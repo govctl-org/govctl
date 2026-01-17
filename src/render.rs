@@ -15,6 +15,22 @@ use crate::signature::{
 use std::fmt::Write as FmtWrite;
 use std::io::Write;
 
+/// Indent continuation lines in multi-line text to preserve markdown list structure.
+/// The first line is returned as-is; subsequent lines are prefixed with the indent.
+fn indent_continuation(text: &str) -> String {
+    let mut lines = text.lines();
+    let Some(first) = lines.next() else {
+        return String::new();
+    };
+    let mut result = first.to_string();
+    for line in lines {
+        result.push('\n');
+        result.push_str("  ");
+        result.push_str(line);
+    }
+    result
+}
+
 /// Render an RFC to Markdown
 pub fn render_rfc(rfc: &RfcIndex) -> String {
     let mut out = String::new();
@@ -237,10 +253,11 @@ pub fn render_adr(adr: &AdrEntry) -> String {
         writeln!(out, "## Alternatives Considered").unwrap();
         writeln!(out).unwrap();
         for alt in &content.alternatives {
+            let indented_text = indent_continuation(&alt.text);
             let line = match alt.status {
-                AlternativeStatus::Considered => format!("- [ ] {}", alt.text),
-                AlternativeStatus::Accepted => format!("- [x] {}", alt.text),
-                AlternativeStatus::Rejected => format!("- ~~{}~~", alt.text),
+                AlternativeStatus::Considered => format!("- [ ] {}", indented_text),
+                AlternativeStatus::Accepted => format!("- [x] {}", indented_text),
+                AlternativeStatus::Rejected => format!("- ~~{}~~", indented_text),
             };
             writeln!(out, "{line}").unwrap();
         }
@@ -329,10 +346,12 @@ pub fn render_work_item(item: &WorkItemEntry) -> String {
         writeln!(out, "## Acceptance Criteria").unwrap();
         writeln!(out).unwrap();
         for item in &content.acceptance_criteria {
+            // Indent continuation lines to keep them within the list item
+            let indented_text = indent_continuation(&item.text);
             let line = match item.status {
-                ChecklistStatus::Pending => format!("- [ ] {}", item.text),
-                ChecklistStatus::Done => format!("- [x] {}", item.text),
-                ChecklistStatus::Cancelled => format!("- ~~{}~~", item.text),
+                ChecklistStatus::Pending => format!("- [ ] {}", indented_text),
+                ChecklistStatus::Done => format!("- [x] {}", indented_text),
+                ChecklistStatus::Cancelled => format!("- ~~{}~~", indented_text),
             };
             writeln!(out, "{line}").unwrap();
         }
@@ -345,10 +364,11 @@ pub fn render_work_item(item: &WorkItemEntry) -> String {
         writeln!(out, "## Decisions").unwrap();
         writeln!(out).unwrap();
         for item in &content.decisions {
+            let indented_text = indent_continuation(&item.text);
             let line = match item.status {
-                ChecklistStatus::Pending => format!("- [ ] {}", item.text),
-                ChecklistStatus::Done => format!("- [x] {}", item.text),
-                ChecklistStatus::Cancelled => format!("- ~~{}~~", item.text),
+                ChecklistStatus::Pending => format!("- [ ] {}", indented_text),
+                ChecklistStatus::Done => format!("- [x] {}", indented_text),
+                ChecklistStatus::Cancelled => format!("- ~~{}~~", indented_text),
             };
             writeln!(out, "{line}").unwrap();
         }
