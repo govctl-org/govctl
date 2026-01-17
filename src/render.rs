@@ -132,7 +132,7 @@ pub fn render_rfc(rfc: &RfcIndex) -> String {
         }
     }
 
-    // Changelog
+    // Changelog (Keep a Changelog format)
     if !rfc.rfc.changelog.is_empty() {
         writeln!(out, "---").unwrap();
         writeln!(out).unwrap();
@@ -142,19 +142,35 @@ pub fn render_rfc(rfc: &RfcIndex) -> String {
         for entry in &rfc.rfc.changelog {
             writeln!(out, "### v{} ({})", entry.version, entry.date).unwrap();
             writeln!(out).unwrap();
-            writeln!(out, "{}", entry.summary).unwrap();
-            writeln!(out).unwrap();
 
-            if !entry.changes.is_empty() {
-                for change in &entry.changes {
-                    writeln!(out, "- {change}").unwrap();
-                }
+            if let Some(ref notes) = entry.notes {
+                writeln!(out, "{notes}").unwrap();
                 writeln!(out).unwrap();
             }
+
+            render_changelog_section(&mut out, "Added", &entry.added);
+            render_changelog_section(&mut out, "Changed", &entry.changed);
+            render_changelog_section(&mut out, "Deprecated", &entry.deprecated);
+            render_changelog_section(&mut out, "Removed", &entry.removed);
+            render_changelog_section(&mut out, "Fixed", &entry.fixed);
+            render_changelog_section(&mut out, "Security", &entry.security);
         }
     }
 
     out
+}
+
+/// Render a changelog section (Keep a Changelog format)
+fn render_changelog_section(out: &mut String, heading: &str, items: &[String]) {
+    if items.is_empty() {
+        return;
+    }
+    writeln!(out, "#### {heading}").unwrap();
+    writeln!(out).unwrap();
+    for item in items {
+        writeln!(out, "- {item}").unwrap();
+    }
+    writeln!(out).unwrap();
 }
 
 /// Generate anchor ID for a clause (matches ref_link anchor format).

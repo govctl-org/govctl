@@ -134,8 +134,13 @@ fn create_rfc(
         changelog: vec![ChangelogEntry {
             version: "0.1.0".to_string(),
             date: today(),
-            summary: "Initial draft".to_string(),
-            changes: vec![],
+            notes: Some("Initial draft".to_string()),
+            added: vec![],
+            changed: vec![],
+            deprecated: vec![],
+            removed: vec![],
+            fixed: vec![],
+            security: vec![],
         }],
     };
 

@@ -52,14 +52,32 @@ pub struct ClauseSpec {
     pub since: Option<String>,
 }
 
-/// Changelog entry for RFC versioning
+/// Changelog entry for RFC versioning (Keep a Changelog format)
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChangelogEntry {
     pub version: String,
     pub date: String,
-    pub summary: String,
+    /// Optional freeform notes for this release
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+    /// New features added
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub changes: Vec<String>,
+    pub added: Vec<String>,
+    /// Changes to existing functionality
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub changed: Vec<String>,
+    /// Features marked for removal in upcoming releases
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub deprecated: Vec<String>,
+    /// Features removed in this release
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub removed: Vec<String>,
+    /// Bug fixes
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub fixed: Vec<String>,
+    /// Security-related changes
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub security: Vec<String>,
 }
 
 /// RFC status lifecycle

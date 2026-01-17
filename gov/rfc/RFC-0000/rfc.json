@@ -36,7 +36,13 @@
     {
       "version": "1.0.0",
       "date": "2026-01-17",
-      "summary": "Initial stable release"
+      "notes": "Initial stable release of the govctl governance framework.",
+      "added": [
+        "RFC specification with status and phase lifecycle",
+        "Clause specification for normative and informative requirements",
+        "ADR specification for architectural decisions",
+        "Work Item specification for task tracking"
+      ]
     }
   ]
 }

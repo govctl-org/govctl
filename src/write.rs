@@ -69,24 +69,29 @@ pub fn bump_rfc_version(rfc: &mut RfcSpec, level: BumpLevel, summary: &str) -> R
     rfc.version = new_version.clone();
     rfc.updated = Some(today());
 
-    // Add changelog entry
+    // Add changelog entry (Keep a Changelog format)
     rfc.changelog.insert(
         0,
         ChangelogEntry {
             version: new_version.clone(),
             date: today(),
-            summary: summary.to_string(),
-            changes: vec![],
+            notes: Some(summary.to_string()),
+            added: vec![],
+            changed: vec![],
+            deprecated: vec![],
+            removed: vec![],
+            fixed: vec![],
+            security: vec![],
         },
     );
 
     Ok(new_version)
 }
 
-/// Add a change to the current version's changelog
+/// Add a change to the current version's changelog (defaults to 'added' category)
 pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
     if let Some(entry) = rfc.changelog.first_mut() {
-        entry.changes.push(change.to_string());
+        entry.added.push(change.to_string());
     } else {
         anyhow::bail!("No changelog entry exists. Bump version first.");
     }

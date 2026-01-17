@@ -2,7 +2,7 @@
 schema = 1
 id = "ADR-0004"
 title = "Adopt Keep a Changelog format for RFC changelogs"
-status = "proposed"
+status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000"]
 
