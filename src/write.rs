@@ -160,7 +160,14 @@ pub fn update_clause_field(
                 )
             })?;
         }
-        "superseded_by" => clause.superseded_by = Some(value.to_string()),
+        "superseded_by" => {
+            clause.superseded_by = if value.is_empty() {
+                None
+            } else {
+                Some(value.to_string())
+            };
+        }
+        "since" => clause.since = Some(value.to_string()),
         _ => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0201ClauseSchemaInvalid,

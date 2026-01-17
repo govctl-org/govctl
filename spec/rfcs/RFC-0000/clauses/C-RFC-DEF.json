@@ -3,5 +3,6 @@
   "title": "RFC Definition",
   "kind": "normative",
   "status": "active",
-  "text": "An RFC is a **normative document** that defines intent, constraints, or decisions which govern implementation within PhaseOS.\n\nAn RFC is not a suggestion. It is law.\n\nEvery RFC MUST contain a JSON source file (`rfc.json`) with:\n- `rfc_id`: Unique identifier (e.g., `RFC-0001`)\n- `title`: Human-readable title\n- `version`: Semantic version\n- `status`: Lifecycle state (`draft`, `normative`, `deprecated`)\n- `phase`: Work stage (`spec`, `impl`, `test`, `stable`)\n- `owners`: List of responsible parties\n- `sections`: Ordered list of sections with clause references"
+  "text": "An RFC is a **normative document** that defines intent, constraints, or decisions which govern implementation within PhaseOS.\n\nAn RFC is not a suggestion. It is law.\n\nEvery RFC MUST contain a JSON source file (`rfc.json`) with:\n- `rfc_id`: Unique identifier (e.g., `RFC-0001`)\n- `title`: Human-readable title\n- `version`: Semantic version\n- `status`: Lifecycle state (`draft`, `normative`, `deprecated`)\n- `phase`: Work stage (`spec`, `impl`, `test`, `stable`)\n- `owners`: List of responsible parties\n- `sections`: Ordered list of sections with clause references",
+  "since": "0.1.0"
 }

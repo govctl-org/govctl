@@ -3,5 +3,6 @@
   "title": "Status Lifecycle",
   "kind": "normative",
   "status": "active",
-  "text": "RFC status follows this lifecycle:\n\n```\ndraft → normative → deprecated\n```\n\n- **draft**: Under discussion. No implementation may depend on it.\n- **normative**: Frozen. Implementation MUST conform to it.\n- **deprecated**: Superseded. Implementation SHOULD migrate away.\n\nState transitions:\n- `draft → normative`: Requires explicit approval and phase gate passage\n- `normative → deprecated`: Requires a superseding RFC in normative status"
+  "text": "RFC status follows this lifecycle:\n\n```\ndraft → normative → deprecated\n```\n\n- **draft**: Under discussion. No implementation may depend on it.\n- **normative**: Frozen. Implementation MUST conform to it.\n- **deprecated**: Superseded. Implementation SHOULD migrate away.\n\nState transitions:\n- `draft → normative`: Requires explicit approval and phase gate passage\n- `normative → deprecated`: Requires a superseding RFC in normative status",
+  "since": "0.1.0"
 }

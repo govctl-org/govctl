@@ -9,3 +9,14 @@ description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?"""
 notes = ""
+
+[[content.acceptance_criteria]]
+text = """
+Multi-line criterion:
+- First condition
+- Second condition"""
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Test criterion"
+status = "pending"

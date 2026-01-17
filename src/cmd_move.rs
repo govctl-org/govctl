@@ -2,7 +2,7 @@
 
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
-use crate::model::WorkItemStatus;
+use crate::model::{ChecklistStatus, WorkItemStatus};
 use crate::parse::{load_work_item, write_work_item};
 use crate::validate::is_valid_work_transition;
 use crate::write::today;
@@ -36,6 +36,31 @@ pub fn move_item(
             entry.spec.govctl.status.as_ref(),
             status.as_ref()
         );
+    }
+
+    // Validate acceptance criteria before marking done
+    if status == WorkItemStatus::Done {
+        let pending: Vec<_> = entry
+            .spec
+            .content
+            .acceptance_criteria
+            .iter()
+            .filter(|c| c.status == ChecklistStatus::Pending)
+            .map(|c| c.text.as_str())
+            .collect();
+
+        if !pending.is_empty() {
+            let list = pending
+                .iter()
+                .map(|t| format!("  - {t}"))
+                .collect::<Vec<_>>()
+                .join("\n");
+            anyhow::bail!(
+                "Cannot mark as done: {} pending acceptance criteria:\n{}",
+                pending.len(),
+                list
+            );
+        }
     }
 
     entry.spec.govctl.status = status;

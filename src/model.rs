@@ -119,6 +119,34 @@ pub struct AdrMeta {
     pub refs: Vec<String>,
 }
 
+/// Status for ADR alternatives
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, AsRefStr)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum AlternativeStatus {
+    #[default]
+    Considered,
+    Rejected,
+    Accepted,
+}
+
+/// An alternative option considered in an ADR
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Alternative {
+    pub text: String,
+    #[serde(default)]
+    pub status: AlternativeStatus,
+}
+
+impl Alternative {
+    pub fn new(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            status: AlternativeStatus::Considered,
+        }
+    }
+}
+
 /// ADR content section [content]
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AdrContent {
@@ -128,6 +156,8 @@ pub struct AdrContent {
     pub decision: String,
     #[serde(default)]
     pub consequences: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub alternatives: Vec<Alternative>,
 }
 
 /// Complete ADR file structure
@@ -167,11 +197,43 @@ pub struct WorkItemMeta {
     pub refs: Vec<String>,
 }
 
+/// Status for checklist items (acceptance criteria, decisions)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, AsRefStr)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum ChecklistStatus {
+    #[default]
+    Pending,
+    Done,
+    Cancelled,
+}
+
+/// A checklist item with text and status
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ChecklistItem {
+    pub text: String,
+    #[serde(default)]
+    pub status: ChecklistStatus,
+}
+
+impl ChecklistItem {
+    pub fn new(text: impl Into<String>) -> Self {
+        Self {
+            text: text.into(),
+            status: ChecklistStatus::Pending,
+        }
+    }
+}
+
 /// Work Item content section [content]
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WorkItemContent {
     #[serde(default)]
     pub description: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub acceptance_criteria: Vec<ChecklistItem>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub decisions: Vec<ChecklistItem>,
     #[serde(default)]
     pub notes: String,
 }

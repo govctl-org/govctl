@@ -14,3 +14,12 @@ refs = ["RFC-0001", "ADR-0002"]     # Optional: references to other artifacts
 context = """Multi-line text describing the context and problem."""
 decision = """Multi-line text describing the decision made."""
 consequences = """Multi-line text describing the consequences."""
+
+# Optional: Alternatives considered with status (considered/accepted/rejected)
+[[content.alternatives]]
+text = "Option A: Use approach X"
+status = "rejected"    # considered (default), accepted, rejected
+
+[[content.alternatives]]
+text = "Option B: Use approach Y"
+status = "accepted"

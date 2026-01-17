@@ -102,7 +102,7 @@ enum Commands {
         text_file: Option<PathBuf>,
         /// Read text from stdin (recommended for multi-line)
         #[arg(long, group = "text_source")]
-        text_stdin: bool,
+        stdin: bool,
     },
 
     /// Set a field value
@@ -111,8 +111,12 @@ enum Commands {
         id: String,
         /// Field name
         field: String,
-        /// New value
-        value: String,
+        /// New value (omit if using --stdin)
+        #[arg(required_unless_present = "stdin")]
+        value: Option<String>,
+        /// Read value from stdin (for multi-line content)
+        #[arg(long)]
+        stdin: bool,
     },
 
     /// Get a field value
@@ -129,8 +133,11 @@ enum Commands {
         id: String,
         /// Array field name (e.g., owners, refs, anchors)
         field: String,
-        /// Value to add
-        value: String,
+        /// Value to add (optional if --stdin)
+        value: Option<String>,
+        /// Read value from stdin (supports multi-line)
+        #[arg(long)]
+        stdin: bool,
     },
 
     /// Remove a value from an array field
@@ -212,16 +219,40 @@ enum Commands {
         #[arg(value_enum)]
         status: WorkItemStatus,
     },
+
+    /// Mark a checklist item as done/pending/cancelled
+    Tick {
+        /// Artifact ID (WI-xxx or ADR-xxx)
+        id: String,
+        /// Field (acceptance_criteria, decisions, or alternatives)
+        field: String,
+        /// Item text (substring match)
+        item: String,
+        /// New status (done, pending, cancelled for WI; accepted, rejected, considered for ADR)
+        #[arg(value_enum)]
+        status: TickStatus,
+    },
+}
+
+#[derive(ValueEnum, Clone, Copy, Debug)]
+pub enum TickStatus {
+    /// Mark as done/accepted
+    Done,
+    /// Mark as pending/considered
+    Pending,
+    /// Mark as cancelled/rejected
+    Cancelled,
 }
 
 #[derive(Subcommand, Clone, Debug)]
 enum NewTarget {
     /// Create a new RFC
     Rfc {
-        /// RFC ID (e.g., RFC-0010)
-        rfc_id: String,
         /// RFC title
         title: String,
+        /// RFC ID (e.g., RFC-0010). Auto-generated if omitted.
+        #[arg(long)]
+        id: Option<String>,
     },
     /// Create a new clause
     Clause {
@@ -245,6 +276,9 @@ enum NewTarget {
     Work {
         /// Work item title
         title: String,
+        /// Immediately activate the work item
+        #[arg(long)]
+        active: bool,
     },
 }
 
@@ -349,17 +383,27 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             clause_id,
             text,
             text_file,
-            text_stdin,
+            stdin,
         } => cmd_edit::edit_clause(
             &config,
             clause_id,
             text.as_deref(),
             text_file.as_deref(),
-            *text_stdin,
+            *stdin,
         ),
-        Commands::Set { id, field, value } => cmd_edit::set_field(&config, id, field, value),
+        Commands::Set {
+            id,
+            field,
+            value,
+            stdin,
+        } => cmd_edit::set_field(&config, id, field, value.as_deref(), *stdin),
         Commands::Get { id, field } => cmd_edit::get_field(&config, id, field.as_deref()),
-        Commands::Add { id, field, value } => cmd_edit::add_to_field(&config, id, field, value),
+        Commands::Add {
+            id,
+            field,
+            value,
+            stdin,
+        } => cmd_edit::add_to_field(&config, id, field, value.as_deref(), *stdin),
         Commands::Remove { id, field, value } => {
             cmd_edit::remove_from_field(&config, id, field, value)
         }
@@ -386,5 +430,11 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         Commands::Deprecate { id } => cmd_lifecycle::deprecate(&config, id),
         Commands::Supersede { id, by } => cmd_lifecycle::supersede(&config, id, by),
         Commands::Move { file, status } => cmd_move::move_item(&config, file, *status),
+        Commands::Tick {
+            id,
+            field,
+            item,
+            status,
+        } => cmd_edit::tick_item(&config, id, field, item, *status),
     }
 }

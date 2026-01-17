@@ -2,9 +2,187 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::load::find_clause_json;
 use crate::model::{
     AdrStatus, ClauseStatus, ProjectIndex, RfcIndex, RfcPhase, RfcStatus, WorkItemStatus,
 };
+use crate::write::read_clause;
+
+// =============================================================================
+// Field Validation System
+// =============================================================================
+
+/// Context for field validation
+pub struct ValidationContext<'a> {
+    pub config: &'a Config,
+    /// The artifact being modified (e.g., "RFC-0001:C-NAME")
+    pub artifact_id: &'a str,
+}
+
+/// Artifact kinds for validation dispatch
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)] // Adr and WorkItem will be used as validation expands
+pub enum ArtifactKind {
+    Rfc,
+    Clause,
+    Adr,
+    WorkItem,
+}
+
+/// Field validation rules
+#[derive(Debug, Clone)]
+pub enum FieldValidation {
+    /// No validation required
+    None,
+    /// Must be valid semver (e.g., "1.2.3")
+    Semver,
+    /// Must be a valid clause reference within same RFC, target must be active
+    ClauseSupersededBy,
+    /// Must be a valid artifact reference (RFC-xxx, ADR-xxx, etc.)
+    ArtifactRef,
+    /// Must be a valid enum value (validated by serde)
+    EnumValue,
+}
+
+impl FieldValidation {
+    /// Get the validation rule for a field
+    pub fn for_field(kind: ArtifactKind, field: &str) -> Self {
+        match (kind, field) {
+            // Clause fields
+            (ArtifactKind::Clause, "since") => Self::Semver,
+            (ArtifactKind::Clause, "superseded_by") => Self::ClauseSupersededBy,
+            (ArtifactKind::Clause, "status") => Self::EnumValue,
+            (ArtifactKind::Clause, "kind") => Self::EnumValue,
+
+            // RFC fields
+            (ArtifactKind::Rfc, "version") => Self::Semver,
+            (ArtifactKind::Rfc, "status") => Self::EnumValue,
+            (ArtifactKind::Rfc, "phase") => Self::EnumValue,
+
+            // ADR fields
+            (ArtifactKind::Adr, "status") => Self::EnumValue,
+            (ArtifactKind::Adr, "superseded_by") => Self::ArtifactRef,
+
+            // Work item fields
+            (ArtifactKind::WorkItem, "status") => Self::EnumValue,
+
+            // Default: no validation
+            _ => Self::None,
+        }
+    }
+
+    /// Validate a value
+    pub fn validate(&self, ctx: &ValidationContext, value: &str) -> anyhow::Result<()> {
+        match self {
+            Self::None => Ok(()),
+            Self::EnumValue => Ok(()), // Validated by serde during parse
+            Self::Semver => validate_semver(value),
+            Self::ClauseSupersededBy => validate_clause_superseded_by(ctx, value),
+            Self::ArtifactRef => validate_artifact_ref(ctx.config, value),
+        }
+    }
+}
+
+/// Validate a semver string
+fn validate_semver(value: &str) -> anyhow::Result<()> {
+    semver::Version::parse(value).map_err(|_| anyhow::anyhow!("Invalid semver: {value}"))?;
+    Ok(())
+}
+
+/// Validate a clause superseded_by reference
+fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyhow::Result<()> {
+    // Empty string means "clear the field"
+    if target.is_empty() {
+        return Ok(());
+    }
+
+    // Extract RFC ID from source clause (e.g., "RFC-0001:C-NAME" -> "RFC-0001")
+    let source_rfc = ctx
+        .artifact_id
+        .split(':')
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("Invalid clause ID format: {}", ctx.artifact_id))?;
+
+    // Build full target reference
+    let full_target = if target.contains(':') {
+        target.to_string()
+    } else {
+        format!("{source_rfc}:{target}")
+    };
+
+    // Check target is in same RFC
+    let target_rfc = full_target
+        .split(':')
+        .next()
+        .ok_or_else(|| anyhow::anyhow!("Invalid target clause ID: {target}"))?;
+
+    if target_rfc != source_rfc {
+        anyhow::bail!(
+            "superseded_by must reference a clause in the same RFC (got {target_rfc}, expected {source_rfc})"
+        );
+    }
+
+    // Check target clause exists
+    let target_path = find_clause_json(ctx.config, &full_target)
+        .ok_or_else(|| anyhow::anyhow!("Target clause not found: {full_target}"))?;
+
+    // Check target clause is active (not superseded or deprecated)
+    let target_clause = read_clause(&target_path)?;
+    match target_clause.status {
+        ClauseStatus::Active => Ok(()),
+        ClauseStatus::Superseded => {
+            anyhow::bail!("Cannot supersede by a superseded clause: {full_target}")
+        }
+        ClauseStatus::Deprecated => {
+            anyhow::bail!("Cannot supersede by a deprecated clause: {full_target}")
+        }
+    }
+}
+
+/// Validate an artifact reference exists
+fn validate_artifact_ref(config: &Config, ref_id: &str) -> anyhow::Result<()> {
+    use crate::load::find_rfc_json;
+    use crate::parse::{load_adrs, load_work_items};
+
+    if ref_id.starts_with("RFC-") {
+        if find_rfc_json(config, ref_id).is_none() {
+            anyhow::bail!("RFC not found: {ref_id}");
+        }
+    } else if ref_id.starts_with("ADR-") {
+        let adrs = load_adrs(config)?;
+        if !adrs.iter().any(|a| a.spec.govctl.id == ref_id) {
+            anyhow::bail!("ADR not found: {ref_id}");
+        }
+    } else if ref_id.starts_with("WI-") {
+        let items = load_work_items(config)?;
+        if !items.iter().any(|w| w.spec.govctl.id == ref_id) {
+            anyhow::bail!("Work item not found: {ref_id}");
+        }
+    } else {
+        anyhow::bail!("Unknown artifact type: {ref_id}");
+    }
+    Ok(())
+}
+
+// =============================================================================
+// Convenience function for commands
+// =============================================================================
+
+/// Validate a field value before setting
+pub fn validate_field(
+    config: &Config,
+    artifact_id: &str,
+    kind: ArtifactKind,
+    field: &str,
+    value: &str,
+) -> anyhow::Result<()> {
+    let ctx = ValidationContext {
+        config,
+        artifact_id,
+    };
+    let validation = FieldValidation::for_field(kind, field);
+    validation.validate(&ctx, value)
+}
 
 /// Validation result with diagnostics
 #[derive(Debug, Default)]

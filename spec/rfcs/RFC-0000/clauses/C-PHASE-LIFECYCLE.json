@@ -3,5 +3,6 @@
   "title": "Phase Lifecycle",
   "kind": "normative",
   "status": "active",
-  "text": "RFC phase follows this lifecycle:\n\n```\nspec → impl → test → stable\n```\n\n- **spec**: Defining what will be built\n- **impl**: Building what was specified  \n- **test**: Verifying implementation\n- **stable**: Released for use\n\nPhases MUST NOT be skipped. Each phase transition requires the previous phase gate to pass.\n\nPhase constraints:\n- `draft + stable` is FORBIDDEN (cannot stabilize unratified work)\n- `deprecated + impl/test` is FORBIDDEN (no new work on deprecated specs)"
+  "text": "RFC phase follows this lifecycle:\n\n```\nspec → impl → test → stable\n```\n\n- **spec**: Defining what will be built\n- **impl**: Building what was specified  \n- **test**: Verifying implementation\n- **stable**: Released for use\n\nPhases MUST NOT be skipped. Each phase transition requires the previous phase gate to pass.\n\nPhase constraints:\n- `draft + stable` is FORBIDDEN (cannot stabilize unratified work)\n- `deprecated + impl/test` is FORBIDDEN (no new work on deprecated specs)",
+  "since": "0.1.0"
 }

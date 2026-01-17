@@ -1,0 +1,83 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-002"
+title = "Improve govctl CLI UX for agent workflows"
+status = "done"
+start_date = "2026-01-17"
+done_date = "2026-01-17"
+
+[content]
+description = "Improve govctl CLI for better AI agent ergonomics."
+notes = ""
+
+[[content.decisions]]
+text = "RFC ID auto-generation with manual override: `new rfc \"Title\"` auto-assigns, `new rfc --id RFC-0100 \"Title\"` for manual"
+status = "done"
+
+[[content.decisions]]
+text = "Work item ID collision check: scan existing IDs to determine next sequence number"
+status = "done"
+
+[[content.decisions]]
+text = "Unify --stdin option: rename --text-stdin to --stdin, add to set command"
+status = "done"
+
+[[content.decisions]]
+text = "Add --active flag: `new work --active \"Title\"` creates and activates in one step"
+status = "done"
+
+[[content.decisions]]
+text = "Work Item schema: add structured acceptance_criteria and decisions arrays with status"
+status = "done"
+
+[[content.decisions]]
+text = "ADR schema: add alternatives array with status (considered/accepted/rejected)"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "`new rfc \"Title\"` auto-generates RFC-ID"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "`new rfc --id RFC-XXXX \"Title\"` allows manual ID with collision check"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "`new work` generates unique IDs (no collisions)"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "`edit --stdin` works (renamed from --text-stdin)"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "`set <ID> <FIELD> --stdin` reads value from stdin"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "`new work --active \"Title\"` creates active work item"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Work Item schema supports structured `acceptance_criteria` with status"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Work Item schema supports structured `decisions` with status"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "ADR schema supports `alternatives` array with status"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Markdown renderer shows checkboxes (pending=unchecked, done=checked, cancelled=strikethrough)"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "`tick` command updates checklist item status"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Validation blocks move to done if pending acceptance criteria exist"
+status = "done"

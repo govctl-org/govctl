@@ -46,7 +46,7 @@ pub fn init_project(config: &Config, force: bool) -> anyhow::Result<Vec<Diagnost
 /// Create a new artifact
 pub fn create(config: &Config, target: &NewTarget) -> anyhow::Result<Vec<Diagnostic>> {
     match target {
-        NewTarget::Rfc { rfc_id, title } => create_rfc(config, rfc_id, title),
+        NewTarget::Rfc { title, id } => create_rfc(config, title, id.as_deref()),
         NewTarget::Clause {
             clause_id,
             title,
@@ -54,15 +54,55 @@ pub fn create(config: &Config, target: &NewTarget) -> anyhow::Result<Vec<Diagnos
             kind,
         } => create_clause(config, clause_id, title, section, *kind),
         NewTarget::Adr { title } => create_adr(config, title),
-        NewTarget::Work { title } => create_work_item(config, title),
+        NewTarget::Work { title, active } => create_work_item(config, title, *active),
     }
 }
 
 /// Create a new RFC
-fn create_rfc(config: &Config, rfc_id: &str, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_dir = config.rfcs_dir().join(rfc_id);
+fn create_rfc(
+    config: &Config,
+    title: &str,
+    manual_id: Option<&str>,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let rfcs_dir = config.rfcs_dir();
+
+    // Determine RFC ID: use manual if provided, otherwise auto-generate
+    let rfc_id = match manual_id {
+        Some(id) => {
+            // Validate format
+            if !id.starts_with("RFC-") {
+                anyhow::bail!("RFC ID must start with 'RFC-' (got: {id})");
+            }
+            // Check for collision
+            if rfcs_dir.join(id).exists() {
+                anyhow::bail!("RFC already exists: {id}");
+            }
+            id.to_string()
+        }
+        None => {
+            // Auto-generate: find max RFC number and increment
+            let max_num = std::fs::read_dir(&rfcs_dir)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .filter_map(|entry| {
+                    let name = entry.file_name();
+                    let name_str = name.to_string_lossy();
+                    name_str
+                        .strip_prefix("RFC-")
+                        .and_then(|s| s.parse::<u32>().ok())
+                })
+                .max()
+                .unwrap_or(0);
+
+            format!("RFC-{:04}", max_num + 1)
+        }
+    };
+
+    let rfc_dir = rfcs_dir.join(&rfc_id);
     let clauses_dir = rfc_dir.join("clauses");
 
+    // Final collision check (handles race conditions)
     if rfc_dir.exists() {
         anyhow::bail!("RFC already exists: {}", rfc_dir.display());
     }
@@ -226,6 +266,7 @@ fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
             context: "Describe the context and problem statement.\nWhat is the issue that we're seeing that is motivating this decision?".to_string(),
             decision: "Describe the decision that was made.\nWhat is the change that we're proposing and/or doing?".to_string(),
             consequences: "Describe the resulting context after applying the decision.\nWhat becomes easier or more difficult to do because of this change?".to_string(),
+            alternatives: vec![],
         },
     };
 
@@ -237,34 +278,63 @@ fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
 }
 
 /// Create a new work item
-fn create_work_item(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
+fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Result<Vec<Diagnostic>> {
     let work_dir = &config.paths.work_dir;
     std::fs::create_dir_all(work_dir)?;
 
     let date = today();
     let slug = slugify(title);
 
-    // Find unique filename
-    let mut counter = 1u32;
+    // Find next work item ID by scanning existing IDs for today's date
+    let id_prefix = format!("WI-{date}-");
+
+    let max_seq = std::fs::read_dir(work_dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            (path.extension()? == "toml").then_some(path)
+        })
+        .filter_map(|path| std::fs::read_to_string(&path).ok())
+        .filter_map(|content| {
+            content
+                .lines()
+                .find(|line| line.starts_with("id = \""))
+                .and_then(|line| line.strip_prefix("id = \""))
+                .and_then(|s| s.strip_suffix('"'))
+                .and_then(|id| id.strip_prefix(&id_prefix))
+                .and_then(|seq_str| seq_str.parse::<u32>().ok())
+        })
+        .max()
+        .unwrap_or(0);
+
+    let next_seq = max_seq + 1;
+    let work_id = format!("WI-{date}-{next_seq:03}");
+
+    // Find unique filename (append sequence if slug collision)
     let mut filename = format!("{date}-{slug}.toml");
     let mut work_path = work_dir.join(&filename);
 
-    while work_path.exists() {
-        counter += 1;
-        filename = format!("{date}-{slug}-{counter}.toml");
+    if work_path.exists() {
+        filename = format!("{date}-{slug}-{next_seq}.toml");
         work_path = work_dir.join(&filename);
     }
 
-    let work_id = format!("WI-{date}-{counter:03}");
-
     // Create work item spec
+    let (status, start_date) = if active {
+        (WorkItemStatus::Active, Some(date.clone()))
+    } else {
+        (WorkItemStatus::Queue, None)
+    };
+
     let spec = WorkItemSpec {
         govctl: WorkItemMeta {
             schema: 1,
             id: work_id.clone(),
             title: title.to_string(),
-            status: WorkItemStatus::Queue,
-            start_date: None,
+            status,
+            start_date,
             done_date: None,
             refs: vec![],
         },
@@ -272,6 +342,8 @@ fn create_work_item(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnost
             description:
                 "Describe the work to be done.\nWhat is the goal? What are the acceptance criteria?"
                     .to_string(),
+            acceptance_criteria: vec![],
+            decisions: vec![],
             notes: String::new(),
         },
     };

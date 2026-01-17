@@ -210,6 +210,22 @@ pub fn render_adr(adr: &AdrEntry) -> String {
     writeln!(out, "{}", content.consequences).unwrap();
     writeln!(out).unwrap();
 
+    // Alternatives Considered
+    if !content.alternatives.is_empty() {
+        use crate::model::AlternativeStatus;
+        writeln!(out, "## Alternatives Considered").unwrap();
+        writeln!(out).unwrap();
+        for alt in &content.alternatives {
+            let line = match alt.status {
+                AlternativeStatus::Considered => format!("- [ ] {}", alt.text),
+                AlternativeStatus::Accepted => format!("- [x] {}", alt.text),
+                AlternativeStatus::Rejected => format!("- ~~{}~~", alt.text),
+            };
+            writeln!(out, "{line}").unwrap();
+        }
+        writeln!(out).unwrap();
+    }
+
     out
 }
 
@@ -283,6 +299,38 @@ pub fn render_work_item(item: &WorkItemEntry) -> String {
     writeln!(out).unwrap();
     writeln!(out, "{}", content.description).unwrap();
     writeln!(out).unwrap();
+
+    // Acceptance Criteria
+    if !content.acceptance_criteria.is_empty() {
+        use crate::model::ChecklistStatus;
+        writeln!(out, "## Acceptance Criteria").unwrap();
+        writeln!(out).unwrap();
+        for item in &content.acceptance_criteria {
+            let line = match item.status {
+                ChecklistStatus::Pending => format!("- [ ] {}", item.text),
+                ChecklistStatus::Done => format!("- [x] {}", item.text),
+                ChecklistStatus::Cancelled => format!("- ~~{}~~", item.text),
+            };
+            writeln!(out, "{line}").unwrap();
+        }
+        writeln!(out).unwrap();
+    }
+
+    // Decisions
+    if !content.decisions.is_empty() {
+        use crate::model::ChecklistStatus;
+        writeln!(out, "## Decisions").unwrap();
+        writeln!(out).unwrap();
+        for item in &content.decisions {
+            let line = match item.status {
+                ChecklistStatus::Pending => format!("- [ ] {}", item.text),
+                ChecklistStatus::Done => format!("- [x] {}", item.text),
+                ChecklistStatus::Cancelled => format!("- ~~{}~~", item.text),
+            };
+            writeln!(out, "{line}").unwrap();
+        }
+        writeln!(out).unwrap();
+    }
 
     // Notes
     if !content.notes.is_empty() {
