@@ -1,9 +1,0 @@
-[project]
-name = "test-project"
-
-[paths]
-gov_root = "gov"
-docs_output = "docs"
-
-[schema]
-version = 1

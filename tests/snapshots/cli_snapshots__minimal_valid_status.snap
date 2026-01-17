@@ -1,6 +1,6 @@
 ---
 source: tests/cli_snapshots.rs
-expression: output
+expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl status
 govctl status
@@ -14,11 +14,13 @@ Clauses
   Total        1
 
 ADRs
-  accepted     1
-  Total        1
+  Total        0
 
 Work Items
-  done         1
+  active       1
   Total        1
+
+Active Work
+  WI-<DATE>-001 Test work item
 
 exit: 0

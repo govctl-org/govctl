@@ -1,9 +1,0 @@
-{
-  "clause_id": "C-OLD",
-  "title": "Old Clause",
-  "kind": "normative",
-  "status": "superseded",
-  "text": "This clause is superseded.",
-  "superseded_by": "C-NONEXISTENT",
-  "since": "1.0.0"
-}

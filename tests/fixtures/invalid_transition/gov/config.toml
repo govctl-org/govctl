@@ -1,9 +1,0 @@
-[project]
-name = "invalid-transition-test"
-
-[paths]
-gov_root = "gov"
-docs_output = "docs"
-
-[schema]
-version = 1

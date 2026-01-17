@@ -1,8 +1,0 @@
-{
-  "clause_id": "C-VALID",
-  "title": "Valid Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "This is a valid clause for testing.",
-  "since": "1.0.0"
-}

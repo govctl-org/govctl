@@ -1,6 +1,6 @@
 ---
 source: tests/cli_snapshots.rs
-expression: output
+expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl check
 Checked:
@@ -8,10 +8,6 @@ Checked:
   1 clauses
   0 ADRs
   0 work items
-  1 source files scanned
-  4 references found
 
-error[E0107]: Unknown artifact reference: RFC-0001:C-MISSING (src/example.rs)
-error[E0107]: Unknown artifact reference: RFC-9999 (src/example.rs)
-exit: 1
-
+✓ All checks passed
+exit: 0

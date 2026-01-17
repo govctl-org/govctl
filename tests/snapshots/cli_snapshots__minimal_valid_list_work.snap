@@ -1,10 +1,11 @@
 ---
 source: tests/cli_snapshots.rs
-expression: output
+expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl list work
-┌────┬────────┬───────┐
-│ ID ┆ Status ┆ Title │
-╞════╪════════╪═══════╡
-└────┴────────┴───────┘
+┌───────────────────┬────────┬────────────────┐
+│ ID                ┆ Status ┆ Title          │
+╞═══════════════════╪════════╪════════════════╡
+│ WI-<DATE>-001 ┆ active ┆ Test work item │
+└───────────────────┴────────┴────────────────┘
 exit: 0
