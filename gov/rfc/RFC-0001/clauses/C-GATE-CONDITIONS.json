@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-GATE-CONDITIONS",
+  "title": "Transition Gate Conditions",
+  "kind": "normative",
+  "status": "active",
+  "text": "Certain transitions have additional gate conditions beyond the state machine rules.\n\n**Work Item → done:**\n1. The work item MUST have at least one acceptance criterion defined\n2. All acceptance criteria MUST have status \"done\" or \"cancelled\" (no \"pending\")\n\nRationale: Prevents marking work as complete without defined success criteria.\n\n**RFC draft → normative:**\n- No additional gates (policy decision, not structural)\n\n**RFC phase spec → impl:**\n- RFC status SHOULD be normative (warning if draft)\n\nRationale: Implementation should follow finalized specification.\n\n**RFC phase impl → test:**\n- No additional gates\n\n**RFC phase test → stable:**\n- No additional gates (assumes tests are passing externally)\n\nFuture gates MAY be added via RFC amendment, but MUST NOT break existing valid workflows.",
+  "since": "0.1.0"
+}

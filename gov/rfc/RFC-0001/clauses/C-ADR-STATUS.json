@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-ADR-STATUS",
+  "title": "ADR Status Transitions",
+  "kind": "normative",
+  "status": "active",
+  "text": "An ADR MUST have exactly one of the following status values:\n\n1. **proposed** — Initial state. The decision is under consideration.\n2. **accepted** — The decision has been accepted and is in effect.\n3. **superseded** — The decision has been replaced by another ADR.\n\nValid transitions:\n- proposed → accepted (via `accept` command)\n- accepted → superseded (via `supersede` command, requires `--by` to specify replacement)\n\nInvalid transitions (MUST be rejected):\n- proposed → superseded (cannot supersede without first accepting)\n- accepted → proposed (no \"un-accept\")\n- superseded → any (superseded is terminal)\n\nWhen an ADR is superseded:\n- The `superseded_by` field MUST be set to the ID of the replacing ADR\n- The replacing ADR SHOULD reference the superseded ADR",
+  "since": "0.1.0"
+}

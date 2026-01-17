@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-WORK-STATUS",
+  "title": "Work Item Status Transitions",
+  "kind": "normative",
+  "status": "active",
+  "text": "A Work Item MUST have exactly one of the following status values:\n\n1. **queue** — Initial state. The work item is defined but not yet started.\n2. **active** — The work item is currently being worked on.\n3. **done** — The work item is complete. All acceptance criteria are satisfied.\n4. **cancelled** — The work item was abandoned. No further work will be done.\n\nValid transitions (via `move` command):\n- queue → active (start work)\n- queue → cancelled (abandon before starting)\n- active → done (complete work)\n- active → cancelled (abandon in progress)\n\nInvalid transitions (MUST be rejected):\n- done → any (done is terminal)\n- cancelled → any (cancelled is terminal)\n- queue → done (cannot complete without being active)\n- active → queue (no \"un-start\")\n\nTimestamp behavior:\n- queue → active: Sets `started` date if not already set\n- active → done: Sets `completed` date\n- active → cancelled: Sets `completed` date",
+  "since": "0.1.0"
+}

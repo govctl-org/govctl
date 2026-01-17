@@ -1,0 +1,37 @@
+{
+  "rfc_id": "RFC-0001",
+  "title": "Lifecycle State Machines",
+  "version": "0.1.0",
+  "status": "draft",
+  "phase": "spec",
+  "owners": [
+    "@your-handle"
+  ],
+  "created": "2026-01-17",
+  "sections": [
+    {
+      "title": "Summary",
+      "clauses": [
+        "clauses/C-SUMMARY.json"
+      ]
+    },
+    {
+      "title": "Specification",
+      "clauses": [
+        "clauses/C-RFC-STATUS.json",
+        "clauses/C-RFC-PHASE.json",
+        "clauses/C-WORK-STATUS.json",
+        "clauses/C-ADR-STATUS.json",
+        "clauses/C-CLAUSE-STATUS.json",
+        "clauses/C-GATE-CONDITIONS.json"
+      ]
+    }
+  ],
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "date": "2026-01-17",
+      "notes": "Initial draft"
+    }
+  ]
+}

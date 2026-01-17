@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-SUMMARY",
+  "title": "Summary",
+  "kind": "informative",
+  "status": "active",
+  "text": "This RFC defines the lifecycle state machines for all governed artifacts in govctl.\n\nEach artifact type has a finite state machine that governs its lifecycle:\n- **RFC**: status (draft/normative/deprecated) and phase (spec/impl/test/stable)\n- **Work Item**: status (queue/active/done/cancelled)\n- **ADR**: status (proposed/accepted/superseded)\n- **Clause**: status (active/deprecated/superseded)\n\nKey principles:\n1. State machines are acyclic (no going backward)\n2. Terminal states are final (done, cancelled, superseded, stable)\n3. Transitions may have gate conditions beyond state validity\n4. All transitions are explicit commands (no implicit state changes)\n\nThis specification documents what is already implemented in govctl v0.1.0.",
+  "since": "0.1.0"
+}

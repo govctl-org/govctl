@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-CLAUSE-STATUS",
+  "title": "Clause Status Transitions",
+  "kind": "normative",
+  "status": "active",
+  "text": "A Clause MUST have exactly one of the following status values:\n\n1. **active** — Default state. The clause is in effect.\n2. **deprecated** — The clause is no longer recommended but still valid.\n3. **superseded** — The clause has been replaced by another clause.\n\nValid transitions:\n- active → deprecated (via `deprecate` command)\n- active → superseded (via `supersede` command, requires replacement clause)\n- deprecated → superseded (already deprecated, now replaced)\n\nInvalid transitions (MUST be rejected):\n- deprecated → active (no resurrection)\n- superseded → any (superseded is terminal)\n\nWhen a clause is superseded:\n- The `superseded_by` field MUST be set to the ID of the replacing clause\n- The replacing clause SHOULD have a `since` field indicating the version it was introduced",
+  "since": "0.1.0"
+}
