@@ -5,7 +5,52 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::WorkItemStatus;
-use comfy_table::{ContentArrangement, Table, presets::UTF8_FULL};
+use comfy_table::{Attribute, Cell, Color, ContentArrangement, Table, presets::UTF8_FULL};
+
+/// Check if stdout supports colors
+fn use_colors() -> bool {
+    supports_color::on(supports_color::Stream::Stdout).is_some()
+}
+
+/// Create a cell with optional color
+fn cell(text: &str) -> Cell {
+    Cell::new(text)
+}
+
+/// Create an ID cell (cyan, bold when colors enabled)
+fn id_cell(text: &str) -> Cell {
+    if use_colors() {
+        Cell::new(text)
+            .fg(Color::Cyan)
+            .add_attribute(Attribute::Bold)
+    } else {
+        Cell::new(text)
+    }
+}
+
+/// Create a status cell with semantic color
+fn status_cell(status: &str) -> Cell {
+    if use_colors() {
+        let color = match status {
+            "draft" | "proposed" | "queue" => Color::Yellow,
+            "normative" | "accepted" | "active" | "done" => Color::Green,
+            "deprecated" | "superseded" | "cancelled" => Color::DarkGrey,
+            _ => Color::White,
+        };
+        Cell::new(status).fg(color)
+    } else {
+        Cell::new(status)
+    }
+}
+
+/// Create a header cell (bold when colors enabled)
+fn header_cell(text: &str) -> Cell {
+    if use_colors() {
+        Cell::new(text).add_attribute(Attribute::Bold)
+    } else {
+        Cell::new(text)
+    }
+}
 
 /// List artifacts
 pub fn list(
@@ -44,15 +89,21 @@ fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     table
         .load_preset(UTF8_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["RFC", "Version", "Status", "Phase", "Title"]);
+        .set_header(vec![
+            header_cell("RFC"),
+            header_cell("Version"),
+            header_cell("Status"),
+            header_cell("Phase"),
+            header_cell("Title"),
+        ]);
 
     for rfc in rfcs {
         table.add_row(vec![
-            rfc.rfc.rfc_id.as_str(),
-            rfc.rfc.version.as_str(),
-            rfc.rfc.status.as_ref(),
-            rfc.rfc.phase.as_ref(),
-            rfc.rfc.title.as_str(),
+            id_cell(&rfc.rfc.rfc_id),
+            cell(&rfc.rfc.version),
+            status_cell(rfc.rfc.status.as_ref()),
+            status_cell(rfc.rfc.phase.as_ref()),
+            cell(&rfc.rfc.title),
         ]);
     }
 
@@ -81,15 +132,21 @@ fn list_clauses(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     table
         .load_preset(UTF8_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["Clause", "RFC", "Kind", "Status", "Title"]);
+        .set_header(vec![
+            header_cell("Clause"),
+            header_cell("RFC"),
+            header_cell("Kind"),
+            header_cell("Status"),
+            header_cell("Title"),
+        ]);
 
     for (rfc_id, clause) in clauses {
         table.add_row(vec![
-            clause.spec.clause_id.as_str(),
-            rfc_id.as_str(),
-            clause.spec.kind.as_ref(),
-            clause.spec.status.as_ref(),
-            clause.spec.title.as_str(),
+            id_cell(&clause.spec.clause_id),
+            id_cell(&rfc_id),
+            cell(clause.spec.kind.as_ref()),
+            status_cell(clause.spec.status.as_ref()),
+            cell(&clause.spec.title),
         ]);
     }
 
@@ -110,14 +167,19 @@ fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     table
         .load_preset(UTF8_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["ADR", "Status", "Date", "Title"]);
+        .set_header(vec![
+            header_cell("ADR"),
+            header_cell("Status"),
+            header_cell("Date"),
+            header_cell("Title"),
+        ]);
 
     for adr in adrs {
         table.add_row(vec![
-            adr.meta().id.as_str(),
-            adr.meta().status.as_ref(),
-            adr.meta().date.as_str(),
-            adr.meta().title.as_str(),
+            id_cell(&adr.meta().id),
+            status_cell(adr.meta().status.as_ref()),
+            cell(&adr.meta().date),
+            cell(&adr.meta().title),
         ]);
     }
 
@@ -153,13 +215,17 @@ fn list_work_items(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     table
         .load_preset(UTF8_FULL)
         .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec!["ID", "Status", "Title"]);
+        .set_header(vec![
+            header_cell("ID"),
+            header_cell("Status"),
+            header_cell("Title"),
+        ]);
 
     for item in items {
         table.add_row(vec![
-            item.meta().id.as_str(),
-            item.meta().status.as_ref(),
-            item.meta().title.as_str(),
+            id_cell(&item.meta().id),
+            status_cell(item.meta().status.as_ref()),
+            cell(&item.meta().title),
         ]);
     }
 
