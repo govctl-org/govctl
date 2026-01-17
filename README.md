@@ -105,6 +105,7 @@ Every feature in this CLI was specified in an RFC before implementation. You can
 | RFC                              | Title                       | Status    | Phase  |
 | -------------------------------- | --------------------------- | --------- | ------ |
 | [RFC-0000](docs/rfc/RFC-0000.md) | govctl Governance Framework | Normative | Stable |
+| [RFC-0001](docs/rfc/RFC-0001.md) | Status and Phase Lifecycle  | Normative | Stable |
 
 This isn't just documentation — it's **proof that the model works**.
 
