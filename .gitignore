@@ -11,8 +11,3 @@ Cargo.lock
 # OS
 .DS_Store
 Thumbs.db
-
-# Rendered ADRs and Work Items (generated, not committed)
-# Only RFCs are rendered and committed to docs/rfc/
-docs/adrs/
-docs/work/

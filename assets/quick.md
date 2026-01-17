@@ -72,6 +72,7 @@ git add . && git commit -m "chore(work): complete <WI-ID>"
 ## WHEN TO SWITCH TO /gov
 
 If during implementation you discover:
+
 - This requires behavioral changes → switch to `/gov`
 - This needs RFC specification → switch to `/gov`
 - This is an architectural decision → switch to `/gov`

@@ -115,9 +115,16 @@ This isn't just documentation — it's **proof that the model works**.
 
 govctl is a governance CLI for managing RFCs, ADRs, and Work Items.
 
+### Requirements
+
+- **Rust 1.85+** (uses edition 2024)
+
 ### Installation
 
 ```bash
+cargo install govctl
+
+# Or build from source
 cargo build --release
 # Binary at ./target/release/govctl
 ```
@@ -249,13 +256,13 @@ govctl list work pending            # Query status
 
 **MCP would add complexity without adding capability:**
 
-| Concern            | MCP Approach              | CLI Approach                   |
-| ------------------ | ------------------------- | ------------------------------ |
-| Tool discovery     | JSON schema negotiation   | `govctl --help`                |
-| Invocation         | JSON-RPC over stdio       | Shell command                  |
-| Error handling     | Structured error objects  | Exit codes + stderr            |
-| Streaming output   | Chunked JSON              | Plain text                     |
-| Debugging          | Custom tooling required   | Just run the command           |
+| Concern          | MCP Approach             | CLI Approach         |
+| ---------------- | ------------------------ | -------------------- |
+| Tool discovery   | JSON schema negotiation  | `govctl --help`      |
+| Invocation       | JSON-RPC over stdio      | Shell command        |
+| Error handling   | Structured error objects | Exit codes + stderr  |
+| Streaming output | Chunked JSON             | Plain text           |
+| Debugging        | Custom tooling required  | Just run the command |
 
 The CLI is the universal interface. Every shell-capable agent already speaks it.
 

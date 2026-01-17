@@ -50,10 +50,12 @@ EOF
 ## RFC ADVANCEMENT GATE
 
 **Default behavior:** Ask for human permission before:
+
 - `{{GOVCTL}} finalize <RFC-ID> normative`
 - `{{GOVCTL}} advance <RFC-ID> <phase>`
 
 **Override:** If `$ARGUMENTS` contains phrases like:
+
 - "free", "autonomous", "all allowed", "no permission needed", "full authority"
 
 Then RFC advancement may proceed without asking.
@@ -81,21 +83,21 @@ fi
 
 **VCS commands (use detected VCS throughout):**
 
-| Action | jj | git |
-|--------|-----|-----|
-| Simple commit | `jj commit -m "<msg>"` | `git add . && git commit -m "<msg>"` |
-| Multi-line | `jj describe --stdin <<'EOF' ... EOF && jj new` | See CONVENTIONS section |
+| Action        | jj                                              | git                                  |
+| ------------- | ----------------------------------------------- | ------------------------------------ |
+| Simple commit | `jj commit -m "<msg>"`                          | `git add . && git commit -m "<msg>"` |
+| Multi-line    | `jj describe --stdin <<'EOF' ... EOF && jj new` | See CONVENTIONS section              |
 
 ### 0.2 Classify the Target
 
 Parse `$ARGUMENTS` and classify:
 
-| Type | Examples | Workflow |
-|------|----------|----------|
-| **Doc-only** | README, comments, typos | Fast path (skip Phase 2) |
-| **Bug fix** | Existing behavior broken | May skip RFC creation |
-| **Feature** | New capability | Full workflow with RFC |
-| **Refactor** | Internal restructure | ADR recommended |
+| Type         | Examples                 | Workflow                 |
+| ------------ | ------------------------ | ------------------------ |
+| **Doc-only** | README, comments, typos  | Fast path (skip Phase 2) |
+| **Bug fix**  | Existing behavior broken | May skip RFC creation    |
+| **Feature**  | New capability           | Full workflow with RFC   |
+| **Refactor** | Internal restructure     | ADR recommended          |
 
 **Fast path for doc-only changes:** Skip to Phase 1, then directly to Phase 3 (implementation). No RFC/ADR required.
 
@@ -110,6 +112,7 @@ Parse `$ARGUMENTS` and classify:
 ```
 
 **Decision:**
+
 - Active item matches → use it, proceed to Phase 2
 - Queued item matches → `{{GOVCTL}} mv <WI-ID> active`
 - No match → create new
@@ -155,11 +158,11 @@ git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description
 
 ### 2.2 Determine Requirements
 
-| Situation | Action |
-|-----------|--------|
-| New feature not covered by RFC | Create RFC |
-| Ambiguous RFC interpretation | Create ADR |
-| Architectural decision | Create ADR |
+| Situation                           | Action             |
+| ----------------------------------- | ------------------ |
+| New feature not covered by RFC      | Create RFC         |
+| Ambiguous RFC interpretation        | Create ADR         |
+| Architectural decision              | Create ADR         |
 | Pure implementation of existing RFC | Proceed to Phase 3 |
 
 ### 2.3 Create RFC (if needed)
@@ -206,6 +209,7 @@ git add . && git commit -m "docs(rfc): draft <RFC-ID> for <summary>"
 ### 3.1 Gate Check (for RFC-governed work)
 
 Before implementation, verify:
+
 - RFC **status** is `normative` (required for production features)
 - RFC **phase** is `impl` or later
 
@@ -216,14 +220,15 @@ Before implementation, verify:
 
 **Gate conditions:**
 
-| RFC Status | RFC Phase | Action |
-|------------|-----------|--------|
-| draft | spec | **ASK PERMISSION** → Finalize → advance → implement |
-| normative | spec | **ASK PERMISSION** → Advance → implement |
-| normative | impl+ | Proceed directly |
-| deprecated | any | ❌ No new implementation allowed |
+| RFC Status | RFC Phase | Action                                              |
+| ---------- | --------- | --------------------------------------------------- |
+| draft      | spec      | **ASK PERMISSION** → Finalize → advance → implement |
+| normative  | spec      | **ASK PERMISSION** → Advance → implement            |
+| normative  | impl+     | Proceed directly                                    |
+| deprecated | any       | ❌ No new implementation allowed                    |
 
 **If permission granted (or override in $ARGUMENTS):**
+
 ```bash
 {{GOVCTL}} finalize <RFC-ID> normative  # if draft
 {{GOVCTL}} advance <RFC-ID> impl        # if spec phase
@@ -258,6 +263,7 @@ git add . && git commit -m "feat(<scope>): <description>"
 ### 4.1 Advance Phase (if RFC exists)
 
 **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
+
 ```bash
 {{GOVCTL}} advance <RFC-ID> test
 ```
@@ -294,6 +300,7 @@ git add . && git commit -m "test(<scope>): add tests for <feature>"
 ### 5.2 Advance RFC to Stable (if applicable)
 
 If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
+
 ```bash
 {{GOVCTL}} advance <RFC-ID> stable
 ```
@@ -301,11 +308,13 @@ If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless ov
 ### 5.3 Tick Acceptance Criteria
 
 **Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
+
 ```bash
 {{GOVCTL}} add <WI-ID> acceptance_criteria "criterion"
 ```
 
 Then tick each completed criterion:
+
 ```bash
 {{GOVCTL}} tick <WI-ID> acceptance_criteria "criterion" -s done
 ```
@@ -357,12 +366,12 @@ For all other errors: **fix and continue**.
 
 ### Recovery
 
-| Error | Recovery |
-|-------|----------|
-| `{{GOVCTL}} check` fails | Read diagnostics, fix, retry |
-| Tests fail | Debug, fix, retry |
-| Lint/format fails | Usually auto-fixes; re-run |
-| `mv done` rejected | Add/tick acceptance criteria first |
+| Error                    | Recovery                           |
+| ------------------------ | ---------------------------------- |
+| `{{GOVCTL}} check` fails | Read diagnostics, fix, retry       |
+| Tests fail               | Debug, fix, retry                  |
+| Lint/format fails        | Usually auto-fixes; re-run         |
+| `mv done` rejected       | Add/tick acceptance criteria first |
 
 ---
 
@@ -370,14 +379,14 @@ For all other errors: **fix and continue**.
 
 ### Commit Messages
 
-| Prefix | Usage |
-|--------|-------|
-| `feat(scope)` | New feature |
-| `fix(scope)` | Bug fix |
-| `docs(scope)` | Documentation |
-| `test(scope)` | Tests |
+| Prefix            | Usage         |
+| ----------------- | ------------- |
+| `feat(scope)`     | New feature   |
+| `fix(scope)`      | Bug fix       |
+| `docs(scope)`     | Documentation |
+| `test(scope)`     | Tests         |
 | `refactor(scope)` | Restructuring |
-| `chore(scope)` | Maintenance |
+| `chore(scope)`    | Maintenance   |
 
 ### Multi-line Input
 

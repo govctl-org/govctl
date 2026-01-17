@@ -19,10 +19,25 @@ pub struct Config {
 pub struct ProjectConfig {
     #[serde(default = "default_project_name")]
     pub name: String,
+    /// Default owner for new RFCs (e.g., "@your-handle" or "@org-name")
+    #[serde(default = "default_owner")]
+    pub default_owner: String,
 }
 
 fn default_project_name() -> String {
     "govctl-project".to_string()
+}
+
+fn default_owner() -> String {
+    // Try to get git user.name, fall back to placeholder
+    std::process::Command::new("git")
+        .args(["config", "user.name"])
+        .output()
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| format!("@{}", s.trim()))
+        .filter(|s| s.len() > 1) // "@" alone is not valid
+        .unwrap_or_else(|| "@your-handle".to_string())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -183,6 +198,8 @@ impl Config {
     pub fn default_toml() -> &'static str {
         r#"[project]
 name = "my-project"
+# Default owner for new RFCs (uses git user.name if not set)
+# default_owner = "@your-handle"
 
 [paths]
 gov_root = "gov"

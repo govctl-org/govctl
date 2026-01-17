@@ -48,15 +48,15 @@ Display the current governance state. Read-only, no mutations.
 
 If `$ARGUMENTS` specifies a focus:
 
-| Argument | Action |
-|----------|--------|
-| `rfc` or `rfcs` | Show RFC list only |
-| `adr` or `adrs` | Show ADR list only |
-| `work` or `tasks` | Show work items only |
+| Argument              | Action                  |
+| --------------------- | ----------------------- |
+| `rfc` or `rfcs`       | Show RFC list only      |
+| `adr` or `adrs`       | Show ADR list only      |
+| `work` or `tasks`     | Show work items only    |
 | `pending` or `active` | Show pending work items |
-| `<RFC-ID>` | Read specific RFC |
-| `<ADR-ID>` | Read specific ADR |
-| `<WI-ID>` | Read specific work item |
+| `<RFC-ID>`            | Read specific RFC       |
+| `<ADR-ID>`            | Read specific ADR       |
+| `<WI-ID>`             | Read specific work item |
 
 ---
 

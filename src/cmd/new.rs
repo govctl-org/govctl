@@ -162,7 +162,7 @@ fn create_rfc(
         version: "0.1.0".to_string(),
         status: RfcStatus::Draft,
         phase: RfcPhase::Spec,
-        owners: vec!["@your-handle".to_string()],
+        owners: vec![config.project.default_owner.clone()],
         created: today(),
         updated: None,
         supersedes: None,

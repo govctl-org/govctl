@@ -4,6 +4,7 @@ id = "ADR-0007"
 title = "Ergonomic array field matching for remove and tick commands"
 status = "accepted"
 date = "2026-01-17"
+refs = ["RFC-0000:C-WORK-DEF", "RFC-0000:C-ADR-DEF"]
 
 [content]
 context = "The remove command requires exact string match, which is fragile for long strings like URLs. The tick command uses substring matching but remove does not. Checklist fields (acceptance_criteria, decisions, alternatives) require separate semantics from string fields, leading to confusion about when to use remove vs tick."

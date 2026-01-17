@@ -23,11 +23,11 @@ Get-ChildItem -Path $AssetsDir -Filter "*.md" | ForEach-Object {
     $template = $_.FullName
     $filename = $_.Name
     $output = Join-Path $OutputDir $filename
-    
+
     $content = Get-Content -Path $template -Raw
     $content = $content -replace [regex]::Escape($Placeholder), $Replacement
     Set-Content -Path $output -Value $content -NoNewline
-    
+
     Write-Host "Synced: $output"
 }
 

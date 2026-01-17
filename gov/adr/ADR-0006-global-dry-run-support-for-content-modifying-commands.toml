@@ -4,6 +4,7 @@ id = "ADR-0006"
 title = "Global dry-run support for content-modifying commands"
 status = "accepted"
 date = "2026-01-17"
+refs = ["RFC-0000:C-WORK-DEF"]
 
 [content]
 context = "All content-modifying commands (new, set, add, remove, edit, tick, bump, finalize, advance, accept, deprecate, supersede, move) write files immediately with no way to preview changes. Only render commands support --dry-run. Users and agents need a way to preview what changes will be made before committing to disk, especially for destructive or complex operations."
