@@ -4,6 +4,7 @@ id = "ADR-0012"
 title = "Prefix-based changelog category parsing"
 status = "accepted"
 date = "2026-01-17"
+refs = ["ADR-0013"]
 
 [content]
 context = "The `govctl bump` command supports adding changelog entries via `-c` flags, but all changes are hardcoded to the `added` category. The `ChangelogEntry` model supports 6 categories (added, changed, deprecated, removed, fixed, security) per Keep a Changelog format, but users must manually edit JSON to use any category other than `added`."

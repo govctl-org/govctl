@@ -1,20 +1,21 @@
 [govctl]
 schema = 1
 id = "ADR-0013"
-title = "Add category field to work items for changelog generation"
+title = "Add category field to acceptance criteria for changelog generation"
 status = "accepted"
 date = "2026-01-17"
+refs = ["ADR-0012"]
 
 [content]
-context = "Work items track implementation work (features, fixes, refactoring), but lack categorization that maps to Keep a Changelog format. RFC changelog entries already use Keep a Changelog categories (Added, Changed, Deprecated, Removed, Fixed, Security). To generate a repo-level CHANGELOG.md from completed work items, we need the same categorization. Without this, `govctl render changelog` would produce a flat list instead of properly categorized sections."
+context = "Work items track implementation work (features, fixes, refactoring), but lack categorization that maps to Keep a Changelog format. RFC changelog entries already use Keep a Changelog categories (Added, Changed, Deprecated, Removed, Fixed, Security). To generate a repo-level CHANGELOG.md from completed work items, we need the same categorization. Acceptance criteria are the natural atomic unit for changelog entries - each criterion represents one deliverable."
 decision = """
-Add a `category` field to `WorkItemMeta` with a `WorkItemCategory` enum matching Keep a Changelog categories: `added`, `changed`, `deprecated`, `removed`, `fixed`, `security`. Default to `added` for backward compatibility (matches [[ADR-0012]] default behavior for RFC changelog entries). The field is optional in TOML with serde default."""
-consequences = "Work items can be grouped by category when rendering CHANGELOG.md. Existing work items without the field remain valid (default to `added`). The `govctl new work` command can accept `--category` flag. Future `govctl render changelog` can produce proper Keep a Changelog format output."
+Add a `category` field to `ChecklistItem` (acceptance criteria) using the existing `ChangelogCategory` enum (added, changed, deprecated, removed, fixed, security). Default to `added` for backward compatibility. Reuse [[ADR-0012]] prefix parsing: `govctl add WI-xxx acceptance_criteria "fix: memory leak"` parses to `category=fixed`, `text="memory leak"`. This consolidates `ChangelogCategory` from `write.rs` into `model.rs` for reuse across RFC changelogs and work item criteria."""
+consequences = "Acceptance criteria can be grouped by category when rendering CHANGELOG.md. Each criterion becomes one changelog entry. Work items can span multiple categories without being split. Existing work items remain valid (criteria default to `added`). Single `ChangelogCategory` enum used for both RFC changelog entries and work item criteria."
 
 [[content.alternatives]]
-text = "Parse category from title prefix (e.g., `fix: memory leak`)"
+text = "Add category field to WorkItemMeta (work-item level)"
 status = "rejected"
 
 [[content.alternatives]]
-text = "Add explicit `category` field to WorkItemMeta"
+text = "Add category field to ChecklistItem (criterion level) with prefix parsing"
 status = "accepted"

@@ -540,18 +540,21 @@ pub fn add_to_field(
                 "refs" => push_unique(&mut entry.spec.govctl.refs, value),
                 "acceptance_criteria" => {
                     use crate::model::ChecklistItem;
+                    use crate::write::parse_changelog_change;
+                    // Parse prefix per ADR-0012/ADR-0013
+                    let parsed = parse_changelog_change(value)?;
                     if !entry
                         .spec
                         .content
                         .acceptance_criteria
                         .iter()
-                        .any(|c| c.text == value)
+                        .any(|c| c.text == parsed.message)
                     {
                         entry
                             .spec
                             .content
                             .acceptance_criteria
-                            .push(ChecklistItem::new(value));
+                            .push(ChecklistItem::with_category(&parsed.message, parsed.category));
                     }
                 }
                 "notes" => {

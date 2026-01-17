@@ -23,10 +23,14 @@ Updated throughout the work item lifecycle.
 """
 
 # Optional: Acceptance criteria checklist
+# Each criterion can have a category for changelog generation (per ADR-0013)
+# CLI supports prefix parsing: "fix: memory leak" → category=fixed, text="memory leak"
 [[content.acceptance_criteria]]
 text = "First criterion to meet"
 status = "pending"    # pending (default) | done | cancelled
+category = "added"    # added (default) | changed | deprecated | removed | fixed | security
 
 [[content.acceptance_criteria]]
 text = "Second criterion"
 status = "done"
+category = "fixed"

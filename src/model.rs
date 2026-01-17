@@ -239,12 +239,15 @@ pub enum ChecklistStatus {
     Cancelled,
 }
 
-/// A checklist item with text and status
+/// A checklist item with text, status, and changelog category
+/// Per [[ADR-0013]], category enables changelog generation from acceptance criteria.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ChecklistItem {
     pub text: String,
     #[serde(default)]
     pub status: ChecklistStatus,
+    #[serde(default)]
+    pub category: ChangelogCategory,
 }
 
 impl ChecklistItem {
@@ -252,6 +255,16 @@ impl ChecklistItem {
         Self {
             text: text.into(),
             status: ChecklistStatus::Pending,
+            category: ChangelogCategory::default(),
+        }
+    }
+
+    /// Create a checklist item with a specific category
+    pub fn with_category(text: impl Into<String>, category: ChangelogCategory) -> Self {
+        Self {
+            text: text.into(),
+            status: ChecklistStatus::Pending,
+            category,
         }
     }
 }
@@ -283,6 +296,41 @@ pub enum WorkItemStatus {
     Active,
     Done,
     Cancelled,
+}
+
+/// Changelog category for Keep a Changelog format.
+/// Used for both RFC changelog entries and work item acceptance criteria.
+/// Per [[ADR-0012]] and [[ADR-0013]].
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, AsRefStr, ValueEnum)]
+#[serde(rename_all = "lowercase")]
+#[strum(serialize_all = "lowercase")]
+pub enum ChangelogCategory {
+    #[default]
+    Added,
+    Changed,
+    Deprecated,
+    Removed,
+    Fixed,
+    Security,
+}
+
+impl ChangelogCategory {
+    /// All valid category prefixes for parsing
+    pub const VALID_PREFIXES: &'static [&'static str] =
+        &["add", "changed", "deprecated", "removed", "fix", "security"];
+
+    /// Parse a prefix string into a category
+    pub fn from_prefix(prefix: &str) -> Option<Self> {
+        match prefix.to_lowercase().as_str() {
+            "add" | "added" => Some(Self::Added),
+            "changed" | "change" => Some(Self::Changed),
+            "deprecated" | "deprecate" => Some(Self::Deprecated),
+            "removed" | "remove" => Some(Self::Removed),
+            "fix" | "fixed" => Some(Self::Fixed),
+            "security" | "sec" => Some(Self::Security),
+            _ => None,
+        }
+    }
 }
 
 // =============================================================================

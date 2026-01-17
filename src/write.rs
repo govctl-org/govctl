@@ -4,42 +4,12 @@
 //! Implements [[ADR-0012]] prefix-based changelog category parsing.
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{ChangelogEntry, ClauseSpec, RfcSpec};
+use crate::model::{ChangelogCategory, ChangelogEntry, ClauseSpec, RfcSpec};
 use crate::ui;
 use anyhow::{Context, Result};
 use chrono::Local;
 use semver::Version;
 use std::path::Path;
-
-/// Changelog category for Keep a Changelog format
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ChangelogCategory {
-    Added,
-    Changed,
-    Deprecated,
-    Removed,
-    Fixed,
-    Security,
-}
-
-impl ChangelogCategory {
-    /// All valid category prefixes
-    pub const VALID_PREFIXES: &'static [&'static str] =
-        &["add", "changed", "deprecated", "removed", "fix", "security"];
-
-    /// Parse a prefix string into a category
-    pub fn from_prefix(prefix: &str) -> Option<Self> {
-        match prefix.to_lowercase().as_str() {
-            "add" | "added" => Some(Self::Added),
-            "changed" | "change" => Some(Self::Changed),
-            "deprecated" | "deprecate" => Some(Self::Deprecated),
-            "removed" | "remove" => Some(Self::Removed),
-            "fix" | "fixed" => Some(Self::Fixed),
-            "security" | "sec" => Some(Self::Security),
-            _ => None,
-        }
-    }
-}
 
 /// Parsed changelog change with category and message
 #[derive(Debug, Clone)]

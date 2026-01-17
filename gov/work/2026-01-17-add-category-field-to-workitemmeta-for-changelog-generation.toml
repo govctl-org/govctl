@@ -1,37 +1,53 @@
 [govctl]
 schema = 1
 id = "WI-2026-01-17-029"
-title = "Add category field to WorkItemMeta for changelog generation"
-status = "active"
+title = "Add category field to acceptance criteria for changelog generation"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
-refs = ["ADR-0013"]
+completed = "2026-01-17"
+refs = [
+    "ADR-0013",
+    "ADR-0012",
+]
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Add `category` field to `ChecklistItem` (acceptance criteria) for Keep a Changelog categorization.
+
+Consolidate `ChangelogCategory` enum into `model.rs` for reuse across RFC changelog entries and work item criteria. Enable prefix parsing when adding criteria via CLI (e.g., `fix: memory leak` parses to category=fixed)."""
 
 [[content.acceptance_criteria]]
-text = "Add WorkItemCategory enum with 6 values (added, changed, deprecated, removed, fixed, security)"
-status = "pending"
+text = "Consolidate `ChangelogCategory` enum into `model.rs` with `from_prefix` method"
+status = "done"
+category = "changed"
 
 [[content.acceptance_criteria]]
-text = "Add category field to WorkItemMeta with default value Added"
-status = "pending"
+text = "Add `category` field to `ChecklistItem` with default `Added`"
+status = "done"
+category = "added"
 
 [[content.acceptance_criteria]]
-text = "Update work.schema.toml with category field"
-status = "pending"
+text = "Update `add acceptance_criteria` command to parse prefixes per [[ADR-0012]]"
+status = "done"
+category = "added"
 
 [[content.acceptance_criteria]]
-text = "Update work template with category field"
-status = "pending"
+text = "Update `work.schema.toml` with category field documentation"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Update work template with category field documentation"
+status = "done"
+category = "changed"
 
 [[content.acceptance_criteria]]
 text = "All existing work items remain valid (backward compatible default)"
-status = "pending"
+status = "done"
+category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "All tests pass"
-status = "pending"
+status = "done"
+category = "fixed"
