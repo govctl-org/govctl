@@ -1,0 +1,39 @@
+[govctl]
+schema = 1
+id = "ADR-0011"
+title = "Inline reference expansion in rendered content"
+status = "accepted"
+date = "2026-01-17"
+refs = ["RFC-0000"]
+
+[content]
+context = """
+Content fields (description, context, decision, consequences) are rendered as-is with no link expansion. The `refs` field gets expanded to markdown links, but inline references like `[[RFC-0000]]` in text remain as literal strings.
+
+This creates an inconsistency:
+1. The `source_scan` feature uses `[[artifact-id]]` pattern to detect references in source code
+2. Users might expect the same pattern to work in content fields
+3. Without expansion, content authors must write full markdown links manually
+
+The `source_scan` config already defines a customizable `pattern` field for reference format."""
+decision = """
+Add inline reference expansion to content fields during rendering:
+
+1. Use the same pattern from `source_scan.pattern` config (defaults to `[[RFC-NNNN]]` format)
+2. Expand matched references using existing `ref_link()` function
+3. Apply to: description, context, decision, consequences, notes, acceptance_criteria text
+4. Pattern is evaluated at render time, so config changes apply on next render
+
+This creates consistency between source code scanning and content rendering — the same reference format works everywhere."""
+consequences = """
+Positive:
+- Inline references in content become clickable links
+- Consistent with `source_scan` pattern format
+- No new config needed (reuses `source_scan.pattern`)
+- Works with custom patterns if configured
+
+Negative:
+- Couples rendering to source_scan config (even if source_scan.enabled is false)
+- Literal `[[text]]` in content will be matched if it looks like an artifact ID
+
+Migration: Existing content with literal `[[...]]` that happens to match artifact patterns will now become links. This is likely the desired behavior."""

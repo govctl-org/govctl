@@ -13,6 +13,7 @@ use crate::signature::{
     format_signature_header,
 };
 use crate::ui;
+use regex::Regex;
 use std::fmt::Write as FmtWrite;
 use std::io::Write;
 
@@ -51,6 +52,28 @@ fn render_refs(refs: &[String]) -> String {
         .map(|r| ref_link(r))
         .collect::<Vec<_>>()
         .join(", ")
+}
+
+/// Expand inline `[[artifact-id]]` references to markdown links.
+///
+/// Uses the pattern from source_scan config (per ADR-0011).
+/// The pattern must have a capture group for the artifact ID.
+pub fn expand_inline_refs(text: &str, pattern: &str) -> String {
+    let Ok(re) = Regex::new(pattern) else {
+        // Invalid pattern, return text unchanged
+        return text.to_string();
+    };
+
+    re.replace_all(text, |caps: &regex::Captures| {
+        // Capture group 1 contains the artifact ID
+        if let Some(artifact_id) = caps.get(1) {
+            ref_link(artifact_id.as_str())
+        } else {
+            // No capture group, return match unchanged
+            caps.get(0).map_or("", |m| m.as_str()).to_string()
+        }
+    })
+    .to_string()
 }
 
 /// Indent continuation lines in multi-line text to preserve markdown list structure.
@@ -323,8 +346,10 @@ pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::R
     let output_dir = config.adr_output();
     let output_path = output_dir.join(format!("{}.md", meta.id));
 
-    // Trim trailing whitespace, ensure single trailing newline
-    let rendered = format!("{}\n", render_adr(adr)?.trim_end());
+    // Render and expand inline references (per ADR-0011)
+    let raw = render_adr(adr)?;
+    let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+    let rendered = format!("{}\n", expanded.trim_end());
 
     if dry_run {
         ui::dry_run_preview(&output_path);
@@ -434,8 +459,10 @@ pub fn write_work_item_md(
     let output_dir = config.work_output();
     let output_path = output_dir.join(format!("{}.md", meta.id));
 
-    // Trim trailing whitespace, ensure single trailing newline
-    let rendered = format!("{}\n", render_work_item(item)?.trim_end());
+    // Render and expand inline references (per ADR-0011)
+    let raw = render_work_item(item)?;
+    let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+    let rendered = format!("{}\n", expanded.trim_end());
 
     if dry_run {
         ui::dry_run_preview(&output_path);
@@ -451,4 +478,63 @@ pub fn write_work_item_md(
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4})\]\]";
+
+    #[test]
+    fn test_expand_inline_refs_rfc() {
+        let text = "See [[RFC-0000]] for details.";
+        let result = expand_inline_refs(text, DEFAULT_PATTERN);
+        assert_eq!(result, "See [RFC-0000](../rfc/RFC-0000.md) for details.");
+    }
+
+    #[test]
+    fn test_expand_inline_refs_clause() {
+        let text = "Per [[RFC-0000:C-WORK-DEF]], work items must...";
+        let result = expand_inline_refs(text, DEFAULT_PATTERN);
+        assert_eq!(
+            result,
+            "Per [RFC-0000:C-WORK-DEF](../rfc/RFC-0000.md#rfc-0000c-work-def), work items must..."
+        );
+    }
+
+    #[test]
+    fn test_expand_inline_refs_adr() {
+        let text = "This follows [[ADR-0005]] guidelines.";
+        let result = expand_inline_refs(text, DEFAULT_PATTERN);
+        assert_eq!(
+            result,
+            "This follows [ADR-0005](../adr/ADR-0005.md) guidelines."
+        );
+    }
+
+    #[test]
+    fn test_expand_inline_refs_multiple() {
+        let text = "See [[RFC-0000]] and [[ADR-0001]] for context.";
+        let result = expand_inline_refs(text, DEFAULT_PATTERN);
+        assert_eq!(
+            result,
+            "See [RFC-0000](../rfc/RFC-0000.md) and [ADR-0001](../adr/ADR-0001.md) for context."
+        );
+    }
+
+    #[test]
+    fn test_expand_inline_refs_no_match() {
+        let text = "No references here.";
+        let result = expand_inline_refs(text, DEFAULT_PATTERN);
+        assert_eq!(result, "No references here.");
+    }
+
+    #[test]
+    fn test_expand_inline_refs_invalid_pattern() {
+        let text = "[[RFC-0000]] test";
+        let result = expand_inline_refs(text, "[invalid(regex");
+        // Invalid pattern returns text unchanged
+        assert_eq!(result, "[[RFC-0000]] test");
+    }
 }

@@ -81,6 +81,20 @@ else
 fi
 ```
 
+### 0.2 Read Project Configuration
+
+Read the governance config to understand project-specific settings:
+
+```bash
+cat gov/config.toml
+```
+
+Key settings to note:
+
+- `source_scan.pattern` — the `[[...]]` pattern used for inline artifact references
+- Output directories for rendered artifacts
+- Any project-specific overrides
+
 **VCS commands (use detected VCS throughout):**
 
 | Action        | jj                                              | git                                  |
@@ -88,7 +102,7 @@ fi
 | Simple commit | `jj commit -m "<msg>"`                          | `git add . && git commit -m "<msg>"` |
 | Multi-line    | `jj describe --stdin <<'EOF' ... EOF && jj new` | See CONVENTIONS section              |
 
-### 0.2 Classify the Target
+### 0.3 Classify the Target
 
 Parse `$ARGUMENTS` and classify:
 
@@ -376,6 +390,42 @@ For all other errors: **fix and continue**.
 ---
 
 ## CONVENTIONS
+
+### Content Field Formatting
+
+When editing content fields (description, context, decision, consequences, notes), use proper markdown:
+
+**Code and technical terms:** Wrap in backticks
+
+```
+# Good
+description = "Add `expand_inline_refs()` function using `Vec<String>`"
+
+# Bad - will cause mdbook warnings
+description = "Add expand_inline_refs() function using Vec<String>"
+```
+
+**Artifact references:** Use `[[artifact-id]]` syntax for inline references
+
+```
+# Good - expands to clickable link when rendered
+context = "Per [[RFC-0000]], all work items must have acceptance criteria."
+
+# Also good for clauses
+decision = "Follow [[RFC-0000:C-WORK-DEF]] requirements."
+
+# Bad - plain text, not linked
+context = "Per RFC-0000, all work items must have acceptance criteria."
+```
+
+The `[[...]]` pattern is automatically expanded to markdown links during `{{GOVCTL}} render`.
+
+**Note:** The `refs` field uses plain artifact IDs (not `[[...]]` syntax):
+
+```bash
+{{GOVCTL}} add <WI-ID> refs RFC-0000      # Correct
+{{GOVCTL}} add <WI-ID> refs "[[RFC-0000]]" # Wrong
+```
 
 ### Commit Messages
 

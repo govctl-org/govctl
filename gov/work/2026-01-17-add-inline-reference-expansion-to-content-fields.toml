@@ -1,0 +1,30 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-027"
+title = "Add inline reference expansion to content fields"
+status = "done"
+created = "2026-01-17"
+started = "2026-01-17"
+completed = "2026-01-17"
+
+[content]
+description = """
+Expand inline `[[artifact-id]]` references in content fields to markdown links during rendering.
+
+Uses the pattern from `source_scan.pattern` config for consistency with source code scanning."""
+
+[[content.acceptance_criteria]]
+text = "Add `expand_inline_refs()` function using source_scan pattern"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Apply expansion to ADR content fields (context, decision, consequences)"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Apply expansion to work item content fields (description, notes, acceptance_criteria)"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"
