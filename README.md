@@ -171,6 +171,18 @@ govctl mv migrate-docs.toml done          # Or by filename
 # Structured checklists
 govctl add WI-2026-01-17-001 acceptance_criteria "Criterion text"
 govctl tick WI-2026-01-17-001 acceptance_criteria "Criterion" done
+
+# Array field matching (per ADR-0007)
+govctl remove <ID> <field> "pattern"           # Case-insensitive substring (default)
+govctl remove <ID> <field> "exact" --exact     # Exact match
+govctl remove <ID> <field> --at 0              # By index (0-based)
+govctl remove <ID> <field> --at -1             # Negative index (from end)
+govctl remove <ID> <field> "RFC-.*" --regex    # Regex pattern
+govctl remove <ID> <field> "pattern" --all     # Remove all matches
+
+# tick uses same matching (no --all)
+govctl tick <ID> <field> "substr" done         # Substring match
+govctl tick <ID> <field> done --at 2           # By index
 ```
 
 ---

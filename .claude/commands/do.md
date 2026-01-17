@@ -36,6 +36,15 @@ EOF
 # Checklist management
 cargo run -- add <WI-ID> acceptance_criteria "Criterion text"
 cargo run -- tick <WI-ID> acceptance_criteria "Criterion" done
+
+# Array field matching (per ADR-0007)
+cargo run -- remove <ID> <field> "pattern"           # Case-insensitive substring (default)
+cargo run -- remove <ID> <field> "exact" --exact     # Exact match
+cargo run -- remove <ID> <field> --at 0              # By index (0-based)
+cargo run -- remove <ID> <field> --at -1             # From end
+cargo run -- remove <ID> <field> "pattern" --regex   # Regex pattern
+cargo run -- remove <ID> <field> "pattern" --all     # Remove all matches
+cargo run -- tick <WI-ID> <field> done --at 2        # tick by index
 ```
 
 ---

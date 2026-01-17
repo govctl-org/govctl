@@ -145,9 +145,25 @@ get id field="":
 add id field value:
     cargo run --quiet -- add "{{id}}" "{{field}}" "{{value}}"
 
-# Remove value from array field: just remove <id> <field> <value>
-remove id field value:
-    cargo run --quiet -- remove "{{id}}" "{{field}}" "{{value}}"
+# Remove value from array field (per ADR-0007)
+# Examples:
+#   just remove WI-001 refs "rfc"           # substring match (default)
+#   just remove WI-001 refs "RFC" --exact   # exact match
+#   just remove WI-001 refs --at=0          # by index
+#   just remove WI-001 refs ".*" --regex    # regex pattern
+#   just remove WI-001 refs "rfc" --all     # remove all matches
+[arg("at", long="at")]
+[arg("exact", long="exact", value="true")]
+[arg("regex", long="regex", value="true")]
+[arg("all", long="all", value="true")]
+remove id field pattern="" at="" exact="false" regex="false" all="false":
+    @cmd="cargo run --quiet -- remove \"{{id}}\" \"{{field}}\""; \
+    if [ -n "{{at}}" ]; then cmd="$cmd --at {{at}}"; \
+    elif [ -n "{{pattern}}" ]; then cmd="$cmd \"{{pattern}}\""; fi; \
+    if [ "{{exact}}" = "true" ]; then cmd="$cmd --exact"; fi; \
+    if [ "{{regex}}" = "true" ]; then cmd="$cmd --regex"; fi; \
+    if [ "{{all}}" = "true" ]; then cmd="$cmd --all"; fi; \
+    eval $cmd
 
 # =============================================================================
 # Lifecycle Commands (positional args)
@@ -199,17 +215,32 @@ supersede id by:
 # Checklist Commands (positional args)
 # =============================================================================
 
-# Mark checklist item as done: just tick-done <id> <field> <item>
-tick-done id field item:
-    cargo run --quiet -- tick "{{id}}" "{{field}}" "{{item}}" done
+# Tick checklist item (per ADR-0007)
+# Examples:
+#   just tick WI-001 acceptance_criteria "test" done      # substring match
+#   just tick WI-001 acceptance_criteria done --at=0      # by index
+#   just tick WI-001 acceptance_criteria "Test" done --exact
+[arg("at", long="at")]
+[arg("exact", long="exact", value="true")]
+[arg("regex", long="regex", value="true")]
+tick id field pattern="" status="done" at="" exact="false" regex="false":
+    @cmd="cargo run --quiet -- tick \"{{id}}\" \"{{field}}\""; \
+    if [ -n "{{at}}" ]; then cmd="$cmd --at {{at}}"; \
+    elif [ -n "{{pattern}}" ]; then cmd="$cmd \"{{pattern}}\""; fi; \
+    cmd="$cmd {{status}}"; \
+    if [ "{{exact}}" = "true" ]; then cmd="$cmd --exact"; fi; \
+    if [ "{{regex}}" = "true" ]; then cmd="$cmd --regex"; fi; \
+    eval $cmd
 
-# Mark checklist item as pending
-tick-pending id field item:
-    cargo run --quiet -- tick "{{id}}" "{{field}}" "{{item}}" pending
+# Shortcuts for common tick operations
+tick-done id field pattern:
+    just tick "{{id}}" "{{field}}" "{{pattern}}" done
 
-# Mark checklist item as cancelled
-tick-cancel id field item:
-    cargo run --quiet -- tick "{{id}}" "{{field}}" "{{item}}" cancelled
+tick-pending id field pattern:
+    just tick "{{id}}" "{{field}}" "{{pattern}}" pending
+
+tick-cancel id field pattern:
+    just tick "{{id}}" "{{field}}" "{{pattern}}" cancelled
 
 # =============================================================================
 # TUI (optional feature)
