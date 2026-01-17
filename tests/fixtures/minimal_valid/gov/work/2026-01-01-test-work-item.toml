@@ -1,0 +1,12 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Test Work Item"
+status = "done"
+created = "2026-01-01"
+completed = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+description = "A test work item."
+notes = ""

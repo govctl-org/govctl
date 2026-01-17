@@ -1,0 +1,24 @@
+---
+source: tests/cli_snapshots.rs
+expression: output
+---
+$ govctl status
+govctl status
+
+RFCs
+  normative    1
+  Total        1
+
+Clauses
+  active       1
+  Total        1
+
+ADRs
+  accepted     1
+  Total        1
+
+Work Items
+  done         1
+  Total        1
+
+exit: 0

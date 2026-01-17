@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-NEW",
+  "title": "New Clause",
+  "kind": "normative",
+  "status": "active",
+  "text": "This is the new clause.",
+  "since": "1.0.0"
+}

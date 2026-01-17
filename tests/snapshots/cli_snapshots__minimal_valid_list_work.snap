@@ -1,0 +1,10 @@
+---
+source: tests/cli_snapshots.rs
+expression: output
+---
+$ govctl list work
+┌────┬────────┬───────┐
+│ ID ┆ Status ┆ Title │
+╞════╪════════╪═══════╡
+└────┴────────┴───────┘
+exit: 0

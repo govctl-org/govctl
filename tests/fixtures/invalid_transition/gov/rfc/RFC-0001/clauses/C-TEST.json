@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-TEST",
+  "title": "Test Clause",
+  "kind": "normative",
+  "status": "active",
+  "text": "A test clause in an invalid RFC.",
+  "since": "0.1.0"
+}

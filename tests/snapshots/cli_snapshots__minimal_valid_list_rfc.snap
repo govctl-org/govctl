@@ -1,0 +1,11 @@
+---
+source: tests/cli_snapshots.rs
+expression: output
+---
+$ govctl list rfc
+┌──────────┬─────────┬───────────┬────────┬──────────┐
+│ RFC      ┆ Version ┆ Status    ┆ Phase  ┆ Title    │
+╞══════════╪═════════╪═══════════╪════════╪══════════╡
+│ RFC-0001 ┆ 1.0.0   ┆ normative ┆ stable ┆ Test RFC │
+└──────────┴─────────┴───────────┴────────┴──────────┘
+exit: 0

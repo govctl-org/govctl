@@ -1,0 +1,13 @@
+---
+source: tests/cli_snapshots.rs
+expression: output
+---
+$ govctl check
+Checked:
+  1 RFCs
+  1 clauses
+  1 ADRs
+  1 work items
+
+✓ All checks passed
+exit: 0

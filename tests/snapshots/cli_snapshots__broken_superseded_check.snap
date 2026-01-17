@@ -1,0 +1,13 @@
+---
+source: tests/cli_snapshots.rs
+expression: output
+---
+$ govctl check
+Checked:
+  1 RFCs
+  2 clauses
+  0 ADRs
+  0 work items
+
+error[E0207]: Clause 'C-OLD' superseded by 'C-NONEXISTENT' which is not active (gov/rfc/RFC-0001/clauses/C-OLD.json)
+exit: 1

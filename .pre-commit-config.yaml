@@ -3,7 +3,9 @@ repos:
     rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
+        exclude: tests/snapshots/**
       - id: trailing-whitespace
+        exclude: tests/snapshots/**
       - id: check-merge-conflict
       - id: check-toml
       - id: check-yaml

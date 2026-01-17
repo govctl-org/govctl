@@ -1,0 +1,11 @@
+---
+source: tests/cli_snapshots.rs
+expression: output
+---
+$ govctl list clause
+┌───────────┬──────────┬───────────┬────────┬────────────────┐
+│ Clause    ┆ RFC      ┆ Kind      ┆ Status ┆ Title          │
+╞═══════════╪══════════╪═══════════╪════════╪════════════════╡
+│ C-EXAMPLE ┆ RFC-0001 ┆ normative ┆ active ┆ Example Clause │
+└───────────┴──────────┴───────────┴────────┴────────────────┘
+exit: 0

@@ -1,0 +1,22 @@
+{
+  "rfc_id": "RFC-0001",
+  "title": "Broken Superseded Test",
+  "version": "1.0.0",
+  "status": "normative",
+  "phase": "stable",
+  "owners": ["test@example.com"],
+  "created": "2026-01-01",
+  "sections": [
+    {
+      "title": "Clauses",
+      "clauses": ["clauses/C-OLD.json", "clauses/C-NEW.json"]
+    }
+  ],
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2026-01-01",
+      "added": ["Initial release"]
+    }
+  ]
+}

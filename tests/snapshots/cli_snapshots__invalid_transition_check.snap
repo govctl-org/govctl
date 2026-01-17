@@ -1,0 +1,13 @@
+---
+source: tests/cli_snapshots.rs
+expression: output
+---
+$ govctl check
+Checked:
+  1 RFCs
+  1 clauses
+  0 ADRs
+  0 work items
+
+error[E0104]: Cannot have status=draft with phase=stable (gov/rfc/RFC-0001/rfc.json)
+exit: 1

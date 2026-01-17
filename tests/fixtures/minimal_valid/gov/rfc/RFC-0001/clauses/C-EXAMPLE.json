@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-EXAMPLE",
+  "title": "Example Clause",
+  "kind": "normative",
+  "status": "active",
+  "text": "This is an example clause for testing purposes.",
+  "since": "1.0.0"
+}
