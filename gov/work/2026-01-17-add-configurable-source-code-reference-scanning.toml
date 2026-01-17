@@ -5,6 +5,7 @@ title = "Add configurable source code reference scanning"
 status = "active"
 created = "2026-01-17"
 started = "2026-01-17"
+refs = ["ADR-0009"]
 
 [content]
 description = """

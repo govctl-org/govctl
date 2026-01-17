@@ -1,0 +1,45 @@
+[govctl]
+schema = 1
+id = "ADR-0009"
+title = "Configurable source code reference scanning"
+status = "accepted"
+date = "2026-01-17"
+refs = ["RFC-0000"]
+
+[content]
+context = """
+Source code often contains references to governance artifacts (RFCs, clauses, ADRs) in comments. These references can become stale when artifacts are deprecated, superseded, or renamed.
+
+Currently govctl validates internal artifact references (refs fields) but has no mechanism to detect broken references in source code comments. This creates a gap where documentation in code can drift from the actual governance state.
+
+neotex-spec implements this via a hardcoded comment scanning pattern, but govctl needs a generalized solution with configurable patterns to work across different projects and conventions."""
+decision = """
+Add configurable source code scanning with:
+
+1. New [source_scan] config section with:
+   - enabled: bool (default false)
+   - roots: Vec<PathBuf> (directories to scan)
+   - exts: Vec<String> (file extensions to include)
+   - pattern: String (regex with capture group for artifact ID)
+
+2. Default pattern matches [[RFC-0001:C-NAME]] and [[ADR-0001]] style references
+
+3. Scanner walks configured directories, applies pattern, validates extracted IDs against ProjectIndex
+
+4. New diagnostics: E0107SourceRefUnknown (error), W0107SourceRefOutdated (warning for deprecated/superseded)
+
+5. Scanner runs during 'govctl check' when source_scan.enabled = true"""
+consequences = """
+Positive:
+- Dead link detection in source code comments
+- Configurable pattern supports different project conventions
+- Disabled by default - opt-in for projects that want it
+- Catches outdated references to deprecated/superseded artifacts
+
+Negative:
+- Adds walkdir dependency
+- Additional check time when scanning large codebases
+
+Neutral:
+- Pattern configuration requires regex knowledge
+- Projects must explicitly enable and configure"""
