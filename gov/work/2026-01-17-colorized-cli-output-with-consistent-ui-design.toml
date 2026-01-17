@@ -1,0 +1,30 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-009"
+title = "Colorized CLI output with consistent UI design"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+refs = ["ADR-0005"]
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+notes = ""
+
+[[content.acceptance_criteria]]
+text = "Create ui module with color helpers"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Success messages display in green"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Error messages display in red"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "File paths and IDs highlighted"
+status = "pending"

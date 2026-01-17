@@ -1,0 +1,11 @@
+[govctl]
+schema = 1
+id = "ADR-0005"
+title = "CLI output color scheme and formatting"
+status = "proposed"
+date = "2026-01-17"
+
+[content]
+context = "CLI output uses plain text with no visual hierarchy. Users cannot quickly distinguish success from failure, or identify important values. Status messages blend together making output hard to scan."
+decision = "Adopt semantic color scheme: Green for success, Red for errors, Yellow for warnings, Cyan for paths/IDs, Bold for emphasis. Use owo-colors crate (zero-cost, no deps). Auto-detect terminal color support. All output via ui module for consistency."
+consequences = "Positive: Better UX, faster scanning, clearer status. Negative: One new dependency (owo-colors). Migration: All eprintln! calls routed through ui module."
