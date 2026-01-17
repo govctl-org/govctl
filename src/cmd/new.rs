@@ -339,13 +339,15 @@ fn create_work_item(
     let next_seq = max_seq + 1;
     let work_id = format!("WI-{date}-{next_seq:03}");
 
-    // Find unique filename (append sequence if slug collision)
+    // Find unique filename (loop until no collision)
     let mut filename = format!("{date}-{slug}.toml");
     let mut work_path = work_dir.join(&filename);
+    let mut suffix = next_seq;
 
-    if !op.is_preview() && work_path.exists() {
-        filename = format!("{date}-{slug}-{next_seq}.toml");
+    while !op.is_preview() && work_path.exists() {
+        filename = format!("{date}-{slug}-{suffix:03}.toml");
         work_path = work_dir.join(&filename);
+        suffix += 1;
     }
 
     // Create work item spec
@@ -381,6 +383,7 @@ fn create_work_item(
 
     if !op.is_preview() {
         ui::created("work item", &work_path);
+        ui::sub_info(format!("ID: {work_id}"));
     }
 
     Ok(vec![])
