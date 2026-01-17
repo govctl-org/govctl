@@ -251,6 +251,8 @@ pub struct ChecklistItem {
 }
 
 impl ChecklistItem {
+    /// Create a checklist item with default category (Added)
+    #[allow(dead_code)] // Used in tests; kept as public API for simpler construction
     pub fn new(text: impl Into<String>) -> Self {
         Self {
             text: text.into(),
