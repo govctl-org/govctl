@@ -1,7 +1,7 @@
 [govctl]
 schema = 1
-id = "WI-2026-01-17-015"
-title = "Add insta-based snapshot test framework"
+id = "WI-2026-01-17-017"
+title = "Simplify WorkItem schema: remove decisions, change notes to Vec<String>"
 status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
@@ -11,24 +11,23 @@ completed = "2026-01-17"
 description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?"""
-notes = []
 
 [[content.acceptance_criteria]]
-text = "Add insta and insta-cmd as dev dependencies"
+text = "Remove decisions field from WorkItemContent struct"
 status = "done"
 
 [[content.acceptance_criteria]]
-text = "Create minimal test fixtures for valid and invalid governance states"
+text = "Change notes field from String to Vec<String>"
 status = "done"
 
 [[content.acceptance_criteria]]
-text = "Implement test harness with path normalization and color stripping"
+text = "Migrate existing work items to new schema"
 status = "done"
 
 [[content.acceptance_criteria]]
-text = "Add snapshot tests for check, list, and status commands"
+text = "Update new work item template"
 status = "done"
 
 [[content.acceptance_criteria]]
-text = "All tests pass with cargo test"
+text = "All tests pass"
 status = "done"

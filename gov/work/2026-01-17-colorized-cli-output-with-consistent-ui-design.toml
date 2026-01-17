@@ -12,7 +12,7 @@ refs = ["ADR-0005"]
 description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?"""
-notes = ""
+notes = []
 
 [[content.acceptance_criteria]]
 text = "Create ui module with color helpers"

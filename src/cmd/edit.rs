@@ -316,7 +316,9 @@ pub fn set_field(
                 "description" | "content.description" => {
                     entry.spec.content.description = value.to_string()
                 }
-                "notes" | "content.notes" => entry.spec.content.notes = value.to_string(),
+                "notes" | "content.notes" => {
+                    anyhow::bail!("Use 'add' to append notes and 'remove' to delete them")
+                }
                 _ => anyhow::bail!("Unknown work item field: {field}"),
             }
 
@@ -416,12 +418,7 @@ pub fn get_field(
                         |c| c.status.as_ref(),
                         |c| &c.text,
                     ),
-                    "decisions" => format_status_items(
-                        &entry.spec.content.decisions,
-                        |d| d.status.as_ref(),
-                        |d| &d.text,
-                    ),
-                    "notes" => entry.spec.content.notes,
+                    "notes" => entry.spec.content.notes.join("\n"),
                     _ => anyhow::bail!("Unknown field: {f}"),
                 };
                 println!("{value}");
@@ -534,10 +531,9 @@ pub fn add_to_field(
                             .push(ChecklistItem::new(value));
                     }
                 }
-                "decisions" => {
-                    use crate::model::ChecklistItem;
-                    if !entry.spec.content.decisions.iter().any(|d| d.text == value) {
-                        entry.spec.content.decisions.push(ChecklistItem::new(value));
+                "notes" => {
+                    if !entry.spec.content.notes.contains(&value.to_string()) {
+                        entry.spec.content.notes.push(value.to_string());
                     }
                 }
                 _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
@@ -659,13 +655,9 @@ pub fn remove_from_field(
                     field,
                     opts,
                 )?,
-                "decisions" => remove_matching_items(
-                    &mut entry.spec.content.decisions,
-                    |d| &d.text,
-                    id,
-                    field,
-                    opts,
-                )?,
+                "notes" => {
+                    remove_matching_strings(&mut entry.spec.content.notes, id, field, opts)?
+                }
                 _ => anyhow::bail!("Cannot remove from field: {field}"),
             };
 
@@ -766,14 +758,6 @@ pub fn tick_item(
                     &mut entry.spec.content.acceptance_criteria,
                     |c| &c.text,
                     |c| c.status = new_status,
-                    id,
-                    field,
-                    opts,
-                )?,
-                "decisions" => tick_checklist(
-                    &mut entry.spec.content.decisions,
-                    |d| &d.text,
-                    |d| d.status = new_status,
                     id,
                     field,
                     opts,

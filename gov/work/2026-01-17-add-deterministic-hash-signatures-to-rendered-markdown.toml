@@ -20,7 +20,7 @@ Key requirements:
 - Any direct edit to markdown breaks the signature
 
 This enforces: "edit the source, not the projection""""
-notes = ""
+notes = []
 
 [[content.acceptance_criteria]]
 text = "Add src/signature.rs with deterministic hash computation"

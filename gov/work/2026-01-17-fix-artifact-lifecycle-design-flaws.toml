@@ -18,7 +18,7 @@ Fix design flaws in artifact lifecycle state machines identified through analysi
 4. RFC: Document status×phase constraint rules clearly
 
 These changes ensure cleaner separation of concerns and complete lifecycle coverage."""
-notes = ""
+notes = []
 
 [[content.acceptance_criteria]]
 text = "Clause kind enum has only 'normative' and 'informative'"

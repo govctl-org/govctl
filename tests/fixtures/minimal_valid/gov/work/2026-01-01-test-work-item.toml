@@ -9,4 +9,4 @@ refs = ["RFC-0001"]
 
 [content]
 description = "A test work item."
-notes = ""
+notes = []

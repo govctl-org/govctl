@@ -373,8 +373,7 @@ fn create_work_item(
                 "Describe the work to be done.\nWhat is the goal? What are the acceptance criteria?"
                     .to_string(),
             acceptance_criteria: vec![],
-            decisions: vec![],
-            notes: String::new(),
+            notes: vec![],
         },
     };
 

@@ -425,28 +425,13 @@ pub fn render_work_item(item: &WorkItemEntry) -> anyhow::Result<String> {
         let _ = writeln!(out);
     }
 
-    // Decisions
-    if !content.decisions.is_empty() {
-        use crate::model::ChecklistStatus;
-        let _ = writeln!(out, "## Decisions");
-        let _ = writeln!(out);
-        for dec_item in &content.decisions {
-            let indented_text = indent_continuation(&dec_item.text);
-            let line = match dec_item.status {
-                ChecklistStatus::Pending => format!("- [ ] {}", indented_text),
-                ChecklistStatus::Done => format!("- [x] {}", indented_text),
-                ChecklistStatus::Cancelled => format!("- ~~{}~~", indented_text),
-            };
-            let _ = writeln!(out, "{line}");
-        }
-        let _ = writeln!(out);
-    }
-
     // Notes
     if !content.notes.is_empty() {
         let _ = writeln!(out, "## Notes");
         let _ = writeln!(out);
-        let _ = writeln!(out, "{}", content.notes);
+        for note in &content.notes {
+            let _ = writeln!(out, "- {}", note);
+        }
         let _ = writeln!(out);
     }
 

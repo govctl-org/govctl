@@ -255,9 +255,7 @@ pub struct WorkItemContent {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub acceptance_criteria: Vec<ChecklistItem>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub decisions: Vec<ChecklistItem>,
-    #[serde(default)]
-    pub notes: String,
+    pub notes: Vec<String>,
 }
 
 /// Complete Work Item file structure

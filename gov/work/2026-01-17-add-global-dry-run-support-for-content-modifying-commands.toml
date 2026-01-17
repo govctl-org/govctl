@@ -11,4 +11,4 @@ completed = "2026-01-17"
 description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?"""
-notes = ""
+notes = []

@@ -12,7 +12,7 @@ refs = ["ADR-0004"]
 description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?"""
-notes = ""
+notes = []
 
 [[content.acceptance_criteria]]
 text = "ChangelogEntry model uses Keep a Changelog categories"
