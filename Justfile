@@ -1,22 +1,23 @@
-# govctl Justfile - Thin wrapper around govctl commands
-# Requires: just >= 1.46.0
+# govctl Justfile - Development commands only
+# For governance operations, use: cargo run --quiet -- <command>
 
 set shell := ["bash", "-cu"]
 
-# Default: show status
-default: status
+# Default: show help
+default:
+    @just --list
 
 # =============================================================================
 # Build & Development
 # =============================================================================
 
-# Build the CLI (release mode)
+# Build release binary
 build:
     cargo build --release
 
-# Build with TUI feature
-build-tui:
-    cargo build --release --features tui
+# Run tests
+test:
+    cargo test
 
 # Run clippy lints
 lint:
@@ -26,11 +27,7 @@ lint:
 fmt:
     cargo fmt
 
-# Run tests
-test:
-    cargo test
-
-# Pre-commit hooks
+# Pre-commit hooks (lint + format + test)
 [unix]
 pre-commit:
     @if command -v prek > /dev/null 2>&1; then prek run --all-files; else pre-commit run --all-files; fi
@@ -40,10 +37,10 @@ pre-commit:
     @where prek >nul 2>&1 && prek run --all-files || pre-commit run --all-files
 
 # =============================================================================
-# Governance Commands
+# Quick Shortcuts
 # =============================================================================
 
-# Show project status summary
+# Show governance status
 status:
     cargo run --quiet -- status
 
@@ -51,211 +48,15 @@ status:
 check:
     cargo run --quiet -- check
 
-# Validate with warnings as errors
-check-strict:
-    cargo run --quiet -- check -W
-
-# =============================================================================
-# List Commands (positional filter arg, optional)
-# =============================================================================
-
-# List RFCs (filter: status/phase/id substring)
-list-rfc filter="":
-    @if [ -n "{{filter}}" ]; then cargo run --quiet -- list rfc "{{filter}}"; else cargo run --quiet -- list rfc; fi
-
-# List ADRs (filter: status/id substring)
-list-adr filter="":
-    @if [ -n "{{filter}}" ]; then cargo run --quiet -- list adr "{{filter}}"; else cargo run --quiet -- list adr; fi
-
-# List work items (filter: pending/all/queue/active/done/cancelled)
-list-work filter="pending":
-    cargo run --quiet -- list work "{{filter}}"
-
-# List clauses (filter: RFC ID)
-list-clause filter="":
-    @if [ -n "{{filter}}" ]; then cargo run --quiet -- list clause "{{filter}}"; else cargo run --quiet -- list clause; fi
-
-# Shorthand aliases
-alias ls-rfc := list-rfc
-alias ls-adr := list-adr
-alias ls-work := list-work
-alias ls := list-work
-
-# =============================================================================
-# Create Commands (positional required args)
-# =============================================================================
-
-# Create a new RFC (auto-generates ID if not provided)
-new-rfc title id="":
-    @if [ -n "{{id}}" ]; then cargo run --quiet -- new rfc --id "{{id}}" "{{title}}"; else cargo run --quiet -- new rfc "{{title}}"; fi
-
-# Create a new clause: just new-clause RFC-0001:C-NAME "Title" [section] [kind]
-new-clause clause_id title section="Specification" kind="normative":
-    cargo run --quiet -- new clause "{{clause_id}}" "{{title}}" -s "{{section}}" -k "{{kind}}"
-
-# Create a new ADR
-new-adr title:
-    cargo run --quiet -- new adr "{{title}}"
-
-# Create a new work item (use --active flag to activate immediately)
-[arg("active", short="a", long="active", value="true")]
-new-work title active="false":
-    @if [ "{{active}}" = "true" ]; then cargo run --quiet -- new work "{{title}}" --active; else cargo run --quiet -- new work "{{title}}"; fi
-
-# =============================================================================
-# Render Commands
-# =============================================================================
-
 # Render RFCs to markdown
-[arg("dry_run", short="n", long="dry-run", value="true")]
-render rfc_id="" dry_run="false":
-    @cmd="cargo run --quiet -- render rfc"; \
-    if [ -n "{{rfc_id}}" ]; then cmd="$cmd --rfc-id {{rfc_id}}"; fi; \
-    if [ "{{dry_run}}" = "true" ]; then cmd="$cmd --dry-run"; fi; \
-    eval $cmd
-
-# Render ADRs to markdown
-[arg("dry_run", short="n", long="dry-run", value="true")]
-render-adr dry_run="false":
-    @if [ "{{dry_run}}" = "true" ]; then cargo run --quiet -- render adr --dry-run; else cargo run --quiet -- render adr; fi
-
-# Render work items to markdown
-[arg("dry_run", short="n", long="dry-run", value="true")]
-render-work dry_run="false":
-    @if [ "{{dry_run}}" = "true" ]; then cargo run --quiet -- render work --dry-run; else cargo run --quiet -- render work; fi
-
-# Render all artifacts
-[arg("dry_run", short="n", long="dry-run", value="true")]
-render-all dry_run="false":
-    @if [ "{{dry_run}}" = "true" ]; then cargo run --quiet -- render all --dry-run; else cargo run --quiet -- render all; fi
-
-# =============================================================================
-# Edit Commands (positional args)
-# =============================================================================
-
-# Set a field value: just set <id> <field> <value>
-set id field value:
-    cargo run --quiet -- set "{{id}}" "{{field}}" "{{value}}"
-
-# Get a field value: just get <id> [field]
-get id field="":
-    @if [ -n "{{field}}" ]; then cargo run --quiet -- get "{{id}}" "{{field}}"; else cargo run --quiet -- get "{{id}}"; fi
-
-# Add value to array field: just add <id> <field> <value>
-add id field value:
-    cargo run --quiet -- add "{{id}}" "{{field}}" "{{value}}"
-
-# Remove value from array field (per ADR-0007)
-# Examples:
-#   just remove WI-001 refs "rfc"           # substring match (default)
-#   just remove WI-001 refs "RFC" --exact   # exact match
-#   just remove WI-001 refs --at=0          # by index
-#   just remove WI-001 refs ".*" --regex    # regex pattern
-#   just remove WI-001 refs "rfc" --all     # remove all matches
-[arg("at", long="at")]
-[arg("exact", long="exact", value="true")]
-[arg("regex", long="regex", value="true")]
-[arg("all", long="all", value="true")]
-remove id field pattern="" at="" exact="false" regex="false" all="false":
-    @cmd="cargo run --quiet -- remove \"{{id}}\" \"{{field}}\""; \
-    if [ -n "{{at}}" ]; then cmd="$cmd --at {{at}}"; \
-    elif [ -n "{{pattern}}" ]; then cmd="$cmd \"{{pattern}}\""; fi; \
-    if [ "{{exact}}" = "true" ]; then cmd="$cmd --exact"; fi; \
-    if [ "{{regex}}" = "true" ]; then cmd="$cmd --regex"; fi; \
-    if [ "{{all}}" = "true" ]; then cmd="$cmd --all"; fi; \
-    eval $cmd
-
-# =============================================================================
-# Lifecycle Commands (positional args)
-# =============================================================================
-
-# Move work item to new status: just move <file> <status>
-move file status:
-    cargo run --quiet -- move "{{file}}" "{{status}}"
-
-# Activate a work item (queue -> active)
-activate file:
-    cargo run --quiet -- move "{{file}}" active
-
-# Complete a work item (active -> done)
-done file:
-    cargo run --quiet -- move "{{file}}" done
-
-# Bump RFC version: just bump <rfc_id> <summary> [--patch|--minor|--major]
-[arg("patch", long="patch", value="true")]
-[arg("minor", long="minor", value="true")]
-[arg("major", long="major", value="true")]
-bump rfc_id summary patch="true" minor="false" major="false":
-    @level="--patch"; \
-    if [ "{{major}}" = "true" ]; then level="--major"; \
-    elif [ "{{minor}}" = "true" ]; then level="--minor"; fi; \
-    cargo run --quiet -- bump "{{rfc_id}}" $level -m "{{summary}}"
-
-# Finalize RFC to normative
-finalize rfc_id:
-    cargo run --quiet -- finalize "{{rfc_id}}" normative
-
-# Advance RFC phase: just advance <rfc_id> <phase>
-advance rfc_id phase:
-    cargo run --quiet -- advance "{{rfc_id}}" "{{phase}}"
-
-# Accept an ADR
-accept adr_id:
-    cargo run --quiet -- accept "{{adr_id}}"
-
-# Deprecate an artifact
-deprecate id:
-    cargo run --quiet -- deprecate "{{id}}"
-
-# Supersede an artifact: just supersede <id> <by>
-supersede id by:
-    cargo run --quiet -- supersede "{{id}}" --by "{{by}}"
-
-# =============================================================================
-# Checklist Commands (positional args)
-# =============================================================================
-
-# Tick checklist item (per ADR-0007)
-# Examples:
-#   just tick WI-001 acceptance_criteria "test" done      # substring match
-#   just tick WI-001 acceptance_criteria done --at=0      # by index
-#   just tick WI-001 acceptance_criteria "Test" done --exact
-[arg("at", long="at")]
-[arg("exact", long="exact", value="true")]
-[arg("regex", long="regex", value="true")]
-tick id field pattern="" status="done" at="" exact="false" regex="false":
-    @cmd="cargo run --quiet -- tick \"{{id}}\" \"{{field}}\""; \
-    if [ -n "{{at}}" ]; then cmd="$cmd --at {{at}}"; \
-    elif [ -n "{{pattern}}" ]; then cmd="$cmd \"{{pattern}}\""; fi; \
-    cmd="$cmd {{status}}"; \
-    if [ "{{exact}}" = "true" ]; then cmd="$cmd --exact"; fi; \
-    if [ "{{regex}}" = "true" ]; then cmd="$cmd --regex"; fi; \
-    eval $cmd
-
-# Shortcuts for common tick operations
-tick-done id field pattern:
-    just tick "{{id}}" "{{field}}" "{{pattern}}" done
-
-tick-pending id field pattern:
-    just tick "{{id}}" "{{field}}" "{{pattern}}" pending
-
-tick-cancel id field pattern:
-    just tick "{{id}}" "{{field}}" "{{pattern}}" cancelled
-
-# =============================================================================
-# TUI (optional feature)
-# =============================================================================
-
-# Launch interactive TUI dashboard
-tui:
-    cargo run --quiet --features tui -- tui
+render:
+    cargo run --quiet -- render
 
 # =============================================================================
 # Development Helpers
 # =============================================================================
 
-# Sync Claude commands from assets/ with cargo run substitution
-# Run this after editing assets/*.md templates
+# Sync Claude commands from assets/ (substitutes {{GOVCTL}} -> cargo run)
 [unix]
 sync-commands:
     ./scripts/sync-commands.sh
@@ -263,3 +64,11 @@ sync-commands:
 [windows]
 sync-commands:
     powershell -ExecutionPolicy Bypass -File scripts/sync-commands.ps1
+
+# Build with TUI feature
+build-tui:
+    cargo build --release --features tui
+
+# Launch TUI dashboard
+tui:
+    cargo run --quiet --features tui -- tui
