@@ -1,0 +1,49 @@
+[package]
+name = "phaseos"
+version = "0.1.0"
+edition = "2021"
+description = "Project governance CLI for RFC, ADR, and Work Item management"
+license = "MIT"
+
+[[bin]]
+name = "phaseos"
+path = "src/main.rs"
+
+[dependencies]
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0.9"
+
+# YAML frontmatter
+gray_matter = "0.2"
+
+# JSON Schema validation
+jsonschema = "0.29"
+
+# Output formatting
+comfy-table = "7"
+
+# Date/time
+chrono = { version = "0.4", features = ["serde"] }
+
+# Versioning
+semver = { version = "1", features = ["serde"] }
+
+# Error handling
+anyhow = "1"
+thiserror = "2"
+
+# Config parsing
+toml = "0.8"
+
+# Utilities
+strum = { version = "0.27", features = ["derive"] }
+slug = "0.1"
+
+[dev-dependencies]
+insta = { version = "1", features = ["yaml"] }
+tempfile = "3"

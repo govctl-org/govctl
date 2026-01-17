@@ -1,0 +1,7 @@
+{
+  "clause_id": "C-PHASE-ORDER",
+  "title": "Phase Ordering",
+  "kind": "normative",
+  "status": "active",
+  "text": "Phases MUST proceed in order: `spec → impl → test → stable`.\n\nA feature in `impl` phase MUST have a normative RFC that has passed `spec` phase.\nA feature in `test` phase MUST have passed `impl` phase gate.\nA feature in `stable` phase MUST have passed `test` phase gate."
+}

@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://phaseos.dev/schema/rfc.json",
+  "title": "RFC Specification",
+  "description": "JSON schema for RFC source files",
+  "type": "object",
+  "required": ["rfc_id", "title", "version", "status", "phase", "owners", "created", "sections"],
+  "properties": {
+    "rfc_id": {
+      "type": "string",
+      "pattern": "^RFC-\\d{4}$",
+      "description": "Unique RFC identifier (e.g., RFC-0001)"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Human-readable title"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Semantic version (e.g., 1.0.0)"
+    },
+    "status": {
+      "type": "string",
+      "enum": ["draft", "normative", "deprecated"],
+      "description": "RFC lifecycle status"
+    },
+    "phase": {
+      "type": "string",
+      "enum": ["spec", "impl", "test", "stable"],
+      "description": "RFC work phase"
+    },
+    "owners": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "List of responsible parties"
+    },
+    "created": {
+      "type": "string",
+      "format": "date",
+      "description": "Creation date (ISO 8601)"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date",
+      "description": "Last update date (ISO 8601)"
+    },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "clauses": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "description": "RFC sections with clause references"
+    },
+    "changelog": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["version", "date", "summary"],
+        "properties": {
+          "version": { "type": "string" },
+          "date": { "type": "string", "format": "date" },
+          "summary": { "type": "string" },
+          "changes": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      },
+      "description": "Version history"
+    }
+  },
+  "additionalProperties": false
+}
