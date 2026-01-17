@@ -233,13 +233,39 @@ govctl tick <ID> <field> done --at 2           # By index
 
 ---
 
+## Why No MCP?
+
+govctl doesn't need a dedicated [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) integration because **the CLI itself is the tool**.
+
+Modern AI coding agents (Claude, Cursor, Codex, etc.) can already invoke shell commands. Every govctl operation is a single CLI call:
+
+```bash
+govctl new rfc "Feature Title"     # Create artifact
+govctl check                        # Validate state
+govctl advance RFC-0010 impl        # Transition phase
+govctl list work pending            # Query status
+```
+
+**MCP would add complexity without adding capability:**
+
+| Concern            | MCP Approach              | CLI Approach                   |
+| ------------------ | ------------------------- | ------------------------------ |
+| Tool discovery     | JSON schema negotiation   | `govctl --help`                |
+| Invocation         | JSON-RPC over stdio       | Shell command                  |
+| Error handling     | Structured error objects  | Exit codes + stderr            |
+| Streaming output   | Chunked JSON              | Plain text                     |
+| Debugging          | Custom tooling required   | Just run the command           |
+
+The CLI is the universal interface. Every shell-capable agent already speaks it.
+
+---
+
 ## Deferred Work (Explicit Non-Goals for Now)
 
 The following are **not being worked on** until core governance is stable:
 
 - Block storage / CRDT
 - IDE plugins
-- MCP integration
 - Language-specific toolchains
 
 This is not conservatism. This is focus.
