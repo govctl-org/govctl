@@ -30,7 +30,10 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     if config_path.exists() && !force && !op.is_preview() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0501ConfigInvalid,
-            format!("{} already exists (use -f to overwrite)", config_path.display()),
+            format!(
+                "{} already exists (use -f to overwrite)",
+                config_path.display()
+            ),
             config_path.display().to_string(),
         )
         .into());

@@ -229,7 +229,7 @@ pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
                     "'chore:' category is not valid for RFC changelogs (use for work items only)",
                     "changelog",
                 )
-                .into())
+                .into());
             }
         }
     } else {

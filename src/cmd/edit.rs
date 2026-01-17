@@ -140,7 +140,11 @@ fn find_matches(items: &[&str], opts: &MatchOptions) -> anyhow::Result<MatchResu
         if actual_idx < 0 || actual_idx >= len {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0806InvalidPattern,
-                format!("Index {} out of range (array has {} items)", idx, items.len()),
+                format!(
+                    "Index {} out of range (array has {} items)",
+                    idx,
+                    items.len()
+                ),
                 "array",
             )
             .into());
@@ -226,22 +230,18 @@ fn resolve_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
     match (value, stdin) {
         (Some(v), false) => Ok(v.to_string()),
         (None, true) => read_stdin(),
-        (None, false) => {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0801MissingRequiredArg,
-                "Provide a value or use --stdin",
-                "input",
-            )
-            .into())
-        }
-        (Some(_), true) => {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0802ConflictingArgs,
-                "Cannot use both value and --stdin",
-                "input",
-            )
-            .into())
-        }
+        (None, false) => Err(Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            "Provide a value or use --stdin",
+            "input",
+        )
+        .into()),
+        (Some(_), true) => Err(Diagnostic::new(
+            DiagnosticCode::E0802ConflictingArgs,
+            "Cannot use both value and --stdin",
+            "input",
+        )
+        .into()),
     }
 }
 
@@ -270,7 +270,7 @@ pub fn edit_clause(
                 "Provide --text, --text-file, or --stdin",
                 "input",
             )
-            .into())
+            .into());
         }
         _ => unreachable!("clap arg group ensures mutual exclusivity"),
     };
@@ -345,7 +345,7 @@ pub fn set_field(
                         format!("Unknown ADR field: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             }
 
@@ -369,7 +369,7 @@ pub fn set_field(
                         "Use 'add' to append notes and 'remove' to delete them",
                         id,
                     )
-                    .into())
+                    .into());
                 }
                 _ => {
                     return Err(Diagnostic::new(
@@ -377,7 +377,7 @@ pub fn set_field(
                         format!("Unknown work item field: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             }
 
@@ -417,7 +417,7 @@ pub fn get_field(
                             format!("Unknown clause field: {f}"),
                             id,
                         )
-                        .into())
+                        .into());
                     }
                 };
                 println!("{value}");
@@ -445,7 +445,7 @@ pub fn get_field(
                             format!("Unknown RFC field: {f}"),
                             id,
                         )
-                        .into())
+                        .into());
                     }
                 };
                 println!("{value}");
@@ -477,7 +477,7 @@ pub fn get_field(
                             format!("Unknown ADR field: {f}"),
                             id,
                         )
-                        .into())
+                        .into());
                     }
                 };
                 println!("{value}");
@@ -508,7 +508,7 @@ pub fn get_field(
                             format!("Unknown work item field: {f}"),
                             id,
                         )
-                        .into())
+                        .into());
                     }
                 };
                 println!("{value}");
@@ -567,7 +567,7 @@ pub fn add_to_field(
                         format!("Cannot add to field: {field} (not an array or unsupported)"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             }
 
@@ -584,7 +584,7 @@ pub fn add_to_field(
                         format!("Cannot add to field: {field} (not an array or unsupported)"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             }
 
@@ -617,7 +617,7 @@ pub fn add_to_field(
                         format!("Cannot add to field: {field} (not an array or unsupported)"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             }
 
@@ -661,7 +661,7 @@ pub fn add_to_field(
                         format!("Cannot add to field: {field} (not an array or unsupported)"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             }
 
@@ -742,7 +742,7 @@ pub fn remove_from_field(
                         format!("Cannot remove from field: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             };
 
@@ -760,7 +760,7 @@ pub fn remove_from_field(
                         format!("Cannot remove from field: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             };
 
@@ -785,7 +785,7 @@ pub fn remove_from_field(
                         format!("Cannot remove from field: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             };
 
@@ -811,7 +811,7 @@ pub fn remove_from_field(
                         format!("Cannot remove from field: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             };
 
@@ -842,12 +842,12 @@ fn resolve_matches(
     match find_matches(items, opts)? {
         MatchResult::None => {
             let pattern = opts.pattern.unwrap_or("<index>");
-            return Err(Diagnostic::new(
+            Err(Diagnostic::new(
                 DiagnosticCode::E0806InvalidPattern,
                 format!("No items match '{}' in {}.{}", pattern, id, field),
                 id,
             )
-            .into());
+            .into())
         }
         MatchResult::Single(idx) => Ok(vec![idx]),
         MatchResult::Multiple(indices) => {
@@ -855,13 +855,12 @@ fn resolve_matches(
                 Ok(indices)
             } else {
                 let pattern = opts.pattern.unwrap_or("");
-                return Err(Diagnostic::new(
+                Err(Diagnostic::new(
                     DiagnosticCode::E0807AmbiguousMatch,
                     format_multiple_match_error(id, field, pattern, items, &indices),
                     id,
                 )
-                .into()
-                );
+                .into())
             }
         }
     }
@@ -936,7 +935,7 @@ pub fn tick_item(
                         format!("Unknown field for tick: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             };
 
@@ -968,7 +967,7 @@ pub fn tick_item(
                         format!("Unknown field for tick: {field}"),
                         id,
                     )
-                    .into())
+                    .into());
                 }
             };
 
@@ -981,7 +980,7 @@ pub fn tick_item(
                 format!("Tick only works for work items and ADRs: {id}"),
                 id,
             )
-            .into())
+            .into());
         }
     };
 
@@ -1016,7 +1015,7 @@ fn resolve_single_match(
             msg.push_str(&format!("  [{}] {}\n", i, items[i]));
         }
         msg.push_str("\nUse more specific pattern or --at <index> to select one");
-        return Err(Diagnostic::new(DiagnosticCode::E0807AmbiguousMatch, msg, id).into());
+        Err(Diagnostic::new(DiagnosticCode::E0807AmbiguousMatch, msg, id).into())
     }
 }
 

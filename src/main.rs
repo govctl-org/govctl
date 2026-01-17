@@ -82,7 +82,7 @@ enum Commands {
     /// Render artifacts to markdown from SSOT
     #[command(visible_alias = "gen")]
     Render {
-        /// What to render: rfc (default), adr, work, or all
+        /// What to render: rfc (default), adr, work, changelog, or all
         #[arg(value_enum, default_value = "rfc")]
         target: RenderTarget,
         /// Specific RFC ID to render (e.g., RFC-0001)
@@ -211,6 +211,12 @@ enum Commands {
         adr: String,
     },
 
+    /// Reject an ADR (proposed -> rejected)
+    Reject {
+        /// ADR ID or filename
+        adr: String,
+    },
+
     /// Deprecate an artifact
     Deprecate {
         /// Artifact ID (RFC, clause, or ADR)
@@ -229,7 +235,8 @@ enum Commands {
     /// Move work item to new status
     #[command(visible_alias = "mv")]
     Move {
-        /// Work item file
+        /// Work item file path or WI-ID (e.g., WI-2026-01-18-001)
+        #[arg(value_name = "FILE_OR_ID")]
         file: PathBuf,
         /// Target status
         #[arg(value_enum)]
@@ -499,6 +506,7 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         }
         Commands::Advance { rfc_id, phase } => cmd::lifecycle::advance(&config, rfc_id, *phase, op),
         Commands::Accept { adr } => cmd::lifecycle::accept_adr(&config, adr, op),
+        Commands::Reject { adr } => cmd::lifecycle::reject_adr(&config, adr, op),
         Commands::Deprecate { id } => cmd::lifecycle::deprecate(&config, id, op),
         Commands::Supersede { id, by } => cmd::lifecycle::supersede(&config, id, by, op),
         Commands::Move { file, status } => cmd::move_::move_item(&config, file, *status, op),

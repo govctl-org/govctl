@@ -148,15 +148,15 @@ Parse `$ARGUMENTS` and classify:
 
 **Category prefixes** (for changelog generation per ADR-0012/ADR-0013):
 
-| Prefix       | Changelog Section | Notes                        |
-| ------------ | ----------------- | ---------------------------- |
-| `add:`       | Added             | Default if no prefix         |
-| `changed:`   | Changed           |                              |
-| `deprecated:`| Deprecated        |                              |
-| `removed:`   | Removed           |                              |
-| `fix:`       | Fixed             |                              |
-| `security:`  | Security          |                              |
-| `chore:`     | *(excluded)*      | Internal tasks, test passing |
+| Prefix        | Changelog Section | Notes                        |
+| ------------- | ----------------- | ---------------------------- |
+| `add:`        | Added             | Default if no prefix         |
+| `changed:`    | Changed           |                              |
+| `deprecated:` | Deprecated        |                              |
+| `removed:`    | Removed           |                              |
+| `fix:`        | Fixed             |                              |
+| `security:`   | Security          |                              |
+| `chore:`      | _(excluded)_      | Internal tasks, test passing |
 
 ```bash
 {{GOVCTL}} add <WI-ID> acceptance_criteria "add: Implement feature X"

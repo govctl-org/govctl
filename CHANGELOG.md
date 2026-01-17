@@ -10,6 +10,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - README only references RFCs that actually exist (WI-2026-01-17-019)
+- New E08xx diagnostic codes for CLI/command errors (WI-2026-01-18-001)
+- Extended E01xx-E04xx codes for lifecycle operations (WI-2026-01-18-001)
 - All existing tests pass (WI-2026-01-17-018)
 - Move to done rejects if acceptance_criteria is empty (WI-2026-01-17-018)
 - Error message suggests how to add criteria (WI-2026-01-17-018)
@@ -17,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR status enum includes 'rejected' (WI-2026-01-17-004)
 - Work Item lifecycle allows queue to cancelled transition (WI-2026-01-17-004)
 - RFC status×phase rules documented in SCHEMA.md (WI-2026-01-17-004)
+- govctl reject command to reject ADR proposals (WI-2026-01-17-004)
+- is_valid_adr_transition allows proposed to rejected (WI-2026-01-17-004)
 - `Release` and `ReleasesFile` models in model.rs with version, date, and refs fields (WI-2026-01-17-030)
 - Load and save `gov/releases.toml` functionality with semver validation (WI-2026-01-17-030)
 - `govctl release <version>` command to cut releases (WI-2026-01-17-030)
@@ -104,6 +108,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- All anyhow::bail! calls converted to Diagnostic errors (WI-2026-01-18-001)
 - Consolidate `ChangelogCategory` enum into `model.rs` with `from_prefix` method (WI-2026-01-17-029)
 - Update `work.schema.toml` with category field documentation (WI-2026-01-17-029)
 - Update work template with category field documentation (WI-2026-01-17-029)
@@ -111,3 +116,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - All existing work items remain valid (backward compatible default) (WI-2026-01-17-029)
+- mv command help shows FILE_OR_ID instead of FILE (WI-2026-01-18-002)

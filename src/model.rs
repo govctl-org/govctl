@@ -197,12 +197,14 @@ pub struct AdrSpec {
 }
 
 /// ADR status lifecycle: proposed → accepted → superseded
+///                                → rejected
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, AsRefStr, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum AdrStatus {
     Proposed,
     Accepted,
+    Rejected,
     Superseded,
 }
 

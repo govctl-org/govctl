@@ -651,10 +651,13 @@ pub fn is_valid_phase_transition(from: RfcPhase, to: RfcPhase) -> bool {
 
 /// Check if ADR status transition is valid
 /// ADR lifecycle: proposed → accepted → superseded
+///                        → rejected
 pub fn is_valid_adr_transition(from: AdrStatus, to: AdrStatus) -> bool {
     matches!(
         (from, to),
-        (AdrStatus::Proposed, AdrStatus::Accepted) | (AdrStatus::Accepted, AdrStatus::Superseded)
+        (AdrStatus::Proposed, AdrStatus::Accepted)
+            | (AdrStatus::Proposed, AdrStatus::Rejected)
+            | (AdrStatus::Accepted, AdrStatus::Superseded)
     )
 }
 
@@ -784,10 +787,31 @@ mod tests {
     }
 
     #[test]
+    fn test_adr_status_proposed_to_rejected() {
+        assert!(is_valid_adr_transition(
+            AdrStatus::Proposed,
+            AdrStatus::Rejected
+        ));
+    }
+
+    #[test]
     fn test_adr_status_invalid_proposed_to_superseded() {
         assert!(!is_valid_adr_transition(
             AdrStatus::Proposed,
             AdrStatus::Superseded
+        ));
+    }
+
+    #[test]
+    fn test_adr_status_invalid_rejected_transitions() {
+        // Rejected is terminal
+        assert!(!is_valid_adr_transition(
+            AdrStatus::Rejected,
+            AdrStatus::Accepted
+        ));
+        assert!(!is_valid_adr_transition(
+            AdrStatus::Rejected,
+            AdrStatus::Proposed
         ));
     }
 

@@ -180,6 +180,15 @@ pub fn accepted(kind: &str, id: &str) {
     }
 }
 
+/// Format a rejected message
+pub fn rejected(kind: &str, id: &str) {
+    if use_colors() {
+        eprintln!("Rejected {}: {}", kind, id.cyan().bold());
+    } else {
+        eprintln!("Rejected {}: {}", kind, id);
+    }
+}
+
 /// Format a deprecated message
 pub fn deprecated(kind: &str, id: &str) {
     if use_colors() {

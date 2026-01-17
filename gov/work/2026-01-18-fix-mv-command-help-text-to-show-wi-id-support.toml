@@ -1,0 +1,34 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-18-002"
+title = "Fix mv command help text to show WI-ID support"
+status = "done"
+created = "2026-01-18"
+started = "2026-01-18"
+completed = "2026-01-18"
+
+[content]
+description = """
+The `govctl mv` command help text says `<FILE>` but the code actually supports both file paths and WI-IDs.
+
+Current help:
+```
+govctl move <FILE> <STATUS>
+```
+
+The gov.md documentation says:
+```
+govctl mv <WI-ID> <status>
+```
+
+The code supports both - it first tries WI-ID lookup, then file path matching. The help text should reflect this."""
+
+[[content.acceptance_criteria]]
+text = "mv command help shows FILE_OR_ID instead of FILE"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Help text matches actual behavior"
+status = "done"
+category = "chore"

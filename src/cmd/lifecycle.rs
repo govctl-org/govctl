@@ -28,7 +28,11 @@ pub fn bump(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
-        Diagnostic::new(DiagnosticCode::E0102RfcNotFound, format!("RFC not found: {rfc_id}"), rfc_id)
+        Diagnostic::new(
+            DiagnosticCode::E0102RfcNotFound,
+            format!("RFC not found: {rfc_id}"),
+            rfc_id,
+        )
     })?;
 
     let mut rfc = read_rfc(&rfc_path)?;
@@ -93,7 +97,11 @@ pub fn finalize(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
-        Diagnostic::new(DiagnosticCode::E0102RfcNotFound, format!("RFC not found: {rfc_id}"), rfc_id)
+        Diagnostic::new(
+            DiagnosticCode::E0102RfcNotFound,
+            format!("RFC not found: {rfc_id}"),
+            rfc_id,
+        )
     })?;
 
     let mut rfc = read_rfc(&rfc_path)?;
@@ -134,7 +142,11 @@ pub fn advance(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
-        Diagnostic::new(DiagnosticCode::E0102RfcNotFound, format!("RFC not found: {rfc_id}"), rfc_id)
+        Diagnostic::new(
+            DiagnosticCode::E0102RfcNotFound,
+            format!("RFC not found: {rfc_id}"),
+            rfc_id,
+        )
     })?;
 
     let mut rfc = read_rfc(&rfc_path)?;
@@ -209,6 +221,40 @@ pub fn accept_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
     Ok(vec![])
 }
 
+/// Reject an ADR
+pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+    let mut entry = load_adrs(config)?
+        .into_iter()
+        .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("ADR not found: {adr_id}"),
+                adr_id,
+            )
+        })?;
+
+    if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Rejected) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0303AdrInvalidTransition,
+            format!(
+                "Invalid ADR transition: {} -> rejected",
+                entry.spec.govctl.status.as_ref()
+            ),
+            adr_id,
+        )
+        .into());
+    }
+
+    entry.spec.govctl.status = AdrStatus::Rejected;
+    write_adr(&entry.path, &entry.spec, op)?;
+
+    if !op.is_preview() {
+        ui::rejected("ADR", adr_id);
+    }
+    Ok(vec![])
+}
+
 /// Deprecate an artifact
 pub fn deprecate(config: &Config, id: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     if id.contains(':') {
@@ -253,7 +299,9 @@ pub fn deprecate(config: &Config, id: &str, op: WriteOp) -> anyhow::Result<Vec<D
         // ADRs cannot be deprecated; they can only be superseded
         return Err(Diagnostic::new(
             DiagnosticCode::E0305AdrCannotDeprecate,
-            format!("ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead."),
+            format!(
+                "ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead."
+            ),
             id,
         )
         .into());
@@ -318,13 +366,16 @@ pub fn supersede(
         let adrs = load_adrs(config)?;
 
         // Validate replacement exists
-        let _ = adrs.iter().find(|a| a.spec.govctl.id == by).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0302AdrNotFound,
-                format!("Replacement ADR not found: {by}"),
-                by,
-            )
-        })?;
+        let _ = adrs
+            .iter()
+            .find(|a| a.spec.govctl.id == by)
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0302AdrNotFound,
+                    format!("Replacement ADR not found: {by}"),
+                    by,
+                )
+            })?;
 
         // Find the ADR to supersede
         let mut entry = adrs

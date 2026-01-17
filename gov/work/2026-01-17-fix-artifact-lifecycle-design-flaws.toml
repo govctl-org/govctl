@@ -5,7 +5,7 @@ title = "Fix artifact lifecycle design flaws"
 status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
-completed = "2026-01-17"
+completed = "2026-01-18"
 refs = ["ADR-0002"]
 
 [content]
@@ -18,20 +18,34 @@ Fix design flaws in artifact lifecycle state machines identified through analysi
 4. RFC: Document status×phase constraint rules clearly
 
 These changes ensure cleaner separation of concerns and complete lifecycle coverage."""
-notes = []
+notes = ["Reopened: acceptance criterion 'ADR status enum includes rejected' was marked done but Rejected variant was never added to AdrStatus enum in model.rs"]
 
 [[content.acceptance_criteria]]
 text = "Clause kind enum has only 'normative' and 'informative'"
 status = "done"
+category = "added"
 
 [[content.acceptance_criteria]]
 text = "ADR status enum includes 'rejected'"
 status = "done"
+category = "added"
 
 [[content.acceptance_criteria]]
 text = "Work Item lifecycle allows queue to cancelled transition"
 status = "done"
+category = "added"
 
 [[content.acceptance_criteria]]
 text = "RFC status×phase rules documented in SCHEMA.md"
 status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl reject command to reject ADR proposals"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "is_valid_adr_transition allows proposed to rejected"
+status = "done"
+category = "added"
