@@ -271,10 +271,10 @@ pub fn render_work_item(item: &WorkItemEntry) -> String {
         meta.id,
         meta.status.as_ref()
     );
-    if let Some(ref start) = meta.start_date {
+    if let Some(ref start) = meta.started {
         status_line.push_str(&format!(" | **Started:** {start}"));
     }
-    if let Some(ref done) = meta.done_date {
+    if let Some(ref done) = meta.completed {
         status_line.push_str(&format!(" | **Completed:** {done}"));
     }
     writeln!(out, "{status_line}").unwrap();

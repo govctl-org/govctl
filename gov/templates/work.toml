@@ -1,30 +1,24 @@
-# Work Item
-#
-# Status lifecycle: queue → active → done
-#                     ↓       ↓
-#                     └───────┴──→ cancelled
-#
-# Fields:
-#   - id: Unique identifier (WI-YYYY-MM-DD-NNN)
-#   - title: Short descriptive title
-#   - status: queue | active | done | cancelled
-#   - start_date: When work started (auto-set on active)
-#   - done_date: When work completed (auto-set on done/cancelled)
-#   - refs: References to related RFCs, ADRs
+# Work Item Template
+# See gov/schema/SCHEMA.md for full specification
 
 [govctl]
 schema = 1
-id = "{{ID}}"
-title = "{{TITLE}}"
+id = "WI-YYYY-MM-DD-NNN"
+title = "Work Item Title"
 status = "queue"
-refs = []
+# created = "YYYY-MM-DD"   # Auto-set on creation
+# started = "YYYY-MM-DD"   # Auto-set when moved to active
+# completed = "YYYY-MM-DD" # Auto-set when moved to done/cancelled
+# refs = ["RFC-0001"]      # Optional cross-references
 
 [content]
 description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?
 """
+notes = ""
 
-notes = """
-Progress notes and updates.
-"""
+# Add acceptance criteria as needed:
+# [[content.acceptance_criteria]]
+# text = "Criterion description"
+# status = "pending"  # pending | done | cancelled

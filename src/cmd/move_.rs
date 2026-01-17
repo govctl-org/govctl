@@ -68,12 +68,12 @@ pub fn move_item(
     // Update dates
     match status {
         WorkItemStatus::Active => {
-            if entry.spec.govctl.start_date.is_none() {
-                entry.spec.govctl.start_date = Some(today());
+            if entry.spec.govctl.started.is_none() {
+                entry.spec.govctl.started = Some(today());
             }
         }
         WorkItemStatus::Done | WorkItemStatus::Cancelled => {
-            entry.spec.govctl.done_date = Some(today());
+            entry.spec.govctl.completed = Some(today());
         }
         WorkItemStatus::Queue => {}
     }

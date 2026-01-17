@@ -3,8 +3,9 @@ schema = 1
 id = "WI-2026-01-17-003"
 title = "Add TUI dashboard feature"
 status = "done"
-start_date = "2026-01-17"
-done_date = "2026-01-17"
+created = "2026-01-17"
+started = "2026-01-17"
+completed = "2026-01-17"
 
 [content]
 description = """

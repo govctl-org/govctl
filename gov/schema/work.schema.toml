@@ -1,28 +1,32 @@
-# Work Item Schema Definition (for documentation)
-# Actual validation is done in code
+# Work Item Schema Definition
+# govctl schema version: 1
 
 [govctl]
-schema = 1                          # Required: schema version
+schema = 1                          # Required: schema version (always 1)
 id = "WI-YYYY-MM-DD-NNN"            # Required: unique identifier
 title = "Work Item Title"           # Required: descriptive title
-status = "queue"                    # Required: queue|active|done|cancelled
-start_date = "YYYY-MM-DD"           # Optional: when work started
-done_date = "YYYY-MM-DD"            # Optional: when work completed/cancelled
-refs = ["RFC-0001", "ADR-0002"]     # Optional: references to other artifacts
+status = "queue"                    # Required: queue | active | done | cancelled
+created = "YYYY-MM-DD"              # Required: creation date
+started = "YYYY-MM-DD"              # Optional: when work began
+completed = "YYYY-MM-DD"            # Optional: when work finished
+refs = ["RFC-0001", "ADR-0002"]     # Optional: cross-references
 
 [content]
-description = """Multi-line text describing the work to be done."""
-notes = """Multi-line text for progress notes and updates."""
+description = """
+What needs to be done.
+Include enough detail to understand scope.
+"""
 
-# Optional: Structured checklist items with status (pending/done/cancelled)
+notes = """
+Progress notes, observations, and decisions made during work.
+Updated throughout the work item lifecycle.
+"""
+
+# Optional: Acceptance criteria checklist
 [[content.acceptance_criteria]]
-text = "First criterion"
-status = "done"        # pending (default), done, cancelled
+text = "First criterion to meet"
+status = "pending"    # pending (default) | done | cancelled
 
 [[content.acceptance_criteria]]
 text = "Second criterion"
-status = "pending"
-
-[[content.decisions]]
-text = "Decision made during work"
 status = "done"

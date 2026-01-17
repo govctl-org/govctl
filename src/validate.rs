@@ -403,13 +403,12 @@ pub fn is_valid_phase_transition(from: RfcPhase, to: RfcPhase) -> bool {
 }
 
 /// Check if ADR status transition is valid
+/// ADR lifecycle: proposed → accepted → superseded
 pub fn is_valid_adr_transition(from: AdrStatus, to: AdrStatus) -> bool {
     matches!(
         (from, to),
         (AdrStatus::Proposed, AdrStatus::Accepted)
-            | (AdrStatus::Proposed, AdrStatus::Deprecated)
             | (AdrStatus::Accepted, AdrStatus::Superseded)
-            | (AdrStatus::Accepted, AdrStatus::Deprecated)
     )
 }
 

@@ -1,6 +1,5 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://phaseos.dev/schema/clause.json",
   "title": "Clause Specification",
   "description": "JSON schema for clause definition files",
   "type": "object",
@@ -19,11 +18,11 @@
     "kind": {
       "type": "string",
       "enum": ["normative", "informative"],
-      "description": "Clause type"
+      "description": "Clause type: normative (requirement) or informative (context)"
     },
     "status": {
       "type": "string",
-      "enum": ["active", "deprecated", "superseded"],
+      "enum": ["active", "superseded", "deprecated"],
       "default": "active",
       "description": "Clause lifecycle status"
     },
@@ -32,19 +31,20 @@
       "minLength": 1,
       "description": "Clause content (Markdown)"
     },
+    "since": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "RFC version when this clause was introduced"
+    },
+    "superseded_by": {
+      "type": "string",
+      "pattern": "^C-[A-Z0-9-]+$",
+      "description": "Clause ID that supersedes this one"
+    },
     "anchors": {
       "type": "array",
       "items": { "type": "string" },
-      "description": "Cross-reference anchors"
-    },
-    "superseded_by": {
-      "type": ["string", "null"],
-      "description": "ID of clause that supersedes this one"
-    },
-    "since": {
-      "type": ["string", "null"],
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Version when this clause was introduced"
+      "description": "Cross-reference anchors for linking"
     }
   },
   "additionalProperties": false

@@ -1,0 +1,291 @@
+# govctl Schema Specification
+
+This document defines the unified data model for all govctl artifacts.
+
+## Design Principles
+
+1. **Consistency**: Same patterns across artifact types
+2. **Minimalism**: Only essential fields; no speculative features
+3. **Explicit lifecycle**: Each artifact type has a defined status progression
+4. **Cross-referencing**: All artifacts can reference others via `refs`
+
+---
+
+## Identifier Formats
+
+| Artifact | Format | Example |
+|----------|--------|---------|
+| RFC | `RFC-NNNN` | `RFC-0001` |
+| Clause | `C-NAME` | `C-PHASE-ORDER` |
+| ADR | `ADR-NNNN` | `ADR-0001` |
+| Work Item | `WI-YYYY-MM-DD-NNN` | `WI-2026-01-17-001` |
+
+**Full references** combine artifact IDs:
+- Clause in RFC: `RFC-0001:C-PHASE-ORDER`
+- Standalone: `ADR-0001`, `WI-2026-01-17-001`
+
+---
+
+## Lifecycle States
+
+### RFC Status
+
+```
+draft → normative → deprecated
+```
+
+| Status | Meaning |
+|--------|---------|
+| `draft` | Under discussion. Implementation MUST NOT depend on it. |
+| `normative` | Frozen. Implementation MUST conform. |
+| `deprecated` | Obsolete. Implementation SHOULD migrate away. |
+
+### RFC Phase
+
+```
+spec → impl → test → stable
+```
+
+| Phase | Meaning |
+|-------|---------|
+| `spec` | Defining requirements. No implementation. |
+| `impl` | Building per specification. |
+| `test` | Verifying implementation. |
+| `stable` | Released for production use. |
+
+**Constraints:**
+- `draft` + `stable` is FORBIDDEN
+- `deprecated` + `impl`/`test` is FORBIDDEN
+
+### Clause Status
+
+```
+active → superseded
+       → deprecated
+```
+
+| Status | Meaning |
+|--------|---------|
+| `active` | In effect. |
+| `superseded` | Replaced by another clause. |
+| `deprecated` | Obsolete, no replacement. |
+
+### ADR Status
+
+```
+proposed → accepted → superseded
+```
+
+| Status | Meaning |
+|--------|---------|
+| `proposed` | Under consideration. |
+| `accepted` | Ratified decision. |
+| `superseded` | Replaced by newer ADR. |
+
+### Work Item Status
+
+```
+queue → active → done
+              → cancelled
+```
+
+| Status | Meaning |
+|--------|---------|
+| `queue` | Planned, not started. |
+| `active` | In progress. |
+| `done` | Completed successfully. |
+| `cancelled` | Abandoned. |
+
+---
+
+## Schema Definitions
+
+### RFC (JSON)
+
+```json
+{
+  "rfc_id": "RFC-0001",
+  "title": "Example RFC",
+  "version": "1.0.0",
+  "status": "draft",
+  "phase": "spec",
+  "owners": ["@owner"],
+  "created": "2026-01-17",
+  "updated": "2026-01-17",
+  "supersedes": "RFC-0000",
+  "sections": [
+    {
+      "title": "Section Name",
+      "clauses": ["clauses/C-EXAMPLE.json"]
+    }
+  ],
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2026-01-17",
+      "summary": "Initial release"
+    }
+  ]
+}
+```
+
+| Field | Required | Type | Description |
+|-------|----------|------|-------------|
+| `rfc_id` | yes | string | Unique identifier `RFC-NNNN` |
+| `title` | yes | string | Human-readable title |
+| `version` | yes | string | Semantic version `X.Y.Z` |
+| `status` | yes | enum | `draft` \| `normative` \| `deprecated` |
+| `phase` | yes | enum | `spec` \| `impl` \| `test` \| `stable` |
+| `owners` | yes | array | List of responsible parties |
+| `created` | yes | date | Creation date |
+| `updated` | no | date | Last modification date |
+| `supersedes` | no | string | RFC ID this replaces |
+| `sections` | yes | array | Ordered sections with clause refs |
+| `changelog` | no | array | Version history |
+
+### Clause (JSON)
+
+```json
+{
+  "clause_id": "C-EXAMPLE",
+  "title": "Example Clause",
+  "kind": "normative",
+  "status": "active",
+  "text": "The system MUST do X.",
+  "since": "1.0.0",
+  "superseded_by": null,
+  "anchors": []
+}
+```
+
+| Field | Required | Type | Description |
+|-------|----------|------|-------------|
+| `clause_id` | yes | string | Unique within RFC `C-NAME` |
+| `title` | yes | string | Human-readable title |
+| `kind` | yes | enum | `normative` \| `informative` |
+| `status` | no | enum | `active` \| `superseded` \| `deprecated` (default: `active`) |
+| `text` | yes | string | Clause content (Markdown) |
+| `since` | no | string | Version introduced |
+| `superseded_by` | no | string | Clause ID that replaces this |
+| `anchors` | no | array | Cross-reference targets |
+
+### ADR (TOML)
+
+```toml
+[govctl]
+id = "ADR-0001"
+title = "Example Decision"
+status = "proposed"
+date = "2026-01-17"
+superseded_by = "ADR-0002"
+refs = ["RFC-0001:C-EXAMPLE"]
+
+[content]
+context = """
+Background and problem description.
+"""
+
+decision = """
+What was decided and why.
+"""
+
+consequences = """
+Impact of the decision.
+"""
+
+[[content.alternatives]]
+text = "Option A"
+status = "rejected"
+
+[[content.alternatives]]
+text = "Option B"
+status = "accepted"
+```
+
+| Field | Required | Type | Description |
+|-------|----------|------|-------------|
+| `govctl.id` | yes | string | Unique identifier `ADR-NNNN` |
+| `govctl.title` | yes | string | Decision title |
+| `govctl.status` | yes | enum | `proposed` \| `accepted` \| `superseded` |
+| `govctl.date` | yes | date | Decision date |
+| `govctl.superseded_by` | no | string | ADR ID that replaces this |
+| `govctl.refs` | no | array | Cross-references |
+| `content.context` | yes | string | Problem description |
+| `content.decision` | yes | string | Decision and rationale |
+| `content.consequences` | yes | string | Impact analysis |
+| `content.alternatives` | no | array | Options considered |
+| `content.alternatives[].text` | yes | string | Option description |
+| `content.alternatives[].status` | no | enum | `considered` \| `rejected` \| `accepted` |
+
+### Work Item (TOML)
+
+```toml
+[govctl]
+id = "WI-2026-01-17-001"
+title = "Example Work Item"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+completed = "2026-01-18"
+refs = ["RFC-0001"]
+
+[content]
+description = """
+What needs to be done.
+"""
+
+notes = """
+Progress notes and observations.
+"""
+
+[[content.acceptance_criteria]]
+text = "First criterion"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Second criterion"
+status = "pending"
+```
+
+| Field | Required | Type | Description |
+|-------|----------|------|-------------|
+| `govctl.id` | yes | string | Unique identifier `WI-YYYY-MM-DD-NNN` |
+| `govctl.title` | yes | string | Work item title |
+| `govctl.status` | yes | enum | `queue` \| `active` \| `done` \| `cancelled` |
+| `govctl.created` | yes | date | Creation date |
+| `govctl.started` | no | date | When work began |
+| `govctl.completed` | no | date | When work finished |
+| `govctl.refs` | no | array | Cross-references |
+| `content.description` | yes | string | Work description |
+| `content.notes` | no | string | Progress notes |
+| `content.acceptance_criteria` | no | array | Completion checklist |
+| `content.acceptance_criteria[].text` | yes | string | Criterion text |
+| `content.acceptance_criteria[].status` | no | enum | `pending` \| `done` \| `cancelled` |
+
+---
+
+## Cross-Reference Format
+
+References use artifact IDs, optionally scoped to clauses:
+
+```
+refs = [
+  "RFC-0001",           # Reference to entire RFC
+  "RFC-0001:C-EXAMPLE", # Reference to specific clause
+  "ADR-0001",           # Reference to ADR
+  "WI-2026-01-17-001"   # Reference to work item
+]
+```
+
+---
+
+## Schema Version
+
+All TOML artifacts include a schema version for forward compatibility:
+
+```toml
+[govctl]
+schema = 1  # Increment when breaking changes occur
+```
+
+Current version: **1**

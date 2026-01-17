@@ -1,25 +1,32 @@
-# ADR Schema Definition (for documentation)
-# Actual validation is done in code
+# ADR Schema Definition
+# govctl schema version: 1
 
 [govctl]
-schema = 1                          # Required: schema version
+schema = 1                          # Required: schema version (always 1)
 id = "ADR-NNNN"                     # Required: unique identifier
 title = "ADR Title"                 # Required: descriptive title
-status = "proposed"                 # Required: proposed|accepted|superseded|deprecated
-date = "YYYY-MM-DD"                 # Required: creation date
-superseded_by = "ADR-NNNN"          # Optional: if superseded
-refs = ["RFC-0001", "ADR-0002"]     # Optional: references to other artifacts
+status = "proposed"                 # Required: proposed | accepted | superseded
+date = "YYYY-MM-DD"                 # Required: decision date
+superseded_by = "ADR-NNNN"          # Optional: if superseded, the replacing ADR
+refs = ["RFC-0001", "ADR-0002"]     # Optional: cross-references
 
 [content]
-context = """Multi-line text describing the context and problem."""
-decision = """Multi-line text describing the decision made."""
-consequences = """Multi-line text describing the consequences."""
+context = """
+Background and problem description.
+What is the issue being addressed?
+"""
 
-# Optional: Alternatives considered with status (considered/accepted/rejected)
-[[content.alternatives]]
-text = "Option A: Use approach X"
-status = "rejected"    # considered (default), accepted, rejected
+decision = """
+The decision made and the rationale.
+Why this choice over alternatives?
+"""
 
+consequences = """
+Impact of this decision.
+What are the trade-offs?
+"""
+
+# Optional: Alternatives that were considered
 [[content.alternatives]]
-text = "Option B: Use approach Y"
-status = "accepted"
+text = "Option A: Description"
+status = "rejected"    # considered (default) | accepted | rejected

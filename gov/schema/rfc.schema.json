@@ -1,19 +1,9 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://phaseos.dev/schema/rfc.json",
   "title": "RFC Specification",
   "description": "JSON schema for RFC source files",
   "type": "object",
-  "required": [
-    "rfc_id",
-    "title",
-    "version",
-    "status",
-    "phase",
-    "owners",
-    "created",
-    "sections"
-  ],
+  "required": ["rfc_id", "title", "version", "status", "phase", "owners", "created", "sections"],
   "properties": {
     "rfc_id": {
       "type": "string",
@@ -49,12 +39,17 @@
     "created": {
       "type": "string",
       "format": "date",
-      "description": "Creation date (ISO 8601)"
+      "description": "Creation date (YYYY-MM-DD)"
     },
     "updated": {
       "type": "string",
       "format": "date",
-      "description": "Last update date (ISO 8601)"
+      "description": "Last update date (YYYY-MM-DD)"
+    },
+    "supersedes": {
+      "type": "string",
+      "pattern": "^RFC-\\d{4}$",
+      "description": "RFC ID this replaces"
     },
     "sections": {
       "type": "array",

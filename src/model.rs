@@ -20,6 +20,8 @@ pub struct RfcSpec {
     pub created: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supersedes: Option<String>,
     pub sections: Vec<SectionSpec>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub changelog: Vec<ChangelogEntry>,
@@ -167,7 +169,7 @@ pub struct AdrSpec {
     pub content: AdrContent,
 }
 
-/// ADR status lifecycle
+/// ADR status lifecycle: proposed → accepted → superseded
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, AsRefStr, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
@@ -175,7 +177,6 @@ pub enum AdrStatus {
     Proposed,
     Accepted,
     Superseded,
-    Deprecated,
 }
 
 // =============================================================================
@@ -185,14 +186,17 @@ pub enum AdrStatus {
 /// Work Item metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemMeta {
+    #[serde(default)]
     pub schema: u32,
     pub id: String,
     pub title: String,
     pub status: WorkItemStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub start_date: Option<String>,
+    pub created: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub done_date: Option<String>,
+    pub started: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completed: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
 }

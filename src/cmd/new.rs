@@ -120,6 +120,7 @@ fn create_rfc(
         owners: vec!["@your-handle".to_string()],
         created: today(),
         updated: None,
+        supersedes: None,
         sections: vec![
             SectionSpec {
                 title: "Summary".to_string(),
@@ -322,7 +323,7 @@ fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Resul
     }
 
     // Create work item spec
-    let (status, start_date) = if active {
+    let (status, started) = if active {
         (WorkItemStatus::Active, Some(date.clone()))
     } else {
         (WorkItemStatus::Queue, None)
@@ -334,8 +335,9 @@ fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Resul
             id: work_id.clone(),
             title: title.to_string(),
             status,
-            start_date,
-            done_date: None,
+            created: Some(date.clone()),
+            started,
+            completed: None,
             refs: vec![],
         },
         content: WorkItemContent {

@@ -251,8 +251,8 @@ pub fn get_field(
             let value = match f {
                 "status" => entry.spec.govctl.status.as_ref().to_string(),
                 "title" => entry.spec.govctl.title,
-                "start_date" => entry.spec.govctl.start_date.unwrap_or_default(),
-                "done_date" => entry.spec.govctl.done_date.unwrap_or_default(),
+                "started" => entry.spec.govctl.started.unwrap_or_default(),
+                "completed" => entry.spec.govctl.completed.unwrap_or_default(),
                 "refs" => entry.spec.govctl.refs.join(", "),
                 "description" => entry.spec.content.description,
                 "acceptance_criteria" => entry

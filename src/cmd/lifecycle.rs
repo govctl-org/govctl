@@ -166,22 +166,8 @@ pub fn deprecate(config: &Config, id: &str) -> anyhow::Result<Vec<Diagnostic>> {
         // Use finalize for RFC deprecation
         return finalize(config, id, FinalizeStatus::Deprecated);
     } else if id.starts_with("ADR-") {
-        let mut entry = load_adrs(config)?
-            .into_iter()
-            .find(|a| a.spec.govctl.id == id)
-            .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
-
-        if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Deprecated) {
-            anyhow::bail!(
-                "Invalid ADR transition: {} -> deprecated",
-                entry.spec.govctl.status.as_ref()
-            );
-        }
-
-        entry.spec.govctl.status = AdrStatus::Deprecated;
-        write_adr(&entry.path, &entry.spec)?;
-
-        eprintln!("Deprecated ADR: {id}");
+        // ADRs cannot be deprecated; they can only be superseded
+        anyhow::bail!("ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead.");
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }
