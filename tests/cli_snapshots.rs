@@ -132,3 +132,13 @@ fn test_invalid_transition_check() {
     let output = run_commands("invalid_transition", &[&["check"]]);
     insta::assert_snapshot!(output);
 }
+
+// =============================================================================
+// Source Scan Tests
+// =============================================================================
+
+#[test]
+fn test_source_scan_detects_refs() {
+    let output = run_commands("source_scan", &[&["check"]]);
+    insta::assert_snapshot!(output);
+}

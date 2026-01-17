@@ -10,6 +10,7 @@ mod load;
 mod model;
 mod parse;
 mod render;
+mod scan;
 mod signature;
 mod ui;
 mod validate;

@@ -1,0 +1,14 @@
+[project]
+name = "source-scan-test"
+
+[paths]
+gov_root = "gov"
+docs_output = "docs"
+
+[schema]
+version = 1
+
+[source_scan]
+enabled = true
+roots = ["src"]
+exts = ["rs"]

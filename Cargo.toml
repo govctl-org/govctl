@@ -48,6 +48,9 @@ regex = "1"
 slug = "0.1"
 strum = { version = "0.27", features = ["derive"] }
 
+# File system traversal
+walkdir = "2"
+
 # Terminal output
 comfy-table = "7"
 owo-colors = "4"

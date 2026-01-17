@@ -8,3 +8,9 @@ docs_output = "docs"
 
 [schema]
 version = 1
+
+[source_scan]
+# Enable source scanning in projects that use govctl governance references
+enabled = false
+roots = ["src"]
+exts = ["rs", "md"]

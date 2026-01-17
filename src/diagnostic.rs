@@ -20,6 +20,7 @@ pub enum DiagnosticCode {
     E0104RfcInvalidTransition,
     E0105RfcRefNotFound,
     E0106RfcSupersedesNotFound,
+    E0107SourceRefUnknown,
 
     // Clause errors (E02xx)
     E0201ClauseSchemaInvalid,
@@ -62,6 +63,7 @@ pub enum DiagnosticCode {
     W0104AdrParseSkipped,
     W0105WorkParseSkipped,
     W0106RenderedReadError,
+    W0107SourceRefOutdated,
 }
 
 impl DiagnosticCode {
@@ -72,7 +74,8 @@ impl DiagnosticCode {
             | Self::W0103AdrNoRefs
             | Self::W0104AdrParseSkipped
             | Self::W0105WorkParseSkipped
-            | Self::W0106RenderedReadError => DiagnosticLevel::Warning,
+            | Self::W0106RenderedReadError
+            | Self::W0107SourceRefOutdated => DiagnosticLevel::Warning,
             _ => DiagnosticLevel::Error,
         }
     }
@@ -85,6 +88,7 @@ impl DiagnosticCode {
             Self::E0104RfcInvalidTransition => "E0104",
             Self::E0105RfcRefNotFound => "E0105",
             Self::E0106RfcSupersedesNotFound => "E0106",
+            Self::E0107SourceRefUnknown => "E0107",
             Self::E0201ClauseSchemaInvalid => "E0201",
             Self::E0202ClauseNotFound => "E0202",
             Self::E0203ClauseIdMismatch => "E0203",
@@ -113,6 +117,7 @@ impl DiagnosticCode {
             Self::W0104AdrParseSkipped => "W0104",
             Self::W0105WorkParseSkipped => "W0105",
             Self::W0106RenderedReadError => "W0106",
+            Self::W0107SourceRefOutdated => "W0107",
         }
     }
 }

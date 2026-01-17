@@ -13,6 +13,8 @@ pub struct Config {
     pub paths: PathsConfig,
     #[serde(default)]
     pub schema: SchemaConfig,
+    #[serde(default)]
+    pub source_scan: SourceScanConfig,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -123,6 +125,47 @@ impl Default for SchemaConfig {
     fn default() -> Self {
         Self {
             version: default_schema_version(),
+        }
+    }
+}
+
+/// Source code scanning configuration
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SourceScanConfig {
+    /// Enable source code scanning (default: false)
+    #[serde(default)]
+    pub enabled: bool,
+    /// Directories to scan (relative to workspace root)
+    #[serde(default = "default_scan_roots")]
+    pub roots: Vec<PathBuf>,
+    /// File extensions to include (without dot)
+    #[serde(default = "default_scan_exts")]
+    pub exts: Vec<String>,
+    /// Regex pattern with capture group 1 for artifact ID
+    #[serde(default = "default_scan_pattern")]
+    pub pattern: String,
+}
+
+fn default_scan_roots() -> Vec<PathBuf> {
+    vec![PathBuf::from("src")]
+}
+
+fn default_scan_exts() -> Vec<String> {
+    vec!["rs".to_string(), "md".to_string()]
+}
+
+fn default_scan_pattern() -> String {
+    // Matches double-bracket references like RFC-NNNN:C-CLAUSE or RFC-NNNN or ADR-NNNN
+    r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4})\]\]".to_string()
+}
+
+impl Default for SourceScanConfig {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            roots: default_scan_roots(),
+            exts: default_scan_exts(),
+            pattern: default_scan_pattern(),
         }
     }
 }
