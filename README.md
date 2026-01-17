@@ -18,6 +18,25 @@ AI-assisted coding is powerful but undisciplined:
 
 The result: faster typing, slower thinking, unmaintainable systems.
 
+### Without govctl
+
+```
+Day 1:  "Let's add caching!"
+Day 2:  AI generates 500 lines of Redis integration
+Day 7:  "Wait, did we agree on Redis or Memcached?"
+Day 14: Half the team implements one, half the other
+Day 30: Two incompatible caching layers, no spec, nobody knows why
+```
+
+### With govctl
+
+```
+Day 1:  govctl new rfc "Caching Strategy"
+Day 2:  RFC-0015 defines: Redis, TTL policy, invalidation rules
+Day 3:  govctl advance RFC-0015 impl
+Day 14: Single implementation, traceable to spec, zero ambiguity
+```
+
 ---
 
 ## What govctl Is
@@ -29,6 +48,31 @@ govctl enforces **phase discipline** on software development:
 3. **Governance is executable** — Rules are checked, not suggested
 
 govctl governs itself by its own rules. This repository is the first proof.
+
+### Phase Discipline Workflow
+
+```
+┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+│  SPEC   │ ──► │   IMPL   │ ──► │   TEST   │ ──► │  STABLE  │
+│  phase  │     │  phase   │     │  phase   │     │  phase   │
+└─────────┘     └──────────┘     └──────────┘     └──────────┘
+     │                │                │                │
+     ▼                ▼                ▼                ▼
+  RFC must         Code must       Tests must       Bug fixes
+  be normative     match spec      pass gates       only
+```
+
+---
+
+## Who This Is For
+
+✅ **Teams frustrated by AI "code now, think later" patterns**
+✅ **Projects where specifications drift from implementations**
+✅ **Organizations needing audit trails for AI-generated code**
+✅ **Developers who believe discipline enables velocity**
+
+❌ Not for "move fast and break things" workflows
+❌ Not for projects without review processes
 
 ---
 
@@ -54,11 +98,15 @@ These are non-negotiable:
 
 ## Current Status
 
-govctl is in active development. The following RFCs define its governance:
+govctl is in active development, **governing itself with its own rules**.
+
+Every feature in this CLI was specified in an RFC before implementation. You can trace any line of code back to its specification.
 
 | RFC                              | Title                       | Status    | Phase  |
 | -------------------------------- | --------------------------- | --------- | ------ |
 | [RFC-0000](docs/rfc/RFC-0000.md) | govctl Governance Framework | Normative | Stable |
+
+This isn't just documentation — it's **proof that the model works**.
 
 ---
 
@@ -200,13 +248,13 @@ This is not conservatism. This is focus.
 
 ## Contributing
 
-Before contributing code, understand:
+govctl has an opinionated workflow. Before contributing:
 
-1. Read all three constitutional RFCs
-2. Any code contribution requires a normative RFC in the appropriate phase
-3. PhaseOS is not a democracy — it is a discipline
+1. Read the [governance RFC](docs/rfc/RFC-0000.md) to understand the model
+2. All features require an RFC before implementation
+3. Phase gates are enforced — this is the point, not bureaucracy
 
-If you disagree with this philosophy, this project is not for you.
+**This workflow isn't for everyone, and that's okay.** If you thrive in structured, spec-driven development, we'd welcome your contributions.
 
 ---
 
@@ -216,4 +264,4 @@ MIT
 
 ---
 
-> _"The first commit is not the start of coding. It is the start of obedience."_
+> _"Discipline is not the opposite of creativity. It is the foundation."_

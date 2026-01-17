@@ -17,7 +17,10 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     let config_path = config.paths.gov_root.join("config.toml");
 
     if config_path.exists() && !force && !op.is_preview() {
-        anyhow::bail!("{} already exists (use -f to overwrite)", config_path.display());
+        anyhow::bail!(
+            "{} already exists (use -f to overwrite)",
+            config_path.display()
+        );
     }
 
     // Create directories first (config lives inside gov_root)

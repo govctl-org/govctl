@@ -674,9 +674,7 @@ pub fn remove_from_field(
                     field,
                     opts,
                 )?,
-                "notes" => {
-                    remove_matching_strings(&mut entry.spec.content.notes, id, field, opts)?
-                }
+                "notes" => remove_matching_strings(&mut entry.spec.content.notes, id, field, opts)?,
                 _ => anyhow::bail!("Cannot remove from field: {field}"),
             };
 

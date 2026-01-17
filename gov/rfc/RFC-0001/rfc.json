@@ -4,17 +4,13 @@
   "version": "0.1.0",
   "status": "normative",
   "phase": "stable",
-  "owners": [
-    "@your-handle"
-  ],
+  "owners": ["@your-handle"],
   "created": "2026-01-17",
   "updated": "2026-01-17",
   "sections": [
     {
       "title": "Summary",
-      "clauses": [
-        "clauses/C-SUMMARY.json"
-      ]
+      "clauses": ["clauses/C-SUMMARY.json"]
     },
     {
       "title": "Specification",
