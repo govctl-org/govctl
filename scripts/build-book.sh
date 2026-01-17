@@ -20,10 +20,15 @@ for arg in "$@"; do
     esac
 done
 
-# Render all governance artifacts to markdown (unless --skip-render)
+# Render governance artifacts to markdown (unless --skip-render)
+# Note: We render rfc, adr, and changelog for the book (not work items - too noisy)
 if [[ "$SKIP_RENDER" == "false" ]]; then
     echo "Rendering governance artifacts..."
-    cargo run --quiet -- render all
+    cargo run --quiet -- render rfc
+    cargo run --quiet -- render adr
+    cargo run --quiet -- render changelog
+    # Copy changelog to docs/ for mdbook
+    cp "$PROJECT_ROOT/CHANGELOG.md" "$DOCS_DIR/CHANGELOG.md"
 else
     echo "Skipping render (--skip-render)"
 fi
@@ -35,9 +40,17 @@ SUMMARY="$DOCS_DIR/SUMMARY.md"
 cat > "$SUMMARY" << 'EOF'
 # Summary
 
-[Introduction](./introduction.md)
+[Introduction](./INTRODUCTION.md)
 
 ---
+
+# User Guide
+
+- [Getting Started](./guide/getting-started.md)
+- [Working with RFCs](./guide/rfcs.md)
+- [Working with ADRs](./guide/adrs.md)
+- [Working with Work Items](./guide/work-items.md)
+- [Validation & Rendering](./guide/validation.md)
 
 # Specifications
 EOF
@@ -65,16 +78,12 @@ if [[ -d "$DOCS_DIR/adr" ]] && ls "$DOCS_DIR/adr/"*.md &>/dev/null; then
     done
 fi
 
-# Add Work Items section if any exist
-if [[ -d "$DOCS_DIR/work" ]] && ls "$DOCS_DIR/work/"*.md &>/dev/null; then
+# Add Changelog if it exists
+if [[ -f "$DOCS_DIR/CHANGELOG.md" ]]; then
     echo "" >> "$SUMMARY"
-    echo "# Work Items" >> "$SUMMARY"
-    for work in $(ls "$DOCS_DIR/work/"*.md 2>/dev/null | sort); do
-        filename=$(basename "$work")
-        id="${filename%.md}"
-        title=$(grep -m1 '^# ' "$work" | sed 's/^# //' || echo "$id")
-        echo "- [$title](./work/$filename)" >> "$SUMMARY"
-    done
+    echo "---" >> "$SUMMARY"
+    echo "" >> "$SUMMARY"
+    echo "[Changelog](./CHANGELOG.md)" >> "$SUMMARY"
 fi
 
 echo "Generated: $SUMMARY"

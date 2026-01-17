@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <!-- Gradient for the phase progression -->
+    <linearGradient id="phaseGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="50%" stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+
+    <!-- Subtle shadow -->
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Background circle (optional, for context) -->
+  <circle cx="60" cy="60" r="56" fill="none" stroke="#E5E7EB" stroke-width="1"/>
+
+  <!-- Four phase arcs forming a cycle -->
+  <!-- SPEC phase (top-right) - Blue -->
+  <path d="M60 8 A52 52 0 0 1 112 60"
+        fill="none"
+        stroke="#3B82F6"
+        stroke-width="8"
+        stroke-linecap="round"/>
+
+  <!-- IMPL phase (bottom-right) - Indigo -->
+  <path d="M112 60 A52 52 0 0 1 60 112"
+        fill="none"
+        stroke="#6366F1"
+        stroke-width="8"
+        stroke-linecap="round"/>
+
+  <!-- TEST phase (bottom-left) - Violet -->
+  <path d="M60 112 A52 52 0 0 1 8 60"
+        fill="none"
+        stroke="#8B5CF6"
+        stroke-width="8"
+        stroke-linecap="round"/>
+
+  <!-- STABLE phase (top-left) - Purple -->
+  <path d="M8 60 A52 52 0 0 1 60 8"
+        fill="none"
+        stroke="#A855F7"
+        stroke-width="8"
+        stroke-linecap="round"/>
+
+  <!-- Phase transition arrows (subtle) -->
+  <circle cx="60" cy="8" r="4" fill="#3B82F6"/>
+  <circle cx="112" cy="60" r="4" fill="#6366F1"/>
+  <circle cx="60" cy="112" r="4" fill="#8B5CF6"/>
+  <circle cx="8" cy="60" r="4" fill="#A855F7"/>
+
+  <!-- Center: Shield/governance symbol -->
+  <g filter="url(#shadow)">
+    <!-- Shield shape -->
+    <path d="M60 28
+             L82 38
+             L82 58
+             C82 72 72 82 60 88
+             C48 82 38 72 38 58
+             L38 38
+             Z"
+          fill="url(#phaseGradient)"/>
+
+    <!-- Checkmark inside shield (governance/validation) -->
+    <path d="M48 56 L56 64 L72 48"
+          fill="none"
+          stroke="white"
+          stroke-width="4"
+          stroke-linecap="round"
+          stroke-linejoin="round"/>
+  </g>
+</svg>

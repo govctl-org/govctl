@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <defs>
+    <linearGradient id="phaseGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Four phase arcs -->
+  <path d="M32 4 A28 28 0 0 1 60 32" fill="none" stroke="#3B82F6" stroke-width="5" stroke-linecap="round"/>
+  <path d="M60 32 A28 28 0 0 1 32 60" fill="none" stroke="#6366F1" stroke-width="5" stroke-linecap="round"/>
+  <path d="M32 60 A28 28 0 0 1 4 32" fill="none" stroke="#8B5CF6" stroke-width="5" stroke-linecap="round"/>
+  <path d="M4 32 A28 28 0 0 1 32 4" fill="none" stroke="#A855F7" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Phase gate dots -->
+  <circle cx="32" cy="4" r="2.5" fill="#3B82F6"/>
+  <circle cx="60" cy="32" r="2.5" fill="#6366F1"/>
+  <circle cx="32" cy="60" r="2.5" fill="#8B5CF6"/>
+  <circle cx="4" cy="32" r="2.5" fill="#A855F7"/>
+
+  <!-- Center shield with check -->
+  <path d="M32 16 L44 21 L44 33 C44 41 39 47 32 50 C25 47 20 41 20 33 L20 21 Z" fill="url(#phaseGrad)"/>
+  <path d="M26 32 L30 36 L38 28" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

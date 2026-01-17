@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <defs>
+    <linearGradient id="phaseGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#60A5FA"/>
+      <stop offset="50%" stop-color="#818CF8"/>
+      <stop offset="100%" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Dark background -->
+  <rect width="120" height="120" fill="#0F172A" rx="12"/>
+
+  <!-- Subtle ring -->
+  <circle cx="60" cy="60" r="54" fill="none" stroke="#1E293B" stroke-width="1"/>
+
+  <!-- Four phase arcs - lighter for dark mode -->
+  <path d="M60 10 A50 50 0 0 1 110 60" fill="none" stroke="#60A5FA" stroke-width="7" stroke-linecap="round"/>
+  <path d="M110 60 A50 50 0 0 1 60 110" fill="none" stroke="#818CF8" stroke-width="7" stroke-linecap="round"/>
+  <path d="M60 110 A50 50 0 0 1 10 60" fill="none" stroke="#A78BFA" stroke-width="7" stroke-linecap="round"/>
+  <path d="M10 60 A50 50 0 0 1 60 10" fill="none" stroke="#C084FC" stroke-width="7" stroke-linecap="round"/>
+
+  <!-- Phase gate dots -->
+  <circle cx="60" cy="10" r="4" fill="#60A5FA"/>
+  <circle cx="110" cy="60" r="4" fill="#818CF8"/>
+  <circle cx="60" cy="110" r="4" fill="#A78BFA"/>
+  <circle cx="10" cy="60" r="4" fill="#C084FC"/>
+
+  <!-- Center shield -->
+  <path d="M60 28 L82 38 L82 58 C82 72 72 82 60 88 C48 82 38 72 38 58 L38 38 Z" fill="url(#phaseGradientDark)"/>
+  <path d="M48 56 L56 64 L72 48" fill="none" stroke="#0F172A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

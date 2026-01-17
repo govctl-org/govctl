@@ -1,10 +1,18 @@
-# govctl
+<p align="center">
+  <img src="assets/logo.svg" alt="govctl logo" width="120" height="120">
+</p>
 
-[![CI](https://github.com/govctl-org/govctl/actions/workflows/ci.yml/badge.svg)](https://github.com/govctl-org/govctl/actions/workflows/ci.yml)
-[![Crates.io](https://img.shields.io/crates/v/govctl.svg)](https://crates.io/crates/govctl)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+<h1 align="center">govctl</h1>
 
-> **govctl is an opinionated governance CLI for RFC-driven AI software development.**
+<p align="center">
+  <a href="https://github.com/govctl-org/govctl/actions/workflows/ci.yml"><img src="https://github.com/govctl-org/govctl/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://crates.io/crates/govctl"><img src="https://img.shields.io/crates/v/govctl.svg" alt="Crates.io"></a>
+  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">
+  <strong>Opinionated governance CLI for RFC-driven AI-assisted software development.</strong>
+</p>
 
 ---
 
@@ -34,7 +42,9 @@ Day 30: Two incompatible caching layers, no spec, nobody knows why
 Day 1:  govctl new rfc "Caching Strategy"
 Day 2:  RFC-0015 defines: Redis, TTL policy, invalidation rules
 Day 3:  govctl advance RFC-0015 impl
-Day 14: Single implementation, traceable to spec, zero ambiguity
+Day 7:  Implementation complete, traceable to spec
+Day 10: govctl advance RFC-0015 test
+Day 14: Tests pass, govctl advance RFC-0015 stable
 ```
 
 ---
@@ -47,20 +57,17 @@ govctl enforces **phase discipline** on software development:
 2. **Phases are enforced** — Each phase has explicit gates and invariants
 3. **Governance is executable** — Rules are checked, not suggested
 
-govctl governs itself by its own rules. This repository is the first proof.
-
-### Phase Discipline Workflow
-
 ```
 ┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
 │  SPEC   │ ──► │   IMPL   │ ──► │   TEST   │ ──► │  STABLE  │
-│  phase  │     │  phase   │     │  phase   │     │  phase   │
 └─────────┘     └──────────┘     └──────────┘     └──────────┘
      │                │                │                │
      ▼                ▼                ▼                ▼
   RFC must         Code must       Tests must       Bug fixes
   be normative     match spec      pass gates       only
 ```
+
+govctl governs itself by its own rules. This repository is the first proof.
 
 ---
 
@@ -76,168 +83,32 @@ govctl governs itself by its own rules. This repository is the first proof.
 
 ---
 
-## What govctl Is NOT
-
-- ❌ **Not a code generator** — govctl doesn't write code; it ensures code follows specs
-- ❌ **Not a documentation editor** — govctl enforces structure, not style
-- ❌ **Not about "faster coding"** — govctl is about _correct_ coding
-- ❌ **Not a framework** — govctl is a constraint system
-
----
-
-## First Principles
-
-These are non-negotiable:
-
-1. **Specification precedes implementation**
-2. **Phases cannot be skipped**
-3. **Breaking changes require explicit RFC amendments**
-4. **govctl itself follows govctl governance**
-
----
-
-## Current Status
-
-govctl is in active development, **governing itself with its own rules**.
-
-Every feature in this CLI was specified in an RFC before implementation. You can trace any line of code back to its specification.
-
-| RFC                              | Title                       | Status    | Phase  |
-| -------------------------------- | --------------------------- | --------- | ------ |
-| [RFC-0000](docs/rfc/RFC-0000.md) | govctl Governance Framework | Normative | Stable |
-| [RFC-0001](docs/rfc/RFC-0001.md) | Status and Phase Lifecycle  | Normative | Stable |
-
-This isn't just documentation — it's **proof that the model works**.
-
----
-
-## The `govctl` CLI
-
-govctl is a governance CLI for managing RFCs, ADRs, and Work Items.
-
-### Requirements
-
-- **Rust 1.85+** (uses edition 2024)
-
-### Installation
+## Quick Start
 
 ```bash
+# Install
 cargo install govctl
 
-# Or build from source
-cargo build --release
-# Binary at ./target/release/govctl
-```
-
-### Quick Start
-
-```bash
-# Initialize a new project
+# Initialize project
 govctl init
 
-# Create an RFC (auto-assigns next ID)
+# Create your first RFC
 govctl new rfc "Feature Title"
 
-# Or specify ID manually
-govctl new rfc "Feature Title" --id RFC-0010
-
-# Create a clause within an RFC
-govctl new clause RFC-0010:C-SCOPE "Scope" -s "Specification" -k normative
-
-# Edit clause text
-govctl edit RFC-0010:C-SCOPE --stdin <<'EOF'
-The feature MUST...
-EOF
-
-# Render RFCs to markdown (default, published to repo)
-govctl render
-
-# Render specific RFC
-govctl render --rfc-id RFC-0010
-
-# Render ADRs/Work Items locally (not committed, .gitignore'd)
-govctl render adr
-govctl render work
-govctl render all   # Everything
-
-# Validate all governed documents
+# Validate
 govctl check
-
-# List RFCs
-govctl list rfc
-
-# List clauses
-govctl list clause
-
-# Show summary
-govctl stat
 ```
 
-### Data Model
+For complete documentation, see the [User Guide](https://govctl-org.github.io/govctl/).
 
-All SSOT (Single Source of Truth) files live under `gov/`, rendered docs go to `docs/`:
+---
 
-```
-gov/                          # SSOT (managed by govctl)
-├── config.toml               # govctl configuration
-├── rfc/                      # RFC-NNNN/rfc.json + clauses/
-├── adr/                      # ADR-NNNN-*.toml
-├── work/                     # WI-YYYY-MM-DD-NNN-*.toml
-├── schema/                   # Schema definitions
-└── templates/                # New artifact templates
+## What govctl Is NOT
 
-docs/                         # Rendered (human-readable)
-├── rfc/                      # RFC-NNNN.md
-├── adr/                      # ADR-NNNN.md
-└── work/                     # WI-*.md
-```
-
-**Why TOML for ADRs/Work Items?**
-
-- Comments allowed (humans can annotate)
-- Multi-line strings are clean (`"""` blocks)
-- No YAML ambiguity (`NO` → false problem)
-- Round-trip stable (deterministic serialization)
-
-### Lifecycle Commands
-
-```bash
-# RFC status: draft → normative → deprecated
-govctl finalize RFC-0010 normative
-
-# RFC phase: spec → impl → test → stable
-govctl advance RFC-0010 impl
-
-# Version bump with changelog
-govctl bump RFC-0010 --minor -m "Add new clause"
-
-# ADR lifecycle
-govctl accept ADR-0003
-govctl deprecate ADR-0002
-govctl supersede ADR-0001 --by ADR-0005
-
-# Work item lifecycle
-govctl new work "Task title"              # Creates in queue
-govctl new work --active "Urgent task"    # Creates and activates
-govctl mv WI-2026-01-17-001 active        # By ID
-govctl mv migrate-docs.toml done          # Or by filename
-
-# Structured checklists
-govctl add WI-2026-01-17-001 acceptance_criteria "Criterion text"
-govctl tick WI-2026-01-17-001 acceptance_criteria "Criterion" -s done
-
-# Array field matching (per ADR-0007)
-govctl remove <ID> <field> "pattern"           # Case-insensitive substring (default)
-govctl remove <ID> <field> "exact" --exact     # Exact match
-govctl remove <ID> <field> --at 0              # By index (0-based)
-govctl remove <ID> <field> --at -1             # Negative index (from end)
-govctl remove <ID> <field> "RFC-.*" --regex    # Regex pattern
-govctl remove <ID> <field> "pattern" --all     # Remove all matches
-
-# tick uses same matching (no --all)
-govctl tick <ID> <field> "substr" -s done      # Substring match
-govctl tick <ID> <field> -s done --at 2        # By index
-```
+- **Not a code generator** — govctl doesn't write code; it ensures code follows specs
+- **Not a documentation editor** — govctl enforces structure, not style
+- **Not about "faster coding"** — govctl is about _correct_ coding
+- **Not a framework** — govctl is a constraint system
 
 ---
 
@@ -245,38 +116,9 @@ govctl tick <ID> <field> -s done --at 2        # By index
 
 govctl doesn't need a dedicated [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) integration because **the CLI itself is the tool**.
 
-Modern AI coding agents (Claude, Cursor, Codex, etc.) can already invoke shell commands. Every govctl operation is a single CLI call:
-
-```bash
-govctl new rfc "Feature Title"     # Create artifact
-govctl check                        # Validate state
-govctl advance RFC-0010 impl        # Transition phase
-govctl list work pending            # Query status
-```
-
-**MCP would add complexity without adding capability:**
-
-| Concern          | MCP Approach             | CLI Approach         |
-| ---------------- | ------------------------ | -------------------- |
-| Tool discovery   | JSON schema negotiation  | `govctl --help`      |
-| Invocation       | JSON-RPC over stdio      | Shell command        |
-| Error handling   | Structured error objects | Exit codes + stderr  |
-| Streaming output | Chunked JSON             | Plain text           |
-| Debugging        | Custom tooling required  | Just run the command |
+Modern AI coding agents (Claude, Cursor, Codex, etc.) can already invoke shell commands. Every govctl operation is a single CLI call. MCP would add complexity without adding capability.
 
 The CLI is the universal interface. Every shell-capable agent already speaks it.
-
----
-
-## Deferred Work (Explicit Non-Goals for Now)
-
-The following are **not being worked on** until core governance is stable:
-
-- Block storage / CRDT
-- IDE plugins
-- Language-specific toolchains
-
-This is not conservatism. This is focus.
 
 ---
 

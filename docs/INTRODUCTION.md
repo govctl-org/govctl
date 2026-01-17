@@ -51,8 +51,5 @@ Phases cannot be skipped. This discipline ensures specifications precede impleme
 ## Getting Started
 
 1. Read [RFC-0000](./rfc/RFC-0000.md) to understand the governance model
-2. Install govctl: `cargo install govctl`
-3. Initialize a project: `govctl init`
-4. Create your first RFC: `govctl new rfc "Feature Title"`
-
-For CLI usage details, see the [README](https://github.com/govctl-org/govctl#readme).
+2. Follow the [Getting Started guide](./guide/getting-started.md) to install and initialize
+3. Learn about [RFCs](./guide/rfcs.md), [ADRs](./guide/adrs.md), and [Work Items](./guide/work-items.md)
