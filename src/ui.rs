@@ -1,4 +1,6 @@
-//! CLI output formatting with colors (per ADR-0005).
+//! CLI output formatting with colors.
+//!
+//! Implements [[ADR-0005]] CLI output color scheme and formatting.
 //!
 //! Provides consistent, colorized output for all CLI commands.
 //! Colors auto-disable when output is not a TTY (agent-friendly).

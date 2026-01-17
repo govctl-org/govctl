@@ -1,4 +1,6 @@
 //! JSON and frontmatter mutation utilities.
+//!
+//! Implements [[ADR-0006]] global dry-run support for content-modifying commands.
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogEntry, ClauseSpec, RfcSpec};
@@ -8,7 +10,7 @@ use chrono::Local;
 use semver::Version;
 use std::path::Path;
 
-/// Write operation mode (per ADR-0006).
+/// Write operation mode.
 ///
 /// Controls whether write operations execute or just preview.
 #[derive(Debug, Clone, Copy, Default)]

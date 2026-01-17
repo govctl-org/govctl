@@ -1,4 +1,8 @@
 //! Schema validation and state machine rules.
+//!
+//! Implements validation per [[RFC-0000]] and [[RFC-0001]]:
+//! - [[ADR-0003]] signature verification for rendered projections
+//! - [[ADR-0010]] placeholder description detection
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};

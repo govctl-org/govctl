@@ -1,5 +1,7 @@
 //! Source code reference scanning.
 //!
+//! Implements [[ADR-0009]] configurable source code reference scanning.
+//!
 //! Scans files matching include/exclude glob patterns for references to
 //! governance artifacts and validates they exist in the project index.
 

@@ -1,4 +1,6 @@
 //! Edit command implementation - modify artifacts.
+//!
+//! Implements [[ADR-0007]] ergonomic array field matching for remove and tick commands.
 
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;

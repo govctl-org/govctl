@@ -1,10 +1,11 @@
 //! SSOT to Markdown rendering.
 //!
+//! Implements [[ADR-0003]] signatures and [[ADR-0011]] inline reference expansion.
+//!
 //! Rendered markdown files are read-only projections. Each includes:
 //! - A "GENERATED" comment warning not to edit
 //! - A SHA-256 signature for tampering detection
-//!
-//! Per ADR-0003: Signatures are computed from canonicalized source content.
+//! - Inline `[[artifact-id]]` references expanded to markdown links
 
 use crate::config::Config;
 use crate::model::{AdrEntry, ClauseKind, ClauseStatus, RfcIndex, WorkItemEntry};

@@ -1,4 +1,6 @@
 //! Configuration loading and management.
+//!
+//! Implements [[ADR-0009]] configurable source code reference scanning.
 
 use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};

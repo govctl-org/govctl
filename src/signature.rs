@@ -1,10 +1,12 @@
 //! Deterministic signature computation for rendered projections.
 //!
+//! Implements [[ADR-0003]] deterministic hash signatures.
+//!
 //! Signatures ensure rendered markdown files are read-only projections
 //! of the authoritative JSON/TOML sources. Any direct edit to the markdown
 //! will break the signature, which is detected by `govctl check`.
 //!
-//! Per ADR-0003: Hash is SHA-256 of canonicalized content with sorted keys.
+//! Hash is SHA-256 of canonicalized content with sorted keys.
 
 use crate::model::{AdrEntry, RfcIndex, WorkItemEntry};
 use serde_json::Value;

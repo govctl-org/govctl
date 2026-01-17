@@ -1,4 +1,11 @@
 //! Data models for all governed artifacts.
+//!
+//! Implements data structures per [[RFC-0000]] governance framework:
+//! - RFCs with clauses ([[RFC-0000:C-RFC-DEF]])
+//! - ADRs ([[RFC-0000:C-ADR-DEF]])
+//! - Work Items ([[RFC-0000:C-WORK-DEF]])
+//!
+//! Lifecycle state machines per [[RFC-0001]].
 
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
