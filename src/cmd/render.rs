@@ -5,6 +5,7 @@ use crate::diagnostic::Diagnostic;
 use crate::load::load_rfcs;
 use crate::parse::{load_adrs, load_work_items};
 use crate::render::{write_adr_md, write_rfc, write_work_item_md};
+use crate::ui;
 
 /// Render RFC markdown from JSON source
 pub fn render(
@@ -18,7 +19,7 @@ pub fn render(
     })?;
 
     if rfcs.is_empty() {
-        eprintln!("No RFCs found in {}", config.rfc_dir().display());
+        ui::not_found("RFC", &config.rfc_dir());
         return Ok(vec![]);
     }
 
@@ -40,7 +41,7 @@ pub fn render(
     }
 
     if !dry_run {
-        eprintln!("✓ Rendered {} RFC(s)", rfcs_to_render.len());
+        ui::render_summary(rfcs_to_render.len(), "RFC");
     }
 
     Ok(vec![])
@@ -51,7 +52,7 @@ pub fn render_adrs(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Diagnos
     let adrs = load_adrs(config)?;
 
     if adrs.is_empty() {
-        eprintln!("No ADRs found");
+        ui::info("No ADRs found");
         return Ok(vec![]);
     }
 
@@ -60,7 +61,7 @@ pub fn render_adrs(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Diagnos
     }
 
     if !dry_run {
-        eprintln!("✓ Rendered {} ADR(s)", adrs.len());
+        ui::render_summary(adrs.len(), "ADR");
     }
 
     Ok(vec![])
@@ -71,7 +72,7 @@ pub fn render_work_items(config: &Config, dry_run: bool) -> anyhow::Result<Vec<D
     let items = load_work_items(config)?;
 
     if items.is_empty() {
-        eprintln!("No work items found");
+        ui::info("No work items found");
         return Ok(vec![]);
     }
 
@@ -80,7 +81,7 @@ pub fn render_work_items(config: &Config, dry_run: bool) -> anyhow::Result<Vec<D
     }
 
     if !dry_run {
-        eprintln!("✓ Rendered {} work item(s)", items.len());
+        ui::render_summary(items.len(), "work item");
     }
 
     Ok(vec![])

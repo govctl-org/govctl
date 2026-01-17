@@ -12,6 +12,7 @@ use crate::signature::{
     compute_adr_signature, compute_rfc_signature, compute_work_item_signature,
     format_signature_header,
 };
+use crate::ui;
 use std::fmt::Write as FmtWrite;
 use std::io::Write;
 
@@ -246,7 +247,7 @@ pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Resu
 
         let mut file = std::fs::File::create(&output_path)?;
         file.write_all(content.as_bytes())?;
-        eprintln!("Rendered: {}", output_path.display());
+        ui::rendered(&output_path);
     }
 
     Ok(())
@@ -349,7 +350,7 @@ pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::R
         std::fs::create_dir_all(&output_dir)?;
         let mut file = std::fs::File::create(&output_path)?;
         file.write_all(rendered.as_bytes())?;
-        eprintln!("Rendered: {}", output_path.display());
+        ui::rendered(&output_path);
     }
 
     Ok(())
@@ -472,7 +473,7 @@ pub fn write_work_item_md(
         std::fs::create_dir_all(&output_dir)?;
         let mut file = std::fs::File::create(&output_path)?;
         file.write_all(rendered.as_bytes())?;
-        eprintln!("Rendered: {}", output_path.display());
+        ui::rendered(&output_path);
     }
 
     Ok(())

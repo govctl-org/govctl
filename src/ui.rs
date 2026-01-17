@@ -3,6 +3,8 @@
 //! Provides consistent, colorized output for all CLI commands.
 //! Colors auto-disable when output is not a TTY (agent-friendly).
 
+#![allow(dead_code)] // Helpers for future command migrations
+
 use owo_colors::OwoColorize;
 use std::fmt::Display;
 use std::path::Path;
@@ -113,12 +115,7 @@ pub fn moved(filename: &str, status: &str) {
 /// Format a status transition message
 pub fn transitioned(id: &str, action: &str, target: &str) {
     if use_colors() {
-        eprintln!(
-            "{} {}: {}",
-            action,
-            id.cyan().bold(),
-            target.green()
-        );
+        eprintln!("{} {}: {}", action, id.cyan().bold(), target.green());
     } else {
         eprintln!("{} {}: {}", action, id, target);
     }
@@ -127,11 +124,7 @@ pub fn transitioned(id: &str, action: &str, target: &str) {
 /// Format a phase advance message
 pub fn phase_advanced(id: &str, phase: &str) {
     if use_colors() {
-        eprintln!(
-            "Advanced {} to phase: {}",
-            id.cyan().bold(),
-            phase.green()
-        );
+        eprintln!("Advanced {} to phase: {}", id.cyan().bold(), phase.green());
     } else {
         eprintln!("Advanced {} to phase: {}", id, phase);
     }

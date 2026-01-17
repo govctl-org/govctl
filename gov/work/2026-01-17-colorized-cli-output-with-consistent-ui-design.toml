@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-17-009"
 title = "Colorized CLI output with consistent UI design"
-status = "active"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
+completed = "2026-01-17"
 refs = ["ADR-0005"]
 
 [content]
@@ -15,16 +16,16 @@ notes = ""
 
 [[content.acceptance_criteria]]
 text = "Create ui module with color helpers"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Success messages display in green"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Error messages display in red"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "File paths and IDs highlighted"
-status = "pending"
+status = "done"

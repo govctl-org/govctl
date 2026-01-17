@@ -320,7 +320,7 @@ fn main() -> ExitCode {
             let has_warnings = diags.iter().any(|d| d.level == DiagnosticLevel::Warning);
 
             for diag in &diags {
-                eprintln!("{diag}");
+                ui::diagnostic(diag);
             }
 
             if has_errors {

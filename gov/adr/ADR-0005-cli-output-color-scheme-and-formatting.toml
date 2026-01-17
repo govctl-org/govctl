@@ -2,8 +2,9 @@
 schema = 1
 id = "ADR-0005"
 title = "CLI output color scheme and formatting"
-status = "proposed"
+status = "accepted"
 date = "2026-01-17"
+refs = ["RFC-0000"]
 
 [content]
 context = "CLI output uses plain text with no visual hierarchy. Users cannot quickly distinguish success from failure, or identify important values. Status messages blend together making output hard to scan."
