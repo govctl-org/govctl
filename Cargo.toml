@@ -54,6 +54,7 @@ slug = "0.1"
 # TUI (optional)
 ratatui = { version = "0.30", optional = true }
 crossterm = { version = "0.29", optional = true }
+sha2 = "0.10.9"
 
 [dev-dependencies]
 insta = { version = "1", features = ["yaml"] }

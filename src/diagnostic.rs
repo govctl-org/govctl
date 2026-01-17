@@ -47,6 +47,10 @@ pub enum DiagnosticCode {
     E0902JsonParseError,
     E0903YamlParseError,
 
+    // Signature errors (E06xx)
+    E0601SignatureMismatch,
+    E0602SignatureMissing,
+
     // Warnings (W01xx)
     W0101RfcNoChangelog,
     W0102ClauseNoSince,
@@ -84,6 +88,8 @@ impl DiagnosticCode {
             Self::E0403WorkInvalidTransition => "E0403",
             Self::E0501ConfigInvalid => "E0501",
             Self::E0502PathNotFound => "E0502",
+            Self::E0601SignatureMismatch => "E0601",
+            Self::E0602SignatureMissing => "E0602",
             Self::E0901IoError => "E0901",
             Self::E0902JsonParseError => "E0902",
             Self::E0903YamlParseError => "E0903",

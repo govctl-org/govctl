@@ -6,6 +6,7 @@ use crate::load::find_clause_json;
 use crate::model::{
     AdrStatus, ClauseStatus, ProjectIndex, RfcIndex, RfcPhase, RfcStatus, WorkItemStatus,
 };
+use crate::signature::{compute_rfc_signature, extract_signature};
 use crate::write::read_clause;
 
 // =============================================================================
@@ -204,7 +205,7 @@ impl ValidationResult {
 }
 
 /// Validate the entire project
-pub fn validate_project(index: &ProjectIndex, _config: &Config) -> ValidationResult {
+pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResult {
     let mut result = ValidationResult {
         rfc_count: index.rfcs.len(),
         clause_count: index.iter_clauses().count(),
@@ -217,6 +218,9 @@ pub fn validate_project(index: &ProjectIndex, _config: &Config) -> ValidationRes
     for rfc in &index.rfcs {
         validate_rfc(rfc, &mut result);
     }
+
+    // Validate RFC signatures (per ADR-0003)
+    validate_rfc_signatures(index, config, &mut result);
 
     // Validate cross-references
     validate_clause_references(index, &mut result);
@@ -244,6 +248,54 @@ pub fn validate_project(index: &ProjectIndex, _config: &Config) -> ValidationRes
     // Validate Work Items (no specific checks currently)
 
     result
+}
+
+/// Validate RFC rendered markdown signatures (per ADR-0003)
+fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut ValidationResult) {
+    let output_dir = config.rfc_output();
+
+    for rfc in &index.rfcs {
+        let md_path = output_dir.join(format!("{}.md", rfc.rfc.rfc_id));
+
+        // Skip if rendered file doesn't exist yet
+        if !md_path.exists() {
+            continue;
+        }
+
+        // Read rendered markdown
+        let md_content = match std::fs::read_to_string(&md_path) {
+            Ok(content) => content,
+            Err(_) => continue, // Skip on read error
+        };
+
+        // Extract signature from rendered markdown
+        let Some(existing_sig) = extract_signature(&md_content) else {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0602SignatureMissing,
+                format!(
+                    "Rendered markdown missing signature. Run 'govctl render' to regenerate: {}",
+                    rfc.rfc.rfc_id
+                ),
+                md_path.display().to_string(),
+            ));
+            continue;
+        };
+
+        // Compute expected signature from source
+        let expected_sig = compute_rfc_signature(rfc);
+
+        // Compare
+        if existing_sig != expected_sig {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0601SignatureMismatch,
+                format!(
+                    "Signature mismatch: rendered markdown was edited directly or source changed. Run 'govctl render' to regenerate: {}",
+                    rfc.rfc.rfc_id
+                ),
+                md_path.display().to_string(),
+            ));
+        }
+    }
 }
 
 /// Validate a single RFC

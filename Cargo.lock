@@ -750,6 +750,7 @@ dependencies = [
  "semver",
  "serde",
  "serde_json",
+ "sha2",
  "slug",
  "strum",
  "tempfile",

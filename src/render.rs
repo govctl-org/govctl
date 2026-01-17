@@ -1,13 +1,26 @@
 //! SSOT to Markdown rendering.
+//!
+//! Rendered markdown files are read-only projections. Each includes:
+//! - A "GENERATED" comment warning not to edit
+//! - A SHA-256 signature for tampering detection
+//!
+//! Per ADR-0003: Signatures are computed from canonicalized source content.
 
 use crate::config::Config;
 use crate::model::{AdrEntry, ClauseKind, ClauseStatus, RfcIndex, WorkItemEntry};
+use crate::signature::{
+    compute_adr_signature, compute_rfc_signature, compute_work_item_signature,
+    format_signature_header,
+};
 use std::fmt::Write as FmtWrite;
 use std::io::Write;
 
 /// Render an RFC to Markdown
 pub fn render_rfc(rfc: &RfcIndex) -> String {
     let mut out = String::new();
+
+    // Compute signature from source content (per ADR-0003)
+    let signature = compute_rfc_signature(rfc);
 
     // YAML frontmatter (for compatibility with existing tooling)
     writeln!(out, "---").unwrap();
@@ -24,6 +37,10 @@ pub fn render_rfc(rfc: &RfcIndex) -> String {
         writeln!(out, "  updated: {updated}").unwrap();
     }
     writeln!(out, "---").unwrap();
+    writeln!(out).unwrap();
+
+    // Signature header (tampering detection per ADR-0003)
+    out.push_str(&format_signature_header(&rfc.rfc.rfc_id, &signature));
     writeln!(out).unwrap();
 
     // Title
@@ -166,6 +183,13 @@ pub fn render_adr(adr: &AdrEntry) -> String {
     let content = &adr.spec.content;
     let mut out = String::new();
 
+    // Compute signature (per ADR-0003)
+    let signature = compute_adr_signature(adr);
+
+    // Signature header
+    out.push_str(&format_signature_header(&meta.id, &signature));
+    writeln!(out).unwrap();
+
     // Title
     writeln!(out, "# {}: {}", meta.id, meta.title).unwrap();
     writeln!(out).unwrap();
@@ -260,6 +284,13 @@ pub fn render_work_item(item: &WorkItemEntry) -> String {
     let meta = item.meta();
     let content = &item.spec.content;
     let mut out = String::new();
+
+    // Compute signature (per ADR-0003)
+    let signature = compute_work_item_signature(item);
+
+    // Signature header
+    out.push_str(&format_signature_header(&meta.id, &signature));
+    writeln!(out).unwrap();
 
     // Title
     writeln!(out, "# {}", meta.title).unwrap();

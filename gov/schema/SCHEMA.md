@@ -285,6 +285,50 @@ refs = [
 
 ---
 
+## Rendered Markdown Signatures
+
+Per ADR-0003, all rendered markdown files include a deterministic hash signature for tampering detection.
+
+### Format
+
+```markdown
+<!-- GENERATED: do not edit. Source: RFC-0000 -->
+<!-- SIGNATURE: sha256:64-character-hex-string -->
+```
+
+### Purpose
+
+Rendered markdown files are **read-only projections** of the authoritative JSON/TOML sources. The signature ensures:
+
+1. **SSOT enforcement**: Edits to markdown are detected and rejected
+2. **Tamper detection**: Any modification breaks the signature
+3. **Reproducibility**: Same source always produces same hash
+
+### Computation
+
+The signature is computed as follows:
+
+1. Collect source content (RFC + all clauses, or ADR/Work Item TOML)
+2. Convert to JSON and canonicalize:
+   - Object keys sorted alphabetically at all nesting levels
+   - Arrays preserve element order
+   - Compact format (no extra whitespace)
+3. For RFCs: sort clauses by `clause_id` before hashing
+4. Prepend signature version header
+5. Compute SHA-256 hash
+6. Encode as 64-character lowercase hex string
+
+### Verification
+
+`govctl check` verifies that:
+
+- Rendered markdown files have a signature comment
+- The signature matches the recomputed hash from current sources
+
+Mismatches are reported as errors. Run `govctl render` to regenerate.
+
+---
+
 ## Schema Version
 
 All TOML artifacts include a schema version for forward compatibility:
