@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-17-004"
 title = "Fix artifact lifecycle design flaws"
-status = "active"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
+completed = "2026-01-17"
 refs = ["ADR-0002"]
 
 [content]
@@ -21,16 +22,16 @@ notes = ""
 
 [[content.acceptance_criteria]]
 text = "Clause kind enum has only 'normative' and 'informative'"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "ADR status enum includes 'rejected'"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Work Item lifecycle allows queue to cancelled transition"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "RFC status×phase rules documented in SCHEMA.md"
-status = "pending"
+status = "done"
