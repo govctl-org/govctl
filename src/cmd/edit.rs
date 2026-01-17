@@ -846,3 +846,319 @@ fn resolve_single_match(
         anyhow::bail!("{}", msg);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // =========================================================================
+    // ArtifactType::from_id Tests
+    // =========================================================================
+
+    #[test]
+    fn test_artifact_type_clause() {
+        assert_eq!(
+            ArtifactType::from_id("RFC-0001:C-NAME"),
+            Some(ArtifactType::Clause)
+        );
+        assert_eq!(
+            ArtifactType::from_id("RFC-0000:C-SUMMARY"),
+            Some(ArtifactType::Clause)
+        );
+    }
+
+    #[test]
+    fn test_artifact_type_rfc() {
+        assert_eq!(ArtifactType::from_id("RFC-0001"), Some(ArtifactType::Rfc));
+        assert_eq!(ArtifactType::from_id("RFC-9999"), Some(ArtifactType::Rfc));
+    }
+
+    #[test]
+    fn test_artifact_type_adr() {
+        assert_eq!(ArtifactType::from_id("ADR-0001"), Some(ArtifactType::Adr));
+        assert_eq!(ArtifactType::from_id("ADR-0007"), Some(ArtifactType::Adr));
+    }
+
+    #[test]
+    fn test_artifact_type_work_item_by_prefix() {
+        assert_eq!(
+            ArtifactType::from_id("WI-2026-01-17-001"),
+            Some(ArtifactType::WorkItem)
+        );
+    }
+
+    #[test]
+    fn test_artifact_type_work_item_by_hyphen() {
+        // Any ID with hyphen that doesn't match RFC/ADR/Clause is WorkItem
+        assert_eq!(
+            ArtifactType::from_id("2026-01-17-add-tests"),
+            Some(ArtifactType::WorkItem)
+        );
+    }
+
+    #[test]
+    fn test_artifact_type_unknown() {
+        assert_eq!(ArtifactType::from_id("UNKNOWN"), None);
+        assert_eq!(ArtifactType::from_id("foo"), None);
+    }
+
+    // =========================================================================
+    // find_matches Tests - Substring (Default)
+    // =========================================================================
+
+    #[test]
+    fn test_find_matches_substring_single() {
+        let items = vec!["apple", "banana", "cherry"];
+        let opts = MatchOptions {
+            pattern: Some("nan"),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 1),
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_substring_case_insensitive() {
+        let items = vec!["Apple", "BANANA", "Cherry"];
+        let opts = MatchOptions {
+            pattern: Some("banana"),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 1),
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_substring_multiple() {
+        let items = vec!["test-one", "test-two", "other"];
+        let opts = MatchOptions {
+            pattern: Some("test"),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Multiple(indices) => assert_eq!(indices, vec![0, 1]),
+            _ => panic!("Expected multiple matches"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_substring_none() {
+        let items = vec!["apple", "banana", "cherry"];
+        let opts = MatchOptions {
+            pattern: Some("xyz"),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::None => {}
+            _ => panic!("Expected no match"),
+        }
+    }
+
+    // =========================================================================
+    // find_matches Tests - Exact Match
+    // =========================================================================
+
+    #[test]
+    fn test_find_matches_exact_match() {
+        let items = vec!["test", "testing", "test"];
+        let opts = MatchOptions {
+            pattern: Some("test"),
+            exact: true,
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Multiple(indices) => assert_eq!(indices, vec![0, 2]),
+            _ => panic!("Expected multiple matches"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_exact_case_sensitive() {
+        let items = vec!["Test", "test", "TEST"];
+        let opts = MatchOptions {
+            pattern: Some("test"),
+            exact: true,
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 1),
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_exact_no_match() {
+        let items = vec!["testing", "tested"];
+        let opts = MatchOptions {
+            pattern: Some("test"),
+            exact: true,
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::None => {}
+            _ => panic!("Expected no match"),
+        }
+    }
+
+    // =========================================================================
+    // find_matches Tests - Index-based
+    // =========================================================================
+
+    #[test]
+    fn test_find_matches_at_positive() {
+        let items = vec!["a", "b", "c"];
+        let opts = MatchOptions {
+            at: Some(1),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 1),
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_at_zero() {
+        let items = vec!["first", "second"];
+        let opts = MatchOptions {
+            at: Some(0),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 0),
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_at_negative() {
+        let items = vec!["a", "b", "c"];
+        let opts = MatchOptions {
+            at: Some(-1),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 2), // last item
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_at_negative_two() {
+        let items = vec!["a", "b", "c", "d"];
+        let opts = MatchOptions {
+            at: Some(-2),
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 2), // second to last
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_at_out_of_range() {
+        let items = vec!["a", "b"];
+        let opts = MatchOptions {
+            at: Some(5),
+            ..Default::default()
+        };
+        assert!(find_matches(&items, &opts).is_err());
+    }
+
+    #[test]
+    fn test_find_matches_at_negative_out_of_range() {
+        let items = vec!["a", "b"];
+        let opts = MatchOptions {
+            at: Some(-5),
+            ..Default::default()
+        };
+        assert!(find_matches(&items, &opts).is_err());
+    }
+
+    // =========================================================================
+    // find_matches Tests - Regex
+    // =========================================================================
+
+    #[test]
+    fn test_find_matches_regex_single() {
+        let items = vec!["RFC-0001", "ADR-0001", "WI-001"];
+        let opts = MatchOptions {
+            pattern: Some("RFC-.*"),
+            regex: true,
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Single(idx) => assert_eq!(idx, 0),
+            _ => panic!("Expected single match"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_regex_multiple() {
+        let items = vec!["test-1", "test-2", "other"];
+        let opts = MatchOptions {
+            pattern: Some("test-\\d+"),
+            regex: true,
+            ..Default::default()
+        };
+        match find_matches(&items, &opts).unwrap() {
+            MatchResult::Multiple(indices) => assert_eq!(indices, vec![0, 1]),
+            _ => panic!("Expected multiple matches"),
+        }
+    }
+
+    #[test]
+    fn test_find_matches_regex_invalid() {
+        let items = vec!["a", "b"];
+        let opts = MatchOptions {
+            pattern: Some("[invalid"),
+            regex: true,
+            ..Default::default()
+        };
+        assert!(find_matches(&items, &opts).is_err());
+    }
+
+    // =========================================================================
+    // remove_indices Tests
+    // =========================================================================
+
+    #[test]
+    fn test_remove_indices_single() {
+        let mut items = vec!["a", "b", "c"];
+        remove_indices(&mut items, &[1]);
+        assert_eq!(items, vec!["a", "c"]);
+    }
+
+    #[test]
+    fn test_remove_indices_multiple() {
+        let mut items = vec!["a", "b", "c", "d"];
+        remove_indices(&mut items, &[1, 3]);
+        assert_eq!(items, vec!["a", "c"]);
+    }
+
+    #[test]
+    fn test_remove_indices_all() {
+        let mut items = vec!["a", "b", "c"];
+        remove_indices(&mut items, &[0, 1, 2]);
+        assert!(items.is_empty());
+    }
+
+    #[test]
+    fn test_remove_indices_preserves_order() {
+        let mut items = vec!["1", "2", "3", "4", "5"];
+        remove_indices(&mut items, &[0, 2, 4]);
+        assert_eq!(items, vec!["2", "4"]);
+    }
+
+    #[test]
+    fn test_remove_indices_empty() {
+        let mut items = vec!["a", "b"];
+        remove_indices(&mut items, &[]);
+        assert_eq!(items, vec!["a", "b"]);
+    }
+}

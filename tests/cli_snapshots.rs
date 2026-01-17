@@ -55,10 +55,7 @@ fn run_commands(fixture: &str, commands: &[&[&str]]) -> String {
             }
         }
 
-        output.push_str(&format!(
-            "exit: {}\n\n",
-            result.status.code().unwrap_or(-1)
-        ));
+        output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
     }
 
     output
