@@ -10,8 +10,9 @@ refs = ["ADR-0009"]
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Added source code scanning to detect references to governance artifacts in comments.
+
+Configurable via [source_scan] in config.toml with pattern matching. Detects broken or outdated references during `govctl check`."""
 
 [[content.acceptance_criteria]]
 text = "Add SourceScanConfig to config.rs with enabled, roots, exts, pattern fields"

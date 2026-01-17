@@ -10,8 +10,9 @@ refs = ["ADR-0004"]
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Adopted Keep a Changelog format for RFC changelog entries.
+
+Changed the ChangelogEntry model to use standard categories (Added, Changed, Deprecated, Removed, Fixed, Security) and updated the renderer to display them properly."""
 notes = []
 
 [[content.acceptance_criteria]]

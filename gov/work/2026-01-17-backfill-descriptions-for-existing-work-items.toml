@@ -1,0 +1,27 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-026"
+title = "Backfill descriptions for existing work items"
+status = "done"
+created = "2026-01-17"
+started = "2026-01-17"
+completed = "2026-01-17"
+
+[content]
+description = """
+Add meaningful descriptions to the 21 existing work items that currently have placeholder text.
+
+Each description should summarize what the work item accomplished, derived from:
+- The work item title
+- The acceptance criteria
+- Related ADRs or RFCs
+
+Goal: Eliminate all W0108 warnings from `govctl check`."""
+
+[[content.acceptance_criteria]]
+text = "All work items have meaningful descriptions"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "No W0108 warnings from govctl check"
+status = "done"

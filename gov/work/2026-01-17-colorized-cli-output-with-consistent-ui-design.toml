@@ -10,8 +10,9 @@ refs = ["ADR-0005"]
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Added colorized output to govctl CLI commands.
+
+Created a ui module with color helpers for consistent styling: green for success, red for errors, with highlighted file paths and artifact IDs."""
 notes = []
 
 [[content.acceptance_criteria]]

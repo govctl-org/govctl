@@ -9,8 +9,9 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Migrated governance artifacts from the original format to TOML-based storage.
+
+This established the foundation for govctl's data model with structured TOML files for ADRs and work items."""
 notes = []
 
 [[content.acceptance_criteria]]

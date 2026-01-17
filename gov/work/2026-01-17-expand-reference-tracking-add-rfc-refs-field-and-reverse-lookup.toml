@@ -10,8 +10,9 @@ refs = ["ADR-0008"]
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Added refs field to RFCs for cross-referencing other artifacts.
+
+RFCs can now reference ADRs, other RFCs, and work items, with validation to ensure referenced artifacts exist."""
 
 [[content.acceptance_criteria]]
 text = "Add refs field to RfcSpec model"

@@ -9,6 +9,7 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Refactored edit.rs to reduce code duplication.
+
+Consolidated repeated patterns into shared helper functions, improving maintainability and reducing the chance of inconsistent behavior."""
 notes = []

@@ -9,8 +9,9 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Fixed multiple issues in the Claude /gov command file.
+
+Corrected command syntax (tick -s flag, --stdin, --id), fixed file paths, added fast path for doc-only changes, and improved workflow documentation."""
 
 [[content.acceptance_criteria]]
 text = "Fix tick command syntax (use -s flag)"

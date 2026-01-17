@@ -9,8 +9,9 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Enhanced the markdown renderer to expand refs into clickable links.
+
+ADR and work item refs now render as markdown links pointing to the appropriate files, with clause refs including anchors for direct navigation."""
 notes = []
 
 [[content.acceptance_criteria]]

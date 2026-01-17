@@ -9,6 +9,7 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Improved remove and tick commands with flexible matching options.
+
+Added --exact, --at (index), --regex, and --all flags. Default to case-insensitive substring matching for ergonomic use."""
 notes = []

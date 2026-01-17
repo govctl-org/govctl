@@ -9,8 +9,9 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Added validation for refs fields in ADRs and work items during `govctl check`.
+
+Ensures all referenced artifacts (RFCs, ADRs, work items, clauses) actually exist, preventing broken cross-references."""
 notes = []
 
 [[content.acceptance_criteria]]

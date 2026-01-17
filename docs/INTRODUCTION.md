@@ -13,7 +13,7 @@ RFCs (Requests for Comments) are the normative specifications that define govctl
 
 ### Decisions
 
-ADRs (Architectural Decision Records) document significant design choices. They explain *why* things are built a certain way.
+ADRs (Architectural Decision Records) document significant design choices. They explain _why_ things are built a certain way.
 
 ### Work Items
 

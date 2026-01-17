@@ -9,8 +9,9 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Simplified the WorkItem schema by removing unused fields.
+
+Removed the decisions field and changed notes from a single String to `Vec<String>` for better structured note-taking."""
 
 [[content.acceptance_criteria]]
 text = "Remove decisions field from WorkItemContent struct"

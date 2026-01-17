@@ -9,6 +9,7 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Redesigned the `govctl status` command output to display a colorized dashboard.
+
+Shows artifact counts by type and status in a visually organized format."""
 notes = []

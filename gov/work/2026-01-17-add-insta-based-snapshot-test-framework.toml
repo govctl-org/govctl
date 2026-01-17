@@ -9,8 +9,9 @@ completed = "2026-01-17"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Set up insta-based snapshot testing framework for CLI commands.
+
+Added test fixtures, path normalization, color stripping, and snapshot tests for check, list, and status commands."""
 notes = []
 
 [[content.acceptance_criteria]]
