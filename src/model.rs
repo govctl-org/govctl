@@ -322,8 +322,15 @@ pub enum ChangelogCategory {
 
 impl ChangelogCategory {
     /// All valid category prefixes for parsing
-    pub const VALID_PREFIXES: &'static [&'static str] =
-        &["add", "changed", "deprecated", "removed", "fix", "security", "chore"];
+    pub const VALID_PREFIXES: &'static [&'static str] = &[
+        "add",
+        "changed",
+        "deprecated",
+        "removed",
+        "fix",
+        "security",
+        "chore",
+    ];
 
     /// Parse a prefix string into a category
     pub fn from_prefix(prefix: &str) -> Option<Self> {

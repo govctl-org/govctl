@@ -24,9 +24,13 @@ Execute a complete, auditable workflow to do: `$ARGUMENTS`
 {{GOVCTL}} new adr "<title>"                  # Create ADR
 {{GOVCTL}} check                              # Validate everything
 {{GOVCTL}} render                             # Render to markdown
+{{GOVCTL}} render changelog                   # Generate CHANGELOG.md
+{{GOVCTL}} release <version>                  # Cut a release (e.g., 1.0.0)
 
-# Checklist management
-{{GOVCTL}} add <WI-ID> acceptance_criteria "Criterion text"
+# Checklist management (with changelog category prefixes)
+{{GOVCTL}} add <WI-ID> acceptance_criteria "add: New feature"    # → Added section
+{{GOVCTL}} add <WI-ID> acceptance_criteria "fix: Bug fixed"      # → Fixed section
+{{GOVCTL}} add <WI-ID> acceptance_criteria "chore: Tests pass"   # → excluded from changelog
 {{GOVCTL}} tick <WI-ID> acceptance_criteria "pattern" -s done
 
 # Multi-line input
@@ -142,9 +146,22 @@ Parse `$ARGUMENTS` and classify:
 
 **Important:** Work items cannot be marked done without acceptance criteria.
 
+**Category prefixes** (for changelog generation per ADR-0012/ADR-0013):
+
+| Prefix       | Changelog Section | Notes                        |
+| ------------ | ----------------- | ---------------------------- |
+| `add:`       | Added             | Default if no prefix         |
+| `changed:`   | Changed           |                              |
+| `deprecated:`| Deprecated        |                              |
+| `removed:`   | Removed           |                              |
+| `fix:`       | Fixed             |                              |
+| `security:`  | Security          |                              |
+| `chore:`     | *(excluded)*      | Internal tasks, test passing |
+
 ```bash
-{{GOVCTL}} add <WI-ID> acceptance_criteria "First criterion"
-{{GOVCTL}} add <WI-ID> acceptance_criteria "Second criterion"
+{{GOVCTL}} add <WI-ID> acceptance_criteria "add: Implement feature X"
+{{GOVCTL}} add <WI-ID> acceptance_criteria "fix: Memory leak resolved"
+{{GOVCTL}} add <WI-ID> acceptance_criteria "chore: All tests pass"  # won't appear in changelog
 ```
 
 ### 1.4 Record
