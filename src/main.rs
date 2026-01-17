@@ -148,8 +148,21 @@ enum Commands {
         id: String,
         /// Array field name
         field: String,
-        /// Value to remove
-        value: String,
+        /// Pattern to match (substring by default, case-insensitive)
+        #[arg(required_unless_present = "at")]
+        pattern: Option<String>,
+        /// Remove by index (0-based, negative from end)
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match (case-sensitive)
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern match
+        #[arg(long)]
+        regex: bool,
+        /// Remove all matches (required for multiple matches)
+        #[arg(long)]
+        all: bool,
     },
 
     /// Bump RFC version
@@ -228,11 +241,21 @@ enum Commands {
         id: String,
         /// Field (acceptance_criteria, decisions, or alternatives)
         field: String,
-        /// Item text (substring match)
-        item: String,
+        /// Pattern to match (substring by default, case-insensitive)
+        #[arg(required_unless_present = "at")]
+        pattern: Option<String>,
         /// New status (done, pending, cancelled for WI; accepted, rejected, considered for ADR)
         #[arg(value_enum)]
         status: TickStatus,
+        /// Match by index (0-based, negative from end)
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match (case-sensitive)
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern match
+        #[arg(long)]
+        regex: bool,
     },
 
     /// Launch interactive TUI dashboard
@@ -422,8 +445,23 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             value,
             stdin,
         } => cmd::edit::add_to_field(&config, id, field, value.as_deref(), *stdin, op),
-        Commands::Remove { id, field, value } => {
-            cmd::edit::remove_from_field(&config, id, field, value, op)
+        Commands::Remove {
+            id,
+            field,
+            pattern,
+            at,
+            exact,
+            regex,
+            all,
+        } => {
+            let match_opts = cmd::edit::MatchOptions {
+                pattern: pattern.as_deref(),
+                at: *at,
+                exact: *exact,
+                regex: *regex,
+                all: *all,
+            };
+            cmd::edit::remove_from_field(&config, id, field, &match_opts, op)
         }
         Commands::Bump {
             rfc_id,
@@ -453,9 +491,21 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         Commands::Tick {
             id,
             field,
-            item,
+            pattern,
             status,
-        } => cmd::edit::tick_item(&config, id, field, item, *status, op),
+            at,
+            exact,
+            regex,
+        } => {
+            let match_opts = cmd::edit::MatchOptions {
+                pattern: pattern.as_deref(),
+                at: *at,
+                exact: *exact,
+                regex: *regex,
+                all: false, // tick never allows --all
+            };
+            cmd::edit::tick_item(&config, id, field, &match_opts, *status, op)
+        }
         #[cfg(feature = "tui")]
         Commands::Tui => {
             tui::run(&config)?;

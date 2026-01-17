@@ -748,6 +748,7 @@ dependencies = [
  "jsonschema",
  "owo-colors",
  "ratatui",
+ "regex",
  "semver",
  "serde",
  "serde_json",

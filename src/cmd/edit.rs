@@ -9,8 +9,114 @@ use crate::write::{
     WriteOp, read_clause, read_rfc, update_clause_field, update_rfc_field, write_clause, write_rfc,
 };
 use anyhow::Context;
+use regex::Regex;
 use std::io::Read;
 use std::path::Path;
+
+/// Options for matching array elements (per ADR-0007)
+#[derive(Debug, Clone, Default)]
+pub struct MatchOptions<'a> {
+    /// Pattern to match (substring by default)
+    pub pattern: Option<&'a str>,
+    /// Match by index (0-based, negative from end)
+    pub at: Option<i32>,
+    /// Exact match (case-sensitive)
+    pub exact: bool,
+    /// Regex pattern
+    pub regex: bool,
+    /// Allow removing all matches
+    pub all: bool,
+}
+
+/// Result of matching against an array
+#[derive(Debug)]
+pub enum MatchResult {
+    /// No matches found
+    None,
+    /// Single match at index
+    Single(usize),
+    /// Multiple matches at indices
+    Multiple(Vec<usize>),
+}
+
+/// Find matching indices in a list of strings
+fn find_matches(items: &[&str], opts: &MatchOptions) -> anyhow::Result<MatchResult> {
+    // Index-based matching
+    if let Some(idx) = opts.at {
+        let len = items.len() as i32;
+        let actual_idx = if idx < 0 { len + idx } else { idx };
+        if actual_idx < 0 || actual_idx >= len {
+            anyhow::bail!(
+                "Index {} out of range (array has {} items)",
+                idx,
+                items.len()
+            );
+        }
+        return Ok(MatchResult::Single(actual_idx as usize));
+    }
+
+    // Pattern-based matching
+    let pattern = opts
+        .pattern
+        .ok_or_else(|| anyhow::anyhow!("No pattern or index provided"))?;
+
+    let matches: Vec<usize> = if opts.regex {
+        let re = Regex::new(pattern).map_err(|e| anyhow::anyhow!("Invalid regex: {}", e))?;
+        items
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| re.is_match(s))
+            .map(|(i, _)| i)
+            .collect()
+    } else if opts.exact {
+        items
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| **s == pattern)
+            .map(|(i, _)| i)
+            .collect()
+    } else {
+        // Default: case-insensitive substring
+        let pattern_lower = pattern.to_lowercase();
+        items
+            .iter()
+            .enumerate()
+            .filter(|(_, s)| s.to_lowercase().contains(&pattern_lower))
+            .map(|(i, _)| i)
+            .collect()
+    };
+
+    Ok(match matches.len() {
+        0 => MatchResult::None,
+        1 => MatchResult::Single(matches[0]),
+        _ => MatchResult::Multiple(matches),
+    })
+}
+
+/// Format error message for multiple matches
+fn format_multiple_match_error(
+    id: &str,
+    field: &str,
+    pattern: &str,
+    items: &[&str],
+    indices: &[usize],
+) -> String {
+    let mut msg = format!(
+        "{} items match '{}' in {}.{}:\n",
+        indices.len(),
+        pattern,
+        id,
+        field
+    );
+    for &i in indices {
+        msg.push_str(&format!("  [{}] {}\n", i, items[i]));
+    }
+    msg.push_str("\nOptions:\n");
+    msg.push_str(
+        "  • Use more specific pattern\n  • Use --at <index> to select one\n  • Use --all to remove all matches"
+    );
+    msg
+}
 
 /// Read value from stdin, trimming trailing newline
 fn read_stdin() -> anyhow::Result<String> {
@@ -437,12 +543,12 @@ pub fn add_to_field(
     Ok(vec![])
 }
 
-/// Remove a value from an array field
+/// Remove matching items from an array field (per ADR-0007)
 pub fn remove_from_field(
     config: &Config,
     id: &str,
     field: &str,
-    value: &str,
+    opts: &MatchOptions,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     if id.starts_with("RFC-") && !id.contains(':') {
@@ -453,14 +559,19 @@ pub fn remove_from_field(
 
         match field {
             "owners" => {
-                rfc.owners.retain(|o| o != value);
+                let items: Vec<&str> = rfc.owners.iter().map(|s| s.as_str()).collect();
+                let to_remove = resolve_matches(id, field, &items, opts)?;
+                let removed: Vec<_> = to_remove.iter().map(|&i| rfc.owners[i].clone()).collect();
+                remove_indices(&mut rfc.owners, &to_remove);
+
+                write_rfc(&rfc_path, &rfc, op)?;
+                if !op.is_preview() {
+                    for item in &removed {
+                        ui::field_removed(id, field, item);
+                    }
+                }
             }
             _ => anyhow::bail!("Cannot remove from field: {field}"),
-        }
-
-        write_rfc(&rfc_path, &rfc, op)?;
-        if !op.is_preview() {
-            ui::field_removed(id, field, value);
         }
     } else if id.contains(':') {
         let clause_path = find_clause_json(config, id)
@@ -470,14 +581,22 @@ pub fn remove_from_field(
 
         match field {
             "anchors" => {
-                clause.anchors.retain(|a| a != value);
+                let items: Vec<&str> = clause.anchors.iter().map(|s| s.as_str()).collect();
+                let to_remove = resolve_matches(id, field, &items, opts)?;
+                let removed: Vec<_> = to_remove
+                    .iter()
+                    .map(|&i| clause.anchors[i].clone())
+                    .collect();
+                remove_indices(&mut clause.anchors, &to_remove);
+
+                write_clause(&clause_path, &clause, op)?;
+                if !op.is_preview() {
+                    for item in &removed {
+                        ui::field_removed(id, field, item);
+                    }
+                }
             }
             _ => anyhow::bail!("Cannot remove from field: {field}"),
-        }
-
-        write_clause(&clause_path, &clause, op)?;
-        if !op.is_preview() {
-            ui::field_removed(id, field, value);
         }
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
@@ -487,17 +606,44 @@ pub fn remove_from_field(
 
         match field {
             "refs" => {
-                entry.spec.govctl.refs.retain(|r| r != value);
+                let items: Vec<&str> = entry.spec.govctl.refs.iter().map(|s| s.as_str()).collect();
+                let to_remove = resolve_matches(id, field, &items, opts)?;
+                let removed: Vec<_> = to_remove
+                    .iter()
+                    .map(|&i| entry.spec.govctl.refs[i].clone())
+                    .collect();
+                remove_indices(&mut entry.spec.govctl.refs, &to_remove);
+
+                write_adr(&entry.path, &entry.spec, op)?;
+                if !op.is_preview() {
+                    for item in &removed {
+                        ui::field_removed(id, field, item);
+                    }
+                }
             }
             "alternatives" => {
-                entry.spec.content.alternatives.retain(|a| a.text != value);
+                let items: Vec<&str> = entry
+                    .spec
+                    .content
+                    .alternatives
+                    .iter()
+                    .map(|a| a.text.as_str())
+                    .collect();
+                let to_remove = resolve_matches(id, field, &items, opts)?;
+                let removed: Vec<_> = to_remove
+                    .iter()
+                    .map(|&i| entry.spec.content.alternatives[i].text.clone())
+                    .collect();
+                remove_indices(&mut entry.spec.content.alternatives, &to_remove);
+
+                write_adr(&entry.path, &entry.spec, op)?;
+                if !op.is_preview() {
+                    for item in &removed {
+                        ui::field_removed(id, field, item);
+                    }
+                }
             }
             _ => anyhow::bail!("Cannot remove from field: {field}"),
-        }
-
-        write_adr(&entry.path, &entry.spec, op)?;
-        if !op.is_preview() {
-            ui::field_removed(id, field, value);
         }
     } else if id.starts_with("WI-") || id.contains("-") {
         let mut entry = load_work_items(config)?
@@ -507,24 +653,66 @@ pub fn remove_from_field(
 
         match field {
             "refs" => {
-                entry.spec.govctl.refs.retain(|r| r != value);
+                let items: Vec<&str> = entry.spec.govctl.refs.iter().map(|s| s.as_str()).collect();
+                let to_remove = resolve_matches(id, field, &items, opts)?;
+                let removed: Vec<_> = to_remove
+                    .iter()
+                    .map(|&i| entry.spec.govctl.refs[i].clone())
+                    .collect();
+                remove_indices(&mut entry.spec.govctl.refs, &to_remove);
+
+                write_work_item(&entry.path, &entry.spec, op)?;
+                if !op.is_preview() {
+                    for item in &removed {
+                        ui::field_removed(id, field, item);
+                    }
+                }
             }
             "acceptance_criteria" => {
-                entry
+                let items: Vec<&str> = entry
                     .spec
                     .content
                     .acceptance_criteria
-                    .retain(|c| c.text != value);
+                    .iter()
+                    .map(|c| c.text.as_str())
+                    .collect();
+                let to_remove = resolve_matches(id, field, &items, opts)?;
+                let removed: Vec<_> = to_remove
+                    .iter()
+                    .map(|&i| entry.spec.content.acceptance_criteria[i].text.clone())
+                    .collect();
+                remove_indices(&mut entry.spec.content.acceptance_criteria, &to_remove);
+
+                write_work_item(&entry.path, &entry.spec, op)?;
+                if !op.is_preview() {
+                    for item in &removed {
+                        ui::field_removed(id, field, item);
+                    }
+                }
             }
             "decisions" => {
-                entry.spec.content.decisions.retain(|d| d.text != value);
+                let items: Vec<&str> = entry
+                    .spec
+                    .content
+                    .decisions
+                    .iter()
+                    .map(|d| d.text.as_str())
+                    .collect();
+                let to_remove = resolve_matches(id, field, &items, opts)?;
+                let removed: Vec<_> = to_remove
+                    .iter()
+                    .map(|&i| entry.spec.content.decisions[i].text.clone())
+                    .collect();
+                remove_indices(&mut entry.spec.content.decisions, &to_remove);
+
+                write_work_item(&entry.path, &entry.spec, op)?;
+                if !op.is_preview() {
+                    for item in &removed {
+                        ui::field_removed(id, field, item);
+                    }
+                }
             }
             _ => anyhow::bail!("Cannot remove from field: {field}"),
-        }
-
-        write_work_item(&entry.path, &entry.spec, op)?;
-        if !op.is_preview() {
-            ui::field_removed(id, field, value);
         }
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
@@ -533,12 +721,52 @@ pub fn remove_from_field(
     Ok(vec![])
 }
 
-/// Mark a checklist item with a new status
+/// Resolve match result to list of indices, handling errors for no/multiple matches
+fn resolve_matches(
+    id: &str,
+    field: &str,
+    items: &[&str],
+    opts: &MatchOptions,
+) -> anyhow::Result<Vec<usize>> {
+    if items.is_empty() {
+        anyhow::bail!("Field {}.{} is empty", id, field);
+    }
+
+    match find_matches(items, opts)? {
+        MatchResult::None => {
+            let pattern = opts.pattern.unwrap_or("<index>");
+            anyhow::bail!("No items match '{}' in {}.{}", pattern, id, field);
+        }
+        MatchResult::Single(idx) => Ok(vec![idx]),
+        MatchResult::Multiple(indices) => {
+            if opts.all {
+                Ok(indices)
+            } else {
+                let pattern = opts.pattern.unwrap_or("");
+                anyhow::bail!(
+                    "{}",
+                    format_multiple_match_error(id, field, pattern, items, &indices)
+                );
+            }
+        }
+    }
+}
+
+/// Remove items at given indices (must be sorted descending to avoid index shift)
+fn remove_indices<T>(vec: &mut Vec<T>, indices: &[usize]) {
+    let mut sorted: Vec<usize> = indices.to_vec();
+    sorted.sort_by(|a, b| b.cmp(a)); // descending
+    for i in sorted {
+        vec.remove(i);
+    }
+}
+
+/// Mark a checklist item with a new status (per ADR-0007)
 pub fn tick_item(
     config: &Config,
     id: &str,
     field: &str,
-    item: &str,
+    opts: &MatchOptions,
     status: crate::TickStatus,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
@@ -558,45 +786,39 @@ pub fn tick_item(
             crate::TickStatus::Cancelled => ChecklistStatus::Cancelled,
         };
 
-        let found = match field {
+        let ticked_text = match field {
             "acceptance_criteria" => {
-                if let Some(c) = entry
+                let items: Vec<&str> = entry
                     .spec
                     .content
                     .acceptance_criteria
-                    .iter_mut()
-                    .find(|c| c.text.contains(item))
-                {
-                    c.status = new_status;
-                    true
-                } else {
-                    false
-                }
+                    .iter()
+                    .map(|c| c.text.as_str())
+                    .collect();
+                let indices = resolve_single_match(id, field, &items, opts)?;
+                let text = entry.spec.content.acceptance_criteria[indices].text.clone();
+                entry.spec.content.acceptance_criteria[indices].status = new_status;
+                text
             }
             "decisions" => {
-                if let Some(d) = entry
+                let items: Vec<&str> = entry
                     .spec
                     .content
                     .decisions
-                    .iter_mut()
-                    .find(|d| d.text.contains(item))
-                {
-                    d.status = new_status;
-                    true
-                } else {
-                    false
-                }
+                    .iter()
+                    .map(|d| d.text.as_str())
+                    .collect();
+                let indices = resolve_single_match(id, field, &items, opts)?;
+                let text = entry.spec.content.decisions[indices].text.clone();
+                entry.spec.content.decisions[indices].status = new_status;
+                text
             }
             _ => anyhow::bail!("Unknown field for tick: {field}"),
         };
 
-        if !found {
-            anyhow::bail!("Item not found: {item}");
-        }
-
         write_work_item(&entry.path, &entry.spec, op)?;
         if !op.is_preview() {
-            ui::ticked(item, new_status.as_ref());
+            ui::ticked(&ticked_text, new_status.as_ref());
         }
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
@@ -610,35 +832,65 @@ pub fn tick_item(
             crate::TickStatus::Cancelled => AlternativeStatus::Rejected,
         };
 
-        let found = match field {
+        let ticked_text = match field {
             "alternatives" => {
-                if let Some(a) = entry
+                let items: Vec<&str> = entry
                     .spec
                     .content
                     .alternatives
-                    .iter_mut()
-                    .find(|a| a.text.contains(item))
-                {
-                    a.status = new_status;
-                    true
-                } else {
-                    false
-                }
+                    .iter()
+                    .map(|a| a.text.as_str())
+                    .collect();
+                let indices = resolve_single_match(id, field, &items, opts)?;
+                let text = entry.spec.content.alternatives[indices].text.clone();
+                entry.spec.content.alternatives[indices].status = new_status;
+                text
             }
             _ => anyhow::bail!("Unknown field for tick: {field}"),
         };
 
-        if !found {
-            anyhow::bail!("Item not found: {item}");
-        }
-
         write_adr(&entry.path, &entry.spec, op)?;
         if !op.is_preview() {
-            ui::ticked(item, new_status.as_ref());
+            ui::ticked(&ticked_text, new_status.as_ref());
         }
     } else {
         anyhow::bail!("Tick only works for work items and ADRs: {id}");
     }
 
     Ok(vec![])
+}
+
+/// Resolve match result to a single index (tick doesn't allow multiple)
+fn resolve_single_match(
+    id: &str,
+    field: &str,
+    items: &[&str],
+    opts: &MatchOptions,
+) -> anyhow::Result<usize> {
+    if items.is_empty() {
+        anyhow::bail!("Field {}.{} is empty", id, field);
+    }
+
+    match find_matches(items, opts)? {
+        MatchResult::None => {
+            let pattern = opts.pattern.unwrap_or("<index>");
+            anyhow::bail!("No items match '{}' in {}.{}", pattern, id, field);
+        }
+        MatchResult::Single(idx) => Ok(idx),
+        MatchResult::Multiple(indices) => {
+            let pattern = opts.pattern.unwrap_or("");
+            let mut msg = format!(
+                "{} items match '{}' in {}.{}:\n",
+                indices.len(),
+                pattern,
+                id,
+                field
+            );
+            for &i in &indices {
+                msg.push_str(&format!("  [{}] {}\n", i, items[i]));
+            }
+            msg.push_str("\nUse more specific pattern or --at <index> to select one");
+            anyhow::bail!("{}", msg);
+        }
+    }
 }
