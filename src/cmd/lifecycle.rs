@@ -6,6 +6,7 @@ use crate::diagnostic::Diagnostic;
 use crate::load::{find_clause_json, find_rfc_json};
 use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus};
 use crate::parse::{load_adrs, write_adr};
+use crate::ui;
 use crate::validate::{
     is_valid_adr_transition, is_valid_phase_transition, is_valid_status_transition,
 };
@@ -30,11 +31,11 @@ pub fn bump(
     match (level, summary, changes.is_empty()) {
         (Some(lvl), Some(sum), _) => {
             let new_version = bump_rfc_version(&mut rfc, lvl, sum)?;
-            eprintln!("Bumped {rfc_id} to {new_version}");
+            ui::version_bumped(rfc_id, &new_version);
 
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
-                eprintln!("  Added change: {change}");
+                ui::sub_info(format!("Added change: {change}"));
             }
         }
         (Some(_), None, _) => {
@@ -43,7 +44,7 @@ pub fn bump(
         (None, _, false) => {
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
-                eprintln!("Added change to {rfc_id} v{}: {change}", rfc.version);
+                ui::changelog_change_added(rfc_id, &rfc.version, change);
             }
         }
         (None, Some(_), true) => {
@@ -86,7 +87,7 @@ pub fn finalize(
     rfc.updated = Some(crate::write::today());
     write_rfc(&rfc_path, &rfc)?;
 
-    eprintln!("Finalized {rfc_id} to status: {}", target_status.as_ref());
+    ui::finalized(rfc_id, target_status.as_ref());
     Ok(vec![])
 }
 
@@ -117,7 +118,7 @@ pub fn advance(config: &Config, rfc_id: &str, phase: RfcPhase) -> anyhow::Result
     rfc.updated = Some(crate::write::today());
     write_rfc(&rfc_path, &rfc)?;
 
-    eprintln!("Advanced {rfc_id} to phase: {}", phase.as_ref());
+    ui::phase_advanced(rfc_id, phase.as_ref());
     Ok(vec![])
 }
 
@@ -138,7 +139,7 @@ pub fn accept_adr(config: &Config, adr_id: &str) -> anyhow::Result<Vec<Diagnosti
     entry.spec.govctl.status = AdrStatus::Accepted;
     write_adr(&entry.path, &entry.spec)?;
 
-    eprintln!("Accepted ADR: {adr_id}");
+    ui::accepted("ADR", adr_id);
     Ok(vec![])
 }
 
@@ -161,7 +162,7 @@ pub fn deprecate(config: &Config, id: &str) -> anyhow::Result<Vec<Diagnostic>> {
         clause.status = ClauseStatus::Deprecated;
         write_clause(&clause_path, &clause)?;
 
-        eprintln!("Deprecated clause: {id}");
+        ui::deprecated("clause", id);
     } else if id.starts_with("RFC-") {
         // Use finalize for RFC deprecation
         return finalize(config, id, FinalizeStatus::Deprecated);
@@ -198,8 +199,7 @@ pub fn supersede(config: &Config, id: &str, by: &str) -> anyhow::Result<Vec<Diag
         clause.superseded_by = Some(by.to_string());
         write_clause(&clause_path, &clause)?;
 
-        eprintln!("Superseded clause: {id}");
-        eprintln!("  Replaced by: {by}");
+        ui::superseded("clause", id, by);
     } else if id.starts_with("ADR-") {
         // Validate replacement exists
         let _ = load_adrs(config)?
@@ -223,8 +223,7 @@ pub fn supersede(config: &Config, id: &str, by: &str) -> anyhow::Result<Vec<Diag
         entry.spec.govctl.superseded_by = Some(by.to_string());
         write_adr(&entry.path, &entry.spec)?;
 
-        eprintln!("Superseded ADR: {id}");
-        eprintln!("  Replaced by: {by}");
+        ui::superseded("ADR", id, by);
     } else {
         anyhow::bail!("Supersede is not supported for this artifact type: {id}");
     }

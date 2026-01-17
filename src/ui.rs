@@ -247,6 +247,71 @@ pub fn render_summary(count: usize, kind: &str) {
 
 use crate::diagnostic::{Diagnostic, DiagnosticLevel};
 
+/// Format a simple "Created: path" message
+pub fn created_path(path: &Path) {
+    if use_colors() {
+        eprintln!("{}: {}", "Created".green(), path.display().cyan());
+    } else {
+        eprintln!("Created: {}", path.display());
+    }
+}
+
+/// Format an updated message
+pub fn updated(kind: &str, id: &str) {
+    if use_colors() {
+        eprintln!("Updated {}: {}", kind, id.cyan().bold());
+    } else {
+        eprintln!("Updated {}: {}", kind, id);
+    }
+}
+
+/// Format a finalized message
+pub fn finalized(id: &str, status: &str) {
+    if use_colors() {
+        eprintln!(
+            "Finalized {} to status: {}",
+            id.cyan().bold(),
+            status.green()
+        );
+    } else {
+        eprintln!("Finalized {} to status: {}", id, status);
+    }
+}
+
+/// Format an indented sub-info line
+pub fn sub_info(msg: impl Display) {
+    eprintln!("  {}", msg);
+}
+
+/// Format an error message
+pub fn error(msg: impl Display) {
+    if use_colors() {
+        eprintln!("{}: {}", "Error".red().bold(), msg);
+    } else {
+        eprintln!("Error: {}", msg);
+    }
+}
+
+/// Format a dry-run preview header
+pub fn dry_run_preview(path: &Path) {
+    if use_colors() {
+        eprintln!("{}: {}", "Would write".yellow(), path.display().cyan());
+    } else {
+        eprintln!("Would write: {}", path.display());
+    }
+    eprintln!("--- Content preview ---");
+}
+
+/// Format a preview content line
+pub fn preview_line(line: &str) {
+    eprintln!("{}", line);
+}
+
+/// Format preview truncation
+pub fn preview_truncated() {
+    eprintln!("...");
+}
+
 /// Format a diagnostic message
 pub fn diagnostic(diag: &Diagnostic) {
     if use_colors() {

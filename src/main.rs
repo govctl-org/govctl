@@ -342,7 +342,7 @@ fn main() -> ExitCode {
             }
         }
         Err(e) => {
-            eprintln!("Error: {e}");
+            ui::error(&e);
             ExitCode::FAILURE
         }
     }

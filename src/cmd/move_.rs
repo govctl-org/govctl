@@ -4,6 +4,7 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::model::{ChecklistStatus, WorkItemStatus};
 use crate::parse::{load_work_item, write_work_item};
+use crate::ui;
 use crate::validate::is_valid_work_transition;
 use crate::write::today;
 use std::path::Path;
@@ -80,10 +81,9 @@ pub fn move_item(
 
     write_work_item(&work_path, &entry.spec)?;
 
-    eprintln!(
-        "Moved {} to {}",
-        work_path.file_name().unwrap().to_string_lossy(),
-        status.as_ref()
+    ui::moved(
+        &work_path.file_name().unwrap().to_string_lossy(),
+        status.as_ref(),
     );
 
     Ok(vec![])

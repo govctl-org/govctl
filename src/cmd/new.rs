@@ -8,6 +8,7 @@ use crate::model::{
     RfcPhase, RfcSpec, RfcStatus, SectionSpec, WorkItemContent, WorkItemMeta, WorkItemSpec,
     WorkItemStatus,
 };
+use crate::ui;
 use crate::write::today;
 use slug::slugify;
 
@@ -21,7 +22,7 @@ pub fn init_project(config: &Config, force: bool) -> anyhow::Result<Vec<Diagnost
 
     // Write config
     std::fs::write(config_path, Config::default_toml())?;
-    eprintln!("Created: govctl.toml");
+    ui::created_path(config_path);
 
     // Create directories
     let dirs = [
@@ -36,10 +37,10 @@ pub fn init_project(config: &Config, force: bool) -> anyhow::Result<Vec<Diagnost
 
     for dir in dirs {
         std::fs::create_dir_all(dir)?;
-        eprintln!("Created: {}", dir.display());
+        ui::created_path(dir);
     }
 
-    eprintln!("✓ Project initialized");
+    ui::success("Project initialized");
     Ok(vec![])
 }
 
@@ -148,8 +149,8 @@ fn create_rfc(
     let content = serde_json::to_string_pretty(&rfc)?;
     std::fs::write(&rfc_json, content)?;
 
-    eprintln!("Created RFC: {}", rfc_json.display());
-    eprintln!("  Clauses dir: {}", clauses_dir.display());
+    ui::created("RFC", &rfc_json);
+    ui::sub_info(format!("Clauses dir: {}", clauses_dir.display()));
 
     Ok(vec![])
 }
@@ -218,11 +219,11 @@ fn create_clause(
     let rfc_content = serde_json::to_string_pretty(&rfc)?;
     std::fs::write(&rfc_json, rfc_content)?;
 
-    eprintln!("Created clause: {}", clause_path.display());
-    eprintln!(
-        "  Added to section '{}', path: {}",
+    ui::created("clause", &clause_path);
+    ui::sub_info(format!(
+        "Added to section '{}', path: {}",
         section, clause_rel_path
-    );
+    ));
 
     Ok(vec![])
 }
@@ -278,7 +279,7 @@ fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
 
     let content = toml::to_string_pretty(&spec)?;
     std::fs::write(&adr_path, content)?;
-    eprintln!("Created ADR: {}", adr_path.display());
+    ui::created("ADR", &adr_path);
 
     Ok(vec![])
 }
@@ -357,7 +358,7 @@ fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Resul
 
     let content = toml::to_string_pretty(&spec)?;
     std::fs::write(&work_path, content)?;
-    eprintln!("Created work item: {}", work_path.display());
+    ui::created("work item", &work_path);
 
     Ok(vec![])
 }

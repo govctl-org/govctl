@@ -4,6 +4,7 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::{find_clause_json, find_rfc_json};
 use crate::parse::{load_adrs, load_work_items, write_adr, write_work_item};
+use crate::ui;
 use crate::write::{
     read_clause, read_rfc, update_clause_field, update_rfc_field, write_clause, write_rfc,
 };
@@ -56,7 +57,7 @@ pub fn edit_clause(
     clause.text = new_text;
     write_clause(&clause_path, &clause)?;
 
-    eprintln!("Updated clause: {clause_id}");
+    ui::updated("clause", clause_id);
     Ok(vec![])
 }
 
@@ -89,7 +90,7 @@ pub fn set_field(
         update_clause_field(&mut clause, field, value)?;
         write_clause(&clause_path, &clause)?;
 
-        eprintln!("Set {id}.{field} = {value}");
+        ui::field_set(id, field, value);
     } else if id.starts_with("RFC-") {
         // It's an RFC
         let rfc_path =
@@ -108,7 +109,7 @@ pub fn set_field(
         update_rfc_field(&mut rfc, field, value)?;
         write_rfc(&rfc_path, &rfc)?;
 
-        eprintln!("Set {id}.{field} = {value}");
+        ui::field_set(id, field, value);
     } else if id.starts_with("ADR-") {
         // It's an ADR - load, modify, write TOML
         let mut entry = load_adrs(config)?
@@ -132,7 +133,7 @@ pub fn set_field(
         }
 
         write_adr(&entry.path, &entry.spec)?;
-        eprintln!("Set {id}.{field} = {value}");
+        ui::field_set(id, field, value);
     } else if id.starts_with("WI-")
         || (id.contains("-") && !id.starts_with("RFC-") && !id.starts_with("ADR-"))
     {
@@ -156,7 +157,7 @@ pub fn set_field(
         }
 
         write_work_item(&entry.path, &entry.spec)?;
-        eprintln!("Set {id}.{field} = {value}");
+        ui::field_set(id, field, value);
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }
@@ -317,7 +318,7 @@ pub fn add_to_field(
         }
 
         write_rfc(&rfc_path, &rfc)?;
-        eprintln!("Added '{value}' to {id}.{field}");
+        ui::field_added(id, field, value);
     } else if id.contains(':') {
         // Clause array fields: anchors
         let clause_path = find_clause_json(config, id)
@@ -335,7 +336,7 @@ pub fn add_to_field(
         }
 
         write_clause(&clause_path, &clause)?;
-        eprintln!("Added '{value}' to {id}.{field}");
+        ui::field_added(id, field, value);
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
@@ -368,7 +369,7 @@ pub fn add_to_field(
         }
 
         write_adr(&entry.path, &entry.spec)?;
-        eprintln!("Added '{value}' to {id}.{field}");
+        ui::field_added(id, field, value);
     } else if id.starts_with("WI-") || id.contains("-") {
         let mut entry = load_work_items(config)?
             .into_iter()
@@ -407,7 +408,7 @@ pub fn add_to_field(
         }
 
         write_work_item(&entry.path, &entry.spec)?;
-        eprintln!("Added '{value}' to {id}.{field}");
+        ui::field_added(id, field, value);
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }
@@ -436,7 +437,7 @@ pub fn remove_from_field(
         }
 
         write_rfc(&rfc_path, &rfc)?;
-        eprintln!("Removed '{value}' from {id}.{field}");
+        ui::field_removed(id, field, value);
     } else if id.contains(':') {
         let clause_path = find_clause_json(config, id)
             .ok_or_else(|| anyhow::anyhow!("Clause not found: {id}"))?;
@@ -451,7 +452,7 @@ pub fn remove_from_field(
         }
 
         write_clause(&clause_path, &clause)?;
-        eprintln!("Removed '{value}' from {id}.{field}");
+        ui::field_removed(id, field, value);
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
@@ -469,7 +470,7 @@ pub fn remove_from_field(
         }
 
         write_adr(&entry.path, &entry.spec)?;
-        eprintln!("Removed '{value}' from {id}.{field}");
+        ui::field_removed(id, field, value);
     } else if id.starts_with("WI-") || id.contains("-") {
         let mut entry = load_work_items(config)?
             .into_iter()
@@ -494,7 +495,7 @@ pub fn remove_from_field(
         }
 
         write_work_item(&entry.path, &entry.spec)?;
-        eprintln!("Removed '{value}' from {id}.{field}");
+        ui::field_removed(id, field, value);
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }
@@ -563,7 +564,7 @@ pub fn tick_item(
         }
 
         write_work_item(&entry.path, &entry.spec)?;
-        eprintln!("Marked '{item}' as {}", new_status.as_ref());
+        ui::ticked(item, new_status.as_ref());
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
@@ -599,7 +600,7 @@ pub fn tick_item(
         }
 
         write_adr(&entry.path, &entry.spec)?;
-        eprintln!("Marked '{item}' as {}", new_status.as_ref());
+        ui::ticked(item, new_status.as_ref());
     } else {
         anyhow::bail!("Tick only works for work items and ADRs: {id}");
     }

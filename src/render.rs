@@ -232,13 +232,11 @@ pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Resu
     let content = render_rfc(rfc);
 
     if dry_run {
-        eprintln!("Would write: {}", output_path.display());
-        eprintln!("--- Content preview ---");
-        // Print first 20 lines
+        ui::dry_run_preview(&output_path);
         for line in content.lines().take(20) {
-            eprintln!("{line}");
+            ui::preview_line(line);
         }
-        eprintln!("...");
+        ui::preview_truncated();
     } else {
         // Ensure parent directory exists
         if let Some(parent) = output_path.parent() {
@@ -340,12 +338,11 @@ pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::R
     let rendered = render_adr(adr);
 
     if dry_run {
-        eprintln!("Would write: {}", output_path.display());
-        eprintln!("--- Content preview ---");
+        ui::dry_run_preview(&output_path);
         for line in rendered.lines().take(15) {
-            eprintln!("{line}");
+            ui::preview_line(line);
         }
-        eprintln!("...");
+        ui::preview_truncated();
     } else {
         std::fs::create_dir_all(&output_dir)?;
         let mut file = std::fs::File::create(&output_path)?;
@@ -463,12 +460,11 @@ pub fn write_work_item_md(
     let rendered = render_work_item(item);
 
     if dry_run {
-        eprintln!("Would write: {}", output_path.display());
-        eprintln!("--- Content preview ---");
+        ui::dry_run_preview(&output_path);
         for line in rendered.lines().take(15) {
-            eprintln!("{line}");
+            ui::preview_line(line);
         }
-        eprintln!("...");
+        ui::preview_truncated();
     } else {
         std::fs::create_dir_all(&output_dir)?;
         let mut file = std::fs::File::create(&output_path)?;
