@@ -3,6 +3,6 @@
   "title": "ADR Definition",
   "kind": "normative",
   "status": "active",
-  "text": "An ADR (Architectural Decision Record) documents a significant design decision.\n\nEvery ADR MUST be stored as a TOML file containing:\n- `[govctl]` section with: id, title, status, date, refs\n- `[content]` section with: context, decision, consequences\n\nADR status lifecycle:\n\n    proposed → accepted\n                  ↓\n             superseded\n\n**proposed**: Under consideration. Not yet binding.\n\n**accepted**: Ratified. Design SHOULD follow this decision.\n\n**superseded**: Replaced by a newer ADR. Listed in `superseded_by` field.",
+  "text": "An ADR (Architectural Decision Record) documents a significant design decision.\n\nEvery ADR MUST be stored as a TOML file containing:\n- `[govctl]` section with: id, title, status, date, refs\n- `[content]` section with: context, decision, consequences\n\nADR status lifecycle:\n\n    proposed → accepted → superseded\n             → rejected\n\n**proposed**: Under consideration. Not yet binding.\n\n**accepted**: Ratified. Design SHOULD follow this decision.\n\n**rejected**: Declined after consideration. Reason documented in decision field.\n\n**superseded**: Replaced by a newer ADR. Listed in `superseded_by` field.",
   "since": "1.0.0"
 }

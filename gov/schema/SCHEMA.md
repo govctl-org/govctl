@@ -53,9 +53,13 @@ spec → impl → test → stable
 | `test` | Verifying implementation. |
 | `stable` | Released for production use. |
 
-**Constraints:**
-- `draft` + `stable` is FORBIDDEN
-- `deprecated` + `impl`/`test` is FORBIDDEN
+**Invariant Rules:**
+
+1. **Phase gate rule**: Phase MUST NOT advance past `spec` until status is `normative`.
+2. **Stability rule**: Status `draft` + phase `stable` is FORBIDDEN.
+3. **Deprecation rule**: Status `deprecated` + phase `impl` or `test` is FORBIDDEN.
+
+These rules ensure specifications are locked before implementation begins, and deprecated specs receive no new development work.
 
 ### Clause Status
 
@@ -74,19 +78,21 @@ active → superseded
 
 ```
 proposed → accepted → superseded
+         → rejected
 ```
 
 | Status | Meaning |
 |--------|---------|
 | `proposed` | Under consideration. |
 | `accepted` | Ratified decision. |
+| `rejected` | Declined after consideration. |
 | `superseded` | Replaced by newer ADR. |
 
 ### Work Item Status
 
 ```
 queue → active → done
-              → cancelled
+    ↘        ↘ cancelled
 ```
 
 | Status | Meaning |
@@ -94,7 +100,7 @@ queue → active → done
 | `queue` | Planned, not started. |
 | `active` | In progress. |
 | `done` | Completed successfully. |
-| `cancelled` | Abandoned. |
+| `cancelled` | Abandoned (from queue or active). |
 
 ---
 
@@ -206,7 +212,7 @@ status = "accepted"
 |-------|----------|------|-------------|
 | `govctl.id` | yes | string | Unique identifier `ADR-NNNN` |
 | `govctl.title` | yes | string | Decision title |
-| `govctl.status` | yes | enum | `proposed` \| `accepted` \| `superseded` |
+| `govctl.status` | yes | enum | `proposed` \| `accepted` \| `rejected` \| `superseded` |
 | `govctl.date` | yes | date | Decision date |
 | `govctl.superseded_by` | no | string | ADR ID that replaces this |
 | `govctl.refs` | no | array | Cross-references |
