@@ -3,7 +3,7 @@
 //! Implements [[ADR-0007]] ergonomic array field matching for remove and tick commands.
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::{find_clause_json, find_rfc_json};
 use crate::model::{AdrEntry, ClauseSpec, RfcSpec, WorkItemEntry};
 use crate::parse::{load_adrs, load_work_items, write_adr, write_work_item};
@@ -138,11 +138,12 @@ fn find_matches(items: &[&str], opts: &MatchOptions) -> anyhow::Result<MatchResu
         let len = items.len() as i32;
         let actual_idx = if idx < 0 { len + idx } else { idx };
         if actual_idx < 0 || actual_idx >= len {
-            anyhow::bail!(
-                "Index {} out of range (array has {} items)",
-                idx,
-                items.len()
-            );
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0806InvalidPattern,
+                format!("Index {} out of range (array has {} items)", idx, items.len()),
+                "array",
+            )
+            .into());
         }
         return Ok(MatchResult::Single(actual_idx as usize));
     }
@@ -225,8 +226,22 @@ fn resolve_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
     match (value, stdin) {
         (Some(v), false) => Ok(v.to_string()),
         (None, true) => read_stdin(),
-        (None, false) => anyhow::bail!("Provide a value or use --stdin"),
-        (Some(_), true) => anyhow::bail!("Cannot use both value and --stdin"),
+        (None, false) => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0801MissingRequiredArg,
+                "Provide a value or use --stdin",
+                "input",
+            )
+            .into())
+        }
+        (Some(_), true) => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0802ConflictingArgs,
+                "Cannot use both value and --stdin",
+                "input",
+            )
+            .into())
+        }
     }
 }
 
@@ -249,7 +264,14 @@ pub fn edit_clause(
         (None, Some(path), false) => std::fs::read_to_string(path)
             .with_context(|| format!("Failed to read text file: {}", path.display()))?,
         (None, None, true) => read_stdin()?,
-        (None, None, false) => anyhow::bail!("Provide --text, --text-file, or --stdin"),
+        (None, None, false) => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0801MissingRequiredArg,
+                "Provide --text, --text-file, or --stdin",
+                "input",
+            )
+            .into())
+        }
         _ => unreachable!("clap arg group ensures mutual exclusivity"),
     };
 
@@ -317,7 +339,14 @@ pub fn set_field(
                 "consequences" | "content.consequences" => {
                     entry.spec.content.consequences = value.to_string()
                 }
-                _ => anyhow::bail!("Unknown ADR field: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0803UnknownField,
+                        format!("Unknown ADR field: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             }
 
             write_adr(&entry.path, &entry.spec, op)?;
@@ -335,9 +364,21 @@ pub fn set_field(
                     entry.spec.content.description = value.to_string()
                 }
                 "notes" | "content.notes" => {
-                    anyhow::bail!("Use 'add' to append notes and 'remove' to delete them")
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0804FieldNotEditable,
+                        "Use 'add' to append notes and 'remove' to delete them",
+                        id,
+                    )
+                    .into())
                 }
-                _ => anyhow::bail!("Unknown work item field: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0803UnknownField,
+                        format!("Unknown work item field: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             }
 
             write_work_item(&entry.path, &entry.spec, op)?;
@@ -370,7 +411,14 @@ pub fn get_field(
                     "kind" => clause.kind.as_ref().to_string(),
                     "superseded_by" => clause.superseded_by.unwrap_or_default(),
                     "since" => clause.since.unwrap_or_default(),
-                    _ => anyhow::bail!("Unknown field: {f}"),
+                    _ => {
+                        return Err(Diagnostic::new(
+                            DiagnosticCode::E0803UnknownField,
+                            format!("Unknown clause field: {f}"),
+                            id,
+                        )
+                        .into())
+                    }
                 };
                 println!("{value}");
             } else {
@@ -391,7 +439,14 @@ pub fn get_field(
                     "supersedes" => rfc.supersedes.unwrap_or_default(),
                     "created" => rfc.created,
                     "updated" => rfc.updated.unwrap_or_default(),
-                    _ => anyhow::bail!("Unknown field: {f}"),
+                    _ => {
+                        return Err(Diagnostic::new(
+                            DiagnosticCode::E0803UnknownField,
+                            format!("Unknown RFC field: {f}"),
+                            id,
+                        )
+                        .into())
+                    }
                 };
                 println!("{value}");
             } else {
@@ -416,7 +471,14 @@ pub fn get_field(
                         |a| a.status.as_ref(),
                         |a| &a.text,
                     ),
-                    _ => anyhow::bail!("Unknown field: {f}"),
+                    _ => {
+                        return Err(Diagnostic::new(
+                            DiagnosticCode::E0803UnknownField,
+                            format!("Unknown ADR field: {f}"),
+                            id,
+                        )
+                        .into())
+                    }
                 };
                 println!("{value}");
             } else {
@@ -440,7 +502,14 @@ pub fn get_field(
                         |c| &c.text,
                     ),
                     "notes" => entry.spec.content.notes.join("\n"),
-                    _ => anyhow::bail!("Unknown field: {f}"),
+                    _ => {
+                        return Err(Diagnostic::new(
+                            DiagnosticCode::E0803UnknownField,
+                            format!("Unknown work item field: {f}"),
+                            id,
+                        )
+                        .into())
+                    }
                 };
                 println!("{value}");
             } else {
@@ -492,7 +561,14 @@ pub fn add_to_field(
             match field {
                 "owners" => push_unique(&mut data.owners, value),
                 "refs" => push_unique(&mut data.refs, value),
-                _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0810CannotAddToField,
+                        format!("Cannot add to field: {field} (not an array or unsupported)"),
+                        id,
+                    )
+                    .into())
+                }
             }
 
             write_rfc(&path, &data, op)?;
@@ -502,7 +578,14 @@ pub fn add_to_field(
 
             match field {
                 "anchors" => push_unique(&mut data.anchors, value),
-                _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0810CannotAddToField,
+                        format!("Cannot add to field: {field} (not an array or unsupported)"),
+                        id,
+                    )
+                    .into())
+                }
             }
 
             write_clause(&path, &data, op)?;
@@ -528,7 +611,14 @@ pub fn add_to_field(
                             .push(Alternative::new(value));
                     }
                 }
-                _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0810CannotAddToField,
+                        format!("Cannot add to field: {field} (not an array or unsupported)"),
+                        id,
+                    )
+                    .into())
+                }
             }
 
             write_adr(&entry.path, &entry.spec, op)?;
@@ -565,7 +655,14 @@ pub fn add_to_field(
                         entry.spec.content.notes.push(value.to_string());
                     }
                 }
-                _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0810CannotAddToField,
+                        format!("Cannot add to field: {field} (not an array or unsupported)"),
+                        id,
+                    )
+                    .into())
+                }
             }
 
             write_work_item(&entry.path, &entry.spec, op)?;
@@ -639,7 +736,14 @@ pub fn remove_from_field(
             let removed = match field {
                 "owners" => remove_matching_strings(&mut data.owners, id, field, opts)?,
                 "refs" => remove_matching_strings(&mut data.refs, id, field, opts)?,
-                _ => anyhow::bail!("Cannot remove from field: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0811CannotRemoveFromField,
+                        format!("Cannot remove from field: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             };
 
             write_rfc(&path, &data, op)?;
@@ -650,7 +754,14 @@ pub fn remove_from_field(
 
             let removed = match field {
                 "anchors" => remove_matching_strings(&mut data.anchors, id, field, opts)?,
-                _ => anyhow::bail!("Cannot remove from field: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0811CannotRemoveFromField,
+                        format!("Cannot remove from field: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             };
 
             write_clause(&path, &data, op)?;
@@ -668,7 +779,14 @@ pub fn remove_from_field(
                     field,
                     opts,
                 )?,
-                _ => anyhow::bail!("Cannot remove from field: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0811CannotRemoveFromField,
+                        format!("Cannot remove from field: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             };
 
             write_adr(&entry.path, &entry.spec, op)?;
@@ -687,7 +805,14 @@ pub fn remove_from_field(
                     opts,
                 )?,
                 "notes" => remove_matching_strings(&mut entry.spec.content.notes, id, field, opts)?,
-                _ => anyhow::bail!("Cannot remove from field: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0811CannotRemoveFromField,
+                        format!("Cannot remove from field: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             };
 
             write_work_item(&entry.path, &entry.spec, op)?;
@@ -706,13 +831,23 @@ fn resolve_matches(
     opts: &MatchOptions,
 ) -> anyhow::Result<Vec<usize>> {
     if items.is_empty() {
-        anyhow::bail!("Field {}.{} is empty", id, field);
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0812FieldEmpty,
+            format!("Field {}.{} is empty", id, field),
+            id,
+        )
+        .into());
     }
 
     match find_matches(items, opts)? {
         MatchResult::None => {
             let pattern = opts.pattern.unwrap_or("<index>");
-            anyhow::bail!("No items match '{}' in {}.{}", pattern, id, field);
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0806InvalidPattern,
+                format!("No items match '{}' in {}.{}", pattern, id, field),
+                id,
+            )
+            .into());
         }
         MatchResult::Single(idx) => Ok(vec![idx]),
         MatchResult::Multiple(indices) => {
@@ -720,9 +855,12 @@ fn resolve_matches(
                 Ok(indices)
             } else {
                 let pattern = opts.pattern.unwrap_or("");
-                anyhow::bail!(
-                    "{}",
-                    format_multiple_match_error(id, field, pattern, items, &indices)
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0807AmbiguousMatch,
+                    format_multiple_match_error(id, field, pattern, items, &indices),
+                    id,
+                )
+                .into()
                 );
             }
         }
@@ -792,7 +930,14 @@ pub fn tick_item(
                     field,
                     opts,
                 )?,
-                _ => anyhow::bail!("Unknown field for tick: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0803UnknownField,
+                        format!("Unknown field for tick: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             };
 
             write_work_item(&entry.path, &entry.spec, op)?;
@@ -817,13 +962,27 @@ pub fn tick_item(
                     field,
                     opts,
                 )?,
-                _ => anyhow::bail!("Unknown field for tick: {field}"),
+                _ => {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0803UnknownField,
+                        format!("Unknown field for tick: {field}"),
+                        id,
+                    )
+                    .into())
+                }
             };
 
             write_adr(&entry.path, &entry.spec, op)?;
             (ticked_text, status_str)
         }
-        _ => anyhow::bail!("Tick only works for work items and ADRs: {id}"),
+        _ => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0813SupersedeNotSupported,
+                format!("Tick only works for work items and ADRs: {id}"),
+                id,
+            )
+            .into())
+        }
     };
 
     if !op.is_preview() {
@@ -857,7 +1016,7 @@ fn resolve_single_match(
             msg.push_str(&format!("  [{}] {}\n", i, items[i]));
         }
         msg.push_str("\nUse more specific pattern or --at <index> to select one");
-        anyhow::bail!("{}", msg);
+        return Err(Diagnostic::new(DiagnosticCode::E0807AmbiguousMatch, msg, id).into());
     }
 }
 

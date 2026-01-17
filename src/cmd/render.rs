@@ -1,7 +1,7 @@
 //! Render command implementation.
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::load_rfcs;
 use crate::model::{ChangelogCategory, ChecklistStatus, WorkItemStatus};
 use crate::parse::{load_adrs, load_releases, load_work_items};
@@ -34,7 +34,12 @@ pub fn render(
 
     if rfcs_to_render.is_empty() {
         if let Some(id) = rfc_id {
-            anyhow::bail!("RFC not found: {id}");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("RFC not found: {id}"),
+                id,
+            )
+            .into());
         }
     }
 

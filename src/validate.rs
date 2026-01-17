@@ -122,25 +122,41 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
         .ok_or_else(|| anyhow::anyhow!("Invalid target clause ID: {target}"))?;
 
     if target_rfc != source_rfc {
-        anyhow::bail!(
-            "superseded_by must reference a clause in the same RFC (got {target_rfc}, expected {source_rfc})"
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0206ClauseSupersededByUnknown,
+            format!(
+                "superseded_by must reference a clause in the same RFC (got {target_rfc}, expected {source_rfc})"
+            ),
+            target,
+        )
+        .into());
     }
 
     // Check target clause exists
-    let target_path = find_clause_json(ctx.config, &full_target)
-        .ok_or_else(|| anyhow::anyhow!("Target clause not found: {full_target}"))?;
+    let target_path = find_clause_json(ctx.config, &full_target).ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0202ClauseNotFound,
+            format!("Target clause not found: {full_target}"),
+            &full_target,
+        )
+    })?;
 
     // Check target clause is active (not superseded or deprecated)
     let target_clause = read_clause(&target_path)?;
     match target_clause.status {
         ClauseStatus::Active => Ok(()),
-        ClauseStatus::Superseded => {
-            anyhow::bail!("Cannot supersede by a superseded clause: {full_target}")
-        }
-        ClauseStatus::Deprecated => {
-            anyhow::bail!("Cannot supersede by a deprecated clause: {full_target}")
-        }
+        ClauseStatus::Superseded => Err(Diagnostic::new(
+            DiagnosticCode::E0207ClauseSupersededByNotActive,
+            format!("Cannot supersede by a superseded clause: {full_target}"),
+            &full_target,
+        )
+        .into()),
+        ClauseStatus::Deprecated => Err(Diagnostic::new(
+            DiagnosticCode::E0207ClauseSupersededByNotActive,
+            format!("Cannot supersede by a deprecated clause: {full_target}"),
+            &full_target,
+        )
+        .into()),
     }
 }
 
@@ -151,20 +167,40 @@ fn validate_artifact_ref(config: &Config, ref_id: &str) -> anyhow::Result<()> {
 
     if ref_id.starts_with("RFC-") {
         if find_rfc_json(config, ref_id).is_none() {
-            anyhow::bail!("RFC not found: {ref_id}");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("RFC not found: {ref_id}"),
+                ref_id,
+            )
+            .into());
         }
     } else if ref_id.starts_with("ADR-") {
         let adrs = load_adrs(config)?;
         if !adrs.iter().any(|a| a.spec.govctl.id == ref_id) {
-            anyhow::bail!("ADR not found: {ref_id}");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("ADR not found: {ref_id}"),
+                ref_id,
+            )
+            .into());
         }
     } else if ref_id.starts_with("WI-") {
         let items = load_work_items(config)?;
         if !items.iter().any(|w| w.spec.govctl.id == ref_id) {
-            anyhow::bail!("Work item not found: {ref_id}");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0402WorkNotFound,
+                format!("Work item not found: {ref_id}"),
+                ref_id,
+            )
+            .into());
         }
     } else {
-        anyhow::bail!("Unknown artifact type: {ref_id}");
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0813SupersedeNotSupported,
+            format!("Unknown artifact type: {ref_id}"),
+            ref_id,
+        )
+        .into());
     }
     Ok(())
 }

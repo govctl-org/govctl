@@ -1,7 +1,7 @@
 //! Move command implementation for work items.
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChecklistStatus, WorkItemStatus};
 use crate::parse::{load_work_item, write_work_item};
 use crate::ui;
@@ -32,23 +32,34 @@ pub fn move_item(
 
     let mut entry = load_work_item(&work_path)?;
 
+    let work_id = &entry.spec.govctl.id;
     if !is_valid_work_transition(entry.spec.govctl.status, status) {
-        anyhow::bail!(
-            "Invalid transition: {} -> {}",
-            entry.spec.govctl.status.as_ref(),
-            status.as_ref()
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0403WorkInvalidTransition,
+            format!(
+                "Invalid transition: {} -> {}",
+                entry.spec.govctl.status.as_ref(),
+                status.as_ref()
+            ),
+            work_id,
+        )
+        .into());
     }
 
     // Validate acceptance criteria before marking done
     if status == WorkItemStatus::Done {
         // Must have at least one acceptance criterion
         if entry.spec.content.acceptance_criteria.is_empty() {
-            anyhow::bail!(
-                "Cannot mark as done: no acceptance criteria defined.\n\
-                 Add criteria with: govctl add {} acceptance_criteria \"<criterion>\"",
-                entry.spec.govctl.id
-            );
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0407WorkMissingCriteria,
+                format!(
+                    "Cannot mark as done: no acceptance criteria defined.\n\
+                     Add criteria with: govctl add {} acceptance_criteria \"<criterion>\"",
+                    work_id
+                ),
+                work_id,
+            )
+            .into());
         }
 
         // All criteria must be done or cancelled (no pending)
@@ -67,11 +78,16 @@ pub fn move_item(
                 .map(|t| format!("  - {t}"))
                 .collect::<Vec<_>>()
                 .join("\n");
-            anyhow::bail!(
-                "Cannot mark as done: {} pending acceptance criteria:\n{}",
-                pending.len(),
-                list
-            );
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0407WorkMissingCriteria,
+                format!(
+                    "Cannot mark as done: {} pending acceptance criteria:\n{}",
+                    pending.len(),
+                    list
+                ),
+                work_id,
+            )
+            .into());
         }
     }
 
@@ -119,7 +135,12 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
     let work_dir = &config.work_dir();
 
     if !work_dir.exists() {
-        anyhow::bail!("Work directory not found: {}", work_dir.display());
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0405WorkDirNotFound,
+            format!("Work directory not found: {}", work_dir.display()),
+            work_dir.display().to_string(),
+        )
+        .into());
     }
 
     let entries: Vec<_> = std::fs::read_dir(work_dir)?
@@ -134,14 +155,24 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
         .collect();
 
     match entries.len() {
-        0 => anyhow::bail!("No work item found matching: {name}"),
+        0 => Err(Diagnostic::new(
+            DiagnosticCode::E0402WorkNotFound,
+            format!("No work item found matching: {name}"),
+            name,
+        )
+        .into()),
         1 => Ok(entries[0].path()),
         _ => {
             let names: Vec<_> = entries
                 .iter()
                 .filter_map(|e| e.file_name().to_str().map(String::from))
                 .collect();
-            anyhow::bail!("Multiple work items match '{}': {}", name, names.join(", "));
+            Err(Diagnostic::new(
+                DiagnosticCode::E0406WorkAmbiguousMatch,
+                format!("Multiple work items match '{}': {}", name, names.join(", ")),
+                name,
+            )
+            .into())
         }
     }
 }

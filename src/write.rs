@@ -36,7 +36,12 @@ pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
         if !prefix.contains(' ') && !prefix.is_empty() {
             if let Some(category) = ChangelogCategory::from_prefix(prefix) {
                 if message.is_empty() {
-                    anyhow::bail!("Empty message after prefix '{prefix}:'");
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0805EmptyValue,
+                        format!("Empty message after prefix '{prefix}:'"),
+                        "changelog",
+                    )
+                    .into());
                 }
                 return Ok(ParsedChange {
                     category,
@@ -44,10 +49,15 @@ pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
                 });
             } else {
                 // Unknown prefix - provide helpful error
-                anyhow::bail!(
-                    "Unknown changelog prefix '{prefix}'. Valid prefixes: {}",
-                    ChangelogCategory::VALID_PREFIXES.join(", ")
-                );
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0808InvalidPrefix,
+                    format!(
+                        "Unknown changelog prefix '{prefix}'. Valid prefixes: {}",
+                        ChangelogCategory::VALID_PREFIXES.join(", ")
+                    ),
+                    "changelog",
+                )
+                .into());
             }
         }
     }
@@ -214,13 +224,21 @@ pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
             ChangelogCategory::Fixed => entry.fixed.push(parsed.message),
             ChangelogCategory::Security => entry.security.push(parsed.message),
             ChangelogCategory::Chore => {
-                anyhow::bail!(
-                    "'chore:' category is not valid for RFC changelogs (use for work items only)"
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0809ChoreNotAllowed,
+                    "'chore:' category is not valid for RFC changelogs (use for work items only)",
+                    "changelog",
                 )
+                .into())
             }
         }
     } else {
-        anyhow::bail!("No changelog entry exists. Bump version first.");
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0111RfcNoChangelog,
+            "No changelog entry exists. Bump version first.",
+            "rfc",
+        )
+        .into());
     }
     Ok(())
 }

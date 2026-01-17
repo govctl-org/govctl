@@ -2,7 +2,7 @@
 
 use crate::NewTarget;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
     AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus,
     RfcPhase, RfcSpec, RfcStatus, SectionSpec, WorkItemContent, WorkItemMeta, WorkItemSpec,
@@ -28,10 +28,12 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     let config_path = config.paths.gov_root.join("config.toml");
 
     if config_path.exists() && !force && !op.is_preview() {
-        anyhow::bail!(
-            "{} already exists (use -f to overwrite)",
-            config_path.display()
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0501ConfigInvalid,
+            format!("{} already exists (use -f to overwrite)", config_path.display()),
+            config_path.display().to_string(),
+        )
+        .into());
     }
 
     // Create directories first (config lives inside gov_root)
@@ -116,11 +118,21 @@ fn create_rfc(
         Some(id) => {
             // Validate format
             if !id.starts_with("RFC-") {
-                anyhow::bail!("RFC ID must start with 'RFC-' (got: {id})");
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0110RfcInvalidId,
+                    format!("RFC ID must start with 'RFC-' (got: {id})"),
+                    id,
+                )
+                .into());
             }
             // Check for collision (skip in preview mode)
             if !op.is_preview() && rfcs_dir.join(id).exists() {
-                anyhow::bail!("RFC already exists: {id}");
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0109RfcAlreadyExists,
+                    format!("RFC already exists: {id}"),
+                    id,
+                )
+                .into());
             }
             id.to_string()
         }
@@ -149,7 +161,12 @@ fn create_rfc(
 
     // Final collision check (skip in preview mode)
     if !op.is_preview() && rfc_dir.exists() {
-        anyhow::bail!("RFC already exists: {}", rfc_dir.display());
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0109RfcAlreadyExists,
+            format!("RFC already exists: {}", rfc_dir.display()),
+            rfc_dir.display().to_string(),
+        )
+        .into());
     }
 
     // Create directories
@@ -214,7 +231,12 @@ fn create_clause(
     // Parse clause_id (RFC-0001:C-NAME)
     let parts: Vec<&str> = clause_id.split(':').collect();
     if parts.len() != 2 {
-        anyhow::bail!("Invalid clause ID format. Expected RFC-NNNN:C-NAME");
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            "Invalid clause ID format. Expected RFC-NNNN:C-NAME",
+            clause_id,
+        )
+        .into());
     }
 
     let rfc_id = parts[0];
@@ -222,7 +244,12 @@ fn create_clause(
 
     let rfc_json = config.rfc_dir().join(rfc_id).join("rfc.json");
     if !rfc_json.exists() {
-        anyhow::bail!("RFC not found: {rfc_id}");
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0102RfcNotFound,
+            format!("RFC not found: {rfc_id}"),
+            rfc_id,
+        )
+        .into());
     }
 
     // Create clause

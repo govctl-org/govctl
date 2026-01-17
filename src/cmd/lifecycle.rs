@@ -27,8 +27,9 @@ pub fn bump(
     changes: &[String],
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path =
-        find_rfc_json(config, rfc_id).ok_or_else(|| anyhow::anyhow!("RFC not found: {rfc_id}"))?;
+    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
+        Diagnostic::new(DiagnosticCode::E0102RfcNotFound, format!("RFC not found: {rfc_id}"), rfc_id)
+    })?;
 
     let mut rfc = read_rfc(&rfc_path)?;
 
@@ -47,7 +48,12 @@ pub fn bump(
             }
         }
         (Some(_), None, _) => {
-            anyhow::bail!("--summary is required when bumping version");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0108RfcBumpRequiresSummary,
+                "--summary is required when bumping version",
+                rfc_id,
+            )
+            .into());
         }
         (None, _, false) => {
             for change in changes {
@@ -58,10 +64,20 @@ pub fn bump(
             }
         }
         (None, Some(_), true) => {
-            anyhow::bail!("Bump level (--patch/--minor/--major) required when providing --summary");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0108RfcBumpRequiresSummary,
+                "Bump level (--patch/--minor/--major) required when providing --summary",
+                rfc_id,
+            )
+            .into());
         }
         (None, None, true) => {
-            anyhow::bail!("Provide bump level with --summary, or --change");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0801MissingRequiredArg,
+                "Provide bump level with --summary, or --change",
+                rfc_id,
+            )
+            .into());
         }
     }
 
@@ -76,8 +92,9 @@ pub fn finalize(
     status: FinalizeStatus,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path =
-        find_rfc_json(config, rfc_id).ok_or_else(|| anyhow::anyhow!("RFC not found: {rfc_id}"))?;
+    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
+        Diagnostic::new(DiagnosticCode::E0102RfcNotFound, format!("RFC not found: {rfc_id}"), rfc_id)
+    })?;
 
     let mut rfc = read_rfc(&rfc_path)?;
 
@@ -87,11 +104,16 @@ pub fn finalize(
     };
 
     if !is_valid_status_transition(rfc.status, target_status) {
-        anyhow::bail!(
-            "Invalid status transition: {} -> {}",
-            rfc.status.as_ref(),
-            target_status.as_ref()
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0104RfcInvalidTransition,
+            format!(
+                "Invalid status transition: {} -> {}",
+                rfc.status.as_ref(),
+                target_status.as_ref()
+            ),
+            rfc_id,
+        )
+        .into());
     }
 
     rfc.status = target_status;
@@ -111,25 +133,36 @@ pub fn advance(
     phase: RfcPhase,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path =
-        find_rfc_json(config, rfc_id).ok_or_else(|| anyhow::anyhow!("RFC not found: {rfc_id}"))?;
+    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
+        Diagnostic::new(DiagnosticCode::E0102RfcNotFound, format!("RFC not found: {rfc_id}"), rfc_id)
+    })?;
 
     let mut rfc = read_rfc(&rfc_path)?;
 
     // Check status constraint: cannot advance to impl+ without normative status
     if rfc.status == RfcStatus::Draft && phase != RfcPhase::Spec {
-        anyhow::bail!(
-            "Cannot advance to {} while status is draft. Finalize to normative first.",
-            phase.as_ref()
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0104RfcInvalidTransition,
+            format!(
+                "Cannot advance to {} while status is draft. Finalize to normative first.",
+                phase.as_ref()
+            ),
+            rfc_id,
+        )
+        .into());
     }
 
     if !is_valid_phase_transition(rfc.phase, phase) {
-        anyhow::bail!(
-            "Invalid phase transition: {} -> {}",
-            rfc.phase.as_ref(),
-            phase.as_ref()
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0104RfcInvalidTransition,
+            format!(
+                "Invalid phase transition: {} -> {}",
+                rfc.phase.as_ref(),
+                phase.as_ref()
+            ),
+            rfc_id,
+        )
+        .into());
     }
 
     rfc.phase = phase;
@@ -147,13 +180,24 @@ pub fn accept_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
     let mut entry = load_adrs(config)?
         .into_iter()
         .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
-        .ok_or_else(|| anyhow::anyhow!("ADR not found: {adr_id}"))?;
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("ADR not found: {adr_id}"),
+                adr_id,
+            )
+        })?;
 
     if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Accepted) {
-        anyhow::bail!(
-            "Invalid ADR transition: {} -> accepted",
-            entry.spec.govctl.status.as_ref()
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0303AdrInvalidTransition,
+            format!(
+                "Invalid ADR transition: {} -> accepted",
+                entry.spec.govctl.status.as_ref()
+            ),
+            adr_id,
+        )
+        .into());
     }
 
     entry.spec.govctl.status = AdrStatus::Accepted;
@@ -169,16 +213,31 @@ pub fn accept_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
 pub fn deprecate(config: &Config, id: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     if id.contains(':') {
         // It's a clause
-        let clause_path = find_clause_json(config, id)
-            .ok_or_else(|| anyhow::anyhow!("Clause not found: {id}"))?;
+        let clause_path = find_clause_json(config, id).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Clause not found: {id}"),
+                id,
+            )
+        })?;
 
         let mut clause = read_clause(&clause_path)?;
 
         if clause.status == ClauseStatus::Deprecated {
-            anyhow::bail!("Clause is already deprecated");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0208ClauseAlreadyDeprecated,
+                "Clause is already deprecated",
+                id,
+            )
+            .into());
         }
         if clause.status == ClauseStatus::Superseded {
-            anyhow::bail!("Clause is superseded, cannot deprecate");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0209ClauseAlreadySuperseded,
+                "Clause is superseded, cannot deprecate",
+                id,
+            )
+            .into());
         }
 
         clause.status = ClauseStatus::Deprecated;
@@ -192,11 +251,19 @@ pub fn deprecate(config: &Config, id: &str, op: WriteOp) -> anyhow::Result<Vec<D
         return finalize(config, id, FinalizeStatus::Deprecated, op);
     } else if id.starts_with("ADR-") {
         // ADRs cannot be deprecated; they can only be superseded
-        anyhow::bail!(
-            "ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead."
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0305AdrCannotDeprecate,
+            format!("ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead."),
+            id,
+        )
+        .into());
     } else {
-        anyhow::bail!("Unknown artifact type: {id}");
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0813SupersedeNotSupported,
+            format!("Unknown artifact type: {id}"),
+            id,
+        )
+        .into());
     }
 
     Ok(vec![])
@@ -212,16 +279,31 @@ pub fn supersede(
     if id.contains(':') {
         // It's a clause
         // Validate replacement exists
-        let _ = find_clause_json(config, by)
-            .ok_or_else(|| anyhow::anyhow!("Replacement clause not found: {by}"))?;
+        let _ = find_clause_json(config, by).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Replacement clause not found: {by}"),
+                by,
+            )
+        })?;
 
-        let clause_path = find_clause_json(config, id)
-            .ok_or_else(|| anyhow::anyhow!("Clause not found: {id}"))?;
+        let clause_path = find_clause_json(config, id).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Clause not found: {id}"),
+                id,
+            )
+        })?;
 
         let mut clause = read_clause(&clause_path)?;
 
         if clause.status == ClauseStatus::Superseded {
-            anyhow::bail!("Clause is already superseded");
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0209ClauseAlreadySuperseded,
+                "Clause is already superseded",
+                id,
+            )
+            .into());
         }
 
         clause.status = ClauseStatus::Superseded;
@@ -236,22 +318,36 @@ pub fn supersede(
         let adrs = load_adrs(config)?;
 
         // Validate replacement exists
-        let _ = adrs
-            .iter()
-            .find(|a| a.spec.govctl.id == by)
-            .ok_or_else(|| anyhow::anyhow!("Replacement ADR not found: {by}"))?;
+        let _ = adrs.iter().find(|a| a.spec.govctl.id == by).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("Replacement ADR not found: {by}"),
+                by,
+            )
+        })?;
 
         // Find the ADR to supersede
         let mut entry = adrs
             .into_iter()
             .find(|a| a.spec.govctl.id == id)
-            .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0302AdrNotFound,
+                    format!("ADR not found: {id}"),
+                    id,
+                )
+            })?;
 
         if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Superseded) {
-            anyhow::bail!(
-                "Invalid ADR transition: {} -> superseded",
-                entry.spec.govctl.status.as_ref()
-            );
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0303AdrInvalidTransition,
+                format!(
+                    "Invalid ADR transition: {} -> superseded",
+                    entry.spec.govctl.status.as_ref()
+                ),
+                id,
+            )
+            .into());
         }
 
         entry.spec.govctl.status = AdrStatus::Superseded;
@@ -262,7 +358,12 @@ pub fn supersede(
             ui::superseded("ADR", id, by);
         }
     } else {
-        anyhow::bail!("Supersede is not supported for this artifact type: {id}");
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0813SupersedeNotSupported,
+            format!("Supersede is not supported for this artifact type: {id}"),
+            id,
+        )
+        .into());
     }
 
     Ok(vec![])
