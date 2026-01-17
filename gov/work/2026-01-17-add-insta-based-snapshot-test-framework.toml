@@ -1,0 +1,33 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-015"
+title = "Add insta-based snapshot test framework"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+notes = ""
+
+[[content.acceptance_criteria]]
+text = "Add insta and insta-cmd as dev dependencies"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Create minimal test fixtures for valid and invalid governance states"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Implement test harness with path normalization and color stripping"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Add snapshot tests for check, list, and status commands"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "All tests pass with cargo test"
+status = "pending"
