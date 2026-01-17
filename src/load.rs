@@ -9,26 +9,11 @@ use std::path::{Path, PathBuf};
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum LoadError {
-    Io {
-        file: String,
-        message: String,
-    },
-    Json {
-        file: String,
-        message: String,
-    },
-    RfcSchema {
-        file: String,
-        message: String,
-    },
-    ClauseSchema {
-        file: String,
-        message: String,
-    },
-    ClausePathInvalid {
-        file: String,
-        clause: String,
-    },
+    Io { file: String, message: String },
+    Json { file: String, message: String },
+    RfcSchema { file: String, message: String },
+    ClauseSchema { file: String, message: String },
+    ClausePathInvalid { file: String, clause: String },
 }
 
 impl From<LoadError> for Diagnostic {

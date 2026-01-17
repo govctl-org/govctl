@@ -1,0 +1,37 @@
+# Architecture Decision Record
+#
+# Status lifecycle: proposed → accepted → deprecated
+#                      ↓
+#                   superseded
+#
+# Fields:
+#   - id: Unique identifier (ADR-NNNN)
+#   - title: Short descriptive title
+#   - status: proposed | accepted | superseded | deprecated
+#   - date: Creation date (YYYY-MM-DD)
+#   - superseded_by: ID of superseding ADR (if superseded)
+#   - refs: References to related RFCs, ADRs, or external docs
+
+[phaseos]
+schema = 1
+id = "{{ID}}"
+title = "{{TITLE}}"
+status = "proposed"
+date = "{{DATE}}"
+refs = []
+
+[content]
+context = """
+Describe the context and problem statement.
+What is the issue that we're seeing that is motivating this decision?
+"""
+
+decision = """
+Describe the decision that was made.
+What is the change that we're proposing and/or doing?
+"""
+
+consequences = """
+Describe the resulting context after applying the decision.
+What becomes easier or more difficult to do because of this change?
+"""

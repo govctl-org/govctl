@@ -1,10 +1,8 @@
-//! YAML frontmatter parsing for ADR and Work Item files.
+//! TOML parsing for ADR and Work Item files.
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{AdrEntry, AdrMeta, PhaseOsWrapper, WorkItemEntry, WorkItemMeta};
-use gray_matter::engine::YAML;
-use gray_matter::Matter;
+use crate::model::{AdrEntry, AdrSpec, WorkItemEntry, WorkItemSpec};
 use std::path::Path;
 
 /// Load all ADRs from the adr directory
@@ -25,7 +23,7 @@ pub fn load_adrs(config: &Config) -> Result<Vec<AdrEntry>, Diagnostic> {
 
     for entry in entries.flatten() {
         let path = entry.path();
-        if path.extension().is_some_and(|ext| ext == "md") {
+        if path.extension().is_some_and(|ext| ext == "toml") {
             match load_adr(&path) {
                 Ok(adr) => adrs.push(adr),
                 Err(_) => continue, // Skip invalid files
@@ -36,7 +34,7 @@ pub fn load_adrs(config: &Config) -> Result<Vec<AdrEntry>, Diagnostic> {
     Ok(adrs)
 }
 
-/// Load a single ADR
+/// Load a single ADR from TOML file
 pub fn load_adr(path: &Path) -> Result<AdrEntry, Diagnostic> {
     let content = std::fs::read_to_string(path).map_err(|e| {
         Diagnostic::new(
@@ -46,31 +44,39 @@ pub fn load_adr(path: &Path) -> Result<AdrEntry, Diagnostic> {
         )
     })?;
 
-    let matter = Matter::<YAML>::new();
-    let parsed = matter.parse(&content);
-
-    let frontmatter = parsed.data.ok_or_else(|| {
+    let spec: AdrSpec = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0301AdrSchemaInvalid,
-            "Missing frontmatter",
+            format!("Invalid TOML: {e}"),
             path.display().to_string(),
         )
     })?;
 
-    let wrapper: PhaseOsWrapper<AdrMeta> =
-        frontmatter.deserialize().map_err(|e| {
-            Diagnostic::new(
-                DiagnosticCode::E0301AdrSchemaInvalid,
-                format!("Invalid frontmatter: {e}"),
-                path.display().to_string(),
-            )
-        })?;
-
     Ok(AdrEntry {
-        meta: wrapper.phaseos,
+        spec,
         path: path.to_path_buf(),
-        content: parsed.content,
     })
+}
+
+/// Write an ADR to TOML file
+pub fn write_adr(path: &Path, spec: &AdrSpec) -> Result<(), Diagnostic> {
+    let content = toml::to_string_pretty(spec).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to serialize TOML: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+
+    std::fs::write(path, content).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            e.to_string(),
+            path.display().to_string(),
+        )
+    })?;
+
+    Ok(())
 }
 
 /// Load all work items from the work directory
@@ -91,7 +97,7 @@ pub fn load_work_items(config: &Config) -> Result<Vec<WorkItemEntry>, Diagnostic
 
     for entry in entries.flatten() {
         let path = entry.path();
-        if path.extension().is_some_and(|ext| ext == "md") {
+        if path.extension().is_some_and(|ext| ext == "toml") {
             match load_work_item(&path) {
                 Ok(item) => items.push(item),
                 Err(_) => continue, // Skip invalid files
@@ -102,7 +108,7 @@ pub fn load_work_items(config: &Config) -> Result<Vec<WorkItemEntry>, Diagnostic
     Ok(items)
 }
 
-/// Load a single work item
+/// Load a single work item from TOML file
 pub fn load_work_item(path: &Path) -> Result<WorkItemEntry, Diagnostic> {
     let content = std::fs::read_to_string(path).map_err(|e| {
         Diagnostic::new(
@@ -112,60 +118,31 @@ pub fn load_work_item(path: &Path) -> Result<WorkItemEntry, Diagnostic> {
         )
     })?;
 
-    let matter = Matter::<YAML>::new();
-    let parsed = matter.parse(&content);
-
-    let frontmatter = parsed.data.ok_or_else(|| {
+    let spec: WorkItemSpec = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0401WorkSchemaInvalid,
-            "Missing frontmatter",
+            format!("Invalid TOML: {e}"),
             path.display().to_string(),
         )
     })?;
 
-    let wrapper: PhaseOsWrapper<WorkItemMeta> =
-        frontmatter.deserialize().map_err(|e| {
-            Diagnostic::new(
-                DiagnosticCode::E0401WorkSchemaInvalid,
-                format!("Invalid frontmatter: {e}"),
-                path.display().to_string(),
-            )
-        })?;
-
     Ok(WorkItemEntry {
-        meta: wrapper.phaseos,
+        spec,
         path: path.to_path_buf(),
-        content: parsed.content,
     })
 }
 
-/// Update frontmatter in a markdown file
-pub fn update_frontmatter<T: serde::Serialize>(
-    path: &Path,
-    meta: &PhaseOsWrapper<T>,
-) -> Result<(), Diagnostic> {
-    let content = std::fs::read_to_string(path).map_err(|e| {
+/// Write a work item to TOML file
+pub fn write_work_item(path: &Path, spec: &WorkItemSpec) -> Result<(), Diagnostic> {
+    let content = toml::to_string_pretty(spec).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
-            e.to_string(),
+            format!("Failed to serialize TOML: {e}"),
             path.display().to_string(),
         )
     })?;
 
-    let matter = Matter::<YAML>::new();
-    let parsed = matter.parse(&content);
-
-    let yaml = serde_yaml::to_string(meta).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0903YamlParseError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
-
-    let new_content = format!("---\n{}---\n{}", yaml, parsed.content);
-
-    std::fs::write(path, new_content).map_err(|e| {
+    std::fs::write(path, content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
             e.to_string(),

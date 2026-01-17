@@ -1,0 +1,16 @@
+# ADR Schema Definition (for documentation)
+# Actual validation is done in code
+
+[phaseos]
+schema = 1                          # Required: schema version
+id = "ADR-NNNN"                     # Required: unique identifier
+title = "ADR Title"                 # Required: descriptive title
+status = "proposed"                 # Required: proposed|accepted|superseded|deprecated
+date = "YYYY-MM-DD"                 # Required: creation date
+superseded_by = "ADR-NNNN"          # Optional: if superseded
+refs = ["RFC-0001", "ADR-0002"]     # Optional: references to other artifacts
+
+[content]
+context = """Multi-line text describing the context and problem."""
+decision = """Multi-line text describing the decision made."""
+consequences = """Multi-line text describing the consequences."""

@@ -52,11 +52,11 @@ These are non-negotiable:
 
 PhaseOS is in its constitutional phase. The following RFCs define its governance:
 
-| RFC                                | Title            | Status |
-| ---------------------------------- | ---------------- | ------ |
-| [RFC-0000](docs/rfc/RFC-0000.md)   | What an RFC Is   | Draft  |
-| [RFC-0001](docs/rfc/RFC-0001.md)   | PhaseOS Vision   | Draft  |
-| [RFC-0002](docs/rfc/RFC-0002.md)   | Phase Discipline | Draft  |
+| RFC                              | Title            | Status |
+| -------------------------------- | ---------------- | ------ |
+| [RFC-0000](docs/rfc/RFC-0000.md) | What an RFC Is   | Draft  |
+| [RFC-0001](docs/rfc/RFC-0001.md) | PhaseOS Vision   | Draft  |
+| [RFC-0002](docs/rfc/RFC-0002.md) | Phase Discipline | Draft  |
 
 ---
 
@@ -88,8 +88,16 @@ phaseos edit RFC-0010:C-SCOPE --text-stdin <<'EOF'
 The feature MUST...
 EOF
 
-# Render RFC markdown from JSON
-phaseos render RFC-0010
+# Render RFCs to markdown (default, published to repo)
+phaseos render
+
+# Render specific RFC
+phaseos render --rfc-id RFC-0010
+
+# Render ADRs/Work Items locally (not committed, .gitignore'd)
+phaseos render adr
+phaseos render work
+phaseos render all   # Everything
 
 # Validate all governed documents
 phaseos check
@@ -106,10 +114,19 @@ phaseos stat
 
 ### Data Model
 
-- **RFCs**: JSON source of truth (`spec/rfcs/RFC-NNNN/rfc.json`) → rendered Markdown (`docs/rfc/RFC-NNNN.md`)
-- **Clauses**: Individual requirement units within RFCs (`spec/rfcs/RFC-NNNN/clauses/C-NAME.json`)
-- **ADRs**: Architecture Decision Records (`docs/adr/ADR-NNNN-*.md`) with YAML frontmatter
-- **Work Items**: Task tracking (`worklogs/items/YYYY-MM-DD-*.md`) with YAML frontmatter
+All artifacts use structured formats as Single Source of Truth (SSOT):
+
+- **RFCs**: JSON SSOT (`spec/rfcs/RFC-NNNN/rfc.json`) → rendered Markdown (`docs/rfc/RFC-NNNN.md`)
+- **Clauses**: JSON SSOT (`spec/rfcs/RFC-NNNN/clauses/C-NAME.json`)
+- **ADRs**: TOML SSOT (`docs/adr/ADR-NNNN-*.toml`) → rendered Markdown (`docs/adrs/ADR-NNNN.md`)
+- **Work Items**: TOML SSOT (`worklogs/items/YYYY-MM-DD-*.toml`) → rendered Markdown (`docs/work/WI-*.md`)
+
+**Why TOML for ADRs/Work Items?**
+
+- Comments allowed (humans can annotate)
+- Multi-line strings are clean (`"""` blocks)
+- No YAML ambiguity (`NO` → false problem)
+- Round-trip stable (deterministic serialization)
 
 ### Lifecycle Commands
 

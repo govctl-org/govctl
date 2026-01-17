@@ -10,7 +10,24 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=500"]
 
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      - id: fmt
+      - id: cargo-check
+      - id: clippy
+
+  - repo: local
+    hooks:
+      - id: cargo-test
+        name: cargo test runner
+        entry: cargo test --workspace
+        language: system
+        pass_filenames: false
+
   - repo: https://github.com/rbubley/mirrors-prettier
     rev: v3.7.4
     hooks:
       - id: prettier
+        exclude: ^docs/rfc/RFC.*\.md$
+        args: [--log-level=silent]

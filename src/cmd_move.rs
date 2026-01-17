@@ -2,8 +2,8 @@
 
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
-use crate::model::{PhaseOsWrapper, WorkItemStatus};
-use crate::parse::load_work_item;
+use crate::model::WorkItemStatus;
+use crate::parse::{load_work_item, write_work_item};
 use crate::validate::is_valid_work_transition;
 use crate::write::today;
 use std::path::Path;
@@ -28,37 +28,32 @@ pub fn move_item(
         }
     };
 
-    let item = load_work_item(&work_path)?;
+    let mut entry = load_work_item(&work_path)?;
 
-    if !is_valid_work_transition(item.meta.status, status) {
+    if !is_valid_work_transition(entry.spec.phaseos.status, status) {
         anyhow::bail!(
             "Invalid transition: {} -> {}",
-            item.meta.status.as_ref(),
+            entry.spec.phaseos.status.as_ref(),
             status.as_ref()
         );
     }
 
-    let mut meta = item.meta;
-    meta.status = status;
+    entry.spec.phaseos.status = status;
 
     // Update dates
     match status {
         WorkItemStatus::Active => {
-            if meta.start_date.is_none() {
-                meta.start_date = Some(today());
+            if entry.spec.phaseos.start_date.is_none() {
+                entry.spec.phaseos.start_date = Some(today());
             }
         }
-        WorkItemStatus::Done => {
-            meta.done_date = Some(today());
+        WorkItemStatus::Done | WorkItemStatus::Cancelled => {
+            entry.spec.phaseos.done_date = Some(today());
         }
         WorkItemStatus::Queue => {}
     }
 
-    let wrapper = PhaseOsWrapper {
-        phaseos: meta,
-        ext: None,
-    };
-    crate::parse::update_frontmatter(&work_path, &wrapper)?;
+    write_work_item(&work_path, &entry.spec)?;
 
     eprintln!(
         "Moved {} to {}",
@@ -96,11 +91,7 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
                 .iter()
                 .filter_map(|e| e.file_name().to_str().map(String::from))
                 .collect();
-            anyhow::bail!(
-                "Multiple work items match '{}': {}",
-                name,
-                names.join(", ")
-            );
+            anyhow::bail!("Multiple work items match '{}': {}", name, names.join(", "));
         }
     }
 }

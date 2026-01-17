@@ -76,10 +76,14 @@ enum Commands {
         target: NewTarget,
     },
 
-    /// Render RFC markdown from JSON source
+    /// Render artifacts to markdown from SSOT
     #[command(visible_alias = "gen")]
     Render {
-        /// RFC ID to render (e.g., RFC-0001). If omitted, renders all.
+        /// What to render: rfc (default), adr, work, or all
+        #[arg(value_enum, default_value = "rfc")]
+        target: RenderTarget,
+        /// Specific RFC ID to render (e.g., RFC-0001)
+        #[arg(long)]
         rfc_id: Option<String>,
         /// Dry run: show what would be written
         #[arg(long)]
@@ -117,6 +121,26 @@ enum Commands {
         id: String,
         /// Field name (omit to show all)
         field: Option<String>,
+    },
+
+    /// Add a value to an array field
+    Add {
+        /// Artifact ID (e.g., RFC-0001 or ADR-0001)
+        id: String,
+        /// Array field name (e.g., owners, refs, anchors)
+        field: String,
+        /// Value to add
+        value: String,
+    },
+
+    /// Remove a value from an array field
+    Remove {
+        /// Artifact ID
+        id: String,
+        /// Array field name
+        field: String,
+        /// Value to remove
+        value: String,
     },
 
     /// Bump RFC version
@@ -233,6 +257,18 @@ enum ListTarget {
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
+enum RenderTarget {
+    /// Render RFCs only (default, published to repo)
+    Rfc,
+    /// Render ADRs (local only, .gitignore'd)
+    Adr,
+    /// Render Work Items (local only, .gitignore'd)
+    Work,
+    /// Render all artifact types (local use)
+    All,
+}
+
+#[derive(ValueEnum, Clone, Copy, Debug)]
 enum FinalizeStatus {
     Normative,
     Deprecated,
@@ -285,8 +321,29 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         Commands::Status => cmd_status::show_status(&config),
         Commands::List { target, filter } => cmd_list::list(&config, *target, filter.as_deref()),
         Commands::New { target } => cmd_new::create(&config, target),
-        Commands::Render { rfc_id, dry_run } => {
-            cmd_render::render(&config, rfc_id.as_deref(), *dry_run)
+        Commands::Render {
+            target,
+            rfc_id,
+            dry_run,
+        } => {
+            let mut all_diags = vec![];
+            match target {
+                RenderTarget::Rfc => {
+                    all_diags.extend(cmd_render::render(&config, rfc_id.as_deref(), *dry_run)?);
+                }
+                RenderTarget::Adr => {
+                    all_diags.extend(cmd_render::render_adrs(&config, *dry_run)?);
+                }
+                RenderTarget::Work => {
+                    all_diags.extend(cmd_render::render_work_items(&config, *dry_run)?);
+                }
+                RenderTarget::All => {
+                    all_diags.extend(cmd_render::render(&config, rfc_id.as_deref(), *dry_run)?);
+                    all_diags.extend(cmd_render::render_adrs(&config, *dry_run)?);
+                    all_diags.extend(cmd_render::render_work_items(&config, *dry_run)?);
+                }
+            }
+            Ok(all_diags)
         }
         Commands::Edit {
             clause_id,
@@ -302,6 +359,10 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         ),
         Commands::Set { id, field, value } => cmd_edit::set_field(&config, id, field, value),
         Commands::Get { id, field } => cmd_edit::get_field(&config, id, field.as_deref()),
+        Commands::Add { id, field, value } => cmd_edit::add_to_field(&config, id, field, value),
+        Commands::Remove { id, field, value } => {
+            cmd_edit::remove_from_field(&config, id, field, value)
+        }
         Commands::Bump {
             rfc_id,
             patch,

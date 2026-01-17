@@ -1,7 +1,7 @@
-//! RFC JSON to Markdown rendering.
+//! SSOT to Markdown rendering.
 
 use crate::config::Config;
-use crate::model::{ClauseKind, ClauseStatus, RfcIndex};
+use crate::model::{AdrEntry, ClauseKind, ClauseStatus, RfcIndex, WorkItemEntry};
 use std::fmt::Write as FmtWrite;
 use std::io::Write;
 
@@ -31,11 +31,14 @@ pub fn render_rfc(rfc: &RfcIndex) -> String {
     writeln!(out).unwrap();
 
     // Version info
-    writeln!(out, "> **Version:** {} | **Status:** {} | **Phase:** {}",
+    writeln!(
+        out,
+        "> **Version:** {} | **Status:** {} | **Phase:** {}",
         rfc.rfc.version,
         rfc.rfc.status.as_ref(),
         rfc.rfc.phase.as_ref()
-    ).unwrap();
+    )
+    .unwrap();
     writeln!(out).unwrap();
 
     // Render sections with clauses
@@ -150,6 +153,176 @@ pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Resu
 
         let mut file = std::fs::File::create(&output_path)?;
         file.write_all(content.as_bytes())?;
+        eprintln!("Rendered: {}", output_path.display());
+    }
+
+    Ok(())
+}
+
+// =============================================================================
+// ADR Rendering
+// =============================================================================
+
+/// Render an ADR to Markdown
+pub fn render_adr(adr: &AdrEntry) -> String {
+    let meta = adr.meta();
+    let content = &adr.spec.content;
+    let mut out = String::new();
+
+    // Title
+    writeln!(out, "# {}: {}", meta.id, meta.title).unwrap();
+    writeln!(out).unwrap();
+
+    // Status and date
+    writeln!(
+        out,
+        "> **Status:** {} | **Date:** {}",
+        meta.status.as_ref(),
+        meta.date
+    )
+    .unwrap();
+    if let Some(ref by) = meta.superseded_by {
+        writeln!(out, "> **Superseded by:** {by}").unwrap();
+    }
+    writeln!(out).unwrap();
+
+    // References
+    if !meta.refs.is_empty() {
+        writeln!(out, "**References:** {}", meta.refs.join(", ")).unwrap();
+        writeln!(out).unwrap();
+    }
+
+    // Context
+    writeln!(out, "## Context").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "{}", content.context).unwrap();
+    writeln!(out).unwrap();
+
+    // Decision
+    writeln!(out, "## Decision").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "{}", content.decision).unwrap();
+    writeln!(out).unwrap();
+
+    // Consequences
+    writeln!(out, "## Consequences").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "{}", content.consequences).unwrap();
+    writeln!(out).unwrap();
+
+    out
+}
+
+/// Write rendered ADR to file
+pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::Result<()> {
+    let meta = adr.meta();
+    let output_dir = config
+        .paths
+        .rfc_output
+        .parent()
+        .unwrap_or(&config.paths.rfc_output)
+        .join("adrs");
+    let output_path = output_dir.join(format!("{}.md", meta.id));
+
+    let rendered = render_adr(adr);
+
+    if dry_run {
+        eprintln!("Would write: {}", output_path.display());
+        eprintln!("--- Content preview ---");
+        for line in rendered.lines().take(15) {
+            eprintln!("{line}");
+        }
+        eprintln!("...");
+    } else {
+        std::fs::create_dir_all(&output_dir)?;
+        let mut file = std::fs::File::create(&output_path)?;
+        file.write_all(rendered.as_bytes())?;
+        eprintln!("Rendered: {}", output_path.display());
+    }
+
+    Ok(())
+}
+
+// =============================================================================
+// Work Item Rendering
+// =============================================================================
+
+/// Render a Work Item to Markdown
+pub fn render_work_item(item: &WorkItemEntry) -> String {
+    let meta = item.meta();
+    let content = &item.spec.content;
+    let mut out = String::new();
+
+    // Title
+    writeln!(out, "# {}", meta.title).unwrap();
+    writeln!(out).unwrap();
+
+    // Status
+    let mut status_line = format!(
+        "> **ID:** {} | **Status:** {}",
+        meta.id,
+        meta.status.as_ref()
+    );
+    if let Some(ref start) = meta.start_date {
+        status_line.push_str(&format!(" | **Started:** {start}"));
+    }
+    if let Some(ref done) = meta.done_date {
+        status_line.push_str(&format!(" | **Completed:** {done}"));
+    }
+    writeln!(out, "{status_line}").unwrap();
+    writeln!(out).unwrap();
+
+    // References
+    if !meta.refs.is_empty() {
+        writeln!(out, "**References:** {}", meta.refs.join(", ")).unwrap();
+        writeln!(out).unwrap();
+    }
+
+    // Description
+    writeln!(out, "## Description").unwrap();
+    writeln!(out).unwrap();
+    writeln!(out, "{}", content.description).unwrap();
+    writeln!(out).unwrap();
+
+    // Notes
+    if !content.notes.is_empty() {
+        writeln!(out, "## Notes").unwrap();
+        writeln!(out).unwrap();
+        writeln!(out, "{}", content.notes).unwrap();
+        writeln!(out).unwrap();
+    }
+
+    out
+}
+
+/// Write rendered Work Item to file
+pub fn write_work_item_md(
+    config: &Config,
+    item: &WorkItemEntry,
+    dry_run: bool,
+) -> anyhow::Result<()> {
+    let meta = item.meta();
+    let output_dir = config
+        .paths
+        .rfc_output
+        .parent()
+        .unwrap_or(&config.paths.rfc_output)
+        .join("work");
+    let output_path = output_dir.join(format!("{}.md", meta.id));
+
+    let rendered = render_work_item(item);
+
+    if dry_run {
+        eprintln!("Would write: {}", output_path.display());
+        eprintln!("--- Content preview ---");
+        for line in rendered.lines().take(15) {
+            eprintln!("{line}");
+        }
+        eprintln!("...");
+    } else {
+        std::fs::create_dir_all(&output_dir)?;
+        let mut file = std::fs::File::create(&output_path)?;
+        file.write_all(rendered.as_bytes())?;
         eprintln!("Rendered: {}", output_path.display());
     }
 

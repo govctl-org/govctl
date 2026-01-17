@@ -1,0 +1,11 @@
+[phaseos]
+schema = 1
+id = "WI-2026-01-17-001"
+title = "Migrate existing docs to TOML"
+status = "queue"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+notes = ""

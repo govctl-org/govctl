@@ -3,8 +3,9 @@
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::model::{
-    AdrMeta, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus, PhaseOsWrapper,
-    RfcPhase, RfcSpec, RfcStatus, SectionSpec, WorkItemMeta, WorkItemStatus,
+    AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus,
+    RfcPhase, RfcSpec, RfcStatus, SectionSpec, WorkItemContent, WorkItemMeta, WorkItemSpec,
+    WorkItemStatus,
 };
 use crate::write::today;
 use crate::NewTarget;
@@ -172,7 +173,10 @@ fn create_clause(
     std::fs::write(&rfc_json, rfc_content)?;
 
     eprintln!("Created clause: {}", clause_path.display());
-    eprintln!("  Added to section '{}', path: {}", section, clause_rel_path);
+    eprintln!(
+        "  Added to section '{}', path: {}",
+        section, clause_rel_path
+    );
 
     Ok(vec![])
 }
@@ -204,49 +208,28 @@ fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
     let next_num = max_num + 1;
     let adr_id = format!("ADR-{next_num:04}");
     let slug = slugify(title);
-    let filename = format!("{adr_id}-{slug}.md");
+    let filename = format!("{adr_id}-{slug}.toml");
     let adr_path = adr_dir.join(&filename);
 
-    // Create ADR content
-    let meta = PhaseOsWrapper {
+    // Create ADR spec
+    let spec = AdrSpec {
         phaseos: AdrMeta {
             schema: 1,
             id: adr_id.clone(),
             title: title.to_string(),
-            kind: "adr".to_string(),
             status: AdrStatus::Proposed,
             date: today(),
             superseded_by: None,
             refs: vec![],
         },
-        ext: None,
+        content: AdrContent {
+            context: "Describe the context and problem statement.\nWhat is the issue that we're seeing that is motivating this decision?".to_string(),
+            decision: "Describe the decision that was made.\nWhat is the change that we're proposing and/or doing?".to_string(),
+            consequences: "Describe the resulting context after applying the decision.\nWhat becomes easier or more difficult to do because of this change?".to_string(),
+        },
     };
 
-    let yaml = serde_yaml::to_string(&meta)?;
-    let content = format!(
-        r#"---
-{yaml}---
-
-# {adr_id}: {title}
-
-## Context
-
-[Describe the context and problem statement.]
-
-## Decision
-
-[Describe the decision that was made.]
-
-## Consequences
-
-[Describe the consequences of this decision.]
-
-## References
-
-- [Link to relevant RFCs or documents]
-"#
-    );
-
+    let content = toml::to_string_pretty(&spec)?;
     std::fs::write(&adr_path, content)?;
     eprintln!("Created ADR: {}", adr_path.display());
 
@@ -263,54 +246,37 @@ fn create_work_item(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnost
 
     // Find unique filename
     let mut counter = 1u32;
-    let mut filename = format!("{date}-{slug}.md");
+    let mut filename = format!("{date}-{slug}.toml");
     let mut work_path = work_dir.join(&filename);
 
     while work_path.exists() {
         counter += 1;
-        filename = format!("{date}-{slug}-{counter}.md");
+        filename = format!("{date}-{slug}-{counter}.toml");
         work_path = work_dir.join(&filename);
     }
 
     let work_id = format!("WI-{date}-{counter:03}");
 
-    // Create work item content
-    let meta = PhaseOsWrapper {
+    // Create work item spec
+    let spec = WorkItemSpec {
         phaseos: WorkItemMeta {
             schema: 1,
             id: work_id.clone(),
             title: title.to_string(),
-            kind: "work".to_string(),
             status: WorkItemStatus::Queue,
             start_date: None,
             done_date: None,
             refs: vec![],
         },
-        ext: None,
+        content: WorkItemContent {
+            description:
+                "Describe the work to be done.\nWhat is the goal? What are the acceptance criteria?"
+                    .to_string(),
+            notes: String::new(),
+        },
     };
 
-    let yaml = serde_yaml::to_string(&meta)?;
-    let content = format!(
-        r#"---
-{yaml}---
-
-# {title}
-
-## Goal
-
-[Describe what this work item aims to accomplish.]
-
-## Tasks
-
-- [ ] Task 1
-- [ ] Task 2
-
-## Notes
-
-[Add notes as work progresses.]
-"#
-    );
-
+    let content = toml::to_string_pretty(&spec)?;
     std::fs::write(&work_path, content)?;
     eprintln!("Created work item: {}", work_path.display());
 

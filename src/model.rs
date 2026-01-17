@@ -102,22 +102,39 @@ pub enum ClauseStatus {
 }
 
 // =============================================================================
-// ADR Models (Markdown SSOT)
+// ADR Models (TOML SSOT)
 // =============================================================================
 
-/// ADR frontmatter (under phaseos: namespace)
+/// ADR metadata section [phaseos]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdrMeta {
     pub schema: u32,
     pub id: String,
     pub title: String,
-    pub kind: String, // Should be "adr"
     pub status: AdrStatus,
     pub date: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub superseded_by: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
+}
+
+/// ADR content section [content]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AdrContent {
+    #[serde(default)]
+    pub context: String,
+    #[serde(default)]
+    pub decision: String,
+    #[serde(default)]
+    pub consequences: String,
+}
+
+/// Complete ADR file structure
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdrSpec {
+    pub phaseos: AdrMeta,
+    pub content: AdrContent,
 }
 
 /// ADR status lifecycle
@@ -132,16 +149,15 @@ pub enum AdrStatus {
 }
 
 // =============================================================================
-// Work Item Models (Markdown SSOT)
+// Work Item Models (TOML SSOT)
 // =============================================================================
 
-/// Work Item frontmatter (under phaseos: namespace)
+/// Work Item metadata section [phaseos]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemMeta {
     pub schema: u32,
     pub id: String,
     pub title: String,
-    pub kind: String, // Should be "work"
     pub status: WorkItemStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub start_date: Option<String>,
@@ -149,6 +165,22 @@ pub struct WorkItemMeta {
     pub done_date: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
+}
+
+/// Work Item content section [content]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct WorkItemContent {
+    #[serde(default)]
+    pub description: String,
+    #[serde(default)]
+    pub notes: String,
+}
+
+/// Complete Work Item file structure
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkItemSpec {
+    pub phaseos: WorkItemMeta,
+    pub content: WorkItemContent,
 }
 
 /// Work Item status lifecycle
@@ -159,18 +191,7 @@ pub enum WorkItemStatus {
     Queue,
     Active,
     Done,
-}
-
-// =============================================================================
-// Wrapper for frontmatter namespace
-// =============================================================================
-
-/// Wrapper for phaseos: namespace in frontmatter
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct PhaseOsWrapper<T> {
-    pub phaseos: T,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ext: Option<serde_yaml::Value>,
+    Cancelled,
 }
 
 // =============================================================================
@@ -192,22 +213,32 @@ pub struct ClauseEntry {
     pub path: std::path::PathBuf,
 }
 
-/// Loaded ADR with metadata
+/// Loaded ADR with full spec
 #[derive(Debug, Clone)]
 pub struct AdrEntry {
-    pub meta: AdrMeta,
+    pub spec: AdrSpec,
     pub path: std::path::PathBuf,
-    #[allow(dead_code)]
-    pub content: String,
 }
 
-/// Loaded Work Item with metadata
+impl AdrEntry {
+    /// Convenience accessor for metadata
+    pub fn meta(&self) -> &AdrMeta {
+        &self.spec.phaseos
+    }
+}
+
+/// Loaded Work Item with full spec
 #[derive(Debug, Clone)]
 pub struct WorkItemEntry {
-    pub meta: WorkItemMeta,
+    pub spec: WorkItemSpec,
     pub path: std::path::PathBuf,
-    #[allow(dead_code)]
-    pub content: String,
+}
+
+impl WorkItemEntry {
+    /// Convenience accessor for metadata
+    pub fn meta(&self) -> &WorkItemMeta {
+        &self.spec.phaseos
+    }
 }
 
 /// Full project index

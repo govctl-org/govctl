@@ -25,7 +25,11 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     }
 
     println!("  By Status:");
-    for status in [RfcStatus::Draft, RfcStatus::Normative, RfcStatus::Deprecated] {
+    for status in [
+        RfcStatus::Draft,
+        RfcStatus::Normative,
+        RfcStatus::Deprecated,
+    ] {
         let count = by_status.get(&status).copied().unwrap_or(0);
         if count > 0 {
             println!("    {:12}: {}", status.as_ref(), count);
@@ -33,7 +37,12 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     }
 
     println!("  By Phase:");
-    for phase in [RfcPhase::Spec, RfcPhase::Impl, RfcPhase::Test, RfcPhase::Stable] {
+    for phase in [
+        RfcPhase::Spec,
+        RfcPhase::Impl,
+        RfcPhase::Test,
+        RfcPhase::Stable,
+    ] {
         let count = by_phase.get(&phase).copied().unwrap_or(0);
         if count > 0 {
             println!("    {:12}: {}", phase.as_ref(), count);
@@ -54,7 +63,11 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
         total_clauses += 1;
     }
 
-    for status in [ClauseStatus::Active, ClauseStatus::Deprecated, ClauseStatus::Superseded] {
+    for status in [
+        ClauseStatus::Active,
+        ClauseStatus::Deprecated,
+        ClauseStatus::Superseded,
+    ] {
         let count = clause_by_status.get(&status).copied().unwrap_or(0);
         if count > 0 {
             println!("    {:12}: {}", status.as_ref(), count);
@@ -70,7 +83,7 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     let mut adr_by_status: HashMap<AdrStatus, usize> = HashMap::new();
 
     for adr in &index.adrs {
-        *adr_by_status.entry(adr.meta.status).or_insert(0) += 1;
+        *adr_by_status.entry(adr.meta().status).or_insert(0) += 1;
     }
 
     for status in [
@@ -94,10 +107,15 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     let mut work_by_status: HashMap<WorkItemStatus, usize> = HashMap::new();
 
     for item in &index.work_items {
-        *work_by_status.entry(item.meta.status).or_insert(0) += 1;
+        *work_by_status.entry(item.meta().status).or_insert(0) += 1;
     }
 
-    for status in [WorkItemStatus::Queue, WorkItemStatus::Active, WorkItemStatus::Done] {
+    for status in [
+        WorkItemStatus::Queue,
+        WorkItemStatus::Active,
+        WorkItemStatus::Done,
+        WorkItemStatus::Cancelled,
+    ] {
         let count = work_by_status.get(&status).copied().unwrap_or(0);
         if count > 0 {
             println!("    {:12}: {}", status.as_ref(), count);

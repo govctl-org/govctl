@@ -45,33 +45,25 @@ pub fn validate_project(index: &ProjectIndex, _config: &Config) -> ValidationRes
 
     // Validate ADRs
     for adr in &index.adrs {
-        if adr.meta.kind != "adr" {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0301AdrSchemaInvalid,
-                format!("ADR kind must be 'adr', got '{}'", adr.meta.kind),
-                adr.path.display().to_string(),
-            ));
-        }
-
-        if adr.meta.refs.is_empty() {
+        if adr.meta().refs.is_empty() {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
                 "ADR has no references",
                 adr.path.display().to_string(),
             ));
         }
-    }
 
-    // Validate Work Items
-    for item in &index.work_items {
-        if item.meta.kind != "work" {
+        // Validate content is not placeholder
+        if adr.spec.content.context.contains("Describe the context") {
             result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0401WorkSchemaInvalid,
-                format!("Work item kind must be 'work', got '{}'", item.meta.kind),
-                item.path.display().to_string(),
+                DiagnosticCode::W0103AdrNoRefs,
+                "ADR context appears to be placeholder text",
+                adr.path.display().to_string(),
             ));
         }
     }
+
+    // Validate Work Items (no specific checks currently)
 
     result
 }
@@ -159,7 +151,10 @@ fn validate_status_phase_constraints(rfc: &RfcIndex, result: &mut ValidationResu
     if status == RfcStatus::Deprecated && (phase == RfcPhase::Impl || phase == RfcPhase::Test) {
         result.diagnostics.push(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
-            format!("Cannot have status=deprecated with phase={}", phase.as_ref()),
+            format!(
+                "Cannot have status=deprecated with phase={}",
+                phase.as_ref()
+            ),
             rfc.path.display().to_string(),
         ));
     }
@@ -244,6 +239,9 @@ pub fn is_valid_adr_transition(from: AdrStatus, to: AdrStatus) -> bool {
 pub fn is_valid_work_transition(from: WorkItemStatus, to: WorkItemStatus) -> bool {
     matches!(
         (from, to),
-        (WorkItemStatus::Queue, WorkItemStatus::Active) | (WorkItemStatus::Active, WorkItemStatus::Done)
+        (WorkItemStatus::Queue, WorkItemStatus::Active)
+            | (WorkItemStatus::Active, WorkItemStatus::Done)
+            | (WorkItemStatus::Queue, WorkItemStatus::Cancelled)
+            | (WorkItemStatus::Active, WorkItemStatus::Cancelled)
     )
 }

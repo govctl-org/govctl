@@ -34,9 +34,7 @@ fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     // Filter by status or phase if provided
     if let Some(f) = filter {
         rfcs.retain(|r| {
-            r.rfc.status.as_ref() == f
-                || r.rfc.phase.as_ref() == f
-                || r.rfc.rfc_id.contains(f)
+            r.rfc.status.as_ref() == f || r.rfc.phase.as_ref() == f || r.rfc.rfc_id.contains(f)
         });
     }
 
@@ -103,10 +101,10 @@ fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
 
     // Filter by status if provided
     if let Some(f) = filter {
-        adrs.retain(|a| a.meta.status.as_ref() == f || a.meta.id.contains(f));
+        adrs.retain(|a| a.meta().status.as_ref() == f || a.meta().id.contains(f));
     }
 
-    adrs.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+    adrs.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
 
     let mut table = Table::new();
     table
@@ -116,10 +114,10 @@ fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
 
     for adr in adrs {
         table.add_row(vec![
-            adr.meta.id.as_str(),
-            adr.meta.status.as_ref(),
-            adr.meta.date.as_str(),
-            adr.meta.title.as_str(),
+            adr.meta().id.as_str(),
+            adr.meta().status.as_ref(),
+            adr.meta().date.as_str(),
+            adr.meta().title.as_str(),
         ]);
     }
 
@@ -136,18 +134,20 @@ fn list_work_items(index: &crate::model::ProjectIndex, filter: Option<&str>) {
         "all" => {}
         "pending" => {
             items.retain(|i| {
-                i.meta.status == WorkItemStatus::Queue || i.meta.status == WorkItemStatus::Active
+                i.meta().status == WorkItemStatus::Queue
+                    || i.meta().status == WorkItemStatus::Active
             });
         }
-        "queue" => items.retain(|i| i.meta.status == WorkItemStatus::Queue),
-        "active" => items.retain(|i| i.meta.status == WorkItemStatus::Active),
-        "done" => items.retain(|i| i.meta.status == WorkItemStatus::Done),
+        "queue" => items.retain(|i| i.meta().status == WorkItemStatus::Queue),
+        "active" => items.retain(|i| i.meta().status == WorkItemStatus::Active),
+        "done" => items.retain(|i| i.meta().status == WorkItemStatus::Done),
+        "cancelled" => items.retain(|i| i.meta().status == WorkItemStatus::Cancelled),
         other => {
-            items.retain(|i| i.meta.status.as_ref() == other || i.meta.id.contains(other));
+            items.retain(|i| i.meta().status.as_ref() == other || i.meta().id.contains(other));
         }
     }
 
-    items.sort_by(|a, b| a.meta.id.cmp(&b.meta.id));
+    items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
 
     let mut table = Table::new();
     table
@@ -157,9 +157,9 @@ fn list_work_items(index: &crate::model::ProjectIndex, filter: Option<&str>) {
 
     for item in items {
         table.add_row(vec![
-            item.meta.id.as_str(),
-            item.meta.status.as_ref(),
-            item.meta.title.as_str(),
+            item.meta().id.as_str(),
+            item.meta().status.as_ref(),
+            item.meta().title.as_str(),
         ]);
     }
 

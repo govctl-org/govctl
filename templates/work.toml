@@ -1,0 +1,30 @@
+# Work Item
+#
+# Status lifecycle: queue → active → done
+#                     ↓       ↓
+#                     └───────┴──→ cancelled
+#
+# Fields:
+#   - id: Unique identifier (WI-YYYY-MM-DD-NNN)
+#   - title: Short descriptive title
+#   - status: queue | active | done | cancelled
+#   - start_date: When work started (auto-set on active)
+#   - done_date: When work completed (auto-set on done/cancelled)
+#   - refs: References to related RFCs, ADRs
+
+[phaseos]
+schema = 1
+id = "{{ID}}"
+title = "{{TITLE}}"
+status = "queue"
+refs = []
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?
+"""
+
+notes = """
+Progress notes and updates.
+"""

@@ -16,10 +16,6 @@ clap = { version = "4", features = ["derive"] }
 # Serialization
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-serde_yaml = "0.9"
-
-# YAML frontmatter
-gray_matter = "0.2"
 
 # JSON Schema validation
 jsonschema = "0.29"
