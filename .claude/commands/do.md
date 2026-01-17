@@ -43,6 +43,22 @@ EOF
 2. **Proceed autonomously** unless you hit a blocking condition (see ERROR HANDLING)
 3. **Phase discipline** — follow `spec → impl → test → stable` for RFC-governed work
 4. **RFC supremacy** — behavioral changes must be grounded in RFCs
+5. **RFC advancement requires permission** — see RFC ADVANCEMENT GATE below
+
+---
+
+## RFC ADVANCEMENT GATE
+
+**Default behavior:** Ask for human permission before:
+- `govctl finalize <RFC-ID> normative`
+- `govctl advance <RFC-ID> <phase>`
+
+**Override:** If `$ARGUMENTS` contains phrases like:
+- "free", "autonomous", "all allowed", "no permission needed", "full authority"
+
+Then RFC advancement may proceed without asking.
+
+**Rationale:** RFC status/phase changes are significant governance actions. They should not happen silently unless explicitly authorized.
 
 ---
 
@@ -188,22 +204,22 @@ Before implementation, verify:
 ```bash
 # Check current state
 cargo run --quiet -- list rfc
-
-# If RFC is draft, finalize it first
-cargo run --quiet -- finalize <RFC-ID> normative
-
-# If RFC phase is spec, advance to impl
-cargo run --quiet -- advance <RFC-ID> impl
 ```
 
 **Gate conditions per RFC-0001:**
 
 | RFC Status | RFC Phase | Action |
 |------------|-----------|--------|
-| draft | spec | Finalize → advance → implement (experimental) |
-| normative | spec | Advance → implement |
+| draft | spec | **ASK PERMISSION** → Finalize → advance → implement |
+| normative | spec | **ASK PERMISSION** → Advance → implement |
 | normative | impl+ | Proceed directly |
 | deprecated | any | ❌ No new implementation allowed |
+
+**If permission granted (or override in $ARGUMENTS):**
+```bash
+cargo run --quiet -- finalize <RFC-ID> normative  # if draft
+cargo run --quiet -- advance <RFC-ID> impl        # if spec phase
+```
 
 ### 3.2 Implement
 
@@ -229,6 +245,7 @@ jj commit -m "feat(<scope>): <description>"
 
 ### 4.1 Advance Phase (if RFC exists)
 
+**ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 ```bash
 cargo run --quiet -- advance <RFC-ID> test
 ```
@@ -261,7 +278,7 @@ cargo test
 
 ### 5.2 Advance RFC to Stable (if applicable)
 
-If RFC exists and all tests pass:
+If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 ```bash
 cargo run --quiet -- advance <RFC-ID> stable
 ```
