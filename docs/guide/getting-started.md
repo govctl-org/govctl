@@ -12,12 +12,24 @@ This guide walks you through installing govctl and creating your first governed 
 # From crates.io
 cargo install govctl
 
+# With TUI dashboard feature
+cargo install govctl --features tui
+
 # Or build from source
 git clone https://github.com/govctl-org/govctl
 cd govctl
 cargo build --release
 # Binary at ./target/release/govctl
+
+# Build with TUI
+cargo build --release --features tui
 ```
+
+### Optional Features
+
+| Feature | Description                                   | Dependencies       |
+| ------- | --------------------------------------------- | ------------------ |
+| `tui`   | Interactive terminal dashboard (`govctl tui`) | ratatui, crossterm |
 
 ## Initialize a Project
 

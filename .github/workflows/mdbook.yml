@@ -28,7 +28,10 @@ jobs:
         run: cargo build --release
 
       - name: Render governance artifacts
-        run: ./target/release/govctl render all
+        run: |
+          ./target/release/govctl render rfc
+          ./target/release/govctl render adr
+          ./target/release/govctl render changelog
 
       - name: Build mdbook
         run: ./scripts/build-book.sh --skip-render

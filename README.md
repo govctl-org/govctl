@@ -89,6 +89,9 @@ govctl governs itself by its own rules. This repository is the first proof.
 # Install
 cargo install govctl
 
+# Or with TUI dashboard
+cargo install govctl --features tui
+
 # Initialize project
 govctl init
 
