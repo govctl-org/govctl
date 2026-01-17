@@ -31,7 +31,14 @@ pub struct App {
 
 impl App {
     /// Create new app with loaded project index
-    pub fn new(index: ProjectIndex) -> Self {
+    pub fn new(mut index: ProjectIndex) -> Self {
+        // Sort all items by ID for consistent display
+        index.rfcs.sort_by(|a, b| a.rfc.rfc_id.cmp(&b.rfc.rfc_id));
+        index.adrs.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
+        index
+            .work_items
+            .sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
+
         Self {
             index,
             view: View::Dashboard,
