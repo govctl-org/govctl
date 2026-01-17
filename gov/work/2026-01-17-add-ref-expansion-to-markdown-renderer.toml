@@ -1,0 +1,25 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-007"
+title = "Add ref expansion to markdown renderer"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+notes = ""
+
+[[content.acceptance_criteria]]
+text = "Refs in ADRs render as markdown links"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Refs in Work Items render as markdown links"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Clause refs link to RFC file with anchor"
+status = "pending"
