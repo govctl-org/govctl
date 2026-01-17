@@ -2,34 +2,34 @@
 schema = 1
 id = "WI-2026-01-17-028"
 title = "Add prefix-based changelog category parsing"
-status = "active"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
+completed = "2026-01-17"
 refs = ["ADR-0012"]
 
 [content]
 description = """
 Implement [[ADR-0012]] prefix-based changelog category parsing for `govctl bump -c` flags.
 
-Parse conventional-commit-style prefixes (e.g., `fix:`, `security:`) from change strings \
-and route to the appropriate changelog category. Default to `added` for backward compatibility."""
+Parse conventional-commit-style prefixes (e.g., `fix:`, `security:`) from change strings and route to the appropriate changelog category. Default to `added` for backward compatibility."""
 
 [[content.acceptance_criteria]]
 text = "Parse prefix from change string (add:, fix:, changed:, deprecated:, removed:, security:)"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Route changes to correct changelog category based on prefix"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Validate unknown prefixes with helpful error message"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Default to added category when no prefix"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "All tests pass"
-status = "pending"
+status = "done"
