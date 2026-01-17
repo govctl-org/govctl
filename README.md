@@ -54,13 +54,11 @@ These are non-negotiable:
 
 ## Current Status
 
-govctl is in its constitutional phase. The following RFCs define its governance:
+govctl is in active development. The following RFCs define its governance:
 
-| RFC                              | Title            | Status |
-| -------------------------------- | ---------------- | ------ |
-| [RFC-0000](docs/rfc/RFC-0000.md) | What an RFC Is   | Draft  |
-| [RFC-0001](docs/rfc/RFC-0001.md) | govctl Vision    | Draft  |
-| [RFC-0002](docs/rfc/RFC-0002.md) | Phase Discipline | Draft  |
+| RFC                              | Title                       | Status    | Phase  |
+| -------------------------------- | --------------------------- | --------- | ------ |
+| [RFC-0000](docs/rfc/RFC-0000.md) | govctl Governance Framework | Normative | Stable |
 
 ---
 
