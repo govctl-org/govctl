@@ -1,7 +1,7 @@
 [govctl]
 schema = 1
 id = "WI-2026-01-17-017"
-title = "Simplify WorkItem schema: remove decisions, change notes to Vec<String>"
+title = "Simplify WorkItem schema: remove decisions, change notes to `Vec<String>`"
 status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
@@ -17,7 +17,7 @@ text = "Remove decisions field from WorkItemContent struct"
 status = "done"
 
 [[content.acceptance_criteria]]
-text = "Change notes field from String to Vec<String>"
+text = "Change notes field from String to `Vec<String>`"
 status = "done"
 
 [[content.acceptance_criteria]]

@@ -79,25 +79,6 @@ pub fn render_rfc(rfc: &RfcIndex) -> anyhow::Result<String> {
     // Compute signature from source content (per ADR-0003)
     let signature = compute_rfc_signature(rfc)?;
 
-    // YAML frontmatter (for compatibility with existing tooling)
-    // Note: writeln! to String is infallible, using let _ to be explicit
-    let _ = writeln!(out, "---");
-    let _ = writeln!(out, "govctl:");
-    let _ = writeln!(out, "  schema: 1");
-    let _ = writeln!(out, "  id: {}", rfc.rfc.rfc_id);
-    let _ = writeln!(out, "  title: \"{}\"", rfc.rfc.title);
-    let _ = writeln!(out, "  version: \"{}\"", rfc.rfc.version);
-    let _ = writeln!(out, "  kind: rfc");
-    let _ = writeln!(out, "  status: {}", rfc.rfc.status.as_ref());
-    let _ = writeln!(out, "  phase: {}", rfc.rfc.phase.as_ref());
-    let _ = writeln!(out, "  owners: {:?}", rfc.rfc.owners);
-    let _ = writeln!(out, "  created: {}", rfc.rfc.created);
-    if let Some(ref updated) = rfc.rfc.updated {
-        let _ = writeln!(out, "  updated: {updated}");
-    }
-    let _ = writeln!(out, "---");
-    let _ = writeln!(out);
-
     // Signature header (tampering detection per ADR-0003)
     out.push_str(&format_signature_header(&rfc.rfc.rfc_id, &signature));
     let _ = writeln!(out);

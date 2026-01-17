@@ -16,11 +16,11 @@ This asymmetry creates problems:
 3. Validation cannot check RFC references for consistency
 4. Impact analysis for deprecation is incomplete
 
-The existing pattern in AdrMeta and WorkItemMeta is: refs: Vec<String> with validation against known artifact IDs."""
+The existing pattern in AdrMeta and WorkItemMeta is: `refs: Vec<String>` with validation against known artifact IDs."""
 decision = """
 Add refs field to RfcSpec following the same pattern as AdrMeta and WorkItemMeta:
 
-1. Add refs: Vec<String> to RfcSpec model (serde skip_serializing_if empty)
+1. Add `refs: Vec<String>` to RfcSpec model (serde skip_serializing_if empty)
 2. Add diagnostic code E0105RfcRefNotFound for validation errors
 3. Extend validate_artifact_refs() to include RFC refs validation
 4. Support add/remove/get refs operations in edit commands for RFCs

@@ -18,8 +18,8 @@ Add configurable source code scanning with:
 
 1. New [source_scan] config section with:
    - enabled: bool (default false)
-   - roots: Vec<PathBuf> (directories to scan)
-   - exts: Vec<String> (file extensions to include)
+   - `roots: Vec<PathBuf>` (directories to scan)
+   - `exts: Vec<String>` (file extensions to include)
    - pattern: String (regex with capture group for artifact ID)
 
 2. Default pattern matches [[RFC-0001:C-NAME]] and [[ADR-0001]] style references

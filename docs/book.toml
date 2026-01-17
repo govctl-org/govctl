@@ -3,7 +3,6 @@ title = "govctl"
 description = "Opinionated governance CLI for RFC-driven AI software development"
 authors = ["govctl-org"]
 language = "en"
-multilingual = false
 src = "."
 
 [build]
