@@ -86,6 +86,7 @@ pub fn render_rfc(rfc: &RfcIndex) -> anyhow::Result<String> {
     let _ = writeln!(out, "  schema: 1");
     let _ = writeln!(out, "  id: {}", rfc.rfc.rfc_id);
     let _ = writeln!(out, "  title: \"{}\"", rfc.rfc.title);
+    let _ = writeln!(out, "  version: \"{}\"", rfc.rfc.version);
     let _ = writeln!(out, "  kind: rfc");
     let _ = writeln!(out, "  status: {}", rfc.rfc.status.as_ref());
     let _ = writeln!(out, "  phase: {}", rfc.rfc.phase.as_ref());
