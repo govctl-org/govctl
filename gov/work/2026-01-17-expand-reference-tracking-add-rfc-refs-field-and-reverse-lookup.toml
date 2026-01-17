@@ -5,6 +5,7 @@ title = "Expand reference tracking: add RFC refs field and reverse lookup"
 status = "active"
 created = "2026-01-17"
 started = "2026-01-17"
+refs = ["ADR-0008"]
 
 [content]
 description = """

@@ -1,0 +1,42 @@
+[govctl]
+schema = 1
+id = "ADR-0008"
+title = "Add refs field to RfcSpec for artifact cross-referencing"
+status = "accepted"
+date = "2026-01-17"
+refs = ["RFC-0000"]
+
+[content]
+context = """
+RFCs are the supreme governance documents in govctl, yet they cannot formally reference other artifacts (ADRs, other RFCs, work items). Meanwhile, ADRs and Work Items both have a refs field for cross-referencing.
+
+This asymmetry creates problems:
+1. RFCs cannot declare dependencies on ADRs that informed their design
+2. No way to trace which ADRs led to an RFC's creation
+3. Validation cannot check RFC references for consistency
+4. Impact analysis for deprecation is incomplete
+
+The existing pattern in AdrMeta and WorkItemMeta is: refs: Vec<String> with validation against known artifact IDs."""
+decision = """
+Add refs field to RfcSpec following the same pattern as AdrMeta and WorkItemMeta:
+
+1. Add refs: Vec<String> to RfcSpec model (serde skip_serializing_if empty)
+2. Add diagnostic code E0105RfcRefNotFound for validation errors
+3. Extend validate_artifact_refs() to include RFC refs validation
+4. Support add/remove/get refs operations in edit commands for RFCs
+5. Validate RFC supersedes field against known RFCs (currently unvalidated)
+
+This creates consistency across all artifact types and enables complete cross-reference tracking."""
+consequences = """
+Positive:
+- RFCs can now reference ADRs, other RFCs, and work items
+- Complete artifact graph for impact analysis
+- Consistent API across all artifact types
+- Existing RFCs remain valid (refs is optional, defaults to empty)
+
+Negative:
+- Minor schema change to RfcSpec
+- Slightly more validation overhead on check
+
+Neutral:
+- Existing RFCs do not need migration (empty default)"""
