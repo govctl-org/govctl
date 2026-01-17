@@ -45,6 +45,21 @@ impl ArtifactType {
     }
 }
 
+/// Normalize field name aliases to canonical form.
+///
+/// Supports short aliases for commonly used fields:
+/// - `ac` → `acceptance_criteria`
+/// - `alt` → `alternatives`
+/// - `desc` → `description`
+fn normalize_field(field: &str) -> &str {
+    match field {
+        "ac" => "acceptance_criteria",
+        "alt" => "alternatives",
+        "desc" => "description",
+        _ => field,
+    }
+}
+
 /// Loaded RFC with its path
 pub struct LoadedRfc {
     pub path: PathBuf,
@@ -254,6 +269,7 @@ pub fn set_field(
     stdin: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
+    let field = normalize_field(field);
     let value = resolve_value(value, stdin)?;
     let value = value.as_str();
 
@@ -339,6 +355,7 @@ pub fn get_field(
     id: &str,
     field: Option<&str>,
 ) -> anyhow::Result<Vec<Diagnostic>> {
+    let field = field.map(normalize_field);
     match ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))? {
         ArtifactType::Clause => {
             let LoadedClause { data: clause, .. } = load_clause(config, id)?;
@@ -460,6 +477,7 @@ pub fn add_to_field(
     stdin: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
+    let field = normalize_field(field);
     let value = resolve_value(value, stdin)?;
     let value = value.as_str();
 
@@ -602,6 +620,7 @@ pub fn remove_from_field(
     opts: &MatchOptions,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
+    let field = normalize_field(field);
     match ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))? {
         ArtifactType::Rfc => {
             let LoadedRfc { path, mut data } = load_rfc(config, id)?;
@@ -740,6 +759,7 @@ pub fn tick_item(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     use crate::model::{AlternativeStatus, ChecklistStatus};
 
+    let field = normalize_field(field);
     let artifact_type = ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))?;
 
     let (ticked_text, status_str): (String, String) = match artifact_type {
