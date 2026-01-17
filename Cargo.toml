@@ -50,6 +50,7 @@ strum = { version = "0.27", features = ["derive"] }
 
 # File system traversal
 walkdir = "2"
+globset = "0.4"
 
 # Terminal output
 comfy-table = "7"

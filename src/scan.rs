@@ -1,13 +1,13 @@
 //! Source code reference scanning.
 //!
-//! Scans configured directories for references to governance artifacts
-//! and validates they exist in the project index.
+//! Scans files matching include/exclude glob patterns for references to
+//! governance artifacts and validates they exist in the project index.
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ClauseStatus, ProjectIndex, RfcStatus};
+use globset::{Glob, GlobSetBuilder};
 use regex::Regex;
-use std::collections::HashSet;
 use std::fs;
 use walkdir::WalkDir;
 
@@ -30,7 +30,7 @@ pub fn scan_source_refs(config: &Config, index: &ProjectIndex) -> ScanResult {
     // Build known artifact IDs
     let known_ids = build_artifact_index(index);
 
-    // Compile the pattern
+    // Compile the artifact pattern
     let pattern = match Regex::new(&config.source_scan.pattern) {
         Ok(re) => re,
         Err(e) => {
@@ -43,63 +43,114 @@ pub fn scan_source_refs(config: &Config, index: &ProjectIndex) -> ScanResult {
         }
     };
 
-    // Collect file extensions for filtering
-    let exts: HashSet<&str> = config.source_scan.exts.iter().map(|s| s.as_str()).collect();
+    // Build include glob set
+    let mut include_builder = GlobSetBuilder::new();
+    for pat in &config.source_scan.include {
+        match Glob::new(pat) {
+            Ok(g) => {
+                include_builder.add(g);
+            }
+            Err(e) => {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0501ConfigInvalid,
+                    format!("Invalid source_scan.include glob '{}': {}", pat, e),
+                    "gov/config.toml".to_string(),
+                ));
+                return result;
+            }
+        }
+    }
+    let include_set = match include_builder.build() {
+        Ok(s) => s,
+        Err(e) => {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0501ConfigInvalid,
+                format!("Failed to build include glob set: {}", e),
+                "gov/config.toml".to_string(),
+            ));
+            return result;
+        }
+    };
 
-    // Walk configured roots
-    for root in &config.source_scan.roots {
-        if !root.exists() {
+    // Build exclude glob set
+    let mut exclude_builder = GlobSetBuilder::new();
+    for pat in &config.source_scan.exclude {
+        match Glob::new(pat) {
+            Ok(g) => {
+                exclude_builder.add(g);
+            }
+            Err(e) => {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0501ConfigInvalid,
+                    format!("Invalid source_scan.exclude glob '{}': {}", pat, e),
+                    "gov/config.toml".to_string(),
+                ));
+                return result;
+            }
+        }
+    }
+    let exclude_set = match exclude_builder.build() {
+        Ok(s) => s,
+        Err(e) => {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0501ConfigInvalid,
+                format!("Failed to build exclude glob set: {}", e),
+                "gov/config.toml".to_string(),
+            ));
+            return result;
+        }
+    };
+
+    // Walk from current directory, filter by include/exclude
+    let files = WalkDir::new(".")
+        .follow_links(false)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file());
+
+    for entry in files {
+        let path = entry.path();
+        // Strip leading "./" for glob matching
+        let match_path = path.strip_prefix("./").unwrap_or(path);
+
+        // Check include/exclude
+        if !include_set.is_match(match_path) || exclude_set.is_match(match_path) {
             continue;
         }
 
-        let files = WalkDir::new(root)
-            .follow_links(false)
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file())
-            .filter(|e| {
-                e.path()
-                    .extension()
-                    .and_then(|ext| ext.to_str())
-                    .is_some_and(|ext| exts.contains(ext))
-            });
+        let Ok(content) = fs::read_to_string(path) else {
+            continue;
+        };
 
-        for entry in files {
-            let path = entry.path();
-            let Ok(content) = fs::read_to_string(path) else {
+        result.files_scanned += 1;
+        let path_str = match_path.to_string_lossy().to_string();
+
+        // Find all matches
+        for caps in pattern.captures_iter(&content) {
+            let Some(artifact_id) = caps.get(1).map(|m| m.as_str()) else {
                 continue;
             };
 
-            result.files_scanned += 1;
-            let path_str = path.to_string_lossy().to_string();
+            result.refs_found += 1;
 
-            // Find all matches
-            for caps in pattern.captures_iter(&content) {
-                let Some(artifact_id) = caps.get(1).map(|m| m.as_str()) else {
-                    continue;
-                };
-
-                result.refs_found += 1;
-
-                // Check if artifact exists
-                match known_ids.get(artifact_id) {
-                    None => {
-                        result.diagnostics.push(Diagnostic::new(
-                            DiagnosticCode::E0107SourceRefUnknown,
-                            format!("Unknown artifact reference: {}", artifact_id),
-                            path_str.clone(),
-                        ));
-                    }
-                    Some(ArtifactState::Outdated(reason)) => {
-                        result.diagnostics.push(Diagnostic::new(
-                            DiagnosticCode::W0107SourceRefOutdated,
-                            format!("Outdated artifact reference: {} ({})", artifact_id, reason),
-                            path_str.clone(),
-                        ));
-                    }
-                    Some(ArtifactState::Active) => {
-                        // OK - reference is valid
-                    }
+            // Check if artifact exists
+            match known_ids.get(artifact_id) {
+                None => {
+                    result.diagnostics.push(Diagnostic::new(
+                        DiagnosticCode::E0107SourceRefUnknown,
+                        format!("Unknown artifact reference: {}", artifact_id),
+                        path_str.clone(),
+                    ));
+                }
+                Some(ArtifactState::Outdated(reason)) => {
+                    result.diagnostics.push(Diagnostic::new(
+                        DiagnosticCode::W0107SourceRefOutdated,
+                        format!("Outdated artifact reference: {} ({})", artifact_id, reason),
+                        path_str.clone(),
+                    ));
+                }
+                Some(ArtifactState::Active) => {
+                    // OK - reference is valid
                 }
             }
         }

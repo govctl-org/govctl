@@ -10,5 +10,5 @@ version = 1
 
 [source_scan]
 enabled = true
-roots = ["src"]
-exts = ["rs"]
+include = ["src/**/*.rs"]
+exclude = []
