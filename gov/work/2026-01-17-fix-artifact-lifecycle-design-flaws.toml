@@ -5,6 +5,7 @@ title = "Fix artifact lifecycle design flaws"
 status = "active"
 created = "2026-01-17"
 started = "2026-01-17"
+refs = ["ADR-0002"]
 
 [content]
 description = """
