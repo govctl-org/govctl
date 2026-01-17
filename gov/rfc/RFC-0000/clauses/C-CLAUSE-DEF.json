@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-CLAUSE-DEF",
+  "title": "Clause Definition",
+  "kind": "normative",
+  "status": "active",
+  "text": "A clause is an individual requirement or statement within an RFC.\n\nEvery clause MUST be stored as a JSON file containing:\n- `clause_id`: Unique identifier within the RFC (e.g., C-PHASE-ORDER)\n- `title`: Human-readable title\n- `kind`: normative | informative | deprecated\n- `status`: active | superseded | deprecated\n- `text`: The clause content\n- `since`: Version when the clause was introduced\n\nClause kinds:\n- **normative**: Defines a requirement. Implementations MUST comply.\n- **informative**: Provides context. No compliance requirement.\n- **deprecated**: Obsolete. Retained for historical reference.",
+  "since": "1.0.0"
+}

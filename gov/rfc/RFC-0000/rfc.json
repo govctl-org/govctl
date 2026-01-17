@@ -1,35 +1,42 @@
 {
   "rfc_id": "RFC-0000",
-  "title": "What an RFC Is",
-  "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["@your-handle"],
+  "title": "govctl Governance Framework",
+  "version": "1.0.0",
+  "status": "normative",
+  "phase": "stable",
+  "owners": ["@govctl-org"],
   "created": "2026-01-17",
   "sections": [
     {
-      "title": "Summary"
+      "title": "Summary",
+      "clauses": ["clauses/C-SUMMARY.json"]
     },
     {
-      "title": "Specification"
-    },
-    {
-      "title": "Definition",
-      "clauses": ["clauses/C-RFC-DEF.json"]
-    },
-    {
-      "title": "Lifecycle",
+      "title": "RFC Specification",
       "clauses": [
+        "clauses/C-RFC-DEF.json",
         "clauses/C-STATUS-LIFECYCLE.json",
         "clauses/C-PHASE-LIFECYCLE.json"
       ]
+    },
+    {
+      "title": "Clause Specification",
+      "clauses": ["clauses/C-CLAUSE-DEF.json"]
+    },
+    {
+      "title": "ADR Specification",
+      "clauses": ["clauses/C-ADR-DEF.json"]
+    },
+    {
+      "title": "Work Item Specification",
+      "clauses": ["clauses/C-WORK-DEF.json"]
     }
   ],
   "changelog": [
     {
-      "version": "0.1.0",
+      "version": "1.0.0",
       "date": "2026-01-17",
-      "summary": "Initial draft"
+      "summary": "Initial stable release"
     }
   ]
 }

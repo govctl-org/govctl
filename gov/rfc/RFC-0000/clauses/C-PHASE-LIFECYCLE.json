@@ -1,8 +1,8 @@
 {
   "clause_id": "C-PHASE-LIFECYCLE",
-  "title": "Phase Lifecycle",
+  "title": "RFC Phase Lifecycle",
   "kind": "normative",
   "status": "active",
-  "text": "RFC phase follows this lifecycle:\n\n```\nspec → impl → test → stable\n```\n\n- **spec**: Defining what will be built\n- **impl**: Building what was specified  \n- **test**: Verifying implementation\n- **stable**: Released for use\n\nPhases MUST NOT be skipped. Each phase transition requires the previous phase gate to pass.\n\nPhase constraints:\n- `draft + stable` is FORBIDDEN (cannot stabilize unratified work)\n- `deprecated + impl/test` is FORBIDDEN (no new work on deprecated specs)",
-  "since": "0.1.0"
+  "text": "RFC phase follows this lifecycle:\n\n    spec → impl → test → stable\n\n**spec**: Defining what will be built. No implementation work permitted.\n\n**impl**: Building what was specified. Implementation proceeds per spec.\n\n**test**: Verifying implementation matches specification.\n\n**stable**: Released for production use.\n\nPhase rules:\n- Phases MUST proceed in order; skipping is FORBIDDEN\n- Each phase transition requires the previous phase gate to pass\n- draft + stable is FORBIDDEN (cannot stabilize unratified work)\n- deprecated + impl/test is FORBIDDEN (no new work on deprecated specs)",
+  "since": "1.0.0"
 }

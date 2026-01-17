@@ -1,8 +1,0 @@
-{
-  "clause_id": "C-VISION",
-  "title": "Core Vision",
-  "kind": "normative",
-  "status": "active",
-  "text": "PhaseOS is a governance system that ensures software development proceeds through well-defined phases with explicit gates.\n\nThe core principle: **No implementation work may proceed without a normative RFC in the appropriate phase.**\n\nThis is the fundamental invariant of PhaseOS governance.",
-  "since": "0.1.0"
-}

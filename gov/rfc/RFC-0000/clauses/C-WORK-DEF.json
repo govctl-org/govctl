@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-WORK-DEF",
+  "title": "Work Item Definition",
+  "kind": "normative",
+  "status": "active",
+  "text": "A Work Item tracks a unit of work from inception to completion.\n\nEvery Work Item MUST be stored as a TOML file containing:\n- `[govctl]` section with: id, title, status, refs\n- `[content]` section with: description, acceptance_criteria, decisions, notes\n\nWork Item status lifecycle:\n\n    queue → active → done\n              ↓\n          cancelled\n\n**queue**: Planned but not started.\n\n**active**: Currently in progress. Only one active item recommended per focus area.\n\n**done**: Completed. All acceptance criteria met.\n\n**cancelled**: Abandoned. Reason documented in notes.\n\nA Work Item MUST NOT transition to done if any acceptance_criteria are pending.",
+  "since": "1.0.0"
+}

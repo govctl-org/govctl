@@ -4,7 +4,7 @@ id = "ADR-0001"
 title = "Use TOML for ADRs and Work Items"
 status = "accepted"
 date = "2026-01-17"
-refs = ["RFC-0000"]
+refs = ["RFC-0000:C-ADR-DEF", "RFC-0000:C-WORK-DEF"]
 
 [content]
 context = """
