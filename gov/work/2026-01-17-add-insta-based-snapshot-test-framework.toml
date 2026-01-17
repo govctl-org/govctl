@@ -33,3 +33,4 @@ status = "done"
 [[content.acceptance_criteria]]
 text = "All tests pass with cargo test"
 status = "done"
+category = "chore"

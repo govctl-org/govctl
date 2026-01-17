@@ -33,12 +33,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Route changes to correct changelog category based on prefix (WI-2026-01-17-028)
 - Validate unknown prefixes with helpful error message (WI-2026-01-17-028)
 - Default to added category when no prefix (WI-2026-01-17-028)
-- All tests pass (WI-2026-01-17-028)
 - Add SourceScanConfig to config.rs with enabled, roots, exts, pattern fields (WI-2026-01-17-024)
 - Add E0107SourceRefUnknown and W0107SourceRefOutdated diagnostic codes (WI-2026-01-17-024)
 - Create scan.rs with scan_source_refs function (WI-2026-01-17-024)
 - Integrate scanner into check command (WI-2026-01-17-024)
-- All tests pass (WI-2026-01-17-024)
 - Add concrete Before/After example (WI-2026-01-17-020)
 - Add visual workflow diagram (WI-2026-01-17-020)
 - Add Who This Is For section (WI-2026-01-17-020)
@@ -61,7 +59,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Change notes field from String to `Vec<String>` (WI-2026-01-17-017)
 - Migrate existing work items to new schema (WI-2026-01-17-017)
 - Update new work item template (WI-2026-01-17-017)
-- All tests pass (WI-2026-01-17-017)
 - ADR refs field validates that referenced artifacts exist (WI-2026-01-17-006)
 - Work Item refs field validates that referenced artifacts exist (WI-2026-01-17-006)
 - govctl check reports diagnostics for invalid refs (WI-2026-01-17-006)
@@ -77,11 +74,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add acceptance criteria setup in Phase 1 (WI-2026-01-17-021)
 - Add warning diagnostic for placeholder descriptions (WI-2026-01-17-025)
 - Detect common placeholder patterns (WI-2026-01-17-025)
-- All tests pass (WI-2026-01-17-025)
 - Add `expand_inline_refs()` function using source_scan pattern (WI-2026-01-17-027)
 - Apply expansion to ADR content fields (context, decision, consequences) (WI-2026-01-17-027)
 - Apply expansion to work item content fields (description, notes, acceptance_criteria) (WI-2026-01-17-027)
-- All tests pass (WI-2026-01-17-027)
 - `new rfc "Title"` auto-generates RFC-ID (WI-2026-01-17-002)
 - `new rfc --id RFC-XXXX "Title"` allows manual ID with collision check (WI-2026-01-17-002)
 - `new work` generates unique IDs (no collisions) (WI-2026-01-17-002)
@@ -98,7 +93,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate RFC refs against known artifacts (WI-2026-01-17-023)
 - Add diagnostic code for RFC ref not found (WI-2026-01-17-023)
 - Support add/remove/get refs for RFCs in edit commands (WI-2026-01-17-023)
-- All tests pass (WI-2026-01-17-023)
 - Multi-line criterion:
 - First condition
 - Second condition (WI-2026-01-17-001)
@@ -107,7 +101,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Create minimal test fixtures for valid and invalid governance states (WI-2026-01-17-015)
 - Implement test harness with path normalization and color stripping (WI-2026-01-17-015)
 - Add snapshot tests for check, list, and status commands (WI-2026-01-17-015)
-- All tests pass with cargo test (WI-2026-01-17-015)
 
 ### Changed
 
@@ -117,6 +110,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- All tests pass (WI-2026-01-17-030)
 - All existing work items remain valid (backward compatible default) (WI-2026-01-17-029)
-- All tests pass (WI-2026-01-17-029)

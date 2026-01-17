@@ -22,7 +22,7 @@ notes = ""
 # [[content.acceptance_criteria]]
 # text = "Criterion description"
 # status = "pending"  # pending | done | cancelled
-# category = "added"  # added | changed | deprecated | removed | fixed | security
+# category = "added"  # added | changed | deprecated | removed | fixed | security | chore (chore items excluded from changelog)
 #
 # CLI supports prefix parsing per ADR-0012/ADR-0013:
 #   govctl add WI-xxx acceptance_criteria "fix: memory leak"

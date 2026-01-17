@@ -28,7 +28,7 @@ Updated throughout the work item lifecycle.
 [[content.acceptance_criteria]]
 text = "First criterion to meet"
 status = "pending"    # pending (default) | done | cancelled
-category = "added"    # added (default) | changed | deprecated | removed | fixed | security
+category = "added"    # added (default) | changed | deprecated | removed | fixed | security | chore
 
 [[content.acceptance_criteria]]
 text = "Second criterion"

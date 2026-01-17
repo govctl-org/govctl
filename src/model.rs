@@ -316,12 +316,14 @@ pub enum ChangelogCategory {
     Removed,
     Fixed,
     Security,
+    /// Internal/housekeeping items - excluded from rendered changelog
+    Chore,
 }
 
 impl ChangelogCategory {
     /// All valid category prefixes for parsing
     pub const VALID_PREFIXES: &'static [&'static str] =
-        &["add", "changed", "deprecated", "removed", "fix", "security"];
+        &["add", "changed", "deprecated", "removed", "fix", "security", "chore"];
 
     /// Parse a prefix string into a category
     pub fn from_prefix(prefix: &str) -> Option<Self> {
@@ -332,6 +334,7 @@ impl ChangelogCategory {
             "removed" | "remove" => Some(Self::Removed),
             "fix" | "fixed" => Some(Self::Fixed),
             "security" | "sec" => Some(Self::Security),
+            "chore" | "internal" => Some(Self::Chore),
             _ => None,
         }
     }

@@ -213,6 +213,9 @@ pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
             ChangelogCategory::Removed => entry.removed.push(parsed.message),
             ChangelogCategory::Fixed => entry.fixed.push(parsed.message),
             ChangelogCategory::Security => entry.security.push(parsed.message),
+            ChangelogCategory::Chore => {
+                anyhow::bail!("'chore:' category is not valid for RFC changelogs (use for work items only)")
+            }
         }
     } else {
         anyhow::bail!("No changelog entry exists. Bump version first.");

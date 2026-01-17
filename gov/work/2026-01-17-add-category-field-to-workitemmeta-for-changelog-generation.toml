@@ -50,4 +50,4 @@ category = "fixed"
 [[content.acceptance_criteria]]
 text = "All tests pass"
 status = "done"
-category = "fixed"
+category = "chore"
