@@ -157,6 +157,13 @@ pub fn render_rfc(rfc: &RfcIndex) -> String {
     out
 }
 
+/// Generate anchor ID for a clause (matches ref_link anchor format).
+fn clause_anchor(rfc_id: &str, clause_id: &str) -> String {
+    format!("{}:{}", rfc_id, clause_id)
+        .to_lowercase()
+        .replace(':', "")
+}
+
 /// Render a single clause
 fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEntry) {
     let spec = &clause.spec;
@@ -173,9 +180,12 @@ fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEn
         ClauseStatus::Superseded => " ~~SUPERSEDED~~",
     };
 
+    // Generate anchor for clause linking (matches ref_link anchor format)
+    let anchor = clause_anchor(rfc_id, &spec.clause_id);
+
     writeln!(
         out,
-        "### [{rfc_id}:{}] {} {kind_marker}{status_marker}",
+        "### [{rfc_id}:{}] {} {kind_marker}{status_marker} <a id=\"{anchor}\"></a>",
         spec.clause_id, spec.title
     )
     .unwrap();
