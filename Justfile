@@ -249,3 +249,17 @@ tick-cancel id field pattern:
 # Launch interactive TUI dashboard
 tui:
     cargo run --quiet --features tui -- tui
+
+# =============================================================================
+# Development Helpers
+# =============================================================================
+
+# Sync Claude commands from assets/ with cargo run substitution
+# Run this after editing assets/*.md templates
+[unix]
+sync-commands:
+    ./scripts/sync-commands.sh
+
+[windows]
+sync-commands:
+    powershell -ExecutionPolicy Bypass -File scripts/sync-commands.ps1

@@ -13,8 +13,15 @@ use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
 use std::path::PathBuf;
 
-/// Embedded Claude command template for governed workflows
-const DO_COMMAND_TEMPLATE: &str = include_str!("../../assets/do.md");
+/// Embedded Claude command templates for governed workflows
+const GOV_COMMAND_TEMPLATE: &str = include_str!("../../assets/gov.md");
+const QUICK_COMMAND_TEMPLATE: &str = include_str!("../../assets/quick.md");
+const STATUS_COMMAND_TEMPLATE: &str = include_str!("../../assets/status.md");
+
+/// Placeholder for govctl command in templates
+const GOVCTL_PLACEHOLDER: &str = "{{GOVCTL}}";
+/// Default replacement for govctl command
+const GOVCTL_DEFAULT: &str = "govctl";
 
 /// Initialize govctl project
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
@@ -51,17 +58,27 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         ui::created_path(&config_path);
     }
 
-    // Create .claude/commands directory and write do.md
+    // Create .claude/commands directory and write command templates
     let claude_commands_dir = PathBuf::from(".claude/commands");
     create_dir_all(&claude_commands_dir, op)?;
     if !op.is_preview() {
         ui::created_path(&claude_commands_dir);
     }
 
-    let do_command_path = claude_commands_dir.join("do.md");
-    write_file(&do_command_path, DO_COMMAND_TEMPLATE, op)?;
-    if !op.is_preview() {
-        ui::created_path(&do_command_path);
+    // Write command templates with {{GOVCTL}} → govctl substitution
+    let templates = [
+        ("gov.md", GOV_COMMAND_TEMPLATE),
+        ("quick.md", QUICK_COMMAND_TEMPLATE),
+        ("status.md", STATUS_COMMAND_TEMPLATE),
+    ];
+
+    for (filename, template) in templates {
+        let content = template.replace(GOVCTL_PLACEHOLDER, GOVCTL_DEFAULT);
+        let path = claude_commands_dir.join(filename);
+        write_file(&path, &content, op)?;
+        if !op.is_preview() {
+            ui::created_path(&path);
+        }
     }
 
     if !op.is_preview() {

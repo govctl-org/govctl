@@ -4,7 +4,7 @@ allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, T
 argument-hint: <what-to-do>
 ---
 
-# /do — Governed Workflow
+# /gov — Governed Workflow
 
 Execute a complete, auditable workflow to do: `$ARGUMENTS`
 
@@ -13,24 +13,24 @@ Execute a complete, auditable workflow to do: `$ARGUMENTS`
 ## QUICK REFERENCE
 
 ```bash
-# govctl commands
-cargo run --quiet -- status                   # Show summary
-cargo run --quiet -- list work pending        # List queue + active items
-cargo run --quiet -- list rfc                 # List all RFCs
-cargo run --quiet -- list adr                 # List all ADRs
-cargo run --quiet -- new work --active "<title>"  # Create + activate work item
-cargo run --quiet -- mv <WI-ID> <status>      # Transition (queue|active|done|cancelled)
-cargo run --quiet -- new rfc "<title>"        # Create RFC (auto-assigns ID)
-cargo run --quiet -- new adr "<title>"        # Create ADR
-cargo run --quiet -- check                    # Validate everything
-cargo run --quiet -- render                   # Render to markdown
+# {{GOVCTL}} commands
+{{GOVCTL}} status                             # Show summary
+{{GOVCTL}} list work pending                  # List queue + active items
+{{GOVCTL}} list rfc                           # List all RFCs
+{{GOVCTL}} list adr                           # List all ADRs
+{{GOVCTL}} new work --active "<title>"        # Create + activate work item
+{{GOVCTL}} mv <WI-ID> <status>                # Transition (queue|active|done|cancelled)
+{{GOVCTL}} new rfc "<title>"                  # Create RFC (auto-assigns ID)
+{{GOVCTL}} new adr "<title>"                  # Create ADR
+{{GOVCTL}} check                              # Validate everything
+{{GOVCTL}} render                             # Render to markdown
 
 # Checklist management
-cargo run --quiet -- add <WI-ID> acceptance_criteria "Criterion text"
-cargo run --quiet -- tick <WI-ID> acceptance_criteria "pattern" -s done
+{{GOVCTL}} add <WI-ID> acceptance_criteria "Criterion text"
+{{GOVCTL}} tick <WI-ID> acceptance_criteria "pattern" -s done
 
 # Multi-line input
-cargo run --quiet -- edit <clause-id> --stdin <<'EOF'
+{{GOVCTL}} edit <clause-id> --stdin <<'EOF'
 multi-line text here
 EOF
 ```
@@ -39,7 +39,7 @@ EOF
 
 ## CRITICAL RULES
 
-1. **All governance operations MUST use `govctl` CLI** — never edit governed files directly
+1. **All governance operations MUST use `{{GOVCTL}}` CLI** — never edit governed files directly
 2. **Proceed autonomously** unless you hit a blocking condition (see ERROR HANDLING)
 3. **Phase discipline** — follow `spec → impl → test → stable` for RFC-governed work
 4. **RFC supremacy** — behavioral changes must be grounded in RFCs
@@ -50,8 +50,8 @@ EOF
 ## RFC ADVANCEMENT GATE
 
 **Default behavior:** Ask for human permission before:
-- `govctl finalize <RFC-ID> normative`
-- `govctl advance <RFC-ID> <phase>`
+- `{{GOVCTL}} finalize <RFC-ID> normative`
+- `{{GOVCTL}} advance <RFC-ID> <phase>`
 
 **Override:** If `$ARGUMENTS` contains phrases like:
 - "free", "autonomous", "all allowed", "no permission needed", "full authority"
@@ -67,7 +67,7 @@ Then RFC advancement may proceed without asking.
 ### 0.1 Validate Environment
 
 ```bash
-cargo run --quiet -- status
+{{GOVCTL}} status
 
 # Detect VCS (run once, use throughout)
 if jj status >/dev/null 2>&1; then
@@ -106,19 +106,19 @@ Parse `$ARGUMENTS` and classify:
 ### 1.1 Check Existing Work Items
 
 ```bash
-cargo run --quiet -- list work pending
+{{GOVCTL}} list work pending
 ```
 
 **Decision:**
 - Active item matches → use it, proceed to Phase 2
-- Queued item matches → `cargo run --quiet -- mv <WI-ID> active`
+- Queued item matches → `{{GOVCTL}} mv <WI-ID> active`
 - No match → create new
 
 ### 1.2 Create New Work Item
 
 ```bash
 # Create and activate in one command
-cargo run --quiet -- new work --active "<concise-title>"
+{{GOVCTL}} new work --active "<concise-title>"
 ```
 
 ### 1.3 Add Acceptance Criteria
@@ -126,14 +126,18 @@ cargo run --quiet -- new work --active "<concise-title>"
 **Important:** Work items cannot be marked done without acceptance criteria.
 
 ```bash
-cargo run --quiet -- add <WI-ID> acceptance_criteria "First criterion"
-cargo run --quiet -- add <WI-ID> acceptance_criteria "Second criterion"
+{{GOVCTL}} add <WI-ID> acceptance_criteria "First criterion"
+{{GOVCTL}} add <WI-ID> acceptance_criteria "Second criterion"
 ```
 
 ### 1.4 Record
 
 ```bash
+# jj
 jj commit -m "chore(work): activate <WI-ID> for <brief-description>"
+
+# git
+git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description>"
 ```
 
 ---
@@ -145,8 +149,8 @@ jj commit -m "chore(work): activate <WI-ID> for <brief-description>"
 ### 2.1 Survey Existing Governance
 
 ```bash
-cargo run --quiet -- list rfc
-cargo run --quiet -- list adr
+{{GOVCTL}} list rfc
+{{GOVCTL}} list adr
 ```
 
 ### 2.2 Determine Requirements
@@ -162,13 +166,13 @@ cargo run --quiet -- list adr
 
 ```bash
 # Create RFC (auto-assigns next ID, or use --id RFC-NNNN)
-cargo run --quiet -- new rfc "<title>"
+{{GOVCTL}} new rfc "<title>"
 
 # Add clauses
-cargo run --quiet -- new clause <RFC-ID>:<CLAUSE-ID> "<title>" -s "Specification" -k normative
+{{GOVCTL}} new clause <RFC-ID>:<CLAUSE-ID> "<title>" -s "Specification" -k normative
 
 # Edit clause text via stdin
-cargo run --quiet -- edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
+{{GOVCTL}} edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
 The system MUST...
 EOF
 ```
@@ -176,19 +180,23 @@ EOF
 ### 2.4 Create ADR (if needed)
 
 ```bash
-cargo run --quiet -- new adr "<title>"
+{{GOVCTL}} new adr "<title>"
 ```
 
 ### 2.5 Link to Work Item
 
 ```bash
-cargo run --quiet -- add <WI-ID> refs <RFC-ID>
+{{GOVCTL}} add <WI-ID> refs <RFC-ID>
 ```
 
 ### 2.6 Record
 
 ```bash
+# jj
 jj commit -m "docs(rfc): draft <RFC-ID> for <summary>"
+
+# git
+git add . && git commit -m "docs(rfc): draft <RFC-ID> for <summary>"
 ```
 
 ---
@@ -203,10 +211,10 @@ Before implementation, verify:
 
 ```bash
 # Check current state
-cargo run --quiet -- list rfc
+{{GOVCTL}} list rfc
 ```
 
-**Gate conditions per RFC-0001:**
+**Gate conditions:**
 
 | RFC Status | RFC Phase | Action |
 |------------|-----------|--------|
@@ -217,8 +225,8 @@ cargo run --quiet -- list rfc
 
 **If permission granted (or override in $ARGUMENTS):**
 ```bash
-cargo run --quiet -- finalize <RFC-ID> normative  # if draft
-cargo run --quiet -- advance <RFC-ID> impl        # if spec phase
+{{GOVCTL}} finalize <RFC-ID> normative  # if draft
+{{GOVCTL}} advance <RFC-ID> impl        # if spec phase
 ```
 
 ### 3.2 Implement
@@ -227,33 +235,37 @@ cargo run --quiet -- advance <RFC-ID> impl        # if spec phase
 2. Keep changes focused — one logical change per commit
 3. Run validations after substantive changes:
    ```bash
-   just pre-commit
-   cargo run --quiet -- check
+   # Run your project's lint/format checks
+   {{GOVCTL}} check
    ```
 
 ### 3.3 Record
 
 ```bash
+# jj
 jj commit -m "feat(<scope>): <description>"
+
+# git
+git add . && git commit -m "feat(<scope>): <description>"
 ```
 
 ---
 
 ## PHASE 4: TESTING
 
-> **For doc-only changes:** Run `cargo test` to verify no regressions, but skip RFC phase advancement.
+> **For doc-only changes:** Run tests to verify no regressions, but skip RFC phase advancement.
 
 ### 4.1 Advance Phase (if RFC exists)
 
 **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 ```bash
-cargo run --quiet -- advance <RFC-ID> test
+{{GOVCTL}} advance <RFC-ID> test
 ```
 
 ### 4.2 Run Tests
 
 ```bash
-cargo test
+# Run your project's test command
 ```
 
 If tests fail, fix implementation and re-run. Do not proceed until green.
@@ -261,7 +273,11 @@ If tests fail, fix implementation and re-run. Do not proceed until green.
 ### 4.3 Record
 
 ```bash
+# jj
 jj commit -m "test(<scope>): add tests for <feature>"
+
+# git
+git add . && git commit -m "test(<scope>): add tests for <feature>"
 ```
 
 ---
@@ -271,40 +287,43 @@ jj commit -m "test(<scope>): add tests for <feature>"
 ### 5.1 Final Validation
 
 ```bash
-just pre-commit
-cargo run --quiet -- check
-cargo test
+# Run your project's full validation suite
+{{GOVCTL}} check
 ```
 
 ### 5.2 Advance RFC to Stable (if applicable)
 
 If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 ```bash
-cargo run --quiet -- advance <RFC-ID> stable
+{{GOVCTL}} advance <RFC-ID> stable
 ```
 
 ### 5.3 Tick Acceptance Criteria
 
 **Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
 ```bash
-cargo run --quiet -- add <WI-ID> acceptance_criteria "criterion"
+{{GOVCTL}} add <WI-ID> acceptance_criteria "criterion"
 ```
 
 Then tick each completed criterion:
 ```bash
-cargo run --quiet -- tick <WI-ID> acceptance_criteria "criterion" -s done
+{{GOVCTL}} tick <WI-ID> acceptance_criteria "criterion" -s done
 ```
 
 ### 5.4 Mark Work Item Done
 
 ```bash
-cargo run --quiet -- mv <WI-ID> done
+{{GOVCTL}} mv <WI-ID> done
 ```
 
 ### 5.5 Record
 
 ```bash
+# jj
 jj commit -m "chore(work): complete <WI-ID> — <summary>"
+
+# git
+git add . && git commit -m "chore(work): complete <WI-ID> — <summary>"
 ```
 
 ### 5.6 Summary Report
@@ -340,9 +359,9 @@ For all other errors: **fix and continue**.
 
 | Error | Recovery |
 |-------|----------|
-| `check` fails | Read diagnostics, fix, retry |
-| `cargo test` fails | Debug, fix, retry |
-| `pre-commit` fails | Usually auto-fixes; re-run |
+| `{{GOVCTL}} check` fails | Read diagnostics, fix, retry |
+| Tests fail | Debug, fix, retry |
+| Lint/format fails | Usually auto-fixes; re-run |
 | `mv done` rejected | Add/tick acceptance criteria first |
 
 ---
@@ -362,10 +381,10 @@ For all other errors: **fix and continue**.
 
 ### Multi-line Input
 
-**govctl:** Use `--stdin` with heredoc:
+**{{GOVCTL}}:** Use `--stdin` with heredoc:
 
 ```bash
-cargo run --quiet -- edit <clause-id> --stdin <<'EOF'
+{{GOVCTL}} edit <clause-id> --stdin <<'EOF'
 Multi-line content here.
 EOF
 ```
