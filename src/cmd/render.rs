@@ -149,6 +149,9 @@ pub fn render_changelog(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Di
         }
     }
 
+    // Trim trailing whitespace and ensure single final newline
+    let output = format!("{}\n", output.trim_end());
+
     // Write CHANGELOG.md
     let changelog_path = std::path::PathBuf::from("CHANGELOG.md");
     if dry_run {
