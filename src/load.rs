@@ -40,9 +40,9 @@ impl From<LoadError> for Diagnostic {
     }
 }
 
-/// Load all RFCs from the spec directory
+/// Load all RFCs from the gov/rfc directory
 pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
-    let rfcs_dir = config.rfcs_dir();
+    let rfcs_dir = config.rfc_dir();
     if !rfcs_dir.exists() {
         return Ok(vec![]);
     }
@@ -163,7 +163,7 @@ pub fn load_project(config: &Config) -> Result<ProjectIndex, Vec<Diagnostic>> {
 
 /// Find RFC JSON by ID
 pub fn find_rfc_json(config: &Config, rfc_id: &str) -> Option<PathBuf> {
-    let rfc_dir = config.rfcs_dir().join(rfc_id);
+    let rfc_dir = config.rfc_dir().join(rfc_id);
     let rfc_json = rfc_dir.join("rfc.json");
     if rfc_json.exists() {
         Some(rfc_json)
@@ -183,7 +183,7 @@ pub fn find_clause_json(config: &Config, clause_id: &str) -> Option<PathBuf> {
     let clause_name = parts[1];
 
     let clause_path = config
-        .rfcs_dir()
+        .rfc_dir()
         .join(rfc_id)
         .join("clauses")
         .join(format!("{clause_name}.json"));

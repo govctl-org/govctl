@@ -19,7 +19,7 @@ pub fn move_item(
         file.to_path_buf()
     } else {
         // Try in work directory
-        let in_work_dir = config.paths.work_dir.join(file);
+        let in_work_dir = config.work_dir().join(file);
         if in_work_dir.exists() {
             in_work_dir
         } else {
@@ -102,7 +102,7 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
     }
 
     // Second try: match by filename
-    let work_dir = &config.paths.work_dir;
+    let work_dir = &config.work_dir();
 
     if !work_dir.exists() {
         anyhow::bail!("Work directory not found: {}", work_dir.display());

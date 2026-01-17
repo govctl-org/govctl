@@ -25,13 +25,13 @@ pub fn init_project(config: &Config, force: bool) -> anyhow::Result<Vec<Diagnost
 
     // Create directories
     let dirs = [
-        &config.paths.spec_root,
-        &config.rfcs_dir(),
+        &config.paths.gov_root,
+        &config.rfc_dir(),
         &config.schema_dir(),
-        &config.paths.rfc_output,
-        &config.paths.adr_dir,
-        &config.paths.work_dir,
-        &config.paths.templates_dir,
+        &config.rfc_output(),
+        &config.adr_dir(),
+        &config.work_dir(),
+        &config.templates_dir(),
     ];
 
     for dir in dirs {
@@ -64,7 +64,7 @@ fn create_rfc(
     title: &str,
     manual_id: Option<&str>,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfcs_dir = config.rfcs_dir();
+    let rfcs_dir = config.rfc_dir();
 
     // Determine RFC ID: use manual if provided, otherwise auto-generate
     let rfc_id = match manual_id {
@@ -165,7 +165,7 @@ fn create_clause(
     let rfc_id = parts[0];
     let clause_name = parts[1];
 
-    let rfc_json = config.rfcs_dir().join(rfc_id).join("rfc.json");
+    let rfc_json = config.rfc_dir().join(rfc_id).join("rfc.json");
     if !rfc_json.exists() {
         anyhow::bail!("RFC not found: {rfc_id}");
     }
@@ -183,7 +183,7 @@ fn create_clause(
     };
 
     let clause_path = config
-        .rfcs_dir()
+        .rfc_dir()
         .join(rfc_id)
         .join("clauses")
         .join(format!("{clause_name}.json"));
@@ -224,11 +224,11 @@ fn create_clause(
 /// Create a new ADR
 fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
     // Find next ADR number
-    let adr_dir = &config.paths.adr_dir;
-    std::fs::create_dir_all(adr_dir)?;
+    let adr_dir = config.adr_dir();
+    std::fs::create_dir_all(&adr_dir)?;
 
     let mut max_num = 0u32;
-    if let Ok(entries) = std::fs::read_dir(adr_dir) {
+    if let Ok(entries) = std::fs::read_dir(&adr_dir) {
         for entry in entries.flatten() {
             let name = entry.file_name();
             let name_str = name.to_string_lossy();
@@ -279,8 +279,8 @@ fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
 
 /// Create a new work item
 fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Result<Vec<Diagnostic>> {
-    let work_dir = &config.paths.work_dir;
-    std::fs::create_dir_all(work_dir)?;
+    let work_dir = config.work_dir();
+    std::fs::create_dir_all(&work_dir)?;
 
     let date = today();
     let slug = slugify(title);
@@ -288,7 +288,7 @@ fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Resul
     // Find next work item ID by scanning existing IDs for today's date
     let id_prefix = format!("WI-{date}-");
 
-    let max_seq = std::fs::read_dir(work_dir)
+    let max_seq = std::fs::read_dir(&work_dir)
         .into_iter()
         .flatten()
         .flatten()

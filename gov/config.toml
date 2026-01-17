@@ -1,0 +1,9 @@
+[project]
+name = "govctl"
+
+[paths]
+gov_root = "gov"
+docs_output = "docs"
+
+[schema]
+version = 1

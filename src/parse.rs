@@ -7,13 +7,13 @@ use std::path::Path;
 
 /// Load all ADRs from the adr directory
 pub fn load_adrs(config: &Config) -> Result<Vec<AdrEntry>, Diagnostic> {
-    let adr_dir = &config.paths.adr_dir;
+    let adr_dir = config.adr_dir();
     if !adr_dir.exists() {
         return Ok(vec![]);
     }
 
     let mut adrs = Vec::new();
-    let entries = std::fs::read_dir(adr_dir).map_err(|e| {
+    let entries = std::fs::read_dir(&adr_dir).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
             e.to_string(),
@@ -81,13 +81,13 @@ pub fn write_adr(path: &Path, spec: &AdrSpec) -> Result<(), Diagnostic> {
 
 /// Load all work items from the work directory
 pub fn load_work_items(config: &Config) -> Result<Vec<WorkItemEntry>, Diagnostic> {
-    let work_dir = &config.paths.work_dir;
+    let work_dir = config.work_dir();
     if !work_dir.exists() {
         return Ok(vec![]);
     }
 
     let mut items = Vec::new();
-    let entries = std::fs::read_dir(work_dir).map_err(|e| {
+    let entries = std::fs::read_dir(&work_dir).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
             e.to_string(),

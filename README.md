@@ -121,12 +121,22 @@ govctl stat
 
 ### Data Model
 
-All artifacts use structured formats as Single Source of Truth (SSOT):
+All SSOT (Single Source of Truth) files live under `gov/`, rendered docs go to `docs/`:
 
-- **RFCs**: JSON SSOT (`spec/rfcs/RFC-NNNN/rfc.json`) → rendered Markdown (`docs/rfc/RFC-NNNN.md`)
-- **Clauses**: JSON SSOT (`spec/rfcs/RFC-NNNN/clauses/C-NAME.json`)
-- **ADRs**: TOML SSOT (`docs/adr/ADR-NNNN-*.toml`) → rendered Markdown (`docs/adrs/ADR-NNNN.md`)
-- **Work Items**: TOML SSOT (`worklogs/items/YYYY-MM-DD-*.toml`) → rendered Markdown (`docs/work/WI-*.md`)
+```
+gov/                          # SSOT (managed by govctl)
+├── config.toml               # govctl configuration
+├── rfc/                      # RFC-NNNN/rfc.json + clauses/
+├── adr/                      # ADR-NNNN-*.toml
+├── work/                     # WI-YYYY-MM-DD-NNN-*.toml
+├── schema/                   # Schema definitions
+└── templates/                # New artifact templates
+
+docs/                         # Rendered (human-readable)
+├── rfc/                      # RFC-NNNN.md
+├── adr/                      # ADR-NNNN.md
+└── work/                     # WI-*.md
+```
 
 **Why TOML for ADRs/Work Items?**
 

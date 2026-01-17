@@ -130,10 +130,7 @@ fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEn
 
 /// Write rendered RFC to file
 pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Result<()> {
-    let output_path = config
-        .paths
-        .rfc_output
-        .join(format!("{}.md", rfc.rfc.rfc_id));
+    let output_path = config.rfc_output().join(format!("{}.md", rfc.rfc.rfc_id));
 
     let content = render_rfc(rfc);
 
@@ -232,12 +229,7 @@ pub fn render_adr(adr: &AdrEntry) -> String {
 /// Write rendered ADR to file
 pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::Result<()> {
     let meta = adr.meta();
-    let output_dir = config
-        .paths
-        .rfc_output
-        .parent()
-        .unwrap_or(&config.paths.rfc_output)
-        .join("adrs");
+    let output_dir = config.adr_output();
     let output_path = output_dir.join(format!("{}.md", meta.id));
 
     let rendered = render_adr(adr);
@@ -350,12 +342,7 @@ pub fn write_work_item_md(
     dry_run: bool,
 ) -> anyhow::Result<()> {
     let meta = item.meta();
-    let output_dir = config
-        .paths
-        .rfc_output
-        .parent()
-        .unwrap_or(&config.paths.rfc_output)
-        .join("work");
+    let output_dir = config.work_output();
     let output_path = output_dir.join(format!("{}.md", meta.id));
 
     let rendered = render_work_item(item);

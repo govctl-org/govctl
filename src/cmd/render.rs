@@ -18,7 +18,7 @@ pub fn render(
     })?;
 
     if rfcs.is_empty() {
-        eprintln!("No RFCs found in {}", config.rfcs_dir().display());
+        eprintln!("No RFCs found in {}", config.rfc_dir().display());
         return Ok(vec![]);
     }
 

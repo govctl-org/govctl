@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-/// Project configuration (govctl.toml)
+/// Project configuration (gov/config.toml)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -27,52 +27,70 @@ fn default_project_name() -> String {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PathsConfig {
-    /// Root directory for RFC JSON source
-    #[serde(default = "default_spec_root")]
-    pub spec_root: PathBuf,
-    /// Output directory for rendered RFC markdown
-    #[serde(default = "default_rfc_output")]
-    pub rfc_output: PathBuf,
-    /// Directory for ADR markdown files
-    #[serde(default = "default_adr_dir")]
-    pub adr_dir: PathBuf,
-    /// Directory for work item markdown files
-    #[serde(default = "default_work_dir")]
-    pub work_dir: PathBuf,
-    /// Directory for templates
-    #[serde(default = "default_templates_dir")]
-    pub templates_dir: PathBuf,
+    /// Root directory for governance SSOT (gov/)
+    #[serde(default = "default_gov_root")]
+    pub gov_root: PathBuf,
+    /// Output directory for rendered docs (docs/)
+    #[serde(default = "default_docs_output")]
+    pub docs_output: PathBuf,
 }
 
-fn default_spec_root() -> PathBuf {
-    PathBuf::from("spec")
+fn default_gov_root() -> PathBuf {
+    PathBuf::from("gov")
 }
 
-fn default_rfc_output() -> PathBuf {
-    PathBuf::from("docs/rfc")
-}
-
-fn default_adr_dir() -> PathBuf {
-    PathBuf::from("docs/adr")
-}
-
-fn default_work_dir() -> PathBuf {
-    PathBuf::from("worklogs/items")
-}
-
-fn default_templates_dir() -> PathBuf {
-    PathBuf::from("templates")
+fn default_docs_output() -> PathBuf {
+    PathBuf::from("docs")
 }
 
 impl Default for PathsConfig {
     fn default() -> Self {
         Self {
-            spec_root: default_spec_root(),
-            rfc_output: default_rfc_output(),
-            adr_dir: default_adr_dir(),
-            work_dir: default_work_dir(),
-            templates_dir: default_templates_dir(),
+            gov_root: default_gov_root(),
+            docs_output: default_docs_output(),
         }
+    }
+}
+
+impl PathsConfig {
+    /// RFC SSOT directory (gov/rfc/)
+    pub fn rfc_dir(&self) -> PathBuf {
+        self.gov_root.join("rfc")
+    }
+
+    /// ADR SSOT directory (gov/adr/)
+    pub fn adr_dir(&self) -> PathBuf {
+        self.gov_root.join("adr")
+    }
+
+    /// Work item SSOT directory (gov/work/)
+    pub fn work_dir(&self) -> PathBuf {
+        self.gov_root.join("work")
+    }
+
+    /// Schema directory (gov/schema/)
+    pub fn schema_dir(&self) -> PathBuf {
+        self.gov_root.join("schema")
+    }
+
+    /// Templates directory (gov/templates/)
+    pub fn templates_dir(&self) -> PathBuf {
+        self.gov_root.join("templates")
+    }
+
+    /// RFC rendered output (docs/rfc/)
+    pub fn rfc_output(&self) -> PathBuf {
+        self.docs_output.join("rfc")
+    }
+
+    /// ADR rendered output (docs/adr/)
+    pub fn adr_output(&self) -> PathBuf {
+        self.docs_output.join("adr")
+    }
+
+    /// Work item rendered output (docs/work/)
+    pub fn work_output(&self) -> PathBuf {
+        self.docs_output.join("work")
     }
 }
 
@@ -100,7 +118,7 @@ impl Config {
         let config_path = path
             .map(PathBuf::from)
             .or_else(Self::find_config)
-            .unwrap_or_else(|| PathBuf::from("govctl.toml"));
+            .unwrap_or_else(|| PathBuf::from("gov/config.toml"));
 
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)
@@ -118,9 +136,14 @@ impl Config {
     fn find_config() -> Option<PathBuf> {
         let mut current = std::env::current_dir().ok()?;
         loop {
-            let config_path = current.join("govctl.toml");
-            if config_path.exists() {
-                return Some(config_path);
+            // Try gov/config.toml first, then legacy govctl.toml
+            let gov_config = current.join("gov/config.toml");
+            if gov_config.exists() {
+                return Some(gov_config);
+            }
+            let legacy_config = current.join("govctl.toml");
+            if legacy_config.exists() {
+                return Some(legacy_config);
             }
             if !current.pop() {
                 return None;
@@ -128,14 +151,37 @@ impl Config {
         }
     }
 
-    /// Get the RFC spec directory (spec/rfcs/)
-    pub fn rfcs_dir(&self) -> PathBuf {
-        self.paths.spec_root.join("rfcs")
+    // Convenience accessors that delegate to paths
+    pub fn rfc_dir(&self) -> PathBuf {
+        self.paths.rfc_dir()
     }
 
-    /// Get the schema directory (spec/schema/)
+    pub fn adr_dir(&self) -> PathBuf {
+        self.paths.adr_dir()
+    }
+
+    pub fn work_dir(&self) -> PathBuf {
+        self.paths.work_dir()
+    }
+
     pub fn schema_dir(&self) -> PathBuf {
-        self.paths.spec_root.join("schema")
+        self.paths.schema_dir()
+    }
+
+    pub fn templates_dir(&self) -> PathBuf {
+        self.paths.templates_dir()
+    }
+
+    pub fn rfc_output(&self) -> PathBuf {
+        self.paths.rfc_output()
+    }
+
+    pub fn adr_output(&self) -> PathBuf {
+        self.paths.adr_output()
+    }
+
+    pub fn work_output(&self) -> PathBuf {
+        self.paths.work_output()
     }
 
     /// Generate default config TOML
@@ -144,11 +190,8 @@ impl Config {
 name = "my-project"
 
 [paths]
-spec_root = "spec"
-rfc_output = "docs/rfc"
-adr_dir = "docs/adr"
-work_dir = "worklogs/items"
-templates_dir = "templates"
+gov_root = "gov"
+docs_output = "docs"
 
 [schema]
 version = 1
