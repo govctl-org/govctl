@@ -54,12 +54,12 @@ spec → impl → test → stable
 
 Phases are absolute boundaries. Skipping is forbidden.
 
-| Phase  | Permitted Work                          |
-|--------|----------------------------------------|
-| spec   | RFC drafting, design discussion only   |
-| impl   | Code writing per normative RFC         |
-| test   | Verification, test writing             |
-| stable | Bug fixes only, no new features        |
+| Phase  | Permitted Work                       |
+| ------ | ------------------------------------ |
+| spec   | RFC drafting, design discussion only |
+| impl   | Code writing per normative RFC       |
+| test   | Verification, test writing           |
+| stable | Bug fixes only, no new features      |
 
 ### Law 3: No Silent Deviation
 
@@ -84,10 +84,10 @@ Reverse transitions are forbidden.
 ### Phase × Status Compatibility
 
 | Status \ Phase | spec | impl | test | stable |
-|---------------|------|------|------|--------|
-| draft         | ✅   | ⚠️    | ⚠️    | ❌     |
-| normative     | ✅   | ✅   | ✅   | ✅     |
-| deprecated    | ✅   | ❌   | ❌   | ✅     |
+| -------------- | ---- | ---- | ---- | ------ |
+| draft          | ✅   | ⚠️   | ⚠️   | ❌     |
+| normative      | ✅   | ✅   | ✅   | ✅     |
+| deprecated     | ✅   | ❌   | ❌   | ✅     |
 
 - ⚠️ = experimental, gates are soft warnings
 - ❌ = forbidden
@@ -96,11 +96,11 @@ Reverse transitions are forbidden.
 
 ## 4. Decision Tree
 
-| Situation                        | Action                    |
-|---------------------------------|---------------------------|
-| RFC ambiguity or conflict       | Open issue, escalate      |
-| New behavior or design choice   | Draft RFC first           |
-| Fully specified small change    | Proceed with implementation |
+| Situation                     | Action                      |
+| ----------------------------- | --------------------------- |
+| RFC ambiguity or conflict     | Open issue, escalate        |
+| New behavior or design choice | Draft RFC first             |
+| Fully specified small change  | Proceed with implementation |
 
 Execution MUST NOT begin on new features until RFC is normative.
 
@@ -114,7 +114,7 @@ govctl check                    # Validate all artifacts
 
 # Listing
 govctl list rfc                 # List RFCs
-govctl list adr                 # List ADRs  
+govctl list adr                 # List ADRs
 govctl list work                # List work items
 
 # Status
@@ -136,9 +136,9 @@ Before requesting review: `just pre-commit`
 
 ## 6. Skills
 
-| Skill          | Path                                 | Purpose            |
-|----------------|--------------------------------------|--------------------|
-| RFC Writer     | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide |
+| Skill      | Path                                 | Purpose            |
+| ---------- | ------------------------------------ | ------------------ |
+| RFC Writer | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide |
 
 ---
 
