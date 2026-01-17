@@ -1,0 +1,62 @@
+[govctl]
+schema = 1
+id = "ADR-0003"
+title = "Deterministic hash signatures for rendered projections"
+status = "proposed"
+date = "2026-01-17"
+refs = ["RFC-0000"]
+
+[content]
+context = """
+govctl renders markdown files from authoritative JSON/TOML sources (RFCs, ADRs, Work Items). These rendered markdown files are **projections** — read-only views intended for human consumption.
+
+Problem: Without a mechanism to detect tampering, someone could edit `docs/rfc/RFC-0000.md` directly. This edit would:
+1. Be overwritten on next `govctl render`
+2. Create confusion about which version is authoritative
+3. Violate the Single Source of Truth (SSOT) principle
+
+We need a mechanism to:
+- Mark rendered files as generated (not authoritative)
+- Detect when a rendered file has been edited directly
+- Ensure verification is deterministic (same source always produces same hash)"""
+decision = """
+Implement deterministic hash signatures embedded in rendered markdown.
+
+**Signature Format:**
+```html
+<!-- GENERATED: do not edit. Source: RFC-0000 -->
+<!-- SIGNATURE: sha256:<64-hex-chars> -->
+```
+
+**Hash Computation:**
+1. Collect all source JSON content (RFC metadata + clauses, or ADR/Work Item TOML)
+2. Canonicalize JSON/TOML: sort object keys recursively, normalize whitespace
+3. For RFCs: sort clauses by `clause_id` before hashing
+4. Compute SHA-256 of the canonical representation
+5. Include a signature version prefix for future-proofing
+
+**Determinism Requirements:**
+- Object keys sorted alphabetically at all nesting levels
+- Arrays preserve order (only objects get key-sorted)
+- Consistent string escaping and number formatting
+- No dependency on file modification times or filesystem order
+
+**Verification:**
+- `govctl check` extracts signature from rendered markdown
+- Recomputes hash from current source files
+- Reports mismatch as a diagnostic error"""
+consequences = """
+**Positive:**
+- Enforces "edit the source, not the projection" discipline
+- Tampered markdown is detected automatically by `govctl check`
+- Deterministic hashes enable reproducible builds
+- Clear provenance: every rendered file traces back to its source
+
+**Negative:**
+- Existing rendered markdown will fail verification until re-rendered
+- Minor source reformatting (whitespace) changes the hash
+- Adds complexity to the render pipeline
+
+**Migration:**
+- Run `govctl render` to regenerate all markdown with signatures
+- Commit the updated files"""

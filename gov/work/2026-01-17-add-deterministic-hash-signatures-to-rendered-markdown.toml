@@ -5,6 +5,7 @@ title = "Add deterministic hash signatures to rendered markdown"
 status = "active"
 created = "2026-01-17"
 started = "2026-01-17"
+refs = ["ADR-0003"]
 
 [content]
 description = """
