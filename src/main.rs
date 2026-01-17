@@ -11,6 +11,7 @@ mod model;
 mod parse;
 mod render;
 mod signature;
+mod ui;
 mod validate;
 mod write;
 

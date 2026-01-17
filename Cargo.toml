@@ -51,6 +51,10 @@ toml = "0.9"
 strum = { version = "0.27", features = ["derive"] }
 slug = "0.1"
 
+# Terminal colors (with TTY detection for agent-friendly output)
+owo-colors = "4"
+supports-color = "3"
+
 # TUI (optional)
 ratatui = { version = "0.30", optional = true }
 crossterm = { version = "0.29", optional = true }
