@@ -245,7 +245,8 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         }
     }
 
-    // Validate Work Items (no specific checks currently)
+    // Validate artifact references (refs fields)
+    validate_artifact_refs(index, &mut result);
 
     result
 }
@@ -436,6 +437,65 @@ fn validate_clause_references(index: &ProjectIndex, result: &mut ValidationResul
     }
 }
 
+/// Validate refs fields in ADRs and Work Items
+fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
+    // Build a set of all known artifact IDs (including clause references)
+    let mut known_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+
+    // Add RFC IDs and clause references
+    for rfc in &index.rfcs {
+        known_ids.insert(rfc.rfc.rfc_id.clone());
+        // Add clause references in format RFC-ID:CLAUSE-ID
+        for clause in &rfc.clauses {
+            known_ids.insert(format!("{}:{}", rfc.rfc.rfc_id, clause.spec.clause_id));
+        }
+    }
+
+    // Add ADR IDs
+    for adr in &index.adrs {
+        known_ids.insert(adr.meta().id.clone());
+    }
+
+    // Add Work Item IDs
+    for work in &index.work_items {
+        known_ids.insert(work.meta().id.clone());
+    }
+
+    // Validate ADR refs
+    for adr in &index.adrs {
+        for ref_id in &adr.meta().refs {
+            if !known_ids.contains(ref_id) {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0304AdrRefNotFound,
+                    format!(
+                        "ADR '{}' references unknown artifact: {}",
+                        adr.meta().id,
+                        ref_id
+                    ),
+                    adr.path.display().to_string(),
+                ));
+            }
+        }
+    }
+
+    // Validate Work Item refs
+    for work in &index.work_items {
+        for ref_id in &work.meta().refs {
+            if !known_ids.contains(ref_id) {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0404WorkRefNotFound,
+                    format!(
+                        "Work item '{}' references unknown artifact: {}",
+                        work.meta().id,
+                        ref_id
+                    ),
+                    work.path.display().to_string(),
+                ));
+            }
+        }
+    }
+}
+
 /// Check if RFC status transition is valid
 pub fn is_valid_status_transition(from: RfcStatus, to: RfcStatus) -> bool {
     matches!(
@@ -459,8 +519,7 @@ pub fn is_valid_phase_transition(from: RfcPhase, to: RfcPhase) -> bool {
 pub fn is_valid_adr_transition(from: AdrStatus, to: AdrStatus) -> bool {
     matches!(
         (from, to),
-        (AdrStatus::Proposed, AdrStatus::Accepted)
-            | (AdrStatus::Accepted, AdrStatus::Superseded)
+        (AdrStatus::Proposed, AdrStatus::Accepted) | (AdrStatus::Accepted, AdrStatus::Superseded)
     )
 }
 

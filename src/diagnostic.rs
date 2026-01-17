@@ -32,11 +32,13 @@ pub enum DiagnosticCode {
     E0301AdrSchemaInvalid,
     E0302AdrNotFound,
     E0303AdrInvalidTransition,
+    E0304AdrRefNotFound,
 
     // Work Item errors (E04xx)
     E0401WorkSchemaInvalid,
     E0402WorkNotFound,
     E0403WorkInvalidTransition,
+    E0404WorkRefNotFound,
 
     // Config errors (E05xx)
     E0501ConfigInvalid,
@@ -83,9 +85,11 @@ impl DiagnosticCode {
             Self::E0301AdrSchemaInvalid => "E0301",
             Self::E0302AdrNotFound => "E0302",
             Self::E0303AdrInvalidTransition => "E0303",
+            Self::E0304AdrRefNotFound => "E0304",
             Self::E0401WorkSchemaInvalid => "E0401",
             Self::E0402WorkNotFound => "E0402",
             Self::E0403WorkInvalidTransition => "E0403",
+            Self::E0404WorkRefNotFound => "E0404",
             Self::E0501ConfigInvalid => "E0501",
             Self::E0502PathNotFound => "E0502",
             Self::E0601SignatureMismatch => "E0601",

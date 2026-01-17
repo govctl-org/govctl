@@ -310,10 +310,7 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
                 Line::from(rfc.rfc.rfc_id.clone()),
                 Line::from(rfc.rfc.title.clone()),
                 Line::from(vec![
-                    Span::styled(
-                        format!("{} ", status_icon(status)),
-                        status_style(status),
-                    ),
+                    Span::styled(format!("{} ", status_icon(status)), status_style(status)),
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
                 Line::from(Span::styled(phase.to_string(), phase_style(phase))),
@@ -340,7 +337,9 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
 
     frame.render_widget(table, chunks[0]);
 
-    let footer = keybind_footer(&["j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit"]);
+    let footer = keybind_footer(&[
+        "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
+    ]);
     frame.render_widget(footer, chunks[1]);
 }
 
@@ -370,10 +369,7 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
                 Line::from(meta.id.clone()),
                 Line::from(meta.title.clone()),
                 Line::from(vec![
-                    Span::styled(
-                        format!("{} ", status_icon(status)),
-                        status_style(status),
-                    ),
+                    Span::styled(format!("{} ", status_icon(status)), status_style(status)),
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
             ])
@@ -398,7 +394,9 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
 
     frame.render_widget(table, chunks[0]);
 
-    let footer = keybind_footer(&["j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit"]);
+    let footer = keybind_footer(&[
+        "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
+    ]);
     frame.render_widget(footer, chunks[1]);
 }
 
@@ -428,10 +426,7 @@ fn draw_work_list(frame: &mut Frame, app: &App) {
                 Line::from(meta.id.clone()),
                 Line::from(meta.title.clone()),
                 Line::from(vec![
-                    Span::styled(
-                        format!("{} ", status_icon(status)),
-                        status_style(status),
-                    ),
+                    Span::styled(format!("{} ", status_icon(status)), status_style(status)),
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
             ])
@@ -456,7 +451,9 @@ fn draw_work_list(frame: &mut Frame, app: &App) {
 
     frame.render_widget(table, chunks[0]);
 
-    let footer = keybind_footer(&["j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit"]);
+    let footer = keybind_footer(&[
+        "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
+    ]);
     frame.render_widget(footer, chunks[1]);
 }
 
@@ -477,12 +474,14 @@ fn keybind_footer(bindings: &[&str]) -> Paragraph<'static> {
         }
     }
 
-    Paragraph::new(Line::from(spans)).alignment(Alignment::Center).block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::DarkGray)),
-    )
+    Paragraph::new(Line::from(spans))
+        .alignment(Alignment::Center)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .border_set(border::ROUNDED)
+                .border_style(Style::default().fg(Color::DarkGray)),
+        )
 }
 
 fn draw_rfc_detail(frame: &mut Frame, app: &App, idx: usize) {

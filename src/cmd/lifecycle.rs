@@ -167,7 +167,9 @@ pub fn deprecate(config: &Config, id: &str) -> anyhow::Result<Vec<Diagnostic>> {
         return finalize(config, id, FinalizeStatus::Deprecated);
     } else if id.starts_with("ADR-") {
         // ADRs cannot be deprecated; they can only be superseded
-        anyhow::bail!("ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead.");
+        anyhow::bail!(
+            "ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead."
+        );
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }

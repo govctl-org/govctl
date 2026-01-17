@@ -86,7 +86,11 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
         *adr_by_status.entry(adr.meta().status).or_insert(0) += 1;
     }
 
-    for status in [AdrStatus::Proposed, AdrStatus::Accepted, AdrStatus::Superseded] {
+    for status in [
+        AdrStatus::Proposed,
+        AdrStatus::Accepted,
+        AdrStatus::Superseded,
+    ] {
         let count = adr_by_status.get(&status).copied().unwrap_or(0);
         if count > 0 {
             println!("    {:12}: {}", status.as_ref(), count);
