@@ -1,0 +1,40 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-18-001"
+title = "Add explicit diagnostic codes to all error messages"
+status = "active"
+created = "2026-01-18"
+started = "2026-01-18"
+
+[content]
+description = """
+Convert all `anyhow::bail!` error messages to use structured `Diagnostic` codes.
+
+This provides:
+- Consistent error formatting across all commands
+- Machine-parseable error codes for tooling
+- Categorized errors by artifact type and operation
+
+New code ranges:
+- E08xx: CLI/command errors (missing args, unknown fields, ambiguous matches)
+- Extended E01xx-E04xx: Lifecycle operations (bump, deprecate, supersede)"""
+
+[[content.acceptance_criteria]]
+text = "New E08xx diagnostic codes for CLI/command errors"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Extended E01xx-E04xx codes for lifecycle operations"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "All anyhow::bail! calls converted to Diagnostic errors"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "pending"
+category = "chore"
