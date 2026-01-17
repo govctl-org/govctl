@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build mdbook from governance artifacts
-# Usage: ./scripts/build-book.sh [--serve]
+# Usage: ./scripts/build-book.sh [--serve] [--skip-render]
 
 set -euo pipefail
 
@@ -10,9 +10,23 @@ DOCS_DIR="$PROJECT_ROOT/docs"
 
 cd "$PROJECT_ROOT"
 
-# Render all governance artifacts to markdown
-echo "Rendering governance artifacts..."
-cargo run --quiet -- render all
+# Parse arguments
+SKIP_RENDER=false
+SERVE=false
+for arg in "$@"; do
+    case $arg in
+        --skip-render) SKIP_RENDER=true ;;
+        --serve) SERVE=true ;;
+    esac
+done
+
+# Render all governance artifacts to markdown (unless --skip-render)
+if [[ "$SKIP_RENDER" == "false" ]]; then
+    echo "Rendering governance artifacts..."
+    cargo run --quiet -- render all
+else
+    echo "Skipping render (--skip-render)"
+fi
 
 # Generate SUMMARY.md dynamically
 echo "Generating SUMMARY.md..."
@@ -67,7 +81,7 @@ echo "Generated: $SUMMARY"
 
 # Build or serve
 cd "$DOCS_DIR"
-if [[ "${1:-}" == "--serve" ]]; then
+if [[ "$SERVE" == "true" ]]; then
     echo "Starting mdbook server..."
     mdbook serve --open
 else
