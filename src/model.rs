@@ -22,6 +22,8 @@ pub struct RfcSpec {
     pub updated: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub supersedes: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub refs: Vec<String>,
     pub sections: Vec<SectionSpec>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub changelog: Vec<ChangelogEntry>,

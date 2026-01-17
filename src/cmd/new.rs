@@ -166,6 +166,7 @@ fn create_rfc(
         created: today(),
         updated: None,
         supersedes: None,
+        refs: vec![],
         sections: vec![
             SectionSpec {
                 title: "Summary".to_string(),

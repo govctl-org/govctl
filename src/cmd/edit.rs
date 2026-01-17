@@ -385,6 +385,8 @@ pub fn get_field(
                     "title" => rfc.title,
                     "version" => rfc.version,
                     "owners" => rfc.owners.join(", "),
+                    "refs" => rfc.refs.join(", "),
+                    "supersedes" => rfc.supersedes.unwrap_or_default(),
                     "created" => rfc.created,
                     "updated" => rfc.updated.unwrap_or_default(),
                     _ => anyhow::bail!("Unknown field: {f}"),
@@ -487,6 +489,7 @@ pub fn add_to_field(
 
             match field {
                 "owners" => push_unique(&mut data.owners, value),
+                "refs" => push_unique(&mut data.refs, value),
                 _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
             }
 
@@ -627,6 +630,7 @@ pub fn remove_from_field(
 
             let removed = match field {
                 "owners" => remove_matching_strings(&mut data.owners, id, field, opts)?,
+                "refs" => remove_matching_strings(&mut data.refs, id, field, opts)?,
                 _ => anyhow::bail!("Cannot remove from field: {field}"),
             };
 

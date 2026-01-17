@@ -18,6 +18,8 @@ pub enum DiagnosticCode {
     E0102RfcNotFound,
     E0103RfcIdMismatch,
     E0104RfcInvalidTransition,
+    E0105RfcRefNotFound,
+    E0106RfcSupersedesNotFound,
 
     // Clause errors (E02xx)
     E0201ClauseSchemaInvalid,
@@ -81,6 +83,8 @@ impl DiagnosticCode {
             Self::E0102RfcNotFound => "E0102",
             Self::E0103RfcIdMismatch => "E0103",
             Self::E0104RfcInvalidTransition => "E0104",
+            Self::E0105RfcRefNotFound => "E0105",
+            Self::E0106RfcSupersedesNotFound => "E0106",
             Self::E0201ClauseSchemaInvalid => "E0201",
             Self::E0202ClauseNotFound => "E0202",
             Self::E0203ClauseIdMismatch => "E0203",

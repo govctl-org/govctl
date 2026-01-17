@@ -454,7 +454,7 @@ fn validate_clause_references(index: &ProjectIndex, result: &mut ValidationResul
     }
 }
 
-/// Validate refs fields in ADRs and Work Items
+/// Validate refs fields in RFCs, ADRs and Work Items
 fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
     // Build a set of all known artifact IDs (including clause references)
     let mut known_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
@@ -476,6 +476,37 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
     // Add Work Item IDs
     for work in &index.work_items {
         known_ids.insert(work.meta().id.clone());
+    }
+
+    // Validate RFC refs and supersedes
+    for rfc in &index.rfcs {
+        // Validate refs field
+        for ref_id in &rfc.rfc.refs {
+            if !known_ids.contains(ref_id) {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0105RfcRefNotFound,
+                    format!(
+                        "RFC '{}' references unknown artifact: {}",
+                        rfc.rfc.rfc_id, ref_id
+                    ),
+                    rfc.path.display().to_string(),
+                ));
+            }
+        }
+
+        // Validate supersedes field
+        if let Some(ref supersedes) = rfc.rfc.supersedes {
+            if !known_ids.contains(supersedes) {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0106RfcSupersedesNotFound,
+                    format!(
+                        "RFC '{}' supersedes unknown RFC: {}",
+                        rfc.rfc.rfc_id, supersedes
+                    ),
+                    rfc.path.display().to_string(),
+                ));
+            }
+        }
     }
 
     // Validate ADR refs
