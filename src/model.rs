@@ -105,7 +105,7 @@ pub enum ClauseStatus {
 // ADR Models (TOML SSOT)
 // =============================================================================
 
-/// ADR metadata section [phaseos]
+/// ADR metadata section [govctl]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdrMeta {
     pub schema: u32,
@@ -133,7 +133,7 @@ pub struct AdrContent {
 /// Complete ADR file structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdrSpec {
-    pub phaseos: AdrMeta,
+    pub govctl: AdrMeta,
     pub content: AdrContent,
 }
 
@@ -152,7 +152,7 @@ pub enum AdrStatus {
 // Work Item Models (TOML SSOT)
 // =============================================================================
 
-/// Work Item metadata section [phaseos]
+/// Work Item metadata section [govctl]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemMeta {
     pub schema: u32,
@@ -179,7 +179,7 @@ pub struct WorkItemContent {
 /// Complete Work Item file structure
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemSpec {
-    pub phaseos: WorkItemMeta,
+    pub govctl: WorkItemMeta,
     pub content: WorkItemContent,
 }
 
@@ -223,7 +223,7 @@ pub struct AdrEntry {
 impl AdrEntry {
     /// Convenience accessor for metadata
     pub fn meta(&self) -> &AdrMeta {
-        &self.spec.phaseos
+        &self.spec.govctl
     }
 }
 
@@ -237,7 +237,7 @@ pub struct WorkItemEntry {
 impl WorkItemEntry {
     /// Convenience accessor for metadata
     pub fn meta(&self) -> &WorkItemMeta {
-        &self.spec.phaseos
+        &self.spec.govctl
     }
 }
 

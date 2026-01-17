@@ -1,6 +1,6 @@
-# PhaseOS
+# govctl
 
-> **PhaseOS is an opinionated governance engine for RFC-driven AI software development.**
+> **govctl is an opinionated governance CLI for RFC-driven AI software development.**
 
 ---
 
@@ -16,24 +16,24 @@ The result: faster typing, slower thinking, unmaintainable systems.
 
 ---
 
-## What PhaseOS Is
+## What govctl Is
 
-PhaseOS enforces **phase discipline** on software development:
+govctl enforces **phase discipline** on software development:
 
 1. **RFC is the source of truth** — No implementation without specification
 2. **Phases are enforced** — Each phase has explicit gates and invariants
 3. **Governance is executable** — Rules are checked, not suggested
 
-PhaseOS governs itself by its own rules. This repository is the first proof.
+govctl governs itself by its own rules. This repository is the first proof.
 
 ---
 
-## What PhaseOS Is NOT
+## What govctl Is NOT
 
-- ❌ **Not a code generator** — PhaseOS doesn't write code; it ensures code follows specs
-- ❌ **Not a documentation editor** — PhaseOS enforces structure, not style
-- ❌ **Not about "faster coding"** — PhaseOS is about _correct_ coding
-- ❌ **Not a framework** — PhaseOS is a constraint system
+- ❌ **Not a code generator** — govctl doesn't write code; it ensures code follows specs
+- ❌ **Not a documentation editor** — govctl enforces structure, not style
+- ❌ **Not about "faster coding"** — govctl is about _correct_ coding
+- ❌ **Not a framework** — govctl is a constraint system
 
 ---
 
@@ -44,72 +44,72 @@ These are non-negotiable:
 1. **Specification precedes implementation**
 2. **Phases cannot be skipped**
 3. **Breaking changes require explicit RFC amendments**
-4. **PhaseOS itself follows PhaseOS governance**
+4. **govctl itself follows govctl governance**
 
 ---
 
 ## Current Status
 
-PhaseOS is in its constitutional phase. The following RFCs define its governance:
+govctl is in its constitutional phase. The following RFCs define its governance:
 
 | RFC                              | Title            | Status |
 | -------------------------------- | ---------------- | ------ |
 | [RFC-0000](docs/rfc/RFC-0000.md) | What an RFC Is   | Draft  |
-| [RFC-0001](docs/rfc/RFC-0001.md) | PhaseOS Vision   | Draft  |
+| [RFC-0001](docs/rfc/RFC-0001.md) | govctl Vision    | Draft  |
 | [RFC-0002](docs/rfc/RFC-0002.md) | Phase Discipline | Draft  |
 
 ---
 
-## The `phaseos` CLI
+## The `govctl` CLI
 
-PhaseOS includes a governance CLI for managing RFCs, ADRs, and Work Items.
+govctl is a governance CLI for managing RFCs, ADRs, and Work Items.
 
 ### Installation
 
 ```bash
 cargo build --release
-# Binary at ./target/release/phaseos
+# Binary at ./target/release/govctl
 ```
 
 ### Quick Start
 
 ```bash
 # Initialize a new project
-phaseos init
+govctl init
 
 # Create an RFC
-phaseos new rfc RFC-0010 "Feature Title"
+govctl new rfc RFC-0010 "Feature Title"
 
 # Create a clause within an RFC
-phaseos new clause RFC-0010:C-SCOPE "Scope" -s "Specification" -k normative
+govctl new clause RFC-0010:C-SCOPE "Scope" -s "Specification" -k normative
 
 # Edit clause text
-phaseos edit RFC-0010:C-SCOPE --text-stdin <<'EOF'
+govctl edit RFC-0010:C-SCOPE --text-stdin <<'EOF'
 The feature MUST...
 EOF
 
 # Render RFCs to markdown (default, published to repo)
-phaseos render
+govctl render
 
 # Render specific RFC
-phaseos render --rfc-id RFC-0010
+govctl render --rfc-id RFC-0010
 
 # Render ADRs/Work Items locally (not committed, .gitignore'd)
-phaseos render adr
-phaseos render work
-phaseos render all   # Everything
+govctl render adr
+govctl render work
+govctl render all   # Everything
 
 # Validate all governed documents
-phaseos check
+govctl check
 
 # List RFCs
-phaseos list rfc
+govctl list rfc
 
 # List clauses
-phaseos list clause
+govctl list clause
 
 # Show summary
-phaseos stat
+govctl stat
 ```
 
 ### Data Model
@@ -132,22 +132,22 @@ All artifacts use structured formats as Single Source of Truth (SSOT):
 
 ```bash
 # RFC status: draft → normative → deprecated
-phaseos finalize RFC-0010 normative
+govctl finalize RFC-0010 normative
 
 # RFC phase: spec → impl → test → stable
-phaseos advance RFC-0010 impl
+govctl advance RFC-0010 impl
 
 # Version bump with changelog
-phaseos bump RFC-0010 --minor -m "Add new clause"
+govctl bump RFC-0010 --minor -m "Add new clause"
 
 # ADR lifecycle
-phaseos accept ADR-0003
-phaseos deprecate ADR-0002
-phaseos supersede ADR-0001 --by ADR-0005
+govctl accept ADR-0003
+govctl deprecate ADR-0002
+govctl supersede ADR-0001 --by ADR-0005
 
 # Work item status
-phaseos mv work-item.md active
-phaseos mv work-item.md done
+govctl mv work-item.md active
+govctl mv work-item.md done
 ```
 
 ---

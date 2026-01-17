@@ -1,5 +1,5 @@
 [project]
-name = "phaseos"
+name = "govctl"
 
 [paths]
 spec_root = "spec"

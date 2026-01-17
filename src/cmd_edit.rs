@@ -79,16 +79,16 @@ pub fn set_field(
         // It's an ADR - load, modify, write TOML
         let mut entry = load_adrs(config)?
             .into_iter()
-            .find(|a| a.spec.phaseos.id == id)
+            .find(|a| a.spec.govctl.id == id)
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
 
         match field {
             "status" => {
-                entry.spec.phaseos.status = serde_json::from_str(&format!("\"{value}\""))
+                entry.spec.govctl.status = serde_json::from_str(&format!("\"{value}\""))
                     .map_err(|_| anyhow::anyhow!("Invalid status: {value}"))?;
             }
-            "title" => entry.spec.phaseos.title = value.to_string(),
-            "date" => entry.spec.phaseos.date = value.to_string(),
+            "title" => entry.spec.govctl.title = value.to_string(),
+            "date" => entry.spec.govctl.date = value.to_string(),
             "context" => entry.spec.content.context = value.to_string(),
             "decision" => entry.spec.content.decision = value.to_string(),
             "consequences" => entry.spec.content.consequences = value.to_string(),
@@ -103,15 +103,15 @@ pub fn set_field(
         // It's a work item
         let mut entry = load_work_items(config)?
             .into_iter()
-            .find(|w| w.spec.phaseos.id == id || w.path.to_string_lossy().contains(id))
+            .find(|w| w.spec.govctl.id == id || w.path.to_string_lossy().contains(id))
             .ok_or_else(|| anyhow::anyhow!("Work item not found: {id}"))?;
 
         match field {
             "status" => {
-                entry.spec.phaseos.status = serde_json::from_str(&format!("\"{value}\""))
+                entry.spec.govctl.status = serde_json::from_str(&format!("\"{value}\""))
                     .map_err(|_| anyhow::anyhow!("Invalid status: {value}"))?;
             }
-            "title" => entry.spec.phaseos.title = value.to_string(),
+            "title" => entry.spec.govctl.title = value.to_string(),
             "description" => entry.spec.content.description = value.to_string(),
             "notes" => entry.spec.content.notes = value.to_string(),
             _ => anyhow::bail!("Unknown work item field: {field}"),
@@ -177,16 +177,16 @@ pub fn get_field(
     } else if id.starts_with("ADR-") {
         let entry = load_adrs(config)?
             .into_iter()
-            .find(|a| a.spec.phaseos.id == id)
+            .find(|a| a.spec.govctl.id == id)
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
 
         if let Some(f) = field {
             let value = match f {
-                "status" => entry.spec.phaseos.status.as_ref().to_string(),
-                "title" => entry.spec.phaseos.title,
-                "date" => entry.spec.phaseos.date,
-                "superseded_by" => entry.spec.phaseos.superseded_by.unwrap_or_default(),
-                "refs" => entry.spec.phaseos.refs.join(", "),
+                "status" => entry.spec.govctl.status.as_ref().to_string(),
+                "title" => entry.spec.govctl.title,
+                "date" => entry.spec.govctl.date,
+                "superseded_by" => entry.spec.govctl.superseded_by.unwrap_or_default(),
+                "refs" => entry.spec.govctl.refs.join(", "),
                 "context" => entry.spec.content.context,
                 "decision" => entry.spec.content.decision,
                 "consequences" => entry.spec.content.consequences,
@@ -202,16 +202,16 @@ pub fn get_field(
         // It's a work item
         let entry = load_work_items(config)?
             .into_iter()
-            .find(|w| w.spec.phaseos.id == id || w.path.to_string_lossy().contains(id))
+            .find(|w| w.spec.govctl.id == id || w.path.to_string_lossy().contains(id))
             .ok_or_else(|| anyhow::anyhow!("Work item not found: {id}"))?;
 
         if let Some(f) = field {
             let value = match f {
-                "status" => entry.spec.phaseos.status.as_ref().to_string(),
-                "title" => entry.spec.phaseos.title,
-                "start_date" => entry.spec.phaseos.start_date.unwrap_or_default(),
-                "done_date" => entry.spec.phaseos.done_date.unwrap_or_default(),
-                "refs" => entry.spec.phaseos.refs.join(", "),
+                "status" => entry.spec.govctl.status.as_ref().to_string(),
+                "title" => entry.spec.govctl.title,
+                "start_date" => entry.spec.govctl.start_date.unwrap_or_default(),
+                "done_date" => entry.spec.govctl.done_date.unwrap_or_default(),
+                "refs" => entry.spec.govctl.refs.join(", "),
                 "description" => entry.spec.content.description,
                 "notes" => entry.spec.content.notes,
                 _ => anyhow::bail!("Unknown field: {f}"),
@@ -273,13 +273,13 @@ pub fn add_to_field(
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
-            .find(|a| a.spec.phaseos.id == id)
+            .find(|a| a.spec.govctl.id == id)
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
 
         match field {
             "refs" => {
-                if !entry.spec.phaseos.refs.contains(&value.to_string()) {
-                    entry.spec.phaseos.refs.push(value.to_string());
+                if !entry.spec.govctl.refs.contains(&value.to_string()) {
+                    entry.spec.govctl.refs.push(value.to_string());
                 }
             }
             _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
@@ -290,13 +290,13 @@ pub fn add_to_field(
     } else if id.starts_with("WI-") || id.contains("-") {
         let mut entry = load_work_items(config)?
             .into_iter()
-            .find(|w| w.spec.phaseos.id == id || w.path.to_string_lossy().contains(id))
+            .find(|w| w.spec.govctl.id == id || w.path.to_string_lossy().contains(id))
             .ok_or_else(|| anyhow::anyhow!("Work item not found: {id}"))?;
 
         match field {
             "refs" => {
-                if !entry.spec.phaseos.refs.contains(&value.to_string()) {
-                    entry.spec.phaseos.refs.push(value.to_string());
+                if !entry.spec.govctl.refs.contains(&value.to_string()) {
+                    entry.spec.govctl.refs.push(value.to_string());
                 }
             }
             _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
@@ -351,12 +351,12 @@ pub fn remove_from_field(
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
-            .find(|a| a.spec.phaseos.id == id)
+            .find(|a| a.spec.govctl.id == id)
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
 
         match field {
             "refs" => {
-                entry.spec.phaseos.refs.retain(|r| r != value);
+                entry.spec.govctl.refs.retain(|r| r != value);
             }
             _ => anyhow::bail!("Cannot remove from field: {field}"),
         }
@@ -366,12 +366,12 @@ pub fn remove_from_field(
     } else if id.starts_with("WI-") || id.contains("-") {
         let mut entry = load_work_items(config)?
             .into_iter()
-            .find(|w| w.spec.phaseos.id == id || w.path.to_string_lossy().contains(id))
+            .find(|w| w.spec.govctl.id == id || w.path.to_string_lossy().contains(id))
             .ok_or_else(|| anyhow::anyhow!("Work item not found: {id}"))?;
 
         match field {
             "refs" => {
-                entry.spec.phaseos.refs.retain(|r| r != value);
+                entry.spec.govctl.refs.retain(|r| r != value);
             }
             _ => anyhow::bail!("Cannot remove from field: {field}"),
         }

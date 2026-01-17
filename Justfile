@@ -1,4 +1,4 @@
-# PhaseOS Justfile
+# govctl Justfile
 
 # Build the CLI
 build:

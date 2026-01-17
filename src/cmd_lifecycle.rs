@@ -125,17 +125,17 @@ pub fn advance(config: &Config, rfc_id: &str, phase: RfcPhase) -> anyhow::Result
 pub fn accept_adr(config: &Config, adr_id: &str) -> anyhow::Result<Vec<Diagnostic>> {
     let mut entry = load_adrs(config)?
         .into_iter()
-        .find(|a| a.spec.phaseos.id == adr_id || a.path.to_string_lossy().contains(adr_id))
+        .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
         .ok_or_else(|| anyhow::anyhow!("ADR not found: {adr_id}"))?;
 
-    if !is_valid_adr_transition(entry.spec.phaseos.status, AdrStatus::Accepted) {
+    if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Accepted) {
         anyhow::bail!(
             "Invalid ADR transition: {} -> accepted",
-            entry.spec.phaseos.status.as_ref()
+            entry.spec.govctl.status.as_ref()
         );
     }
 
-    entry.spec.phaseos.status = AdrStatus::Accepted;
+    entry.spec.govctl.status = AdrStatus::Accepted;
     write_adr(&entry.path, &entry.spec)?;
 
     eprintln!("Accepted ADR: {adr_id}");
@@ -168,17 +168,17 @@ pub fn deprecate(config: &Config, id: &str) -> anyhow::Result<Vec<Diagnostic>> {
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
-            .find(|a| a.spec.phaseos.id == id)
+            .find(|a| a.spec.govctl.id == id)
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
 
-        if !is_valid_adr_transition(entry.spec.phaseos.status, AdrStatus::Deprecated) {
+        if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Deprecated) {
             anyhow::bail!(
                 "Invalid ADR transition: {} -> deprecated",
-                entry.spec.phaseos.status.as_ref()
+                entry.spec.govctl.status.as_ref()
             );
         }
 
-        entry.spec.phaseos.status = AdrStatus::Deprecated;
+        entry.spec.govctl.status = AdrStatus::Deprecated;
         write_adr(&entry.path, &entry.spec)?;
 
         eprintln!("Deprecated ADR: {id}");
@@ -216,23 +216,23 @@ pub fn supersede(config: &Config, id: &str, by: &str) -> anyhow::Result<Vec<Diag
         // Validate replacement exists
         let _ = load_adrs(config)?
             .into_iter()
-            .find(|a| a.spec.phaseos.id == by)
+            .find(|a| a.spec.govctl.id == by)
             .ok_or_else(|| anyhow::anyhow!("Replacement ADR not found: {by}"))?;
 
         let mut entry = load_adrs(config)?
             .into_iter()
-            .find(|a| a.spec.phaseos.id == id)
+            .find(|a| a.spec.govctl.id == id)
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
 
-        if !is_valid_adr_transition(entry.spec.phaseos.status, AdrStatus::Superseded) {
+        if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Superseded) {
             anyhow::bail!(
                 "Invalid ADR transition: {} -> superseded",
-                entry.spec.phaseos.status.as_ref()
+                entry.spec.govctl.status.as_ref()
             );
         }
 
-        entry.spec.phaseos.status = AdrStatus::Superseded;
-        entry.spec.phaseos.superseded_by = Some(by.to_string());
+        entry.spec.govctl.status = AdrStatus::Superseded;
+        entry.spec.govctl.superseded_by = Some(by.to_string());
         write_adr(&entry.path, &entry.spec)?;
 
         eprintln!("Superseded ADR: {id}");

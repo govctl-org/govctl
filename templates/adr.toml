@@ -12,7 +12,7 @@
 #   - superseded_by: ID of superseding ADR (if superseded)
 #   - refs: References to related RFCs, ADRs, or external docs
 
-[phaseos]
+[govctl]
 schema = 1
 id = "{{ID}}"
 title = "{{TITLE}}"

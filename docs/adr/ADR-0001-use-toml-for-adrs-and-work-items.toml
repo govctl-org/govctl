@@ -1,4 +1,4 @@
-[phaseos]
+[govctl]
 schema = 1
 id = "ADR-0001"
 title = "Use TOML for ADRs and Work Items"

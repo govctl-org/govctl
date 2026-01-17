@@ -1,7 +1,7 @@
 # ADR Schema Definition (for documentation)
 # Actual validation is done in code
 
-[phaseos]
+[govctl]
 schema = 1                          # Required: schema version
 id = "ADR-NNNN"                     # Required: unique identifier
 title = "ADR Title"                 # Required: descriptive title

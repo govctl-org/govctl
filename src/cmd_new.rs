@@ -11,17 +11,17 @@ use crate::write::today;
 use crate::NewTarget;
 use slug::slugify;
 
-/// Initialize phaseos project
+/// Initialize govctl project
 pub fn init_project(config: &Config, force: bool) -> anyhow::Result<Vec<Diagnostic>> {
-    let config_path = std::path::Path::new("phaseos.toml");
+    let config_path = std::path::Path::new("govctl.toml");
 
     if config_path.exists() && !force {
-        anyhow::bail!("phaseos.toml already exists (use -f to overwrite)");
+        anyhow::bail!("govctl.toml already exists (use -f to overwrite)");
     }
 
     // Write config
     std::fs::write(config_path, Config::default_toml())?;
-    eprintln!("Created: phaseos.toml");
+    eprintln!("Created: govctl.toml");
 
     // Create directories
     let dirs = [
@@ -213,7 +213,7 @@ fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
 
     // Create ADR spec
     let spec = AdrSpec {
-        phaseos: AdrMeta {
+        govctl: AdrMeta {
             schema: 1,
             id: adr_id.clone(),
             title: title.to_string(),
@@ -259,7 +259,7 @@ fn create_work_item(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnost
 
     // Create work item spec
     let spec = WorkItemSpec {
-        phaseos: WorkItemMeta {
+        govctl: WorkItemMeta {
             schema: 1,
             id: work_id.clone(),
             title: title.to_string(),

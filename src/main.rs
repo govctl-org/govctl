@@ -1,4 +1,4 @@
-//! phaseos: Project governance CLI for RFC, ADR, and Work Item management.
+//! govctl: Project governance CLI for RFC, ADR, and Work Item management.
 
 use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
@@ -27,11 +27,11 @@ use diagnostic::{Diagnostic, DiagnosticLevel};
 use model::{ClauseKind, RfcPhase, WorkItemStatus};
 
 #[derive(Parser)]
-#[command(name = "phaseos")]
+#[command(name = "govctl")]
 #[command(about = "Project governance CLI for RFC, ADR, and Work Item management")]
 #[command(version)]
 struct Cli {
-    /// Path to phaseos config (TOML)
+    /// Path to govctl config (TOML)
     #[arg(short = 'C', long, global = true)]
     config: Option<PathBuf>,
 
@@ -41,7 +41,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Initialize phaseos in the current directory
+    /// Initialize govctl in the current directory
     Init {
         /// Overwrite existing config
         #[arg(short = 'f', long)]

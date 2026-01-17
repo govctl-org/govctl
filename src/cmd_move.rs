@@ -30,25 +30,25 @@ pub fn move_item(
 
     let mut entry = load_work_item(&work_path)?;
 
-    if !is_valid_work_transition(entry.spec.phaseos.status, status) {
+    if !is_valid_work_transition(entry.spec.govctl.status, status) {
         anyhow::bail!(
             "Invalid transition: {} -> {}",
-            entry.spec.phaseos.status.as_ref(),
+            entry.spec.govctl.status.as_ref(),
             status.as_ref()
         );
     }
 
-    entry.spec.phaseos.status = status;
+    entry.spec.govctl.status = status;
 
     // Update dates
     match status {
         WorkItemStatus::Active => {
-            if entry.spec.phaseos.start_date.is_none() {
-                entry.spec.phaseos.start_date = Some(today());
+            if entry.spec.govctl.start_date.is_none() {
+                entry.spec.govctl.start_date = Some(today());
             }
         }
         WorkItemStatus::Done | WorkItemStatus::Cancelled => {
-            entry.spec.phaseos.done_date = Some(today());
+            entry.spec.govctl.done_date = Some(today());
         }
         WorkItemStatus::Queue => {}
     }

@@ -11,7 +11,7 @@ pub fn render_rfc(rfc: &RfcIndex) -> String {
 
     // YAML frontmatter (for compatibility with existing tooling)
     writeln!(out, "---").unwrap();
-    writeln!(out, "phaseos:").unwrap();
+    writeln!(out, "govctl:").unwrap();
     writeln!(out, "  schema: 1").unwrap();
     writeln!(out, "  id: {}", rfc.rfc.rfc_id).unwrap();
     writeln!(out, "  title: \"{}\"", rfc.rfc.title).unwrap();

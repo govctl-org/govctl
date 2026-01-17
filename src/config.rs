@@ -4,7 +4,7 @@ use anyhow::{Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
-/// Project configuration (phaseos.toml)
+/// Project configuration (govctl.toml)
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Config {
     #[serde(default)]
@@ -22,7 +22,7 @@ pub struct ProjectConfig {
 }
 
 fn default_project_name() -> String {
-    "phaseos-project".to_string()
+    "govctl-project".to_string()
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,7 +100,7 @@ impl Config {
         let config_path = path
             .map(PathBuf::from)
             .or_else(Self::find_config)
-            .unwrap_or_else(|| PathBuf::from("phaseos.toml"));
+            .unwrap_or_else(|| PathBuf::from("govctl.toml"));
 
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)
@@ -118,7 +118,7 @@ impl Config {
     fn find_config() -> Option<PathBuf> {
         let mut current = std::env::current_dir().ok()?;
         loop {
-            let config_path = current.join("phaseos.toml");
+            let config_path = current.join("govctl.toml");
             if config_path.exists() {
                 return Some(config_path);
             }

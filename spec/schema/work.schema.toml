@@ -1,7 +1,7 @@
 # Work Item Schema Definition (for documentation)
 # Actual validation is done in code
 
-[phaseos]
+[govctl]
 schema = 1                          # Required: schema version
 id = "WI-YYYY-MM-DD-NNN"            # Required: unique identifier
 title = "Work Item Title"           # Required: descriptive title

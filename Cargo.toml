@@ -1,12 +1,12 @@
 [package]
-name = "phaseos"
+name = "govctl"
 version = "0.1.0"
 edition = "2021"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
 license = "MIT"
 
 [[bin]]
-name = "phaseos"
+name = "govctl"
 path = "src/main.rs"
 
 [dependencies]

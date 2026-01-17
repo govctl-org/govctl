@@ -12,7 +12,7 @@
 #   - done_date: When work completed (auto-set on done/cancelled)
 #   - refs: References to related RFCs, ADRs
 
-[phaseos]
+[govctl]
 schema = 1
 id = "{{ID}}"
 title = "{{TITLE}}"
