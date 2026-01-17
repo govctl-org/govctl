@@ -4,7 +4,7 @@ use super::app::{App, View};
 use ratatui::{
     prelude::*,
     symbols::border,
-    widgets::{Block, Borders, Paragraph, Row, Table},
+    widgets::{Block, Borders, Paragraph, Row, Table, Wrap},
 };
 
 // Status color helpers
@@ -553,6 +553,7 @@ fn draw_rfc_detail(frame: &mut Frame, app: &App, idx: usize) {
 
     let title = format!("📋 {}", rfc.rfc.rfc_id);
     let content = Paragraph::new(lines)
+        .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Blue)));
 
@@ -618,6 +619,7 @@ fn draw_adr_detail(frame: &mut Frame, app: &App, idx: usize) {
 
     let title = format!("📝 {}", meta.id);
     let content = Paragraph::new(lines)
+        .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Green)));
 
@@ -687,6 +689,7 @@ fn draw_work_detail(frame: &mut Frame, app: &App, idx: usize) {
 
     let title = format!("📌 {}", meta.id);
     let content = Paragraph::new(lines)
+        .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Yellow)));
 
