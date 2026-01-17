@@ -2,7 +2,7 @@
 
 use crate::FinalizeStatus;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::{find_clause_json, find_rfc_json};
 use crate::model::{AdrStatus, ClauseStatus, Release, RfcPhase, RfcStatus, WorkItemStatus};
 use crate::parse::{load_adrs, load_releases, load_work_items, validate_version, write_adr, write_releases};
@@ -274,15 +274,30 @@ pub fn cut_release(
     date: Option<&str>,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
+    let releases_path = config.releases_path();
+    let releases_path_str = releases_path.display().to_string();
+
     // Validate version is valid semver
-    validate_version(version).map_err(|e| anyhow::anyhow!("{e}"))?;
+    validate_version(version).map_err(|_| {
+        let diag = Diagnostic::new(
+            DiagnosticCode::E0701ReleaseInvalidSemver,
+            format!("Invalid semver version: {version}"),
+            &releases_path_str,
+        );
+        anyhow::anyhow!("{}", diag)
+    })?;
 
     // Load existing releases
-    let mut releases_file = load_releases(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+    let mut releases_file = load_releases(config).map_err(|d| anyhow::anyhow!("{}", d))?;
 
     // Check for duplicate version
     if releases_file.releases.iter().any(|r| r.version == version) {
-        anyhow::bail!("Release {version} already exists");
+        let diag = Diagnostic::new(
+            DiagnosticCode::E0702ReleaseDuplicate,
+            format!("Release {version} already exists"),
+            &releases_path_str,
+        );
+        anyhow::bail!("{}", diag);
     }
 
     // Get all work item IDs already in releases
@@ -293,7 +308,7 @@ pub fn cut_release(
         .collect();
 
     // Load all done work items
-    let work_items = load_work_items(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+    let work_items = load_work_items(config).map_err(|d| anyhow::anyhow!("{}", d))?;
     let unreleased: Vec<_> = work_items
         .iter()
         .filter(|w| w.spec.govctl.status == WorkItemStatus::Done)
@@ -301,7 +316,12 @@ pub fn cut_release(
         .collect();
 
     if unreleased.is_empty() {
-        anyhow::bail!("No unreleased work items to include in release");
+        let diag = Diagnostic::new(
+            DiagnosticCode::E0703ReleaseNoUnreleasedItems,
+            "No unreleased work items to include in release",
+            &releases_path_str,
+        );
+        anyhow::bail!("{}", diag);
     }
 
     // Create new release
@@ -318,7 +338,7 @@ pub fn cut_release(
     releases_file.releases.insert(0, release);
 
     // Write releases file
-    write_releases(config, &releases_file, op).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+    write_releases(config, &releases_file, op).map_err(|d| anyhow::anyhow!("{}", d))?;
 
     if !op.is_preview() {
         ui::release_created(version, &release_date, refs.len());

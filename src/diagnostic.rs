@@ -43,6 +43,11 @@ pub enum DiagnosticCode {
     E0403WorkInvalidTransition,
     E0404WorkRefNotFound,
 
+    // Release errors (E07xx)
+    E0701ReleaseInvalidSemver,
+    E0702ReleaseDuplicate,
+    E0703ReleaseNoUnreleasedItems,
+
     // Config errors (E05xx)
     E0501ConfigInvalid,
     E0502PathNotFound,
@@ -110,6 +115,9 @@ impl DiagnosticCode {
             Self::E0502PathNotFound => "E0502",
             Self::E0601SignatureMismatch => "E0601",
             Self::E0602SignatureMissing => "E0602",
+            Self::E0701ReleaseInvalidSemver => "E0701",
+            Self::E0702ReleaseDuplicate => "E0702",
+            Self::E0703ReleaseNoUnreleasedItems => "E0703",
             Self::E0901IoError => "E0901",
             Self::E0902JsonParseError => "E0902",
             Self::E0903YamlParseError => "E0903",
