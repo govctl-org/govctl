@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-17-005"
 title = "Add deterministic hash signatures to rendered markdown"
-status = "active"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
+completed = "2026-01-17"
 refs = ["ADR-0003"]
 
 [content]
@@ -23,16 +24,16 @@ notes = ""
 
 [[content.acceptance_criteria]]
 text = "Add src/signature.rs with deterministic hash computation"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Rendered markdown includes SIGNATURE comment"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "govctl check validates signatures"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "SCHEMA.md documents signature format"
-status = "pending"
+status = "done"
