@@ -480,10 +480,11 @@ pub fn cut_release(
 
     // Create new release
     let release_date = date.map(|d| d.to_string()).unwrap_or_else(today);
-    let refs: Vec<_> = unreleased
+    let mut refs: Vec<_> = unreleased
         .iter()
         .map(|w| w.spec.govctl.id.clone())
         .collect();
+    refs.sort(); // Ensure deterministic ordering across platforms
 
     let release = Release {
         version: version.to_string(),
