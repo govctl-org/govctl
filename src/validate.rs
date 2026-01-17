@@ -234,7 +234,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         if adr.meta().refs.is_empty() {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
-                "ADR has no references",
+                "ADR does not reference any artifacts (refs field is empty)",
                 adr.path.display().to_string(),
             ));
         }
