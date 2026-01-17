@@ -3,8 +3,39 @@
 use super::app::{App, View};
 use ratatui::{
     prelude::*,
+    symbols::border,
     widgets::{Block, Borders, Paragraph, Row, Table},
 };
+
+// Status color helpers
+fn status_style(status: &str) -> Style {
+    match status {
+        "normative" | "accepted" | "done" | "active" => Style::default().fg(Color::Green),
+        "draft" | "proposed" | "queue" => Style::default().fg(Color::Yellow),
+        "deprecated" | "superseded" | "cancelled" => Style::default().fg(Color::Red),
+        _ => Style::default(),
+    }
+}
+
+fn status_icon(status: &str) -> &'static str {
+    match status {
+        "normative" | "accepted" | "done" => "●",
+        "active" => "◉",
+        "draft" | "proposed" | "queue" => "○",
+        "deprecated" | "superseded" | "cancelled" => "✗",
+        _ => "•",
+    }
+}
+
+fn phase_style(phase: &str) -> Style {
+    match phase {
+        "stable" => Style::default().fg(Color::Green),
+        "test" => Style::default().fg(Color::Cyan),
+        "impl" => Style::default().fg(Color::Blue),
+        "spec" => Style::default().fg(Color::Yellow),
+        _ => Style::default(),
+    }
+}
 
 /// Main draw function
 pub fn draw(frame: &mut Frame, app: &App) {
@@ -17,6 +48,13 @@ pub fn draw(frame: &mut Frame, app: &App) {
         View::AdrDetail(idx) => draw_adr_detail(frame, app, idx),
         View::WorkDetail(idx) => draw_work_detail(frame, app, idx),
     }
+}
+
+fn rounded_block(title: &str) -> Block<'_> {
+    Block::default()
+        .title(format!(" {} ", title))
+        .borders(Borders::ALL)
+        .border_set(border::ROUNDED)
 }
 
 fn draw_dashboard(frame: &mut Frame, app: &App) {
@@ -32,11 +70,19 @@ fn draw_dashboard(frame: &mut Frame, app: &App) {
         ])
         .split(area);
 
-    // Header
-    let header = Paragraph::new("govctl Dashboard")
-        .style(Style::default().fg(Color::Cyan).bold())
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    // Header with fancy title
+    let header = Paragraph::new(Line::from(vec![
+        Span::styled("╔══ ", Style::default().fg(Color::Cyan)),
+        Span::styled("govctl", Style::default().fg(Color::Cyan).bold()),
+        Span::styled(" Dashboard ══╗", Style::default().fg(Color::Cyan)),
+    ]))
+    .alignment(Alignment::Center)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
+            .border_style(Style::default().fg(Color::Cyan)),
+    );
     frame.render_widget(header, chunks[0]);
 
     // Content: 3 columns for RFC, ADR, Work
@@ -61,16 +107,33 @@ fn draw_dashboard(frame: &mut Frame, app: &App) {
     let work_stats = build_work_stats(app);
     frame.render_widget(work_stats, content_chunks[2]);
 
-    // Footer
-    let footer = Paragraph::new("[1/r] RFCs  [2/a] ADRs  [3/w] Work  [q] Quit")
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    // Footer with keybindings
+    let footer = Paragraph::new(Line::from(vec![
+        Span::styled(" [", Style::default().fg(Color::DarkGray)),
+        Span::styled("1", Style::default().fg(Color::Blue).bold()),
+        Span::styled("/r] RFCs  ", Style::default().fg(Color::DarkGray)),
+        Span::styled("[", Style::default().fg(Color::DarkGray)),
+        Span::styled("2", Style::default().fg(Color::Green).bold()),
+        Span::styled("/a] ADRs  ", Style::default().fg(Color::DarkGray)),
+        Span::styled("[", Style::default().fg(Color::DarkGray)),
+        Span::styled("3", Style::default().fg(Color::Yellow).bold()),
+        Span::styled("/w] Work  ", Style::default().fg(Color::DarkGray)),
+        Span::styled("[", Style::default().fg(Color::DarkGray)),
+        Span::styled("q", Style::default().fg(Color::Red).bold()),
+        Span::styled("] Quit ", Style::default().fg(Color::DarkGray)),
+    ]))
+    .alignment(Alignment::Center)
+    .block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    );
     frame.render_widget(footer, chunks[2]);
 }
 
 fn build_rfc_stats(app: &App) -> Paragraph<'static> {
-    let mut lines = vec![Line::from("").style(Style::default())];
+    let mut lines = vec![Line::from("")];
 
     // Count by status
     let mut draft = 0;
@@ -86,22 +149,42 @@ fn build_rfc_stats(app: &App) -> Paragraph<'static> {
         }
     }
 
-    lines.push(Line::from(format!("  Draft:      {}", draft)));
-    lines.push(Line::from(format!("  Normative:  {}", normative)));
-    lines.push(Line::from(format!("  Deprecated: {}", deprecated)));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("○", Style::default().fg(Color::Yellow)),
+        Span::raw(format!(" Draft:      {}", draft)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("●", Style::default().fg(Color::Green)),
+        Span::raw(format!(" Normative:  {}", normative)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("✗", Style::default().fg(Color::Red)),
+        Span::raw(format!(" Deprecated: {}", deprecated)),
+    ]));
     lines.push(Line::from(""));
-    lines.push(Line::from(format!("  Total: {}", app.index.rfcs.len())));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("Σ", Style::default().fg(Color::Cyan).bold()),
+        Span::styled(
+            format!(" Total: {}", app.index.rfcs.len()),
+            Style::default().bold(),
+        ),
+    ]));
 
     Paragraph::new(lines).block(
         Block::default()
-            .title(" RFCs ")
+            .title(" 📋 RFCs ")
             .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
             .border_style(Style::default().fg(Color::Blue)),
     )
 }
 
 fn build_adr_stats(app: &App) -> Paragraph<'static> {
-    let mut lines = vec![Line::from("").style(Style::default())];
+    let mut lines = vec![Line::from("")];
 
     let mut proposed = 0;
     let mut accepted = 0;
@@ -116,22 +199,42 @@ fn build_adr_stats(app: &App) -> Paragraph<'static> {
         }
     }
 
-    lines.push(Line::from(format!("  Proposed:   {}", proposed)));
-    lines.push(Line::from(format!("  Accepted:   {}", accepted)));
-    lines.push(Line::from(format!("  Superseded: {}", superseded)));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("○", Style::default().fg(Color::Yellow)),
+        Span::raw(format!(" Proposed:   {}", proposed)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("●", Style::default().fg(Color::Green)),
+        Span::raw(format!(" Accepted:   {}", accepted)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("✗", Style::default().fg(Color::Red)),
+        Span::raw(format!(" Superseded: {}", superseded)),
+    ]));
     lines.push(Line::from(""));
-    lines.push(Line::from(format!("  Total: {}", app.index.adrs.len())));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("Σ", Style::default().fg(Color::Cyan).bold()),
+        Span::styled(
+            format!(" Total: {}", app.index.adrs.len()),
+            Style::default().bold(),
+        ),
+    ]));
 
     Paragraph::new(lines).block(
         Block::default()
-            .title(" ADRs ")
+            .title(" 📝 ADRs ")
             .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
             .border_style(Style::default().fg(Color::Green)),
     )
 }
 
 fn build_work_stats(app: &App) -> Paragraph<'static> {
-    let mut lines = vec![Line::from("").style(Style::default())];
+    let mut lines = vec![Line::from("")];
 
     let mut queue = 0;
     let mut active = 0;
@@ -146,19 +249,36 @@ fn build_work_stats(app: &App) -> Paragraph<'static> {
         }
     }
 
-    lines.push(Line::from(format!("  Queue:  {}", queue)));
-    lines.push(Line::from(format!("  Active: {}", active)));
-    lines.push(Line::from(format!("  Done:   {}", done)));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("○", Style::default().fg(Color::Yellow)),
+        Span::raw(format!(" Queue:  {}", queue)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("◉", Style::default().fg(Color::Green)),
+        Span::raw(format!(" Active: {}", active)),
+    ]));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("●", Style::default().fg(Color::Green)),
+        Span::raw(format!(" Done:   {}", done)),
+    ]));
     lines.push(Line::from(""));
-    lines.push(Line::from(format!(
-        "  Total: {}",
-        app.index.work_items.len()
-    )));
+    lines.push(Line::from(vec![
+        Span::raw("  "),
+        Span::styled("Σ", Style::default().fg(Color::Cyan).bold()),
+        Span::styled(
+            format!(" Total: {}", app.index.work_items.len()),
+            Style::default().bold(),
+        ),
+    ]));
 
     Paragraph::new(lines).block(
         Block::default()
-            .title(" Work Items ")
+            .title(" 📌 Work Items ")
             .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
             .border_style(Style::default().fg(Color::Yellow)),
     )
 }
@@ -171,25 +291,34 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
         .constraints([Constraint::Min(5), Constraint::Length(3)])
         .split(area);
 
-    // Build table rows
+    // Build table rows with colored status
     let rows: Vec<Row> = app
         .index
         .rfcs
         .iter()
         .enumerate()
         .map(|(i, rfc)| {
-            let style = if i == app.selected {
-                Style::default().bg(Color::DarkGray)
+            let status = rfc.rfc.status.as_ref();
+            let phase = rfc.rfc.phase.as_ref();
+            let bg = if i == app.selected {
+                Color::DarkGray
             } else {
-                Style::default()
+                Color::Reset
             };
+
             Row::new(vec![
-                rfc.rfc.rfc_id.clone(),
-                rfc.rfc.title.clone(),
-                rfc.rfc.status.as_ref().to_string(),
-                rfc.rfc.phase.as_ref().to_string(),
+                Line::from(rfc.rfc.rfc_id.clone()),
+                Line::from(rfc.rfc.title.clone()),
+                Line::from(vec![
+                    Span::styled(
+                        format!("{} ", status_icon(status)),
+                        status_style(status),
+                    ),
+                    Span::styled(status.to_string(), status_style(status)),
+                ]),
+                Line::from(Span::styled(phase.to_string(), phase_style(phase))),
             ])
-            .style(style)
+            .style(Style::default().bg(bg))
         })
         .collect();
 
@@ -198,22 +327,20 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
         [
             Constraint::Length(10),
             Constraint::Min(30),
-            Constraint::Length(12),
+            Constraint::Length(14),
             Constraint::Length(10),
         ],
     )
     .header(
         Row::new(vec!["ID", "Title", "Status", "Phase"])
-            .style(Style::default().bold().fg(Color::Cyan)),
+            .style(Style::default().bold().fg(Color::Cyan))
+            .bottom_margin(1),
     )
-    .block(Block::default().title(" RFCs ").borders(Borders::ALL));
+    .block(rounded_block("📋 RFCs").border_style(Style::default().fg(Color::Blue)));
 
     frame.render_widget(table, chunks[0]);
 
-    let footer = Paragraph::new("[j/k] Navigate  [Enter] View  [Esc] Back  [q] Quit")
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    let footer = keybind_footer(&["j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit"]);
     frame.render_widget(footer, chunks[1]);
 }
 
@@ -232,17 +359,25 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
         .enumerate()
         .map(|(i, adr)| {
             let meta = adr.meta();
-            let style = if i == app.selected {
-                Style::default().bg(Color::DarkGray)
+            let status = meta.status.as_ref();
+            let bg = if i == app.selected {
+                Color::DarkGray
             } else {
-                Style::default()
+                Color::Reset
             };
+
             Row::new(vec![
-                meta.id.clone(),
-                meta.title.clone(),
-                meta.status.as_ref().to_string(),
+                Line::from(meta.id.clone()),
+                Line::from(meta.title.clone()),
+                Line::from(vec![
+                    Span::styled(
+                        format!("{} ", status_icon(status)),
+                        status_style(status),
+                    ),
+                    Span::styled(status.to_string(), status_style(status)),
+                ]),
             ])
-            .style(style)
+            .style(Style::default().bg(bg))
         })
         .collect();
 
@@ -251,18 +386,19 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
         [
             Constraint::Length(12),
             Constraint::Min(40),
-            Constraint::Length(12),
+            Constraint::Length(14),
         ],
     )
-    .header(Row::new(vec!["ID", "Title", "Status"]).style(Style::default().bold().fg(Color::Cyan)))
-    .block(Block::default().title(" ADRs ").borders(Borders::ALL));
+    .header(
+        Row::new(vec!["ID", "Title", "Status"])
+            .style(Style::default().bold().fg(Color::Cyan))
+            .bottom_margin(1),
+    )
+    .block(rounded_block("📝 ADRs").border_style(Style::default().fg(Color::Green)));
 
     frame.render_widget(table, chunks[0]);
 
-    let footer = Paragraph::new("[j/k] Navigate  [Enter] View  [Esc] Back  [q] Quit")
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    let footer = keybind_footer(&["j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit"]);
     frame.render_widget(footer, chunks[1]);
 }
 
@@ -281,17 +417,25 @@ fn draw_work_list(frame: &mut Frame, app: &App) {
         .enumerate()
         .map(|(i, item)| {
             let meta = item.meta();
-            let style = if i == app.selected {
-                Style::default().bg(Color::DarkGray)
+            let status = meta.status.as_ref();
+            let bg = if i == app.selected {
+                Color::DarkGray
             } else {
-                Style::default()
+                Color::Reset
             };
+
             Row::new(vec![
-                meta.id.clone(),
-                meta.title.clone(),
-                meta.status.as_ref().to_string(),
+                Line::from(meta.id.clone()),
+                Line::from(meta.title.clone()),
+                Line::from(vec![
+                    Span::styled(
+                        format!("{} ", status_icon(status)),
+                        status_style(status),
+                    ),
+                    Span::styled(status.to_string(), status_style(status)),
+                ]),
             ])
-            .style(style)
+            .style(Style::default().bg(bg))
         })
         .collect();
 
@@ -300,19 +444,45 @@ fn draw_work_list(frame: &mut Frame, app: &App) {
         [
             Constraint::Length(20),
             Constraint::Min(40),
-            Constraint::Length(10),
+            Constraint::Length(12),
         ],
     )
-    .header(Row::new(vec!["ID", "Title", "Status"]).style(Style::default().bold().fg(Color::Cyan)))
-    .block(Block::default().title(" Work Items ").borders(Borders::ALL));
+    .header(
+        Row::new(vec!["ID", "Title", "Status"])
+            .style(Style::default().bold().fg(Color::Cyan))
+            .bottom_margin(1),
+    )
+    .block(rounded_block("📌 Work Items").border_style(Style::default().fg(Color::Yellow)));
 
     frame.render_widget(table, chunks[0]);
 
-    let footer = Paragraph::new("[j/k] Navigate  [Enter] View  [Esc] Back  [q] Quit")
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    let footer = keybind_footer(&["j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit"]);
     frame.render_widget(footer, chunks[1]);
+}
+
+fn keybind_footer(bindings: &[&str]) -> Paragraph<'static> {
+    let mut spans = vec![Span::raw(" ")];
+    for chunk in bindings.chunks(2) {
+        if chunk.len() == 2 {
+            spans.push(Span::styled("[", Style::default().fg(Color::DarkGray)));
+            spans.push(Span::styled(
+                chunk[0].to_string(),
+                Style::default().fg(Color::Cyan).bold(),
+            ));
+            spans.push(Span::styled("] ", Style::default().fg(Color::DarkGray)));
+            spans.push(Span::styled(
+                format!("{}  ", chunk[1]),
+                Style::default().fg(Color::DarkGray),
+            ));
+        }
+    }
+
+    Paragraph::new(Line::from(spans)).alignment(Alignment::Center).block(
+        Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
+            .border_style(Style::default().fg(Color::DarkGray)),
+    )
 }
 
 fn draw_rfc_detail(frame: &mut Frame, app: &App, idx: usize) {
@@ -327,38 +497,68 @@ fn draw_rfc_detail(frame: &mut Frame, app: &App, idx: usize) {
         .constraints([Constraint::Min(5), Constraint::Length(3)])
         .split(area);
 
+    let status = rfc.rfc.status.as_ref();
+    let phase = rfc.rfc.phase.as_ref();
+
     let mut lines = vec![
-        Line::from(format!("ID:      {}", rfc.rfc.rfc_id)),
-        Line::from(format!("Title:   {}", rfc.rfc.title)),
-        Line::from(format!("Version: {}", rfc.rfc.version)),
-        Line::from(format!("Status:  {}", rfc.rfc.status.as_ref())),
-        Line::from(format!("Phase:   {}", rfc.rfc.phase.as_ref())),
-        Line::from(format!("Owners:  {}", rfc.rfc.owners.join(", "))),
+        Line::from(vec![
+            Span::styled("ID:      ", Style::default().fg(Color::DarkGray)),
+            Span::styled(rfc.rfc.rfc_id.clone(), Style::default().bold()),
+        ]),
+        Line::from(vec![
+            Span::styled("Title:   ", Style::default().fg(Color::DarkGray)),
+            Span::raw(rfc.rfc.title.clone()),
+        ]),
+        Line::from(vec![
+            Span::styled("Version: ", Style::default().fg(Color::DarkGray)),
+            Span::styled(rfc.rfc.version.clone(), Style::default().fg(Color::Cyan)),
+        ]),
+        Line::from(vec![
+            Span::styled("Status:  ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
+            Span::styled(status.to_string(), status_style(status)),
+        ]),
+        Line::from(vec![
+            Span::styled("Phase:   ", Style::default().fg(Color::DarkGray)),
+            Span::styled(phase.to_string(), phase_style(phase)),
+        ]),
+        Line::from(vec![
+            Span::styled("Owners:  ", Style::default().fg(Color::DarkGray)),
+            Span::raw(rfc.rfc.owners.join(", ")),
+        ]),
         Line::from(""),
-        Line::from("Clauses:").style(Style::default().bold()),
+        Line::from(Span::styled(
+            "━━━ Clauses ━━━",
+            Style::default().fg(Color::Cyan).bold(),
+        )),
+        Line::from(""),
     ];
 
     for clause in &rfc.clauses {
-        lines.push(Line::from(format!(
-            "  {} - {} [{}]",
-            clause.spec.clause_id,
-            clause.spec.title,
-            clause.spec.status.as_ref()
-        )));
+        let clause_status = clause.spec.status.as_ref();
+        lines.push(Line::from(vec![
+            Span::styled("  ", Style::default()),
+            Span::styled(
+                format!("{} ", status_icon(clause_status)),
+                status_style(clause_status),
+            ),
+            Span::styled(
+                clause.spec.clause_id.clone(),
+                Style::default().fg(Color::Blue).bold(),
+            ),
+            Span::raw(" — "),
+            Span::raw(clause.spec.title.clone()),
+        ]));
     }
 
-    let content = Paragraph::new(lines).scroll((app.scroll, 0)).block(
-        Block::default()
-            .title(format!(" {} ", rfc.rfc.rfc_id))
-            .borders(Borders::ALL),
-    );
+    let title = format!("📋 {}", rfc.rfc.rfc_id);
+    let content = Paragraph::new(lines)
+        .scroll((app.scroll, 0))
+        .block(rounded_block(&title).border_style(Style::default().fg(Color::Blue)));
 
     frame.render_widget(content, chunks[0]);
 
-    let footer = Paragraph::new("[j/k] Scroll  [Esc] Back  [q] Quit")
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
     frame.render_widget(footer, chunks[1]);
 }
 
@@ -376,35 +576,54 @@ fn draw_adr_detail(frame: &mut Frame, app: &App, idx: usize) {
 
     let meta = adr.meta();
     let content_data = &adr.spec.content;
+    let status = meta.status.as_ref();
 
     let lines = vec![
-        Line::from(format!("ID:     {}", meta.id)),
-        Line::from(format!("Title:  {}", meta.title)),
-        Line::from(format!("Status: {}", meta.status.as_ref())),
-        Line::from(format!("Date:   {}", meta.date)),
+        Line::from(vec![
+            Span::styled("ID:     ", Style::default().fg(Color::DarkGray)),
+            Span::styled(meta.id.clone(), Style::default().bold()),
+        ]),
+        Line::from(vec![
+            Span::styled("Title:  ", Style::default().fg(Color::DarkGray)),
+            Span::raw(meta.title.clone()),
+        ]),
+        Line::from(vec![
+            Span::styled("Status: ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
+            Span::styled(status.to_string(), status_style(status)),
+        ]),
+        Line::from(vec![
+            Span::styled("Date:   ", Style::default().fg(Color::DarkGray)),
+            Span::raw(meta.date.clone()),
+        ]),
         Line::from(""),
-        Line::from("Context:").style(Style::default().bold()),
+        Line::from(Span::styled(
+            "━━━ Context ━━━",
+            Style::default().fg(Color::Cyan).bold(),
+        )),
         Line::from(format!("  {}", content_data.context)),
         Line::from(""),
-        Line::from("Decision:").style(Style::default().bold()),
+        Line::from(Span::styled(
+            "━━━ Decision ━━━",
+            Style::default().fg(Color::Green).bold(),
+        )),
         Line::from(format!("  {}", content_data.decision)),
         Line::from(""),
-        Line::from("Consequences:").style(Style::default().bold()),
+        Line::from(Span::styled(
+            "━━━ Consequences ━━━",
+            Style::default().fg(Color::Yellow).bold(),
+        )),
         Line::from(format!("  {}", content_data.consequences)),
     ];
 
-    let content = Paragraph::new(lines).scroll((app.scroll, 0)).block(
-        Block::default()
-            .title(format!(" {} ", meta.id))
-            .borders(Borders::ALL),
-    );
+    let title = format!("📝 {}", meta.id);
+    let content = Paragraph::new(lines)
+        .scroll((app.scroll, 0))
+        .block(rounded_block(&title).border_style(Style::default().fg(Color::Green)));
 
     frame.render_widget(content, chunks[0]);
 
-    let footer = Paragraph::new("[j/k] Scroll  [Esc] Back  [q] Quit")
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
     frame.render_widget(footer, chunks[1]);
 }
 
@@ -422,40 +641,57 @@ fn draw_work_detail(frame: &mut Frame, app: &App, idx: usize) {
 
     let meta = item.meta();
     let content_data = &item.spec.content;
+    let status = meta.status.as_ref();
 
     let mut lines = vec![
-        Line::from(format!("ID:     {}", meta.id)),
-        Line::from(format!("Title:  {}", meta.title)),
-        Line::from(format!("Status: {}", meta.status.as_ref())),
+        Line::from(vec![
+            Span::styled("ID:     ", Style::default().fg(Color::DarkGray)),
+            Span::styled(meta.id.clone(), Style::default().bold()),
+        ]),
+        Line::from(vec![
+            Span::styled("Title:  ", Style::default().fg(Color::DarkGray)),
+            Span::raw(meta.title.clone()),
+        ]),
+        Line::from(vec![
+            Span::styled("Status: ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
+            Span::styled(status.to_string(), status_style(status)),
+        ]),
         Line::from(""),
-        Line::from("Description:").style(Style::default().bold()),
+        Line::from(Span::styled(
+            "━━━ Description ━━━",
+            Style::default().fg(Color::Cyan).bold(),
+        )),
         Line::from(format!("  {}", content_data.description)),
     ];
 
     if !content_data.acceptance_criteria.is_empty() {
         lines.push(Line::from(""));
-        lines.push(Line::from("Acceptance Criteria:").style(Style::default().bold()));
+        lines.push(Line::from(Span::styled(
+            "━━━ Acceptance Criteria ━━━",
+            Style::default().fg(Color::Magenta).bold(),
+        )));
         for ac in &content_data.acceptance_criteria {
-            let checkbox = match ac.status {
-                crate::model::ChecklistStatus::Done => "[x]",
-                crate::model::ChecklistStatus::Cancelled => "[-]",
-                crate::model::ChecklistStatus::Pending => "[ ]",
+            let (icon, style) = match ac.status {
+                crate::model::ChecklistStatus::Done => ("✓", Style::default().fg(Color::Green)),
+                crate::model::ChecklistStatus::Cancelled => ("✗", Style::default().fg(Color::Red)),
+                crate::model::ChecklistStatus::Pending => ("○", Style::default().fg(Color::Yellow)),
             };
-            lines.push(Line::from(format!("  {} {}", checkbox, ac.text)));
+            lines.push(Line::from(vec![
+                Span::raw("  "),
+                Span::styled(format!("{} ", icon), style),
+                Span::raw(ac.text.clone()),
+            ]));
         }
     }
 
-    let content = Paragraph::new(lines).scroll((app.scroll, 0)).block(
-        Block::default()
-            .title(format!(" {} ", meta.id))
-            .borders(Borders::ALL),
-    );
+    let title = format!("📌 {}", meta.id);
+    let content = Paragraph::new(lines)
+        .scroll((app.scroll, 0))
+        .block(rounded_block(&title).border_style(Style::default().fg(Color::Yellow)));
 
     frame.render_widget(content, chunks[0]);
 
-    let footer = Paragraph::new("[j/k] Scroll  [Esc] Back  [q] Quit")
-        .style(Style::default().fg(Color::DarkGray))
-        .alignment(Alignment::Center)
-        .block(Block::default().borders(Borders::ALL));
+    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
     frame.render_widget(footer, chunks[1]);
 }
