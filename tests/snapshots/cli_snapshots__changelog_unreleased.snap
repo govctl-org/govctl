@@ -1,0 +1,61 @@
+---
+source: tests/cli_snapshots.rs
+expression: "normalize_output(&unreleased_output, &date)"
+---
+$ govctl new work New features --active
+Created work item: gov/work/<DATE>-new-features.toml
+  ID: WI-<DATE>-003
+exit: 0
+
+$ govctl add WI-<DATE>-003 acceptance_criteria add: User authentication
+Added 'add: User authentication' to WI-<DATE>-003.acceptance_criteria
+exit: 0
+
+$ govctl add WI-<DATE>-003 acceptance_criteria security: Password hashing
+Added 'security: Password hashing' to WI-<DATE>-003.acceptance_criteria
+exit: 0
+
+$ govctl tick WI-<DATE>-003 acceptance_criteria authentication -s done
+Marked 'User authentication' as done
+exit: 0
+
+$ govctl tick WI-<DATE>-003 acceptance_criteria Password -s done
+Marked 'Password hashing' as done
+exit: 0
+
+$ govctl mv WI-<DATE>-003 done
+Moved <DATE>-new-features.toml to done
+exit: 0
+
+$ govctl new work API changes --active
+Created work item: gov/work/<DATE>-api-changes.toml
+  ID: WI-<DATE>-004
+exit: 0
+
+$ govctl add WI-<DATE>-004 acceptance_criteria changed: Response format to JSON
+Added 'changed: Response format to JSON' to WI-<DATE>-004.acceptance_criteria
+exit: 0
+
+$ govctl add WI-<DATE>-004 acceptance_criteria deprecated: Legacy XML endpoint
+Added 'deprecated: Legacy XML endpoint' to WI-<DATE>-004.acceptance_criteria
+exit: 0
+
+$ govctl add WI-<DATE>-004 acceptance_criteria removed: Obsolete v1 API
+Added 'removed: Obsolete v1 API' to WI-<DATE>-004.acceptance_criteria
+exit: 0
+
+$ govctl tick WI-<DATE>-004 acceptance_criteria Response -s done
+Marked 'Response format to JSON' as done
+exit: 0
+
+$ govctl tick WI-<DATE>-004 acceptance_criteria Legacy -s done
+Marked 'Legacy XML endpoint' as done
+exit: 0
+
+$ govctl tick WI-<DATE>-004 acceptance_criteria Obsolete -s done
+Marked 'Obsolete v1 API' as done
+exit: 0
+
+$ govctl mv WI-<DATE>-004 done
+Moved <DATE>-api-changes.toml to done
+exit: 0

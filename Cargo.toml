@@ -64,3 +64,5 @@ crossterm = { version = "0.29", optional = true }
 [dev-dependencies]
 insta = { version = "1", features = ["yaml"] }
 tempfile = "3"
+regex = "1"
+chrono = "0.4"

@@ -1,0 +1,73 @@
+---
+source: tests/cli_snapshots.rs
+expression: "normalize_output(&setup_output, &date)"
+---
+$ govctl init
+Created: gov
+Created: gov/rfc
+Created: gov/schema
+Created: docs/rfc
+Created: gov/adr
+Created: gov/work
+Created: gov/templates
+Created: gov/config.toml
+Created: .claude/commands
+Created: .claude/commands/gov.md
+Created: .claude/commands/quick.md
+Created: .claude/commands/status.md
+✓ Project initialized
+exit: 0
+
+$ govctl new work Initial setup --active
+Created work item: gov/work/<DATE>-initial-setup.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl add WI-<DATE>-001 acceptance_criteria add: Project scaffolding complete
+Added 'add: Project scaffolding complete' to WI-<DATE>-001.acceptance_criteria
+exit: 0
+
+$ govctl add WI-<DATE>-001 acceptance_criteria add: Basic configuration
+Added 'add: Basic configuration' to WI-<DATE>-001.acceptance_criteria
+exit: 0
+
+$ govctl tick WI-<DATE>-001 acceptance_criteria scaffolding -s done
+Marked 'Project scaffolding complete' as done
+exit: 0
+
+$ govctl tick WI-<DATE>-001 acceptance_criteria configuration -s done
+Marked 'Basic configuration' as done
+exit: 0
+
+$ govctl mv WI-<DATE>-001 done
+Moved <DATE>-initial-setup.toml to done
+exit: 0
+
+$ govctl new work Bug fixes --active
+Created work item: gov/work/<DATE>-bug-fixes.toml
+  ID: WI-<DATE>-002
+exit: 0
+
+$ govctl add WI-<DATE>-002 acceptance_criteria fix: Memory leak in parser
+Added 'fix: Memory leak in parser' to WI-<DATE>-002.acceptance_criteria
+exit: 0
+
+$ govctl add WI-<DATE>-002 acceptance_criteria fix: Crash on empty input
+Added 'fix: Crash on empty input' to WI-<DATE>-002.acceptance_criteria
+exit: 0
+
+$ govctl tick WI-<DATE>-002 acceptance_criteria Memory leak -s done
+Marked 'Memory leak in parser' as done
+exit: 0
+
+$ govctl tick WI-<DATE>-002 acceptance_criteria Crash -s done
+Marked 'Crash on empty input' as done
+exit: 0
+
+$ govctl mv WI-<DATE>-002 done
+Moved <DATE>-bug-fixes.toml to done
+exit: 0
+
+$ govctl release 0.1.0 --date 2026-01-15
+Created release 0.1.0 (2026-01-15) with 2 work items
+exit: 0

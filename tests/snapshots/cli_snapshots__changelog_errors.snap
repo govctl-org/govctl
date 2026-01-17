@@ -1,0 +1,11 @@
+---
+source: tests/cli_snapshots.rs
+expression: "normalize_output(&error_output, &date)"
+---
+$ govctl release invalid-version
+Error: error[E0701]: Invalid semver version: invalid-version (gov/releases.toml)
+exit: 1
+
+$ govctl release 0.1.0
+Error: error[E0702]: Release 0.1.0 already exists (gov/releases.toml)
+exit: 1

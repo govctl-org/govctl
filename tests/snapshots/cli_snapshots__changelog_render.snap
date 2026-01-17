@@ -1,0 +1,65 @@
+---
+source: tests/cli_snapshots.rs
+expression: "normalize_output(&changelog_output, &date)"
+---
+$ govctl status
+govctl status
+
+RFCs
+  Total        0
+
+Clauses
+  Total        0
+
+ADRs
+  Total        0
+
+Work Items
+  done         4
+  Total        4
+
+exit: 0
+
+$ govctl render changelog --dry-run
+Would write: CHANGELOG.md
+  # Changelog
+  
+  All notable changes to this project will be documented in this file.
+  
+  The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+  and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+  
+  ## [Unreleased]
+  
+  ### Added
+  
+  - User authentication (WI-<DATE>-003)
+  
+  ### Changed
+  
+  - Response format to JSON (WI-<DATE>-004)
+  
+  ### Deprecated
+  
+  - Legacy XML endpoint (WI-<DATE>-004)
+  ...
+exit: 0
+
+$ govctl release 0.2.0 --dry-run
+Would write: gov/releases.toml
+  [[releases]]
+  version = "0.2.0"
+  date = "<DATE>"
+  refs = [
+      "WI-<DATE>-003",
+      "WI-<DATE>-004",
+  ]
+  
+  [[releases]]
+  version = "0.1.0"
+  date = "2026-01-15"
+  refs = [
+      "WI-<DATE>-001",
+      "WI-<DATE>-002",
+  ]
+exit: 0
