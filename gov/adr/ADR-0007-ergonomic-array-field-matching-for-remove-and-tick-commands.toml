@@ -1,0 +1,11 @@
+[govctl]
+schema = 1
+id = "ADR-0007"
+title = "Ergonomic array field matching for remove and tick commands"
+status = "accepted"
+date = "2026-01-17"
+
+[content]
+context = "The remove command requires exact string match, which is fragile for long strings like URLs. The tick command uses substring matching but remove does not. Checklist fields (acceptance_criteria, decisions, alternatives) require separate semantics from string fields, leading to confusion about when to use remove vs tick."
+decision = "Unify matching semantics: (1) Default to case-insensitive substring matching for remove and tick. (2) Add --exact flag for exact matching. (3) Add --at <index> for positional removal. (4) Add --regex flag for pattern matching. (5) Add --all flag for bulk removal. (6) Single match proceeds; multiple matches error with guidance. (7) remove works on all array types including checklists; tick only changes status."
+consequences = "Positive: Ergonomic default matching, safe bulk operations, unified semantics. Negative: Breaking change for scripts relying on exact match. Migration: Existing exact-match callers should add --exact flag."
