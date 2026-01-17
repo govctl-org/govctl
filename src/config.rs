@@ -136,14 +136,9 @@ impl Config {
     fn find_config() -> Option<PathBuf> {
         let mut current = std::env::current_dir().ok()?;
         loop {
-            // Try gov/config.toml first, then legacy govctl.toml
-            let gov_config = current.join("gov/config.toml");
-            if gov_config.exists() {
-                return Some(gov_config);
-            }
-            let legacy_config = current.join("govctl.toml");
-            if legacy_config.exists() {
-                return Some(legacy_config);
+            let config_path = current.join("gov/config.toml");
+            if config_path.exists() {
+                return Some(config_path);
             }
             if !current.pop() {
                 return None;

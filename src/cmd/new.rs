@@ -14,19 +14,13 @@ use slug::slugify;
 
 /// Initialize govctl project
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-    let config_path = std::path::Path::new("govctl.toml");
+    let config_path = config.paths.gov_root.join("config.toml");
 
     if config_path.exists() && !force && !op.is_preview() {
-        anyhow::bail!("govctl.toml already exists (use -f to overwrite)");
+        anyhow::bail!("{} already exists (use -f to overwrite)", config_path.display());
     }
 
-    // Write config
-    write_file(config_path, Config::default_toml(), op)?;
-    if !op.is_preview() {
-        ui::created_path(config_path);
-    }
-
-    // Create directories
+    // Create directories first (config lives inside gov_root)
     let dirs = [
         &config.paths.gov_root,
         &config.rfc_dir(),
@@ -42,6 +36,12 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         if !op.is_preview() {
             ui::created_path(dir);
         }
+    }
+
+    // Write config after gov_root exists
+    write_file(&config_path, Config::default_toml(), op)?;
+    if !op.is_preview() {
+        ui::created_path(&config_path);
     }
 
     if !op.is_preview() {
