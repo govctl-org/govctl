@@ -1,6 +1,7 @@
 //! JSON and frontmatter mutation utilities.
 //!
 //! Implements [[ADR-0006]] global dry-run support for content-modifying commands.
+//! Implements [[ADR-0012]] prefix-based changelog category parsing.
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogEntry, ClauseSpec, RfcSpec};
@@ -9,6 +10,84 @@ use anyhow::{Context, Result};
 use chrono::Local;
 use semver::Version;
 use std::path::Path;
+
+/// Changelog category for Keep a Changelog format
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChangelogCategory {
+    Added,
+    Changed,
+    Deprecated,
+    Removed,
+    Fixed,
+    Security,
+}
+
+impl ChangelogCategory {
+    /// All valid category prefixes
+    pub const VALID_PREFIXES: &'static [&'static str] =
+        &["add", "changed", "deprecated", "removed", "fix", "security"];
+
+    /// Parse a prefix string into a category
+    pub fn from_prefix(prefix: &str) -> Option<Self> {
+        match prefix.to_lowercase().as_str() {
+            "add" | "added" => Some(Self::Added),
+            "changed" | "change" => Some(Self::Changed),
+            "deprecated" | "deprecate" => Some(Self::Deprecated),
+            "removed" | "remove" => Some(Self::Removed),
+            "fix" | "fixed" => Some(Self::Fixed),
+            "security" | "sec" => Some(Self::Security),
+            _ => None,
+        }
+    }
+}
+
+/// Parsed changelog change with category and message
+#[derive(Debug, Clone)]
+pub struct ParsedChange {
+    pub category: ChangelogCategory,
+    pub message: String,
+}
+
+/// Parse a change string with optional prefix (per ADR-0012).
+///
+/// Format: `[prefix:] message`
+/// - `fix: memory leak` → Fixed category, "memory leak"
+/// - `security: patched CVE` → Security category, "patched CVE"
+/// - `just a change` → Added category (default), "just a change"
+///
+/// Returns error if prefix is present but invalid.
+pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
+    // Look for prefix pattern: "word: rest"
+    if let Some(colon_pos) = change.find(':') {
+        let prefix = change[..colon_pos].trim();
+        let message = change[colon_pos + 1..].trim();
+
+        // Only treat as prefix if it's a single word (no spaces)
+        if !prefix.contains(' ') && !prefix.is_empty() {
+            if let Some(category) = ChangelogCategory::from_prefix(prefix) {
+                if message.is_empty() {
+                    anyhow::bail!("Empty message after prefix '{prefix}:'");
+                }
+                return Ok(ParsedChange {
+                    category,
+                    message: message.to_string(),
+                });
+            } else {
+                // Unknown prefix - provide helpful error
+                anyhow::bail!(
+                    "Unknown changelog prefix '{prefix}'. Valid prefixes: {}",
+                    ChangelogCategory::VALID_PREFIXES.join(", ")
+                );
+            }
+        }
+    }
+
+    // No prefix or multi-word before colon - default to Added
+    Ok(ParsedChange {
+        category: ChangelogCategory::Added,
+        message: change.trim().to_string(),
+    })
+}
 
 /// Write operation mode.
 ///
@@ -147,10 +226,24 @@ pub fn bump_rfc_version(rfc: &mut RfcSpec, level: BumpLevel, summary: &str) -> R
     Ok(new_version)
 }
 
-/// Add a change to the current version's changelog (defaults to 'added' category)
+/// Add a change to the current version's changelog.
+///
+/// Parses prefix from change string per ADR-0012:
+/// - `fix: message` → fixed category
+/// - `security: message` → security category
+/// - `message` (no prefix) → added category
 pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
+    let parsed = parse_changelog_change(change)?;
+
     if let Some(entry) = rfc.changelog.first_mut() {
-        entry.added.push(change.to_string());
+        match parsed.category {
+            ChangelogCategory::Added => entry.added.push(parsed.message),
+            ChangelogCategory::Changed => entry.changed.push(parsed.message),
+            ChangelogCategory::Deprecated => entry.deprecated.push(parsed.message),
+            ChangelogCategory::Removed => entry.removed.push(parsed.message),
+            ChangelogCategory::Fixed => entry.fixed.push(parsed.message),
+            ChangelogCategory::Security => entry.security.push(parsed.message),
+        }
     } else {
         anyhow::bail!("No changelog entry exists. Bump version first.");
     }
@@ -241,4 +334,98 @@ pub fn update_clause_field(
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_changelog_no_prefix() {
+        let result = parse_changelog_change("Added new feature").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Added);
+        assert_eq!(result.message, "Added new feature");
+    }
+
+    #[test]
+    fn test_parse_changelog_fix_prefix() {
+        let result = parse_changelog_change("fix: memory leak in parser").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Fixed);
+        assert_eq!(result.message, "memory leak in parser");
+    }
+
+    #[test]
+    fn test_parse_changelog_security_prefix() {
+        let result = parse_changelog_change("security: patched CVE-2026-1234").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Security);
+        assert_eq!(result.message, "patched CVE-2026-1234");
+    }
+
+    #[test]
+    fn test_parse_changelog_changed_prefix() {
+        let result = parse_changelog_change("changed: API response format").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Changed);
+        assert_eq!(result.message, "API response format");
+    }
+
+    #[test]
+    fn test_parse_changelog_deprecated_prefix() {
+        let result = parse_changelog_change("deprecated: old API endpoint").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Deprecated);
+        assert_eq!(result.message, "old API endpoint");
+    }
+
+    #[test]
+    fn test_parse_changelog_removed_prefix() {
+        let result = parse_changelog_change("removed: legacy feature").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Removed);
+        assert_eq!(result.message, "legacy feature");
+    }
+
+    #[test]
+    fn test_parse_changelog_add_prefix() {
+        let result = parse_changelog_change("add: new CLI flag").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Added);
+        assert_eq!(result.message, "new CLI flag");
+    }
+
+    #[test]
+    fn test_parse_changelog_case_insensitive() {
+        let result = parse_changelog_change("FIX: uppercase prefix").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Fixed);
+        assert_eq!(result.message, "uppercase prefix");
+    }
+
+    #[test]
+    fn test_parse_changelog_invalid_prefix() {
+        let result = parse_changelog_change("invalid: some message");
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("Unknown changelog prefix"));
+        assert!(err.contains("Valid prefixes"));
+    }
+
+    #[test]
+    fn test_parse_changelog_empty_message_after_prefix() {
+        let result = parse_changelog_change("fix:");
+        assert!(result.is_err());
+        let err = result.unwrap_err().to_string();
+        assert!(err.contains("Empty message after prefix"));
+    }
+
+    #[test]
+    fn test_parse_changelog_colon_in_message_no_prefix() {
+        // "Multi word prefix: message" should not be treated as a prefix
+        let result = parse_changelog_change("Updated module: fixed edge case").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Added);
+        assert_eq!(result.message, "Updated module: fixed edge case");
+    }
+
+    #[test]
+    fn test_parse_changelog_url_in_message() {
+        // URLs contain colons but shouldn't trigger prefix parsing
+        let result = parse_changelog_change("See https://example.com for details").unwrap();
+        assert_eq!(result.category, ChangelogCategory::Added);
+        assert_eq!(result.message, "See https://example.com for details");
+    }
 }

@@ -9,8 +9,10 @@ refs = ["ADR-0012"]
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Implement [[ADR-0012]] prefix-based changelog category parsing for `govctl bump -c` flags.
+
+Parse conventional-commit-style prefixes (e.g., `fix:`, `security:`) from change strings \
+and route to the appropriate changelog category. Default to `added` for backward compatibility."""
 
 [[content.acceptance_criteria]]
 text = "Parse prefix from change string (add:, fix:, changed:, deprecated:, removed:, security:)"
