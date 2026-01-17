@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-17-001"
 title = "Migrate existing docs to TOML"
-status = "active"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
+completed = "2026-01-17"
 
 [content]
 description = """
@@ -17,8 +18,8 @@ text = """
 Multi-line criterion:
 - First condition
 - Second condition"""
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Test criterion"
-status = "pending"
+status = "done"
