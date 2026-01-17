@@ -1,9 +1,16 @@
 [package]
 name = "govctl"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.85"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
 license = "MIT"
+repository = "https://github.com/govctl-org/govctl"
+homepage = "https://github.com/govctl-org/govctl"
+documentation = "https://docs.rs/govctl"
+readme = "README.md"
+keywords = ["governance", "rfc", "cli", "adr", "specification"]
+categories = ["command-line-utilities", "development-tools"]
 
 [[bin]]
 name = "govctl"

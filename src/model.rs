@@ -105,7 +105,7 @@ pub enum ClauseStatus {
 // ADR Models (TOML SSOT)
 // =============================================================================
 
-/// ADR metadata section [govctl]
+/// ADR metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdrMeta {
     pub schema: u32,
@@ -147,7 +147,7 @@ impl Alternative {
     }
 }
 
-/// ADR content section [content]
+/// ADR content section `[content]`
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct AdrContent {
     #[serde(default)]
@@ -182,7 +182,7 @@ pub enum AdrStatus {
 // Work Item Models (TOML SSOT)
 // =============================================================================
 
-/// Work Item metadata section [govctl]
+/// Work Item metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemMeta {
     pub schema: u32,
@@ -225,7 +225,7 @@ impl ChecklistItem {
     }
 }
 
-/// Work Item content section [content]
+/// Work Item content section `[content]`
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WorkItemContent {
     #[serde(default)]

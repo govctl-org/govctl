@@ -126,7 +126,7 @@ pub fn update_rfc_field(rfc: &mut RfcSpec, field: &str, value: &str) -> Result<(
                 DiagnosticCode::E0101RfcSchemaInvalid,
                 format!("Unknown field: {field}"),
                 "",
-            ))
+            ));
         }
     }
     rfc.updated = Some(today());
@@ -173,7 +173,7 @@ pub fn update_clause_field(
                 DiagnosticCode::E0201ClauseSchemaInvalid,
                 format!("Unknown field: {field}"),
                 "",
-            ))
+            ));
         }
     }
     Ok(())

@@ -1,5 +1,9 @@
 # govctl
 
+[![CI](https://github.com/govctl-org/govctl/actions/workflows/ci.yml/badge.svg)](https://github.com/govctl-org/govctl/actions/workflows/ci.yml)
+[![Crates.io](https://img.shields.io/crates/v/govctl.svg)](https://crates.io/crates/govctl)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 > **govctl is an opinionated governance CLI for RFC-driven AI software development.**
 
 ---
@@ -77,14 +81,17 @@ cargo build --release
 # Initialize a new project
 govctl init
 
-# Create an RFC
-govctl new rfc RFC-0010 "Feature Title"
+# Create an RFC (auto-assigns next ID)
+govctl new rfc "Feature Title"
+
+# Or specify ID manually
+govctl new rfc "Feature Title" --id RFC-0010
 
 # Create a clause within an RFC
 govctl new clause RFC-0010:C-SCOPE "Scope" -s "Specification" -k normative
 
 # Edit clause text
-govctl edit RFC-0010:C-SCOPE --text-stdin <<'EOF'
+govctl edit RFC-0010:C-SCOPE --stdin <<'EOF'
 The feature MUST...
 EOF
 
@@ -145,9 +152,15 @@ govctl accept ADR-0003
 govctl deprecate ADR-0002
 govctl supersede ADR-0001 --by ADR-0005
 
-# Work item status
-govctl mv work-item.md active
-govctl mv work-item.md done
+# Work item lifecycle
+govctl new work "Task title"              # Creates in queue
+govctl new work --active "Urgent task"    # Creates and activates
+govctl mv WI-2026-01-17-001 active        # By ID
+govctl mv migrate-docs.toml done          # Or by filename
+
+# Structured checklists
+govctl add WI-2026-01-17-001 acceptance_criteria "Criterion text"
+govctl tick WI-2026-01-17-001 acceptance_criteria "Criterion" done
 ```
 
 ---

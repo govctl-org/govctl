@@ -1,11 +1,11 @@
 //! List command implementation.
 
+use crate::ListTarget;
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::WorkItemStatus;
-use crate::ListTarget;
-use comfy_table::{presets::UTF8_FULL, ContentArrangement, Table};
+use comfy_table::{ContentArrangement, Table, presets::UTF8_FULL};
 
 /// List artifacts
 pub fn list(

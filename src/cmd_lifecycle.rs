@@ -1,5 +1,6 @@
 //! Lifecycle command implementations.
 
+use crate::FinalizeStatus;
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::{find_clause_json, find_rfc_json};
@@ -9,10 +10,9 @@ use crate::validate::{
     is_valid_adr_transition, is_valid_phase_transition, is_valid_status_transition,
 };
 use crate::write::{
-    add_changelog_change, bump_rfc_version, read_clause, read_rfc, write_clause, write_rfc,
-    BumpLevel,
+    BumpLevel, add_changelog_change, bump_rfc_version, read_clause, read_rfc, write_clause,
+    write_rfc,
 };
-use crate::FinalizeStatus;
 
 /// Bump RFC version
 pub fn bump(

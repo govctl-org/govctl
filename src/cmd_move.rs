@@ -89,8 +89,19 @@ pub fn move_item(
     Ok(vec![])
 }
 
-/// Find work item by partial name
+/// Find work item by partial name or ID
 fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::path::PathBuf> {
+    use crate::parse::load_work_items;
+
+    // First try: load all work items and match by ID
+    if name.starts_with("WI-") {
+        let items = load_work_items(config)?;
+        if let Some(item) = items.iter().find(|w| w.spec.govctl.id == name) {
+            return Ok(item.path.clone());
+        }
+    }
+
+    // Second try: match by filename
     let work_dir = &config.paths.work_dir;
 
     if !work_dir.exists() {

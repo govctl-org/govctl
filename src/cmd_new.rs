@@ -1,5 +1,6 @@
 //! New command implementation - create artifacts.
 
+use crate::NewTarget;
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::model::{
@@ -8,7 +9,6 @@ use crate::model::{
     WorkItemStatus,
 };
 use crate::write::today;
-use crate::NewTarget;
 use slug::slugify;
 
 /// Initialize govctl project
