@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-17-024"
 title = "Add configurable source code reference scanning"
-status = "active"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
+completed = "2026-01-17"
 refs = ["ADR-0009"]
 
 [content]
@@ -14,20 +15,20 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "Add SourceScanConfig to config.rs with enabled, roots, exts, pattern fields"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Add E0107SourceRefUnknown and W0107SourceRefOutdated diagnostic codes"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Create scan.rs with scan_source_refs function"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Integrate scanner into check command"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "All tests pass"
-status = "pending"
+status = "done"
