@@ -1,0 +1,14 @@
+[govctl]
+schema = 1
+id = "ADR-0012"
+title = "Prefix-based changelog category parsing"
+status = "accepted"
+date = "2026-01-17"
+
+[content]
+context = "The `govctl bump` command supports adding changelog entries via `-c` flags, but all changes are hardcoded to the `added` category. The `ChangelogEntry` model supports 6 categories (added, changed, deprecated, removed, fixed, security) per Keep a Changelog format, but users must manually edit JSON to use any category other than `added`."
+decision = """
+Parse conventional-commit-style prefixes from change strings to route to the correct changelog category. Supported prefixes: `add:`, `fix:`, `changed:`, `deprecated:`, `removed:`, `security:`. Unknown prefixes produce a validation error. No prefix defaults to `added` for backward compatibility.
+
+Example: `govctl bump RFC-0001 --patch -m "Bug fixes" -c "fix: memory leak" -c "security: patched CVE"`"""
+consequences = "Users can populate all changelog categories via CLI without JSON editing. The prefix syntax follows conventional commits, reducing learning curve. Invalid prefixes are caught early with helpful error messages listing valid options."

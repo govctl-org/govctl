@@ -5,6 +5,7 @@ title = "Add prefix-based changelog category parsing"
 status = "active"
 created = "2026-01-17"
 started = "2026-01-17"
+refs = ["ADR-0012"]
 
 [content]
 description = """
