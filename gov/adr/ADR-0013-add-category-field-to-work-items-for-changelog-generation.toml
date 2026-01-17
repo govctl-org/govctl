@@ -1,0 +1,20 @@
+[govctl]
+schema = 1
+id = "ADR-0013"
+title = "Add category field to work items for changelog generation"
+status = "accepted"
+date = "2026-01-17"
+
+[content]
+context = "Work items track implementation work (features, fixes, refactoring), but lack categorization that maps to Keep a Changelog format. RFC changelog entries already use Keep a Changelog categories (Added, Changed, Deprecated, Removed, Fixed, Security). To generate a repo-level CHANGELOG.md from completed work items, we need the same categorization. Without this, `govctl render changelog` would produce a flat list instead of properly categorized sections."
+decision = """
+Add a `category` field to `WorkItemMeta` with a `WorkItemCategory` enum matching Keep a Changelog categories: `added`, `changed`, `deprecated`, `removed`, `fixed`, `security`. Default to `added` for backward compatibility (matches [[ADR-0012]] default behavior for RFC changelog entries). The field is optional in TOML with serde default."""
+consequences = "Work items can be grouped by category when rendering CHANGELOG.md. Existing work items without the field remain valid (default to `added`). The `govctl new work` command can accept `--category` flag. Future `govctl render changelog` can produce proper Keep a Changelog format output."
+
+[[content.alternatives]]
+text = "Parse category from title prefix (e.g., `fix: memory leak`)"
+status = "rejected"
+
+[[content.alternatives]]
+text = "Add explicit `category` field to WorkItemMeta"
+status = "accepted"
