@@ -1,0 +1,12 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-020"
+title = "Improve README for better PR appeal"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
