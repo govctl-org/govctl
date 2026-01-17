@@ -1,0 +1,29 @@
+[govctl]
+schema = 1
+id = "ADR-0014"
+title = "Release management with releases.toml"
+status = "accepted"
+date = "2026-01-17"
+
+[content]
+context = "To generate a CHANGELOG.md from work items, we need version information. Work items have `completed` dates but no version. Version is a release-time concept, not a work-time concept. We need a way to track which work items belong to which release without mutating completed work items."
+decision = """
+Store release history in a single `gov/releases.toml` file with explicit work item references:
+
+```toml
+[[releases]]
+version = "0.2.0"
+date = "2026-01-17"
+refs = ["WI-2026-01-17-029", "WI-2026-01-17-008"]
+```
+
+The `govctl release <version>` command collects all done work items not yet in any release and adds them to a new release entry. The `govctl render changelog` command generates CHANGELOG.md grouped by release version and category."""
+consequences = "Completed work items remain immutable. Explicit refs list eliminates ambiguity about release membership. Single file is simpler than per-release artifacts. Unreleased work items appear under `[Unreleased]` section in changelog."
+
+[[content.alternatives]]
+text = "Add version field to work items after release"
+status = "rejected"
+
+[[content.alternatives]]
+text = "Store releases in single `gov/releases.toml` with explicit refs"
+status = "accepted"

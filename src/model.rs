@@ -334,6 +334,27 @@ impl ChangelogCategory {
 }
 
 // =============================================================================
+// Release Models (TOML - gov/releases.toml)
+// =============================================================================
+
+/// A single release entry
+/// Per [[ADR-0014]], tracks which work items belong to which version.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Release {
+    pub version: String,
+    pub date: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub refs: Vec<String>,
+}
+
+/// Collection of releases in gov/releases.toml
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct ReleasesFile {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub releases: Vec<Release>,
+}
+
+// =============================================================================
 // Indexed structures for loaded data
 // =============================================================================
 

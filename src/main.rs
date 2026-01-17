@@ -258,6 +258,15 @@ enum Commands {
         regex: bool,
     },
 
+    /// Cut a release (collect unreleased work items into a version)
+    Release {
+        /// Version number (semver, e.g., 0.2.0)
+        version: String,
+        /// Release date (defaults to today)
+        #[arg(long)]
+        date: Option<String>,
+    },
+
     /// Launch interactive TUI dashboard
     #[cfg(feature = "tui")]
     Tui,
@@ -327,6 +336,8 @@ enum RenderTarget {
     Adr,
     /// Render Work Items (local only, .gitignore'd)
     Work,
+    /// Render CHANGELOG.md from completed work items
+    Changelog,
     /// Render all artifact types (local use)
     All,
 }
@@ -406,6 +417,9 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
                 }
                 RenderTarget::Work => {
                     all_diags.extend(cmd::render::render_work_items(&config, effective_dry_run)?);
+                }
+                RenderTarget::Changelog => {
+                    all_diags.extend(cmd::render::render_changelog(&config, effective_dry_run)?);
                 }
                 RenderTarget::All => {
                     all_diags.extend(cmd::render::render(
@@ -505,6 +519,9 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
                 all: false, // tick never allows --all
             };
             cmd::edit::tick_item(&config, id, field, &match_opts, *status, op)
+        }
+        Commands::Release { version, date } => {
+            cmd::lifecycle::cut_release(&config, version, date.as_deref(), op)
         }
         #[cfg(feature = "tui")]
         Commands::Tui => {

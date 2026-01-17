@@ -1,8 +1,8 @@
-//! TOML parsing for ADR and Work Item files.
+//! TOML parsing for ADR, Work Item, and Release files.
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{AdrEntry, AdrSpec, WorkItemEntry, WorkItemSpec};
+use crate::model::{AdrEntry, AdrSpec, ReleasesFile, WorkItemEntry, WorkItemSpec};
 use crate::ui;
 use crate::write::WriteOp;
 use std::path::Path;
@@ -206,6 +206,79 @@ pub fn write_work_item(path: &Path, spec: &WorkItemSpec, op: WriteOp) -> Result<
         }
         WriteOp::Preview => {
             ui::dry_run_file_preview(path, &content);
+        }
+    }
+
+    Ok(())
+}
+
+/// Load releases from gov/releases.toml
+/// Returns empty ReleasesFile if file doesn't exist.
+/// Validates that all versions are valid semver.
+pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
+    let path = config.releases_path();
+    if !path.exists() {
+        return Ok(ReleasesFile::default());
+    }
+
+    let content = std::fs::read_to_string(&path).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            e.to_string(),
+            path.display().to_string(),
+        )
+    })?;
+
+    let releases: ReleasesFile = toml::from_str(&content).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Invalid releases.toml: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+
+    // Validate all versions are valid semver
+    for release in &releases.releases {
+        semver::Version::parse(&release.version).map_err(|_| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Invalid semver version: {}", release.version),
+                path.display().to_string(),
+            )
+        })?;
+    }
+
+    Ok(releases)
+}
+
+/// Validate a version string as semver
+pub fn validate_version(version: &str) -> Result<semver::Version, String> {
+    semver::Version::parse(version).map_err(|_| format!("Invalid semver: {version}"))
+}
+
+/// Write releases to gov/releases.toml
+pub fn write_releases(config: &Config, releases: &ReleasesFile, op: WriteOp) -> Result<(), Diagnostic> {
+    let path = config.releases_path();
+    let content = toml::to_string_pretty(releases).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to serialize releases: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+
+    match op {
+        WriteOp::Execute => {
+            std::fs::write(&path, content).map_err(|e| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    e.to_string(),
+                    path.display().to_string(),
+                )
+            })?;
+        }
+        WriteOp::Preview => {
+            ui::dry_run_file_preview(&path, &content);
         }
     }
 

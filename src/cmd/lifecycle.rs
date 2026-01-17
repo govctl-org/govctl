@@ -4,16 +4,17 @@ use crate::FinalizeStatus;
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::{find_clause_json, find_rfc_json};
-use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus};
-use crate::parse::{load_adrs, write_adr};
+use crate::model::{AdrStatus, ClauseStatus, Release, RfcPhase, RfcStatus, WorkItemStatus};
+use crate::parse::{load_adrs, load_releases, load_work_items, validate_version, write_adr, write_releases};
 use crate::ui;
 use crate::validate::{
     is_valid_adr_transition, is_valid_phase_transition, is_valid_status_transition,
 };
 use crate::write::{
-    BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_clause, read_rfc,
+    BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_clause, read_rfc, today,
     write_clause, write_rfc,
 };
+use std::collections::HashSet;
 
 /// Bump RFC version
 pub fn bump(
@@ -260,6 +261,67 @@ pub fn supersede(
         }
     } else {
         anyhow::bail!("Supersede is not supported for this artifact type: {id}");
+    }
+
+    Ok(vec![])
+}
+
+/// Cut a release - collect unreleased work items into a version
+/// Per [[ADR-0014]], stores release info in gov/releases.toml
+pub fn cut_release(
+    config: &Config,
+    version: &str,
+    date: Option<&str>,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    // Validate version is valid semver
+    validate_version(version).map_err(|e| anyhow::anyhow!("{e}"))?;
+
+    // Load existing releases
+    let mut releases_file = load_releases(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+
+    // Check for duplicate version
+    if releases_file.releases.iter().any(|r| r.version == version) {
+        anyhow::bail!("Release {version} already exists");
+    }
+
+    // Get all work item IDs already in releases
+    let released_ids: HashSet<_> = releases_file
+        .releases
+        .iter()
+        .flat_map(|r| r.refs.iter().cloned())
+        .collect();
+
+    // Load all done work items
+    let work_items = load_work_items(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+    let unreleased: Vec<_> = work_items
+        .iter()
+        .filter(|w| w.spec.govctl.status == WorkItemStatus::Done)
+        .filter(|w| !released_ids.contains(&w.spec.govctl.id))
+        .collect();
+
+    if unreleased.is_empty() {
+        anyhow::bail!("No unreleased work items to include in release");
+    }
+
+    // Create new release
+    let release_date = date.map(|d| d.to_string()).unwrap_or_else(today);
+    let refs: Vec<_> = unreleased.iter().map(|w| w.spec.govctl.id.clone()).collect();
+
+    let release = Release {
+        version: version.to_string(),
+        date: release_date.clone(),
+        refs: refs.clone(),
+    };
+
+    // Insert at the beginning (newest first)
+    releases_file.releases.insert(0, release);
+
+    // Write releases file
+    write_releases(config, &releases_file, op).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+
+    if !op.is_preview() {
+        ui::release_created(version, &release_date, refs.len());
     }
 
     Ok(vec![])

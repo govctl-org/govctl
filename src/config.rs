@@ -239,6 +239,11 @@ impl Config {
         self.paths.work_output()
     }
 
+    /// Releases file path (gov/releases.toml)
+    pub fn releases_path(&self) -> PathBuf {
+        self.paths.gov_root.join("releases.toml")
+    }
+
     /// Generate default config TOML
     pub fn default_toml() -> &'static str {
         r#"[project]

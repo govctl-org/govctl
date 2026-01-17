@@ -287,6 +287,42 @@ pub fn finalized(id: &str, status: &str) {
     }
 }
 
+/// Format a release created message
+pub fn release_created(version: &str, date: &str, work_item_count: usize) {
+    if use_colors() {
+        eprintln!(
+            "Created release {} ({}) with {} work items",
+            version.cyan().bold(),
+            date,
+            work_item_count.to_string().green()
+        );
+    } else {
+        eprintln!(
+            "Created release {} ({}) with {} work items",
+            version, date, work_item_count
+        );
+    }
+}
+
+/// Format a changelog rendered message
+pub fn changelog_rendered(path: &std::path::Path, release_count: usize, unreleased_count: usize) {
+    if use_colors() {
+        eprintln!(
+            "Rendered CHANGELOG to {} ({} releases, {} unreleased)",
+            path_str(path).cyan(),
+            release_count,
+            unreleased_count
+        );
+    } else {
+        eprintln!(
+            "Rendered CHANGELOG to {} ({} releases, {} unreleased)",
+            path.display(),
+            release_count,
+            unreleased_count
+        );
+    }
+}
+
 /// Format an indented sub-info line
 pub fn sub_info(msg: impl Display) {
     eprintln!("  {}", msg);

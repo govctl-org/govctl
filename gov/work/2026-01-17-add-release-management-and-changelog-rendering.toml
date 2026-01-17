@@ -1,0 +1,41 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-030"
+title = "Add release management and changelog rendering"
+status = "done"
+created = "2026-01-17"
+started = "2026-01-17"
+completed = "2026-01-17"
+refs = ["ADR-0014"]
+
+[content]
+description = """
+Implement release management and CHANGELOG rendering per [[ADR-0014]].
+
+Add `govctl release <version>` to cut releases (collect unreleased work items into `gov/releases.toml`).
+Add `govctl render changelog` to generate CHANGELOG.md from releases and work item criteria."""
+
+[[content.acceptance_criteria]]
+text = "`Release` and `ReleasesFile` models in model.rs with version, date, and refs fields"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Load and save `gov/releases.toml` functionality with semver validation"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`govctl release <version>` command to cut releases"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`govctl render changelog` command with Keep a Changelog format"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"
+category = "fixed"
