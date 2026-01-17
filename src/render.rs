@@ -232,6 +232,9 @@ pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Resu
 
     let content = render_rfc(rfc)?;
 
+    // Trim trailing whitespace, ensure single trailing newline
+    let content = format!("{}\n", content.trim_end());
+
     if dry_run {
         ui::dry_run_preview(&output_path);
         for line in content.lines().take(20) {
@@ -338,7 +341,8 @@ pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::R
     let output_dir = config.adr_output();
     let output_path = output_dir.join(format!("{}.md", meta.id));
 
-    let rendered = render_adr(adr)?;
+    // Trim trailing whitespace, ensure single trailing newline
+    let rendered = format!("{}\n", render_adr(adr)?.trim_end());
 
     if dry_run {
         ui::dry_run_preview(&output_path);
@@ -448,7 +452,8 @@ pub fn write_work_item_md(
     let output_dir = config.work_output();
     let output_path = output_dir.join(format!("{}.md", meta.id));
 
-    let rendered = render_work_item(item)?;
+    // Trim trailing whitespace, ensure single trailing newline
+    let rendered = format!("{}\n", render_work_item(item)?.trim_end());
 
     if dry_run {
         ui::dry_run_preview(&output_path);
