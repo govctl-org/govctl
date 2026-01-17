@@ -1,0 +1,37 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-005"
+title = "Add deterministic hash signatures to rendered markdown"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Implement deterministic hash signatures for rendered markdown files to ensure they are read-only projections of the authoritative SSOT (JSON/TOML).
+
+Key requirements:
+- Hash is SHA-256 of canonical content (not file bytes)
+- Files and fields must be sorted recursively for determinism
+- Signature embedded as HTML comment in rendered markdown
+- govctl check verifies signatures match source content
+- Any direct edit to markdown breaks the signature
+
+This enforces: "edit the source, not the projection""""
+notes = ""
+
+[[content.acceptance_criteria]]
+text = "Add src/signature.rs with deterministic hash computation"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Rendered markdown includes SIGNATURE comment"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "govctl check validates signatures"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "SCHEMA.md documents signature format"
+status = "pending"
