@@ -15,6 +15,43 @@ use crate::signature::{
 use std::fmt::Write as FmtWrite;
 use std::io::Write;
 
+/// Generate a markdown link for an artifact reference.
+///
+/// Supports:
+/// - RFC refs: `RFC-0000` → `[RFC-0000](../rfc/RFC-0000.md)`
+/// - Clause refs: `RFC-0000:C-NAME` → `[RFC-0000:C-NAME](../rfc/RFC-0000.md#rfc-0000c-name)`
+/// - ADR refs: `ADR-0001` → `[ADR-0001](../adr/ADR-0001.md)`
+/// - Work Item refs: `WI-2026-01-17-001` → `[WI-2026-01-17-001](../work/WI-2026-01-17-001.md)`
+fn ref_link(ref_id: &str) -> String {
+    if ref_id.starts_with("RFC-") {
+        if ref_id.contains(':') {
+            // Clause reference: RFC-0000:C-NAME
+            let rfc_id = ref_id.split(':').next().unwrap_or(ref_id);
+            // Anchor: lowercase, no special chars (GitHub-style slug)
+            let anchor = ref_id.to_lowercase().replace(':', "");
+            format!("[{}](../rfc/{}.md#{})", ref_id, rfc_id, anchor)
+        } else {
+            // RFC reference
+            format!("[{}](../rfc/{}.md)", ref_id, ref_id)
+        }
+    } else if ref_id.starts_with("ADR-") {
+        format!("[{}](../adr/{}.md)", ref_id, ref_id)
+    } else if ref_id.starts_with("WI-") {
+        format!("[{}](../work/{}.md)", ref_id, ref_id)
+    } else {
+        // Unknown type, return as-is
+        ref_id.to_string()
+    }
+}
+
+/// Render a list of refs as markdown links.
+fn render_refs(refs: &[String]) -> String {
+    refs.iter()
+        .map(|r| ref_link(r))
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 /// Indent continuation lines in multi-line text to preserve markdown list structure.
 /// The first line is returned as-is; subsequent lines are prefixed with the indent.
 fn indent_continuation(text: &str) -> String {
@@ -223,9 +260,9 @@ pub fn render_adr(adr: &AdrEntry) -> String {
     }
     writeln!(out).unwrap();
 
-    // References
+    // References (expanded to markdown links)
     if !meta.refs.is_empty() {
-        writeln!(out, "**References:** {}", meta.refs.join(", ")).unwrap();
+        writeln!(out, "**References:** {}", render_refs(&meta.refs)).unwrap();
         writeln!(out).unwrap();
     }
 
@@ -328,9 +365,9 @@ pub fn render_work_item(item: &WorkItemEntry) -> String {
     writeln!(out, "{status_line}").unwrap();
     writeln!(out).unwrap();
 
-    // References
+    // References (expanded to markdown links)
     if !meta.refs.is_empty() {
-        writeln!(out, "**References:** {}", meta.refs.join(", ")).unwrap();
+        writeln!(out, "**References:** {}", render_refs(&meta.refs)).unwrap();
         writeln!(out).unwrap();
     }
 
