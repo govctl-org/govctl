@@ -1,0 +1,12 @@
+[govctl]
+schema = 1
+id = "ADR-0004"
+title = "Adopt Keep a Changelog format for RFC changelogs"
+status = "proposed"
+date = "2026-01-17"
+refs = ["RFC-0000"]
+
+[content]
+context = "RFC changelogs use a flat changes array. This makes it difficult to categorize changes by type (additions, fixes, removals). The Keep a Changelog format (keepachangelog.com) is a widely-adopted standard that organizes changes into semantic categories aligned with semver."
+decision = "Replace the flat changes array with categorized arrays: added, changed, deprecated, removed, fixed, security. Keep summary field as optional notes. Migrate existing RFC-0000 changelog (trivial: one entry)."
+consequences = "Positive: Standard format, better scanability, semver-aligned categories. Negative: More verbose schema, breaking change to ChangelogEntry model. Migration cost is minimal (RFC-0000 has only one entry)."

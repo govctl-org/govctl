@@ -1,0 +1,13 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-008"
+title = "Adopt Keep a Changelog format for RFC changelogs"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+notes = ""

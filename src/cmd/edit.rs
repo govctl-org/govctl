@@ -117,15 +117,17 @@ pub fn set_field(
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;
 
         match field {
-            "status" => {
+            "status" | "govctl.status" => {
                 entry.spec.govctl.status = serde_json::from_str(&format!("\"{value}\""))
                     .map_err(|_| anyhow::anyhow!("Invalid status: {value}"))?;
             }
-            "title" => entry.spec.govctl.title = value.to_string(),
-            "date" => entry.spec.govctl.date = value.to_string(),
-            "context" => entry.spec.content.context = value.to_string(),
-            "decision" => entry.spec.content.decision = value.to_string(),
-            "consequences" => entry.spec.content.consequences = value.to_string(),
+            "title" | "govctl.title" => entry.spec.govctl.title = value.to_string(),
+            "date" | "govctl.date" => entry.spec.govctl.date = value.to_string(),
+            "context" | "content.context" => entry.spec.content.context = value.to_string(),
+            "decision" | "content.decision" => entry.spec.content.decision = value.to_string(),
+            "consequences" | "content.consequences" => {
+                entry.spec.content.consequences = value.to_string()
+            }
             _ => anyhow::bail!("Unknown ADR field: {field}"),
         }
 
@@ -141,13 +143,15 @@ pub fn set_field(
             .ok_or_else(|| anyhow::anyhow!("Work item not found: {id}"))?;
 
         match field {
-            "status" => {
+            "status" | "govctl.status" => {
                 entry.spec.govctl.status = serde_json::from_str(&format!("\"{value}\""))
                     .map_err(|_| anyhow::anyhow!("Invalid status: {value}"))?;
             }
-            "title" => entry.spec.govctl.title = value.to_string(),
-            "description" => entry.spec.content.description = value.to_string(),
-            "notes" => entry.spec.content.notes = value.to_string(),
+            "title" | "govctl.title" => entry.spec.govctl.title = value.to_string(),
+            "description" | "content.description" => {
+                entry.spec.content.description = value.to_string()
+            }
+            "notes" | "content.notes" => entry.spec.content.notes = value.to_string(),
             _ => anyhow::bail!("Unknown work item field: {field}"),
         }
 
