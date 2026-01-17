@@ -42,6 +42,16 @@ pub fn move_item(
 
     // Validate acceptance criteria before marking done
     if status == WorkItemStatus::Done {
+        // Must have at least one acceptance criterion
+        if entry.spec.content.acceptance_criteria.is_empty() {
+            anyhow::bail!(
+                "Cannot mark as done: no acceptance criteria defined.\n\
+                 Add criteria with: govctl add {} acceptance_criteria \"<criterion>\"",
+                entry.spec.govctl.id
+            );
+        }
+
+        // All criteria must be done or cancelled (no pending)
         let pending: Vec<_> = entry
             .spec
             .content
