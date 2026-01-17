@@ -19,7 +19,10 @@ const SIGNATURE_VERSION: u32 = 1;
 /// 1. Signature version prefix
 /// 2. Canonical RFC JSON (keys sorted recursively)
 /// 3. Canonical clause JSONs (sorted by clause_id, then keys sorted recursively)
-pub fn compute_rfc_signature(rfc: &RfcIndex) -> String {
+///
+/// # Errors
+/// Returns an error if serialization fails (should not happen for valid specs).
+pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, serde_json::Error> {
     let mut hasher = Sha256::new();
 
     // Version prefix for forward compatibility
@@ -27,7 +30,7 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> String {
     hasher.update(b"type:rfc\n");
 
     // Canonical RFC metadata
-    let rfc_json = serde_json::to_value(&rfc.rfc).expect("RfcSpec serializable");
+    let rfc_json = serde_json::to_value(&rfc.rfc)?;
     let canonical_rfc = canonicalize_json(&rfc_json);
     hasher.update(canonical_rfc.as_bytes());
     hasher.update(b"\n");
@@ -38,7 +41,7 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> String {
 
     // Canonical clause content
     for clause in clauses {
-        let clause_json = serde_json::to_value(&clause.spec).expect("ClauseSpec serializable");
+        let clause_json = serde_json::to_value(&clause.spec)?;
         let canonical_clause = canonicalize_json(&clause_json);
         hasher.update(canonical_clause.as_bytes());
         hasher.update(b"\n");
@@ -46,40 +49,46 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> String {
 
     // Produce hex string
     let digest = hasher.finalize();
-    hex_encode(&digest)
+    Ok(hex_encode(&digest))
 }
 
 /// Compute SHA-256 signature for an ADR.
-pub fn compute_adr_signature(adr: &AdrEntry) -> String {
+///
+/// # Errors
+/// Returns an error if serialization fails (should not happen for valid specs).
+pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, serde_json::Error> {
     let mut hasher = Sha256::new();
 
     hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
     hasher.update(b"type:adr\n");
 
     // Serialize TOML to JSON Value for canonical representation
-    let adr_json = serde_json::to_value(&adr.spec).expect("AdrSpec serializable");
+    let adr_json = serde_json::to_value(&adr.spec)?;
     let canonical = canonicalize_json(&adr_json);
     hasher.update(canonical.as_bytes());
     hasher.update(b"\n");
 
     let digest = hasher.finalize();
-    hex_encode(&digest)
+    Ok(hex_encode(&digest))
 }
 
 /// Compute SHA-256 signature for a Work Item.
-pub fn compute_work_item_signature(item: &WorkItemEntry) -> String {
+///
+/// # Errors
+/// Returns an error if serialization fails (should not happen for valid specs).
+pub fn compute_work_item_signature(item: &WorkItemEntry) -> Result<String, serde_json::Error> {
     let mut hasher = Sha256::new();
 
     hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
     hasher.update(b"type:work\n");
 
-    let item_json = serde_json::to_value(&item.spec).expect("WorkItemSpec serializable");
+    let item_json = serde_json::to_value(&item.spec)?;
     let canonical = canonicalize_json(&item_json);
     hasher.update(canonical.as_bytes());
     hasher.update(b"\n");
 
     let digest = hasher.finalize();
-    hex_encode(&digest)
+    Ok(hex_encode(&digest))
 }
 
 /// Extract signature from rendered markdown content.
@@ -175,7 +184,8 @@ mod tests {
 
     #[test]
     fn test_canonicalize_sorts_keys() {
-        let json: Value = serde_json::from_str(r#"{"z": 1, "a": 2, "m": 3}"#).unwrap();
+        let json: Value = serde_json::from_str(r#"{"z": 1, "a": 2, "m": 3}"#)
+            .expect("test JSON should parse");
         let canonical = canonicalize_json(&json);
         assert_eq!(canonical, r#"{"a":2,"m":3,"z":1}"#);
     }
@@ -183,7 +193,8 @@ mod tests {
     #[test]
     fn test_canonicalize_nested_objects() {
         let json: Value =
-            serde_json::from_str(r#"{"outer": {"z": 1, "a": 2}, "inner": {"b": 3}}"#).unwrap();
+            serde_json::from_str(r#"{"outer": {"z": 1, "a": 2}, "inner": {"b": 3}}"#)
+                .expect("test JSON should parse");
         let canonical = canonicalize_json(&json);
         assert_eq!(canonical, r#"{"inner":{"b":3},"outer":{"a":2,"z":1}}"#);
     }

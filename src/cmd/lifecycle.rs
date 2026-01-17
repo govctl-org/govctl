@@ -201,13 +201,17 @@ pub fn supersede(config: &Config, id: &str, by: &str) -> anyhow::Result<Vec<Diag
 
         ui::superseded("clause", id, by);
     } else if id.starts_with("ADR-") {
+        // Load all ADRs once and find both source and replacement
+        let adrs = load_adrs(config)?;
+
         // Validate replacement exists
-        let _ = load_adrs(config)?
-            .into_iter()
+        let _ = adrs
+            .iter()
             .find(|a| a.spec.govctl.id == by)
             .ok_or_else(|| anyhow::anyhow!("Replacement ADR not found: {by}"))?;
 
-        let mut entry = load_adrs(config)?
+        // Find the ADR to supersede
+        let mut entry = adrs
             .into_iter()
             .find(|a| a.spec.govctl.id == id)
             .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))?;

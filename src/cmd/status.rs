@@ -4,12 +4,13 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus, WorkItemStatus};
+use crate::ui::stdout_supports_color;
 use owo_colors::OwoColorize;
 use std::collections::HashMap;
 
-/// Check if stdout supports colors
+/// Check if stdout supports colors (delegates to centralized ui module)
 fn use_colors() -> bool {
-    supports_color::on(supports_color::Stream::Stdout).is_some()
+    stdout_supports_color()
 }
 
 /// Print a section header

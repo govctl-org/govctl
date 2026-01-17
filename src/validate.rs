@@ -283,7 +283,17 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
         };
 
         // Compute expected signature from source
-        let expected_sig = compute_rfc_signature(rfc);
+        let expected_sig = match compute_rfc_signature(rfc) {
+            Ok(sig) => sig,
+            Err(e) => {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0601SignatureMismatch,
+                    format!("Failed to compute signature for {}: {}", rfc.rfc.rfc_id, e),
+                    md_path.display().to_string(),
+                ));
+                continue;
+            }
+        };
 
         // Compare
         if existing_sig != expected_sig {

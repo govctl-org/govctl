@@ -81,10 +81,11 @@ pub fn move_item(
 
     write_work_item(&work_path, &entry.spec)?;
 
-    ui::moved(
-        &work_path.file_name().unwrap().to_string_lossy(),
-        status.as_ref(),
-    );
+    let filename = work_path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_else(|| work_path.display().to_string());
+    ui::moved(&filename, status.as_ref());
 
     Ok(vec![])
 }

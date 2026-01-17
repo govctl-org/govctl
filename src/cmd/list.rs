@@ -5,11 +5,12 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::WorkItemStatus;
+use crate::ui::stdout_supports_color;
 use comfy_table::{Attribute, Cell, Color, ContentArrangement, Table, presets::UTF8_FULL};
 
-/// Check if stdout supports colors
+/// Check if stdout supports colors (delegates to centralized ui module)
 fn use_colors() -> bool {
-    supports_color::on(supports_color::Stream::Stdout).is_some()
+    stdout_supports_color()
 }
 
 /// Create a cell with optional color

@@ -14,6 +14,13 @@ fn use_colors() -> bool {
     supports_color::on(supports_color::Stream::Stderr).is_some()
 }
 
+/// Check if stdout supports colors (TTY detection)
+///
+/// Use this for commands that output to stdout (e.g., `list`, `status`).
+pub fn stdout_supports_color() -> bool {
+    supports_color::on(supports_color::Stream::Stdout).is_some()
+}
+
 // =============================================================================
 // Color Helpers
 // =============================================================================

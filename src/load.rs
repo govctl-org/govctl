@@ -84,7 +84,10 @@ pub fn load_rfc(rfc_json: &Path) -> Result<RfcIndex, LoadError> {
         message: e.to_string(),
     })?;
 
-    let rfc_dir = rfc_json.parent().unwrap();
+    let rfc_dir = rfc_json.parent().ok_or_else(|| LoadError::Io {
+        file: rfc_json.display().to_string(),
+        message: "RFC path has no parent directory".to_string(),
+    })?;
     let mut clauses = Vec::new();
 
     // Load all clauses referenced in sections
