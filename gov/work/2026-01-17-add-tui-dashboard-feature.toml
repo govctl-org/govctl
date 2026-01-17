@@ -13,20 +13,20 @@ notes = ""
 
 [[content.acceptance_criteria]]
 text = "TUI launches with govctl tui command"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Dashboard shows RFC/ADR/Work item counts by status"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "List views for RFC/ADR/Work with j/k navigation"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Detail views show full content"
-status = "pending"
+status = "done"
 
 [[content.acceptance_criteria]]
 text = "Feature-gated behind --features tui"
-status = "pending"
+status = "done"

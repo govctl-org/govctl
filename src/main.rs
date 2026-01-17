@@ -15,6 +15,9 @@ mod write;
 
 mod cmd;
 
+#[cfg(feature = "tui")]
+mod tui;
+
 use config::Config;
 use diagnostic::{Diagnostic, DiagnosticLevel};
 use model::{ClauseKind, RfcPhase, WorkItemStatus};
@@ -225,6 +228,10 @@ enum Commands {
         #[arg(value_enum)]
         status: TickStatus,
     },
+
+    /// Launch interactive TUI dashboard
+    #[cfg(feature = "tui")]
+    Tui,
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -429,5 +436,10 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             item,
             status,
         } => cmd::edit::tick_item(&config, id, field, item, *status),
+        #[cfg(feature = "tui")]
+        Commands::Tui => {
+            tui::run(&config)?;
+            Ok(vec![])
+        }
     }
 }
