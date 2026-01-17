@@ -266,7 +266,14 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
         // Read rendered markdown
         let md_content = match std::fs::read_to_string(&md_path) {
             Ok(content) => content,
-            Err(_) => continue, // Skip on read error
+            Err(e) => {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::W0106RenderedReadError,
+                    format!("Could not read rendered markdown: {}", e),
+                    md_path.display().to_string(),
+                ));
+                continue;
+            }
         };
 
         // Extract signature from rendered markdown

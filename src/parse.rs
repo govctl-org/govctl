@@ -7,14 +7,29 @@ use crate::ui;
 use crate::write::WriteOp;
 use std::path::Path;
 
+/// Result of loading items: successfully loaded items plus any warnings
+pub struct LoadResult<T> {
+    pub items: Vec<T>,
+    pub warnings: Vec<Diagnostic>,
+}
+
 /// Load all ADRs from the adr directory
 pub fn load_adrs(config: &Config) -> Result<Vec<AdrEntry>, Diagnostic> {
+    load_adrs_with_warnings(config).map(|r| r.items)
+}
+
+/// Load all ADRs, returning both items and parse warnings
+pub fn load_adrs_with_warnings(config: &Config) -> Result<LoadResult<AdrEntry>, Diagnostic> {
     let adr_dir = config.adr_dir();
     if !adr_dir.exists() {
-        return Ok(vec![]);
+        return Ok(LoadResult {
+            items: vec![],
+            warnings: vec![],
+        });
     }
 
     let mut adrs = Vec::new();
+    let mut warnings = Vec::new();
     let entries = std::fs::read_dir(&adr_dir).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -28,12 +43,22 @@ pub fn load_adrs(config: &Config) -> Result<Vec<AdrEntry>, Diagnostic> {
         if path.extension().is_some_and(|ext| ext == "toml") {
             match load_adr(&path) {
                 Ok(adr) => adrs.push(adr),
-                Err(_) => continue, // Skip invalid files
+                Err(e) => {
+                    // Record warning instead of silently skipping
+                    warnings.push(Diagnostic::new(
+                        DiagnosticCode::W0104AdrParseSkipped,
+                        format!("Skipped ADR (parse error): {}", e.message),
+                        path.display().to_string(),
+                    ));
+                }
             }
         }
     }
 
-    Ok(adrs)
+    Ok(LoadResult {
+        items: adrs,
+        warnings,
+    })
 }
 
 /// Load a single ADR from TOML file
@@ -90,12 +115,23 @@ pub fn write_adr(path: &Path, spec: &AdrSpec, op: WriteOp) -> Result<(), Diagnos
 
 /// Load all work items from the work directory
 pub fn load_work_items(config: &Config) -> Result<Vec<WorkItemEntry>, Diagnostic> {
+    load_work_items_with_warnings(config).map(|r| r.items)
+}
+
+/// Load all work items, returning both items and parse warnings
+pub fn load_work_items_with_warnings(
+    config: &Config,
+) -> Result<LoadResult<WorkItemEntry>, Diagnostic> {
     let work_dir = config.work_dir();
     if !work_dir.exists() {
-        return Ok(vec![]);
+        return Ok(LoadResult {
+            items: vec![],
+            warnings: vec![],
+        });
     }
 
     let mut items = Vec::new();
+    let mut warnings = Vec::new();
     let entries = std::fs::read_dir(&work_dir).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -109,12 +145,19 @@ pub fn load_work_items(config: &Config) -> Result<Vec<WorkItemEntry>, Diagnostic
         if path.extension().is_some_and(|ext| ext == "toml") {
             match load_work_item(&path) {
                 Ok(item) => items.push(item),
-                Err(_) => continue, // Skip invalid files
+                Err(e) => {
+                    // Record warning instead of silently skipping
+                    warnings.push(Diagnostic::new(
+                        DiagnosticCode::W0105WorkParseSkipped,
+                        format!("Skipped work item (parse error): {}", e.message),
+                        path.display().to_string(),
+                    ));
+                }
             }
         }
     }
 
-    Ok(items)
+    Ok(LoadResult { items, warnings })
 }
 
 /// Load a single work item from TOML file

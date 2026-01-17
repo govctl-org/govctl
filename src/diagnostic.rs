@@ -57,14 +57,20 @@ pub enum DiagnosticCode {
     W0101RfcNoChangelog,
     W0102ClauseNoSince,
     W0103AdrNoRefs,
+    W0104AdrParseSkipped,
+    W0105WorkParseSkipped,
+    W0106RenderedReadError,
 }
 
 impl DiagnosticCode {
     pub fn level(&self) -> DiagnosticLevel {
         match self {
-            Self::W0101RfcNoChangelog | Self::W0102ClauseNoSince | Self::W0103AdrNoRefs => {
-                DiagnosticLevel::Warning
-            }
+            Self::W0101RfcNoChangelog
+            | Self::W0102ClauseNoSince
+            | Self::W0103AdrNoRefs
+            | Self::W0104AdrParseSkipped
+            | Self::W0105WorkParseSkipped
+            | Self::W0106RenderedReadError => DiagnosticLevel::Warning,
             _ => DiagnosticLevel::Error,
         }
     }
@@ -100,6 +106,9 @@ impl DiagnosticCode {
             Self::W0101RfcNoChangelog => "W0101",
             Self::W0102ClauseNoSince => "W0102",
             Self::W0103AdrNoRefs => "W0103",
+            Self::W0104AdrParseSkipped => "W0104",
+            Self::W0105WorkParseSkipped => "W0105",
+            Self::W0106RenderedReadError => "W0106",
         }
     }
 }

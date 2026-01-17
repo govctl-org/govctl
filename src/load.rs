@@ -134,10 +134,22 @@ pub fn load_clause(path: &Path) -> Result<ClauseEntry, LoadError> {
     })
 }
 
+/// Result of loading a project: index plus any warnings encountered
+pub struct ProjectLoadResult {
+    pub index: ProjectIndex,
+    pub warnings: Vec<Diagnostic>,
+}
+
 /// Load full project index (RFCs, ADRs, Work Items)
 pub fn load_project(config: &Config) -> Result<ProjectIndex, Vec<Diagnostic>> {
+    load_project_with_warnings(config).map(|r| r.index)
+}
+
+/// Load full project index, returning both the index and any parse warnings
+pub fn load_project_with_warnings(config: &Config) -> Result<ProjectLoadResult, Vec<Diagnostic>> {
     let mut index = ProjectIndex::default();
     let mut errors = Vec::new();
+    let mut warnings = Vec::new();
 
     // Load RFCs
     match load_rfcs(config) {
@@ -145,20 +157,26 @@ pub fn load_project(config: &Config) -> Result<ProjectIndex, Vec<Diagnostic>> {
         Err(e) => errors.push(e.into()),
     }
 
-    // Load ADRs
-    match crate::parse::load_adrs(config) {
-        Ok(adrs) => index.adrs = adrs,
+    // Load ADRs (with warnings for skipped files)
+    match crate::parse::load_adrs_with_warnings(config) {
+        Ok(result) => {
+            index.adrs = result.items;
+            warnings.extend(result.warnings);
+        }
         Err(e) => errors.push(e),
     }
 
-    // Load Work Items
-    match crate::parse::load_work_items(config) {
-        Ok(items) => index.work_items = items,
+    // Load Work Items (with warnings for skipped files)
+    match crate::parse::load_work_items_with_warnings(config) {
+        Ok(result) => {
+            index.work_items = result.items;
+            warnings.extend(result.warnings);
+        }
         Err(e) => errors.push(e),
     }
 
     if errors.is_empty() {
-        Ok(index)
+        Ok(ProjectLoadResult { index, warnings })
     } else {
         Err(errors)
     }
