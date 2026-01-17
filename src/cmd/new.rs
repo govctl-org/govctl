@@ -11,6 +11,10 @@ use crate::model::{
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
+use std::path::PathBuf;
+
+/// Embedded Claude command template for governed workflows
+const DO_COMMAND_TEMPLATE: &str = include_str!("../../assets/do.md");
 
 /// Initialize govctl project
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
@@ -45,6 +49,19 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     write_file(&config_path, Config::default_toml(), op)?;
     if !op.is_preview() {
         ui::created_path(&config_path);
+    }
+
+    // Create .claude/commands directory and write do.md
+    let claude_commands_dir = PathBuf::from(".claude/commands");
+    create_dir_all(&claude_commands_dir, op)?;
+    if !op.is_preview() {
+        ui::created_path(&claude_commands_dir);
+    }
+
+    let do_command_path = claude_commands_dir.join("do.md");
+    write_file(&do_command_path, DO_COMMAND_TEMPLATE, op)?;
+    if !op.is_preview() {
+        ui::created_path(&do_command_path);
     }
 
     if !op.is_preview() {
