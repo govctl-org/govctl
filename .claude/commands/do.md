@@ -181,11 +181,29 @@ jj commit -m "docs(rfc): draft <RFC-ID> for <summary>"
 
 ### 3.1 Gate Check (for RFC-governed work)
 
-If RFC exists and phase is `spec`:
+Before implementation, verify:
+- RFC **status** is `normative` (required for production features)
+- RFC **phase** is `impl` or later
+
 ```bash
+# Check current state
+cargo run --quiet -- list rfc
+
+# If RFC is draft, finalize it first
 cargo run --quiet -- finalize <RFC-ID> normative
+
+# If RFC phase is spec, advance to impl
 cargo run --quiet -- advance <RFC-ID> impl
 ```
+
+**Gate conditions per RFC-0001:**
+
+| RFC Status | RFC Phase | Action |
+|------------|-----------|--------|
+| draft | spec | Finalize → advance → implement (experimental) |
+| normative | spec | Advance → implement |
+| normative | impl+ | Proceed directly |
+| deprecated | any | ❌ No new implementation allowed |
 
 ### 3.2 Implement
 
@@ -207,7 +225,7 @@ jj commit -m "feat(<scope>): <description>"
 
 ## PHASE 4: TESTING
 
-> **Skip RFC phase advancement** if no RFC exists for this work.
+> **For doc-only changes:** Run `cargo test` to verify no regressions, but skip RFC phase advancement.
 
 ### 4.1 Advance Phase (if RFC exists)
 
@@ -220,6 +238,8 @@ cargo run --quiet -- advance <RFC-ID> test
 ```bash
 cargo test
 ```
+
+If tests fail, fix implementation and re-run. Do not proceed until green.
 
 ### 4.3 Record
 
@@ -239,26 +259,38 @@ cargo run --quiet -- check
 cargo test
 ```
 
-### 5.2 Tick Acceptance Criteria
+### 5.2 Advance RFC to Stable (if applicable)
 
+If RFC exists and all tests pass:
 ```bash
-cargo run --quiet -- tick <WI-ID> acceptance_criteria "criterion" -s done
-# Repeat for each criterion
+cargo run --quiet -- advance <RFC-ID> stable
 ```
 
-### 5.3 Mark Work Item Done
+### 5.3 Tick Acceptance Criteria
+
+**Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
+```bash
+cargo run --quiet -- add <WI-ID> acceptance_criteria "criterion"
+```
+
+Then tick each completed criterion:
+```bash
+cargo run --quiet -- tick <WI-ID> acceptance_criteria "criterion" -s done
+```
+
+### 5.4 Mark Work Item Done
 
 ```bash
 cargo run --quiet -- mv <WI-ID> done
 ```
 
-### 5.4 Record
+### 5.5 Record
 
 ```bash
 jj commit -m "chore(work): complete <WI-ID> — <summary>"
 ```
 
-### 5.5 Summary Report
+### 5.6 Summary Report
 
 ```
 === WORKFLOW COMPLETE ===
