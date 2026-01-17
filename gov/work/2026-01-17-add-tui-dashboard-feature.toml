@@ -1,0 +1,32 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-003"
+title = "Add TUI dashboard feature"
+status = "active"
+start_date = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+notes = ""
+
+[[content.acceptance_criteria]]
+text = "TUI launches with govctl tui command"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Dashboard shows RFC/ADR/Work item counts by status"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "List views for RFC/ADR/Work with j/k navigation"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Detail views show full content"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Feature-gated behind --features tui"
+status = "pending"
