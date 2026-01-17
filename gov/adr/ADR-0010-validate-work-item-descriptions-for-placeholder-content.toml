@@ -1,0 +1,36 @@
+[govctl]
+schema = 1
+id = "ADR-0010"
+title = "Validate work item descriptions for placeholder content"
+status = "accepted"
+date = "2026-01-17"
+refs = ["RFC-0000:C-WORK-DEF"]
+
+[content]
+context = """
+Work items are created with a placeholder description template: "Describe the work to be done. What is the goal? What are the acceptance criteria?" This placeholder is meant to be replaced with actual content, but 21 of 24 existing work items still have this placeholder text.
+
+Empty or placeholder descriptions provide no value for audit trails, make it hard to understand what was actually done, and defeat the purpose of structured governance."""
+decision = """
+Add a warning diagnostic (W0106) for work items with placeholder or empty descriptions.
+
+Detection patterns:
+1. Description matches the exact template text
+2. Description is empty or whitespace-only
+3. Description contains only generic phrases like "TODO", "TBD", "Fill in later"
+
+This is a warning (not error) because:
+- Existing work items should not block `govctl check`
+- It's advisory during development, not a hard gate
+- Users can address warnings incrementally"""
+consequences = """
+Positive:
+- Encourages meaningful documentation of completed work
+- Improves audit trail quality
+- Catches forgotten placeholders before they become permanent
+
+Negative:
+- Existing 21 work items will trigger warnings until fixed
+- Minor noise during `govctl check` until addressed
+
+Migration: Fix existing work items by adding meaningful descriptions based on their titles and acceptance criteria."""

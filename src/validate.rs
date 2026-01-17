@@ -248,6 +248,9 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
     // Validate artifact references (refs fields)
     validate_artifact_refs(index, &mut result);
 
+    // Validate work item descriptions
+    validate_work_item_descriptions(index, &mut result);
+
     result
 }
 
@@ -540,6 +543,50 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
                     work.path.display().to_string(),
                 ));
             }
+        }
+    }
+}
+
+/// Check if a work item description is a placeholder or empty
+fn is_placeholder_description(desc: &str) -> bool {
+    let trimmed = desc.trim();
+
+    // Empty or whitespace-only
+    if trimmed.is_empty() {
+        return true;
+    }
+
+    // Exact template match
+    if trimmed.contains("Describe the work to be done")
+        && trimmed.contains("What is the goal?")
+        && trimmed.contains("What are the acceptance criteria?")
+    {
+        return true;
+    }
+
+    // Common placeholder patterns (case-insensitive)
+    let lower = trimmed.to_lowercase();
+    let placeholder_patterns = ["todo", "tbd", "fill in later", "placeholder", "fixme"];
+
+    // Only flag if the entire description is just a placeholder word
+    placeholder_patterns
+        .iter()
+        .any(|p| lower == *p || lower == format!("[{}]", p) || lower == format!("<{}>", p))
+}
+
+/// Validate work item descriptions for placeholder content (per ADR-0010)
+fn validate_work_item_descriptions(index: &ProjectIndex, result: &mut ValidationResult) {
+    for work in &index.work_items {
+        let desc = &work.spec.content.description;
+        if is_placeholder_description(desc) {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::W0108WorkPlaceholderDescription,
+                format!(
+                    "Work item '{}' has placeholder or empty description",
+                    work.meta().id
+                ),
+                work.path.display().to_string(),
+            ));
         }
     }
 }

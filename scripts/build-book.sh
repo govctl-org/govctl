@@ -21,7 +21,7 @@ SUMMARY="$DOCS_DIR/SUMMARY.md"
 cat > "$SUMMARY" << 'EOF'
 # Summary
 
-[Introduction](./README.md)
+[Introduction](./introduction.md)
 
 ---
 

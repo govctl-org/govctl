@@ -1,0 +1,26 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-025"
+title = "Add validation for placeholder work item descriptions"
+status = "done"
+created = "2026-01-17"
+started = "2026-01-17"
+completed = "2026-01-17"
+
+[content]
+description = """
+Add validation to detect work items with placeholder or empty descriptions.
+
+This warns users when descriptions contain template text like "Describe the work to be done" or are empty, encouraging meaningful documentation for audit trails."""
+
+[[content.acceptance_criteria]]
+text = "Add warning diagnostic for placeholder descriptions"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "Detect common placeholder patterns"
+status = "done"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"

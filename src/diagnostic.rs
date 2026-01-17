@@ -64,6 +64,7 @@ pub enum DiagnosticCode {
     W0105WorkParseSkipped,
     W0106RenderedReadError,
     W0107SourceRefOutdated,
+    W0108WorkPlaceholderDescription,
 }
 
 impl DiagnosticCode {
@@ -75,7 +76,8 @@ impl DiagnosticCode {
             | Self::W0104AdrParseSkipped
             | Self::W0105WorkParseSkipped
             | Self::W0106RenderedReadError
-            | Self::W0107SourceRefOutdated => DiagnosticLevel::Warning,
+            | Self::W0107SourceRefOutdated
+            | Self::W0108WorkPlaceholderDescription => DiagnosticLevel::Warning,
             _ => DiagnosticLevel::Error,
         }
     }
@@ -118,6 +120,7 @@ impl DiagnosticCode {
             Self::W0105WorkParseSkipped => "W0105",
             Self::W0106RenderedReadError => "W0106",
             Self::W0107SourceRefOutdated => "W0107",
+            Self::W0108WorkPlaceholderDescription => "W0108",
         }
     }
 }
