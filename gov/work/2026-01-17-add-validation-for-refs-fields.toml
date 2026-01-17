@@ -1,0 +1,25 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-006"
+title = "Add validation for refs fields"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+notes = ""
+
+[[content.acceptance_criteria]]
+text = "ADR refs field validates that referenced artifacts exist"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Work Item refs field validates that referenced artifacts exist"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "govctl check reports diagnostics for invalid refs"
+status = "pending"
