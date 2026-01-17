@@ -323,10 +323,9 @@ EOF
 
 ### Multi-line Commits
 
-**jujutsu (preferred):** Use `jj describe --stdin` after committing:
+**jujutsu:** Use native `--stdin` support (no `cat` — avoids sandbox issues):
 
 ```bash
-# Commit with placeholder, then update description via stdin
 jj commit -m "placeholder"
 jj describe @- --stdin <<'EOF'
 feat(scope): summary
@@ -338,18 +337,9 @@ Refs: RFC-0010
 EOF
 ```
 
-**Alternative:** Heredoc with `-m` (works for both jj and git):
+**git:** Must use `cat` heredoc (no native stdin support):
 
 ```bash
-jj commit -m "$(cat <<'EOF'
-feat(scope): summary
-
-- Detail one
-- Detail two
-EOF
-)"
-
-# git equivalent
 git add . && git commit -m "$(cat <<'EOF'
 feat(scope): summary
 
