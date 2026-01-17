@@ -257,7 +257,11 @@ pub fn validate_version(version: &str) -> Result<semver::Version, String> {
 }
 
 /// Write releases to gov/releases.toml
-pub fn write_releases(config: &Config, releases: &ReleasesFile, op: WriteOp) -> Result<(), Diagnostic> {
+pub fn write_releases(
+    config: &Config,
+    releases: &ReleasesFile,
+    op: WriteOp,
+) -> Result<(), Diagnostic> {
     let path = config.releases_path();
     let content = toml::to_string_pretty(releases).map_err(|e| {
         Diagnostic::new(

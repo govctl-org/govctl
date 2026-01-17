@@ -5,7 +5,9 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::{find_clause_json, find_rfc_json};
 use crate::model::{AdrStatus, ClauseStatus, Release, RfcPhase, RfcStatus, WorkItemStatus};
-use crate::parse::{load_adrs, load_releases, load_work_items, validate_version, write_adr, write_releases};
+use crate::parse::{
+    load_adrs, load_releases, load_work_items, validate_version, write_adr, write_releases,
+};
 use crate::ui;
 use crate::validate::{
     is_valid_adr_transition, is_valid_phase_transition, is_valid_status_transition,
@@ -326,7 +328,10 @@ pub fn cut_release(
 
     // Create new release
     let release_date = date.map(|d| d.to_string()).unwrap_or_else(today);
-    let refs: Vec<_> = unreleased.iter().map(|w| w.spec.govctl.id.clone()).collect();
+    let refs: Vec<_> = unreleased
+        .iter()
+        .map(|w| w.spec.govctl.id.clone())
+        .collect();
 
     let release = Release {
         version: version.to_string(),

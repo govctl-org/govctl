@@ -187,15 +187,12 @@ fn setup_minimal_valid(dir: &Path, date: &str) {
     fs::write(
         dir.join("gov/adr/ADR-0001-test-decision.toml"),
         r#"[govctl]
-schema = "adr"
+schema = 1
 id = "ADR-0001"
-status = "accepted"
-refs = ["RFC-0001"]
-
-[meta]
 title = "Test Decision"
+status = "accepted"
 date = "2026-01-01"
-deciders = ["test@example.com"]
+refs = ["RFC-0001"]
 
 [content]
 context = "We need to test ADR functionality."

@@ -3,8 +3,9 @@ source: tests/cli_snapshots.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl list adr
-┌─────┬────────┬──────┬───────┐
-│ ADR ┆ Status ┆ Date ┆ Title │
-╞═════╪════════╪══════╪═══════╡
-└─────┴────────┴──────┴───────┘
+┌──────────┬──────────┬────────────┬───────────────┐
+│ ADR      ┆ Status   ┆ Date       ┆ Title         │
+╞══════════╪══════════╪════════════╪═══════════════╡
+│ ADR-0001 ┆ accepted ┆ 2026-01-01 ┆ Test Decision │
+└──────────┴──────────┴────────────┴───────────────┘
 exit: 0

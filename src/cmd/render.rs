@@ -118,7 +118,9 @@ pub fn render_changelog(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Di
     let mut output = String::new();
     output.push_str("# Changelog\n\n");
     output.push_str("All notable changes to this project will be documented in this file.\n\n");
-    output.push_str("The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n");
+    output.push_str(
+        "The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n",
+    );
     output.push_str("and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n");
 
     // Render unreleased section if there are unreleased items
@@ -153,7 +155,11 @@ pub fn render_changelog(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Di
         ui::dry_run_file_preview(&changelog_path, &output);
     } else {
         std::fs::write(&changelog_path, &output)?;
-        ui::changelog_rendered(&changelog_path, releases_file.releases.len(), unreleased_count);
+        ui::changelog_rendered(
+            &changelog_path,
+            releases_file.releases.len(),
+            unreleased_count,
+        );
     }
 
     Ok(vec![])

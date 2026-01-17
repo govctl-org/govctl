@@ -554,7 +554,10 @@ pub fn add_to_field(
                             .spec
                             .content
                             .acceptance_criteria
-                            .push(ChecklistItem::with_category(&parsed.message, parsed.category));
+                            .push(ChecklistItem::with_category(
+                                &parsed.message,
+                                parsed.category,
+                            ));
                     }
                 }
                 "notes" => {

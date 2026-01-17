@@ -6,15 +6,9 @@ $ govctl check
 Checked:
   1 RFCs
   1 clauses
-  0 ADRs
+  1 ADRs
   1 work items
 
-warning[W0104]: Skipped ADR (parse error): Invalid TOML: TOML parse error at line 2, column 10
-  |
-2 | schema = "adr"
-  |          ^^^^^
-invalid type: string "adr", expected u32
- (gov/adr/ADR-XXXX-test-decision.toml)
 warning[W0108]: Work item 'WI-<DATE>-001' has placeholder or empty description (gov/work/<DATE>-test-work-item.toml)
 exit: 0
 
@@ -35,10 +29,11 @@ $ govctl list clause
 exit: 0
 
 $ govctl list adr
-┌─────┬────────┬──────┬───────┐
-│ ADR ┆ Status ┆ Date ┆ Title │
-╞═════╪════════╪══════╪═══════╡
-└─────┴────────┴──────┴───────┘
+┌──────────┬──────────┬────────────┬───────────────┐
+│ ADR      ┆ Status   ┆ Date       ┆ Title         │
+╞══════════╪══════════╪════════════╪═══════════════╡
+│ ADR-0001 ┆ accepted ┆ 2026-01-01 ┆ Test Decision │
+└──────────┴──────────┴────────────┴───────────────┘
 exit: 0
 
 $ govctl list work
@@ -61,7 +56,8 @@ Clauses
   Total        1
 
 ADRs
-  Total        0
+  accepted     1
+  Total        1
 
 Work Items
   active       1

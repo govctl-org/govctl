@@ -303,7 +303,9 @@ pub enum WorkItemStatus {
 /// Changelog category for Keep a Changelog format.
 /// Used for both RFC changelog entries and work item acceptance criteria.
 /// Per [[ADR-0012]] and [[ADR-0013]].
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, AsRefStr, ValueEnum)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, AsRefStr, ValueEnum,
+)]
 #[serde(rename_all = "lowercase")]
 #[strum(serialize_all = "lowercase")]
 pub enum ChangelogCategory {
