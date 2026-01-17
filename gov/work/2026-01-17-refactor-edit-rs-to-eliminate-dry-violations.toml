@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-17-014"
 title = "Refactor edit.rs to eliminate DRY violations"
-status = "active"
+status = "done"
 created = "2026-01-17"
 started = "2026-01-17"
+completed = "2026-01-17"
 
 [content]
 description = """
