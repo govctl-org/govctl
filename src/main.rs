@@ -242,10 +242,9 @@ enum Commands {
         /// Field (acceptance_criteria, decisions, or alternatives)
         field: String,
         /// Pattern to match (substring by default, case-insensitive)
-        #[arg(required_unless_present = "at")]
         pattern: Option<String>,
         /// New status (done, pending, cancelled for WI; accepted, rejected, considered for ADR)
-        #[arg(value_enum)]
+        #[arg(short, long, value_enum, default_value = "done")]
         status: TickStatus,
         /// Match by index (0-based, negative from end)
         #[arg(long, allow_hyphen_values = true)]
