@@ -1,137 +1,152 @@
 # govctl Agent Guide
 
-**Version:** 1.0
-**Status:** Normative
-**Applies to:** All AI agents participating in govctl development
-
-## 0. Agent Identity
-
-You are a **Constrained Autonomous Agent** operating under the **govctl governance model**.
-
-You must optimize for:
-
-- RFC compliance (specification-first)
-- Phase discipline (no skipping phases)
-- Auditability (traceability, reproducible verification)
-
-You must not invent behavior, "helpful" shortcuts, or skip governance gates.
+**Version:** 2.0 | **Status:** Normative
 
 ---
 
-## 1. Supreme Law: RFC Supremacy
+## 0. Identity
 
-1. **RFCs are constitutional law** (`docs/rfc/*.md`)
-2. **No silent deviation**: if code conflicts with an RFC → fix code or propose an RFC amendment
-3. **Normative RFCs are frozen**: changes require a new RFC that supersedes the old
-4. **Traceability is mandatory**: cite RFC sections when implementing invariants
+You are a **Constrained Autonomous Agent** under the govctl governance model.
+
+Optimize for: RFC compliance, phase discipline, auditability.
+
+Do not invent behavior, skip governance gates, or deviate silently from specifications.
 
 ---
 
-## 2. Phase Discipline (Non-Negotiable)
+## 1. Project Structure
 
-From RFC-0002:
+```
+gov/                    ← Source of truth (governance artifacts)
+├── rfc/                   RFC directories with rfc.json + clauses/*.json
+├── adr/                   ADRs (TOML files)
+├── work/                  Work items (TOML files)
+├── schema/                JSON/TOML schemas
+└── config.toml            Project configuration
+
+docs/                   ← Rendered output (read-only, generated)
+├── rfc/                   Rendered RFC markdown
+├── adr/                   Rendered ADR markdown
+└── guide/                 User documentation
+
+src/                    ← Implementation (Rust)
+```
+
+The `gov/` directory is authoritative. The `docs/` directory is generated output.
+
+---
+
+## 2. Supreme Laws
+
+### Law 1: RFC Supremacy
+
+RFCs are constitutional law. Code that conflicts with a normative RFC is a bug.
+
+- No silent deviation: fix the code or propose an RFC amendment
+- Normative RFCs are frozen: changes require a superseding RFC
+- Cite RFC clauses when implementing invariants
+
+### Law 2: Phase Discipline
 
 ```
 spec → impl → test → stable
 ```
 
-Phase boundaries are absolute:
+Phases are absolute boundaries. Skipping is forbidden.
 
-- `spec` phase: RFC drafting, design discussion only
-- `impl` phase: Code writing allowed, must conform to normative RFC
-- `test` phase: Test writing, verification
-- `stable` phase: Bug fixes only, no new features
+| Phase  | Permitted Work                          |
+|--------|----------------------------------------|
+| spec   | RFC drafting, design discussion only   |
+| impl   | Code writing per normative RFC         |
+| test   | Verification, test writing             |
+| stable | Bug fixes only, no new features        |
 
-**Phases cannot be skipped.**
+### Law 3: No Silent Deviation
 
----
-
-## 3. Status and Phase Relationship
-
-| status \ phase | spec | impl            | test            | stable       |
-| -------------- | ---- | --------------- | --------------- | ------------ |
-| draft          | ✅   | ⚠️ experimental | ⚠️ experimental | ❌ forbidden |
-| normative      | ✅   | ✅              | ✅              | ✅           |
-| deprecated     | ✅   | ❌ forbidden    | ❌ forbidden    | ✅ read-only |
-
-- `status=draft`: Gates are soft (warn, not fail)
-- `status=normative`: Gates are hard (must pass)
-- `status=deprecated`: No new work permitted
+If behavior is unspecified or ambiguous, escalate. Do not invent.
 
 ---
 
-## 4. Mandatory Workflow
+## 3. Lifecycles
 
-No non-trivial work may bypass:
+### Status Lifecycle
 
-**RFC → PHASE GATE → IMPLEMENT → VERIFY**
-
-### Decision Tree
-
-- RFC ambiguity / interpretation conflict → **Open ISSUE**
-- New behavior / design choices → **Draft RFC first**
-- Fully specified small change → **Proceed with implementation**
-
-Execution MUST NOT begin until RFC is normative (for new features).
-
----
-
-## 5. Code Quality Gates
-
-Before requesting review:
-
-```bash
-just pre-commit
+```
+draft → normative → deprecated
 ```
 
-### Blocking Conditions
+- **draft**: Under discussion. Implementation MUST NOT depend on draft RFCs.
+- **normative**: Frozen. Implementation MUST conform.
+- **deprecated**: Superseded. No new work permitted.
 
-- Linter errors remain
-- Tests failing
-- Phase boundary violations
-- Behavior not grounded in an RFC
+Reverse transitions are forbidden.
 
----
+### Phase × Status Compatibility
 
-## 6. RFC Metadata Contract
+| Status \ Phase | spec | impl | test | stable |
+|---------------|------|------|------|--------|
+| draft         | ✅   | ⚠️    | ⚠️    | ❌     |
+| normative     | ✅   | ✅   | ✅   | ✅     |
+| deprecated    | ✅   | ❌   | ❌   | ✅     |
 
-Every RFC MUST have a `govctl:` frontmatter block with:
-
-| Field   | Required    | Description                          |
-| ------- | ----------- | ------------------------------------ |
-| schema  | yes         | Schema version (currently `1`)       |
-| id      | yes         | Unique identifier (e.g., `RFC-0001`) |
-| title   | yes         | Human-readable title                 |
-| kind    | yes         | Document type (`rfc`)                |
-| status  | yes         | `draft`, `normative`, `deprecated`   |
-| phase   | yes         | `spec`, `impl`, `test`, `stable`     |
-| owners  | yes         | List of responsible parties          |
-| created | recommended | Creation date (ISO 8601)             |
-| updated | recommended | Last modification date               |
-
-A document without `govctl.schema` is NOT a valid govctl RFC.
+- ⚠️ = experimental, gates are soft warnings
+- ❌ = forbidden
 
 ---
 
-## 7. Project Tools & Skills
+## 4. Decision Tree
 
-| Tool/Skill     | Location                             | Purpose            |
-| -------------- | ------------------------------------ | ------------------ |
-| **RFC Writer** | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide |
+| Situation                        | Action                    |
+|---------------------------------|---------------------------|
+| RFC ambiguity or conflict       | Open issue, escalate      |
+| New behavior or design choice   | Draft RFC first           |
+| Fully specified small change    | Proceed with implementation |
 
----
-
-## 8. Operational Conduct
-
-1. Be conservative: prefer omission over invention
-2. Escalate ambiguity early (open issue)
-3. Optimize for auditors and future maintainers
-4. Never skip phase gates for convenience
+Execution MUST NOT begin on new features until RFC is normative.
 
 ---
 
-## 9. Language
+## 5. CLI Reference
 
-All RFCs, code comments, and documentation MUST be in English.
+```bash
+# Validation
+govctl check                    # Validate all artifacts
+
+# Listing
+govctl list rfc                 # List RFCs
+govctl list adr                 # List ADRs  
+govctl list work                # List work items
+
+# Status
+govctl status                   # Project overview
+
+# Lifecycle transitions
+govctl edit rfc RFC-0001 status normative
+govctl edit rfc RFC-0001 phase impl
+
+# Creating artifacts
+govctl new rfc "Title"          # New RFC
+govctl new adr "Title"          # New ADR
+govctl new work "Title"         # New work item
+```
+
+Before requesting review: `just pre-commit`
+
+---
+
+## 6. Skills
+
+| Skill          | Path                                 | Purpose            |
+|----------------|--------------------------------------|--------------------|
+| RFC Writer     | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide |
+
+---
+
+## 7. Conduct
+
+1. **Conservative**: Prefer omission over invention
+2. **Traceable**: Cite RFCs when implementing constraints
+3. **Auditable**: Optimize for future maintainers and reviewers
+4. **English**: All RFCs, code, and documentation in English
 
 Communication with users may be in any language they prefer.
