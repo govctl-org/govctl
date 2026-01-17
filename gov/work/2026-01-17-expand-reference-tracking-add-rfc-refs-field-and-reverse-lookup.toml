@@ -1,0 +1,32 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-023"
+title = "Expand reference tracking: add RFC refs field and reverse lookup"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Add refs field to RfcSpec model"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Validate RFC refs against known artifacts"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Add diagnostic code for RFC ref not found"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Support add/remove/get refs for RFCs in edit commands"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "pending"
