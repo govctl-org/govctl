@@ -67,8 +67,8 @@ fi
 
 | Action | jj | git |
 |--------|-----|-----|
-| Commit | `jj commit -m "<msg>"` | `git add . && git commit -m "<msg>"` |
-| Multi-line commit | See MULTI-LINE COMMITS below | See MULTI-LINE COMMITS below |
+| Simple commit | `jj commit -m "<msg>"` | `git add . && git commit -m "<msg>"` |
+| Multi-line | `jj describe --stdin <<'EOF' ... EOF && jj new` | See CONVENTIONS section |
 
 ### 0.2 Classify the Target
 
@@ -323,11 +323,11 @@ EOF
 
 ### Multi-line Commits
 
-**jujutsu:** Use native `--stdin` support (no `cat` — avoids sandbox issues):
+**jujutsu:** Use `jj describe` then `jj new`:
 
 ```bash
-jj commit -m "placeholder"
-jj describe @- --stdin <<'EOF'
+# Describe current change, then create new empty change
+jj describe --stdin <<'EOF'
 feat(scope): summary
 
 - Detail one
@@ -335,6 +335,7 @@ feat(scope): summary
 
 Refs: RFC-0010
 EOF
+jj new
 ```
 
 **git:** Must use `cat` heredoc (no native stdin support):
