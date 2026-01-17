@@ -33,6 +33,10 @@ struct Cli {
     #[arg(short = 'C', long, global = true)]
     config: Option<PathBuf>,
 
+    /// Dry run: preview changes without writing files
+    #[arg(short = 'n', long, global = true)]
+    dry_run: bool,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -350,33 +354,44 @@ fn main() -> ExitCode {
 
 fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
     let config = Config::load(cli.config.as_deref())?;
+    let op = write::WriteOp::from_dry_run(cli.dry_run);
 
     match &cli.command {
-        Commands::Init { force } => cmd::new::init_project(&config, *force),
+        Commands::Init { force } => cmd::new::init_project(&config, *force, op),
         Commands::Check { deny_warnings: _ } => cmd::check::check_all(&config),
         Commands::Status => cmd::status::show_status(&config),
         Commands::List { target, filter } => cmd::list::list(&config, *target, filter.as_deref()),
-        Commands::New { target } => cmd::new::create(&config, target),
+        Commands::New { target } => cmd::new::create(&config, target, op),
         Commands::Render {
             target,
             rfc_id,
             dry_run,
         } => {
+            // Combine global and command-specific dry-run flags
+            let effective_dry_run = cli.dry_run || *dry_run;
             let mut all_diags = vec![];
             match target {
                 RenderTarget::Rfc => {
-                    all_diags.extend(cmd::render::render(&config, rfc_id.as_deref(), *dry_run)?);
+                    all_diags.extend(cmd::render::render(
+                        &config,
+                        rfc_id.as_deref(),
+                        effective_dry_run,
+                    )?);
                 }
                 RenderTarget::Adr => {
-                    all_diags.extend(cmd::render::render_adrs(&config, *dry_run)?);
+                    all_diags.extend(cmd::render::render_adrs(&config, effective_dry_run)?);
                 }
                 RenderTarget::Work => {
-                    all_diags.extend(cmd::render::render_work_items(&config, *dry_run)?);
+                    all_diags.extend(cmd::render::render_work_items(&config, effective_dry_run)?);
                 }
                 RenderTarget::All => {
-                    all_diags.extend(cmd::render::render(&config, rfc_id.as_deref(), *dry_run)?);
-                    all_diags.extend(cmd::render::render_adrs(&config, *dry_run)?);
-                    all_diags.extend(cmd::render::render_work_items(&config, *dry_run)?);
+                    all_diags.extend(cmd::render::render(
+                        &config,
+                        rfc_id.as_deref(),
+                        effective_dry_run,
+                    )?);
+                    all_diags.extend(cmd::render::render_adrs(&config, effective_dry_run)?);
+                    all_diags.extend(cmd::render::render_work_items(&config, effective_dry_run)?);
                 }
             }
             Ok(all_diags)
@@ -392,22 +407,23 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             text.as_deref(),
             text_file.as_deref(),
             *stdin,
+            op,
         ),
         Commands::Set {
             id,
             field,
             value,
             stdin,
-        } => cmd::edit::set_field(&config, id, field, value.as_deref(), *stdin),
+        } => cmd::edit::set_field(&config, id, field, value.as_deref(), *stdin, op),
         Commands::Get { id, field } => cmd::edit::get_field(&config, id, field.as_deref()),
         Commands::Add {
             id,
             field,
             value,
             stdin,
-        } => cmd::edit::add_to_field(&config, id, field, value.as_deref(), *stdin),
+        } => cmd::edit::add_to_field(&config, id, field, value.as_deref(), *stdin, op),
         Commands::Remove { id, field, value } => {
-            cmd::edit::remove_from_field(&config, id, field, value)
+            cmd::edit::remove_from_field(&config, id, field, value, op)
         }
         Commands::Bump {
             rfc_id,
@@ -424,20 +440,22 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
                 (false, false, false) => None,
                 _ => unreachable!("clap arg group ensures mutual exclusivity"),
             };
-            cmd::lifecycle::bump(&config, rfc_id, level, summary.as_deref(), changes)
+            cmd::lifecycle::bump(&config, rfc_id, level, summary.as_deref(), changes, op)
         }
-        Commands::Finalize { rfc_id, status } => cmd::lifecycle::finalize(&config, rfc_id, *status),
-        Commands::Advance { rfc_id, phase } => cmd::lifecycle::advance(&config, rfc_id, *phase),
-        Commands::Accept { adr } => cmd::lifecycle::accept_adr(&config, adr),
-        Commands::Deprecate { id } => cmd::lifecycle::deprecate(&config, id),
-        Commands::Supersede { id, by } => cmd::lifecycle::supersede(&config, id, by),
-        Commands::Move { file, status } => cmd::move_::move_item(&config, file, *status),
+        Commands::Finalize { rfc_id, status } => {
+            cmd::lifecycle::finalize(&config, rfc_id, *status, op)
+        }
+        Commands::Advance { rfc_id, phase } => cmd::lifecycle::advance(&config, rfc_id, *phase, op),
+        Commands::Accept { adr } => cmd::lifecycle::accept_adr(&config, adr, op),
+        Commands::Deprecate { id } => cmd::lifecycle::deprecate(&config, id, op),
+        Commands::Supersede { id, by } => cmd::lifecycle::supersede(&config, id, by, op),
+        Commands::Move { file, status } => cmd::move_::move_item(&config, file, *status, op),
         Commands::Tick {
             id,
             field,
             item,
             status,
-        } => cmd::edit::tick_item(&config, id, field, item, *status),
+        } => cmd::edit::tick_item(&config, id, field, item, *status, op),
         #[cfg(feature = "tui")]
         Commands::Tui => {
             tui::run(&config)?;

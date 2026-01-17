@@ -2,10 +2,69 @@
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogEntry, ClauseSpec, RfcSpec};
+use crate::ui;
 use anyhow::{Context, Result};
 use chrono::Local;
 use semver::Version;
 use std::path::Path;
+
+/// Write operation mode (per ADR-0006).
+///
+/// Controls whether write operations execute or just preview.
+#[derive(Debug, Clone, Copy, Default)]
+pub enum WriteOp {
+    /// Actually write to disk
+    #[default]
+    Execute,
+    /// Preview only: show what would be written
+    Preview,
+}
+
+impl WriteOp {
+    /// Create WriteOp from dry_run boolean flag
+    pub fn from_dry_run(dry_run: bool) -> Self {
+        if dry_run {
+            WriteOp::Preview
+        } else {
+            WriteOp::Execute
+        }
+    }
+
+    /// Returns true if this is a preview/dry-run operation
+    pub fn is_preview(&self) -> bool {
+        matches!(self, WriteOp::Preview)
+    }
+}
+
+/// Write content to a file, respecting WriteOp mode.
+///
+/// In Preview mode, shows what would be written instead of writing.
+pub fn write_file(path: &Path, content: &str, op: WriteOp) -> Result<()> {
+    match op {
+        WriteOp::Execute => {
+            std::fs::write(path, content)?;
+        }
+        WriteOp::Preview => {
+            ui::dry_run_file_preview(path, content);
+        }
+    }
+    Ok(())
+}
+
+/// Create a directory, respecting WriteOp mode.
+///
+/// In Preview mode, shows what directory would be created.
+pub fn create_dir_all(path: &Path, op: WriteOp) -> Result<()> {
+    match op {
+        WriteOp::Execute => {
+            std::fs::create_dir_all(path)?;
+        }
+        WriteOp::Preview => {
+            ui::dry_run_mkdir(path);
+        }
+    }
+    Ok(())
+}
 
 /// Version bump level
 #[derive(Debug, Clone, Copy)]
@@ -25,10 +84,9 @@ pub fn read_rfc(path: &Path) -> Result<RfcSpec> {
 }
 
 /// Write RFC JSON to file
-pub fn write_rfc(path: &Path, rfc: &RfcSpec) -> Result<()> {
+pub fn write_rfc(path: &Path, rfc: &RfcSpec, op: WriteOp) -> Result<()> {
     let content = serde_json::to_string_pretty(rfc)?;
-    std::fs::write(path, content)?;
-    Ok(())
+    write_file(path, &content, op)
 }
 
 /// Read clause JSON from file
@@ -41,10 +99,9 @@ pub fn read_clause(path: &Path) -> Result<ClauseSpec> {
 }
 
 /// Write clause JSON to file
-pub fn write_clause(path: &Path, clause: &ClauseSpec) -> Result<()> {
+pub fn write_clause(path: &Path, clause: &ClauseSpec, op: WriteOp) -> Result<()> {
     let content = serde_json::to_string_pretty(clause)?;
-    std::fs::write(path, content)?;
-    Ok(())
+    write_file(path, &content, op)
 }
 
 /// Bump RFC version and add changelog entry

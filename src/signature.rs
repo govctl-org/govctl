@@ -184,17 +184,16 @@ mod tests {
 
     #[test]
     fn test_canonicalize_sorts_keys() {
-        let json: Value = serde_json::from_str(r#"{"z": 1, "a": 2, "m": 3}"#)
-            .expect("test JSON should parse");
+        let json: Value =
+            serde_json::from_str(r#"{"z": 1, "a": 2, "m": 3}"#).expect("test JSON should parse");
         let canonical = canonicalize_json(&json);
         assert_eq!(canonical, r#"{"a":2,"m":3,"z":1}"#);
     }
 
     #[test]
     fn test_canonicalize_nested_objects() {
-        let json: Value =
-            serde_json::from_str(r#"{"outer": {"z": 1, "a": 2}, "inner": {"b": 3}}"#)
-                .expect("test JSON should parse");
+        let json: Value = serde_json::from_str(r#"{"outer": {"z": 1, "a": 2}, "inner": {"b": 3}}"#)
+            .expect("test JSON should parse");
         let canonical = canonicalize_json(&json);
         assert_eq!(canonical, r#"{"inner":{"b":3},"outer":{"a":2,"z":1}}"#);
     }

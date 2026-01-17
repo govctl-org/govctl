@@ -6,7 +6,7 @@ use crate::load::{find_clause_json, find_rfc_json};
 use crate::parse::{load_adrs, load_work_items, write_adr, write_work_item};
 use crate::ui;
 use crate::write::{
-    read_clause, read_rfc, update_clause_field, update_rfc_field, write_clause, write_rfc,
+    WriteOp, read_clause, read_rfc, update_clause_field, update_rfc_field, write_clause, write_rfc,
 };
 use anyhow::Context;
 use std::io::Read;
@@ -39,6 +39,7 @@ pub fn edit_clause(
     text: Option<&str>,
     text_file: Option<&Path>,
     stdin: bool,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let clause_path = find_clause_json(config, clause_id)
         .ok_or_else(|| anyhow::anyhow!("Clause not found: {clause_id}"))?;
@@ -55,9 +56,11 @@ pub fn edit_clause(
     };
 
     clause.text = new_text;
-    write_clause(&clause_path, &clause)?;
+    write_clause(&clause_path, &clause, op)?;
 
-    ui::updated("clause", clause_id);
+    if !op.is_preview() {
+        ui::updated("clause", clause_id);
+    }
     Ok(vec![])
 }
 
@@ -68,6 +71,7 @@ pub fn set_field(
     field: &str,
     value: Option<&str>,
     stdin: bool,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let value = resolve_value(value, stdin)?;
     let value = value.as_str();
@@ -88,9 +92,11 @@ pub fn set_field(
 
         let mut clause = read_clause(&clause_path)?;
         update_clause_field(&mut clause, field, value)?;
-        write_clause(&clause_path, &clause)?;
+        write_clause(&clause_path, &clause, op)?;
 
-        ui::field_set(id, field, value);
+        if !op.is_preview() {
+            ui::field_set(id, field, value);
+        }
     } else if id.starts_with("RFC-") {
         // It's an RFC
         let rfc_path =
@@ -107,9 +113,11 @@ pub fn set_field(
 
         let mut rfc = read_rfc(&rfc_path)?;
         update_rfc_field(&mut rfc, field, value)?;
-        write_rfc(&rfc_path, &rfc)?;
+        write_rfc(&rfc_path, &rfc, op)?;
 
-        ui::field_set(id, field, value);
+        if !op.is_preview() {
+            ui::field_set(id, field, value);
+        }
     } else if id.starts_with("ADR-") {
         // It's an ADR - load, modify, write TOML
         let mut entry = load_adrs(config)?
@@ -132,8 +140,10 @@ pub fn set_field(
             _ => anyhow::bail!("Unknown ADR field: {field}"),
         }
 
-        write_adr(&entry.path, &entry.spec)?;
-        ui::field_set(id, field, value);
+        write_adr(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::field_set(id, field, value);
+        }
     } else if id.starts_with("WI-")
         || (id.contains("-") && !id.starts_with("RFC-") && !id.starts_with("ADR-"))
     {
@@ -156,8 +166,10 @@ pub fn set_field(
             _ => anyhow::bail!("Unknown work item field: {field}"),
         }
 
-        write_work_item(&entry.path, &entry.spec)?;
-        ui::field_set(id, field, value);
+        write_work_item(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::field_set(id, field, value);
+        }
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }
@@ -297,6 +309,7 @@ pub fn add_to_field(
     field: &str,
     value: Option<&str>,
     stdin: bool,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let value = resolve_value(value, stdin)?;
     let value = value.as_str();
@@ -317,8 +330,10 @@ pub fn add_to_field(
             _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
         }
 
-        write_rfc(&rfc_path, &rfc)?;
-        ui::field_added(id, field, value);
+        write_rfc(&rfc_path, &rfc, op)?;
+        if !op.is_preview() {
+            ui::field_added(id, field, value);
+        }
     } else if id.contains(':') {
         // Clause array fields: anchors
         let clause_path = find_clause_json(config, id)
@@ -335,8 +350,10 @@ pub fn add_to_field(
             _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
         }
 
-        write_clause(&clause_path, &clause)?;
-        ui::field_added(id, field, value);
+        write_clause(&clause_path, &clause, op)?;
+        if !op.is_preview() {
+            ui::field_added(id, field, value);
+        }
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
@@ -368,8 +385,10 @@ pub fn add_to_field(
             _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
         }
 
-        write_adr(&entry.path, &entry.spec)?;
-        ui::field_added(id, field, value);
+        write_adr(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::field_added(id, field, value);
+        }
     } else if id.starts_with("WI-") || id.contains("-") {
         let mut entry = load_work_items(config)?
             .into_iter()
@@ -407,8 +426,10 @@ pub fn add_to_field(
             _ => anyhow::bail!("Cannot add to field: {field} (not an array or unsupported)"),
         }
 
-        write_work_item(&entry.path, &entry.spec)?;
-        ui::field_added(id, field, value);
+        write_work_item(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::field_added(id, field, value);
+        }
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }
@@ -422,6 +443,7 @@ pub fn remove_from_field(
     id: &str,
     field: &str,
     value: &str,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     if id.starts_with("RFC-") && !id.contains(':') {
         let rfc_path =
@@ -436,8 +458,10 @@ pub fn remove_from_field(
             _ => anyhow::bail!("Cannot remove from field: {field}"),
         }
 
-        write_rfc(&rfc_path, &rfc)?;
-        ui::field_removed(id, field, value);
+        write_rfc(&rfc_path, &rfc, op)?;
+        if !op.is_preview() {
+            ui::field_removed(id, field, value);
+        }
     } else if id.contains(':') {
         let clause_path = find_clause_json(config, id)
             .ok_or_else(|| anyhow::anyhow!("Clause not found: {id}"))?;
@@ -451,8 +475,10 @@ pub fn remove_from_field(
             _ => anyhow::bail!("Cannot remove from field: {field}"),
         }
 
-        write_clause(&clause_path, &clause)?;
-        ui::field_removed(id, field, value);
+        write_clause(&clause_path, &clause, op)?;
+        if !op.is_preview() {
+            ui::field_removed(id, field, value);
+        }
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
@@ -469,8 +495,10 @@ pub fn remove_from_field(
             _ => anyhow::bail!("Cannot remove from field: {field}"),
         }
 
-        write_adr(&entry.path, &entry.spec)?;
-        ui::field_removed(id, field, value);
+        write_adr(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::field_removed(id, field, value);
+        }
     } else if id.starts_with("WI-") || id.contains("-") {
         let mut entry = load_work_items(config)?
             .into_iter()
@@ -494,8 +522,10 @@ pub fn remove_from_field(
             _ => anyhow::bail!("Cannot remove from field: {field}"),
         }
 
-        write_work_item(&entry.path, &entry.spec)?;
-        ui::field_removed(id, field, value);
+        write_work_item(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::field_removed(id, field, value);
+        }
     } else {
         anyhow::bail!("Unknown artifact type: {id}");
     }
@@ -510,6 +540,7 @@ pub fn tick_item(
     field: &str,
     item: &str,
     status: crate::TickStatus,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     use crate::model::{AlternativeStatus, ChecklistStatus};
 
@@ -563,8 +594,10 @@ pub fn tick_item(
             anyhow::bail!("Item not found: {item}");
         }
 
-        write_work_item(&entry.path, &entry.spec)?;
-        ui::ticked(item, new_status.as_ref());
+        write_work_item(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::ticked(item, new_status.as_ref());
+        }
     } else if id.starts_with("ADR-") {
         let mut entry = load_adrs(config)?
             .into_iter()
@@ -599,8 +632,10 @@ pub fn tick_item(
             anyhow::bail!("Item not found: {item}");
         }
 
-        write_adr(&entry.path, &entry.spec)?;
-        ui::ticked(item, new_status.as_ref());
+        write_adr(&entry.path, &entry.spec, op)?;
+        if !op.is_preview() {
+            ui::ticked(item, new_status.as_ref());
+        }
     } else {
         anyhow::bail!("Tick only works for work items and ADRs: {id}");
     }

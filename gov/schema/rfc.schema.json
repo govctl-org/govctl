@@ -3,7 +3,16 @@
   "title": "RFC Specification",
   "description": "JSON schema for RFC source files",
   "type": "object",
-  "required": ["rfc_id", "title", "version", "status", "phase", "owners", "created", "sections"],
+  "required": [
+    "rfc_id",
+    "title",
+    "version",
+    "status",
+    "phase",
+    "owners",
+    "created",
+    "sections"
+  ],
   "properties": {
     "rfc_id": {
       "type": "string",

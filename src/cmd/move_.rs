@@ -6,7 +6,7 @@ use crate::model::{ChecklistStatus, WorkItemStatus};
 use crate::parse::{load_work_item, write_work_item};
 use crate::ui;
 use crate::validate::is_valid_work_transition;
-use crate::write::today;
+use crate::write::{WriteOp, today};
 use std::path::Path;
 
 /// Move work item to new status
@@ -14,6 +14,7 @@ pub fn move_item(
     config: &Config,
     file: &Path,
     status: WorkItemStatus,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     // Find the work item file
     let work_path = if file.is_absolute() || file.exists() {
@@ -79,13 +80,15 @@ pub fn move_item(
         WorkItemStatus::Queue => {}
     }
 
-    write_work_item(&work_path, &entry.spec)?;
+    write_work_item(&work_path, &entry.spec, op)?;
 
-    let filename = work_path
-        .file_name()
-        .map(|n| n.to_string_lossy().into_owned())
-        .unwrap_or_else(|| work_path.display().to_string());
-    ui::moved(&filename, status.as_ref());
+    if !op.is_preview() {
+        let filename = work_path
+            .file_name()
+            .map(|n| n.to_string_lossy().into_owned())
+            .unwrap_or_else(|| work_path.display().to_string());
+        ui::moved(&filename, status.as_ref());
+    }
 
     Ok(vec![])
 }

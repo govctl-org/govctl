@@ -13,14 +13,15 @@ This document defines the unified data model for all govctl artifacts.
 
 ## Identifier Formats
 
-| Artifact | Format | Example |
-|----------|--------|---------|
-| RFC | `RFC-NNNN` | `RFC-0001` |
-| Clause | `C-NAME` | `C-PHASE-ORDER` |
-| ADR | `ADR-NNNN` | `ADR-0001` |
+| Artifact  | Format              | Example             |
+| --------- | ------------------- | ------------------- |
+| RFC       | `RFC-NNNN`          | `RFC-0001`          |
+| Clause    | `C-NAME`            | `C-PHASE-ORDER`     |
+| ADR       | `ADR-NNNN`          | `ADR-0001`          |
 | Work Item | `WI-YYYY-MM-DD-NNN` | `WI-2026-01-17-001` |
 
 **Full references** combine artifact IDs:
+
 - Clause in RFC: `RFC-0001:C-PHASE-ORDER`
 - Standalone: `ADR-0001`, `WI-2026-01-17-001`
 
@@ -34,11 +35,11 @@ This document defines the unified data model for all govctl artifacts.
 draft → normative → deprecated
 ```
 
-| Status | Meaning |
-|--------|---------|
-| `draft` | Under discussion. Implementation MUST NOT depend on it. |
-| `normative` | Frozen. Implementation MUST conform. |
-| `deprecated` | Obsolete. Implementation SHOULD migrate away. |
+| Status       | Meaning                                                 |
+| ------------ | ------------------------------------------------------- |
+| `draft`      | Under discussion. Implementation MUST NOT depend on it. |
+| `normative`  | Frozen. Implementation MUST conform.                    |
+| `deprecated` | Obsolete. Implementation SHOULD migrate away.           |
 
 ### RFC Phase
 
@@ -46,12 +47,12 @@ draft → normative → deprecated
 spec → impl → test → stable
 ```
 
-| Phase | Meaning |
-|-------|---------|
-| `spec` | Defining requirements. No implementation. |
-| `impl` | Building per specification. |
-| `test` | Verifying implementation. |
-| `stable` | Released for production use. |
+| Phase    | Meaning                                   |
+| -------- | ----------------------------------------- |
+| `spec`   | Defining requirements. No implementation. |
+| `impl`   | Building per specification.               |
+| `test`   | Verifying implementation.                 |
+| `stable` | Released for production use.              |
 
 **Invariant Rules:**
 
@@ -68,11 +69,11 @@ active → superseded
        → deprecated
 ```
 
-| Status | Meaning |
-|--------|---------|
-| `active` | In effect. |
+| Status       | Meaning                     |
+| ------------ | --------------------------- |
+| `active`     | In effect.                  |
 | `superseded` | Replaced by another clause. |
-| `deprecated` | Obsolete, no replacement. |
+| `deprecated` | Obsolete, no replacement.   |
 
 ### ADR Status
 
@@ -81,12 +82,12 @@ proposed → accepted → superseded
          → rejected
 ```
 
-| Status | Meaning |
-|--------|---------|
-| `proposed` | Under consideration. |
-| `accepted` | Ratified decision. |
-| `rejected` | Declined after consideration. |
-| `superseded` | Replaced by newer ADR. |
+| Status       | Meaning                       |
+| ------------ | ----------------------------- |
+| `proposed`   | Under consideration.          |
+| `accepted`   | Ratified decision.            |
+| `rejected`   | Declined after consideration. |
+| `superseded` | Replaced by newer ADR.        |
 
 ### Work Item Status
 
@@ -95,11 +96,11 @@ queue → active → done
     ↘        ↘ cancelled
 ```
 
-| Status | Meaning |
-|--------|---------|
-| `queue` | Planned, not started. |
-| `active` | In progress. |
-| `done` | Completed successfully. |
+| Status      | Meaning                           |
+| ----------- | --------------------------------- |
+| `queue`     | Planned, not started.             |
+| `active`    | In progress.                      |
+| `done`      | Completed successfully.           |
 | `cancelled` | Abandoned (from queue or active). |
 
 ---
@@ -135,19 +136,19 @@ queue → active → done
 }
 ```
 
-| Field | Required | Type | Description |
-|-------|----------|------|-------------|
-| `rfc_id` | yes | string | Unique identifier `RFC-NNNN` |
-| `title` | yes | string | Human-readable title |
-| `version` | yes | string | Semantic version `X.Y.Z` |
-| `status` | yes | enum | `draft` \| `normative` \| `deprecated` |
-| `phase` | yes | enum | `spec` \| `impl` \| `test` \| `stable` |
-| `owners` | yes | array | List of responsible parties |
-| `created` | yes | date | Creation date |
-| `updated` | no | date | Last modification date |
-| `supersedes` | no | string | RFC ID this replaces |
-| `sections` | yes | array | Ordered sections with clause refs |
-| `changelog` | no | array | Version history |
+| Field        | Required | Type   | Description                            |
+| ------------ | -------- | ------ | -------------------------------------- |
+| `rfc_id`     | yes      | string | Unique identifier `RFC-NNNN`           |
+| `title`      | yes      | string | Human-readable title                   |
+| `version`    | yes      | string | Semantic version `X.Y.Z`               |
+| `status`     | yes      | enum   | `draft` \| `normative` \| `deprecated` |
+| `phase`      | yes      | enum   | `spec` \| `impl` \| `test` \| `stable` |
+| `owners`     | yes      | array  | List of responsible parties            |
+| `created`    | yes      | date   | Creation date                          |
+| `updated`    | no       | date   | Last modification date                 |
+| `supersedes` | no       | string | RFC ID this replaces                   |
+| `sections`   | yes      | array  | Ordered sections with clause refs      |
+| `changelog`  | no       | array  | Version history                        |
 
 ### Clause (JSON)
 
@@ -164,16 +165,16 @@ queue → active → done
 }
 ```
 
-| Field | Required | Type | Description |
-|-------|----------|------|-------------|
-| `clause_id` | yes | string | Unique within RFC `C-NAME` |
-| `title` | yes | string | Human-readable title |
-| `kind` | yes | enum | `normative` \| `informative` |
-| `status` | no | enum | `active` \| `superseded` \| `deprecated` (default: `active`) |
-| `text` | yes | string | Clause content (Markdown) |
-| `since` | no | string | Version introduced |
-| `superseded_by` | no | string | Clause ID that replaces this |
-| `anchors` | no | array | Cross-reference targets |
+| Field           | Required | Type   | Description                                                  |
+| --------------- | -------- | ------ | ------------------------------------------------------------ |
+| `clause_id`     | yes      | string | Unique within RFC `C-NAME`                                   |
+| `title`         | yes      | string | Human-readable title                                         |
+| `kind`          | yes      | enum   | `normative` \| `informative`                                 |
+| `status`        | no       | enum   | `active` \| `superseded` \| `deprecated` (default: `active`) |
+| `text`          | yes      | string | Clause content (Markdown)                                    |
+| `since`         | no       | string | Version introduced                                           |
+| `superseded_by` | no       | string | Clause ID that replaces this                                 |
+| `anchors`       | no       | array  | Cross-reference targets                                      |
 
 ### ADR (TOML)
 
@@ -208,20 +209,20 @@ text = "Option B"
 status = "accepted"
 ```
 
-| Field | Required | Type | Description |
-|-------|----------|------|-------------|
-| `govctl.id` | yes | string | Unique identifier `ADR-NNNN` |
-| `govctl.title` | yes | string | Decision title |
-| `govctl.status` | yes | enum | `proposed` \| `accepted` \| `rejected` \| `superseded` |
-| `govctl.date` | yes | date | Decision date |
-| `govctl.superseded_by` | no | string | ADR ID that replaces this |
-| `govctl.refs` | no | array | Cross-references |
-| `content.context` | yes | string | Problem description |
-| `content.decision` | yes | string | Decision and rationale |
-| `content.consequences` | yes | string | Impact analysis |
-| `content.alternatives` | no | array | Options considered |
-| `content.alternatives[].text` | yes | string | Option description |
-| `content.alternatives[].status` | no | enum | `considered` \| `rejected` \| `accepted` |
+| Field                           | Required | Type   | Description                                            |
+| ------------------------------- | -------- | ------ | ------------------------------------------------------ |
+| `govctl.id`                     | yes      | string | Unique identifier `ADR-NNNN`                           |
+| `govctl.title`                  | yes      | string | Decision title                                         |
+| `govctl.status`                 | yes      | enum   | `proposed` \| `accepted` \| `rejected` \| `superseded` |
+| `govctl.date`                   | yes      | date   | Decision date                                          |
+| `govctl.superseded_by`          | no       | string | ADR ID that replaces this                              |
+| `govctl.refs`                   | no       | array  | Cross-references                                       |
+| `content.context`               | yes      | string | Problem description                                    |
+| `content.decision`              | yes      | string | Decision and rationale                                 |
+| `content.consequences`          | yes      | string | Impact analysis                                        |
+| `content.alternatives`          | no       | array  | Options considered                                     |
+| `content.alternatives[].text`   | yes      | string | Option description                                     |
+| `content.alternatives[].status` | no       | enum   | `considered` \| `rejected` \| `accepted`               |
 
 ### Work Item (TOML)
 
@@ -253,20 +254,20 @@ text = "Second criterion"
 status = "pending"
 ```
 
-| Field | Required | Type | Description |
-|-------|----------|------|-------------|
-| `govctl.id` | yes | string | Unique identifier `WI-YYYY-MM-DD-NNN` |
-| `govctl.title` | yes | string | Work item title |
-| `govctl.status` | yes | enum | `queue` \| `active` \| `done` \| `cancelled` |
-| `govctl.created` | yes | date | Creation date |
-| `govctl.started` | no | date | When work began |
-| `govctl.completed` | no | date | When work finished |
-| `govctl.refs` | no | array | Cross-references |
-| `content.description` | yes | string | Work description |
-| `content.notes` | no | string | Progress notes |
-| `content.acceptance_criteria` | no | array | Completion checklist |
-| `content.acceptance_criteria[].text` | yes | string | Criterion text |
-| `content.acceptance_criteria[].status` | no | enum | `pending` \| `done` \| `cancelled` |
+| Field                                  | Required | Type   | Description                                  |
+| -------------------------------------- | -------- | ------ | -------------------------------------------- |
+| `govctl.id`                            | yes      | string | Unique identifier `WI-YYYY-MM-DD-NNN`        |
+| `govctl.title`                         | yes      | string | Work item title                              |
+| `govctl.status`                        | yes      | enum   | `queue` \| `active` \| `done` \| `cancelled` |
+| `govctl.created`                       | yes      | date   | Creation date                                |
+| `govctl.started`                       | no       | date   | When work began                              |
+| `govctl.completed`                     | no       | date   | When work finished                           |
+| `govctl.refs`                          | no       | array  | Cross-references                             |
+| `content.description`                  | yes      | string | Work description                             |
+| `content.notes`                        | no       | string | Progress notes                               |
+| `content.acceptance_criteria`          | no       | array  | Completion checklist                         |
+| `content.acceptance_criteria[].text`   | yes      | string | Criterion text                               |
+| `content.acceptance_criteria[].status` | no       | enum   | `pending` \| `done` \| `cancelled`           |
 
 ---
 

@@ -9,20 +9,22 @@ use crate::model::{
     WorkItemStatus,
 };
 use crate::ui;
-use crate::write::today;
+use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
 
 /// Initialize govctl project
-pub fn init_project(config: &Config, force: bool) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     let config_path = std::path::Path::new("govctl.toml");
 
-    if config_path.exists() && !force {
+    if config_path.exists() && !force && !op.is_preview() {
         anyhow::bail!("govctl.toml already exists (use -f to overwrite)");
     }
 
     // Write config
-    std::fs::write(config_path, Config::default_toml())?;
-    ui::created_path(config_path);
+    write_file(config_path, Config::default_toml(), op)?;
+    if !op.is_preview() {
+        ui::created_path(config_path);
+    }
 
     // Create directories
     let dirs = [
@@ -36,26 +38,30 @@ pub fn init_project(config: &Config, force: bool) -> anyhow::Result<Vec<Diagnost
     ];
 
     for dir in dirs {
-        std::fs::create_dir_all(dir)?;
-        ui::created_path(dir);
+        create_dir_all(dir, op)?;
+        if !op.is_preview() {
+            ui::created_path(dir);
+        }
     }
 
-    ui::success("Project initialized");
+    if !op.is_preview() {
+        ui::success("Project initialized");
+    }
     Ok(vec![])
 }
 
 /// Create a new artifact
-pub fn create(config: &Config, target: &NewTarget) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn create(config: &Config, target: &NewTarget, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     match target {
-        NewTarget::Rfc { title, id } => create_rfc(config, title, id.as_deref()),
+        NewTarget::Rfc { title, id } => create_rfc(config, title, id.as_deref(), op),
         NewTarget::Clause {
             clause_id,
             title,
             section,
             kind,
-        } => create_clause(config, clause_id, title, section, *kind),
-        NewTarget::Adr { title } => create_adr(config, title),
-        NewTarget::Work { title, active } => create_work_item(config, title, *active),
+        } => create_clause(config, clause_id, title, section, *kind, op),
+        NewTarget::Adr { title } => create_adr(config, title, op),
+        NewTarget::Work { title, active } => create_work_item(config, title, *active, op),
     }
 }
 
@@ -64,6 +70,7 @@ fn create_rfc(
     config: &Config,
     title: &str,
     manual_id: Option<&str>,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let rfcs_dir = config.rfc_dir();
 
@@ -74,8 +81,8 @@ fn create_rfc(
             if !id.starts_with("RFC-") {
                 anyhow::bail!("RFC ID must start with 'RFC-' (got: {id})");
             }
-            // Check for collision
-            if rfcs_dir.join(id).exists() {
+            // Check for collision (skip in preview mode)
+            if !op.is_preview() && rfcs_dir.join(id).exists() {
                 anyhow::bail!("RFC already exists: {id}");
             }
             id.to_string()
@@ -103,13 +110,13 @@ fn create_rfc(
     let rfc_dir = rfcs_dir.join(&rfc_id);
     let clauses_dir = rfc_dir.join("clauses");
 
-    // Final collision check (handles race conditions)
-    if rfc_dir.exists() {
+    // Final collision check (skip in preview mode)
+    if !op.is_preview() && rfc_dir.exists() {
         anyhow::bail!("RFC already exists: {}", rfc_dir.display());
     }
 
     // Create directories
-    std::fs::create_dir_all(&clauses_dir)?;
+    create_dir_all(&clauses_dir, op)?;
 
     // Create rfc.json
     let rfc = RfcSpec {
@@ -147,10 +154,12 @@ fn create_rfc(
 
     let rfc_json = rfc_dir.join("rfc.json");
     let content = serde_json::to_string_pretty(&rfc)?;
-    std::fs::write(&rfc_json, content)?;
+    write_file(&rfc_json, &content, op)?;
 
-    ui::created("RFC", &rfc_json);
-    ui::sub_info(format!("Clauses dir: {}", clauses_dir.display()));
+    if !op.is_preview() {
+        ui::created("RFC", &rfc_json);
+        ui::sub_info(format!("Clauses dir: {}", clauses_dir.display()));
+    }
 
     Ok(vec![])
 }
@@ -162,6 +171,7 @@ fn create_clause(
     title: &str,
     section: &str,
     kind: ClauseKind,
+    op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     // Parse clause_id (RFC-0001:C-NAME)
     let parts: Vec<&str> = clause_id.split(':').collect();
@@ -196,7 +206,7 @@ fn create_clause(
         .join(format!("{clause_name}.json"));
 
     let content = serde_json::to_string_pretty(&clause)?;
-    std::fs::write(&clause_path, content)?;
+    write_file(&clause_path, &content, op)?;
 
     // Update RFC to include clause in section
     let mut rfc: RfcSpec = serde_json::from_str(&std::fs::read_to_string(&rfc_json)?)?;
@@ -217,22 +227,24 @@ fn create_clause(
 
     // Write updated RFC
     let rfc_content = serde_json::to_string_pretty(&rfc)?;
-    std::fs::write(&rfc_json, rfc_content)?;
+    write_file(&rfc_json, &rfc_content, op)?;
 
-    ui::created("clause", &clause_path);
-    ui::sub_info(format!(
-        "Added to section '{}', path: {}",
-        section, clause_rel_path
-    ));
+    if !op.is_preview() {
+        ui::created("clause", &clause_path);
+        ui::sub_info(format!(
+            "Added to section '{}', path: {}",
+            section, clause_rel_path
+        ));
+    }
 
     Ok(vec![])
 }
 
 /// Create a new ADR
-fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
+fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     // Find next ADR number
     let adr_dir = config.adr_dir();
-    std::fs::create_dir_all(&adr_dir)?;
+    create_dir_all(&adr_dir, op)?;
 
     let mut max_num = 0u32;
     if let Ok(entries) = std::fs::read_dir(&adr_dir) {
@@ -278,16 +290,24 @@ fn create_adr(config: &Config, title: &str) -> anyhow::Result<Vec<Diagnostic>> {
     };
 
     let content = toml::to_string_pretty(&spec)?;
-    std::fs::write(&adr_path, content)?;
-    ui::created("ADR", &adr_path);
+    write_file(&adr_path, &content, op)?;
+
+    if !op.is_preview() {
+        ui::created("ADR", &adr_path);
+    }
 
     Ok(vec![])
 }
 
 /// Create a new work item
-fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Result<Vec<Diagnostic>> {
+fn create_work_item(
+    config: &Config,
+    title: &str,
+    active: bool,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
     let work_dir = config.work_dir();
-    std::fs::create_dir_all(&work_dir)?;
+    create_dir_all(&work_dir, op)?;
 
     let date = today();
     let slug = slugify(title);
@@ -323,7 +343,7 @@ fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Resul
     let mut filename = format!("{date}-{slug}.toml");
     let mut work_path = work_dir.join(&filename);
 
-    if work_path.exists() {
+    if !op.is_preview() && work_path.exists() {
         filename = format!("{date}-{slug}-{next_seq}.toml");
         work_path = work_dir.join(&filename);
     }
@@ -357,8 +377,11 @@ fn create_work_item(config: &Config, title: &str, active: bool) -> anyhow::Resul
     };
 
     let content = toml::to_string_pretty(&spec)?;
-    std::fs::write(&work_path, content)?;
-    ui::created("work item", &work_path);
+    write_file(&work_path, &content, op)?;
+
+    if !op.is_preview() {
+        ui::created("work item", &work_path);
+    }
 
     Ok(vec![])
 }

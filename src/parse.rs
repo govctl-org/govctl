@@ -3,6 +3,8 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{AdrEntry, AdrSpec, WorkItemEntry, WorkItemSpec};
+use crate::ui;
+use crate::write::WriteOp;
 use std::path::Path;
 
 /// Load all ADRs from the adr directory
@@ -59,7 +61,7 @@ pub fn load_adr(path: &Path) -> Result<AdrEntry, Diagnostic> {
 }
 
 /// Write an ADR to TOML file
-pub fn write_adr(path: &Path, spec: &AdrSpec) -> Result<(), Diagnostic> {
+pub fn write_adr(path: &Path, spec: &AdrSpec, op: WriteOp) -> Result<(), Diagnostic> {
     let content = toml::to_string_pretty(spec).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -68,13 +70,20 @@ pub fn write_adr(path: &Path, spec: &AdrSpec) -> Result<(), Diagnostic> {
         )
     })?;
 
-    std::fs::write(path, content).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
+    match op {
+        WriteOp::Execute => {
+            std::fs::write(path, content).map_err(|e| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    e.to_string(),
+                    path.display().to_string(),
+                )
+            })?;
+        }
+        WriteOp::Preview => {
+            ui::dry_run_file_preview(path, &content);
+        }
+    }
 
     Ok(())
 }
@@ -133,7 +142,7 @@ pub fn load_work_item(path: &Path) -> Result<WorkItemEntry, Diagnostic> {
 }
 
 /// Write a work item to TOML file
-pub fn write_work_item(path: &Path, spec: &WorkItemSpec) -> Result<(), Diagnostic> {
+pub fn write_work_item(path: &Path, spec: &WorkItemSpec, op: WriteOp) -> Result<(), Diagnostic> {
     let content = toml::to_string_pretty(spec).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -142,13 +151,20 @@ pub fn write_work_item(path: &Path, spec: &WorkItemSpec) -> Result<(), Diagnosti
         )
     })?;
 
-    std::fs::write(path, content).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
+    match op {
+        WriteOp::Execute => {
+            std::fs::write(path, content).map_err(|e| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    e.to_string(),
+                    path.display().to_string(),
+                )
+            })?;
+        }
+        WriteOp::Preview => {
+            ui::dry_run_file_preview(path, &content);
+        }
+    }
 
     Ok(())
 }

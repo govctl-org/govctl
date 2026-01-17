@@ -299,7 +299,7 @@ pub fn error(msg: impl Display) {
     }
 }
 
-/// Format a dry-run preview header
+/// Format a dry-run preview header (for render commands)
 pub fn dry_run_preview(path: &Path) {
     if use_colors() {
         eprintln!("{}: {}", "Would write".yellow(), path.display().cyan());
@@ -317,6 +317,60 @@ pub fn preview_line(line: &str) {
 /// Format preview truncation
 pub fn preview_truncated() {
     eprintln!("...");
+}
+
+/// Format a dry-run file write preview (for SSOT commands)
+pub fn dry_run_file_preview(path: &Path, content: &str) {
+    if use_colors() {
+        eprintln!("{}: {}", "Would write".yellow(), path.display().cyan());
+    } else {
+        eprintln!("Would write: {}", path.display());
+    }
+    // Show first 20 lines of content
+    for line in content.lines().take(20) {
+        eprintln!("  {}", line);
+    }
+    if content.lines().count() > 20 {
+        eprintln!("  ...");
+    }
+}
+
+/// Format a dry-run directory creation preview
+pub fn dry_run_mkdir(path: &Path) {
+    if use_colors() {
+        eprintln!("{}: {}", "Would create dir".yellow(), path.display().cyan());
+    } else {
+        eprintln!("Would create dir: {}", path.display());
+    }
+}
+
+/// Format a dry-run file move preview
+pub fn dry_run_move(from: &Path, to: &Path) {
+    if use_colors() {
+        eprintln!(
+            "{}: {} -> {}",
+            "Would move".yellow(),
+            from.display().cyan(),
+            to.display().cyan()
+        );
+    } else {
+        eprintln!("Would move: {} -> {}", from.display(), to.display());
+    }
+}
+
+/// Format a dry-run operation summary
+pub fn dry_run_summary(kind: &str, id: &str, action: &str) {
+    if use_colors() {
+        eprintln!(
+            "{} {} {}: {}",
+            "Would".yellow(),
+            action,
+            kind,
+            id.cyan().bold()
+        );
+    } else {
+        eprintln!("Would {} {}: {}", action, kind, id);
+    }
 }
 
 /// Format a diagnostic message
