@@ -1,0 +1,32 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-17-028"
+title = "Add prefix-based changelog category parsing"
+status = "active"
+created = "2026-01-17"
+started = "2026-01-17"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Parse prefix from change string (add:, fix:, changed:, deprecated:, removed:, security:)"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Route changes to correct changelog category based on prefix"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Validate unknown prefixes with helpful error message"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "Default to added category when no prefix"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "pending"
