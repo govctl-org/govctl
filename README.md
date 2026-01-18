@@ -57,6 +57,13 @@ govctl enforces **phase discipline** on software development:
 1. **RFC is the source of truth** — No implementation without specification
 2. **Phases are enforced** — Each phase has explicit gates and invariants
 3. **Governance is executable** — Rules are checked, not suggested
+4. **Work is traceable** — Tasks link back to the specs that authorized them
+
+govctl manages three artifact types:
+
+- **RFCs** — Specifications that must exist before implementation
+- **ADRs** — Architectural decisions with explicit consequences
+- **Work Items** — Tracked tasks tied to governance artifacts
 
 ```
 ┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
@@ -113,6 +120,7 @@ For complete documentation, see the [User Guide](https://govctl-org.github.io/go
 - **Not a documentation editor** — govctl enforces structure, not style
 - **Not about "faster coding"** — govctl is about _correct_ coding
 - **Not a framework** — govctl is a constraint system
+- **Not a general issue tracker** — Work items exist to trace work back to specs, not to replace Jira
 
 ---
 
@@ -123,6 +131,8 @@ govctl doesn't need a dedicated [MCP (Model Context Protocol)](https://modelcont
 Modern AI coding agents (Claude, Cursor, Codex, etc.) can already invoke shell commands. Every govctl operation is a single CLI call. MCP would add complexity without adding capability.
 
 The CLI is the universal interface. Every shell-capable agent already speaks it.
+
+**For Claude/Cursor users:** `govctl init` installs a `/gov <task>` command — a complete governed workflow in one invocation.
 
 ---
 

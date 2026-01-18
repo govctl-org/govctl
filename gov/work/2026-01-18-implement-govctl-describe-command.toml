@@ -1,0 +1,39 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-18-003"
+title = "Implement govctl describe command"
+status = "done"
+created = "2026-01-18"
+started = "2026-01-18"
+completed = "2026-01-18"
+refs = ["ADR-0015"]
+
+[content]
+description = """
+Implement the `govctl describe` command per [[ADR-0015]].
+
+Two modes:
+1. Static mode (`--json`): Machine-readable command catalog with semantic guidance
+2. Context-aware mode (`--context --json`): Project state with suggested next actions
+
+This enables AI agents to understand govctl without MCP complexity."""
+
+[[content.acceptance_criteria]]
+text = "`govctl describe --json` outputs machine-readable command catalog"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`govctl describe --context --json` outputs project state with suggested actions"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Command metadata includes `when_to_use` semantic guidance"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "All existing commands covered in describe output"
+status = "done"
+category = "added"

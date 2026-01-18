@@ -1,6 +1,7 @@
 //! Command implementations.
 
 pub mod check;
+pub mod describe;
 pub mod edit;
 pub mod lifecycle;
 pub mod list;

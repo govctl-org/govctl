@@ -1,0 +1,84 @@
+[govctl]
+schema = 1
+id = "ADR-0015"
+title = "Context-aware self-describing CLI for agent discoverability"
+status = "accepted"
+date = "2026-01-18"
+refs = ["RFC-0000"]
+
+[content]
+context = """
+AI coding agents (Claude, Cursor, Codex, etc.) can invoke shell commands, making govctl immediately usable. However, agents lack semantic understanding of *when* to use which command and *why*.
+
+User feedback: "I need to tell the agent in my prompt what this tool is and when to run it."
+
+Current solutions:
+1. MCP (Model Context Protocol) — adds structured tool definitions, but requires server setup, process management, and creates a parallel interface to maintain
+2. Agent guide files (`.claude/CLAUDE.md`) — static, requires manual updates, doesn't reflect current project state
+3. `--help` output — describes syntax, not semantics or workflow context
+
+The core problem: **discovery and context-awareness**, not invocation. Agents need to understand govctl's philosophy, command purposes, and what actions are relevant given current project state."""
+decision = """
+Add a `govctl describe` command with two modes:
+
+**1. Static mode (default):**
+```bash
+govctl describe --json
+```
+
+Outputs machine-readable JSON containing:
+- `version`: govctl version
+- `purpose`: one-line description of govctl's role
+- `philosophy`: core principles (RFC supremacy, phase discipline)
+- `commands[]`: for each command:
+  - `name`: command name (e.g., "new rfc", "advance")
+  - `purpose`: what it does
+  - `when_to_use`: semantic guidance on when to invoke
+  - `example`: concrete usage
+  - `prerequisites`: what must be true before running
+- `workflow`: typical command sequence for common tasks
+
+**2. Context-aware mode:**
+```bash
+govctl describe --context --json
+```
+
+Reads current project state and outputs:
+- `project_state`: current RFCs, ADRs, work items with their statuses/phases
+- `suggested_actions[]`: contextually relevant commands with reasons
+  - Example: "RFC-0001 is in impl phase. If implementation complete, run `govctl advance RFC-0001 test`"
+- `warnings[]`: governance issues detected (stale items, blocked transitions)
+
+**Implementation:**
+- Command metadata derived from existing clap `#[command(about = "...")]` attributes where possible
+- Semantic guidance (`when_to_use`) defined as static data
+- Context mode reuses `status` and `list` logic for project state
+- Output format follows JSON Schema for predictable parsing"""
+consequences = """
+**Positive:**
+- Agents gain semantic understanding without MCP complexity
+- Single interface (CLI) — no parallel implementation to maintain
+- Context-aware mode reduces agent trial-and-error
+- Works with any shell-capable agent (not limited to MCP-compatible tools)
+- Self-documenting: `govctl describe` output stays in sync with actual commands
+- Distribution unchanged: `cargo install govctl` is all users need
+
+**Negative:**
+- Additional ~200-300 lines of code for command metadata and describe logic
+- Semantic guidance (`when_to_use`) must be manually authored and maintained
+- JSON output format becomes a compatibility surface (changes need care)
+
+**Neutral:**
+- Agents must call `govctl describe` once per session (cacheable)
+- Plain `--help` remains available for human users
+- Does not preclude future MCP integration if demand materializes
+
+**Comparison to MCP:**
+
+| Aspect              | `govctl describe`        | MCP                          |
+|---------------------|--------------------------|------------------------------|
+| Distribution        | `cargo install govctl`   | Server config + process mgmt |
+| Agent compatibility | Any shell-capable agent  | MCP-compatible agents only   |
+| Maintenance         | Single codebase          | CLI + MCP server             |
+| Context awareness   | Built-in                 | Separate implementation      |
+| Works offline       | Yes                      | Depends                      |"""

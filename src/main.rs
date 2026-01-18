@@ -274,6 +274,16 @@ enum Commands {
         date: Option<String>,
     },
 
+    /// Output machine-readable CLI metadata for agents
+    Describe {
+        /// Include project state and suggested actions
+        #[arg(long)]
+        context: bool,
+        /// Output format (currently only json is supported)
+        #[arg(long, default_value = "json")]
+        format: String,
+    },
+
     /// Launch interactive TUI dashboard
     #[cfg(feature = "tui")]
     Tui,
@@ -531,6 +541,7 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         Commands::Release { version, date } => {
             cmd::lifecycle::cut_release(&config, version, date.as_deref(), op)
         }
+        Commands::Describe { context, format: _ } => cmd::describe::describe(&config, *context),
         #[cfg(feature = "tui")]
         Commands::Tui => {
             tui::run(&config)?;
