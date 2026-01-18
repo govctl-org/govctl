@@ -9,6 +9,7 @@
   <a href="https://crates.io/crates/govctl"><img src="https://img.shields.io/crates/v/govctl.svg" alt="Crates.io"></a>
   <a href="https://coderabbit.ai"><img src="https://img.shields.io/coderabbit/prs/github/govctl-org/govctl?label=CodeRabbit" alt="CodeRabbit"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://github.com/govctl-org/govctl"><img src="https://img.shields.io/badge/governed%20by-govctl-6366F1" alt="governed by govctl"></a>
 </p>
 
 <p align="center">
@@ -108,6 +109,12 @@ govctl new rfc "Feature Title"
 
 # Validate
 govctl check
+```
+
+Optionally, show the project is governed by govctl:
+
+```markdown
+[![governed by govctl](https://img.shields.io/badge/governed%20by-govctl-6366F1)](https://github.com/govctl-org/govctl)
 ```
 
 For complete documentation, see the [User Guide](https://govctl-org.github.io/govctl/).
