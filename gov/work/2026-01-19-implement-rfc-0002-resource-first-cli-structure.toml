@@ -14,7 +14,8 @@ refs = [
 description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?"""
-notes = ["""
+notes = [
+    """
 ## Implementation Progress Summary
 
 **Phase 1 Complete**: Core architectural foundation implemented.
@@ -40,7 +41,72 @@ To complete [[RFC-0002]]:
 - Mark old verb-first commands with `#[command(hide = true)]`
 - Emit deprecation warnings in old command paths
 
-The architectural pattern is proven and working. Phase 2 is mechanical repetition."""]
+The architectural pattern is proven and working. Phase 2 is mechanical repetition.""",
+    """
+## Design Questions for Discussion
+
+### Current Implementation Status
+
+**✅ Completed:**
+1. Resource-first command structure (`rfc`, `adr`, `work`, `clause` subcommands)
+2. Canonical command pattern (zero duplication)
+3. All new commands working (`govctl rfc list`, `govctl work new`, etc.)
+4. Documentation updated to new syntax
+
+**🤔 Design Decision Needed:**
+
+### Question 1: Should we keep `list` and `new` as global shortcuts?
+
+**Current state:** Both are kept and delegate to resource-first implementations.
+
+**RFC-0002 says:** Only these are global commands:
+- `init`, `check`, `status`, `render`, `describe`, `completions`
+
+**Options:**
+
+**A) Keep shortcuts (current):**
+```bash
+govctl list rfc        # shortcut
+govctl rfc list        # canonical
+govctl new work "..."  # shortcut
+govctl work new "..."  # canonical
+```
+Pros: Backwards compatible, convenient for users
+Cons: Two ways to do same thing, not fully compliant with RFC-0002
+
+**B) Remove shortcuts (strict RFC-0002):**
+```bash
+govctl rfc list        # only way
+govctl work new "..."  # only way
+```
+Pros: Clean, single canonical way, RFC compliant
+Cons: Breaking change for existing users/scripts
+
+**C) Deprecate shortcuts with warnings:**
+Keep for now, emit warnings, remove in next major version.
+
+### Question 2: What about other potential shortcuts?
+
+If we keep `list` and `new`, should we also keep:
+- `govctl mv WI-xxx active` → `govctl work move WI-xxx active`
+- `govctl tick WI-xxx ...` → `govctl work tick WI-xxx ...`
+
+These are common operations but RFC-0002 doesn't designate them as global.
+
+### Recommendation
+
+**Option B (Remove shortcuts)** aligns best with RFC-0002's design:
+- Clear single canonical syntax
+- Simpler mental model for new users
+- Less code to maintain
+- Shell aliases can provide personal shortcuts
+
+Users who want shortcuts can add to their shell:
+```bash
+alias gl='govctl rfc list'
+alias gw='govctl work'
+```""",
+]
 
 [[content.acceptance_criteria]]
 text = "All resource commands use <resource> <verb> structure per [[RFC-0002:C-RESOURCE-MODEL]]"
