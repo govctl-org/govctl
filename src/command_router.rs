@@ -581,9 +581,7 @@ impl CanonicalCommand {
                 };
                 cmd::new::create(config, &target, op)
             }
-            Self::AdrList { status } => {
-                cmd::list::list(config, ListTarget::Adr, status.as_deref())
-            }
+            Self::AdrList { status } => cmd::list::list(config, ListTarget::Adr, status.as_deref()),
             Self::AdrGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
             Self::AdrSet {
                 id,
@@ -601,7 +599,9 @@ impl CanonicalCommand {
                 id,
                 field,
                 match_opts,
-            } => cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op),
+            } => {
+                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
+            }
             Self::AdrAccept { id } => cmd::lifecycle::accept_adr(config, id, op),
             Self::AdrReject { id } => cmd::lifecycle::reject_adr(config, id, op),
             Self::AdrDeprecate { id } => cmd::lifecycle::deprecate(config, id, op),
@@ -611,7 +611,14 @@ impl CanonicalCommand {
                 field,
                 match_opts,
                 status,
-            } => cmd::edit::tick_item(config, id, field, &match_opts.as_match_options(), *status, op),
+            } => cmd::edit::tick_item(
+                config,
+                id,
+                field,
+                &match_opts.as_match_options(),
+                *status,
+                op,
+            ),
 
             // Work item commands
             Self::WorkNew { title, active } => {
@@ -641,7 +648,9 @@ impl CanonicalCommand {
                 id,
                 field,
                 match_opts,
-            } => cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op),
+            } => {
+                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
+            }
             Self::WorkMove { file_or_id, status } => {
                 cmd::move_::move_item(config, file_or_id, *status, op)
             }
@@ -650,7 +659,14 @@ impl CanonicalCommand {
                 field,
                 match_opts,
                 status,
-            } => cmd::edit::tick_item(config, id, field, &match_opts.as_match_options(), *status, op),
+            } => cmd::edit::tick_item(
+                config,
+                id,
+                field,
+                &match_opts.as_match_options(),
+                *status,
+                op,
+            ),
             Self::WorkDelete { id, force } => cmd::edit::delete_work_item(config, id, *force, op),
 
             // Release commands
@@ -791,17 +807,11 @@ impl CanonicalCommand {
     /// Classify artifact ID and route to appropriate Deprecate variant.
     fn classify_and_route_deprecate(id: &str) -> anyhow::Result<Self> {
         Ok(if id.contains(':') {
-            Self::ClauseDeprecate {
-                id: id.to_string(),
-            }
+            Self::ClauseDeprecate { id: id.to_string() }
         } else if id.starts_with("RFC-") {
-            Self::RfcDeprecate {
-                id: id.to_string(),
-            }
+            Self::RfcDeprecate { id: id.to_string() }
         } else if id.starts_with("ADR-") {
-            Self::AdrDeprecate {
-                id: id.to_string(),
-            }
+            Self::AdrDeprecate { id: id.to_string() }
         } else {
             anyhow::bail!("Deprecate only applies to RFC, Clause, or ADR, got: {}", id)
         })

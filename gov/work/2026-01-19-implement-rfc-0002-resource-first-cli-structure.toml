@@ -22,7 +22,7 @@ category = "added"
 
 [[content.acceptance_criteria]]
 text = "Canonical command pattern eliminates duplication"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
