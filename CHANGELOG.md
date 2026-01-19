@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New clauses get 'since' field set to RFC's current version (WI-2026-01-19-002)
+- No W0102 warnings for newly created clauses (WI-2026-01-19-002)
 - CLI command 'govctl delete clause' implemented with proper argument parsing (WI-2026-01-19-001)
 - Safety check: Only draft RFCs allow clause deletion (WI-2026-01-19-001)
 - Atomically removes clause file and updates parent RFC's clauses array (WI-2026-01-19-001)

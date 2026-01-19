@@ -1098,7 +1098,7 @@ pub fn delete_clause(
     delete_file(&clause_path, op)?;
 
     if !op.is_preview() {
-        ui::success(&format!("Deleted clause {}", clause_id));
+        ui::success(format!("Deleted clause {}", clause_id));
     }
 
     Ok(vec![])

@@ -137,7 +137,7 @@ pub fn delete_file(path: &Path, op: WriteOp) -> Result<()> {
                 .with_context(|| format!("Failed to delete file: {}", path.display()))?;
         }
         WriteOp::Preview => {
-            ui::info(&format!("[DRY RUN] Would delete: {}", path.display()));
+            ui::info(format!("[DRY RUN] Would delete: {}", path.display()));
         }
     }
     Ok(())
