@@ -1,0 +1,45 @@
+---
+source: tests/cli_snapshots.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl new work Keep this work item
+Created work item: gov/work/<DATE>-keep-this-work-item.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl new work Delete this work item
+Created work item: gov/work/<DATE>-delete-this-work-item.toml
+  ID: WI-<DATE>-002
+exit: 0
+
+$ govctl list work
+┌───────────────────┬────────┬───────────────────────┐
+│ ID                ┆ Status ┆ Title                 │
+╞═══════════════════╪════════╪═══════════════════════╡
+│ WI-<DATE>-001 ┆ queue  ┆ Keep this work item   │
+├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
+│ WI-<DATE>-002 ┆ queue  ┆ Delete this work item │
+└───────────────────┴────────┴───────────────────────┘
+exit: 0
+
+$ govctl delete work WI-<DATE>-002 -f
+✓ Deleted work item WI-<DATE>-002
+exit: 0
+
+$ govctl list work
+┌───────────────────┬────────┬─────────────────────┐
+│ ID                ┆ Status ┆ Title               │
+╞═══════════════════╪════════╪═════════════════════╡
+│ WI-<DATE>-001 ┆ queue  ┆ Keep this work item │
+└───────────────────┴────────┴─────────────────────┘
+exit: 0
+
+$ govctl check
+Checked:
+  0 RFCs
+  0 clauses
+  0 ADRs
+  1 work items
+
+warning[W0108]: Work item 'WI-<DATE>-001' has placeholder or empty description (gov/work/<DATE>-keep-this-work-item.toml)
+exit: 0

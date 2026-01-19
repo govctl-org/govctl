@@ -1029,4 +1029,3 @@ fn test_delete_work_safeguard_referenced() {
     let output = run_dynamic_commands(temp_dir.path(), &delete_commands);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
-

@@ -1,0 +1,25 @@
+---
+source: tests/cli_snapshots.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl delete clause RFC-0001:C-DELETE -f
+✓ Deleted clause RFC-0001:C-DELETE
+exit: 0
+
+$ govctl list clause RFC-0001
+┌────────┬──────────┬───────────┬────────┬──────────────────┐
+│ Clause ┆ RFC      ┆ Kind      ┆ Status ┆ Title            │
+╞════════╪══════════╪═══════════╪════════╪══════════════════╡
+│ C-KEEP ┆ RFC-0001 ┆ normative ┆ active ┆ Keep This Clause │
+└────────┴──────────┴───────────┴────────┴──────────────────┘
+exit: 0
+
+$ govctl check
+Checked:
+  1 RFCs
+  1 clauses
+  0 ADRs
+  0 work items
+
+✓ All checks passed
+exit: 0

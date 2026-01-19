@@ -1144,7 +1144,7 @@ pub fn delete_work_item(
             return proceed_with_deletion(&entry.path, &wi.govctl.id, force, op);
         }
     };
-    
+
     let index = &load_result.index;
     let mut referenced_by = Vec::new();
 

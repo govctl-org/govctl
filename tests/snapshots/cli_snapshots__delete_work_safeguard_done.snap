@@ -1,0 +1,24 @@
+---
+source: tests/cli_snapshots.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl new work Completed work item --active
+Created work item: gov/work/<DATE>-completed-work-item.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl add WI-<DATE>-001 acceptance_criteria Test criterion
+Added 'Test criterion' to WI-<DATE>-001.acceptance_criteria
+exit: 0
+
+$ govctl tick WI-<DATE>-001 acceptance_criteria Test -s done
+Marked 'Test criterion' as done
+exit: 0
+
+$ govctl mv WI-<DATE>-001 done
+Moved <DATE>-completed-work-item.toml to done
+exit: 0
+
+$ govctl delete work WI-<DATE>-001 -f
+Error: error[E0402]: Cannot delete work item: WI-<DATE>-001 is done. Only queued work items can be deleted. Use 'mv WI-<DATE>-001 cancelled' for active items. (WI-<DATE>-001)
+exit: 1
