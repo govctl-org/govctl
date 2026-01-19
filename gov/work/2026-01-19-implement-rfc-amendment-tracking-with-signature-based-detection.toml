@@ -9,8 +9,9 @@ completed = "2026-01-19"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Implement RFC amendment tracking using content signatures. Add a signature field \
+to detect when RFC content changes, implement `govctl bump` for version bumping, \
+and display an asterisk indicator in list output for amended RFCs."""
 
 [[content.acceptance_criteria]]
 text = "Add signature field to RfcSpec model"

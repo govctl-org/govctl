@@ -9,8 +9,9 @@ completed = "2026-01-19"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+When creating new clauses via `govctl new clause`, the `since` field should be \
+automatically set to the RFC's current version. This eliminates W0102 warnings \
+for newly created clauses and ensures proper version tracking from creation."""
 
 [[content.acceptance_criteria]]
 text = "New clauses get 'since' field set to RFC's current version"

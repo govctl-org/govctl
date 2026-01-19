@@ -12,8 +12,10 @@ refs = [
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Implement the resource-first CLI structure defined in RFC-0002. Commands should \
+follow `<resource> <verb>` pattern (e.g., `govctl rfc list`, `govctl work new`). \
+This involves creating a canonical command router, adding resource subcommands, \
+and deprecating the old verb-first syntax."""
 notes = [
     """
 ## Implementation Progress Summary

@@ -13,8 +13,9 @@ refs = [
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Remove the constraint that prevents modifying RFCs with `normative = frozen`. \
+RFCs should be amendable during implementation through proper version bumping \
+and changelog documentation, following the evolution model defined in RFC-0001."""
 
 [[content.acceptance_criteria]]
 text = "Remove 'normative = frozen' validation constraint"

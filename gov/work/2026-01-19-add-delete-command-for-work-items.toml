@@ -9,8 +9,9 @@ completed = "2026-01-19"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Add a `delete work` command to remove work items. Only queue-status items can \
+be deleted. Reference checking prevents deletion of work items that are still \
+referenced by other documents to maintain referential integrity."""
 
 [[content.acceptance_criteria]]
 text = "CLI command 'delete work' implemented"

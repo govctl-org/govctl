@@ -1,0 +1,178 @@
+[govctl]
+schema = 1
+id = "ADR-0018"
+title = "Global Command Shortcuts vs Strict Resource-First Syntax"
+status = "proposed"
+date = "2026-01-19"
+refs = [
+    "RFC-0002",
+    "ADR-0017",
+]
+
+[content]
+context = """
+## Context
+
+During implementation of [[RFC-0002]], we successfully built the resource-first command structure (`govctl <resource> <verb>`). However, a design question emerged about backward compatibility with existing verb-first shortcuts.
+
+### Current Implementation
+
+Both syntaxes currently work:
+
+```bash
+# Resource-first (RFC-0002 canonical)
+govctl rfc list
+govctl work new "title"
+govctl adr accept ADR-0001
+
+# Verb-first shortcuts (legacy)
+govctl list rfc
+govctl new work "title"
+```
+
+### The Tension
+
+**[[RFC-0002:C-GLOBAL-COMMANDS]]** explicitly defines which commands should remain global:
+- `init`, `check`, `status`, `render`, `describe`, `completions`
+
+Notably **absent** from this list: `list`, `new`, and all resource-specific operations like `move`, `tick`, `accept`, etc.
+
+This suggests the RFC intentionally designed these as resource-scoped operations, not global commands.
+
+### Problem Statement
+
+Should we:
+1. Keep `list` and `new` as convenient global shortcuts that delegate to resource-first implementations?
+2. Remove them entirely and enforce strict resource-first syntax per RFC-0002?
+3. Keep them with deprecation warnings for gradual migration?
+
+### User Impact
+
+We have ~40 completed work items and governance workflows that use the old syntax. Scripts, documentation, and muscle memory are built around patterns like `govctl list rfc` and `govctl new work`.
+
+However, we are pre-1.0 (currently 0.2.0), which traditionally allows breaking changes.
+
+### Implementation Complexity
+
+Current implementation maintains both paths through the canonical command pattern, adding ~40 lines of delegation code. This works but violates the "one way to do it" principle."""
+decision = """
+## Decision: Remove shortcuts immediately (Option 2)
+
+We will **remove** `govctl list` and `govctl new` shortcuts entirely, enforcing strict resource-first syntax per [[RFC-0002]].
+
+### Rationale
+
+1. **RFC Compliance**: [[RFC-0002:C-GLOBAL-COMMANDS]] deliberately defines the exhaustive list of global commands. `list` and `new` are not on that list, indicating they should be resource-scoped.
+
+2. **Design Clarity**: The resource-first pattern (`govctl <resource> <verb>`) provides a clear, predictable structure:
+   - `govctl rfc list` - list RFCs
+   - `govctl work new` - create work item
+   - `govctl adr accept` - accept ADR
+   
+   Having two ways (`govctl list rfc` vs `govctl rfc list`) violates the "one obvious way" principle.
+
+3. **Reduced Complexity**: Maintaining both patterns adds ~40 lines of delegation code and increases cognitive load for users ("which way should I use?").
+
+4. **Pre-1.0 Window**: We're at version 0.2.0, which traditionally allows breaking changes before stabilizing at 1.0.
+
+5. **Shell Aliases Sufficient**: Users who want shortcuts can add personal aliases:
+   ```bash
+   alias gl='govctl rfc list'
+   alias gw='govctl work'
+   alias ga='govctl adr'
+   ```
+   This moves convenience to where it belongs—user preference—rather than mandating it in the tool.
+
+6. **Consistency**: If we keep `list` and `new` as globals, why not `move`, `tick`, `accept`, `reject`? The line becomes arbitrary. Resource-first is consistent across all operations.
+
+### Migration Plan
+
+Since this is a breaking change:
+
+1. **Update all documentation** to use resource-first syntax ✅ (done)
+2. **Update internal workflows** (gov.md, .claude/CLAUDE.md) ✅ (done)
+3. **Remove from Commands enum** in main.rs
+4. **Remove delegation logic** from command_router.rs
+5. **Update CHANGELOG.md** noting the breaking change
+6. **Consider**: Add migration guide in docs showing the mapping
+
+### Non-breaking Alternative Considered
+
+We could keep shortcuts with deprecation warnings (Option 3), but this:
+- Extends the transition period indefinitely
+- Keeps dual-path complexity in codebase
+- Delays the inevitable
+
+Given pre-1.0 status, clean break is preferable."""
+consequences = """
+## Consequences
+
+### Positive
+
+- **Single Canonical Syntax**: Only one way to invoke commands reduces confusion
+- **RFC Compliance**: Aligns perfectly with [[RFC-0002:C-GLOBAL-COMMANDS]]
+- **Simpler Codebase**: ~40 fewer lines of delegation logic to maintain
+- **Clearer Documentation**: Examples show only one pattern, easier to teach
+- **Predictable**: `govctl <resource> <verb>` works for all operations without exceptions
+- **Tab Completion**: Clearer completion tree (type `govctl ` → see resources, not mix of resources + verbs)
+
+### Negative
+
+- **Breaking Change**: Existing scripts using `govctl list` or `govctl new` will break
+  - Mitigation: We're pre-1.0, document in CHANGELOG
+- **More Keystrokes**: `govctl rfc list` is longer than `govctl list rfc`
+  - Mitigation: Shell aliases for personal shortcuts
+- **Learning Curve**: Users familiar with old syntax need to adjust
+  - Mitigation: Clear error messages suggesting correct syntax
+
+### Migration Required
+
+Users need to update:
+```bash
+# Old → New
+govctl list rfc        → govctl rfc list
+govctl list adr        → govctl adr list  
+govctl list work       → govctl work list
+govctl list clause     → govctl clause list
+govctl new rfc "..."   → govctl rfc new "..."
+govctl new adr "..."   → govctl adr new "..."
+govctl new work "..."  → govctl work new "..."
+govctl new clause ...  → govctl clause new ...
+```
+
+### Future Extension
+
+This decision does NOT prevent adding convenience aliases later if user demand warrants it. However, any such addition would require an RFC amendment to [[RFC-0002:C-GLOBAL-COMMANDS]].
+
+### Recommendation for Users
+
+Add personal shell aliases for frequently used commands:
+```bash
+# In ~/.bashrc or ~/.zshrc
+alias gr='govctl rfc'
+alias ga='govctl adr'
+alias gw='govctl work'
+alias gc='govctl clause'
+
+# Usage becomes:
+gr list        # govctl rfc list
+gw new "task"  # govctl work new "task"
+```
+
+This provides the convenience without coupling it to the tool."""
+
+[[content.alternatives]]
+text = "Keep both syntaxes permanently"
+status = "considered"
+
+[[content.alternatives]]
+text = "Remove shortcuts immediately (strict RFC-0002)"
+status = "considered"
+
+[[content.alternatives]]
+text = "Phased deprecation (warnings now, remove in 1.0)"
+status = "considered"
+
+[[content.alternatives]]
+text = "Expand shortcuts to all common operations"
+status = "considered"
