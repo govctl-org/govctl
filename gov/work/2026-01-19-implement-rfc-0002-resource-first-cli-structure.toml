@@ -32,5 +32,5 @@ category = "added"
 
 [[content.acceptance_criteria]]
 text = "All existing tests pass with new structure"
-status = "pending"
+status = "done"
 category = "chore"
