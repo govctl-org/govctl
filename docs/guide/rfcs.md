@@ -50,7 +50,9 @@ govctl edit RFC-0010:C-SCOPE
 Accidentally created clauses can be deleted from **draft** RFCs only:
 
 ```bash
-govctl delete clause RFC-0010:C-MISTAKE -f
+govctl delete RFC-0010:C-MISTAKE -f
+# Or explicitly specify it's a clause:
+govctl delete --clause RFC-0010:C-MISTAKE -f
 ```
 
 **Safety:** Deletion is only allowed when:

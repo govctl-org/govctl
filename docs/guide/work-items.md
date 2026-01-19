@@ -96,7 +96,9 @@ govctl remove WI-2026-01-17-001 refs "obsolete" --all
 Accidentally created work items can be deleted if they're still in **queue** status:
 
 ```bash
-govctl delete work WI-2026-01-17-999 -f
+govctl delete WI-2026-01-17-999 -f
+# Or explicitly specify it's a work item:
+govctl delete --work WI-2026-01-17-999 -f
 ```
 
 **Safety:** Deletion is only allowed when:

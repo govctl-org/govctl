@@ -19,6 +19,10 @@ build:
 test:
     cargo test
 
+# Update snapshots
+update-snapshots:
+    cargo insta test --accept
+
 # Run clippy lints
 lint:
     cargo clippy --all-targets

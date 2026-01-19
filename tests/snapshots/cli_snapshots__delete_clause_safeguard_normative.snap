@@ -2,6 +2,6 @@
 source: tests/cli_snapshots.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
-$ govctl delete clause RFC-0001:C-LOCKED -f
+$ govctl delete RFC-0001:C-LOCKED -f
 Error: error[E0110]: Cannot delete clause: RFC-0001 is normative. Only draft RFCs allow clause deletion. (RFC-0001:C-LOCKED)
 exit: 1

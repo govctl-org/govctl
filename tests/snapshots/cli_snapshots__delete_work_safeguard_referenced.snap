@@ -2,6 +2,6 @@
 source: tests/cli_snapshots.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
-$ govctl delete work WI-<DATE>-001 -f
+$ govctl delete WI-<DATE>-001 -f
 Error: error[E0404]: Cannot delete work item: WI-<DATE>-001 is referenced by: WI-<DATE>-002. Remove references first. (WI-<DATE>-001)
 exit: 1

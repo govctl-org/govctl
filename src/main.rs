@@ -232,11 +232,19 @@ enum Commands {
         by: String,
     },
 
-    /// Delete an artifact (only draft clauses)
+    /// Delete an artifact
     Delete {
-        /// Target type
-        #[command(subcommand)]
-        target: DeleteTarget,
+        /// Artifact ID (e.g., RFC-0010:C-SCOPE or WI-2026-01-19-001)
+        id: String,
+        /// Force deletion without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
+        /// Explicitly specify clause deletion (optional)
+        #[arg(long, group = "artifact_type")]
+        clause: bool,
+        /// Explicitly specify work item deletion (optional)
+        #[arg(long, group = "artifact_type")]
+        work: bool,
     },
 
     /// Move work item to new status
@@ -341,26 +349,6 @@ enum NewTarget {
         /// Immediately activate the work item
         #[arg(long)]
         active: bool,
-    },
-}
-
-#[derive(Subcommand, Clone, Debug)]
-enum DeleteTarget {
-    /// Delete a clause from a draft RFC
-    Clause {
-        /// Clause ID (e.g., RFC-0010:C-SCOPE)
-        clause_id: String,
-        /// Force deletion without confirmation
-        #[arg(short = 'f', long)]
-        force: bool,
-    },
-    /// Delete a queued work item
-    Work {
-        /// Work item ID or file path
-        id: String,
-        /// Force deletion without confirmation
-        #[arg(short = 'f', long)]
-        force: bool,
     },
 }
 
@@ -546,14 +534,26 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         Commands::Reject { adr } => cmd::lifecycle::reject_adr(&config, adr, op),
         Commands::Deprecate { id } => cmd::lifecycle::deprecate(&config, id, op),
         Commands::Supersede { id, by } => cmd::lifecycle::supersede(&config, id, by, op),
-        Commands::Delete { target } => match target {
-            DeleteTarget::Clause { clause_id, force } => {
-                cmd::edit::delete_clause(&config, clause_id, *force, op)
-            }
-            DeleteTarget::Work { id, force } => {
+        Commands::Delete {
+            id,
+            force,
+            clause,
+            work,
+        } => {
+            // Auto-detect artifact type from ID format if not explicitly specified
+            let is_clause = if *clause || *work {
+                *clause // Use explicit flag if provided
+            } else {
+                // Auto-detect: clause IDs contain ':'
+                id.contains(':')
+            };
+
+            if is_clause {
+                cmd::edit::delete_clause(&config, id, *force, op)
+            } else {
                 cmd::edit::delete_work_item(&config, id, *force, op)
             }
-        },
+        }
         Commands::Move { file, status } => cmd::move_::move_item(&config, file, *status, op),
         Commands::Tick {
             id,
