@@ -232,6 +232,13 @@ enum Commands {
         by: String,
     },
 
+    /// Delete an artifact (only draft clauses)
+    Delete {
+        /// Target type
+        #[command(subcommand)]
+        target: DeleteTarget,
+    },
+
     /// Move work item to new status
     #[command(visible_alias = "mv")]
     Move {
@@ -334,6 +341,18 @@ enum NewTarget {
         /// Immediately activate the work item
         #[arg(long)]
         active: bool,
+    },
+}
+
+#[derive(Subcommand, Clone, Debug)]
+enum DeleteTarget {
+    /// Delete a clause from a draft RFC
+    Clause {
+        /// Clause ID (e.g., RFC-0010:C-SCOPE)
+        clause_id: String,
+        /// Force deletion without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
     },
 }
 
@@ -519,6 +538,11 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         Commands::Reject { adr } => cmd::lifecycle::reject_adr(&config, adr, op),
         Commands::Deprecate { id } => cmd::lifecycle::deprecate(&config, id, op),
         Commands::Supersede { id, by } => cmd::lifecycle::supersede(&config, id, by, op),
+        Commands::Delete { target } => match target {
+            DeleteTarget::Clause { clause_id, force } => {
+                cmd::edit::delete_clause(&config, clause_id, *force, op)
+            }
+        },
         Commands::Move { file, status } => cmd::move_::move_item(&config, file, *status, op),
         Commands::Tick {
             id,

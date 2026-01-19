@@ -991,6 +991,119 @@ pub fn tick_item(
     Ok(vec![])
 }
 
+/// Delete a clause from a draft RFC.
+///
+/// Safety: Only clauses in draft RFCs can be deleted per [[RFC-0000:C-STATUS-LIFECYCLE]].
+/// Atomically removes the clause JSON file and updates the parent RFC's clauses array.
+pub fn delete_clause(
+    config: &Config,
+    clause_id: &str,
+    force: bool,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    use crate::model::RfcStatus;
+    use crate::write::delete_file;
+
+    // Parse clause_id (RFC-0001:C-NAME)
+    let parts: Vec<&str> = clause_id.split(':').collect();
+    if parts.len() != 2 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            "Invalid clause ID format. Expected RFC-NNNN:C-NAME",
+            clause_id,
+        )
+        .into());
+    }
+
+    let rfc_id = parts[0];
+    let clause_name = parts[1];
+
+    // Load RFC and check status
+    let rfc_loaded = load_rfc(config, rfc_id)?;
+
+    // Safety check: Only draft RFCs allow clause deletion per [[RFC-0000:C-STATUS-LIFECYCLE]]
+    if rfc_loaded.data.status != RfcStatus::Draft {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0110RfcInvalidId,
+            format!(
+                "Cannot delete clause: {} is {}. Only draft RFCs allow clause deletion.",
+                rfc_id,
+                rfc_loaded.data.status.as_ref()
+            ),
+            clause_id,
+        )
+        .into());
+    }
+
+    // Verify clause exists
+    let clause_path = config
+        .rfc_dir()
+        .join(rfc_id)
+        .join("clauses")
+        .join(format!("{}.json", clause_name));
+
+    if !clause_path.exists() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0202ClauseNotFound,
+            format!("Clause not found: {}", clause_id),
+            clause_id,
+        )
+        .into());
+    }
+
+    // Confirmation prompt (unless force or dry-run)
+    if !force && !op.is_preview() {
+        use std::io::{self, Write};
+        print!("Delete clause {} from {}? [y/N] ", clause_name, rfc_id);
+        io::stdout().flush()?;
+
+        let mut response = String::new();
+        io::stdin().read_line(&mut response)?;
+
+        if !response.trim().eq_ignore_ascii_case("y") {
+            ui::info("Deletion cancelled");
+            return Ok(vec![]);
+        }
+    }
+
+    // Update RFC to remove clause from sections
+    let mut rfc = rfc_loaded.data.clone();
+    let clause_rel_path = format!("clauses/{}.json", clause_name);
+
+    let mut removed = false;
+    for section in &mut rfc.sections {
+        if let Some(pos) = section.clauses.iter().position(|c| c == &clause_rel_path) {
+            section.clauses.remove(pos);
+            removed = true;
+            break;
+        }
+    }
+
+    if !removed {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0202ClauseNotFound,
+            format!(
+                "Clause {} not found in any section of {}",
+                clause_name, rfc_id
+            ),
+            clause_id,
+        )
+        .into());
+    }
+
+    // Write updated RFC
+    write_rfc(&rfc_loaded.path, &rfc, op)?;
+
+    // Delete clause file
+    delete_file(&clause_path, op)?;
+
+    if !op.is_preview() {
+        ui::success(&format!("Deleted clause {}", clause_id));
+    }
+
+    Ok(vec![])
+}
+
 /// Resolve match result to a single index (tick doesn't allow multiple)
 fn resolve_single_match(
     id: &str,

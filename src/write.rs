@@ -127,6 +127,22 @@ pub fn create_dir_all(path: &Path, op: WriteOp) -> Result<()> {
     Ok(())
 }
 
+/// Delete a file, respecting WriteOp mode.
+///
+/// In Preview mode, shows what would be deleted instead of deleting.
+pub fn delete_file(path: &Path, op: WriteOp) -> Result<()> {
+    match op {
+        WriteOp::Execute => {
+            std::fs::remove_file(path)
+                .with_context(|| format!("Failed to delete file: {}", path.display()))?;
+        }
+        WriteOp::Preview => {
+            ui::info(&format!("[DRY RUN] Would delete: {}", path.display()));
+        }
+    }
+    Ok(())
+}
+
 /// Version bump level
 #[derive(Debug, Clone, Copy)]
 pub enum BumpLevel {
