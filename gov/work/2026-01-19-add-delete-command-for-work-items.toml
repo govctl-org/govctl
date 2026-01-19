@@ -14,7 +14,7 @@ be deleted. Reference checking prevents deletion of work items that are still \
 referenced by other documents to maintain referential integrity."""
 
 [[content.acceptance_criteria]]
-text = "CLI command 'delete work' implemented"
+text = "CLI command 'work delete' implemented"
 status = "done"
 category = "added"
 
@@ -31,4 +31,4 @@ category = "added"
 [[content.acceptance_criteria]]
 text = "Tests verify both successful deletion and safety rejection"
 status = "done"
-category = "added"
+category = "chore"

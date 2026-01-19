@@ -143,4 +143,4 @@ category = "chore"
 [[content.acceptance_criteria]]
 text = "Old verb-first commands removed per [[ADR-0018]]"
 status = "done"
-category = "added"
+category = "removed"

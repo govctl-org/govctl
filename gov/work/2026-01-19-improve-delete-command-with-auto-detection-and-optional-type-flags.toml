@@ -30,9 +30,9 @@ category = "added"
 [[content.acceptance_criteria]]
 text = "Tests updated"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Documentation updated"
 status = "done"
-category = "added"
+category = "chore"

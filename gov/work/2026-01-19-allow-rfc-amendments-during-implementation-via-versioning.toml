@@ -20,7 +20,7 @@ and changelog documentation, following the evolution model defined in RFC-0001."
 [[content.acceptance_criteria]]
 text = "Remove 'normative = frozen' validation constraint"
 status = "done"
-category = "added"
+category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Support RFC amendments via version bumping and changelog"
@@ -35,4 +35,4 @@ category = "chore"
 [[content.acceptance_criteria]]
 text = "Update CLAUDE.md to reflect RFC evolution model"
 status = "done"
-category = "changed"
+category = "chore"

@@ -16,9 +16,9 @@ for newly created clauses and ensures proper version tracking from creation."""
 [[content.acceptance_criteria]]
 text = "New clauses get 'since' field set to RFC's current version"
 status = "done"
-category = "added"
+category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "No W0102 warnings for newly created clauses"
 status = "done"
-category = "added"
+category = "chore"

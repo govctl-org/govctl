@@ -19,7 +19,7 @@ Future: Dynamic completion (artifact IDs, field names)"""
 [[content.acceptance_criteria]]
 text = "clap_complete dependency added"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "completions command implemented"
@@ -34,4 +34,4 @@ category = "added"
 [[content.acceptance_criteria]]
 text = "documentation added"
 status = "done"
-category = "added"
+category = "chore"

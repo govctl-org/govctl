@@ -5,20 +5,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2026-01-19
 
 ### Added
 
-- New clauses get 'since' field set to RFC's current version (WI-2026-01-19-002)
-- No W0102 warnings for newly created clauses (WI-2026-01-19-002)
-- CLI command 'govctl delete clause' implemented with proper argument parsing (WI-2026-01-19-001)
-- Safety check: Only draft RFCs allow clause deletion (WI-2026-01-19-001)
-- Atomically removes clause file and updates parent RFC's clauses array (WI-2026-01-19-001)
-- Tests pass for both successful deletion and safety rejection (WI-2026-01-19-001)
 - `govctl describe --json` outputs machine-readable command catalog (WI-2026-01-18-003)
 - `govctl describe --context --json` outputs project state with suggested actions (WI-2026-01-18-003)
 - Command metadata includes `when_to_use` semantic guidance (WI-2026-01-18-003)
 - All existing commands covered in describe output (WI-2026-01-18-003)
+- CLI command 'govctl clause delete' implemented with proper argument parsing (WI-2026-01-19-001)
+- Atomically removes clause file and updates parent RFC's clauses array (WI-2026-01-19-001)
+- CLI command 'work delete' implemented (WI-2026-01-19-003)
+- Only queue-status work items can be deleted (WI-2026-01-19-003)
+- Reference check prevents deletion if work item is referenced (WI-2026-01-19-003)
+- completions command implemented (WI-2026-01-19-004)
+- works for bash/zsh/fish/powershell (WI-2026-01-19-004)
+- Auto-detection from ID format working (WI-2026-01-19-005)
+- Optional type flags available (WI-2026-01-19-005)
+- Support RFC amendments via version bumping and changelog (WI-2026-01-19-006)
+- Add signature field to RfcSpec model (WI-2026-01-19-007)
+- Implement govctl bump command for version bumping (WI-2026-01-19-007)
+- Display asterisk indicator for amended RFCs in list output (WI-2026-01-19-007)
+- All resource commands use <resource> <verb> structure per [[RFC-0002:C-RESOURCE-MODEL]] (WI-2026-01-19-008)
+- Canonical command pattern eliminates duplication (WI-2026-01-19-008)
+- Add -n short flag to --limit on all list commands (rfc, clause, adr, work) (WI-2026-01-19-009)
+- New sync-commands command to update AI IDE commands (WI-2026-01-19-010)
+- Configurable commands_dir in config.toml for different AI IDEs (WI-2026-01-19-010)
+
+### Changed
+
+- Remove 'normative = frozen' validation constraint (WI-2026-01-19-006)
+- Update .claude/CLAUDE.md to use --dry-run without -n (WI-2026-01-19-009)
+- Update assets/*.md files to use resource-first command syntax (WI-2026-01-19-010)
+
+### Removed
+
+- Old verb-first commands removed per [[ADR-0018]] (WI-2026-01-19-008)
+- Remove -n short flag from global --dry-run (WI-2026-01-19-009)
+
+### Fixed
+
+- New clauses get 'since' field set to RFC's current version (WI-2026-01-19-002)
 
 ## [0.1.0] - 2026-01-18
 

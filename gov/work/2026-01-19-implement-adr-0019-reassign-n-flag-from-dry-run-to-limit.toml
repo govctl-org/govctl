@@ -16,7 +16,7 @@ What is the goal? What are the acceptance criteria?"""
 [[content.acceptance_criteria]]
 text = "Remove -n short flag from global --dry-run"
 status = "done"
-category = "added"
+category = "removed"
 
 [[content.acceptance_criteria]]
 text = "Add -n short flag to --limit on all list commands (rfc, clause, adr, work)"

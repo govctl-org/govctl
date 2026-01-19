@@ -14,14 +14,14 @@ Add a `delete` command to safely remove accidentally-created clauses from draft 
 Currently users must manually delete the JSON file and edit the parent RFC's clauses array."""
 
 [[content.acceptance_criteria]]
-text = "CLI command 'govctl delete clause' implemented with proper argument parsing"
+text = "CLI command 'govctl clause delete' implemented with proper argument parsing"
 status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Safety check: Only draft RFCs allow clause deletion"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Atomically removes clause file and updates parent RFC's clauses array"
@@ -31,4 +31,4 @@ category = "added"
 [[content.acceptance_criteria]]
 text = "Tests pass for both successful deletion and safety rejection"
 status = "done"
-category = "added"
+category = "chore"
