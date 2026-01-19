@@ -1,0 +1,279 @@
+[govctl]
+schema = 1
+id = "ADR-0017"
+title = "CLI Command Implementation Details"
+status = "proposed"
+date = "2026-01-19"
+refs = ["RFC-0002"]
+
+[content]
+context = """
+[[RFC-0002]] defines the structural contract for govctl CLI commands: resource-first organization, universal CRUD verbs, lifecycle operations, and output format control. However, RFC-0002 intentionally defers implementation details to preserve flexibility while maintaining a stable interface contract.
+
+Implementation requires decisions on:
+- Exact flag syntax and naming conventions
+- Array field editing notation (how to add/remove items)
+- Help text formatting and structure
+- Error message templates and exit codes
+- Terminal capability detection (colors, interactive prompts)
+- Confirmation prompt behavior
+- Progress indicators for long-running operations
+
+Without documented conventions, implementers would make inconsistent choices, leading to:
+- Flags named differently across commands (--filter vs --query)
+- Array editing syntax that varies by resource type
+- Inconsistent help text structure
+- Error messages with different formats
+- Terminal behavior that breaks in non-interactive contexts
+
+This ADR establishes implementation conventions that realize RFC-0002's structural contract with consistent UX."""
+decision = """
+We adopt the following implementation conventions:
+
+## 1. Flag Syntax and Naming
+
+**Long flags:** Always use double-dash with kebab-case
+- `--output`, `--filter`, `--dry-run`, `--force`
+
+**Short flags:** Single letter aliases for common flags only
+- `-o` for `--output`
+- `-f` for `--force`
+- `-n` for `--dry-run` (global flag)
+
+**No short flags** for domain-specific options to avoid collision:
+- `--filter` has no short form
+- `--rfc-id` has no short form
+
+**Flag values:**
+- Space-separated: `--output json` (preferred)
+- Equals accepted: `--output=json` (clap auto-supports)
+- No colons: avoid `--output:json`
+
+## 2. Array Field Editing with `edit` Command
+
+Per [[RFC-0002:C-CRUD-VERBS]], `edit` replaces `set`/`add`/`remove`/`tick`. For array fields, use prefix notation:
+
+**Add to array:** Prefix value with `+`
+```
+govctl rfc edit RFC-0001 owners +@alice
+govctl work edit WI-001 refs +RFC-0001:C-SCOPE
+```
+
+**Remove from array:** Prefix pattern with `-`
+```
+govctl rfc edit RFC-0001 owners -@bob
+govctl adr edit ADR-001 refs -RFC-0002
+```
+
+**Replace entire array:** No prefix (comma-separated)
+```
+govctl rfc edit RFC-0001 owners "@alice,@bob"
+```
+
+**Checklist status:** Format as `"text" status`
+```
+govctl work edit WI-001 acceptance_criteria "Tests pass" done
+govctl work edit WI-001 acceptance_criteria "Docs updated" pending
+```
+
+**Pattern matching:** Same semantics as [[ADR-0007]]
+- Default: case-insensitive substring
+- Use `--exact` for exact match
+- Use `--regex` for pattern match
+- Use `--at N` for index-based
+
+## 3. Help Text Structure
+
+All commands follow this template:
+
+```
+USAGE:
+    govctl <resource> <verb> [OPTIONS] <ARGS>
+
+ARGS:
+    <required>     Description
+    [optional]     Description
+
+OPTIONS:
+    -o, --output <FORMAT>    Output format [default: table] [possible: json, yaml, toml, plain]
+    --filter <EXPR>          Filter results (KEY=VALUE)
+    --dry-run                Preview changes without writing
+    -h, --help               Print help
+
+EXAMPLES:
+    govctl rfc list draft
+    govctl rfc get RFC-0001 -o json
+    govctl rfc edit RFC-0001 title "New Title"
+```
+
+**Ordering:**
+1. Universal flags first (output, filter, dry-run)
+2. Resource-specific flags second
+3. Help/version last
+
+## 4. Error Messages and Exit Codes
+
+**Exit codes:**
+- `0` - Success
+- `1` - General error (validation, not found, invalid transition)
+- `2` - Usage error (wrong arguments, unknown flag)
+
+**Error format:**
+```
+error[CODE]: <message>
+  --> <location>
+  |
+  | <context>
+```
+
+Example:
+```
+error[E0102]: RFC not found: RFC-9999
+  --> gov/rfc/RFC-9999
+  |
+  | Run 'govctl rfc list' to see available RFCs
+```
+
+**Diagnostic codes:** Use existing govctl error taxonomy (E0xxx, W0xxx).
+
+## 5. Terminal Capability Detection
+
+**Color output:**
+- Auto-detect TTY with `atty` or `is-terminal` crate
+- Respect `NO_COLOR` environment variable
+- Respect `--color <always|never|auto>` flag (future)
+
+**Interactive prompts:**
+- Only show in TTY mode
+- Skip if `--force` flag provided
+- Skip if stdin is not TTY
+
+**Progress indicators:**
+- Use `indicatif` crate for long operations (>2s expected)
+- Show progress for: render, check, bulk operations
+- Suppress if `--quiet` or non-TTY
+
+## 6. Confirmation Prompts
+
+**Destructive operations require confirmation unless `--force`:**
+- `delete` (clauses, work items)
+- `deprecate` (RFCs, clauses)
+- `supersede` (RFCs, ADRs, clauses)
+
+**Prompt format:**
+```
+Delete work item WI-2026-01-19-001? [y/N]
+```
+
+**Behavior:**
+- Default to "no" (capital N)
+- Accept: y, Y, yes, Yes, YES
+- Reject: n, N, no, No, NO, empty, anything else
+- Timeout: none (wait indefinitely)
+
+## 7. Filter Syntax
+
+Per [[RFC-0002:C-CRUD-VERBS]], `list` commands support filtering.
+
+**Simple filter (shorthand):**
+```
+govctl rfc list draft          # filter by status
+govctl work list active        # filter by status
+```
+
+**Explicit filter (future extension):**
+```
+govctl rfc list --filter status=draft
+govctl rfc list --filter phase=impl,status=normative
+```
+
+**Implementation:** Start with simple substring matching, defer explicit expressions to future ADR.
+
+## 8. Stdin Handling
+
+**When `--stdin` flag is present:**
+- Read entire stdin to EOF
+- Trim trailing newline only (preserve internal newlines)
+- Empty stdin is valid (allows heredocs with empty content)
+
+**HEREDOC pattern (recommended for multi-line):**
+```
+govctl clause edit RFC-0001:C-SCOPE --stdin <<'EOF'
+This clause defines the scope.
+EOF
+```
+
+## 9. Dry-Run Behavior
+
+**Global `-n` / `--dry-run` flag:**
+- Shows what would be written
+- Prints diff or file preview
+- Exits with 0 (success simulation)
+
+**Output format:**
+```
+[DRY RUN] Would write: gov/rfc/RFC-0001/rfc.json
+--- before
++++ after
+```
+
+## 10. Subcommand Organization (clap)
+
+**Structure:**
+```
+Use nested Subcommand enums for resource-first organization.
+Resource commands contain their own verb subcommands.
+Global commands remain at top level.
+```
+
+**Backward compatibility aliases:**
+Emit deprecation warning when old verb-first commands are used."""
+consequences = """
+**Positive:**
+
+1. **Consistent UX:** All commands follow the same patterns. Users learn once, apply everywhere.
+
+2. **Agent-friendly:** Predictable flags, stable error codes, machine-readable output defaults make automation reliable.
+
+3. **Maintainable:** Implementation conventions documented, not scattered across code comments.
+
+4. **Extensible:** Array editing with +/- notation is more intuitive than separate add/remove commands. Easy to add new array operations.
+
+5. **Safe:** Confirmation prompts prevent accidental destructive actions. Dry-run mode enables testing before committing.
+
+6. **Debuggable:** Structured error messages with codes and locations make issues easy to diagnose.
+
+**Negative:**
+
+1. **Migration effort:** Existing codebase uses `set`/`add`/`remove`/`tick` commands. Need to refactor or maintain backward compatibility during transition.
+
+2. **Learning curve:** Users familiar with current verb-first commands must learn resource-first structure and new array editing syntax.
+
+3. **Documentation burden:** Help text, examples, and migration guides need updating across all commands.
+
+4. **Testing complexity:** Need tests for TTY detection, confirmation prompts, dry-run mode, error formatting, etc.
+
+**Migration Strategy:**
+
+Phase 1 (current release):
+- Implement resource-first structure alongside existing commands
+- Emit deprecation warnings for old syntax
+- Update documentation with examples of both styles
+
+Phase 2 (next major release):
+- Remove old verb-first commands
+- Keep only resource-first structure
+- Update all examples and guides
+
+Phase 3 (ongoing):
+- Monitor user feedback on array editing syntax
+- Refine error messages based on common mistakes
+- Add more sophisticated filter syntax if needed
+
+**Trade-offs Accepted:**
+
+- **Uniformity over convenience:** We sacrifice shortcuts like `govctl finalize` for consistency (`govctl rfc finalize`). This makes the CLI more predictable at the cost of slightly more typing.
+
+- **Explicit over implicit:** Array operations use prefix notation (+/-) rather than inferring from context. More characters, but clearer intent.
+
+- **Safety over speed:** Confirmation prompts slow down destructive operations. This is intentional to prevent accidents."""
