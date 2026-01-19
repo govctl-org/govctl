@@ -1,0 +1,15 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-19-004"
+title = "Add shell autocompletion support for all commands"
+status = "queue"
+created = "2026-01-19"
+
+[content]
+description = """
+Add shell autocompletion support for bash, zsh, fish, and PowerShell using `clap_complete`.
+
+Implement a `govctl completions <shell>` command that generates completion scripts. Users can then install them to get tab-completion for commands, flags, and options.
+
+Phase 1: Static completion (commands, flags, options)
+Future: Dynamic completion (artifact IDs, field names)"""

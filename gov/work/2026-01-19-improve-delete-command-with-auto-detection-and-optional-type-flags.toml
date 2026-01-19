@@ -1,0 +1,16 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-19-005"
+title = "Improve delete command with auto-detection and optional type flags"
+status = "queue"
+created = "2026-01-19"
+
+[content]
+description = """
+Improve the `delete` command to auto-detect artifact type from ID format, making type flags optional.
+
+Currently: `govctl delete clause RFC-0001:C-NAME` or `govctl delete work WI-2026-01-19-001`
+
+Proposed: `govctl delete RFC-0001:C-NAME` with optional `--clause`, `--work` flags for explicitness.
+
+This makes `delete` consistent with `edit` (which already auto-detects) and reduces typing. The ID formats are unambiguous, so auto-detection is safe."""
