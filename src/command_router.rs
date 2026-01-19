@@ -80,6 +80,7 @@ pub enum CanonicalCommand {
     },
     RfcList {
         filter: Option<String>,
+        limit: Option<usize>,
     },
     RfcGet {
         id: String,
@@ -124,6 +125,7 @@ pub enum CanonicalCommand {
     },
     ClauseList {
         rfc_id: Option<String>,
+        limit: Option<usize>,
     },
     ClauseGet {
         id: String,
@@ -161,6 +163,7 @@ pub enum CanonicalCommand {
     },
     AdrList {
         status: Option<String>,
+        limit: Option<usize>,
     },
     AdrGet {
         id: String,
@@ -212,6 +215,7 @@ pub enum CanonicalCommand {
     },
     WorkList {
         status: Option<String>,
+        limit: Option<usize>,
     },
     WorkGet {
         id: String,
@@ -361,7 +365,7 @@ impl CanonicalCommand {
                 };
                 cmd::new::create(config, &target, op)
             }
-            Self::RfcList { filter } => cmd::list::list(config, ListTarget::Rfc, filter.as_deref()),
+            Self::RfcList { filter, limit } => cmd::list::list(config, ListTarget::Rfc, filter.as_deref(), *limit),
             Self::RfcGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
             Self::RfcSet {
                 id,
@@ -395,8 +399,8 @@ impl CanonicalCommand {
                 };
                 cmd::new::create(config, &target, op)
             }
-            Self::ClauseList { rfc_id } => {
-                cmd::list::list(config, ListTarget::Clause, rfc_id.as_deref())
+            Self::ClauseList { rfc_id, limit } => {
+                cmd::list::list(config, ListTarget::Clause, rfc_id.as_deref(), *limit)
             }
             Self::ClauseGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
             Self::ClauseEdit {
@@ -429,7 +433,7 @@ impl CanonicalCommand {
                 };
                 cmd::new::create(config, &target, op)
             }
-            Self::AdrList { status } => cmd::list::list(config, ListTarget::Adr, status.as_deref()),
+            Self::AdrList { status, limit } => cmd::list::list(config, ListTarget::Adr, status.as_deref(), *limit),
             Self::AdrGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
             Self::AdrSet {
                 id,
@@ -476,8 +480,8 @@ impl CanonicalCommand {
                 };
                 cmd::new::create(config, &target, op)
             }
-            Self::WorkList { status } => {
-                cmd::list::list(config, ListTarget::Work, status.as_deref())
+            Self::WorkList { status, limit } => {
+                cmd::list::list(config, ListTarget::Work, status.as_deref(), *limit)
             }
             Self::WorkGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
             Self::WorkSet {
@@ -536,8 +540,9 @@ impl CanonicalCommand {
                 title: title.clone(),
                 id: id.clone(),
             },
-            RfcCommand::List { filter } => Self::RfcList {
+            RfcCommand::List { filter, limit } => Self::RfcList {
                 filter: filter.clone(),
+                limit: *limit,
             },
             RfcCommand::Get { id, field } => Self::RfcGet {
                 id: id.clone(),
@@ -607,8 +612,9 @@ impl CanonicalCommand {
                 section: section.clone(),
                 kind: *kind,
             },
-            ClauseCommand::List { rfc_id } => Self::ClauseList {
-                rfc_id: rfc_id.clone(),
+            ClauseCommand::List { filter, limit } => Self::ClauseList {
+                rfc_id: filter.clone(),
+                limit: *limit,
             },
             ClauseCommand::Get { id, field } => Self::ClauseGet {
                 id: id.clone(),
@@ -655,8 +661,9 @@ impl CanonicalCommand {
             AdrCommand::New { title } => Self::AdrNew {
                 title: title.clone(),
             },
-            AdrCommand::List { status } => Self::AdrList {
-                status: status.clone(),
+            AdrCommand::List { filter, limit } => Self::AdrList {
+                status: filter.clone(),
+                limit: *limit,
             },
             AdrCommand::Get { id, field } => Self::AdrGet {
                 id: id.clone(),
@@ -747,8 +754,9 @@ impl CanonicalCommand {
                 title: title.clone(),
                 active: *active,
             },
-            WorkCommand::List { status } => Self::WorkList {
-                status: status.clone(),
+            WorkCommand::List { filter, limit } => Self::WorkList {
+                status: filter.clone(),
+                limit: *limit,
             },
             WorkCommand::Get { id, field } => Self::WorkGet {
                 id: id.clone(),

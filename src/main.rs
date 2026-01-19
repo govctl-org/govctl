@@ -36,7 +36,7 @@ struct Cli {
     config: Option<PathBuf>,
 
     /// Dry run: preview changes without writing files
-    #[arg(short = 'n', long, global = true)]
+    #[arg(long, global = true)]
     dry_run: bool,
 
     #[command(subcommand)]
@@ -230,8 +230,11 @@ enum RfcCommand {
     /// List all RFCs
     #[command(visible_alias = "ls")]
     List {
-        /// Filter by status or phase
+        /// Filter by status (draft|normative|deprecated), phase (spec|impl|test|stable), or ID pattern
         filter: Option<String>,
+        /// Limit number of results
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
     },
     /// Get RFC field value
     Get {
@@ -323,8 +326,11 @@ enum ClauseCommand {
     /// List clauses
     #[command(visible_alias = "ls")]
     List {
-        /// Filter by RFC ID
-        rfc_id: Option<String>,
+        /// Filter by RFC ID or clause ID pattern
+        filter: Option<String>,
+        /// Limit number of results
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
     },
     /// Get clause field value
     Get {
@@ -394,8 +400,11 @@ enum AdrCommand {
     /// List ADRs
     #[command(visible_alias = "ls")]
     List {
-        /// Filter by status
-        status: Option<String>,
+        /// Filter by status (proposed|accepted|rejected|superseded|deprecated) or ID pattern
+        filter: Option<String>,
+        /// Limit number of results
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
     },
     /// Get ADR field value
     Get {
@@ -511,8 +520,11 @@ enum WorkCommand {
     /// List work items
     #[command(visible_alias = "ls")]
     List {
-        /// Filter by status
-        status: Option<String>,
+        /// Filter by status (queue|active|done|cancelled) or ID pattern
+        filter: Option<String>,
+        /// Limit number of results
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
     },
     /// Get work item field value
     Get {

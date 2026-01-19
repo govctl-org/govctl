@@ -58,6 +58,7 @@ pub fn list(
     config: &Config,
     target: ListTarget,
     filter: Option<&str>,
+    limit: Option<usize>,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let index = match load_project(config) {
         Ok(idx) => idx,
@@ -65,16 +66,16 @@ pub fn list(
     };
 
     match target {
-        ListTarget::Rfc => list_rfcs(&index, filter),
-        ListTarget::Clause => list_clauses(&index, filter),
-        ListTarget::Adr => list_adrs(&index, filter),
-        ListTarget::Work => list_work_items(&index, filter),
+        ListTarget::Rfc => list_rfcs(&index, filter, limit),
+        ListTarget::Clause => list_clauses(&index, filter, limit),
+        ListTarget::Adr => list_adrs(&index, filter, limit),
+        ListTarget::Work => list_work_items(&index, filter, limit),
     }
 
     Ok(vec![])
 }
 
-fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
+fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
     let mut rfcs: Vec<_> = index.rfcs.iter().collect();
 
     // Filter by status or phase if provided
@@ -85,6 +86,11 @@ fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     }
 
     rfcs.sort_by(|a, b| a.rfc.rfc_id.cmp(&b.rfc.rfc_id));
+
+    // Apply limit if specified
+    if let Some(n) = limit {
+        rfcs.truncate(n);
+    }
 
     let mut table = Table::new();
     table
@@ -118,7 +124,7 @@ fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     println!("{table}");
 }
 
-fn list_clauses(index: &crate::model::ProjectIndex, filter: Option<&str>) {
+fn list_clauses(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
     let mut clauses: Vec<_> = index
         .iter_clauses()
         .map(|(rfc, clause)| (rfc.rfc.rfc_id.clone(), clause))
@@ -135,6 +141,11 @@ fn list_clauses(index: &crate::model::ProjectIndex, filter: Option<&str>) {
         a.0.cmp(&b.0)
             .then_with(|| a.1.spec.clause_id.cmp(&b.1.spec.clause_id))
     });
+
+    // Apply limit if specified
+    if let Some(n) = limit {
+        clauses.truncate(n);
+    }
 
     let mut table = Table::new();
     table
@@ -161,7 +172,7 @@ fn list_clauses(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     println!("{table}");
 }
 
-fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
+fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
     let mut adrs: Vec<_> = index.adrs.iter().collect();
 
     // Filter by status if provided
@@ -170,6 +181,11 @@ fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     }
 
     adrs.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
+
+    // Apply limit if specified
+    if let Some(n) = limit {
+        adrs.truncate(n);
+    }
 
     let mut table = Table::new();
     table
@@ -194,30 +210,35 @@ fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
     println!("{table}");
 }
 
-fn list_work_items(index: &crate::model::ProjectIndex, filter: Option<&str>) {
+fn list_work_items(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
     let mut items: Vec<_> = index.work_items.iter().collect();
 
-    // Default filter is "pending" (queue + active)
-    let effective_filter = filter.unwrap_or("pending");
-
-    match effective_filter {
-        "all" => {}
-        "pending" => {
-            items.retain(|i| {
-                i.meta().status == WorkItemStatus::Queue
-                    || i.meta().status == WorkItemStatus::Active
-            });
-        }
-        "queue" => items.retain(|i| i.meta().status == WorkItemStatus::Queue),
-        "active" => items.retain(|i| i.meta().status == WorkItemStatus::Active),
-        "done" => items.retain(|i| i.meta().status == WorkItemStatus::Done),
-        "cancelled" => items.retain(|i| i.meta().status == WorkItemStatus::Cancelled),
-        other => {
-            items.retain(|i| i.meta().status.as_ref() == other || i.meta().id.contains(other));
+    // Filter by status or ID if provided
+    if let Some(f) = filter {
+        match f {
+            "all" => {}
+            "pending" => {
+                items.retain(|i| {
+                    i.meta().status == WorkItemStatus::Queue
+                        || i.meta().status == WorkItemStatus::Active
+                });
+            }
+            "queue" => items.retain(|i| i.meta().status == WorkItemStatus::Queue),
+            "active" => items.retain(|i| i.meta().status == WorkItemStatus::Active),
+            "done" => items.retain(|i| i.meta().status == WorkItemStatus::Done),
+            "cancelled" => items.retain(|i| i.meta().status == WorkItemStatus::Cancelled),
+            other => {
+                items.retain(|i| i.meta().status.as_ref() == other || i.meta().id.contains(other));
+            }
         }
     }
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
+
+    // Apply limit if specified
+    if let Some(n) = limit {
+        items.truncate(n);
+    }
 
     let mut table = Table::new();
     table

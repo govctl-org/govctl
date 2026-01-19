@@ -1,0 +1,34 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-19-009"
+title = "Implement ADR-0019: Reassign -n flag from dry-run to limit"
+status = "done"
+created = "2026-01-19"
+started = "2026-01-19"
+completed = "2026-01-19"
+refs = ["ADR-0019"]
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Remove -n short flag from global --dry-run"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Add -n short flag to --limit on all list commands (rfc, clause, adr, work)"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Update .claude/CLAUDE.md to use --dry-run without -n"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "All tests pass with new flag assignments"
+status = "done"
+category = "chore"
