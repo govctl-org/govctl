@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- CLI command 'govctl delete clause' implemented with proper argument parsing (WI-2026-01-19-001)
+- Safety check: Only draft RFCs allow clause deletion (WI-2026-01-19-001)
+- Atomically removes clause file and updates parent RFC's clauses array (WI-2026-01-19-001)
+- Tests pass for both successful deletion and safety rejection (WI-2026-01-19-001)
+- `govctl describe --json` outputs machine-readable command catalog (WI-2026-01-18-003)
+- `govctl describe --context --json` outputs project state with suggested actions (WI-2026-01-18-003)
+- Command metadata includes `when_to_use` semantic guidance (WI-2026-01-18-003)
+- All existing commands covered in describe output (WI-2026-01-18-003)
+
 ## [0.1.0] - 2026-01-18
 
 ### Added
