@@ -113,21 +113,21 @@ Execution MUST NOT begin on new features until RFC is normative.
 govctl check                    # Validate all artifacts
 
 # Listing
-govctl list rfc                 # List RFCs
-govctl list adr                 # List ADRs
-govctl list work                # List work items
+govctl rfc list                 # List RFCs
+govctl adr list                 # List ADRs
+govctl work list                # List work items
 
 # Status
 govctl status                   # Project overview
 
 # Lifecycle transitions
-govctl edit rfc RFC-0001 status normative
-govctl edit rfc RFC-0001 phase impl
+govctl rfc set RFC-0001 status normative
+govctl rfc advance RFC-0001 impl
 
 # Creating artifacts
-govctl new rfc "Title"          # New RFC
-govctl new adr "Title"          # New ADR
-govctl new work "Title"         # New work item
+govctl rfc new "Title"          # New RFC
+govctl adr new "Title"          # New ADR
+govctl work new "Title"         # New work item
 ```
 
 Before requesting review: `just pre-commit`

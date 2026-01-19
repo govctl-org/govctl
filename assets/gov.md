@@ -15,26 +15,26 @@ Execute a complete, auditable workflow to do: `$ARGUMENTS`
 ```bash
 # {{GOVCTL}} commands
 {{GOVCTL}} status                             # Show summary
-{{GOVCTL}} list work pending                  # List queue + active items
-{{GOVCTL}} list rfc                           # List all RFCs
-{{GOVCTL}} list adr                           # List all ADRs
-{{GOVCTL}} new work --active "<title>"        # Create + activate work item
-{{GOVCTL}} mv <WI-ID> <status>                # Transition (queue|active|done|cancelled)
-{{GOVCTL}} new rfc "<title>"                  # Create RFC (auto-assigns ID)
-{{GOVCTL}} new adr "<title>"                  # Create ADR
+{{GOVCTL}} work list pending                  # List queue + active items
+{{GOVCTL}} rfc list                           # List all RFCs
+{{GOVCTL}} adr list                           # List all ADRs
+{{GOVCTL}} work new --active "<title>"        # Create + activate work item
+{{GOVCTL}} work move <WI-ID> <status>         # Transition (queue|active|done|cancelled)
+{{GOVCTL}} rfc new "<title>"                  # Create RFC (auto-assigns ID)
+{{GOVCTL}} adr new "<title>"                  # Create ADR
 {{GOVCTL}} check                              # Validate everything
 {{GOVCTL}} render                             # Render to markdown
 {{GOVCTL}} render changelog                   # Generate CHANGELOG.md
 {{GOVCTL}} release <version>                  # Cut a release (e.g., 1.0.0)
 
 # Checklist management (with changelog category prefixes)
-{{GOVCTL}} add <WI-ID> acceptance_criteria "add: New feature"    # → Added section
-{{GOVCTL}} add <WI-ID> acceptance_criteria "fix: Bug fixed"      # → Fixed section
-{{GOVCTL}} add <WI-ID> acceptance_criteria "chore: Tests pass"   # → excluded from changelog
-{{GOVCTL}} tick <WI-ID> acceptance_criteria "pattern" -s done
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: New feature"    # → Added section
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "fix: Bug fixed"      # → Fixed section
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: Tests pass"   # → excluded from changelog
+{{GOVCTL}} work tick <WI-ID> acceptance_criteria "pattern" -s done
 
 # Multi-line input
-{{GOVCTL}} edit <clause-id> --stdin <<'EOF'
+{{GOVCTL}} clause edit <clause-id> --stdin <<'EOF'
 multi-line text here
 EOF
 ```
@@ -55,8 +55,8 @@ EOF
 
 **Default behavior:** Ask for human permission before:
 
-- `{{GOVCTL}} finalize <RFC-ID> normative`
-- `{{GOVCTL}} advance <RFC-ID> <phase>`
+- `{{GOVCTL}} rfc finalize <RFC-ID> normative`
+- `{{GOVCTL}} rfc advance <RFC-ID> <phase>`
 
 **Override:** If `$ARGUMENTS` contains phrases like:
 
@@ -126,7 +126,7 @@ Parse `$ARGUMENTS` and classify:
 ### 1.1 Check Existing Work Items
 
 ```bash
-{{GOVCTL}} list work pending
+{{GOVCTL}} work list pending
 ```
 
 **Decision:**
@@ -139,7 +139,7 @@ Parse `$ARGUMENTS` and classify:
 
 ```bash
 # Create and activate in one command
-{{GOVCTL}} new work --active "<concise-title>"
+{{GOVCTL}} work new --active "<concise-title>"
 ```
 
 ### 1.3 Add Acceptance Criteria
@@ -159,9 +159,9 @@ Parse `$ARGUMENTS` and classify:
 | `chore:`      | _(excluded)_      | Internal tasks, test passing |
 
 ```bash
-{{GOVCTL}} add <WI-ID> acceptance_criteria "add: Implement feature X"
-{{GOVCTL}} add <WI-ID> acceptance_criteria "fix: Memory leak resolved"
-{{GOVCTL}} add <WI-ID> acceptance_criteria "chore: All tests pass"  # won't appear in changelog
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Implement feature X"
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "fix: Memory leak resolved"
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: All tests pass"  # won't appear in changelog
 ```
 
 ### 1.4 Record
@@ -183,8 +183,8 @@ git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description
 ### 2.1 Survey Existing Governance
 
 ```bash
-{{GOVCTL}} list rfc
-{{GOVCTL}} list adr
+{{GOVCTL}} rfc list
+{{GOVCTL}} adr list
 ```
 
 ### 2.2 Determine Requirements
@@ -200,13 +200,13 @@ git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description
 
 ```bash
 # Create RFC (auto-assigns next ID, or use --id RFC-NNNN)
-{{GOVCTL}} new rfc "<title>"
+{{GOVCTL}} rfc new "<title>"
 
 # Add clauses
-{{GOVCTL}} new clause <RFC-ID>:<CLAUSE-ID> "<title>" -s "Specification" -k normative
+{{GOVCTL}} clause new <RFC-ID>:<CLAUSE-ID> "<title>" -s "Specification" -k normative
 
 # Edit clause text via stdin
-{{GOVCTL}} edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
+{{GOVCTL}} clause edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
 The system MUST...
 EOF
 ```
@@ -214,13 +214,13 @@ EOF
 ### 2.4 Create ADR (if needed)
 
 ```bash
-{{GOVCTL}} new adr "<title>"
+{{GOVCTL}} adr new "<title>"
 ```
 
 ### 2.5 Link to Work Item
 
 ```bash
-{{GOVCTL}} add <WI-ID> refs <RFC-ID>
+{{GOVCTL}} work add <WI-ID> refs <RFC-ID>
 ```
 
 ### 2.6 Record
@@ -246,7 +246,7 @@ Before implementation, verify:
 
 ```bash
 # Check current state
-{{GOVCTL}} list rfc
+{{GOVCTL}} rfc list
 ```
 
 **Gate conditions:**
@@ -261,8 +261,8 @@ Before implementation, verify:
 **If permission granted (or override in $ARGUMENTS):**
 
 ```bash
-{{GOVCTL}} finalize <RFC-ID> normative  # if draft
-{{GOVCTL}} advance <RFC-ID> impl        # if spec phase
+{{GOVCTL}} rfc finalize <RFC-ID> normative  # if draft
+{{GOVCTL}} rfc advance <RFC-ID> impl        # if spec phase
 ```
 
 **Amending normative RFCs during implementation:**
@@ -307,7 +307,7 @@ git add . && git commit -m "feat(<scope>): <description>"
 **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 
 ```bash
-{{GOVCTL}} advance <RFC-ID> test
+{{GOVCTL}} rfc advance <RFC-ID> test
 ```
 
 ### 4.2 Run Tests
@@ -344,7 +344,7 @@ git add . && git commit -m "test(<scope>): add tests for <feature>"
 If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 
 ```bash
-{{GOVCTL}} advance <RFC-ID> stable
+{{GOVCTL}} rfc advance <RFC-ID> stable
 ```
 
 ### 5.3 Tick Acceptance Criteria
@@ -352,7 +352,7 @@ If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless ov
 **Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
 
 ```bash
-{{GOVCTL}} add <WI-ID> acceptance_criteria "criterion"
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "criterion"
 ```
 
 Then tick each completed criterion:
@@ -451,8 +451,8 @@ The `[[...]]` pattern is automatically expanded to markdown links during `{{GOVC
 **Note:** The `refs` field uses plain artifact IDs (not `[[...]]` syntax):
 
 ```bash
-{{GOVCTL}} add <WI-ID> refs RFC-0000      # Correct
-{{GOVCTL}} add <WI-ID> refs "[[RFC-0000]]" # Wrong
+{{GOVCTL}} work add <WI-ID> refs RFC-0000      # Correct
+{{GOVCTL}} work add <WI-ID> refs "[[RFC-0000]]" # Wrong
 ```
 
 ### Commit Messages

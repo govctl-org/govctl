@@ -288,8 +288,27 @@ impl CanonicalCommand {
             #[cfg(feature = "tui")]
             Commands::Tui => Self::Tui,
 
+            // ========================================
+            // Resource-First Commands (RFC-0002)
+            // ========================================
+            Commands::Rfc { command } => Self::from_rfc_command(command)?,
+            Commands::Clause { command } => Self::from_clause_command(command)?,
+            Commands::Adr { command } => Self::from_adr_command(command)?,
+            Commands::Work { command } => Self::from_work_command(command)?,
+
+            // ========================================
+            // Old verb-first commands (deprecated)
+            // ========================================
             // Old verb-first commands (deprecated) - mapped to canonical form
-            Commands::New { target } => match target {
+            Commands::New { target } => {
+                eprintln!("Warning: 'govctl new' is deprecated. Use resource-first syntax:");
+                match target {
+                    NewTarget::Rfc { .. } => eprintln!("  govctl rfc new <title>"),
+                    NewTarget::Clause { .. } => eprintln!("  govctl clause new <clause-id> <title>"),
+                    NewTarget::Adr { .. } => eprintln!("  govctl adr new <title>"),
+                    NewTarget::Work { .. } => eprintln!("  govctl work new <title>"),
+                }
+                match target {
                 NewTarget::Rfc { title, id } => Self::RfcNew {
                     title: title.clone(),
                     id: id.clone(),
@@ -339,7 +358,9 @@ impl CanonicalCommand {
                 text,
                 text_file,
                 stdin,
-            } => Self::ClauseEdit {
+            } => {
+                eprintln!("Warning: 'govctl edit' is deprecated. Use: govctl clause edit <id>");
+                Self::ClauseEdit {
                 id: clause_id.clone(),
                 text: text.clone(),
                 text_file: text_file.clone(),
@@ -868,6 +889,314 @@ impl CanonicalCommand {
                 "Tick command only applies to ADR-* and WI-* artifacts, got: {}",
                 id
             )
+        })
+    }
+
+    // ========================================
+    // Resource-First Command Converters (RFC-0002)
+    // ========================================
+
+    /// Convert RFC subcommand to canonical form.
+    fn from_rfc_command(cmd: &crate::RfcCommand) -> anyhow::Result<Self> {
+        use crate::RfcCommand;
+        Ok(match cmd {
+            RfcCommand::New { title, id } => Self::RfcNew {
+                title: title.clone(),
+                id: id.clone(),
+            },
+            RfcCommand::List { filter } => Self::RfcList {
+                filter: filter.clone(),
+            },
+            RfcCommand::Get { id, field } => Self::RfcGet {
+                id: id.clone(),
+                field: field.clone(),
+            },
+            RfcCommand::Set {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::RfcSet {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            RfcCommand::Bump {
+                id,
+                patch,
+                minor,
+                major,
+                summary,
+                changes,
+            } => {
+                let level = match (patch, minor, major) {
+                    (true, false, false) => Some(BumpLevel::Patch),
+                    (false, true, false) => Some(BumpLevel::Minor),
+                    (false, false, true) => Some(BumpLevel::Major),
+                    (false, false, false) => None,
+                    _ => unreachable!("clap arg group ensures mutual exclusivity"),
+                };
+                Self::RfcBump {
+                    id: id.clone(),
+                    level,
+                    summary: summary.clone(),
+                    changes: changes.clone(),
+                }
+            }
+            RfcCommand::Finalize { id, status } => Self::RfcFinalize {
+                id: id.clone(),
+                status: *status,
+            },
+            RfcCommand::Advance { id, phase } => Self::RfcAdvance {
+                id: id.clone(),
+                phase: *phase,
+            },
+            RfcCommand::Deprecate { id } => Self::RfcDeprecate { id: id.clone() },
+            RfcCommand::Supersede { id, by } => Self::RfcSupersede {
+                id: id.clone(),
+                by: by.clone(),
+            },
+        })
+    }
+
+    /// Convert Clause subcommand to canonical form.
+    fn from_clause_command(cmd: &crate::ClauseCommand) -> anyhow::Result<Self> {
+        use crate::ClauseCommand;
+        Ok(match cmd {
+            ClauseCommand::New {
+                clause_id,
+                title,
+                section,
+                kind,
+            } => Self::ClauseNew {
+                clause_id: clause_id.clone(),
+                title: title.clone(),
+                section: section.clone(),
+                kind: *kind,
+            },
+            ClauseCommand::List { rfc_id } => Self::ClauseList {
+                rfc_id: rfc_id.clone(),
+            },
+            ClauseCommand::Get { id, field } => Self::ClauseGet {
+                id: id.clone(),
+                field: field.clone(),
+            },
+            ClauseCommand::Edit {
+                id,
+                text,
+                text_file,
+                stdin,
+            } => Self::ClauseEdit {
+                id: id.clone(),
+                text: text.clone(),
+                text_file: text_file.clone(),
+                stdin: *stdin,
+            },
+            ClauseCommand::Set {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::ClauseSet {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            ClauseCommand::Delete { id, force } => Self::ClauseDelete {
+                id: id.clone(),
+                force: *force,
+            },
+            ClauseCommand::Deprecate { id } => Self::ClauseDeprecate { id: id.clone() },
+            ClauseCommand::Supersede { id, by } => Self::ClauseSupersede {
+                id: id.clone(),
+                by: by.clone(),
+            },
+        })
+    }
+
+    /// Convert ADR subcommand to canonical form.
+    fn from_adr_command(cmd: &crate::AdrCommand) -> anyhow::Result<Self> {
+        use crate::AdrCommand;
+        Ok(match cmd {
+            AdrCommand::New { title } => Self::AdrNew {
+                title: title.clone(),
+            },
+            AdrCommand::List { status } => Self::AdrList {
+                status: status.clone(),
+            },
+            AdrCommand::Get { id, field } => Self::AdrGet {
+                id: id.clone(),
+                field: field.clone(),
+            },
+            AdrCommand::Set {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::AdrSet {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            AdrCommand::Add {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::AdrAdd {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            AdrCommand::Remove {
+                id,
+                field,
+                pattern,
+                at,
+                exact,
+                regex,
+                all,
+            } => {
+                let match_opts = OwnedMatchOptions {
+                    pattern: pattern.clone(),
+                    at: *at,
+                    exact: *exact,
+                    regex: *regex,
+                    all: *all,
+                };
+                Self::AdrRemove {
+                    id: id.clone(),
+                    field: field.clone(),
+                    match_opts,
+                }
+            }
+            AdrCommand::Accept { id } => Self::AdrAccept { id: id.clone() },
+            AdrCommand::Reject { id } => Self::AdrReject { id: id.clone() },
+            AdrCommand::Deprecate { id } => Self::AdrDeprecate { id: id.clone() },
+            AdrCommand::Supersede { id, by } => Self::AdrSupersede {
+                id: id.clone(),
+                by: by.clone(),
+            },
+            AdrCommand::Tick {
+                id,
+                field,
+                pattern,
+                status,
+                at,
+                exact,
+                regex,
+            } => {
+                let match_opts = OwnedMatchOptions {
+                    pattern: pattern.clone(),
+                    at: *at,
+                    exact: *exact,
+                    regex: *regex,
+                    all: false,
+                };
+                Self::AdrTick {
+                    id: id.clone(),
+                    field: field.clone(),
+                    match_opts,
+                    status: *status,
+                }
+            }
+        })
+    }
+
+    /// Convert Work subcommand to canonical form.
+    fn from_work_command(cmd: &crate::WorkCommand) -> anyhow::Result<Self> {
+        use crate::WorkCommand;
+        Ok(match cmd {
+            WorkCommand::New { title, active } => Self::WorkNew {
+                title: title.clone(),
+                active: *active,
+            },
+            WorkCommand::List { status } => Self::WorkList {
+                status: status.clone(),
+            },
+            WorkCommand::Get { id, field } => Self::WorkGet {
+                id: id.clone(),
+                field: field.clone(),
+            },
+            WorkCommand::Set {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::WorkSet {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            WorkCommand::Add {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::WorkAdd {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            WorkCommand::Remove {
+                id,
+                field,
+                pattern,
+                at,
+                exact,
+                regex,
+                all,
+            } => {
+                let match_opts = OwnedMatchOptions {
+                    pattern: pattern.clone(),
+                    at: *at,
+                    exact: *exact,
+                    regex: *regex,
+                    all: *all,
+                };
+                Self::WorkRemove {
+                    id: id.clone(),
+                    field: field.clone(),
+                    match_opts,
+                }
+            }
+            WorkCommand::Move { file, status } => Self::WorkMove {
+                file_or_id: file.clone(),
+                status: *status,
+            },
+            WorkCommand::Tick {
+                id,
+                field,
+                pattern,
+                status,
+                at,
+                exact,
+                regex,
+            } => {
+                let match_opts = OwnedMatchOptions {
+                    pattern: pattern.clone(),
+                    at: *at,
+                    exact: *exact,
+                    regex: *regex,
+                    all: false,
+                };
+                Self::WorkTick {
+                    id: id.clone(),
+                    field: field.clone(),
+                    match_opts,
+                    status: *status,
+                }
+            }
+            WorkCommand::Delete { id, force } => Self::WorkDelete {
+                id: id.clone(),
+                force: *force,
+            },
         })
     }
 }

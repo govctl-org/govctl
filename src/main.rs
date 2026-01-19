@@ -94,7 +94,39 @@ enum Commands {
         dry_run: bool,
     },
 
+    // ========================================
+    // Resource-First Commands (RFC-0002)
+    // ========================================
+    /// RFC operations
+    Rfc {
+        #[command(subcommand)]
+        command: RfcCommand,
+    },
+
+    /// Clause operations
+    Clause {
+        #[command(subcommand)]
+        command: ClauseCommand,
+    },
+
+    /// ADR operations
+    Adr {
+        #[command(subcommand)]
+        command: AdrCommand,
+    },
+
+    /// Work item operations
+    Work {
+        #[command(subcommand)]
+        command: WorkCommand,
+    },
+
+    // ========================================
+    // Deprecated Verb-First Commands
+    // (Kept for backward compatibility)
+    // ========================================
     /// Edit clause text
+    #[command(hide = true)]
     Edit {
         /// Clause ID (e.g., RFC-0001:C-PHASE-ORDER)
         clause_id: String,
@@ -110,6 +142,7 @@ enum Commands {
     },
 
     /// Set a field value
+    #[command(hide = true)]
     Set {
         /// Artifact ID (e.g., RFC-0001 or ADR-0001)
         id: String,
@@ -124,6 +157,7 @@ enum Commands {
     },
 
     /// Get a field value
+    #[command(hide = true)]
     Get {
         /// Artifact ID
         id: String,
@@ -132,6 +166,7 @@ enum Commands {
     },
 
     /// Add a value to an array field
+    #[command(hide = true)]
     Add {
         /// Artifact ID (e.g., RFC-0001 or ADR-0001)
         id: String,
@@ -145,6 +180,7 @@ enum Commands {
     },
 
     /// Remove a value from an array field
+    #[command(hide = true)]
     Remove {
         /// Artifact ID
         id: String,
@@ -168,6 +204,7 @@ enum Commands {
     },
 
     /// Bump RFC version
+    #[command(hide = true)]
     Bump {
         /// RFC ID
         rfc_id: String,
@@ -189,6 +226,7 @@ enum Commands {
     },
 
     /// Transition RFC status to normative/deprecated
+    #[command(hide = true)]
     Finalize {
         /// RFC ID
         rfc_id: String,
@@ -198,6 +236,7 @@ enum Commands {
     },
 
     /// Advance RFC phase
+    #[command(hide = true)]
     Advance {
         /// RFC ID
         rfc_id: String,
@@ -207,24 +246,28 @@ enum Commands {
     },
 
     /// Accept an ADR (proposed -> accepted)
+    #[command(hide = true)]
     Accept {
         /// ADR ID or filename
         adr: String,
     },
 
     /// Reject an ADR (proposed -> rejected)
+    #[command(hide = true)]
     Reject {
         /// ADR ID or filename
         adr: String,
     },
 
     /// Deprecate an artifact
+    #[command(hide = true)]
     Deprecate {
         /// Artifact ID (RFC, clause, or ADR)
         id: String,
     },
 
     /// Supersede an artifact
+    #[command(hide = true)]
     Supersede {
         /// Artifact ID to supersede
         id: String,
@@ -234,6 +277,7 @@ enum Commands {
     },
 
     /// Delete an artifact
+    #[command(hide = true)]
     Delete {
         /// Artifact ID (e.g., RFC-0010:C-SCOPE or WI-2026-01-19-001)
         id: String,
@@ -249,6 +293,7 @@ enum Commands {
     },
 
     /// Move work item to new status
+    #[command(hide = true)]
     #[command(visible_alias = "mv")]
     Move {
         /// Work item file path or WI-ID (e.g., WI-2026-01-18-001)
@@ -260,6 +305,7 @@ enum Commands {
     },
 
     /// Mark a checklist item as done/pending/cancelled
+    #[command(hide = true)]
     Tick {
         /// Artifact ID (WI-xxx or ADR-xxx)
         id: String,
@@ -386,6 +432,403 @@ enum RenderTarget {
 enum FinalizeStatus {
     Normative,
     Deprecated,
+}
+
+// ========================================
+// Resource-First Commands (RFC-0002)
+// ========================================
+
+/// RFC commands (resource-first structure)
+#[derive(Subcommand, Clone, Debug)]
+enum RfcCommand {
+    /// Create a new RFC
+    New {
+        /// RFC title
+        title: String,
+        /// RFC ID (e.g., RFC-0010). Auto-generated if omitted.
+        #[arg(long)]
+        id: Option<String>,
+    },
+    /// List all RFCs
+    #[command(visible_alias = "ls")]
+    List {
+        /// Filter by status or phase
+        filter: Option<String>,
+    },
+    /// Get RFC field value
+    Get {
+        /// RFC ID
+        id: String,
+        /// Field name (omit to show all)
+        field: Option<String>,
+    },
+    /// Set RFC field value
+    Set {
+        /// RFC ID
+        id: String,
+        /// Field name
+        field: String,
+        /// New value (omit if using --stdin)
+        #[arg(required_unless_present = "stdin")]
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Bump RFC version
+    Bump {
+        /// RFC ID
+        id: String,
+        /// Patch version bump
+        #[arg(long, group = "bump_level")]
+        patch: bool,
+        /// Minor version bump
+        #[arg(long, group = "bump_level")]
+        minor: bool,
+        /// Major version bump
+        #[arg(long, group = "bump_level")]
+        major: bool,
+        /// Changelog summary
+        #[arg(short = 'm', long)]
+        summary: Option<String>,
+        /// Add change description(s)
+        #[arg(short = 'c', long = "change")]
+        changes: Vec<String>,
+    },
+    /// Finalize RFC status (draft → normative or deprecated)
+    Finalize {
+        /// RFC ID
+        id: String,
+        /// Target status
+        #[arg(value_enum)]
+        status: FinalizeStatus,
+    },
+    /// Advance RFC phase
+    Advance {
+        /// RFC ID
+        id: String,
+        /// Target phase
+        #[arg(value_enum)]
+        phase: RfcPhase,
+    },
+    /// Deprecate RFC
+    Deprecate {
+        /// RFC ID
+        id: String,
+    },
+    /// Supersede RFC
+    Supersede {
+        /// RFC ID to supersede
+        id: String,
+        /// Replacement RFC ID
+        #[arg(long)]
+        by: String,
+    },
+}
+
+/// Clause commands (resource-first structure)
+#[derive(Subcommand, Clone, Debug)]
+enum ClauseCommand {
+    /// Create a new clause
+    New {
+        /// Clause ID (e.g., RFC-0010:C-SCOPE)
+        clause_id: String,
+        /// Clause title
+        title: String,
+        /// Section to add the clause to
+        #[arg(short = 's', long, default_value = "Specification")]
+        section: String,
+        /// Clause kind
+        #[arg(short = 'k', long, value_enum, default_value = "normative")]
+        kind: ClauseKind,
+    },
+    /// List clauses
+    #[command(visible_alias = "ls")]
+    List {
+        /// Filter by RFC ID
+        rfc_id: Option<String>,
+    },
+    /// Get clause field value
+    Get {
+        /// Clause ID (e.g., RFC-0001:C-PHASE-ORDER)
+        id: String,
+        /// Field name (omit to show all)
+        field: Option<String>,
+    },
+    /// Edit clause text
+    Edit {
+        /// Clause ID
+        id: String,
+        /// Set text directly
+        #[arg(long, group = "text_source")]
+        text: Option<String>,
+        /// Read text from file
+        #[arg(long, group = "text_source")]
+        text_file: Option<PathBuf>,
+        /// Read text from stdin (recommended for multi-line)
+        #[arg(long, group = "text_source")]
+        stdin: bool,
+    },
+    /// Set clause field value
+    Set {
+        /// Clause ID
+        id: String,
+        /// Field name
+        field: String,
+        /// New value (omit if using --stdin)
+        #[arg(required_unless_present = "stdin")]
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Delete clause
+    Delete {
+        /// Clause ID
+        id: String,
+        /// Force deletion without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
+    },
+    /// Deprecate clause
+    Deprecate {
+        /// Clause ID
+        id: String,
+    },
+    /// Supersede clause
+    Supersede {
+        /// Clause ID to supersede
+        id: String,
+        /// Replacement clause ID
+        #[arg(long)]
+        by: String,
+    },
+}
+
+/// ADR commands (resource-first structure)
+#[derive(Subcommand, Clone, Debug)]
+enum AdrCommand {
+    /// Create a new ADR
+    New {
+        /// ADR title
+        title: String,
+    },
+    /// List ADRs
+    #[command(visible_alias = "ls")]
+    List {
+        /// Filter by status
+        status: Option<String>,
+    },
+    /// Get ADR field value
+    Get {
+        /// ADR ID
+        id: String,
+        /// Field name (omit to show all)
+        field: Option<String>,
+    },
+    /// Set ADR field value
+    Set {
+        /// ADR ID
+        id: String,
+        /// Field name
+        field: String,
+        /// New value (omit if using --stdin)
+        #[arg(required_unless_present = "stdin")]
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Add value to ADR array field
+    Add {
+        /// ADR ID
+        id: String,
+        /// Array field name
+        field: String,
+        /// Value to add (optional if --stdin)
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Remove value from ADR array field
+    Remove {
+        /// ADR ID
+        id: String,
+        /// Array field name
+        field: String,
+        /// Pattern to match
+        #[arg(required_unless_present = "at")]
+        pattern: Option<String>,
+        /// Remove by index
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern
+        #[arg(long)]
+        regex: bool,
+        /// Remove all matches
+        #[arg(long)]
+        all: bool,
+    },
+    /// Accept ADR (proposed → accepted)
+    Accept {
+        /// ADR ID
+        id: String,
+    },
+    /// Reject ADR (proposed → rejected)
+    Reject {
+        /// ADR ID
+        id: String,
+    },
+    /// Deprecate ADR
+    Deprecate {
+        /// ADR ID
+        id: String,
+    },
+    /// Supersede ADR
+    Supersede {
+        /// ADR ID to supersede
+        id: String,
+        /// Replacement ADR ID
+        #[arg(long)]
+        by: String,
+    },
+    /// Tick checklist item
+    Tick {
+        /// ADR ID
+        id: String,
+        /// Field (decisions or alternatives)
+        field: String,
+        /// Pattern to match
+        pattern: Option<String>,
+        /// New status
+        #[arg(short, long, value_enum, default_value = "done")]
+        status: TickStatus,
+        /// Match by index
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern
+        #[arg(long)]
+        regex: bool,
+    },
+}
+
+/// Work item commands (resource-first structure)
+#[derive(Subcommand, Clone, Debug)]
+enum WorkCommand {
+    /// Create a new work item
+    New {
+        /// Work item title
+        title: String,
+        /// Immediately activate the work item
+        #[arg(long)]
+        active: bool,
+    },
+    /// List work items
+    #[command(visible_alias = "ls")]
+    List {
+        /// Filter by status
+        status: Option<String>,
+    },
+    /// Get work item field value
+    Get {
+        /// Work item ID
+        id: String,
+        /// Field name (omit to show all)
+        field: Option<String>,
+    },
+    /// Set work item field value
+    Set {
+        /// Work item ID
+        id: String,
+        /// Field name
+        field: String,
+        /// New value (omit if using --stdin)
+        #[arg(required_unless_present = "stdin")]
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Add value to work item array field
+    Add {
+        /// Work item ID
+        id: String,
+        /// Array field name (e.g., refs, acceptance_criteria)
+        field: String,
+        /// Value to add (optional if --stdin)
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Remove value from work item array field
+    Remove {
+        /// Work item ID
+        id: String,
+        /// Array field name
+        field: String,
+        /// Pattern to match
+        #[arg(required_unless_present = "at")]
+        pattern: Option<String>,
+        /// Remove by index
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern
+        #[arg(long)]
+        regex: bool,
+        /// Remove all matches
+        #[arg(long)]
+        all: bool,
+    },
+    /// Move work item to new status
+    #[command(visible_alias = "mv")]
+    Move {
+        /// Work item file path or ID
+        #[arg(value_name = "FILE_OR_ID")]
+        file: PathBuf,
+        /// Target status
+        #[arg(value_enum)]
+        status: WorkItemStatus,
+    },
+    /// Tick acceptance criteria item
+    Tick {
+        /// Work item ID
+        id: String,
+        /// Field (acceptance_criteria)
+        field: String,
+        /// Pattern to match
+        pattern: Option<String>,
+        /// New status
+        #[arg(short, long, value_enum, default_value = "done")]
+        status: TickStatus,
+        /// Match by index
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern
+        #[arg(long)]
+        regex: bool,
+    },
+    /// Delete work item
+    Delete {
+        /// Work item ID
+        id: String,
+        /// Force deletion without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
+    },
 }
 
 fn main() -> ExitCode {
