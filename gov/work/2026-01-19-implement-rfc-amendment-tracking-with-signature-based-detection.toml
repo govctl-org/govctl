@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-19-007"
 title = "Implement RFC amendment tracking with signature-based detection"
-status = "active"
+status = "done"
 created = "2026-01-19"
 started = "2026-01-19"
+completed = "2026-01-19"
 
 [content]
 description = """
@@ -13,20 +14,20 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "Add signature field to RfcSpec model"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Implement govctl bump command for version bumping"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Display asterisk indicator for amended RFCs in list output"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "All tests pass"
-status = "pending"
+status = "done"
 category = "chore"
