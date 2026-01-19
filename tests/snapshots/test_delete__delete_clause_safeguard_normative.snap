@@ -1,5 +1,5 @@
 ---
-source: tests/cli_snapshots.rs
+source: tests/test_delete.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl delete RFC-0001:C-LOCKED -f

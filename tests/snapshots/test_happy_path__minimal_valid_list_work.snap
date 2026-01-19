@@ -1,5 +1,5 @@
 ---
-source: tests/cli_snapshots.rs
+source: tests/test_happy_path.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl list work

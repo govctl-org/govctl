@@ -1,6 +1,6 @@
 ---
-source: tests/cli_snapshots.rs
-expression: "normalize_output(&unreleased_output, &date)"
+source: tests/test_changelog.rs
+expression: "normalize_output(&unreleased_output, dir, &date)"
 ---
 $ govctl new work New features --active
 Created work item: gov/work/<DATE>-new-features.toml

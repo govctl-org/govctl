@@ -1,6 +1,6 @@
 ---
-source: tests/cli_snapshots.rs
-expression: "normalize_output(&error_output, &date)"
+source: tests/test_changelog.rs
+expression: "normalize_output(&error_output, dir, &date)"
 ---
 $ govctl release invalid-version
 Error: error[E0701]: Invalid semver version: invalid-version (gov/releases.toml)

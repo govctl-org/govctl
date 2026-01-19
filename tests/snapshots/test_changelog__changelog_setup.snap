@@ -1,6 +1,6 @@
 ---
-source: tests/cli_snapshots.rs
-expression: "normalize_output(&setup_output, &date)"
+source: tests/test_changelog.rs
+expression: "normalize_output(&setup_output, dir, &date)"
 ---
 $ govctl init
 Created: gov

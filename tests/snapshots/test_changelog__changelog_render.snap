@@ -1,6 +1,6 @@
 ---
-source: tests/cli_snapshots.rs
-expression: "normalize_output(&changelog_output, &date)"
+source: tests/test_changelog.rs
+expression: "normalize_output(&changelog_output, dir, &date)"
 ---
 $ govctl status
 govctl status

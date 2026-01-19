@@ -105,7 +105,7 @@ fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
         } else {
             rfc.rfc.rfc_id.clone()
         };
-        
+
         table.add_row(vec![
             id_cell(&rfc_id_display),
             cell(&rfc.rfc.version),
