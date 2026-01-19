@@ -51,6 +51,7 @@ pub enum CanonicalCommand {
         force: bool,
     },
     Check {
+        #[allow(dead_code)]
         deny_warnings: bool,
     },
     Status,
@@ -61,6 +62,7 @@ pub enum CanonicalCommand {
     },
     Describe {
         context: bool,
+        #[allow(dead_code)]
         format: String,
     },
     Completions {

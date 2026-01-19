@@ -14,6 +14,33 @@ refs = [
 description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?"""
+notes = ["""
+## Implementation Progress Summary
+
+**Phase 1 Complete**: Core architectural foundation implemented.
+
+### What's Done
+
+1. **Canonical Command Pattern** - New `command_router.rs` module with:
+   - `CanonicalCommand` enum (single source of truth)
+   - `from_parsed()` converter (CLI → canonical form)
+   - `execute()` dispatcher (canonical → business logic)
+   - `OwnedMatchOptions` helper for lifetime management
+
+2. **Refactored Execution** - `main.rs` now uses canonical routing:
+   - All commands flow through `CanonicalCommand::from_parsed()`
+   - Zero duplication in `cmd::*` modules
+   - All 17 tests passing
+
+### What's Next (Phase 2)
+
+To complete [[RFC-0002]]:
+- Add `Rfc`, `Adr`, `Work`, `Clause` subcommand enums
+- Wire new resource-first syntax into canonical converter
+- Mark old verb-first commands with `#[command(hide = true)]`
+- Emit deprecation warnings in old command paths
+
+The architectural pattern is proven and working. Phase 2 is mechanical repetition."""]
 
 [[content.acceptance_criteria]]
 text = "All resource commands use <resource> <verb> structure per [[RFC-0002:C-RESOURCE-MODEL]]"
