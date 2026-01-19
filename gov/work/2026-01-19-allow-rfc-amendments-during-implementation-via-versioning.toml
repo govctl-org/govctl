@@ -5,6 +5,10 @@ title = "Allow RFC amendments during implementation via versioning"
 status = "active"
 created = "2026-01-19"
 started = "2026-01-19"
+refs = [
+    "ADR-0016",
+    "RFC-0001",
+]
 
 [content]
 description = """

@@ -1,0 +1,50 @@
+[govctl]
+schema = 1
+id = "ADR-0016"
+title = "Allow RFC amendments via versioning during implementation"
+status = "proposed"
+date = "2026-01-19"
+
+[content]
+context = """
+Real-world governance experience from the neotex-v2 project shows that RFCs often need amendments during implementation. This conflicts with the current govctl mental model that treats `normative` status as "frozen" — the documentation (CLAUDE.md:79) states "normative: Frozen. Implementation MUST conform."
+
+This creates a false dichotomy:
+- **Theory**: Spec everything perfectly, then implement
+- **Practice**: You discover spec bugs, ambiguities, and wrong assumptions during implementation
+
+The problem is **not** with [[RFC-0001:C-RFC-STATUS]] (which only says "normative" means "binding"), but with the **interpretation** that "binding" implies "immutable." This forces workarounds: draft ADRs, inline comments, or ignoring governance entirely.
+
+The infrastructure for RFC evolution already exists: versioning (`version` field) and changelog (`changelog` array per [[ADR-0004]]). We're just not using it for governance."""
+
+decision = """
+**Clarify the semantics of "normative":**
+
+- `normative` means **binding** (code must conform to current version)
+- `normative` does **NOT** mean **frozen** (spec can evolve with version bumps)
+
+**Operational changes:**
+
+1. Remove "normative = frozen" messaging from all documentation
+2. Document that normative RFCs MAY be amended via version bumping
+3. When amending a normative RFC:
+   - Bump version according to semantic versioning
+   - Add changelog entry documenting the change
+   - Rationale and audit trail live in git/jj history
+
+**Precedent:** Linux kernel APIs are both binding (drivers must conform) and evolving (with deprecation, versioning, compatibility) simultaneously."""
+
+consequences = """
+**Easier:**
+- Amending RFCs during implementation (matches real workflow)
+- Iterative spec refinement (discover-fix-document cycle)
+- Honest governance (no pretending specs are perfect)
+
+**More difficult:**
+- Reviewers must check RFC changelog to see what changed
+- Multiple versions of an RFC might exist during development (but this is reality anyway)
+
+**No breaking changes:**
+- Existing RFCs remain valid
+- No data model changes required
+- Validation rules simplified (remove frozen assumption)"""
