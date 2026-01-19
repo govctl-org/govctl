@@ -1104,6 +1104,123 @@ pub fn delete_clause(
     Ok(vec![])
 }
 
+/// Delete a queued work item.
+///
+/// Safety: Only work items in queue status can be deleted.
+/// Work items that have been activated should use 'cancelled' status instead.
+pub fn delete_work_item(
+    config: &Config,
+    id: &str,
+    force: bool,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    use crate::load::load_project_with_warnings;
+    use crate::model::WorkItemStatus;
+
+    // Load work item
+    let entry = load_work_item(config, id)?;
+    let wi = &entry.spec;
+
+    // Safety check: Only queue-status work items can be deleted
+    if wi.govctl.status != WorkItemStatus::Queue {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0402WorkNotFound,
+            format!(
+                "Cannot delete work item: {} is {}. Only queued work items can be deleted. Use 'mv {} cancelled' for active items.",
+                wi.govctl.id,
+                wi.govctl.status.as_ref(),
+                wi.govctl.id
+            ),
+            id,
+        )
+        .into());
+    }
+
+    // Check for references in other artifacts
+    let load_result = match load_project_with_warnings(config) {
+        Ok(result) => result,
+        Err(_) => {
+            // If project fails to load, proceed anyway (deletion might help fix it)
+            return proceed_with_deletion(&entry.path, &wi.govctl.id, force, op);
+        }
+    };
+    
+    let index = &load_result.index;
+    let mut referenced_by = Vec::new();
+
+    // Check RFCs
+    for rfc in &index.rfcs {
+        if rfc.rfc.refs.contains(&wi.govctl.id) {
+            referenced_by.push(rfc.rfc.rfc_id.clone());
+        }
+    }
+
+    // Check ADRs
+    for adr in &index.adrs {
+        if adr.spec.govctl.refs.contains(&wi.govctl.id) {
+            referenced_by.push(adr.spec.govctl.id.clone());
+        }
+    }
+
+    // Check other work items
+    for other_wi in &index.work_items {
+        if other_wi.spec.govctl.id != wi.govctl.id
+            && other_wi.spec.govctl.refs.contains(&wi.govctl.id)
+        {
+            referenced_by.push(other_wi.spec.govctl.id.clone());
+        }
+    }
+
+    if !referenced_by.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0404WorkRefNotFound,
+            format!(
+                "Cannot delete work item: {} is referenced by: {}. Remove references first.",
+                wi.govctl.id,
+                referenced_by.join(", ")
+            ),
+            id,
+        )
+        .into());
+    }
+
+    proceed_with_deletion(&entry.path, &wi.govctl.id, force, op)
+}
+
+/// Helper function to proceed with deletion after checks pass
+fn proceed_with_deletion(
+    path: &std::path::Path,
+    id: &str,
+    force: bool,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    use crate::write::delete_file;
+
+    // Confirmation prompt (unless force or dry-run)
+    if !force && !op.is_preview() {
+        use std::io::{self, Write};
+        print!("Delete work item {}? [y/N] ", id);
+        io::stdout().flush()?;
+
+        let mut response = String::new();
+        io::stdin().read_line(&mut response)?;
+
+        if !response.trim().eq_ignore_ascii_case("y") {
+            ui::info("Deletion cancelled");
+            return Ok(vec![]);
+        }
+    }
+
+    // Delete file
+    delete_file(path, op)?;
+
+    if !op.is_preview() {
+        ui::success(format!("Deleted work item {}", id));
+    }
+
+    Ok(vec![])
+}
+
 /// Resolve match result to a single index (tick doesn't allow multiple)
 fn resolve_single_match(
     id: &str,

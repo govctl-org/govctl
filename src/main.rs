@@ -354,6 +354,14 @@ enum DeleteTarget {
         #[arg(short = 'f', long)]
         force: bool,
     },
+    /// Delete a queued work item
+    Work {
+        /// Work item ID or file path
+        id: String,
+        /// Force deletion without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
+    },
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -541,6 +549,9 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         Commands::Delete { target } => match target {
             DeleteTarget::Clause { clause_id, force } => {
                 cmd::edit::delete_clause(&config, clause_id, *force, op)
+            }
+            DeleteTarget::Work { id, force } => {
+                cmd::edit::delete_work_item(&config, id, *force, op)
             }
         },
         Commands::Move { file, status } => cmd::move_::move_item(&config, file, *status, op),
