@@ -1,0 +1,36 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-19-008"
+title = "Implement RFC-0002 resource-first CLI structure"
+status = "active"
+created = "2026-01-19"
+started = "2026-01-19"
+refs = [
+    "RFC-0002",
+    "ADR-0017",
+]
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "All resource commands use <resource> <verb> structure per [[RFC-0002:C-RESOURCE-MODEL]]"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Canonical command pattern eliminates duplication"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Old verb-first commands emit deprecation warnings"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "All existing tests pass with new structure"
+status = "pending"
+category = "chore"
