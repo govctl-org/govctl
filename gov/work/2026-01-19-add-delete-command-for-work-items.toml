@@ -1,0 +1,32 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-19-003"
+title = "Add delete command for work items"
+status = "active"
+created = "2026-01-19"
+started = "2026-01-19"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "CLI command 'delete work' implemented"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Only queue-status work items can be deleted"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Reference check prevents deletion if work item is referenced"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests verify both successful deletion and safety rejection"
+status = "pending"
+category = "added"
