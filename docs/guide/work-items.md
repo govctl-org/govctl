@@ -91,6 +91,25 @@ govctl remove WI-2026-01-17-001 refs "RFC-.*" --regex
 govctl remove WI-2026-01-17-001 refs "obsolete" --all
 ```
 
+## Deleting Work Items
+
+Accidentally created work items can be deleted if they're still in **queue** status:
+
+```bash
+govctl delete work WI-2026-01-17-999 -f
+```
+
+**Safety:** Deletion is only allowed when:
+
+- The work item status is `queue` (never activated)
+- No other artifacts reference it
+
+For work items that have been activated, use status transitions instead:
+
+```bash
+govctl mv WI-2026-01-17-001 cancelled
+```
+
 ## Listing Work Items
 
 ```bash

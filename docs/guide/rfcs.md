@@ -45,6 +45,21 @@ EOF
 govctl edit RFC-0010:C-SCOPE
 ```
 
+### Delete a Clause
+
+Accidentally created clauses can be deleted from **draft** RFCs only:
+
+```bash
+govctl delete clause RFC-0010:C-MISTAKE -f
+```
+
+**Safety:** Deletion is only allowed when:
+
+- The RFC status is `draft` (normative RFCs are immutable)
+- No other artifacts reference the clause
+
+For normative RFCs, use `govctl deprecate RFC-0010:C-OLD` instead.
+
 ### List Clauses
 
 ```bash
