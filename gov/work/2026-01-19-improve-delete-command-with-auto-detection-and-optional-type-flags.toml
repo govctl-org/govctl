@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-19-005"
 title = "Improve delete command with auto-detection and optional type flags"
-status = "active"
+status = "done"
 created = "2026-01-19"
 started = "2026-01-19"
+completed = "2026-01-19"
 
 [content]
 description = """
@@ -18,20 +19,20 @@ This makes `delete` consistent with `edit` (which already auto-detects) and redu
 
 [[content.acceptance_criteria]]
 text = "Auto-detection from ID format working"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Optional type flags available"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Tests updated"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Documentation updated"
-status = "pending"
+status = "done"
 category = "added"
