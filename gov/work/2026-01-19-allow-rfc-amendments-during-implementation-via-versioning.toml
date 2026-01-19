@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-19-006"
 title = "Allow RFC amendments during implementation via versioning"
-status = "active"
+status = "done"
 created = "2026-01-19"
 started = "2026-01-19"
+completed = "2026-01-19"
 refs = [
     "ADR-0016",
     "RFC-0001",
@@ -17,20 +18,20 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "Remove 'normative = frozen' validation constraint"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Support RFC amendments via version bumping and changelog"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "All tests pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Update CLAUDE.md to reflect RFC evolution model"
-status = "pending"
+status = "done"
 category = "changed"

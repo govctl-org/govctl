@@ -274,9 +274,6 @@ Per [[ADR-0016]], normative RFCs MAY be amended during implementation. Amendment
 {{GOVCTL}} edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
 Updated specification text.
 EOF
-
-# Version bump happens automatically on next render
-# Or manually via future `{{GOVCTL}} bump` command
 ```
 
 ### 3.2 Implement
