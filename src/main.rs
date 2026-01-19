@@ -1,6 +1,6 @@
 //! govctl: Project governance CLI for RFC, ADR, and Work Item management.
 
-use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -17,6 +17,7 @@ mod validate;
 mod write;
 
 mod cmd;
+mod command_router;
 
 #[cfg(feature = "tui")]
 mod tui;
@@ -429,170 +430,26 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
     let config = Config::load(cli.config.as_deref())?;
     let op = write::WriteOp::from_dry_run(cli.dry_run);
 
-    match &cli.command {
-        Commands::Init { force } => cmd::new::init_project(&config, *force, op),
-        Commands::Check { deny_warnings: _ } => cmd::check::check_all(&config),
-        Commands::Status => cmd::status::show_status(&config),
-        Commands::List { target, filter } => cmd::list::list(&config, *target, filter.as_deref()),
-        Commands::New { target } => cmd::new::create(&config, target, op),
-        Commands::Render {
+    // Convert parsed CLI command to canonical form
+    let canonical = command_router::CanonicalCommand::from_parsed(&cli.command)?;
+
+    // Handle render command dry-run flag combination (special case)
+    let canonical = if let command_router::CanonicalCommand::Render {
+        target,
+        rfc_id,
+        dry_run,
+    } = canonical
+    {
+        // Combine global and command-specific dry-run flags
+        command_router::CanonicalCommand::Render {
             target,
             rfc_id,
-            dry_run,
-        } => {
-            // Combine global and command-specific dry-run flags
-            let effective_dry_run = cli.dry_run || *dry_run;
-            let mut all_diags = vec![];
-            match target {
-                RenderTarget::Rfc => {
-                    all_diags.extend(cmd::render::render(
-                        &config,
-                        rfc_id.as_deref(),
-                        effective_dry_run,
-                    )?);
-                }
-                RenderTarget::Adr => {
-                    all_diags.extend(cmd::render::render_adrs(&config, effective_dry_run)?);
-                }
-                RenderTarget::Work => {
-                    all_diags.extend(cmd::render::render_work_items(&config, effective_dry_run)?);
-                }
-                RenderTarget::Changelog => {
-                    all_diags.extend(cmd::render::render_changelog(&config, effective_dry_run)?);
-                }
-                RenderTarget::All => {
-                    all_diags.extend(cmd::render::render(
-                        &config,
-                        rfc_id.as_deref(),
-                        effective_dry_run,
-                    )?);
-                    all_diags.extend(cmd::render::render_adrs(&config, effective_dry_run)?);
-                    all_diags.extend(cmd::render::render_work_items(&config, effective_dry_run)?);
-                }
-            }
-            Ok(all_diags)
+            dry_run: cli.dry_run || dry_run,
         }
-        Commands::Edit {
-            clause_id,
-            text,
-            text_file,
-            stdin,
-        } => cmd::edit::edit_clause(
-            &config,
-            clause_id,
-            text.as_deref(),
-            text_file.as_deref(),
-            *stdin,
-            op,
-        ),
-        Commands::Set {
-            id,
-            field,
-            value,
-            stdin,
-        } => cmd::edit::set_field(&config, id, field, value.as_deref(), *stdin, op),
-        Commands::Get { id, field } => cmd::edit::get_field(&config, id, field.as_deref()),
-        Commands::Add {
-            id,
-            field,
-            value,
-            stdin,
-        } => cmd::edit::add_to_field(&config, id, field, value.as_deref(), *stdin, op),
-        Commands::Remove {
-            id,
-            field,
-            pattern,
-            at,
-            exact,
-            regex,
-            all,
-        } => {
-            let match_opts = cmd::edit::MatchOptions {
-                pattern: pattern.as_deref(),
-                at: *at,
-                exact: *exact,
-                regex: *regex,
-                all: *all,
-            };
-            cmd::edit::remove_from_field(&config, id, field, &match_opts, op)
-        }
-        Commands::Bump {
-            rfc_id,
-            patch,
-            minor,
-            major,
-            summary,
-            changes,
-        } => {
-            let level = match (patch, minor, major) {
-                (true, false, false) => Some(write::BumpLevel::Patch),
-                (false, true, false) => Some(write::BumpLevel::Minor),
-                (false, false, true) => Some(write::BumpLevel::Major),
-                (false, false, false) => None,
-                _ => unreachable!("clap arg group ensures mutual exclusivity"),
-            };
-            cmd::lifecycle::bump(&config, rfc_id, level, summary.as_deref(), changes, op)
-        }
-        Commands::Finalize { rfc_id, status } => {
-            cmd::lifecycle::finalize(&config, rfc_id, *status, op)
-        }
-        Commands::Advance { rfc_id, phase } => cmd::lifecycle::advance(&config, rfc_id, *phase, op),
-        Commands::Accept { adr } => cmd::lifecycle::accept_adr(&config, adr, op),
-        Commands::Reject { adr } => cmd::lifecycle::reject_adr(&config, adr, op),
-        Commands::Deprecate { id } => cmd::lifecycle::deprecate(&config, id, op),
-        Commands::Supersede { id, by } => cmd::lifecycle::supersede(&config, id, by, op),
-        Commands::Delete {
-            id,
-            force,
-            clause,
-            work,
-        } => {
-            // Auto-detect artifact type from ID format if not explicitly specified
-            let is_clause = if *clause || *work {
-                *clause // Use explicit flag if provided
-            } else {
-                // Auto-detect: clause IDs contain ':'
-                id.contains(':')
-            };
+    } else {
+        canonical
+    };
 
-            if is_clause {
-                cmd::edit::delete_clause(&config, id, *force, op)
-            } else {
-                cmd::edit::delete_work_item(&config, id, *force, op)
-            }
-        }
-        Commands::Move { file, status } => cmd::move_::move_item(&config, file, *status, op),
-        Commands::Tick {
-            id,
-            field,
-            pattern,
-            status,
-            at,
-            exact,
-            regex,
-        } => {
-            let match_opts = cmd::edit::MatchOptions {
-                pattern: pattern.as_deref(),
-                at: *at,
-                exact: *exact,
-                regex: *regex,
-                all: false, // tick never allows --all
-            };
-            cmd::edit::tick_item(&config, id, field, &match_opts, *status, op)
-        }
-        Commands::Release { version, date } => {
-            cmd::lifecycle::cut_release(&config, version, date.as_deref(), op)
-        }
-        Commands::Describe { context, format: _ } => cmd::describe::describe(&config, *context),
-        Commands::Completions { shell } => {
-            let mut cmd = Cli::command();
-            clap_complete::generate(*shell, &mut cmd, "govctl", &mut std::io::stdout());
-            Ok(vec![])
-        }
-        #[cfg(feature = "tui")]
-        Commands::Tui => {
-            tui::run(&config)?;
-            Ok(vec![])
-        }
-    }
+    // Execute via canonical command pattern (single execution path)
+    canonical.execute(&config, op)
 }
