@@ -14,10 +14,10 @@ fn test_rfc_amendment_tracking() {
     let setup = run_commands(
         temp_dir.path(),
         &[
-            &["new", "rfc", "Amendment Test RFC"],
+            &["rfc", "new", "Amendment Test RFC"],
             &[
-                "new",
                 "clause",
+                "new",
                 "RFC-0001:C-AMEND-TEST",
                 "Amendment Test Clause",
                 "-s",
@@ -26,6 +26,7 @@ fn test_rfc_amendment_tracking() {
                 "normative",
             ],
             &[
+                "clause",
                 "edit",
                 "RFC-0001:C-AMEND-TEST",
                 "--text",
@@ -38,15 +39,16 @@ fn test_rfc_amendment_tracking() {
     let baseline = run_commands(
         temp_dir.path(),
         &[
-            &["finalize", "RFC-0001", "normative"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
             &[
+                "rfc",
                 "bump",
                 "RFC-0001",
                 "--minor",
                 "--summary",
                 "Establish baseline with signature",
             ],
-            &["list", "rfc"],
+            &["rfc", "list"],
         ],
     );
 
@@ -54,6 +56,7 @@ fn test_rfc_amendment_tracking() {
     let edit = run_commands(
         temp_dir.path(),
         &[&[
+            "clause",
             "edit",
             "RFC-0001:C-AMEND-TEST",
             "--text",
@@ -62,20 +65,21 @@ fn test_rfc_amendment_tracking() {
     );
 
     // List should show asterisk for amended RFC
-    let amended = run_commands(temp_dir.path(), &[&["list", "rfc"]]);
+    let amended = run_commands(temp_dir.path(), &[&["rfc", "list"]]);
 
     // Bump version to release amendment
     let released = run_commands(
         temp_dir.path(),
         &[
             &[
+                "rfc",
                 "bump",
                 "RFC-0001",
                 "--patch",
                 "--summary",
                 "Release amendment",
             ],
-            &["list", "rfc"],
+            &["rfc", "list"],
         ],
     );
 

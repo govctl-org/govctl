@@ -2,29 +2,29 @@
 source: tests/test_rfc_lifecycle.rs
 expression: "normalize_output(&combined, temp_dir.path(), &date)"
 ---
-$ govctl new rfc Amendment Test RFC
+$ govctl rfc new Amendment Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.json
   Clauses dir: gov/rfc/RFC-0001/clauses
 exit: 0
 
-$ govctl new clause RFC-0001:C-AMEND-TEST Amendment Test Clause -s Specification -k normative
+$ govctl clause new RFC-0001:C-AMEND-TEST Amendment Test Clause -s Specification -k normative
 Created clause: gov/rfc/RFC-0001/clauses/C-AMEND-TEST.json
   Added to section 'Specification', path: clauses/C-AMEND-TEST.json
 exit: 0
 
-$ govctl edit RFC-0001:C-AMEND-TEST --text Original text for amendment test.
+$ govctl clause edit RFC-0001:C-AMEND-TEST --text Original text for amendment test.
 Updated clause: RFC-0001:C-AMEND-TEST
 exit: 0
 
-$ govctl finalize RFC-0001 normative
+$ govctl rfc finalize RFC-0001 normative
 Finalized RFC-0001 to status: normative
 exit: 0
 
-$ govctl bump RFC-0001 --minor --summary Establish baseline with signature
+$ govctl rfc bump RFC-0001 --minor --summary Establish baseline with signature
 Bumped RFC-0001 to 0.2.0
 exit: 0
 
-$ govctl list rfc
+$ govctl rfc list
 ┌──────────┬─────────┬───────────┬───────┬────────────────────┐
 │ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title              │
 ╞══════════╪═════════╪═══════════╪═══════╪════════════════════╡
@@ -32,11 +32,11 @@ $ govctl list rfc
 └──────────┴─────────┴───────────┴───────┴────────────────────┘
 exit: 0
 
-$ govctl edit RFC-0001:C-AMEND-TEST --text AMENDED text - content changed.
+$ govctl clause edit RFC-0001:C-AMEND-TEST --text AMENDED text - content changed.
 Updated clause: RFC-0001:C-AMEND-TEST
 exit: 0
 
-$ govctl list rfc
+$ govctl rfc list
 ┌───────────┬─────────┬───────────┬───────┬────────────────────┐
 │ RFC       ┆ Version ┆ Status    ┆ Phase ┆ Title              │
 ╞═══════════╪═════════╪═══════════╪═══════╪════════════════════╡
@@ -44,11 +44,11 @@ $ govctl list rfc
 └───────────┴─────────┴───────────┴───────┴────────────────────┘
 exit: 0
 
-$ govctl bump RFC-0001 --patch --summary Release amendment
+$ govctl rfc bump RFC-0001 --patch --summary Release amendment
 Bumped RFC-0001 to 0.2.1
 exit: 0
 
-$ govctl list rfc
+$ govctl rfc list
 ┌──────────┬─────────┬───────────┬───────┬────────────────────┐
 │ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title              │
 ╞══════════╪═════════╪═══════════╪═══════╪════════════════════╡

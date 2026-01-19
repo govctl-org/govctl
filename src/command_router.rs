@@ -296,46 +296,6 @@ impl CanonicalCommand {
             Commands::Adr { command } => Self::from_adr_command(command)?,
             Commands::Work { command } => Self::from_work_command(command)?,
 
-            // Convenient shortcuts that delegate to resource-first commands
-            Commands::List { target, filter } => match target {
-                ListTarget::Rfc => Self::RfcList {
-                    filter: filter.clone(),
-                },
-                ListTarget::Clause => Self::ClauseList {
-                    rfc_id: filter.clone(),
-                },
-                ListTarget::Adr => Self::AdrList {
-                    status: filter.clone(),
-                },
-                ListTarget::Work => Self::WorkList {
-                    status: filter.clone(),
-                },
-            },
-            Commands::New { target } => match target {
-                NewTarget::Rfc { title, id } => Self::RfcNew {
-                    title: title.clone(),
-                    id: id.clone(),
-                },
-                NewTarget::Clause {
-                    clause_id,
-                    title,
-                    section,
-                    kind,
-                } => Self::ClauseNew {
-                    clause_id: clause_id.clone(),
-                    title: title.clone(),
-                    section: section.clone(),
-                    kind: *kind,
-                },
-                NewTarget::Adr { title } => Self::AdrNew {
-                    title: title.clone(),
-                },
-                NewTarget::Work { title, active } => Self::WorkNew {
-                    title: title.clone(),
-                    active: *active,
-                },
-            },
-
             Commands::Release { version, date } => Self::ReleaseCut {
                 version: version.clone(),
                 date: date.clone(),

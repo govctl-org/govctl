@@ -76,12 +76,13 @@ consequences = "Tests will pass."
     // Create work item via commands
     let commands: Vec<Vec<String>> = vec![
         vec![
-            "new".to_string(),
             "work".to_string(),
+            "new".to_string(),
             "Test work item".to_string(),
             "--active".to_string(),
         ],
         vec![
+            "work".to_string(),
             "add".to_string(),
             wi1.clone(),
             "acceptance_criteria".to_string(),
@@ -108,7 +109,7 @@ fn test_minimal_valid_list_rfc() {
     let date = today();
     setup_minimal_valid(temp_dir.path(), &date);
 
-    let output = run_commands(temp_dir.path(), &[&["list", "rfc"]]);
+    let output = run_commands(temp_dir.path(), &[&["rfc", "list"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -118,7 +119,7 @@ fn test_minimal_valid_list_clause() {
     let date = today();
     setup_minimal_valid(temp_dir.path(), &date);
 
-    let output = run_commands(temp_dir.path(), &[&["list", "clause"]]);
+    let output = run_commands(temp_dir.path(), &[&["clause", "list"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -128,7 +129,7 @@ fn test_minimal_valid_list_adr() {
     let date = today();
     setup_minimal_valid(temp_dir.path(), &date);
 
-    let output = run_commands(temp_dir.path(), &[&["list", "adr"]]);
+    let output = run_commands(temp_dir.path(), &[&["adr", "list"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -138,7 +139,7 @@ fn test_minimal_valid_list_work() {
     let date = today();
     setup_minimal_valid(temp_dir.path(), &date);
 
-    let output = run_commands(temp_dir.path(), &[&["list", "work"]]);
+    let output = run_commands(temp_dir.path(), &[&["work", "list"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -162,10 +163,10 @@ fn test_minimal_valid_full_workflow() {
         temp_dir.path(),
         &[
             &["check"],
-            &["list", "rfc"],
-            &["list", "clause"],
-            &["list", "adr"],
-            &["list", "work"],
+            &["rfc", "list"],
+            &["clause", "list"],
+            &["adr", "list"],
+            &["work", "list"],
             &["status"],
         ],
     );

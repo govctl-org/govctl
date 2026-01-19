@@ -64,22 +64,6 @@ enum Commands {
     #[command(visible_alias = "stat")]
     Status,
 
-    /// List artifacts
-    #[command(visible_alias = "ls")]
-    List {
-        /// Target to list
-        #[arg(value_enum)]
-        target: ListTarget,
-        /// Filter (e.g., status for ADRs, RFC ID for clauses)
-        filter: Option<String>,
-    },
-
-    /// Create a new artifact
-    New {
-        #[command(subcommand)]
-        target: NewTarget,
-    },
-
     /// Render artifacts to markdown from SSOT
     #[command(visible_alias = "gen")]
     Render {

@@ -2,11 +2,11 @@
 source: tests/test_delete.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
-$ govctl delete RFC-0001:C-DELETE -f
+$ govctl clause delete RFC-0001:C-DELETE -f
 ✓ Deleted clause RFC-0001:C-DELETE
 exit: 0
 
-$ govctl list clause RFC-0001
+$ govctl clause list RFC-0001
 ┌────────┬──────────┬───────────┬────────┬──────────────────┐
 │ Clause ┆ RFC      ┆ Kind      ┆ Status ┆ Title            │
 ╞════════╪══════════╪═══════════╪════════╪══════════════════╡

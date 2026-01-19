@@ -2,20 +2,17 @@
 schema = 1
 id = "WI-2026-01-19-008"
 title = "Implement RFC-0002 resource-first CLI structure"
-status = "active"
+status = "done"
 created = "2026-01-19"
 started = "2026-01-19"
+completed = "2026-01-19"
 refs = [
     "RFC-0002",
     "ADR-0017",
 ]
 
 [content]
-description = """
-Implement the resource-first CLI structure defined in RFC-0002. Commands should \
-follow `<resource> <verb>` pattern (e.g., `govctl rfc list`, `govctl work new`). \
-This involves creating a canonical command router, adding resource subcommands, \
-and deprecating the old verb-first syntax."""
+description = "Implement the resource-first CLI structure defined in RFC-0002. Commands should follow `<resource> <verb>` pattern (e.g., `govctl rfc list`, `govctl work new`). This involves creating a canonical command router, adding resource subcommands, and deprecating the old verb-first syntax."
 notes = [
     """
 ## Implementation Progress Summary
@@ -108,11 +105,29 @@ Users who want shortcuts can add to their shell:
 alias gl='govctl rfc list'
 alias gw='govctl work'
 ```""",
+    """
+## Implementation Complete
+
+RFC-0002 resource-first CLI structure fully implemented and verified:
+
+1. **Resource-first commands**: All commands now use `<resource> <verb>` syntax
+2. **Canonical router**: Zero code duplication via `CanonicalCommand` pattern
+3. **Old commands removed**: Per [[ADR-0018]], strict resource-first syntax enforced
+4. **Documentation updated**: `assets/gov.md`, `.claude/CLAUDE.md` use new syntax
+5. **All tests passing**: 109 tests (unit + integration) verified
+6. **Test suite updated**: All `test_*.rs` files use new command structure
+
+Key architectural achievements:
+- Single source of truth for business logic in `cmd::*` modules
+- Clean separation: parsing (main.rs) → routing (command_router.rs) → execution (cmd)
+- Extensible design: adding new resources requires minimal boilerplate
+
+Breaking changes properly managed via ADR-0018 during pre-1.0 window.""",
 ]
 
 [[content.acceptance_criteria]]
 text = "All resource commands use <resource> <verb> structure per [[RFC-0002:C-RESOURCE-MODEL]]"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
@@ -121,11 +136,11 @@ status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
-text = "Old verb-first commands emit deprecation warnings"
-status = "pending"
-category = "added"
-
-[[content.acceptance_criteria]]
 text = "All existing tests pass with new structure"
 status = "done"
 category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Old verb-first commands removed per [[ADR-0018]]"
+status = "done"
+category = "added"

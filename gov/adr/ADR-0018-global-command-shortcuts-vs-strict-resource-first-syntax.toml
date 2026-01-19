@@ -2,7 +2,7 @@
 schema = 1
 id = "ADR-0018"
 title = "Global Command Shortcuts vs Strict Resource-First Syntax"
-status = "proposed"
+status = "accepted"
 date = "2026-01-19"
 refs = [
     "RFC-0002",

@@ -2,7 +2,7 @@
 source: tests/test_happy_path.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
-$ govctl list clause
+$ govctl clause list
 ┌───────────┬──────────┬───────────┬────────┬────────────────┐
 │ Clause    ┆ RFC      ┆ Kind      ┆ Status ┆ Title          │
 ╞═══════════╪══════════╪═══════════╪════════╪════════════════╡

@@ -2,17 +2,17 @@
 source: tests/test_delete.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
-$ govctl new work Keep this work item
+$ govctl work new Keep this work item
 Created work item: gov/work/<DATE>-keep-this-work-item.toml
   ID: WI-<DATE>-001
 exit: 0
 
-$ govctl new work Delete this work item
+$ govctl work new Delete this work item
 Created work item: gov/work/<DATE>-delete-this-work-item.toml
   ID: WI-<DATE>-002
 exit: 0
 
-$ govctl list work
+$ govctl work list
 ┌───────────────────┬────────┬───────────────────────┐
 │ ID                ┆ Status ┆ Title                 │
 ╞═══════════════════╪════════╪═══════════════════════╡
@@ -22,11 +22,11 @@ $ govctl list work
 └───────────────────┴────────┴───────────────────────┘
 exit: 0
 
-$ govctl delete WI-<DATE>-001 -f
+$ govctl work delete WI-<DATE>-001 -f
 ✓ Deleted work item WI-<DATE>-001
 exit: 0
 
-$ govctl list work
+$ govctl work list
 ┌───────────────────┬────────┬───────────────────────┐
 │ ID                ┆ Status ┆ Title                 │
 ╞═══════════════════╪════════╪═══════════════════════╡
