@@ -41,12 +41,12 @@ Day 30: Two incompatible caching layers, no spec, nobody knows why
 ### With govctl
 
 ```
-Day 1:  govctl new rfc "Caching Strategy"
+Day 1:  govctl rfc new "Caching Strategy"
 Day 2:  RFC-0015 defines: Redis, TTL policy, invalidation rules
-Day 3:  govctl advance RFC-0015 impl
+Day 3:  govctl rfc advance RFC-0015 impl
 Day 7:  Implementation complete, traceable to spec
-Day 10: govctl advance RFC-0015 test
-Day 14: Tests pass, govctl advance RFC-0015 stable
+Day 10: govctl rfc advance RFC-0015 test
+Day 14: Tests pass, govctl rfc advance RFC-0015 stable
 ```
 
 ---
@@ -105,7 +105,7 @@ cargo install govctl --features tui
 govctl init
 
 # Create your first RFC
-govctl new rfc "Feature Title"
+govctl rfc new "Feature Title"
 
 # Validate
 govctl check

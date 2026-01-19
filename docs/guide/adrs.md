@@ -5,7 +5,7 @@ ADRs (Architectural Decision Records) document significant design choices. They 
 ## Creating ADRs
 
 ```bash
-govctl new adr "Use Redis for caching"
+govctl adr new "Use Redis for caching"
 ```
 
 This creates a TOML file in `gov/adr/` with the decision context.
@@ -21,10 +21,14 @@ ADRs contain:
 
 ## Editing ADRs
 
-ADRs are TOML files — edit them directly or use govctl:
+ADRs are TOML files — edit them directly in your editor or use govctl to get/set fields:
 
 ```bash
-govctl edit ADR-0003
+# Get specific field
+govctl adr get ADR-0003 status
+
+# Set field value
+govctl adr set ADR-0003 status accepted
 ```
 
 ## Status Lifecycle
@@ -39,7 +43,7 @@ proposed → accepted → deprecated
 When consensus is reached:
 
 ```bash
-govctl accept ADR-0003
+govctl adr accept ADR-0003
 ```
 
 ### Deprecate
@@ -47,7 +51,7 @@ govctl accept ADR-0003
 When a decision is no longer relevant:
 
 ```bash
-govctl deprecate ADR-0003
+govctl adr deprecate ADR-0003
 ```
 
 ### Supersede
@@ -55,7 +59,7 @@ govctl deprecate ADR-0003
 When a new decision replaces an old one:
 
 ```bash
-govctl supersede ADR-0001 --by ADR-0005
+govctl adr supersede ADR-0001 --by ADR-0005
 ```
 
 This marks ADR-0001 as superseded and records ADR-0005 as its replacement.
@@ -63,8 +67,8 @@ This marks ADR-0001 as superseded and records ADR-0005 as its replacement.
 ## Listing ADRs
 
 ```bash
-govctl list adr
-govctl list adr --status accepted
+govctl adr list
+govctl adr list accepted    # Filter by status
 ```
 
 ## Why TOML?

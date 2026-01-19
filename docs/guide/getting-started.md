@@ -73,7 +73,7 @@ gov/
 ## Create Your First RFC
 
 ```bash
-govctl new rfc "Feature Title"
+govctl rfc new "Feature Title"
 ```
 
 This creates `gov/rfc/RFC-0000/rfc.json` with the RFC metadata.
@@ -83,13 +83,13 @@ This creates `gov/rfc/RFC-0000/rfc.json` with the RFC metadata.
 RFCs are composed of clauses — atomic units of specification:
 
 ```bash
-govctl new clause RFC-0000:C-SCOPE "Scope" -s "Specification" -k normative
+govctl clause new RFC-0000:C-SCOPE "Scope" -s "Specification" -k normative
 ```
 
 ## Edit Clause Content
 
 ```bash
-govctl edit RFC-0000:C-SCOPE --stdin <<'EOF'
+govctl clause edit RFC-0000:C-SCOPE --stdin <<'EOF'
 The feature MUST do X.
 The feature SHOULD do Y.
 EOF

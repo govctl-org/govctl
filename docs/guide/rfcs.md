@@ -6,10 +6,10 @@ RFCs (Requests for Comments) are the normative specifications in govctl. They de
 
 ```bash
 # Auto-assign next available ID
-govctl new rfc "Feature Title"
+govctl rfc new "Feature Title"
 
 # Specify ID manually
-govctl new rfc "Feature Title" --id RFC-0010
+govctl rfc new "Feature Title" --id RFC-0010
 ```
 
 ## RFC Structure
@@ -24,7 +24,7 @@ An RFC consists of:
 ### Create a Clause
 
 ```bash
-govctl new clause RFC-0010:C-SCOPE "Scope" -s "Specification" -k normative
+govctl clause new RFC-0010:C-SCOPE "Scope" -s "Specification" -k normative
 ```
 
 Options:
@@ -36,13 +36,13 @@ Options:
 
 ```bash
 # From stdin
-govctl edit RFC-0010:C-SCOPE --stdin <<'EOF'
+govctl clause edit RFC-0010:C-SCOPE --stdin <<'EOF'
 The system MUST validate all inputs.
 The system SHOULD log validation failures.
 EOF
 
 # Open in editor
-govctl edit RFC-0010:C-SCOPE
+govctl clause edit RFC-0010:C-SCOPE
 ```
 
 ### Delete a Clause
@@ -60,13 +60,13 @@ govctl delete --clause RFC-0010:C-MISTAKE -f
 - The RFC status is `draft` (normative RFCs are immutable)
 - No other artifacts reference the clause
 
-For normative RFCs, use `govctl deprecate RFC-0010:C-OLD` instead.
+For normative RFCs, use `govctl clause deprecate RFC-0010:C-OLD` instead.
 
 ### List Clauses
 
 ```bash
-govctl list clause
-govctl list clause --rfc RFC-0010
+govctl clause list
+govctl clause list RFC-0010
 ```
 
 ## Status Lifecycle
@@ -82,7 +82,7 @@ draft → normative → deprecated
 When the spec is complete and approved:
 
 ```bash
-govctl finalize RFC-0010 normative
+govctl rfc finalize RFC-0010 normative
 ```
 
 This makes the RFC binding — implementation must conform to it.
@@ -92,7 +92,7 @@ This makes the RFC binding — implementation must conform to it.
 When an RFC is superseded or obsolete:
 
 ```bash
-govctl finalize RFC-0010 deprecated
+govctl rfc finalize RFC-0010 deprecated
 ```
 
 ## Phase Lifecycle
@@ -106,9 +106,9 @@ spec → impl → test → stable
 ### Advance Phase
 
 ```bash
-govctl advance RFC-0010 impl    # Ready for implementation
-govctl advance RFC-0010 test    # Implementation complete, ready for testing
-govctl advance RFC-0010 stable  # Tested, ready for production
+govctl rfc advance RFC-0010 impl    # Ready for implementation
+govctl rfc advance RFC-0010 test    # Implementation complete, ready for testing
+govctl rfc advance RFC-0010 stable  # Tested, ready for production
 ```
 
 Phase transitions are gated:
@@ -122,15 +122,15 @@ RFCs use semantic versioning:
 
 ```bash
 # Bump version with changelog entry
-govctl bump RFC-0010 --patch -m "Fix typo in clause C-SCOPE"
-govctl bump RFC-0010 --minor -m "Add new clause for edge case"
-govctl bump RFC-0010 --major -m "Breaking change to API contract"
+govctl rfc bump RFC-0010 --patch -m "Fix typo in clause C-SCOPE"
+govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
+govctl rfc bump RFC-0010 --major -m "Breaking change to API contract"
 ```
 
 ## Listing RFCs
 
 ```bash
-govctl list rfc
-govctl list rfc --status normative
-govctl list rfc --phase impl
+govctl rfc list
+govctl rfc list normative    # Filter by status
+govctl rfc list impl         # Filter by phase
 ```

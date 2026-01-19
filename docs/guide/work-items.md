@@ -6,10 +6,10 @@ Work Items track units of work from inception to completion. They provide an aud
 
 ```bash
 # Create in queue (pending)
-govctl new work "Implement caching layer"
+govctl work new "Implement caching layer"
 
 # Create and activate immediately
-govctl new work --active "Urgent bug fix"
+govctl work new --active "Urgent bug fix"
 ```
 
 Work items are automatically assigned IDs like `WI-2026-01-17-001`.
@@ -35,11 +35,11 @@ queue → active → done
 
 ```bash
 # By ID
-govctl mv WI-2026-01-17-001 active
-govctl mv WI-2026-01-17-001 done
+govctl work move WI-2026-01-17-001 active
+govctl work move WI-2026-01-17-001 done
 
 # By filename (without path)
-govctl mv implement-caching.toml active
+govctl work move implement-caching.toml active
 ```
 
 ## Acceptance Criteria
@@ -47,14 +47,14 @@ govctl mv implement-caching.toml active
 ### Add Criteria
 
 ```bash
-govctl add WI-2026-01-17-001 acceptance_criteria "Unit tests pass"
-govctl add WI-2026-01-17-001 acceptance_criteria "Documentation updated"
+govctl work add WI-2026-01-17-001 acceptance_criteria "Unit tests pass"
+govctl work add WI-2026-01-17-001 acceptance_criteria "Documentation updated"
 ```
 
 ### Mark Criteria Complete
 
 ```bash
-govctl tick WI-2026-01-17-001 acceptance_criteria "Unit tests" -s done
+govctl work tick WI-2026-01-17-001 acceptance_criteria "Unit tests" -s done
 ```
 
 The pattern matches case-insensitively by substring.
@@ -64,7 +64,7 @@ The pattern matches case-insensitively by substring.
 Add context or progress notes:
 
 ```bash
-govctl add WI-2026-01-17-001 notes "Discovered edge case in validation"
+govctl work add WI-2026-01-17-001 notes "Discovered edge case in validation"
 ```
 
 ## Removing Items
@@ -73,22 +73,22 @@ Remove items from array fields using flexible matching:
 
 ```bash
 # Substring match (default, case-insensitive)
-govctl remove WI-2026-01-17-001 notes "edge case"
+govctl work remove WI-2026-01-17-001 notes "edge case"
 
 # Exact match
-govctl remove WI-2026-01-17-001 notes "Discovered edge case in validation" --exact
+govctl work remove WI-2026-01-17-001 notes "Discovered edge case in validation" --exact
 
 # By index (0-based)
-govctl remove WI-2026-01-17-001 notes --at 0
+govctl work remove WI-2026-01-17-001 notes --at 0
 
 # Negative index (from end)
-govctl remove WI-2026-01-17-001 notes --at -1
+govctl work remove WI-2026-01-17-001 notes --at -1
 
 # Regex pattern
-govctl remove WI-2026-01-17-001 refs "RFC-.*" --regex
+govctl work remove WI-2026-01-17-001 refs "RFC-.*" --regex
 
 # Remove all matches
-govctl remove WI-2026-01-17-001 refs "obsolete" --all
+govctl work remove WI-2026-01-17-001 refs "obsolete" --all
 ```
 
 ## Deleting Work Items
@@ -109,16 +109,16 @@ govctl delete --work WI-2026-01-17-999 -f
 For work items that have been activated, use status transitions instead:
 
 ```bash
-govctl mv WI-2026-01-17-001 cancelled
+govctl work move WI-2026-01-17-001 cancelled
 ```
 
 ## Listing Work Items
 
 ```bash
-govctl list work
-govctl list work queue      # Pending items
-govctl list work active     # In progress
-govctl list work done       # Completed
+govctl work list
+govctl work list queue      # Pending items
+govctl work list active     # In progress
+govctl work list done       # Completed
 ```
 
 ## Why TOML?
