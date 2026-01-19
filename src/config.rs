@@ -52,6 +52,9 @@ pub struct PathsConfig {
     /// Output directory for rendered docs (docs/)
     #[serde(default = "default_docs_output")]
     pub docs_output: PathBuf,
+    /// Commands directory for AI IDEs (Claude, Cursor, Windsurf, etc.)
+    #[serde(default = "default_commands_dir")]
+    pub commands_dir: PathBuf,
 }
 
 fn default_gov_root() -> PathBuf {
@@ -62,11 +65,16 @@ fn default_docs_output() -> PathBuf {
     PathBuf::from("docs")
 }
 
+fn default_commands_dir() -> PathBuf {
+    PathBuf::from(".claude/commands")
+}
+
 impl Default for PathsConfig {
     fn default() -> Self {
         Self {
             gov_root: default_gov_root(),
             docs_output: default_docs_output(),
+            commands_dir: default_commands_dir(),
         }
     }
 }
@@ -254,6 +262,11 @@ name = "my-project"
 [paths]
 gov_root = "gov"
 docs_output = "docs"
+# Commands directory for AI IDEs (Claude Desktop, Cursor, Windsurf, etc.)
+# Default: ".claude/commands"
+# For Cursor: ".cursor/commands"
+# For Windsurf: ".windsurf/commands"
+# commands_dir = ".claude/commands"
 
 [schema]
 version = 1

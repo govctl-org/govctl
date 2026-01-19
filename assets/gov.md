@@ -132,7 +132,7 @@ Parse `$ARGUMENTS` and classify:
 **Decision:**
 
 - Active item matches → use it, proceed to Phase 2
-- Queued item matches → `{{GOVCTL}} mv <WI-ID> active`
+- Queued item matches → `{{GOVCTL}} work move <WI-ID> active`
 - No match → create new
 
 ### 1.2 Create New Work Item
@@ -271,7 +271,7 @@ Per [[ADR-0016]], normative RFCs MAY be amended during implementation. Amendment
 
 ```bash
 # Edit clause content
-{{GOVCTL}} edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
+{{GOVCTL}} clause edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
 Updated specification text.
 EOF
 ```
@@ -358,13 +358,13 @@ If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless ov
 Then tick each completed criterion:
 
 ```bash
-{{GOVCTL}} tick <WI-ID> acceptance_criteria "criterion" -s done
+{{GOVCTL}} work tick <WI-ID> acceptance_criteria "criterion" -s done
 ```
 
 ### 5.4 Mark Work Item Done
 
 ```bash
-{{GOVCTL}} mv <WI-ID> done
+{{GOVCTL}} work move <WI-ID> done
 ```
 
 ### 5.5 Record
@@ -471,7 +471,7 @@ The `[[...]]` pattern is automatically expanded to markdown links during `{{GOVC
 **{{GOVCTL}}:** Use `--stdin` with heredoc:
 
 ```bash
-{{GOVCTL}} edit <clause-id> --stdin <<'EOF'
+{{GOVCTL}} clause edit <clause-id> --stdin <<'EOF'
 Multi-line content here.
 EOF
 ```

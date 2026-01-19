@@ -52,6 +52,14 @@ enum Commands {
         force: bool,
     },
 
+    /// Sync Claude Desktop commands from assets to .claude/commands/
+    #[allow(clippy::enum_variant_names)]
+    SyncCommands {
+        /// Force overwrite existing commands
+        #[arg(short = 'f', long)]
+        force: bool,
+    },
+
     /// Validate all governed documents
     #[command(visible_alias = "lint")]
     Check {

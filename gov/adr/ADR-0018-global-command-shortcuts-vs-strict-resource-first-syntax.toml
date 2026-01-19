@@ -68,7 +68,7 @@ We will **remove** `govctl list` and `govctl new` shortcuts entirely, enforcing 
    - `govctl rfc list` - list RFCs
    - `govctl work new` - create work item
    - `govctl adr accept` - accept ADR
-   
+
    Having two ways (`govctl list rfc` vs `govctl rfc list`) violates the "one obvious way" principle.
 
 3. **Reduced Complexity**: Maintaining both patterns adds ~40 lines of delegation code and increases cognitive load for users ("which way should I use?").
@@ -131,7 +131,7 @@ Users need to update:
 ```bash
 # Old → New
 govctl list rfc        → govctl rfc list
-govctl list adr        → govctl adr list  
+govctl list adr        → govctl adr list
 govctl list work       → govctl work list
 govctl list clause     → govctl clause list
 govctl new rfc "..."   → govctl rfc new "..."

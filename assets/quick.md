@@ -28,8 +28,8 @@ if jj status >/dev/null 2>&1; then VCS="jj"; else VCS="git"; fi
 ### 2. Create Work Item
 
 ```bash
-{{GOVCTL}} new work --active "<concise-title>"
-{{GOVCTL}} add <WI-ID> acceptance_criteria "Change completed"
+{{GOVCTL}} work new --active "<concise-title>"
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "Change completed"
 ```
 
 ### 3. Implement
@@ -53,8 +53,8 @@ git add . && git commit -m "<type>(<scope>): <description>"
 ### 5. Complete
 
 ```bash
-{{GOVCTL}} tick <WI-ID> acceptance_criteria "completed" -s done
-{{GOVCTL}} mv <WI-ID> done
+{{GOVCTL}} work tick <WI-ID> acceptance_criteria "completed" -s done
+{{GOVCTL}} work move <WI-ID> done
 ```
 
 ### 6. Final Record

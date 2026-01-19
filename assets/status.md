@@ -23,23 +23,23 @@ Display the current governance state. Read-only, no mutations.
 ### RFCs
 
 ```bash
-{{GOVCTL}} list rfc
+{{GOVCTL}} rfc list
 ```
 
 ### ADRs
 
 ```bash
-{{GOVCTL}} list adr
+{{GOVCTL}} adr list
 ```
 
 ### Work Items
 
 ```bash
 # All pending (queue + active)
-{{GOVCTL}} list work pending
+{{GOVCTL}} work list pending
 
 # All work items
-{{GOVCTL}} list work
+{{GOVCTL}} work list
 ```
 
 ---

@@ -1,0 +1,29 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-19-010"
+title = "Add migration tooling for ADR-0019 breaking changes"
+status = "done"
+created = "2026-01-19"
+started = "2026-01-19"
+completed = "2026-01-19"
+refs = ["ADR-0019"]
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Update assets/*.md files to use resource-first command syntax"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "New sync-commands command to update AI IDE commands"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Configurable commands_dir in config.toml for different AI IDEs"
+status = "done"
+category = "added"

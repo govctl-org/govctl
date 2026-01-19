@@ -50,6 +50,9 @@ pub enum CanonicalCommand {
     Init {
         force: bool,
     },
+    SyncCommands {
+        force: bool,
+    },
     Check {
         #[allow(dead_code)]
         deny_warnings: bool,
@@ -271,6 +274,7 @@ impl CanonicalCommand {
         Ok(match cmd {
             // Global commands
             Commands::Init { force } => Self::Init { force: *force },
+            Commands::SyncCommands { force } => Self::SyncCommands { force: *force },
             Commands::Check { deny_warnings } => Self::Check {
                 deny_warnings: *deny_warnings,
             },
@@ -314,6 +318,7 @@ impl CanonicalCommand {
         match self {
             // Global commands
             Self::Init { force } => cmd::new::init_project(config, *force, op),
+            Self::SyncCommands { force } => cmd::new::sync_commands(config, *force, op),
             Self::Check { deny_warnings: _ } => cmd::check::check_all(config),
             Self::Status => cmd::status::show_status(config),
             Self::Render {
@@ -365,7 +370,9 @@ impl CanonicalCommand {
                 };
                 cmd::new::create(config, &target, op)
             }
-            Self::RfcList { filter, limit } => cmd::list::list(config, ListTarget::Rfc, filter.as_deref(), *limit),
+            Self::RfcList { filter, limit } => {
+                cmd::list::list(config, ListTarget::Rfc, filter.as_deref(), *limit)
+            }
             Self::RfcGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
             Self::RfcSet {
                 id,
@@ -433,7 +440,9 @@ impl CanonicalCommand {
                 };
                 cmd::new::create(config, &target, op)
             }
-            Self::AdrList { status, limit } => cmd::list::list(config, ListTarget::Adr, status.as_deref(), *limit),
+            Self::AdrList { status, limit } => {
+                cmd::list::list(config, ListTarget::Adr, status.as_deref(), *limit)
+            }
             Self::AdrGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
             Self::AdrSet {
                 id,

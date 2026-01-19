@@ -64,7 +64,12 @@ fn test_changelog_release_workflow() {
             "-s".to_string(),
             "done".to_string(),
         ],
-        vec!["work".to_string(), "move".to_string(), wi1.clone(), "done".to_string()],
+        vec![
+            "work".to_string(),
+            "move".to_string(),
+            wi1.clone(),
+            "done".to_string(),
+        ],
         vec![
             "work".to_string(),
             "new".to_string(),
@@ -103,7 +108,12 @@ fn test_changelog_release_workflow() {
             "-s".to_string(),
             "done".to_string(),
         ],
-        vec!["work".to_string(), "move".to_string(), wi2.clone(), "done".to_string()],
+        vec![
+            "work".to_string(),
+            "move".to_string(),
+            wi2.clone(),
+            "done".to_string(),
+        ],
         vec![
             "release".to_string(),
             "0.1.0".to_string(),
@@ -158,7 +168,12 @@ fn test_changelog_release_workflow() {
             "-s".to_string(),
             "done".to_string(),
         ],
-        vec!["work".to_string(), "move".to_string(), wi3.clone(), "done".to_string()],
+        vec![
+            "work".to_string(),
+            "move".to_string(),
+            wi3.clone(),
+            "done".to_string(),
+        ],
         vec![
             "work".to_string(),
             "new".to_string(),
@@ -213,7 +228,12 @@ fn test_changelog_release_workflow() {
             "-s".to_string(),
             "done".to_string(),
         ],
-        vec!["work".to_string(), "move".to_string(), wi4.clone(), "done".to_string()],
+        vec![
+            "work".to_string(),
+            "move".to_string(),
+            wi4.clone(),
+            "done".to_string(),
+        ],
     ];
 
     let unreleased_output = run_dynamic_commands(dir, &unreleased_commands);

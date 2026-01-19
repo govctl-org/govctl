@@ -56,7 +56,10 @@ fn test_delete_clause_safeguard_normative() {
     .unwrap();
 
     // Try to delete the clause (should fail)
-    let output = run_commands(temp_dir.path(), &[&["clause", "delete", "RFC-0001:C-LOCKED", "-f"]]);
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["clause", "delete", "RFC-0001:C-LOCKED", "-f"]],
+    );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -157,7 +160,12 @@ fn test_delete_work_safeguard_active() {
             "acceptance_criteria".to_string(),
             "Test criterion".to_string(),
         ],
-        vec!["work".to_string(), "delete".to_string(), wi1.clone(), "-f".to_string()],
+        vec![
+            "work".to_string(),
+            "delete".to_string(),
+            wi1.clone(),
+            "-f".to_string(),
+        ],
     ];
 
     let output = run_dynamic_commands(temp_dir.path(), &commands);
@@ -195,8 +203,18 @@ fn test_delete_work_safeguard_done() {
             "-s".to_string(),
             "done".to_string(),
         ],
-        vec!["work".to_string(), "move".to_string(), wi1.clone(), "done".to_string()],
-        vec!["work".to_string(), "delete".to_string(), wi1.clone(), "-f".to_string()],
+        vec![
+            "work".to_string(),
+            "move".to_string(),
+            wi1.clone(),
+            "done".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "delete".to_string(),
+            wi1.clone(),
+            "-f".to_string(),
+        ],
     ];
 
     let output = run_dynamic_commands(temp_dir.path(), &commands);
@@ -223,7 +241,12 @@ fn test_delete_work_success_queue() {
             "Delete this work item".to_string(),
         ],
         vec!["work".to_string(), "list".to_string()],
-        vec!["work".to_string(), "delete".to_string(), wi1.clone(), "-f".to_string()],
+        vec![
+            "work".to_string(),
+            "delete".to_string(),
+            wi1.clone(),
+            "-f".to_string(),
+        ],
         vec!["work".to_string(), "list".to_string()],
         vec!["check".to_string()],
     ];
@@ -264,8 +287,12 @@ fn test_delete_work_safeguard_referenced() {
     let _ = run_dynamic_commands(temp_dir.path(), &setup_commands);
 
     // Try to delete wi1 (should fail because wi2 references it)
-    let delete_commands: Vec<Vec<String>> =
-        vec![vec!["work".to_string(), "delete".to_string(), wi1.clone(), "-f".to_string()]];
+    let delete_commands: Vec<Vec<String>> = vec![vec![
+        "work".to_string(),
+        "delete".to_string(),
+        wi1.clone(),
+        "-f".to_string(),
+    ]];
 
     let output = run_dynamic_commands(temp_dir.path(), &delete_commands);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));

@@ -92,6 +92,73 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     Ok(vec![])
 }
 
+/// Sync Claude Desktop commands from assets to .claude/commands/
+pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+    let commands_dir = &config.paths.commands_dir;
+
+    // Create directory if it doesn't exist
+    create_dir_all(commands_dir, op)?;
+    if !op.is_preview() {
+        ui::created_path(commands_dir);
+    }
+
+    // Command templates to sync
+    let templates = [
+        ("gov.md", GOV_COMMAND_TEMPLATE),
+        ("quick.md", QUICK_COMMAND_TEMPLATE),
+        ("status.md", STATUS_COMMAND_TEMPLATE),
+    ];
+
+    let mut synced = 0;
+    let mut skipped = 0;
+
+    for (filename, template) in templates {
+        let path = commands_dir.join(filename);
+
+        // Check if file exists and skip if not forcing
+        if path.exists() && !force && !op.is_preview() {
+            skipped += 1;
+            if !op.is_preview() {
+                ui::sub_info(format!(
+                    "Skipped {} (already exists, use -f to overwrite)",
+                    path.display()
+                ));
+            }
+            continue;
+        }
+
+        // Write template with {{GOVCTL}} → govctl substitution
+        let content = template.replace(GOVCTL_PLACEHOLDER, GOVCTL_DEFAULT);
+        write_file(&path, &content, op)?;
+
+        if !op.is_preview() {
+            if path.exists() && force {
+                ui::info(format!("Updated {}", path.display()));
+            } else {
+                ui::created_path(&path);
+            }
+        }
+        synced += 1;
+    }
+
+    if !op.is_preview() {
+        if synced > 0 {
+            ui::success(format!("Synced {} command(s)", synced));
+        }
+        if skipped > 0 {
+            ui::info(format!(
+                "{} command(s) skipped (use -f to overwrite)",
+                skipped
+            ));
+        }
+        if synced == 0 && skipped == 0 {
+            ui::info("No commands to sync");
+        }
+    }
+
+    Ok(vec![])
+}
+
 /// Create a new artifact
 pub fn create(config: &Config, target: &NewTarget, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     match target {

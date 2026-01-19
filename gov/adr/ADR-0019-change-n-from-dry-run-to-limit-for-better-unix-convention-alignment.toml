@@ -15,7 +15,7 @@ ADR-0006 and ADR-0017 assigned `-n` as the short flag for `--dry-run`, following
 
 **Standard Unix tools using `-n` for number/limit:**
 - `head -n 10` (limit to N lines)
-- `tail -n 10` (limit to N lines)  
+- `tail -n 10` (limit to N lines)
 - `grep -n` (show line numbers)
 - `sort -n` (numeric sort)
 - `ls -n` (numeric IDs)
@@ -40,12 +40,12 @@ decision = """
 1. **Remove `-n` short flag from `--dry-run`** (keep long form only)
    - Dry-run remains accessible as `--dry-run`
    - This is a safety flag - verbosity is appropriate
-   
+
 2. **Add `-n` short flag to `--limit`** on all list commands
    - `govctl rfc list -n 10`
    - `govctl work list -n 5`
    - Aligns with `head -n` / `tail -n` conventions
-   
+
 3. **Amend ADR-0006 and ADR-0017** to reflect this change
 
 **Rationale:**
