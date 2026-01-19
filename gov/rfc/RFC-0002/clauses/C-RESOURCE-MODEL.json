@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-RESOURCE-MODEL",
+  "title": "Resource-First Command Structure",
+  "kind": "normative",
+  "status": "active",
+  "text": "The govctl CLI MUST use a resource-first command structure of the form:\n\n```\ngovctl <resource> <verb> [arguments] [flags]\n```\n\nWhere:\n- `<resource>` is a governance artifact type (rfc, adr, work, clause, release)\n- `<verb>` is an operation on that resource (new, list, get, edit, delete, or resource-specific lifecycle operations)\n- `[arguments]` are positional parameters (typically IDs, titles, or values)\n- `[flags]` are optional modifiers (--filter, --output, --stdin, etc.)\n\n**Rationale:**\n\nThe resource-first structure (noun-first) provides several advantages over verb-first (operation-first):\n\n1. **Scoped Discovery:** `govctl rfc --help` shows only RFC operations, not all 30+ global commands\n2. **Namespace Clarity:** `govctl rfc finalize` is unambiguous; `govctl finalize` requires knowing it only applies to RFCs\n3. **Mental Model Alignment:** Users think \"I want to work with RFCs\" then \"What can I do?\", not \"I want to finalize something, what can be finalized?\"\n4. **Extensibility:** Adding `govctl rfc validate` doesn't pollute the global namespace\n5. **Industry Convention:** Docker, kubectl, git, cargo all use resource-scoping or similar patterns\n\n**Exceptions:**\n\nCommands that operate across all resource types (init, check, status, render) remain at the global level as they don't belong to a specific resource namespace.\n\n**Implementation Note:**\n\nFor backwards compatibility during migration, verb-first aliases MAY be supported but MUST emit deprecation warnings. Full verb-first syntax MUST be removed in a major version release.",
+  "since": "0.1.0"
+}

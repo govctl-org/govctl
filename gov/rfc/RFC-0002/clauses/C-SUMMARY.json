@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-SUMMARY",
+  "title": "Summary",
+  "kind": "informative",
+  "status": "active",
+  "text": "This RFC defines the resource-first command architecture for the govctl CLI. It establishes normative requirements for command structure, resource types, and verb semantics to ensure consistency and discoverability.\n\nThe design follows established patterns from Docker, kubectl, and other modern CLIs where commands are grouped by resource type (noun-first) rather than operation type (verb-first).\n\n**Scope:** This RFC specifies the structural contract (which commands exist, how they're organized, what resources they operate on). Implementation details (flag syntax, help text formatting, terminal colors) are left to ADRs.\n\n**Rationale:** A stable command structure enables:\n1. Predictable UX across all resource types\n2. Agent/script automation via consistent patterns\n3. Scoped help and command discovery\n4. Future extensibility without namespace pollution",
+  "since": "0.1.0"
+}

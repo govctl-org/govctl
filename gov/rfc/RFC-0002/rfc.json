@@ -1,0 +1,48 @@
+{
+  "rfc_id": "RFC-0002",
+  "title": "CLI Resource Model and Command Architecture",
+  "version": "0.2.0",
+  "status": "normative",
+  "phase": "spec",
+  "owners": ["@govctl-org"],
+  "created": "2026-01-19",
+  "updated": "2026-01-19",
+  "sections": [
+    {
+      "title": "Summary",
+      "clauses": ["clauses/C-SUMMARY.json"]
+    },
+    {
+      "title": "Specification",
+      "clauses": [
+        "clauses/C-RESOURCE-MODEL.json",
+        "clauses/C-RESOURCES.json",
+        "clauses/C-CRUD-VERBS.json",
+        "clauses/C-LIFECYCLE-VERBS.json",
+        "clauses/C-OUTPUT-FORMAT.json",
+        "clauses/C-GLOBAL-COMMANDS.json"
+      ]
+    }
+  ],
+  "changelog": [
+    {
+      "version": "0.2.0",
+      "date": "2026-01-19",
+      "notes": "Incorporate review feedback: add deletion safety constraints, field name stability, output format defaults, describe schema versioning, and editorial clarifications",
+      "added": [
+        "Added deletion safety constraints requiring draft RFCs and reference checks",
+        "Added field name stability guarantee for get command",
+        "Specified json as default output format for non-TTY",
+        "Added status command exception to output format requirements",
+        "Added describe command schema versioning contract",
+        "Clarified clause namespace vs filesystem storage independence",
+        "Added case-sensitivity and timestamp format requirements"
+      ]
+    },
+    {
+      "version": "0.1.0",
+      "date": "2026-01-19",
+      "notes": "Initial draft"
+    }
+  ]
+}
