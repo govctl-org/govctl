@@ -13,12 +13,12 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "CLI command 'delete work' implemented"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Only queue-status work items can be deleted"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
@@ -28,5 +28,5 @@ category = "added"
 
 [[content.acceptance_criteria]]
 text = "Tests verify both successful deletion and safety rejection"
-status = "pending"
+status = "done"
 category = "added"
