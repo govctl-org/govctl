@@ -265,6 +265,20 @@ Before implementation, verify:
 {{GOVCTL}} advance <RFC-ID> impl        # if spec phase
 ```
 
+**Amending normative RFCs during implementation:**
+
+Per [[ADR-0016]], normative RFCs MAY be amended during implementation. Amendments MUST bump version and add changelog entry:
+
+```bash
+# Edit clause content
+{{GOVCTL}} edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
+Updated specification text.
+EOF
+
+# Version bump happens automatically on next render
+# Or manually via future `{{GOVCTL}} bump` command
+```
+
 ### 3.2 Implement
 
 1. Write code following RFC clauses (if applicable)

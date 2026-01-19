@@ -43,7 +43,7 @@ The `gov/` directory is authoritative. The `docs/` directory is generated output
 RFCs are constitutional law. Code that conflicts with a normative RFC is a bug.
 
 - No silent deviation: fix the code or propose an RFC amendment
-- Normative RFCs are frozen: changes require a superseding RFC
+- Normative RFCs MAY be amended: version bump + changelog per [[ADR-0016]]
 - Cite RFC clauses when implementing invariants
 
 ### Law 2: Phase Discipline
@@ -76,7 +76,7 @@ draft → normative → deprecated
 ```
 
 - **draft**: Under discussion. Implementation MUST NOT depend on draft RFCs.
-- **normative**: Frozen. Implementation MUST conform.
+- **normative**: Binding. Implementation MUST conform to current version. Spec MAY evolve via version bumps with changelog entries per [[ADR-0016]].
 - **deprecated**: Superseded. No new work permitted.
 
 Reverse transitions are forbidden.
