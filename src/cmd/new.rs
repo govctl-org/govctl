@@ -255,6 +255,9 @@ fn create_clause(
         .into());
     }
 
+    // Load RFC to get current version
+    let mut rfc: RfcSpec = serde_json::from_str(&std::fs::read_to_string(&rfc_json)?)?;
+
     // Create clause
     let clause = ClauseSpec {
         clause_id: clause_name.to_string(),
@@ -264,7 +267,7 @@ fn create_clause(
         text: "TODO: Add clause text here.".to_string(),
         anchors: vec![],
         superseded_by: None,
-        since: None, // Will be set on next version bump
+        since: Some(rfc.version.clone()), // Clause introduced in current RFC version
     };
 
     let clause_path = config
@@ -277,8 +280,6 @@ fn create_clause(
     write_file(&clause_path, &content, op)?;
 
     // Update RFC to include clause in section
-    let mut rfc: RfcSpec = serde_json::from_str(&std::fs::read_to_string(&rfc_json)?)?;
-
     let clause_rel_path = format!("clauses/{clause_name}.json");
 
     // Find or create section
