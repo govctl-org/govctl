@@ -51,13 +51,20 @@ pub fn bump(
                 }
             }
             
-            // Recompute and store signature after version bump per [[ADR-0016]]
+            // Write the RFC first
+            write_rfc(&rfc_path, &rfc, op)?;
+            
+            // Then recompute and store signature after version bump per [[ADR-0016]]
             // Load full RFC with clauses to compute accurate signature
             if let Ok(rfc_index) = crate::load::load_rfc(&rfc_path) {
                 if let Ok(sig) = crate::signature::compute_rfc_signature(&rfc_index) {
                     rfc.signature = Some(sig);
+                    // Write again with updated signature
+                    write_rfc(&rfc_path, &rfc, op)?;
                 }
             }
+            
+            return Ok(vec![]);
         }
         (Some(_), None, _) => {
             return Err(Diagnostic::new(

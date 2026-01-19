@@ -1,16 +1,20 @@
 {
   "rfc_id": "RFC-0001",
   "title": "Lifecycle State Machines",
-  "version": "0.1.0",
+  "version": "0.2.3",
   "status": "normative",
   "phase": "stable",
-  "owners": ["@govctl-org"],
+  "owners": [
+    "@govctl-org"
+  ],
   "created": "2026-01-17",
-  "updated": "2026-01-17",
+  "updated": "2026-01-19",
   "sections": [
     {
       "title": "Summary",
-      "clauses": ["clauses/C-SUMMARY.json"]
+      "clauses": [
+        "clauses/C-SUMMARY.json"
+      ]
     },
     {
       "title": "Specification",
@@ -26,9 +30,30 @@
   ],
   "changelog": [
     {
+      "version": "0.2.3",
+      "date": "2026-01-19",
+      "notes": "Fix signature computation to exclude signature field"
+    },
+    {
+      "version": "0.2.2",
+      "date": "2026-01-19",
+      "notes": "Test signature computation fix"
+    },
+    {
+      "version": "0.2.1",
+      "date": "2026-01-19",
+      "notes": "Update summary to mention RFC amendment capability"
+    },
+    {
+      "version": "0.2.0",
+      "date": "2026-01-19",
+      "notes": "Clarify that normative RFCs may be amended"
+    },
+    {
       "version": "0.1.0",
       "date": "2026-01-17",
       "notes": "Initial draft"
     }
-  ]
+  ],
+  "signature": "a377038de686e5c44ca3583d2b3439b3e81731bd6eaff68992f64fdbdbec2584"
 }

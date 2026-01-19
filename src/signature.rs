@@ -31,8 +31,11 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, serde_json::Error
     hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
     hasher.update(b"type:rfc\n");
 
-    // Canonical RFC metadata
-    let rfc_json = serde_json::to_value(&rfc.rfc)?;
+    // Canonical RFC metadata (excluding signature field to avoid circularity)
+    let mut rfc_json = serde_json::to_value(&rfc.rfc)?;
+    if let Value::Object(ref mut map) = rfc_json {
+        map.remove("signature"); // Exclude signature from hash computation
+    }
     let canonical_rfc = canonicalize_json(&rfc_json);
     hasher.update(canonical_rfc.as_bytes());
     hasher.update(b"\n");
