@@ -99,8 +99,15 @@ fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>) {
         ]);
 
     for rfc in rfcs {
+        // Check if RFC has been amended
+        let rfc_id_display = if crate::signature::is_rfc_amended(rfc) {
+            format!("{}*", rfc.rfc.rfc_id)
+        } else {
+            rfc.rfc.rfc_id.clone()
+        };
+        
         table.add_row(vec![
-            id_cell(&rfc.rfc.rfc_id),
+            id_cell(&rfc_id_display),
             cell(&rfc.rfc.version),
             status_cell(rfc.rfc.status.as_ref()),
             status_cell(rfc.rfc.phase.as_ref()),

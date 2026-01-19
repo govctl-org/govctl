@@ -50,6 +50,14 @@ pub fn bump(
                     ui::sub_info(format!("Added change: {change}"));
                 }
             }
+            
+            // Recompute and store signature after version bump per [[ADR-0016]]
+            // Load full RFC with clauses to compute accurate signature
+            if let Ok(rfc_index) = crate::load::load_rfc(&rfc_path) {
+                if let Ok(sig) = crate::signature::compute_rfc_signature(&rfc_index) {
+                    rfc.signature = Some(sig);
+                }
+            }
         }
         (Some(_), None, _) => {
             return Err(Diagnostic::new(

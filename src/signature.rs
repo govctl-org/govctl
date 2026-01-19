@@ -180,6 +180,24 @@ fn hex_encode(bytes: &[u8]) -> String {
     hex
 }
 
+/// Check if an RFC has been amended since its last release.
+///
+/// Returns `true` if the current content signature differs from the stored signature,
+/// indicating the RFC has been modified but not yet bumped to a new version.
+///
+/// Returns `false` if signatures match (clean state) or if no signature is stored (legacy RFC).
+pub fn is_rfc_amended(rfc: &RfcIndex) -> bool {
+    let Some(stored_sig) = &rfc.rfc.signature else {
+        return false; // No signature = legacy RFC, assume clean
+    };
+
+    let Ok(current_sig) = compute_rfc_signature(rfc) else {
+        return false; // Can't compute = assume clean
+    };
+
+    stored_sig != &current_sig
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

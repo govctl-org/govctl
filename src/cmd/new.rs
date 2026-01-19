@@ -208,6 +208,7 @@ fn create_rfc(
             fixed: vec![],
             security: vec![],
         }],
+        signature: None, // Will be set on first bump per [[ADR-0016]]
     };
 
     let rfc_json = rfc_dir.join("rfc.json");
