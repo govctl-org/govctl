@@ -2,8 +2,12 @@
 schema = 1
 id = "ADR-0016"
 title = "Allow RFC amendments via versioning during implementation"
-status = "proposed"
+status = "accepted"
 date = "2026-01-19"
+refs = [
+    "RFC-0001",
+    "ADR-0004",
+]
 
 [content]
 context = """
@@ -16,7 +20,6 @@ This creates a false dichotomy:
 The problem is **not** with [[RFC-0001:C-RFC-STATUS]] (which only says "normative" means "binding"), but with the **interpretation** that "binding" implies "immutable." This forces workarounds: draft ADRs, inline comments, or ignoring governance entirely.
 
 The infrastructure for RFC evolution already exists: versioning (`version` field) and changelog (`changelog` array per [[ADR-0004]]). We're just not using it for governance."""
-
 decision = """
 **Clarify the semantics of "normative":**
 
@@ -33,7 +36,6 @@ decision = """
    - Rationale and audit trail live in git/jj history
 
 **Precedent:** Linux kernel APIs are both binding (drivers must conform) and evolving (with deprecation, versioning, compatibility) simultaneously."""
-
 consequences = """
 **Easier:**
 - Amending RFCs during implementation (matches real workflow)
