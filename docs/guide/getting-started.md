@@ -31,6 +31,27 @@ cargo build --release --features tui
 | ------- | --------------------------------------------- | ------------------ |
 | `tui`   | Interactive terminal dashboard (`govctl tui`) | ratatui, crossterm |
 
+## Shell Completion
+
+Generate completion scripts for your shell:
+
+```bash
+# Bash
+govctl completions bash > ~/.local/share/bash-completion/completions/govctl
+
+# Zsh (add to your .zshrc or install to completion directory)
+govctl completions zsh > ~/.zsh/completions/_govctl
+# Then add to fpath: fpath=(~/.zsh/completions $fpath)
+
+# Fish
+govctl completions fish > ~/.config/fish/completions/govctl.fish
+
+# PowerShell (add to your profile)
+govctl completions powershell >> $PROFILE
+```
+
+Restart your shell or source the configuration to enable tab completion.
+
 ## Initialize a Project
 
 ```bash

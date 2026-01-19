@@ -23,6 +23,7 @@ tui = ["ratatui", "crossterm"]
 [dependencies]
 # CLI framework
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4"
 
 # Serialization (JSON/TOML)
 serde = { version = "1", features = ["derive"] }

@@ -1,6 +1,6 @@
 //! govctl: Project governance CLI for RFC, ADR, and Work Item management.
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
@@ -299,6 +299,13 @@ enum Commands {
         format: String,
     },
 
+    /// Generate shell completion scripts
+    Completions {
+        /// Shell to generate completions for
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
+
     /// Launch interactive TUI dashboard
     #[cfg(feature = "tui")]
     Tui,
@@ -577,6 +584,11 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             cmd::lifecycle::cut_release(&config, version, date.as_deref(), op)
         }
         Commands::Describe { context, format: _ } => cmd::describe::describe(&config, *context),
+        Commands::Completions { shell } => {
+            let mut cmd = Cli::command();
+            clap_complete::generate(*shell, &mut cmd, "govctl", &mut std::io::stdout());
+            Ok(vec![])
+        }
         #[cfg(feature = "tui")]
         Commands::Tui => {
             tui::run(&config)?;

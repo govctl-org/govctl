@@ -2,8 +2,10 @@
 schema = 1
 id = "WI-2026-01-19-004"
 title = "Add shell autocompletion support for all commands"
-status = "queue"
+status = "done"
 created = "2026-01-19"
+started = "2026-01-19"
+completed = "2026-01-19"
 
 [content]
 description = """
@@ -13,3 +15,23 @@ Implement a `govctl completions <shell>` command that generates completion scrip
 
 Phase 1: Static completion (commands, flags, options)
 Future: Dynamic completion (artifact IDs, field names)"""
+
+[[content.acceptance_criteria]]
+text = "clap_complete dependency added"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "completions command implemented"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "works for bash/zsh/fish/powershell"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "documentation added"
+status = "done"
+category = "added"
