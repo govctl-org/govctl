@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-19-001"
 title = "Add delete command for clauses"
-status = "active"
+status = "done"
 created = "2026-01-19"
 started = "2026-01-19"
+completed = "2026-01-19"
 refs = ["RFC-0000:C-STATUS-LIFECYCLE"]
 
 [content]
@@ -14,20 +15,20 @@ Currently users must manually delete the JSON file and edit the parent RFC's cla
 
 [[content.acceptance_criteria]]
 text = "CLI command 'govctl delete clause' implemented with proper argument parsing"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Safety check: Only draft RFCs allow clause deletion"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Atomically removes clause file and updates parent RFC's clauses array"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Tests pass for both successful deletion and safety rejection"
-status = "pending"
+status = "done"
 category = "added"
