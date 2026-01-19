@@ -5,6 +5,7 @@ title = "Add delete command for clauses"
 status = "active"
 created = "2026-01-19"
 started = "2026-01-19"
+refs = ["RFC-0000:C-STATUS-LIFECYCLE"]
 
 [content]
 description = """
