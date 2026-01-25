@@ -2,16 +2,28 @@
 schema = 1
 id = "WI-2026-01-25-001"
 title = "Require explicit category for acceptance criteria"
-status = "active"
+status = "done"
 created = "2026-01-25"
 started = "2026-01-25"
+completed = "2026-01-25"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+Add hard gate requiring explicit changelog category when adding acceptance criteria.
+
+Without this gate, agents often forget to specify category prefix (e.g., 'fix:', 'add:'), causing acceptance criteria to silently default to 'added' category, which may be incorrect.
+
+This change:
+- Adds E0408 error when no prefix AND no --category option provided
+- Adds --category CLI option as alternative to prefix
+- Tracks whether category was explicit via ParsedChange.explicit field"""
 
 [[content.acceptance_criteria]]
-text = "Change completed"
-status = "pending"
-category = "chore"
+text = "--category option to 'work add' command for explicit category specification"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "E0408 error when acceptance criteria lacks explicit category"
+status = "done"
+category = "added"
