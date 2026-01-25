@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- --category option to 'work add' command for explicit category specification (WI-2026-01-25-001)
+- E0408 error when acceptance criteria lacks explicit category (WI-2026-01-25-001)
+
+### Fixed
+
+- Changelog inline refs (`[[RFC-NNNN]]`) now expand to markdown links (WI-2026-01-25-002)
+- Link paths use configurable `docs_output` from config (WI-2026-01-25-002)
+
 ## [0.2.0] - 2026-01-19
 
 ### Added
@@ -26,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add signature field to RfcSpec model (WI-2026-01-19-007)
 - Implement govctl bump command for version bumping (WI-2026-01-19-007)
 - Display asterisk indicator for amended RFCs in list output (WI-2026-01-19-007)
-- All resource commands use <resource> <verb> structure per [[RFC-0002:C-RESOURCE-MODEL]] (WI-2026-01-19-008)
+- All resource commands use <resource> <verb> structure per [RFC-0002:C-RESOURCE-MODEL](docs/rfc/RFC-0002.md#rfc-0002c-resource-model) (WI-2026-01-19-008)
 - Canonical command pattern eliminates duplication (WI-2026-01-19-008)
 - Add -n short flag to --limit on all list commands (rfc, clause, adr, work) (WI-2026-01-19-009)
 - New sync-commands command to update AI IDE commands (WI-2026-01-19-010)
@@ -40,7 +52,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
-- Old verb-first commands removed per [[ADR-0018]] (WI-2026-01-19-008)
+- Old verb-first commands removed per [ADR-0018](docs/adr/ADR-0018.md) (WI-2026-01-19-008)
 - Remove -n short flag from global --dry-run (WI-2026-01-19-009)
 
 ### Fixed
@@ -140,7 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Validate unknown prefixes with helpful error message (WI-2026-01-17-028)
 - Default to added category when no prefix (WI-2026-01-17-028)
 - Add `category` field to `ChecklistItem` with default `Added` (WI-2026-01-17-029)
-- Update `add acceptance_criteria` command to parse prefixes per [[ADR-0012]] (WI-2026-01-17-029)
+- Update `add acceptance_criteria` command to parse prefixes per [ADR-0012](docs/adr/ADR-0012.md) (WI-2026-01-17-029)
 - `Release` and `ReleasesFile` models in model.rs with version, date, and refs fields (WI-2026-01-17-030)
 - Load and save `gov/releases.toml` functionality with semver validation (WI-2026-01-17-030)
 - `govctl release <version>` command to cut releases (WI-2026-01-17-030)

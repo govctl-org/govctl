@@ -5,7 +5,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::load_rfcs;
 use crate::model::{ChangelogCategory, ChecklistStatus, WorkItemStatus};
 use crate::parse::{load_adrs, load_releases, load_work_items};
-use crate::render::{write_adr_md, write_rfc, write_work_item_md};
+use crate::render::{expand_inline_refs_from_root, write_adr_md, write_rfc, write_work_item_md};
 use crate::ui;
 use std::collections::{HashMap, HashSet};
 
@@ -154,8 +154,10 @@ pub fn render_changelog(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Di
         }
     }
 
-    // Trim trailing whitespace and ensure single final newline
-    let output = format!("{}\n", output.trim_end());
+    // Expand inline references (per ADR-0011) and trim trailing whitespace
+    let docs_output = config.paths.docs_output.to_string_lossy();
+    let expanded = expand_inline_refs_from_root(&output, &config.source_scan.pattern, &docs_output);
+    let output = format!("{}\n", expanded.trim_end());
 
     // Write CHANGELOG.md
     let changelog_path = std::path::PathBuf::from("CHANGELOG.md");

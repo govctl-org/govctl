@@ -9,9 +9,9 @@ completed = "2026-01-19"
 refs = ["ADR-0019"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = """Support --limit flag on all list commands (rfc, clause, adr, work) to control result count.
+Also remove -n short flag from global --dry-run to avoid collision with limit flag.
+"""
 
 [[content.acceptance_criteria]]
 text = "Remove -n short flag from global --dry-run"

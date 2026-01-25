@@ -9,9 +9,7 @@ completed = "2026-01-19"
 refs = ["ADR-0019"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = """Some commands related improvements"""
 
 [[content.acceptance_criteria]]
 text = "Update assets/*.md files to use resource-first command syntax"

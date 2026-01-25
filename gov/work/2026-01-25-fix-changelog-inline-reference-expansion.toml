@@ -1,0 +1,31 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-25-002"
+title = "Fix changelog inline reference expansion"
+status = "done"
+created = "2026-01-25"
+started = "2026-01-25"
+completed = "2026-01-25"
+
+[content]
+description = """
+Fix `render changelog` to expand inline `[[artifact-id]]` references to proper markdown links.
+
+Previously, patterns like `[[RFC-0002:C-RESOURCE-MODEL]]` were rendered literally instead of being converted to clickable links. Now they expand to `[RFC-0002:C-RESOURCE-MODEL](docs/rfc/RFC-0002.md#rfc-0002c-resource-model)`.
+
+The base path is read from `config.paths.docs_output` instead of being hardcoded."""
+
+[[content.acceptance_criteria]]
+text = "Changelog inline refs (`[[RFC-NNNN]]`) now expand to markdown links"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Link paths use configurable `docs_output` from config"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Tests added for `ref_link_from_root` and `expand_inline_refs_from_root`"
+status = "done"
+category = "chore"

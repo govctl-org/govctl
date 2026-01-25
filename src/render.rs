@@ -26,21 +26,36 @@ use std::io::Write;
 /// - ADR refs: `ADR-0001` → `[ADR-0001](../adr/ADR-0001.md)`
 /// - Work Item refs: `WI-2026-01-17-001` → `[WI-2026-01-17-001](../work/WI-2026-01-17-001.md)`
 fn ref_link(ref_id: &str) -> String {
+    ref_link_with_base(ref_id, "..")
+}
+
+/// Generate a markdown link for an artifact reference from the repository root.
+///
+/// Used for files like CHANGELOG.md that live at the root level.
+/// The `docs_output` path comes from config (e.g., "docs").
+pub fn ref_link_from_root(ref_id: &str, docs_output: &str) -> String {
+    ref_link_with_base(ref_id, docs_output)
+}
+
+/// Generate a markdown link with a configurable base path.
+///
+/// - `base`: Path prefix before `/rfc/`, `/adr/`, `/work/` (e.g., ".." or "docs")
+fn ref_link_with_base(ref_id: &str, base: &str) -> String {
     if ref_id.starts_with("RFC-") {
         if ref_id.contains(':') {
             // Clause reference: RFC-0000:C-NAME
             let rfc_id = ref_id.split(':').next().unwrap_or(ref_id);
             // Anchor: lowercase, no special chars (GitHub-style slug)
             let anchor = ref_id.to_lowercase().replace(':', "");
-            format!("[{}](../rfc/{}.md#{})", ref_id, rfc_id, anchor)
+            format!("[{}]({}/rfc/{}.md#{})", ref_id, base, rfc_id, anchor)
         } else {
             // RFC reference
-            format!("[{}](../rfc/{}.md)", ref_id, ref_id)
+            format!("[{}]({}/rfc/{}.md)", ref_id, base, ref_id)
         }
     } else if ref_id.starts_with("ADR-") {
-        format!("[{}](../adr/{}.md)", ref_id, ref_id)
+        format!("[{}]({}/adr/{}.md)", ref_id, base, ref_id)
     } else if ref_id.starts_with("WI-") {
-        format!("[{}](../work/{}.md)", ref_id, ref_id)
+        format!("[{}]({}/work/{}.md)", ref_id, base, ref_id)
     } else {
         // Unknown type, return as-is
         ref_id.to_string()
@@ -60,6 +75,24 @@ fn render_refs(refs: &[String]) -> String {
 /// Uses the pattern from source_scan config (per ADR-0011).
 /// The pattern must have a capture group for the artifact ID.
 pub fn expand_inline_refs(text: &str, pattern: &str) -> String {
+    expand_inline_refs_with_linker(text, pattern, ref_link)
+}
+
+/// Expand inline `[[artifact-id]]` references to markdown links from repository root.
+///
+/// Used for files like CHANGELOG.md that live at the root level.
+/// The `docs_output` path comes from config (e.g., "docs").
+pub fn expand_inline_refs_from_root(text: &str, pattern: &str, docs_output: &str) -> String {
+    expand_inline_refs_with_linker(text, pattern, |ref_id| {
+        ref_link_from_root(ref_id, docs_output)
+    })
+}
+
+/// Expand inline references using a custom link generator function.
+fn expand_inline_refs_with_linker<F>(text: &str, pattern: &str, linker: F) -> String
+where
+    F: Fn(&str) -> String,
+{
     let Ok(re) = Regex::new(pattern) else {
         // Invalid pattern, return text unchanged
         return text.to_string();
@@ -68,7 +101,7 @@ pub fn expand_inline_refs(text: &str, pattern: &str) -> String {
     re.replace_all(text, |caps: &regex::Captures| {
         // Capture group 1 contains the artifact ID
         if let Some(artifact_id) = caps.get(1) {
-            ref_link(artifact_id.as_str())
+            linker(artifact_id.as_str())
         } else {
             // No capture group, return match unchanged
             caps.get(0).map_or("", |m| m.as_str()).to_string()
@@ -537,5 +570,52 @@ mod tests {
         let result = expand_inline_refs(text, "[invalid(regex");
         // Invalid pattern returns text unchanged
         assert_eq!(result, "[[RFC-0000]] test");
+    }
+
+    #[test]
+    fn test_ref_link_from_root_rfc() {
+        let result = ref_link_from_root("RFC-0000", "docs");
+        assert_eq!(result, "[RFC-0000](docs/rfc/RFC-0000.md)");
+    }
+
+    #[test]
+    fn test_ref_link_from_root_clause() {
+        let result = ref_link_from_root("RFC-0000:C-WORK-DEF", "docs");
+        assert_eq!(
+            result,
+            "[RFC-0000:C-WORK-DEF](docs/rfc/RFC-0000.md#rfc-0000c-work-def)"
+        );
+    }
+
+    #[test]
+    fn test_ref_link_from_root_adr() {
+        let result = ref_link_from_root("ADR-0005", "docs");
+        assert_eq!(result, "[ADR-0005](docs/adr/ADR-0005.md)");
+    }
+
+    #[test]
+    fn test_ref_link_from_root_custom_path() {
+        let result = ref_link_from_root("RFC-0001", "documentation");
+        assert_eq!(result, "[RFC-0001](documentation/rfc/RFC-0001.md)");
+    }
+
+    #[test]
+    fn test_expand_inline_refs_from_root() {
+        let text = "Per [[RFC-0002:C-RESOURCE-MODEL]], resources use verb pattern.";
+        let result = expand_inline_refs_from_root(text, DEFAULT_PATTERN, "docs");
+        assert_eq!(
+            result,
+            "Per [RFC-0002:C-RESOURCE-MODEL](docs/rfc/RFC-0002.md#rfc-0002c-resource-model), resources use verb pattern."
+        );
+    }
+
+    #[test]
+    fn test_expand_inline_refs_from_root_multiple() {
+        let text = "See [[RFC-0000]] and [[ADR-0018]] for details.";
+        let result = expand_inline_refs_from_root(text, DEFAULT_PATTERN, "docs");
+        assert_eq!(
+            result,
+            "See [RFC-0000](docs/rfc/RFC-0000.md) and [ADR-0018](docs/adr/ADR-0018.md) for details."
+        );
     }
 }
