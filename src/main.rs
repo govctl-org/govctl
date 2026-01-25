@@ -565,6 +565,9 @@ enum WorkCommand {
         /// Read value from stdin
         #[arg(long)]
         stdin: bool,
+        /// Changelog category for acceptance_criteria (alternative to prefix)
+        #[arg(short = 'c', long, value_enum)]
+        category: Option<model::ChangelogCategory>,
     },
     /// Remove value from work item array field
     Remove {

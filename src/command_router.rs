@@ -12,7 +12,7 @@
 use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
-use crate::model::{ClauseKind, RfcPhase, WorkItemStatus};
+use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
 use crate::{Commands, FinalizeStatus, ListTarget, NewTarget, RenderTarget, TickStatus};
 use std::path::PathBuf;
@@ -235,6 +235,7 @@ pub enum CanonicalCommand {
         field: String,
         value: Option<String>,
         stdin: bool,
+        category: Option<ChangelogCategory>,
     },
     WorkRemove {
         id: String,
@@ -455,7 +456,7 @@ impl CanonicalCommand {
                 field,
                 value,
                 stdin,
-            } => cmd::edit::add_to_field(config, id, field, value.as_deref(), *stdin, op),
+            } => cmd::edit::add_to_field(config, id, field, value.as_deref(), *stdin, None, op),
             Self::AdrRemove {
                 id,
                 field,
@@ -504,7 +505,10 @@ impl CanonicalCommand {
                 field,
                 value,
                 stdin,
-            } => cmd::edit::add_to_field(config, id, field, value.as_deref(), *stdin, op),
+                category,
+            } => {
+                cmd::edit::add_to_field(config, id, field, value.as_deref(), *stdin, *category, op)
+            }
             Self::WorkRemove {
                 id,
                 field,
@@ -787,11 +791,13 @@ impl CanonicalCommand {
                 field,
                 value,
                 stdin,
+                category,
             } => Self::WorkAdd {
                 id: id.clone(),
                 field: field.clone(),
                 value: value.clone(),
                 stdin: *stdin,
+                category: *category,
             },
             WorkCommand::Remove {
                 id,

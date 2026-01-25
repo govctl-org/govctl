@@ -158,7 +158,7 @@ fn test_delete_work_safeguard_active() {
             "add".to_string(),
             wi1.clone(),
             "acceptance_criteria".to_string(),
-            "Test criterion".to_string(),
+            "chore: Test criterion".to_string(),
         ],
         vec![
             "work".to_string(),
@@ -192,7 +192,7 @@ fn test_delete_work_safeguard_done() {
             "add".to_string(),
             wi1.clone(),
             "acceptance_criteria".to_string(),
-            "Test criterion".to_string(),
+            "chore: Test criterion".to_string(),
         ],
         vec![
             "work".to_string(),

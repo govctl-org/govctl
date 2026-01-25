@@ -548,6 +548,7 @@ pub fn add_to_field(
     field: &str,
     value: Option<&str>,
     stdin: bool,
+    category_override: Option<crate::model::ChangelogCategory>,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let field = normalize_field(field);
@@ -633,6 +634,25 @@ pub fn add_to_field(
                     use crate::write::parse_changelog_change;
                     // Parse prefix per ADR-0012/ADR-0013
                     let parsed = parse_changelog_change(value)?;
+
+                    // Determine final category: explicit override > parsed prefix > error
+                    let final_category = if let Some(cat) = category_override {
+                        cat
+                    } else if parsed.explicit {
+                        parsed.category
+                    } else {
+                        // No explicit category specified - require prefix or --category
+                        return Err(Diagnostic::new(
+                            DiagnosticCode::E0408WorkCriteriaMissingCategory,
+                            format!(
+                                "Acceptance criteria requires category. Use prefix (e.g., 'fix: {}') or --category",
+                                parsed.message
+                            ),
+                            id,
+                        )
+                        .into());
+                    };
+
                     if !entry
                         .spec
                         .content
@@ -646,7 +666,7 @@ pub fn add_to_field(
                             .acceptance_criteria
                             .push(ChecklistItem::with_category(
                                 &parsed.message,
-                                parsed.category,
+                                final_category,
                             ));
                     }
                 }

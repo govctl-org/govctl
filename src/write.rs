@@ -16,6 +16,8 @@ use std::path::Path;
 pub struct ParsedChange {
     pub category: ChangelogCategory,
     pub message: String,
+    /// Whether the category was explicitly specified via prefix
+    pub explicit: bool,
 }
 
 /// Parse a change string with optional prefix (per ADR-0012).
@@ -46,6 +48,7 @@ pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
                 return Ok(ParsedChange {
                     category,
                     message: message.to_string(),
+                    explicit: true,
                 });
             } else {
                 // Unknown prefix - provide helpful error
@@ -62,10 +65,11 @@ pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
         }
     }
 
-    // No prefix or multi-word before colon - default to Added
+    // No prefix or multi-word before colon - default to Added (not explicit)
     Ok(ParsedChange {
         category: ChangelogCategory::Added,
         message: change.trim().to_string(),
+        explicit: false,
     })
 }
 
@@ -354,6 +358,7 @@ mod tests {
         let result = parse_changelog_change("Added new feature").unwrap();
         assert_eq!(result.category, ChangelogCategory::Added);
         assert_eq!(result.message, "Added new feature");
+        assert!(!result.explicit, "no prefix means not explicit");
     }
 
     #[test]
@@ -361,6 +366,7 @@ mod tests {
         let result = parse_changelog_change("fix: memory leak in parser").unwrap();
         assert_eq!(result.category, ChangelogCategory::Fixed);
         assert_eq!(result.message, "memory leak in parser");
+        assert!(result.explicit, "prefix means explicit");
     }
 
     #[test]
@@ -428,6 +434,10 @@ mod tests {
         let result = parse_changelog_change("Updated module: fixed edge case").unwrap();
         assert_eq!(result.category, ChangelogCategory::Added);
         assert_eq!(result.message, "Updated module: fixed edge case");
+        assert!(
+            !result.explicit,
+            "multi-word before colon means not explicit"
+        );
     }
 
     #[test]
@@ -436,5 +446,6 @@ mod tests {
         let result = parse_changelog_change("See https://example.com for details").unwrap();
         assert_eq!(result.category, ChangelogCategory::Added);
         assert_eq!(result.message, "See https://example.com for details");
+        assert!(!result.explicit, "URL colon means not explicit");
     }
 }

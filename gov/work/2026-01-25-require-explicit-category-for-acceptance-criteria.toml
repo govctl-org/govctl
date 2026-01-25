@@ -1,0 +1,17 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-25-001"
+title = "Require explicit category for acceptance criteria"
+status = "active"
+created = "2026-01-25"
+started = "2026-01-25"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Change completed"
+status = "pending"
+category = "chore"
