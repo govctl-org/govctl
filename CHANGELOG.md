@@ -48,7 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Remove 'normative = frozen' validation constraint (WI-2026-01-19-006)
 - Update .claude/CLAUDE.md to use --dry-run without -n (WI-2026-01-19-009)
-- Update assets/*.md files to use resource-first command syntax (WI-2026-01-19-010)
+- Update assets/\*.md files to use resource-first command syntax (WI-2026-01-19-010)
 
 ### Removed
 
