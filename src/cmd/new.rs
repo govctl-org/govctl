@@ -13,15 +13,19 @@ use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
 use std::path::PathBuf;
 
-/// Embedded Claude command templates for governed workflows
-const GOV_COMMAND_TEMPLATE: &str = include_str!("../../assets/gov.md");
-const QUICK_COMMAND_TEMPLATE: &str = include_str!("../../assets/quick.md");
-const STATUS_COMMAND_TEMPLATE: &str = include_str!("../../assets/status.md");
-
 /// Placeholder for govctl command in templates
 const GOVCTL_PLACEHOLDER: &str = "{{GOVCTL}}";
 /// Default replacement for govctl command
 const GOVCTL_DEFAULT: &str = "govctl";
+
+/// Command templates: (filename, content) pairs
+/// Single source of truth for both init_project and sync_commands
+const COMMAND_TEMPLATES: &[(&str, &str)] = &[
+    ("gov.md", include_str!("../../assets/gov.md")),
+    ("quick.md", include_str!("../../assets/quick.md")),
+    ("status.md", include_str!("../../assets/status.md")),
+    ("discuss.md", include_str!("../../assets/discuss.md")),
+];
 
 /// Initialize govctl project
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
@@ -71,13 +75,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     }
 
     // Write command templates with {{GOVCTL}} → govctl substitution
-    let templates = [
-        ("gov.md", GOV_COMMAND_TEMPLATE),
-        ("quick.md", QUICK_COMMAND_TEMPLATE),
-        ("status.md", STATUS_COMMAND_TEMPLATE),
-    ];
-
-    for (filename, template) in templates {
+    for (filename, template) in COMMAND_TEMPLATES {
         let content = template.replace(GOVCTL_PLACEHOLDER, GOVCTL_DEFAULT);
         let path = claude_commands_dir.join(filename);
         write_file(&path, &content, op)?;
@@ -102,17 +100,10 @@ pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Resul
         ui::created_path(commands_dir);
     }
 
-    // Command templates to sync
-    let templates = [
-        ("gov.md", GOV_COMMAND_TEMPLATE),
-        ("quick.md", QUICK_COMMAND_TEMPLATE),
-        ("status.md", STATUS_COMMAND_TEMPLATE),
-    ];
-
     let mut synced = 0;
     let mut skipped = 0;
 
-    for (filename, template) in templates {
+    for (filename, template) in COMMAND_TEMPLATES {
         let path = commands_dir.join(filename);
 
         // Check if file exists and skip if not forcing
