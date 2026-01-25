@@ -79,9 +79,12 @@ Then RFC advancement may proceed without asking.
 if jj status >/dev/null 2>&1; then
     VCS="jj"
     echo "Using jujutsu"
-else
+elif git rev-parse --git-dir >/dev/null 2>&1; then
     VCS="git"
     echo "Using git"
+else
+    echo "Error: not in a VCS repository" >&2
+    exit 1
 fi
 ```
 
@@ -150,13 +153,15 @@ Parse `$ARGUMENTS` and classify:
 
 | Prefix        | Changelog Section | Notes                        |
 | ------------- | ----------------- | ---------------------------- |
-| `add:`        | Added             | Default if no prefix         |
+| `add:`        | Added             | New features                 |
 | `changed:`    | Changed           |                              |
 | `deprecated:` | Deprecated        |                              |
 | `removed:`    | Removed           |                              |
 | `fix:`        | Fixed             |                              |
 | `security:`   | Security          |                              |
 | `chore:`      | _(excluded)_      | Internal tasks, test passing |
+
+**Note:** Explicit category is **required**. Use prefix syntax (`add: ...`) or `--category` option.
 
 ```bash
 {{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Implement feature X"
@@ -352,13 +357,13 @@ If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless ov
 **Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
 
 ```bash
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "criterion"
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Feature implemented"
 ```
 
 Then tick each completed criterion:
 
 ```bash
-{{GOVCTL}} work tick <WI-ID> acceptance_criteria "criterion" -s done
+{{GOVCTL}} work tick <WI-ID> acceptance_criteria "Feature implemented" -s done
 ```
 
 ### 5.4 Mark Work Item Done

@@ -22,14 +22,16 @@ Execute a lightweight workflow for trivial changes: `$ARGUMENTS`
 {{GOVCTL}} status
 
 # Detect VCS
-if jj status >/dev/null 2>&1; then VCS="jj"; else VCS="git"; fi
+if jj status >/dev/null 2>&1; then VCS="jj"
+elif git rev-parse --git-dir >/dev/null 2>&1; then VCS="git"
+else echo "Error: not in a VCS repository" >&2; exit 1; fi
 ```
 
 ### 2. Create Work Item
 
 ```bash
 {{GOVCTL}} work new --active "<concise-title>"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "Change completed"
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: Change completed"
 ```
 
 ### 3. Implement
@@ -53,7 +55,7 @@ git add . && git commit -m "<type>(<scope>): <description>"
 ### 5. Complete
 
 ```bash
-{{GOVCTL}} work tick <WI-ID> acceptance_criteria "completed" -s done
+{{GOVCTL}} work tick <WI-ID> acceptance_criteria "Change completed" -s done
 {{GOVCTL}} work move <WI-ID> done
 ```
 
