@@ -1,0 +1,42 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-006"
+title = "Implement remaining ADR-0017 CLI conventions"
+status = "active"
+created = "2026-01-26"
+started = "2026-01-26"
+refs = ["ADR-0017"]
+
+[content]
+description = "Implement remaining [[ADR-0017]] CLI conventions. Tracks items not yet implemented from the accepted ADR."
+notes = ["Items marked 'future' in ADR-0017 (--filter explicit, --color flag, progress indicators) are deferred and not tracked here."]
+
+[[content.acceptance_criteria]]
+text = "`-o` short flag for `--output` on get/list commands"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`error[CODE]:` diagnostic format for error messages"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`NO_COLOR` environment variable support"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Confirmation prompts for `deprecate` and `supersede` commands"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "EXAMPLES section in command help text"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Verify exit codes match ADR-0017 spec (0/1/2)"
+status = "pending"
+category = "chore"

@@ -4,6 +4,7 @@ id = "ADR-0020"
 title = "Configurable work item ID strategies for multi-person collaboration"
 status = "accepted"
 date = "2026-01-26"
+refs = ["RFC-0000"]
 
 [content]
 context = """

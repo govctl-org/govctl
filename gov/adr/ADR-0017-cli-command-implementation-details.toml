@@ -38,7 +38,9 @@ We adopt the following implementation conventions:
 **Short flags:** Single letter aliases for common flags only
 - `-o` for `--output`
 - `-f` for `--force`
-- `-n` for `--dry-run` (global flag)
+- `-n` for `--limit` (per [[ADR-0019]], aligns with head/tail convention)
+
+**No short flag for `--dry-run`:** Safety flags benefit from explicit long form.
 
 **No short flags** for domain-specific options to avoid collision:
 - `--filter` has no short form
@@ -49,38 +51,43 @@ We adopt the following implementation conventions:
 - Equals accepted: `--output=json` (clap auto-supports)
 - No colons: avoid `--output:json`
 
-## 2. Array Field Editing with `edit` Command
+## 2. Field Editing Commands
 
-Per [[RFC-0002:C-CRUD-VERBS]], `edit` replaces `set`/`add`/`remove`/`tick`. For array fields, use prefix notation:
+govctl uses distinct verbs for different mutation operations. Each verb is clear and discoverable via `--help`.
 
-**Add to array:** Prefix value with `+`
+**Scalar fields:** Use `set`
 ```
-govctl rfc edit RFC-0001 owners +@alice
-govctl work edit WI-001 refs +RFC-0001:C-SCOPE
-```
-
-**Remove from array:** Prefix pattern with `-`
-```
-govctl rfc edit RFC-0001 owners -@bob
-govctl adr edit ADR-001 refs -RFC-0002
+govctl rfc set RFC-0001 title "New Title"
+govctl work set WI-001 description "Updated description"
+govctl adr set ADR-001 status accepted
 ```
 
-**Replace entire array:** No prefix (comma-separated)
+**Array fields - append:** Use `add`
 ```
-govctl rfc edit RFC-0001 owners "@alice,@bob"
-```
-
-**Checklist status:** Format as `"text" status`
-```
-govctl work edit WI-001 acceptance_criteria "Tests pass" done
-govctl work edit WI-001 acceptance_criteria "Docs updated" pending
+govctl work add WI-001 refs RFC-0001
+govctl rfc add RFC-0001 owners @alice
+govctl work add WI-001 acceptance_criteria "New criterion"
 ```
 
-**Pattern matching:** Same semantics as [[ADR-0007]]
-- Default: case-insensitive substring
+**Array fields - remove:** Use `remove`
+```
+govctl work remove WI-001 refs RFC-0001
+govctl rfc remove RFC-0001 owners @bob
+```
+
+**Checklist status:** Use `tick`
+```
+govctl work tick WI-001 acceptance_criteria "Tests pass" -s done
+govctl work tick WI-001 acceptance_criteria "Docs" -s pending
+```
+
+**Pattern matching for array operations:** Same semantics as [[ADR-0007]]
+- Default: case-insensitive substring match
 - Use `--exact` for exact match
 - Use `--regex` for pattern match
-- Use `--at N` for index-based
+- Use `--at N` for index-based access
+
+**Rationale:** Distinct verbs (`set`, `add`, `remove`, `tick`) are more intuitive and discoverable than a unified `edit` command with prefix notation. Users immediately understand what each command does.
 
 ## 3. Help Text Structure
 
@@ -103,7 +110,7 @@ OPTIONS:
 EXAMPLES:
     govctl rfc list draft
     govctl rfc get RFC-0001 -o json
-    govctl rfc edit RFC-0001 title "New Title"
+    govctl rfc set RFC-0001 title "New Title"
 ```
 
 **Ordering:**
@@ -198,17 +205,18 @@ govctl rfc list --filter phase=impl,status=normative
 
 **HEREDOC pattern (recommended for multi-line):**
 ```
-govctl clause edit RFC-0001:C-SCOPE --stdin <<'EOF'
+govctl clause set RFC-0001:C-SCOPE text --stdin <<'EOF'
 This clause defines the scope.
 EOF
 ```
 
 ## 9. Dry-Run Behavior
 
-**Global `-n` / `--dry-run` flag:**
+**Global `--dry-run` flag:**
 - Shows what would be written
 - Prints diff or file preview
 - Exits with 0 (success simulation)
+- No short flag (safety flags should be explicit)
 
 **Output format:**
 ```
@@ -237,7 +245,7 @@ consequences = """
 
 3. **Maintainable:** Implementation conventions documented, not scattered across code comments.
 
-4. **Extensible:** Array editing with +/- notation is more intuitive than separate add/remove commands. Easy to add new array operations.
+4. **Discoverable:** Distinct verbs (`set`, `add`, `remove`, `tick`) are immediately understandable. Users can explore via `--help` without reading documentation.
 
 5. **Safe:** Confirmation prompts prevent accidental destructive actions. Dry-run mode enables testing before committing.
 
@@ -245,35 +253,14 @@ consequences = """
 
 **Negative:**
 
-1. **Migration effort:** Existing codebase uses `set`/`add`/`remove`/`tick` commands. Need to refactor or maintain backward compatibility during transition.
+1. **Multiple verbs:** Users must learn four verbs for mutation operations (`set`, `add`, `remove`, `tick`) instead of one. However, each verb's meaning is immediately clear.
 
-2. **Learning curve:** Users familiar with current verb-first commands must learn resource-first structure and new array editing syntax.
-
-3. **Documentation burden:** Help text, examples, and migration guides need updating across all commands.
-
-4. **Testing complexity:** Need tests for TTY detection, confirmation prompts, dry-run mode, error formatting, etc.
-
-**Migration Strategy:**
-
-Phase 1 (current release):
-- Implement resource-first structure alongside existing commands
-- Emit deprecation warnings for old syntax
-- Update documentation with examples of both styles
-
-Phase 2 (next major release):
-- Remove old verb-first commands
-- Keep only resource-first structure
-- Update all examples and guides
-
-Phase 3 (ongoing):
-- Monitor user feedback on array editing syntax
-- Refine error messages based on common mistakes
-- Add more sophisticated filter syntax if needed
+2. **Testing complexity:** Need tests for TTY detection, confirmation prompts, dry-run mode, error formatting, etc.
 
 **Trade-offs Accepted:**
 
-- **Uniformity over convenience:** We sacrifice shortcuts like `govctl finalize` for consistency (`govctl rfc finalize`). This makes the CLI more predictable at the cost of slightly more typing.
+- **Clarity over brevity:** Distinct verbs are more verbose than a unified `edit` command, but much easier to understand. `add` and `remove` are clearer than `edit +value` and `edit -value`.
 
-- **Explicit over implicit:** Array operations use prefix notation (+/-) rather than inferring from context. More characters, but clearer intent.
+- **Discoverability over uniformity:** Four clear verbs are better than one verb with special syntax that requires documentation.
 
 - **Safety over speed:** Confirmation prompts slow down destructive operations. This is intentional to prevent accidents."""
