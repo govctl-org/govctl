@@ -1,0 +1,30 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-009"
+title = "Fix TUI list scrolling when list overflows viewport"
+status = "queue"
+created = "2026-01-26"
+
+[content]
+description = """
+Bug: In the TUI list views (RFCs, ADRs, Work Items), when the list contains more items than fit in the viewport, pressing j/Down to navigate beyond the visible area does not scroll the view. The selection index updates correctly, but the visible portion of the list remains static, making items below the fold inaccessible.
+
+Root cause: The Table widget is rendered with `render_widget` but lacks scroll state management. The code highlights the selected row with a background color, but doesn't use ratatui's `TableState` to track viewport offset.
+
+Fix: Use `TableState` with `render_stateful_widget` instead of `render_widget`. The TableState automatically manages scroll offset when selection changes."""
+notes = []
+
+[[content.acceptance_criteria]]
+category = "fixed"
+text = "Down/j navigation scrolls the list view when selection moves past visible area"
+status = "pending"
+
+[[content.acceptance_criteria]]
+category = "fixed"
+text = "Up/k navigation scrolls the list view when selection moves above visible area"
+status = "pending"
+
+[[content.acceptance_criteria]]
+category = "fixed"
+text = "Selection highlight remains visible at all scroll positions"
+status = "pending"

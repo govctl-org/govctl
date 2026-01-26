@@ -203,6 +203,18 @@ enum ListTarget {
     Work,
 }
 
+/// Output format for list/get commands per [[ADR-0017]]
+#[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum OutputFormat {
+    /// Table format (default)
+    #[default]
+    Table,
+    /// JSON format
+    Json,
+    /// Plain text (one item per line)
+    Plain,
+}
+
 #[derive(ValueEnum, Clone, Copy, Debug)]
 enum RenderTarget {
     /// Render RFCs only (default, published to repo)
@@ -239,13 +251,26 @@ enum RfcCommand {
         id: Option<String>,
     },
     /// List all RFCs
-    #[command(visible_alias = "ls")]
+    #[command(
+        visible_alias = "ls",
+        after_help = "\
+EXAMPLES:
+    govctl rfc list                    # List all RFCs
+    govctl rfc list draft              # Filter by status
+    govctl rfc list impl               # Filter by phase
+    govctl rfc list -n 5               # Limit to 5 results
+    govctl rfc list -o json            # Output as JSON
+"
+    )]
     List {
         /// Filter by status (draft|normative|deprecated), phase (spec|impl|test|stable), or ID pattern
         filter: Option<String>,
         /// Limit number of results
         #[arg(short = 'n', long)]
         limit: Option<usize>,
+        /// Output format
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
     },
     /// Get RFC field value
     Get {
@@ -341,13 +366,25 @@ enum ClauseCommand {
         kind: ClauseKind,
     },
     /// List clauses
-    #[command(visible_alias = "ls")]
+    #[command(
+        visible_alias = "ls",
+        after_help = "\
+EXAMPLES:
+    govctl clause list                 # List all clauses
+    govctl clause list RFC-0001        # Filter by RFC ID
+    govctl clause list active          # Filter by status
+    govctl clause list -o json         # Output as JSON
+"
+    )]
     List {
         /// Filter by RFC ID or clause ID pattern
         filter: Option<String>,
         /// Limit number of results
         #[arg(short = 'n', long)]
         limit: Option<usize>,
+        /// Output format
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
     },
     /// Get clause field value
     Get {
@@ -421,13 +458,25 @@ enum AdrCommand {
         title: String,
     },
     /// List ADRs
-    #[command(visible_alias = "ls")]
+    #[command(
+        visible_alias = "ls",
+        after_help = "\
+EXAMPLES:
+    govctl adr list                    # List all ADRs
+    govctl adr list accepted           # Filter by status
+    govctl adr list -n 10              # Limit to 10 results
+    govctl adr list -o json            # Output as JSON
+"
+    )]
     List {
         /// Filter by status (proposed|accepted|rejected|superseded|deprecated) or ID pattern
         filter: Option<String>,
         /// Limit number of results
         #[arg(short = 'n', long)]
         limit: Option<usize>,
+        /// Output format
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
     },
     /// Get ADR field value
     Get {
@@ -547,13 +596,25 @@ enum WorkCommand {
         active: bool,
     },
     /// List work items
-    #[command(visible_alias = "ls")]
+    #[command(
+        visible_alias = "ls",
+        after_help = "\
+EXAMPLES:
+    govctl work list                   # List all work items
+    govctl work list active            # Filter by status
+    govctl work list pending           # Show queue + active
+    govctl work list -n 5 -o json      # JSON output, 5 items
+"
+    )]
     List {
         /// Filter by status (queue|active|done|cancelled) or ID pattern
         filter: Option<String>,
         /// Limit number of results
         #[arg(short = 'n', long)]
         limit: Option<usize>,
+        /// Output format
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
     },
     /// Get work item field value
     Get {

@@ -1,12 +1,14 @@
 //! List command implementation.
 
 use crate::ListTarget;
+use crate::OutputFormat;
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::WorkItemStatus;
 use crate::ui::stdout_supports_color;
 use comfy_table::{Attribute, Cell, Color, ContentArrangement, Table, presets::UTF8_FULL};
+use serde::Serialize;
 
 /// Check if stdout supports colors (delegates to centralized ui module)
 fn use_colors() -> bool {
@@ -59,6 +61,7 @@ pub fn list(
     target: ListTarget,
     filter: Option<&str>,
     limit: Option<usize>,
+    output: OutputFormat,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let index = match load_project(config) {
         Ok(idx) => idx,
@@ -66,16 +69,88 @@ pub fn list(
     };
 
     match target {
-        ListTarget::Rfc => list_rfcs(&index, filter, limit),
-        ListTarget::Clause => list_clauses(&index, filter, limit),
-        ListTarget::Adr => list_adrs(&index, filter, limit),
-        ListTarget::Work => list_work_items(&index, filter, limit),
+        ListTarget::Rfc => list_rfcs(&index, filter, limit, output),
+        ListTarget::Clause => list_clauses(&index, filter, limit, output),
+        ListTarget::Adr => list_adrs(&index, filter, limit, output),
+        ListTarget::Work => list_work_items(&index, filter, limit, output),
     }
 
     Ok(vec![])
 }
 
-fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
+/// Output a list of items in the specified format
+fn output_list<T: Serialize>(
+    items: &[T],
+    headers: &[&str],
+    format: OutputFormat,
+    to_row: impl Fn(&T) -> Vec<String>,
+) {
+    match format {
+        OutputFormat::Json => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(items).unwrap_or_else(|_| "[]".to_string())
+            );
+        }
+        OutputFormat::Plain => {
+            for item in items {
+                let row = to_row(item);
+                // Plain output: tab-separated values
+                println!("{}", row.join("\t"));
+            }
+        }
+        OutputFormat::Table => {
+            let mut table = Table::new();
+            table
+                .load_preset(UTF8_FULL)
+                .set_content_arrangement(ContentArrangement::Dynamic)
+                .set_header(headers.iter().map(|h| header_cell(h)).collect::<Vec<_>>());
+
+            for item in items {
+                let row = to_row(item);
+                table.add_row(
+                    row.iter()
+                        .enumerate()
+                        .map(|(i, v)| {
+                            // First column is ID (cyan), status columns get semantic colors
+                            if i == 0 {
+                                id_cell(v)
+                            } else if headers
+                                .get(i)
+                                .is_some_and(|h| *h == "Status" || *h == "Phase")
+                            {
+                                status_cell(v)
+                            } else {
+                                cell(v)
+                            }
+                        })
+                        .collect::<Vec<_>>(),
+                );
+            }
+
+            println!("{table}");
+        }
+    }
+}
+
+/// Serializable RFC summary for JSON output
+#[derive(Serialize)]
+struct RfcSummary {
+    id: String,
+    version: String,
+    status: String,
+    phase: String,
+    title: String,
+    #[serde(skip_serializing_if = "std::ops::Not::not")]
+    amended: bool,
+}
+
+fn list_rfcs(
+    index: &crate::model::ProjectIndex,
+    filter: Option<&str>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) {
     let mut rfcs: Vec<_> = index.rfcs.iter().collect();
 
     // Filter by status or phase if provided
@@ -92,39 +167,58 @@ fn list_rfcs(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Op
         rfcs.truncate(n);
     }
 
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec![
-            header_cell("RFC"),
-            header_cell("Version"),
-            header_cell("Status"),
-            header_cell("Phase"),
-            header_cell("Title"),
-        ]);
+    // Convert to summaries
+    let summaries: Vec<RfcSummary> = rfcs
+        .iter()
+        .map(|rfc| {
+            let amended = crate::signature::is_rfc_amended(rfc);
+            RfcSummary {
+                id: if amended {
+                    format!("{}*", rfc.rfc.rfc_id)
+                } else {
+                    rfc.rfc.rfc_id.clone()
+                },
+                version: rfc.rfc.version.clone(),
+                status: rfc.rfc.status.as_ref().to_string(),
+                phase: rfc.rfc.phase.as_ref().to_string(),
+                title: rfc.rfc.title.clone(),
+                amended,
+            }
+        })
+        .collect();
 
-    for rfc in rfcs {
-        // Check if RFC has been amended
-        let rfc_id_display = if crate::signature::is_rfc_amended(rfc) {
-            format!("{}*", rfc.rfc.rfc_id)
-        } else {
-            rfc.rfc.rfc_id.clone()
-        };
-
-        table.add_row(vec![
-            id_cell(&rfc_id_display),
-            cell(&rfc.rfc.version),
-            status_cell(rfc.rfc.status.as_ref()),
-            status_cell(rfc.rfc.phase.as_ref()),
-            cell(&rfc.rfc.title),
-        ]);
-    }
-
-    println!("{table}");
+    output_list(
+        &summaries,
+        &["RFC", "Version", "Status", "Phase", "Title"],
+        output,
+        |s| {
+            vec![
+                s.id.clone(),
+                s.version.clone(),
+                s.status.clone(),
+                s.phase.clone(),
+                s.title.clone(),
+            ]
+        },
+    );
 }
 
-fn list_clauses(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
+/// Serializable clause summary for JSON output
+#[derive(Serialize)]
+struct ClauseSummary {
+    id: String,
+    rfc_id: String,
+    kind: String,
+    status: String,
+    title: String,
+}
+
+fn list_clauses(
+    index: &crate::model::ProjectIndex,
+    filter: Option<&str>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) {
     let mut clauses: Vec<_> = index
         .iter_clauses()
         .map(|(rfc, clause)| (rfc.rfc.rfc_id.clone(), clause))
@@ -147,32 +241,49 @@ fn list_clauses(index: &crate::model::ProjectIndex, filter: Option<&str>, limit:
         clauses.truncate(n);
     }
 
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec![
-            header_cell("Clause"),
-            header_cell("RFC"),
-            header_cell("Kind"),
-            header_cell("Status"),
-            header_cell("Title"),
-        ]);
+    // Convert to summaries
+    let summaries: Vec<ClauseSummary> = clauses
+        .iter()
+        .map(|(rfc_id, clause)| ClauseSummary {
+            id: clause.spec.clause_id.clone(),
+            rfc_id: rfc_id.clone(),
+            kind: clause.spec.kind.as_ref().to_string(),
+            status: clause.spec.status.as_ref().to_string(),
+            title: clause.spec.title.clone(),
+        })
+        .collect();
 
-    for (rfc_id, clause) in clauses {
-        table.add_row(vec![
-            id_cell(&clause.spec.clause_id),
-            id_cell(&rfc_id),
-            cell(clause.spec.kind.as_ref()),
-            status_cell(clause.spec.status.as_ref()),
-            cell(&clause.spec.title),
-        ]);
-    }
-
-    println!("{table}");
+    output_list(
+        &summaries,
+        &["Clause", "RFC", "Kind", "Status", "Title"],
+        output,
+        |s| {
+            vec![
+                s.id.clone(),
+                s.rfc_id.clone(),
+                s.kind.clone(),
+                s.status.clone(),
+                s.title.clone(),
+            ]
+        },
+    );
 }
 
-fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
+/// Serializable ADR summary for JSON output
+#[derive(Serialize)]
+struct AdrSummary {
+    id: String,
+    status: String,
+    date: String,
+    title: String,
+}
+
+fn list_adrs(
+    index: &crate::model::ProjectIndex,
+    filter: Option<&str>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) {
     let mut adrs: Vec<_> = index.adrs.iter().collect();
 
     // Filter by status if provided
@@ -187,30 +298,46 @@ fn list_adrs(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Op
         adrs.truncate(n);
     }
 
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec![
-            header_cell("ADR"),
-            header_cell("Status"),
-            header_cell("Date"),
-            header_cell("Title"),
-        ]);
+    // Convert to summaries
+    let summaries: Vec<AdrSummary> = adrs
+        .iter()
+        .map(|adr| AdrSummary {
+            id: adr.meta().id.clone(),
+            status: adr.meta().status.as_ref().to_string(),
+            date: adr.meta().date.clone(),
+            title: adr.meta().title.clone(),
+        })
+        .collect();
 
-    for adr in adrs {
-        table.add_row(vec![
-            id_cell(&adr.meta().id),
-            status_cell(adr.meta().status.as_ref()),
-            cell(&adr.meta().date),
-            cell(&adr.meta().title),
-        ]);
-    }
-
-    println!("{table}");
+    output_list(
+        &summaries,
+        &["ADR", "Status", "Date", "Title"],
+        output,
+        |s| {
+            vec![
+                s.id.clone(),
+                s.status.clone(),
+                s.date.clone(),
+                s.title.clone(),
+            ]
+        },
+    );
 }
 
-fn list_work_items(index: &crate::model::ProjectIndex, filter: Option<&str>, limit: Option<usize>) {
+/// Serializable work item summary for JSON output
+#[derive(Serialize)]
+struct WorkItemSummary {
+    id: String,
+    status: String,
+    title: String,
+}
+
+fn list_work_items(
+    index: &crate::model::ProjectIndex,
+    filter: Option<&str>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) {
     let mut items: Vec<_> = index.work_items.iter().collect();
 
     // Filter by status or ID if provided
@@ -240,23 +367,17 @@ fn list_work_items(index: &crate::model::ProjectIndex, filter: Option<&str>, lim
         items.truncate(n);
     }
 
-    let mut table = Table::new();
-    table
-        .load_preset(UTF8_FULL)
-        .set_content_arrangement(ContentArrangement::Dynamic)
-        .set_header(vec![
-            header_cell("ID"),
-            header_cell("Status"),
-            header_cell("Title"),
-        ]);
+    // Convert to summaries
+    let summaries: Vec<WorkItemSummary> = items
+        .iter()
+        .map(|item| WorkItemSummary {
+            id: item.meta().id.clone(),
+            status: item.meta().status.as_ref().to_string(),
+            title: item.meta().title.clone(),
+        })
+        .collect();
 
-    for item in items {
-        table.add_row(vec![
-            id_cell(&item.meta().id),
-            status_cell(item.meta().status.as_ref()),
-            cell(&item.meta().title),
-        ]);
-    }
-
-    println!("{table}");
+    output_list(&summaries, &["ID", "Status", "Title"], output, |s| {
+        vec![s.id.clone(), s.status.clone(), s.title.clone()]
+    });
 }

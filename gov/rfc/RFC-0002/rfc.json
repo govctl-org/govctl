@@ -3,14 +3,18 @@
   "title": "CLI Resource Model and Command Architecture",
   "version": "0.2.0",
   "status": "normative",
-  "phase": "impl",
-  "owners": ["@govctl-org"],
+  "phase": "test",
+  "owners": [
+    "@govctl-org"
+  ],
   "created": "2026-01-19",
-  "updated": "2026-01-19",
+  "updated": "2026-01-26",
   "sections": [
     {
       "title": "Summary",
-      "clauses": ["clauses/C-SUMMARY.json"]
+      "clauses": [
+        "clauses/C-SUMMARY.json"
+      ]
     },
     {
       "title": "Specification",
