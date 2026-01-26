@@ -326,7 +326,7 @@ fn create_clause(
         text: "TODO: Add clause text here.".to_string(),
         anchors: vec![],
         superseded_by: None,
-        since: Some(rfc.version.clone()), // Clause introduced in current RFC version
+        since: None, // Will be set by rfc bump
     };
 
     let clause_path = config

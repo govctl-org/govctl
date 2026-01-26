@@ -1,0 +1,21 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-003"
+title = "Implement clause since null tracking"
+status = "done"
+created = "2026-01-26"
+started = "2026-01-26"
+completed = "2026-01-26"
+
+[content]
+description = "New clauses should have since field set to null, and rfc bump should fill it in for pending clauses."
+
+[[content.acceptance_criteria]]
+text = "clause new sets since to null"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "rfc bump fills since for pending clauses"
+status = "done"
+category = "changed"

@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- C-REFERENCE-HIERARCHY clause defines artifact reference rules (WI-2026-01-26-002)
+
+### Changed
+
+- clause new sets since to null (WI-2026-01-26-003)
+- rfc bump fills since for pending clauses (WI-2026-01-26-003)
+
+### Fixed
+
+- RFC rendering expands inline [[...]] refs like ADR/work items (WI-2026-01-26-001)
+- RFC rendering displays refs field when present (WI-2026-01-26-001)
+
 ## [0.2.1] - 2026-01-25
 
 ### Added

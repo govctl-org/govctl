@@ -4,17 +4,13 @@
   "version": "0.2.1",
   "status": "normative",
   "phase": "stable",
-  "owners": [
-    "@govctl-org"
-  ],
+  "owners": ["@govctl-org"],
   "created": "2026-01-17",
   "updated": "2026-01-26",
   "sections": [
     {
       "title": "Summary",
-      "clauses": [
-        "clauses/C-SUMMARY.json"
-      ]
+      "clauses": ["clauses/C-SUMMARY.json"]
     },
     {
       "title": "Specification",

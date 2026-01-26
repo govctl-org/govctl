@@ -17,6 +17,36 @@ use crate::write::{
     write_clause, write_rfc,
 };
 use std::collections::HashSet;
+use std::path::Path;
+
+/// Update pending clauses (since: null) with the given version.
+///
+/// Clauses are created with `since: None` and filled in when the RFC
+/// is bumped or finalized.
+fn fill_pending_clause_versions(rfc_path: &Path, version: &str, op: WriteOp) -> anyhow::Result<()> {
+    let clauses_dir = rfc_path.parent().unwrap().join("clauses");
+    if !clauses_dir.exists() {
+        return Ok(());
+    }
+
+    let pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)?
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "json"))
+        .filter_map(|p| read_clause(&p).ok().map(|c| (p, c)))
+        .filter(|(_, c)| c.since.is_none())
+        .collect();
+
+    for (path, mut clause) in pending_clauses {
+        clause.since = Some(version.to_string());
+        write_clause(&path, &clause, op)?;
+        if !op.is_preview() {
+            ui::sub_info(format!("Set {}.since = {}", clause.clause_id, version));
+        }
+    }
+
+    Ok(())
+}
 
 /// Bump RFC version
 pub fn bump(
@@ -53,6 +83,9 @@ pub fn bump(
 
             // Write the RFC first
             write_rfc(&rfc_path, &rfc, op)?;
+
+            // Update pending clauses (since: null) with new version
+            fill_pending_clause_versions(&rfc_path, &new_version, op)?;
 
             // Then recompute and store signature after version bump per [[ADR-0016]]
             // Load full RFC with clauses to compute accurate signature
@@ -142,6 +175,10 @@ pub fn finalize(
     rfc.status = target_status;
     rfc.updated = Some(crate::write::today());
     write_rfc(&rfc_path, &rfc, op)?;
+
+    // Update pending clauses (since: null) with current version
+    // When an RFC is finalized, all clauses should have proper since values
+    fill_pending_clause_versions(&rfc_path, &rfc.version, op)?;
 
     if !op.is_preview() {
         ui::finalized(rfc_id, target_status.as_ref());

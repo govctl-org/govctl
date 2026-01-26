@@ -4,17 +4,13 @@
   "version": "1.0.1",
   "status": "normative",
   "phase": "stable",
-  "owners": [
-    "@govctl-org"
-  ],
+  "owners": ["@govctl-org"],
   "created": "2026-01-17",
   "updated": "2026-01-26",
   "sections": [
     {
       "title": "Summary",
-      "clauses": [
-        "clauses/C-SUMMARY.json"
-      ]
+      "clauses": ["clauses/C-SUMMARY.json"]
     },
     {
       "title": "RFC Specification",
@@ -27,21 +23,15 @@
     },
     {
       "title": "Clause Specification",
-      "clauses": [
-        "clauses/C-CLAUSE-DEF.json"
-      ]
+      "clauses": ["clauses/C-CLAUSE-DEF.json"]
     },
     {
       "title": "ADR Specification",
-      "clauses": [
-        "clauses/C-ADR-DEF.json"
-      ]
+      "clauses": ["clauses/C-ADR-DEF.json"]
     },
     {
       "title": "Work Item Specification",
-      "clauses": [
-        "clauses/C-WORK-DEF.json"
-      ]
+      "clauses": ["clauses/C-WORK-DEF.json"]
     }
   ],
   "changelog": [
