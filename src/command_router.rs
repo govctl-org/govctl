@@ -112,10 +112,12 @@ pub enum CanonicalCommand {
     },
     RfcDeprecate {
         id: String,
+        force: bool,
     },
     RfcSupersede {
         id: String,
         by: String,
+        force: bool,
     },
 
     // ========================================
@@ -153,10 +155,12 @@ pub enum CanonicalCommand {
     },
     ClauseDeprecate {
         id: String,
+        force: bool,
     },
     ClauseSupersede {
         id: String,
         by: String,
+        force: bool,
     },
 
     // ========================================
@@ -198,10 +202,12 @@ pub enum CanonicalCommand {
     },
     AdrDeprecate {
         id: String,
+        force: bool,
     },
     AdrSupersede {
         id: String,
         by: String,
+        force: bool,
     },
     AdrTick {
         id: String,
@@ -393,8 +399,10 @@ impl CanonicalCommand {
             } => cmd::lifecycle::bump(config, id, *level, summary.as_deref(), changes, op),
             Self::RfcFinalize { id, status } => cmd::lifecycle::finalize(config, id, *status, op),
             Self::RfcAdvance { id, phase } => cmd::lifecycle::advance(config, id, *phase, op),
-            Self::RfcDeprecate { id } => cmd::lifecycle::deprecate(config, id, op),
-            Self::RfcSupersede { id, by } => cmd::lifecycle::supersede(config, id, by, op),
+            Self::RfcDeprecate { id, force } => cmd::lifecycle::deprecate(config, id, *force, op),
+            Self::RfcSupersede { id, by, force } => {
+                cmd::lifecycle::supersede(config, id, by, *force, op)
+            }
 
             // Clause commands
             Self::ClauseNew {
@@ -435,8 +443,12 @@ impl CanonicalCommand {
                 stdin,
             } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
             Self::ClauseDelete { id, force } => cmd::edit::delete_clause(config, id, *force, op),
-            Self::ClauseDeprecate { id } => cmd::lifecycle::deprecate(config, id, op),
-            Self::ClauseSupersede { id, by } => cmd::lifecycle::supersede(config, id, by, op),
+            Self::ClauseDeprecate { id, force } => {
+                cmd::lifecycle::deprecate(config, id, *force, op)
+            }
+            Self::ClauseSupersede { id, by, force } => {
+                cmd::lifecycle::supersede(config, id, by, *force, op)
+            }
 
             // ADR commands
             Self::AdrNew { title } => {
@@ -470,8 +482,12 @@ impl CanonicalCommand {
             }
             Self::AdrAccept { id } => cmd::lifecycle::accept_adr(config, id, op),
             Self::AdrReject { id } => cmd::lifecycle::reject_adr(config, id, op),
-            Self::AdrDeprecate { id } => cmd::lifecycle::deprecate(config, id, op),
-            Self::AdrSupersede { id, by } => cmd::lifecycle::supersede(config, id, by, op),
+            Self::AdrDeprecate { id, force } => {
+                cmd::lifecycle::deprecate(config, id, *force, op)
+            }
+            Self::AdrSupersede { id, by, force } => {
+                cmd::lifecycle::supersede(config, id, by, *force, op)
+            }
             Self::AdrTick {
                 id,
                 field,
@@ -606,10 +622,14 @@ impl CanonicalCommand {
                 id: id.clone(),
                 phase: *phase,
             },
-            RfcCommand::Deprecate { id } => Self::RfcDeprecate { id: id.clone() },
-            RfcCommand::Supersede { id, by } => Self::RfcSupersede {
+            RfcCommand::Deprecate { id, force } => Self::RfcDeprecate {
+                id: id.clone(),
+                force: *force,
+            },
+            RfcCommand::Supersede { id, by, force } => Self::RfcSupersede {
                 id: id.clone(),
                 by: by.clone(),
+                force: *force,
             },
         })
     }
@@ -663,10 +683,14 @@ impl CanonicalCommand {
                 id: id.clone(),
                 force: *force,
             },
-            ClauseCommand::Deprecate { id } => Self::ClauseDeprecate { id: id.clone() },
-            ClauseCommand::Supersede { id, by } => Self::ClauseSupersede {
+            ClauseCommand::Deprecate { id, force } => Self::ClauseDeprecate {
+                id: id.clone(),
+                force: *force,
+            },
+            ClauseCommand::Supersede { id, by, force } => Self::ClauseSupersede {
                 id: id.clone(),
                 by: by.clone(),
+                force: *force,
             },
         })
     }
@@ -732,10 +756,14 @@ impl CanonicalCommand {
             }
             AdrCommand::Accept { id } => Self::AdrAccept { id: id.clone() },
             AdrCommand::Reject { id } => Self::AdrReject { id: id.clone() },
-            AdrCommand::Deprecate { id } => Self::AdrDeprecate { id: id.clone() },
-            AdrCommand::Supersede { id, by } => Self::AdrSupersede {
+            AdrCommand::Deprecate { id, force } => Self::AdrDeprecate {
+                id: id.clone(),
+                force: *force,
+            },
+            AdrCommand::Supersede { id, by, force } => Self::AdrSupersede {
                 id: id.clone(),
                 by: by.clone(),
+                force: *force,
             },
             AdrCommand::Tick {
                 id,

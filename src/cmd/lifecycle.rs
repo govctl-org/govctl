@@ -308,7 +308,29 @@ pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
 }
 
 /// Deprecate an artifact
-pub fn deprecate(config: &Config, id: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+///
+/// Per [[ADR-0017]], destructive operations require confirmation unless `--force`.
+pub fn deprecate(
+    config: &Config,
+    id: &str,
+    force: bool,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    // Confirmation prompt (unless force or dry-run)
+    if !force && !op.is_preview() {
+        use std::io::{self, Write};
+        print!("Deprecate {}? [y/N] ", id);
+        io::stdout().flush()?;
+
+        let mut response = String::new();
+        io::stdin().read_line(&mut response)?;
+
+        if !response.trim().eq_ignore_ascii_case("y") {
+            ui::info("Deprecation cancelled");
+            return Ok(vec![]);
+        }
+    }
+
     if id.contains(':') {
         // It's a clause
         let clause_path = find_clause_json(config, id).ok_or_else(|| {
@@ -345,7 +367,7 @@ pub fn deprecate(config: &Config, id: &str, op: WriteOp) -> anyhow::Result<Vec<D
             ui::deprecated("clause", id);
         }
     } else if id.starts_with("RFC-") {
-        // Use finalize for RFC deprecation
+        // Use finalize for RFC deprecation (confirmation already done above)
         return finalize(config, id, FinalizeStatus::Deprecated, op);
     } else if id.starts_with("ADR-") {
         // ADRs cannot be deprecated; they can only be superseded
@@ -370,12 +392,30 @@ pub fn deprecate(config: &Config, id: &str, op: WriteOp) -> anyhow::Result<Vec<D
 }
 
 /// Supersede an artifact
+///
+/// Per [[ADR-0017]], destructive operations require confirmation unless `--force`.
 pub fn supersede(
     config: &Config,
     id: &str,
     by: &str,
+    force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
+    // Confirmation prompt (unless force or dry-run)
+    if !force && !op.is_preview() {
+        use std::io::{self, Write};
+        print!("Supersede {} with {}? [y/N] ", id, by);
+        io::stdout().flush()?;
+
+        let mut response = String::new();
+        io::stdin().read_line(&mut response)?;
+
+        if !response.trim().eq_ignore_ascii_case("y") {
+            ui::info("Supersede cancelled");
+            return Ok(vec![]);
+        }
+    }
+
     if id.contains(':') {
         // It's a clause
         // Validate replacement exists

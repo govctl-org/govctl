@@ -307,6 +307,9 @@ enum RfcCommand {
     Deprecate {
         /// RFC ID
         id: String,
+        /// Force without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
     },
     /// Supersede RFC
     Supersede {
@@ -315,6 +318,9 @@ enum RfcCommand {
         /// Replacement RFC ID
         #[arg(long)]
         by: String,
+        /// Force without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
     },
 }
 
@@ -389,6 +395,9 @@ enum ClauseCommand {
     Deprecate {
         /// Clause ID
         id: String,
+        /// Force without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
     },
     /// Supersede clause
     Supersede {
@@ -397,6 +406,9 @@ enum ClauseCommand {
         /// Replacement clause ID
         #[arg(long)]
         by: String,
+        /// Force without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
     },
 }
 
@@ -485,6 +497,9 @@ enum AdrCommand {
     Deprecate {
         /// ADR ID
         id: String,
+        /// Force without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
     },
     /// Supersede ADR
     Supersede {
@@ -493,6 +508,9 @@ enum AdrCommand {
         /// Replacement ADR ID
         #[arg(long)]
         by: String,
+        /// Force without confirmation
+        #[arg(short = 'f', long)]
+        force: bool,
     },
     /// Tick checklist item
     Tick {
@@ -667,7 +685,12 @@ fn main() -> ExitCode {
             }
         }
         Err(e) => {
-            ui::error(&e);
+            // Try to extract Diagnostic for structured error output
+            if let Some(diag) = e.downcast_ref::<Diagnostic>() {
+                ui::diagnostic(diag);
+            } else {
+                ui::error(&e);
+            }
             ExitCode::FAILURE
         }
     }
