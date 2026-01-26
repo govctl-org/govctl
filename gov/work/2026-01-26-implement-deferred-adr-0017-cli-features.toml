@@ -1,0 +1,28 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-007"
+title = "Implement deferred ADR-0017 CLI features"
+status = "queue"
+created = "2026-01-26"
+refs = [
+    "ADR-0017",
+    "WI-2026-01-26-006",
+]
+
+[content]
+description = "Continue implementing deferred items from [[WI-2026-01-26-006]]. These features require more significant implementation work."
+
+[[content.acceptance_criteria]]
+text = "`--output` flag with format option (json, yaml, table) on get/list commands"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`-o` short flag for `--output`"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "EXAMPLES section in command help text using clap after_help"
+status = "pending"
+category = "added"
