@@ -154,6 +154,12 @@ pub fn render_rfc(rfc: &RfcIndex) -> anyhow::Result<String> {
     );
     let _ = writeln!(out);
 
+    // References (expanded to markdown links)
+    if !rfc.rfc.refs.is_empty() {
+        let _ = writeln!(out, "**References:** {}", render_refs(&rfc.rfc.refs));
+        let _ = writeln!(out);
+    }
+
     // Render sections with clauses
     for (i, section) in rfc.rfc.sections.iter().enumerate() {
         let _ = writeln!(out, "---");
@@ -265,18 +271,22 @@ fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEn
     }
 }
 
-/// Write rendered RFC to file
-pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Result<()> {
-    let output_path = config.rfc_output().join(format!("{}.md", rfc.rfc.rfc_id));
-
-    let content = render_rfc(rfc)?;
-
+/// Write rendered markdown to file with common formatting.
+///
+/// Handles dry-run preview, directory creation, and consistent formatting.
+/// `preview_lines` controls how many lines to show in dry-run mode.
+fn write_rendered_md(
+    output_path: &std::path::Path,
+    content: &str,
+    dry_run: bool,
+    preview_lines: usize,
+) -> anyhow::Result<()> {
     // Trim trailing whitespace, ensure single trailing newline
     let content = format!("{}\n", content.trim_end());
 
     if dry_run {
-        ui::dry_run_preview(&output_path);
-        for line in content.lines().take(20) {
+        ui::dry_run_preview(output_path);
+        for line in content.lines().take(preview_lines) {
             ui::preview_line(line);
         }
         ui::preview_truncated();
@@ -285,13 +295,23 @@ pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Resu
         if let Some(parent) = output_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-
-        let mut file = std::fs::File::create(&output_path)?;
+        let mut file = std::fs::File::create(output_path)?;
         file.write_all(content.as_bytes())?;
-        ui::rendered(&output_path);
+        ui::rendered(output_path);
     }
 
     Ok(())
+}
+
+/// Write rendered RFC to file
+pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Result<()> {
+    let output_path = config.rfc_output().join(format!("{}.md", rfc.rfc.rfc_id));
+
+    // Render and expand inline references (per ADR-0011)
+    let raw = render_rfc(rfc)?;
+    let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+
+    write_rendered_md(&output_path, &expanded, dry_run, 20)
 }
 
 // =============================================================================
@@ -377,28 +397,13 @@ pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
 /// Write rendered ADR to file
 pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::Result<()> {
     let meta = adr.meta();
-    let output_dir = config.adr_output();
-    let output_path = output_dir.join(format!("{}.md", meta.id));
+    let output_path = config.adr_output().join(format!("{}.md", meta.id));
 
     // Render and expand inline references (per ADR-0011)
     let raw = render_adr(adr)?;
     let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-    let rendered = format!("{}\n", expanded.trim_end());
 
-    if dry_run {
-        ui::dry_run_preview(&output_path);
-        for line in rendered.lines().take(15) {
-            ui::preview_line(line);
-        }
-        ui::preview_truncated();
-    } else {
-        std::fs::create_dir_all(&output_dir)?;
-        let mut file = std::fs::File::create(&output_path)?;
-        file.write_all(rendered.as_bytes())?;
-        ui::rendered(&output_path);
-    }
-
-    Ok(())
+    write_rendered_md(&output_path, &expanded, dry_run, 15)
 }
 
 // =============================================================================
@@ -490,28 +495,13 @@ pub fn write_work_item_md(
     dry_run: bool,
 ) -> anyhow::Result<()> {
     let meta = item.meta();
-    let output_dir = config.work_output();
-    let output_path = output_dir.join(format!("{}.md", meta.id));
+    let output_path = config.work_output().join(format!("{}.md", meta.id));
 
     // Render and expand inline references (per ADR-0011)
     let raw = render_work_item(item)?;
     let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-    let rendered = format!("{}\n", expanded.trim_end());
 
-    if dry_run {
-        ui::dry_run_preview(&output_path);
-        for line in rendered.lines().take(15) {
-            ui::preview_line(line);
-        }
-        ui::preview_truncated();
-    } else {
-        std::fs::create_dir_all(&output_dir)?;
-        let mut file = std::fs::File::create(&output_path)?;
-        file.write_all(rendered.as_bytes())?;
-        ui::rendered(&output_path);
-    }
-
-    Ok(())
+    write_rendered_md(&output_path, &expanded, dry_run, 15)
 }
 
 #[cfg(test)]

@@ -1,0 +1,31 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-001"
+title = "Fix RFC rendering to expand inline refs and show refs field"
+status = "done"
+created = "2026-01-26"
+started = "2026-01-26"
+completed = "2026-01-26"
+
+[content]
+description = "Fix RFC rendering to be consistent with ADR and work item rendering by expanding inline `[[...]]` refs and displaying the refs field. Also refactor write functions to reduce code duplication."
+
+[[content.acceptance_criteria]]
+text = "RFC rendering expands inline [[...]] refs like ADR/work items"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFC rendering displays refs field when present"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Refactor write functions to reduce DRY violation"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Tests pass"
+status = "done"
+category = "chore"
