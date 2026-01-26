@@ -1,0 +1,31 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-004"
+title = "Changelog render preserves released sections"
+status = "done"
+created = "2026-01-26"
+started = "2026-01-26"
+completed = "2026-01-26"
+
+[content]
+description = "Changelog rendering now only updates the Unreleased section by default, preserving manually edited released sections. New release sections are automatically generated when missing. Use --force/-f for full regeneration."
+
+[[content.acceptance_criteria]]
+text = "Default render changelog only updates Unreleased section"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "--force/-f flag for full changelog regeneration"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Missing release sections are auto-generated and inserted in correct order"
+status = "done"
+category = "fixed"

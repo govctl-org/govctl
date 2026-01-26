@@ -84,6 +84,9 @@ enum Commands {
         /// Dry run: show what would be written
         #[arg(long)]
         dry_run: bool,
+        /// Force full regeneration (for changelog: overwrites released sections)
+        #[arg(long, short)]
+        force: bool,
     },
 
     // ========================================
@@ -682,6 +685,7 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         target,
         rfc_id,
         dry_run,
+        force,
     } = canonical
     {
         // Combine global and command-specific dry-run flags
@@ -689,6 +693,7 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             target,
             rfc_id,
             dry_run: cli.dry_run || dry_run,
+            force,
         }
     } else {
         canonical

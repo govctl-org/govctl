@@ -7,19 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-01-26
+
 ### Added
 
 - C-REFERENCE-HIERARCHY clause defines artifact reference rules (WI-2026-01-26-002)
+- --force/-f flag for full changelog regeneration (WI-2026-01-26-004)
 
 ### Changed
 
 - clause new sets since to null (WI-2026-01-26-003)
 - rfc bump fills since for pending clauses (WI-2026-01-26-003)
+- Default render changelog only updates Unreleased section (WI-2026-01-26-004)
 
 ### Fixed
 
 - RFC rendering expands inline [[...]] refs like ADR/work items (WI-2026-01-26-001)
 - RFC rendering displays refs field when present (WI-2026-01-26-001)
+- Missing release sections are auto-generated and inserted in correct order (WI-2026-01-26-004)
 
 ## [0.2.1] - 2026-01-25
 

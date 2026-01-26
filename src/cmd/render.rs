@@ -96,15 +96,16 @@ pub fn render_work_items(config: &Config, dry_run: bool) -> anyhow::Result<Vec<D
 
 /// Render CHANGELOG.md from completed work items
 /// Per [[ADR-0014]], groups by release version and changelog category.
-pub fn render_changelog(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Diagnostic>> {
+///
+/// Default behavior: only updates the Unreleased section, preserving manually
+/// edited released sections. Use `force=true` to regenerate the entire file.
+pub fn render_changelog(
+    config: &Config,
+    dry_run: bool,
+    force: bool,
+) -> anyhow::Result<Vec<Diagnostic>> {
     let releases_file = load_releases(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
     let work_items = load_work_items(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
-
-    // Build work item lookup by ID
-    let work_item_map: HashMap<_, _> = work_items
-        .iter()
-        .map(|w| (w.spec.govctl.id.clone(), w))
-        .collect();
 
     // Get all released work item IDs
     let released_ids: HashSet<_> = releases_file
@@ -120,22 +121,66 @@ pub fn render_changelog(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Di
         .filter(|w| !released_ids.contains(&w.spec.govctl.id))
         .collect();
 
+    let changelog_path = std::path::PathBuf::from("CHANGELOG.md");
+
+    let output = if force {
+        // Force mode: regenerate entire file
+        render_changelog_full(config, &releases_file, &work_items, &unreleased)?
+    } else {
+        // Default mode: update Unreleased section + add missing releases, preserve existing
+        render_changelog_incremental(
+            config,
+            &changelog_path,
+            &releases_file,
+            &work_items,
+            &unreleased,
+        )?
+    };
+
+    let unreleased_count = unreleased.len();
+
+    if dry_run {
+        ui::dry_run_file_preview(&changelog_path, &output);
+    } else {
+        std::fs::write(&changelog_path, &output)?;
+        ui::changelog_rendered(
+            &changelog_path,
+            releases_file.releases.len(),
+            unreleased_count,
+        );
+    }
+
+    Ok(vec![])
+}
+
+/// Generate the complete changelog from scratch (force mode)
+fn render_changelog_full(
+    config: &Config,
+    releases_file: &crate::model::ReleasesFile,
+    work_items: &[crate::model::WorkItemEntry],
+    unreleased: &[&crate::model::WorkItemEntry],
+) -> anyhow::Result<String> {
+    // Build work item lookup by ID
+    let work_item_map: HashMap<_, _> = work_items
+        .iter()
+        .map(|w| (w.spec.govctl.id.clone(), w))
+        .collect();
+
     let mut output = String::new();
     output.push_str("# Changelog\n\n");
     output.push_str("All notable changes to this project will be documented in this file.\n\n");
     output.push_str(
         "The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n",
     );
-    output.push_str("and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n");
+    output.push_str(
+        "and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n",
+    );
 
-    // Render unreleased section if there are unreleased items
-    let unreleased_count = if !unreleased.is_empty() {
-        output.push_str("## [Unreleased]\n\n");
-        render_changelog_section(&mut output, &unreleased);
-        unreleased.len()
-    } else {
-        0
-    };
+    // Always render Unreleased section header
+    output.push_str("## [Unreleased]\n\n");
+    if !unreleased.is_empty() {
+        render_changelog_section(&mut output, unreleased);
+    }
 
     // Render each release (already sorted newest first)
     for release in &releases_file.releases {
@@ -154,25 +199,118 @@ pub fn render_changelog(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Di
         }
     }
 
-    // Expand inline references (per ADR-0011) and trim trailing whitespace
+    // Expand inline references and trim trailing whitespace
     let docs_output = config.paths.docs_output.to_string_lossy();
     let expanded = expand_inline_refs_from_root(&output, &config.source_scan.pattern, &docs_output);
-    let output = format!("{}\n", expanded.trim_end());
+    Ok(format!("{}\n", expanded.trim_end()))
+}
 
-    // Write CHANGELOG.md
-    let changelog_path = std::path::PathBuf::from("CHANGELOG.md");
-    if dry_run {
-        ui::dry_run_file_preview(&changelog_path, &output);
+/// Update Unreleased section and add missing releases, preserving existing sections (default mode)
+fn render_changelog_incremental(
+    config: &Config,
+    changelog_path: &std::path::Path,
+    releases_file: &crate::model::ReleasesFile,
+    work_items: &[crate::model::WorkItemEntry],
+    unreleased: &[&crate::model::WorkItemEntry],
+) -> anyhow::Result<String> {
+    // Read existing changelog if it exists
+    let existing = if changelog_path.exists() {
+        std::fs::read_to_string(changelog_path)?
     } else {
-        std::fs::write(&changelog_path, &output)?;
-        ui::changelog_rendered(
-            &changelog_path,
-            releases_file.releases.len(),
-            unreleased_count,
-        );
+        String::new()
+    };
+
+    // Build work item lookup by ID
+    let work_item_map: HashMap<_, _> = work_items
+        .iter()
+        .map(|w| (w.spec.govctl.id.clone(), w))
+        .collect();
+
+    let unreleased_header = "## [Unreleased]";
+    let release_pattern = "\n## [";
+
+    // Parse existing changelog into header and released sections
+    let (header, existing_released) = if existing.is_empty() {
+        let header = "# Changelog\n\n\
+            All notable changes to this project will be documented in this file.\n\n\
+            The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n\
+            and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n";
+        (header.to_string(), String::new())
+    } else if let Some(unreleased_pos) = existing.find(unreleased_header) {
+        let header = existing[..unreleased_pos].to_string();
+        let after_unreleased = &existing[unreleased_pos + unreleased_header.len()..];
+        let released = if let Some(pos) = after_unreleased.find(release_pattern) {
+            after_unreleased[pos + 1..].to_string() // skip leading \n
+        } else {
+            String::new()
+        };
+        (header, released)
+    } else if let Some(first_release_pos) = existing.find(release_pattern) {
+        let header = existing[..first_release_pos + 1].to_string();
+        let released = existing[first_release_pos + 1..].to_string();
+        (header, released)
+    } else {
+        (existing.clone(), String::new())
+    };
+
+    // Generate new Unreleased section
+    let mut unreleased_content = String::new();
+    unreleased_content.push_str("## [Unreleased]\n\n");
+    if !unreleased.is_empty() {
+        render_changelog_section(&mut unreleased_content, unreleased);
     }
 
-    Ok(vec![])
+    // Build output: header + unreleased + (new releases + existing releases merged)
+    let mut output = header;
+    output.push_str(unreleased_content.trim_end());
+    output.push('\n');
+
+    // Process releases in order (newest first from releases.toml)
+    // Insert missing ones, preserve existing ones
+    for release in &releases_file.releases {
+        let version_header = format!("## [{}]", release.version);
+
+        if existing_released.contains(&version_header) {
+            // This release exists in the file - extract and preserve it
+            if let Some(start) = existing_released.find(&version_header) {
+                // Find the end of this section (next ## [ or EOF)
+                let after_header = &existing_released[start..];
+                let end = after_header[1..] // skip first char to avoid matching self
+                    .find("\n## [")
+                    .map(|p| p + 1) // adjust for the skip
+                    .unwrap_or(after_header.len());
+
+                let section = &after_header[..end];
+                output.push('\n');
+                output.push_str(section.trim_end());
+                output.push('\n');
+            }
+        } else {
+            // This release is missing - generate it
+            output.push('\n');
+            output.push_str(&format!("## [{}] - {}\n\n", release.version, release.date));
+
+            let items: Vec<_> = release
+                .refs
+                .iter()
+                .filter_map(|id| work_item_map.get(id).copied())
+                .collect();
+
+            if items.is_empty() {
+                output.push_str("*No changes recorded.*\n");
+            } else {
+                let mut section = String::new();
+                render_changelog_section(&mut section, &items);
+                output.push_str(section.trim_end());
+                output.push('\n');
+            }
+        }
+    }
+
+    // Expand inline references and trim trailing whitespace
+    let docs_output = config.paths.docs_output.to_string_lossy();
+    let expanded = expand_inline_refs_from_root(&output, &config.source_scan.pattern, &docs_output);
+    Ok(format!("{}\n", expanded.trim_end()))
 }
 
 /// Render a changelog section from work items, grouped by category

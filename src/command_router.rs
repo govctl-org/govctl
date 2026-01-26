@@ -62,6 +62,7 @@ pub enum CanonicalCommand {
         target: RenderTarget,
         rfc_id: Option<String>,
         dry_run: bool,
+        force: bool,
     },
     Describe {
         context: bool,
@@ -284,10 +285,12 @@ impl CanonicalCommand {
                 target,
                 rfc_id,
                 dry_run,
+                force,
             } => Self::Render {
                 target: *target,
                 rfc_id: rfc_id.clone(),
                 dry_run: *dry_run,
+                force: *force,
             },
             Commands::Describe { context, format } => Self::Describe {
                 context: *context,
@@ -326,6 +329,7 @@ impl CanonicalCommand {
                 target,
                 rfc_id,
                 dry_run,
+                force,
             } => {
                 let mut all_diags = vec![];
                 match target {
@@ -339,7 +343,7 @@ impl CanonicalCommand {
                         all_diags.extend(cmd::render::render_work_items(config, *dry_run)?);
                     }
                     RenderTarget::Changelog => {
-                        all_diags.extend(cmd::render::render_changelog(config, *dry_run)?);
+                        all_diags.extend(cmd::render::render_changelog(config, *dry_run, *force)?);
                     }
                     RenderTarget::All => {
                         all_diags.extend(cmd::render::render(config, rfc_id.as_deref(), *dry_run)?);
