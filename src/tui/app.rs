@@ -1,7 +1,7 @@
 //! Application state for TUI.
 
 use crate::model::ProjectIndex;
-use ratatui::widgets::TableState;
+use ratatui::widgets::{ListState, TableState};
 
 /// Current view in the TUI
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -14,6 +14,8 @@ pub enum View {
     RfcDetail(usize),
     AdrDetail(usize),
     WorkDetail(usize),
+    /// Clause detail view: (rfc_index, clause_index)
+    ClauseDetail(usize, usize),
 }
 
 /// Application state
@@ -26,6 +28,8 @@ pub struct App {
     pub selected: usize,
     /// Table state for scrollable list views
     pub table_state: TableState,
+    /// List state for clause selection in RFC detail view
+    pub clause_list_state: ListState,
     /// Scroll offset for detail views
     pub scroll: u16,
     /// Should quit
@@ -47,6 +51,7 @@ impl App {
             view: View::Dashboard,
             selected: 0,
             table_state: TableState::default().with_selected(Some(0)),
+            clause_list_state: ListState::default().with_selected(Some(0)),
             scroll: 0,
             should_quit: false,
         }
@@ -85,7 +90,10 @@ impl App {
             return;
         }
         self.view = match self.view {
-            View::RfcList => View::RfcDetail(self.selected),
+            View::RfcList => {
+                self.clause_list_state = ListState::default().with_selected(Some(0));
+                View::RfcDetail(self.selected)
+            }
             View::AdrList => View::AdrDetail(self.selected),
             View::WorkList => View::WorkDetail(self.selected),
             _ => return,
@@ -96,6 +104,7 @@ impl App {
     /// Go back to previous view
     pub fn go_back(&mut self) {
         self.view = match self.view {
+            View::ClauseDetail(rfc_idx, _) => View::RfcDetail(rfc_idx),
             View::RfcDetail(_) => View::RfcList,
             View::AdrDetail(_) => View::AdrList,
             View::WorkDetail(_) => View::WorkList,
@@ -124,5 +133,46 @@ impl App {
     /// Scroll up in detail view
     pub fn scroll_up(&mut self) {
         self.scroll = self.scroll.saturating_sub(1);
+    }
+
+    /// Get clause count for current RFC detail view
+    pub fn clause_count(&self) -> usize {
+        match self.view {
+            View::RfcDetail(idx) => self
+                .index
+                .rfcs
+                .get(idx)
+                .map(|r| r.clauses.len())
+                .unwrap_or(0),
+            _ => 0,
+        }
+    }
+
+    /// Move clause selection up
+    pub fn clause_prev(&mut self) {
+        let selected = self.clause_list_state.selected().unwrap_or(0);
+        if selected > 0 {
+            self.clause_list_state.select(Some(selected - 1));
+        }
+    }
+
+    /// Move clause selection down
+    pub fn clause_next(&mut self) {
+        let len = self.clause_count();
+        let selected = self.clause_list_state.selected().unwrap_or(0);
+        if len > 0 && selected < len - 1 {
+            self.clause_list_state.select(Some(selected + 1));
+        }
+    }
+
+    /// Enter clause detail view from RFC detail
+    pub fn enter_clause_detail(&mut self) {
+        if let View::RfcDetail(rfc_idx) = self.view {
+            let clause_idx = self.clause_list_state.selected().unwrap_or(0);
+            if self.clause_count() > 0 {
+                self.view = View::ClauseDetail(rfc_idx, clause_idx);
+                self.scroll = 0;
+            }
+        }
     }
 }

@@ -31,7 +31,8 @@ pub fn run_event_loop(
                     View::RfcList | View::AdrList | View::WorkList => {
                         handle_list_keys(app, key.code)
                     }
-                    View::RfcDetail(_) | View::AdrDetail(_) | View::WorkDetail(_) => {
+                    View::RfcDetail(_) => handle_rfc_detail_keys(app, key.code),
+                    View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
                         handle_detail_keys(app, key.code)
                     }
                 }
@@ -62,6 +63,17 @@ fn handle_list_keys(app: &mut App, code: KeyCode) {
         KeyCode::Char('j') | KeyCode::Down => app.select_next(),
         KeyCode::Char('k') | KeyCode::Up => app.select_prev(),
         KeyCode::Enter => app.enter_detail(),
+        KeyCode::Esc => app.go_back(),
+        _ => {}
+    }
+}
+
+fn handle_rfc_detail_keys(app: &mut App, code: KeyCode) {
+    match code {
+        KeyCode::Char('q') => app.should_quit = true,
+        KeyCode::Char('j') | KeyCode::Down => app.clause_next(),
+        KeyCode::Char('k') | KeyCode::Up => app.clause_prev(),
+        KeyCode::Enter => app.enter_clause_detail(),
         KeyCode::Esc => app.go_back(),
         _ => {}
     }

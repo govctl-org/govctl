@@ -2,26 +2,28 @@
 schema = 1
 id = "WI-2026-01-26-010"
 title = "Add clause detail view to TUI RFC navigation"
-status = "active"
+status = "done"
 created = "2026-01-26"
 started = "2026-01-26"
+completed = "2026-01-26"
 
 [content]
 description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+The TUI RFC detail view showed clauses as a static list with no way to view clause details.
+
+Added `ClauseDetail` view with j/k navigation to select clauses in RFC detail, Enter to view full clause specification including ID, title, status, kind, since version, and full text."""
 
 [[content.acceptance_criteria]]
 text = "Users can navigate to clause detail from RFC detail view"
-status = "pending"
+status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "Clause detail shows full clause content (ID, title, status, text)"
-status = "pending"
+status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "j/k navigation works in RFC detail to select clauses"
-status = "pending"
+status = "done"
 category = "fixed"

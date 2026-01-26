@@ -4,7 +4,7 @@ use super::app::{App, View};
 use ratatui::{
     prelude::*,
     symbols::border,
-    widgets::{Block, Borders, Paragraph, Row, Table, Wrap},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Row, Table, Wrap},
 };
 
 // Status color helpers
@@ -47,6 +47,9 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         View::RfcDetail(idx) => draw_rfc_detail(frame, app, idx),
         View::AdrDetail(idx) => draw_adr_detail(frame, app, idx),
         View::WorkDetail(idx) => draw_work_detail(frame, app, idx),
+        View::ClauseDetail(rfc_idx, clause_idx) => {
+            draw_clause_detail(frame, app, rfc_idx, clause_idx)
+        }
     }
 }
 
@@ -473,15 +476,21 @@ fn draw_rfc_detail(frame: &mut Frame, app: &mut App, idx: usize) {
         return;
     };
 
+    // Split into: header, clause list, footer
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
+        .constraints([
+            Constraint::Length(8), // Header (metadata)
+            Constraint::Min(5),    // Clause list
+            Constraint::Length(3), // Footer
+        ])
         .split(area);
 
     let status = rfc.rfc.status.as_ref();
     let phase = rfc.rfc.phase.as_ref();
 
-    let mut lines = vec![
+    // Header with RFC metadata
+    let header_lines = vec![
         Line::from(vec![
             Span::styled("ID:      ", Style::default().fg(Color::DarkGray)),
             Span::styled(rfc.rfc.rfc_id.clone(), Style::default().bold()),
@@ -507,41 +516,52 @@ fn draw_rfc_detail(frame: &mut Frame, app: &mut App, idx: usize) {
             Span::styled("Owners:  ", Style::default().fg(Color::DarkGray)),
             Span::raw(rfc.rfc.owners.join(", ")),
         ]),
-        Line::from(""),
-        Line::from(Span::styled(
-            "━━━ Clauses ━━━",
-            Style::default().fg(Color::Cyan).bold(),
-        )),
-        Line::from(""),
     ];
 
-    for clause in &rfc.clauses {
-        let clause_status = clause.spec.status.as_ref();
-        lines.push(Line::from(vec![
-            Span::styled("  ", Style::default()),
-            Span::styled(
-                format!("{} ", status_icon(clause_status)),
-                status_style(clause_status),
-            ),
-            Span::styled(
-                clause.spec.clause_id.clone(),
-                Style::default().fg(Color::Blue).bold(),
-            ),
-            Span::raw(" — "),
-            Span::raw(clause.spec.title.clone()),
-        ]));
-    }
-
     let title = format!("📋 {}", rfc.rfc.rfc_id);
-    let content = Paragraph::new(lines)
-        .wrap(Wrap { trim: false })
-        .scroll((app.scroll, 0))
+    let header = Paragraph::new(header_lines)
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Blue)));
+    frame.render_widget(header, chunks[0]);
 
-    frame.render_widget(content, chunks[0]);
+    // Clause list using List widget
+    let clause_items: Vec<ListItem> = rfc
+        .clauses
+        .iter()
+        .map(|clause| {
+            let clause_status = clause.spec.status.as_ref();
+            ListItem::new(Line::from(vec![
+                Span::styled(
+                    format!("{} ", status_icon(clause_status)),
+                    status_style(clause_status),
+                ),
+                Span::styled(
+                    clause.spec.clause_id.clone(),
+                    Style::default().fg(Color::Blue).bold(),
+                ),
+                Span::raw(" — "),
+                Span::raw(clause.spec.title.clone()),
+            ]))
+        })
+        .collect();
 
-    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
-    frame.render_widget(footer, chunks[1]);
+    let clause_list = List::new(clause_items)
+        .block(rounded_block("Clauses").border_style(Style::default().fg(Color::Cyan)))
+        .highlight_style(Style::default().bg(Color::DarkGray))
+        .highlight_symbol("▶ ");
+
+    frame.render_stateful_widget(clause_list, chunks[1], &mut app.clause_list_state);
+
+    let footer = keybind_footer(&[
+        "j/k",
+        "Navigate",
+        "Enter",
+        "View Clause",
+        "Esc",
+        "Back",
+        "q",
+        "Quit",
+    ]);
+    frame.render_widget(footer, chunks[2]);
 }
 
 fn draw_adr_detail(frame: &mut Frame, app: &mut App, idx: usize) {
@@ -673,6 +693,79 @@ fn draw_work_detail(frame: &mut Frame, app: &mut App, idx: usize) {
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Yellow)));
+
+    frame.render_widget(content, chunks[0]);
+
+    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
+    frame.render_widget(footer, chunks[1]);
+}
+
+fn draw_clause_detail(frame: &mut Frame, app: &mut App, rfc_idx: usize, clause_idx: usize) {
+    let area = frame.area();
+
+    let Some(rfc) = app.index.rfcs.get(rfc_idx) else {
+        return;
+    };
+
+    let Some(clause) = rfc.clauses.get(clause_idx) else {
+        return;
+    };
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Min(5), Constraint::Length(3)])
+        .split(area);
+
+    let status = clause.spec.status.as_ref();
+
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled("Clause:  ", Style::default().fg(Color::DarkGray)),
+            Span::styled(clause.spec.clause_id.clone(), Style::default().bold()),
+        ]),
+        Line::from(vec![
+            Span::styled("Title:   ", Style::default().fg(Color::DarkGray)),
+            Span::raw(clause.spec.title.clone()),
+        ]),
+        Line::from(vec![
+            Span::styled("Status:  ", Style::default().fg(Color::DarkGray)),
+            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
+            Span::styled(status.to_string(), status_style(status)),
+        ]),
+        Line::from(vec![
+            Span::styled("Kind:    ", Style::default().fg(Color::DarkGray)),
+            Span::raw(clause.spec.kind.as_ref().to_string()),
+        ]),
+        Line::from(vec![
+            Span::styled("RFC:     ", Style::default().fg(Color::DarkGray)),
+            Span::styled(rfc.rfc.rfc_id.clone(), Style::default().fg(Color::Blue)),
+        ]),
+    ];
+
+    if let Some(since) = &clause.spec.since {
+        lines.push(Line::from(vec![
+            Span::styled("Since:   ", Style::default().fg(Color::DarkGray)),
+            Span::raw(since.clone()),
+        ]));
+    }
+
+    lines.push(Line::from(""));
+    lines.push(Line::from(Span::styled(
+        "━━━ Specification ━━━",
+        Style::default().fg(Color::Cyan).bold(),
+    )));
+    lines.push(Line::from(""));
+
+    // Wrap the clause text
+    for line in clause.spec.text.lines() {
+        lines.push(Line::from(format!("  {}", line)));
+    }
+
+    let title = format!("📜 {}", clause.spec.clause_id);
+    let content = Paragraph::new(lines)
+        .wrap(Wrap { trim: false })
+        .scroll((app.scroll, 0))
+        .block(rounded_block(&title).border_style(Style::default().fg(Color::Magenta)));
 
     frame.render_widget(content, chunks[0]);
 
