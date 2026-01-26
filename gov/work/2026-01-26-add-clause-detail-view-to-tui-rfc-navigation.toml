@@ -1,0 +1,27 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-010"
+title = "Add clause detail view to TUI RFC navigation"
+status = "active"
+created = "2026-01-26"
+started = "2026-01-26"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Users can navigate to clause detail from RFC detail view"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Clause detail shows full clause content (ID, title, status, text)"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "j/k navigation works in RFC detail to select clauses"
+status = "pending"
+category = "fixed"
