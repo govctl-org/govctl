@@ -44,6 +44,9 @@ chrono = { version = "0.4", features = ["serde"] }
 # Cryptography (signature verification)
 sha2 = "0.10"
 
+# Random number generation (for work item ID strategy)
+rand = "0.9"
+
 # Text processing
 regex = "1"
 slug = "0.1"

@@ -18,12 +18,34 @@ This document defines the unified data model for all govctl artifacts.
 | RFC       | `RFC-NNNN`          | `RFC-0001`          |
 | Clause    | `C-NAME`            | `C-PHASE-ORDER`     |
 | ADR       | `ADR-NNNN`          | `ADR-0001`          |
-| Work Item | `WI-YYYY-MM-DD-NNN` | `WI-2026-01-17-001` |
+| Work Item | (see ID strategies) | `WI-2026-01-17-001` |
 
 **Full references** combine artifact IDs:
 
 - Clause in RFC: `RFC-0001:C-PHASE-ORDER`
 - Standalone: `ADR-0001`, `WI-2026-01-17-001`
+
+### Work Item ID Strategies
+
+Work item ID format is configurable via `gov/config.toml` to support multi-person collaboration. See [[ADR-0020]].
+
+| Strategy               | Format                      | Example                  | Use Case           |
+| ---------------------- | --------------------------- | ------------------------ | ------------------ |
+| `sequential` (default) | `WI-YYYY-MM-DD-NNN`         | `WI-2026-01-17-001`      | Solo projects      |
+| `author-hash`          | `WI-YYYY-MM-DD-{hash4}-NNN` | `WI-2026-01-17-a7f3-001` | Multi-person teams |
+| `random`               | `WI-YYYY-MM-DD-{rand4}`     | `WI-2026-01-17-b2c9`     | Simple uniqueness  |
+
+**Configuration:**
+
+```toml
+# gov/config.toml
+[work_item]
+id_strategy = "author-hash"  # or "sequential" (default), "random"
+```
+
+- `sequential`: Original behavior. May cause ID collisions in parallel branches.
+- `author-hash`: Uses first 4 chars of sha256(git user.email) for namespace isolation. Recommended for teams.
+- `random`: Generates random 4-char hex suffix. No sequence number.
 
 ---
 

@@ -1,7 +1,7 @@
 //! New command implementation - create artifacts.
 
 use crate::NewTarget;
-use crate::config::Config;
+use crate::config::{Config, IdStrategy};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
     AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus,
@@ -440,37 +440,35 @@ fn create_work_item(
     let date = today();
     let slug = slugify(title);
 
-    // Find next work item ID by scanning existing IDs for today's date
-    let id_prefix = format!("WI-{date}-");
-
-    let max_seq = std::fs::read_dir(&work_dir)
-        .into_iter()
-        .flatten()
-        .flatten()
-        .filter_map(|entry| {
-            let path = entry.path();
-            (path.extension()? == "toml").then_some(path)
-        })
-        .filter_map(|path| std::fs::read_to_string(&path).ok())
-        .filter_map(|content| {
-            content
-                .lines()
-                .find(|line| line.starts_with("id = \""))
-                .and_then(|line| line.strip_prefix("id = \""))
-                .and_then(|s| s.strip_suffix('"'))
-                .and_then(|id| id.strip_prefix(&id_prefix))
-                .and_then(|seq_str| seq_str.parse::<u32>().ok())
-        })
-        .max()
-        .unwrap_or(0);
-
-    let next_seq = max_seq + 1;
-    let work_id = format!("WI-{date}-{next_seq:03}");
+    // Generate work item ID based on configured strategy [[ADR-0020]]
+    let work_id = match config.work_item.id_strategy {
+        IdStrategy::Sequential => {
+            // Original behavior: WI-YYYY-MM-DD-NNN
+            let id_prefix = format!("WI-{date}-");
+            let max_seq = find_max_sequence(&work_dir, &id_prefix);
+            format!("WI-{date}-{:03}", max_seq + 1)
+        }
+        IdStrategy::AuthorHash => {
+            // Author-namespaced: WI-YYYY-MM-DD-{hash4}-NNN
+            let author_hash = IdStrategy::get_author_hash().unwrap_or_else(|| {
+                // Fallback to random if git email not configured
+                IdStrategy::generate_random_suffix()
+            });
+            let id_prefix = format!("WI-{date}-{author_hash}-");
+            let max_seq = find_max_sequence(&work_dir, &id_prefix);
+            format!("WI-{date}-{author_hash}-{:03}", max_seq + 1)
+        }
+        IdStrategy::Random => {
+            // Random suffix: WI-YYYY-MM-DD-{rand4}
+            let random_suffix = IdStrategy::generate_random_suffix();
+            format!("WI-{date}-{random_suffix}")
+        }
+    };
 
     // Find unique filename (loop until no collision)
     let mut filename = format!("{date}-{slug}.toml");
     let mut work_path = work_dir.join(&filename);
-    let mut suffix = next_seq;
+    let mut suffix = 1u32;
 
     while !op.is_preview() && work_path.exists() {
         filename = format!("{date}-{slug}-{suffix:03}.toml");
@@ -514,4 +512,31 @@ fn create_work_item(
     }
 
     Ok(vec![])
+}
+
+/// Find the maximum sequence number for work items with a given ID prefix.
+///
+/// Scans all TOML files in `work_dir`, parses their `id` field, and returns
+/// the highest sequence number found for IDs starting with `id_prefix`.
+fn find_max_sequence(work_dir: &std::path::Path, id_prefix: &str) -> u32 {
+    std::fs::read_dir(work_dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            (path.extension()? == "toml").then_some(path)
+        })
+        .filter_map(|path| std::fs::read_to_string(&path).ok())
+        .filter_map(|content| {
+            content
+                .lines()
+                .find(|line| line.starts_with("id = \""))
+                .and_then(|line| line.strip_prefix("id = \""))
+                .and_then(|s| s.strip_suffix('"'))
+                .and_then(|id| id.strip_prefix(id_prefix))
+                .and_then(|seq_str| seq_str.parse::<u32>().ok())
+        })
+        .max()
+        .unwrap_or(0)
 }

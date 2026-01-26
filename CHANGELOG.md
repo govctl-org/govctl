@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- ADR documents ID strategy decision (WI-2026-01-26-005)
+- Config supports id_strategy field with sequential/author-hash/random options (WI-2026-01-26-005)
+- author-hash strategy uses git user.email for namespace isolation (WI-2026-01-26-005)
+- random strategy generates short unique suffix (WI-2026-01-26-005)
+
+### Changed
+
+- SCHEMA.md documents new ID formats (WI-2026-01-26-005)
+
 ## [0.2.2] - 2026-01-26
 
 ### Added

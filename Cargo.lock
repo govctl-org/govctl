@@ -884,6 +884,7 @@ dependencies = [
  "insta",
  "jsonschema",
  "owo-colors",
+ "rand 0.9.2",
  "ratatui",
  "regex",
  "semver",

@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-01-26-005"
 title = "Add configurable work item ID strategies for multi-person collaboration"
-status = "active"
+status = "done"
 created = "2026-01-26"
 started = "2026-01-26"
+completed = "2026-01-26"
 refs = ["ADR-0020"]
 
 [content]
@@ -12,30 +13,30 @@ description = "The current work item ID format (`WI-YYYY-MM-DD-NNN`) uses local 
 
 [[content.acceptance_criteria]]
 text = "ADR documents ID strategy decision"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Config supports id_strategy field with sequential/author-hash/random options"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "author-hash strategy uses git user.email for namespace isolation"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "random strategy generates short unique suffix"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "SCHEMA.md documents new ID formats"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"

@@ -2,7 +2,7 @@
 schema = 1
 id = "ADR-0020"
 title = "Configurable work item ID strategies for multi-person collaboration"
-status = "proposed"
+status = "accepted"
 date = "2026-01-26"
 
 [content]
