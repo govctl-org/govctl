@@ -1,0 +1,41 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-005"
+title = "Add configurable work item ID strategies for multi-person collaboration"
+status = "active"
+created = "2026-01-26"
+started = "2026-01-26"
+refs = ["ADR-0020"]
+
+[content]
+description = "The current work item ID format (`WI-YYYY-MM-DD-NNN`) uses local sequential numbering. When multiple people create work items on the same day in parallel branches, IDs collide on merge. Add opt-in collision-safe ID strategies via `gov/config.toml` while keeping current sequential behavior as default."
+
+[[content.acceptance_criteria]]
+text = "ADR documents ID strategy decision"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Config supports id_strategy field with sequential/author-hash/random options"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "author-hash strategy uses git user.email for namespace isolation"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "random strategy generates short unique suffix"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "SCHEMA.md documents new ID formats"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"

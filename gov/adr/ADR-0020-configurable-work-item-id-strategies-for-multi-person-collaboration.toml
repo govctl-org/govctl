@@ -1,0 +1,87 @@
+[govctl]
+schema = 1
+id = "ADR-0020"
+title = "Configurable work item ID strategies for multi-person collaboration"
+status = "proposed"
+date = "2026-01-26"
+
+[content]
+context = """
+The current work item ID format (`WI-YYYY-MM-DD-NNN`) uses local sequential numbering. The `govctl work new` command scans `gov/work/` to find the max sequence number for today's date, then increments by 1.
+
+**Problem:** When multiple people work on parallel branches and both create work items on the same day, they get the same ID:
+
+```
+Alice: scans → max=002 → creates WI-2026-01-26-003
+Bob:   scans → max=002 → creates WI-2026-01-26-003 (collision!)
+```
+
+On merge, these IDs collide. This blocks multi-person teams from adopting govctl.
+
+**Options considered:**
+
+| Strategy | Format | Pros | Cons |
+|----------|--------|------|------|
+| Author namespace | `WI-2026-01-26-alice-001` | Clear ownership, sequential per author | Requires config |
+| Git identity hash | `WI-2026-01-26-a7f3-001` | Auto from git email, no config | Less readable |
+| Random suffix | `WI-2026-01-26-a7f3` | Simple, no coordination | Non-sequential |
+| Timestamp | `WI-2026-01-26-143257` | Natural ordering | Clock skew issues |
+| Merge-time renumber | Keep current | Minimal change | Breaks refs on rename |
+
+govctl is primarily single-contributor but must support multi-person teams as external adopters."""
+decision = """
+**Add opt-in ID strategies via `gov/config.toml`, keeping current behavior as default.**
+
+1. **Default: `sequential`** (current behavior)
+   - Format: `WI-YYYY-MM-DD-NNN`
+   - Solo projects keep simple, readable IDs
+   - No breaking change for existing users
+
+2. **Opt-in: `author-hash`** (recommended for teams)
+   - Format: `WI-YYYY-MM-DD-{hash4}-NNN`
+   - `{hash4}` = first 4 chars of `sha256(git config user.email)`
+   - Example: `WI-2026-01-26-a7f3-001`
+   - Each contributor gets their own sequence namespace
+   - Zero configuration (auto-derived from git identity)
+
+3. **Opt-in: `random`** (simple uniqueness)
+   - Format: `WI-YYYY-MM-DD-{rand4}`
+   - `{rand4}` = 4 random hex chars (65,536 possibilities per day)
+   - Example: `WI-2026-01-26-b2c9`
+   - No sequence number, just unique suffix
+
+**Configuration:**
+
+```toml
+# gov/config.toml
+[work_item]
+id_strategy = "author-hash"  # or "sequential" (default), "random"
+```
+
+**Rationale:**
+- Backward compatible: default remains `sequential`
+- Teams explicitly opt-in to collision-safe strategy
+- `author-hash` is recommended because it preserves sequential numbering within author namespace
+- Uses git identity (already required for commits) — zero additional config"""
+consequences = """
+**Positive:**
+- Multi-person teams can adopt govctl without ID collision risk
+- Existing single-contributor projects unchanged
+- `author-hash` provides both collision safety AND sequential ordering
+- Zero configuration for author-hash (uses git email)
+
+**Negative:**
+- New ID formats (`WI-...-a7f3-001`) are less human-memorable
+- Cannot easily tell "who created this" without looking up the hash
+- Projects must explicitly configure for team use
+
+**Implementation:**
+- Add `id_strategy` to `Config` struct
+- Modify `src/cmd/new.rs::create_work_item()` to dispatch based on strategy
+- Add validation that all work items follow configured strategy
+- Update `gov/schema/SCHEMA.md` to document new formats
+
+**Migration for teams:**
+1. Set `[work_item] id_strategy = "author-hash"` in `gov/config.toml`
+2. Existing work items retain their IDs (no renaming required)
+3. New work items use the new format"""
