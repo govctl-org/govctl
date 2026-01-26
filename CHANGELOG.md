@@ -7,16 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-01-26
+
 ### Added
 
 - ADR documents ID strategy decision (WI-2026-01-26-005)
 - Config supports id_strategy field with sequential/author-hash/random options (WI-2026-01-26-005)
 - author-hash strategy uses git user.email for namespace isolation (WI-2026-01-26-005)
 - random strategy generates short unique suffix (WI-2026-01-26-005)
+- `error[CODE]:` diagnostic format for error messages (WI-2026-01-26-006)
+- `NO_COLOR` environment variable support (WI-2026-01-26-006)
+- Confirmation prompts for `deprecate` and `supersede` commands (WI-2026-01-26-006)
+- `--output` flag with format option (json, yaml, table) on get/list commands (WI-2026-01-26-007)
+- `-o` short flag for `--output` (WI-2026-01-26-007)
+- EXAMPLES section in command help text using clap after_help (WI-2026-01-26-007)
 
 ### Changed
 
 - SCHEMA.md documents new ID formats (WI-2026-01-26-005)
+
+### Fixed
+
+- Down/j navigation scrolls the list view when selection moves past visible area (WI-2026-01-26-009)
+- Up/k navigation scrolls the list view when selection moves above visible area (WI-2026-01-26-009)
+- Selection highlight remains visible at all scroll positions (WI-2026-01-26-009)
+- Users can navigate to clause detail from RFC detail view (WI-2026-01-26-010)
+- Clause detail shows full clause content (ID, title, status, text) (WI-2026-01-26-010)
+- j/k navigation works in RFC detail to select clauses (WI-2026-01-26-010)
 
 ## [0.2.2] - 2026-01-26
 
