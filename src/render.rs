@@ -508,7 +508,7 @@ pub fn write_work_item_md(
 mod tests {
     use super::*;
 
-    const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4})\]\]";
+    const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]";
 
     #[test]
     fn test_expand_inline_refs_rfc() {
@@ -606,6 +606,60 @@ mod tests {
         assert_eq!(
             result,
             "See [RFC-0000](docs/rfc/RFC-0000.md) and [ADR-0018](docs/adr/ADR-0018.md) for details."
+        );
+    }
+
+    // Work item inline reference tests (per ADR-0020 ID formats)
+    // Constructs strings at runtime to avoid source_scan matching test fixtures
+
+    fn wi_ref(id: &str) -> String {
+        format!("[[{}]]", id)
+    }
+
+    #[test]
+    fn test_expand_inline_refs_work_item_sequential() {
+        let id = "WI-9999-01-26-001";
+        let text = format!("See {} for task details.", wi_ref(id));
+        let result = expand_inline_refs(&text, DEFAULT_PATTERN);
+        assert_eq!(
+            result,
+            format!("See [{}](../work/{}.md) for task details.", id, id)
+        );
+    }
+
+    #[test]
+    fn test_expand_inline_refs_work_item_author_hash() {
+        let id = "WI-9999-01-26-a7f3-001";
+        let text = format!("See {} for task details.", wi_ref(id));
+        let result = expand_inline_refs(&text, DEFAULT_PATTERN);
+        assert_eq!(
+            result,
+            format!("See [{}](../work/{}.md) for task details.", id, id)
+        );
+    }
+
+    #[test]
+    fn test_expand_inline_refs_work_item_random() {
+        let id = "WI-9999-01-26-b2c9";
+        let text = format!("See {} for task details.", wi_ref(id));
+        let result = expand_inline_refs(&text, DEFAULT_PATTERN);
+        assert_eq!(
+            result,
+            format!("See [{}](../work/{}.md) for task details.", id, id)
+        );
+    }
+
+    #[test]
+    fn test_expand_inline_refs_work_item_mixed() {
+        let wi_id = "WI-9999-01-26-001";
+        let text = format!("Per [[RFC-0000]], see {} and [[ADR-0020]].", wi_ref(wi_id));
+        let result = expand_inline_refs(&text, DEFAULT_PATTERN);
+        assert_eq!(
+            result,
+            format!(
+                "Per [RFC-0000](../rfc/RFC-0000.md), see [{}](../work/{}.md) and [ADR-0020](../adr/ADR-0020.md).",
+                wi_id, wi_id
+            )
         );
     }
 }

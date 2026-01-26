@@ -167,8 +167,13 @@ fn default_scan_include() -> Vec<String> {
 }
 
 fn default_scan_pattern() -> String {
-    // Matches double-bracket references like [[RFC-NNNN:C-CLAUSE]] or [[RFC-NNNN]] or [[ADR-NNNN]]
-    r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4})\]\]".to_string()
+    // Matches double-bracket references:
+    // - [[RFC-NNNN]] or [[RFC-NNNN:C-CLAUSE]]
+    // - [[ADR-NNNN]]
+    // - [[WI-YYYY-MM-DD-NNN]] (sequential)
+    // - [[WI-YYYY-MM-DD-HHHH-NNN]] (author-hash)
+    // - [[WI-YYYY-MM-DD-HHHH]] (random)
+    r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]".to_string()
 }
 
 impl Default for SourceScanConfig {
