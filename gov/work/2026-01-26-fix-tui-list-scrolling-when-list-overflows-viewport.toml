@@ -2,8 +2,10 @@
 schema = 1
 id = "WI-2026-01-26-009"
 title = "Fix TUI list scrolling when list overflows viewport"
-status = "queue"
+status = "done"
 created = "2026-01-26"
+started = "2026-01-26"
+completed = "2026-01-26"
 
 [content]
 description = """
@@ -15,16 +17,16 @@ Fix: Use `TableState` with `render_stateful_widget` instead of `render_widget`. 
 notes = []
 
 [[content.acceptance_criteria]]
-category = "fixed"
 text = "Down/j navigation scrolls the list view when selection moves past visible area"
-status = "pending"
+status = "done"
+category = "fixed"
 
 [[content.acceptance_criteria]]
-category = "fixed"
 text = "Up/k navigation scrolls the list view when selection moves above visible area"
-status = "pending"
+status = "done"
+category = "fixed"
 
 [[content.acceptance_criteria]]
-category = "fixed"
 text = "Selection highlight remains visible at all scroll positions"
-status = "pending"
+status = "done"
+category = "fixed"

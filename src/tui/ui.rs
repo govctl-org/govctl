@@ -38,7 +38,7 @@ fn phase_style(phase: &str) -> Style {
 }
 
 /// Main draw function
-pub fn draw(frame: &mut Frame, app: &App) {
+pub fn draw(frame: &mut Frame, app: &mut App) {
     match app.view {
         View::Dashboard => draw_dashboard(frame, app),
         View::RfcList => draw_rfc_list(frame, app),
@@ -57,7 +57,7 @@ fn rounded_block(title: &str) -> Block<'_> {
         .border_set(border::ROUNDED)
 }
 
-fn draw_dashboard(frame: &mut Frame, app: &App) {
+fn draw_dashboard(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
 
     // Split into header, content, and footer
@@ -283,7 +283,7 @@ fn build_work_stats(app: &App) -> Paragraph<'static> {
     )
 }
 
-fn draw_rfc_list(frame: &mut Frame, app: &App) {
+fn draw_rfc_list(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
 
     let chunks = Layout::default()
@@ -296,15 +296,9 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
         .index
         .rfcs
         .iter()
-        .enumerate()
-        .map(|(i, rfc)| {
+        .map(|rfc| {
             let status = rfc.rfc.status.as_ref();
             let phase = rfc.rfc.phase.as_ref();
-            let bg = if i == app.selected {
-                Color::DarkGray
-            } else {
-                Color::Reset
-            };
 
             Row::new(vec![
                 Line::from(rfc.rfc.rfc_id.clone()),
@@ -315,7 +309,6 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
                 ]),
                 Line::from(Span::styled(phase.to_string(), phase_style(phase))),
             ])
-            .style(Style::default().bg(bg))
         })
         .collect();
 
@@ -333,9 +326,10 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
             .style(Style::default().bold().fg(Color::Cyan))
             .bottom_margin(1),
     )
+    .row_highlight_style(Style::default().bg(Color::DarkGray))
     .block(rounded_block("📋 RFCs").border_style(Style::default().fg(Color::Blue)));
 
-    frame.render_widget(table, chunks[0]);
+    frame.render_stateful_widget(table, chunks[0], &mut app.table_state);
 
     let footer = keybind_footer(&[
         "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
@@ -343,7 +337,7 @@ fn draw_rfc_list(frame: &mut Frame, app: &App) {
     frame.render_widget(footer, chunks[1]);
 }
 
-fn draw_adr_list(frame: &mut Frame, app: &App) {
+fn draw_adr_list(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
 
     let chunks = Layout::default()
@@ -355,15 +349,9 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
         .index
         .adrs
         .iter()
-        .enumerate()
-        .map(|(i, adr)| {
+        .map(|adr| {
             let meta = adr.meta();
             let status = meta.status.as_ref();
-            let bg = if i == app.selected {
-                Color::DarkGray
-            } else {
-                Color::Reset
-            };
 
             Row::new(vec![
                 Line::from(meta.id.clone()),
@@ -373,7 +361,6 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
             ])
-            .style(Style::default().bg(bg))
         })
         .collect();
 
@@ -390,9 +377,10 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
             .style(Style::default().bold().fg(Color::Cyan))
             .bottom_margin(1),
     )
+    .row_highlight_style(Style::default().bg(Color::DarkGray))
     .block(rounded_block("📝 ADRs").border_style(Style::default().fg(Color::Green)));
 
-    frame.render_widget(table, chunks[0]);
+    frame.render_stateful_widget(table, chunks[0], &mut app.table_state);
 
     let footer = keybind_footer(&[
         "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
@@ -400,7 +388,7 @@ fn draw_adr_list(frame: &mut Frame, app: &App) {
     frame.render_widget(footer, chunks[1]);
 }
 
-fn draw_work_list(frame: &mut Frame, app: &App) {
+fn draw_work_list(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
 
     let chunks = Layout::default()
@@ -412,15 +400,9 @@ fn draw_work_list(frame: &mut Frame, app: &App) {
         .index
         .work_items
         .iter()
-        .enumerate()
-        .map(|(i, item)| {
+        .map(|item| {
             let meta = item.meta();
             let status = meta.status.as_ref();
-            let bg = if i == app.selected {
-                Color::DarkGray
-            } else {
-                Color::Reset
-            };
 
             Row::new(vec![
                 Line::from(meta.id.clone()),
@@ -430,7 +412,6 @@ fn draw_work_list(frame: &mut Frame, app: &App) {
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
             ])
-            .style(Style::default().bg(bg))
         })
         .collect();
 
@@ -447,9 +428,10 @@ fn draw_work_list(frame: &mut Frame, app: &App) {
             .style(Style::default().bold().fg(Color::Cyan))
             .bottom_margin(1),
     )
+    .row_highlight_style(Style::default().bg(Color::DarkGray))
     .block(rounded_block("📌 Work Items").border_style(Style::default().fg(Color::Yellow)));
 
-    frame.render_widget(table, chunks[0]);
+    frame.render_stateful_widget(table, chunks[0], &mut app.table_state);
 
     let footer = keybind_footer(&[
         "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
@@ -484,7 +466,7 @@ fn keybind_footer(bindings: &[&str]) -> Paragraph<'static> {
         )
 }
 
-fn draw_rfc_detail(frame: &mut Frame, app: &App, idx: usize) {
+fn draw_rfc_detail(frame: &mut Frame, app: &mut App, idx: usize) {
     let area = frame.area();
 
     let Some(rfc) = app.index.rfcs.get(idx) else {
@@ -562,7 +544,7 @@ fn draw_rfc_detail(frame: &mut Frame, app: &App, idx: usize) {
     frame.render_widget(footer, chunks[1]);
 }
 
-fn draw_adr_detail(frame: &mut Frame, app: &App, idx: usize) {
+fn draw_adr_detail(frame: &mut Frame, app: &mut App, idx: usize) {
     let area = frame.area();
 
     let Some(adr) = app.index.adrs.get(idx) else {
@@ -628,7 +610,7 @@ fn draw_adr_detail(frame: &mut Frame, app: &App, idx: usize) {
     frame.render_widget(footer, chunks[1]);
 }
 
-fn draw_work_detail(frame: &mut Frame, app: &App, idx: usize) {
+fn draw_work_detail(frame: &mut Frame, app: &mut App, idx: usize) {
     let area = frame.area();
 
     let Some(item) = app.index.work_items.get(idx) else {

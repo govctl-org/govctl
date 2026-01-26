@@ -1,6 +1,7 @@
 //! Application state for TUI.
 
 use crate::model::ProjectIndex;
+use ratatui::widgets::TableState;
 
 /// Current view in the TUI
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -23,6 +24,8 @@ pub struct App {
     pub view: View,
     /// Selected index in list views
     pub selected: usize,
+    /// Table state for scrollable list views
+    pub table_state: TableState,
     /// Scroll offset for detail views
     pub scroll: u16,
     /// Should quit
@@ -43,6 +46,7 @@ impl App {
             index,
             view: View::Dashboard,
             selected: 0,
+            table_state: TableState::default().with_selected(Some(0)),
             scroll: 0,
             should_quit: false,
         }
@@ -62,6 +66,7 @@ impl App {
     pub fn select_prev(&mut self) {
         if self.selected > 0 {
             self.selected -= 1;
+            self.table_state.select(Some(self.selected));
         }
     }
 
@@ -70,6 +75,7 @@ impl App {
         let len = self.list_len();
         if len > 0 && self.selected < len - 1 {
             self.selected += 1;
+            self.table_state.select(Some(self.selected));
         }
     }
 
@@ -106,6 +112,7 @@ impl App {
     pub fn go_to(&mut self, view: View) {
         self.view = view;
         self.selected = 0;
+        self.table_state = TableState::default().with_selected(Some(0));
         self.scroll = 0;
     }
 
