@@ -2,14 +2,15 @@
 schema = 1
 id = "WI-2026-01-26-008"
 title = "Add WI reference expansion to source_scan pattern"
-status = "active"
+status = "done"
 created = "2026-01-26"
 started = "2026-01-26"
+completed = "2026-01-26"
 
 [content]
 description = "Add work item pattern to source_scan default pattern to enable inline [[WI-...]] reference expansion in rendered markdown."
 
 [[content.acceptance_criteria]]
 text = "Add WI pattern to default_scan_pattern"
-status = "pending"
+status = "done"
 category = "chore"
