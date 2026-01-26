@@ -1,0 +1,26 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-26-002"
+title = "Add C-REFERENCE-HIERARCHY clause to RFC-0000"
+status = "done"
+created = "2026-01-26"
+started = "2026-01-26"
+completed = "2026-01-26"
+
+[content]
+description = "Add a new clause C-REFERENCE-HIERARCHY to RFC-0000 that codifies the rule that RFCs must be self-contained and should not reference ADRs. This establishes the authority hierarchy: RFC (law) → ADR (interpretation) → Work Item (execution)."
+
+[[content.acceptance_criteria]]
+text = "C-REFERENCE-HIERARCHY clause defines artifact reference rules"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "RFC-0000 version bumped with changelog"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Validation passes"
+status = "done"
+category = "chore"

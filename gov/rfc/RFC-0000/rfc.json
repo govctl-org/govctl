@@ -1,38 +1,58 @@
 {
   "rfc_id": "RFC-0000",
   "title": "govctl Governance Framework",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "status": "normative",
   "phase": "stable",
-  "owners": ["@govctl-org"],
+  "owners": [
+    "@govctl-org"
+  ],
   "created": "2026-01-17",
+  "updated": "2026-01-26",
   "sections": [
     {
       "title": "Summary",
-      "clauses": ["clauses/C-SUMMARY.json"]
+      "clauses": [
+        "clauses/C-SUMMARY.json"
+      ]
     },
     {
       "title": "RFC Specification",
       "clauses": [
         "clauses/C-RFC-DEF.json",
         "clauses/C-STATUS-LIFECYCLE.json",
-        "clauses/C-PHASE-LIFECYCLE.json"
+        "clauses/C-PHASE-LIFECYCLE.json",
+        "clauses/C-REFERENCE-HIERARCHY.json"
       ]
     },
     {
       "title": "Clause Specification",
-      "clauses": ["clauses/C-CLAUSE-DEF.json"]
+      "clauses": [
+        "clauses/C-CLAUSE-DEF.json"
+      ]
     },
     {
       "title": "ADR Specification",
-      "clauses": ["clauses/C-ADR-DEF.json"]
+      "clauses": [
+        "clauses/C-ADR-DEF.json"
+      ]
     },
     {
       "title": "Work Item Specification",
-      "clauses": ["clauses/C-WORK-DEF.json"]
+      "clauses": [
+        "clauses/C-WORK-DEF.json"
+      ]
     }
   ],
   "changelog": [
+    {
+      "version": "1.0.1",
+      "date": "2026-01-26",
+      "notes": "Add artifact reference hierarchy clause",
+      "added": [
+        "Add C-REFERENCE-HIERARCHY clause defining that RFCs must not reference ADRs"
+      ]
+    },
     {
       "version": "1.0.0",
       "date": "2026-01-17",
@@ -44,5 +64,6 @@
         "Work Item specification for task tracking"
       ]
     }
-  ]
+  ],
+  "signature": "de43c9efcd93f54745fbccd43fe9200390b9287bd269d9f20964eb0e337d356f"
 }

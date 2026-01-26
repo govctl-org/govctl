@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-REFERENCE-HIERARCHY",
+  "title": "Artifact Reference Hierarchy",
+  "kind": "normative",
+  "status": "active",
+  "text": "Governance artifacts follow a strict authority hierarchy. References between artifact types MUST respect this hierarchy.\n\n**Authority Order (highest to lowest):**\n1. **RFC** — Constitutional law. Defines what the system does.\n2. **ADR** — Interpretation. Documents decisions implementing RFCs.\n3. **Work Item** — Execution. Tracks work implementing ADRs and RFCs.\n\n**Reference Rules:**\n\nRFCs MUST NOT reference ADRs in normative clause text. RFCs are self-contained specifications. If an RFC needs to describe a decision, the decision MUST be stated directly in the RFC, not delegated to an ADR.\n\nADRs MAY reference RFCs to establish authority for decisions. ADRs SHOULD cite the RFC clause that the decision interprets or implements.\n\nWork Items MAY reference any artifact type. Work Items typically reference the RFC or ADR they implement.\n\n**Rationale:**\n\nThis hierarchy prevents circular dependencies and maintains clear authority chains. An RFC that references an ADR inverts the hierarchy — the ADR becomes the authority, which defeats the purpose of having RFCs as constitutional law.\n\nChangelog entries and informative notes MAY mention ADRs for historical context, but normative clause text MUST remain self-contained.",
+  "since": "1.0.1"
+}
