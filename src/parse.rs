@@ -55,6 +55,9 @@ pub fn load_adrs_with_warnings(config: &Config) -> Result<LoadResult<AdrEntry>, 
         }
     }
 
+    // Sort by ID for deterministic output
+    adrs.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id));
+
     Ok(LoadResult {
         items: adrs,
         warnings,
@@ -156,6 +159,9 @@ pub fn load_work_items_with_warnings(
             }
         }
     }
+
+    // Sort by ID for deterministic output
+    items.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id));
 
     Ok(LoadResult { items, warnings })
 }

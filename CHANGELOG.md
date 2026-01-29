@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `load_work_items()` returns items sorted by ID (WI-2026-01-29-001)
+- `load_adrs()` returns items sorted by ID (WI-2026-01-29-001)
+- `load_rfcs()` returns items sorted by ID (WI-2026-01-29-001)
+
 ## [0.2.3] - 2026-01-26
 
 ### Added

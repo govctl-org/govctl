@@ -69,6 +69,9 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
         }
     }
 
+    // Sort by RFC ID for deterministic output
+    rfcs.sort_by(|a, b| a.rfc.rfc_id.cmp(&b.rfc.rfc_id));
+
     Ok(rfcs)
 }
 

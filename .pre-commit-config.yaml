@@ -39,9 +39,19 @@ repos:
         entry: cargo test --workspace
         language: system
         pass_filenames: false
+      - id: gov-check
+        name: govctl check
+        entry: cargo run --quiet -- check
+        language: system
+        pass_filenames: false
       - id: render-rfc
         name: render RFCs
         entry: cargo run --quiet -- render rfc
+        language: system
+        pass_filenames: false
+      - id: render-changelog
+        name: render changelog
+        entry: cargo run --quiet -- render changelog
         language: system
         pass_filenames: false
 
