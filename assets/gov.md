@@ -48,6 +48,7 @@ EOF
 3. **Phase discipline** — follow `spec → impl → test → stable` for RFC-governed work
 4. **RFC supremacy** — behavioral changes must be grounded in RFCs
 5. **RFC advancement requires permission** — see RFC ADVANCEMENT GATE below
+6. **Reference format in code** — when referencing artifacts in source code comments, use `[[artifact-id]]` syntax (e.g., `// Implements [[RFC-0001:C-FOO]]`) to enable validation by `{{GOVCTL}} check`
 
 ---
 
@@ -284,8 +285,13 @@ EOF
 ### 3.2 Implement
 
 1. Write code following RFC clauses (if applicable)
-2. Keep changes focused — one logical change per commit
-3. Run validations after substantive changes:
+2. **Reference artifacts in comments** — use `[[artifact-id]]` syntax:
+   ```rust
+   // Implements [[RFC-0001:C-VALIDATION]]
+   fn validate() { ... }
+   ```
+3. Keep changes focused — one logical change per commit
+4. Run validations after substantive changes:
    ```bash
    # Run your project's lint/format checks
    {{GOVCTL}} check
@@ -452,6 +458,18 @@ context = "Per RFC-0000, all work items must have acceptance criteria."
 ```
 
 The `[[...]]` pattern is automatically expanded to markdown links during `{{GOVCTL}} render`.
+
+**Source code comments:** Use `[[artifact-id]]` in code comments to enable validation:
+
+```rust
+// Implements [[RFC-0001:C-VALIDATION]]
+fn validate_input(data: &str) -> Result<()> { ... }
+
+// Per [[ADR-0005]], we use streaming instead of buffering
+fn process_stream() { ... }
+```
+
+`{{GOVCTL}} check` validates these references exist and warns if they're deprecated/superseded.
 
 **Note:** The `refs` field uses plain artifact IDs (not `[[...]]` syntax):
 

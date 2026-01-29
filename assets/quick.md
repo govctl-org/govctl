@@ -36,7 +36,13 @@ else echo "Error: not in a VCS repository" >&2; exit 1; fi
 
 ### 3. Implement
 
-Make the changes. Run validations:
+Make the changes. If referencing governance artifacts in code comments, use `[[artifact-id]]` syntax:
+
+```rust
+// Implements [[RFC-0001:C-FOO]]
+```
+
+Run validations:
 
 ```bash
 {{GOVCTL}} check

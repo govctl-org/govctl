@@ -51,6 +51,7 @@ EOF
 4. **No work items** — This is spec phase; work items come later with `/gov`
 5. **Ask when unclear** — If requirements are ambiguous, ask clarifying questions
 6. **Quality over speed** — Produce complete, well-structured drafts
+7. **Reference format** — Always use `[[artifact-id]]` syntax when referencing artifacts (e.g., `[[RFC-0001]]`, `[[RFC-0001:C-FOO]]`) — in content fields AND code comments
 
 ---
 
@@ -384,6 +385,17 @@ decision = "Follow [[RFC-0001:C-SUMMARY]] structure."
 # Bad - plain text, not linked
 context = "Per RFC-0001, all RFCs must have a summary clause."
 ```
+
+**Also use in source code comments** for implementation traceability:
+
+```rust
+// Implements [[RFC-0001:C-VALIDATION]]
+fn validate() { ... }
+
+// Per [[ADR-0005]], we chose X over Y
+```
+
+This enables `{{GOVCTL}} check` to validate all references exist and are not deprecated.
 
 ### RFC 2119 Keywords
 

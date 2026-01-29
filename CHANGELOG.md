@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Add `govctl rfc render <RFC-ID>` command (WI-2026-01-29-003)
+- Add `govctl adr render <ADR-ID>` command (WI-2026-01-29-003)
+- Add `govctl work render <WI-ID>` command (WI-2026-01-29-003)
+
+### Removed
+
+- Remove `--rfc-id` flag from global render command (WI-2026-01-29-003)
+
 ## [0.2.4] - 2026-01-29
 
 ### Fixed

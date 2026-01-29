@@ -419,9 +419,7 @@ impl CanonicalCommand {
             Self::RfcSupersede { id, by, force } => {
                 cmd::lifecycle::supersede(config, id, by, *force, op)
             }
-            Self::RfcRender { id, dry_run } => {
-                cmd::render::render(config, Some(id), *dry_run)
-            }
+            Self::RfcRender { id, dry_run } => cmd::render::render(config, Some(id), *dry_run),
 
             // Clause commands
             Self::ClauseNew {
@@ -528,9 +526,7 @@ impl CanonicalCommand {
                 *status,
                 op,
             ),
-            Self::AdrRender { id, dry_run } => {
-                cmd::render::render_adrs(config, Some(id), *dry_run)
-            }
+            Self::AdrRender { id, dry_run } => cmd::render::render_adrs(config, Some(id), *dry_run),
 
             // Work item commands
             Self::WorkNew { title, active } => {

@@ -45,7 +45,7 @@ We will **add resource-scoped render commands** and **remove the `--rfc-id` flag
 
 ```bash
 govctl rfc render <RFC-ID>    # Render single RFC
-govctl adr render <ADR-ID>    # Render single ADR  
+govctl adr render <ADR-ID>    # Render single ADR
 govctl work render <WI-ID>    # Render single work item
 ```
 
