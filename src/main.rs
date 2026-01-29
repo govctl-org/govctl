@@ -72,15 +72,14 @@ enum Commands {
     #[command(visible_alias = "stat")]
     Status,
 
-    /// Render artifacts to markdown from SSOT
+    /// Render artifacts to markdown from SSOT (bulk operation)
+    ///
+    /// For single-item render, use: govctl rfc render <ID>, govctl adr render <ID>, etc.
     #[command(visible_alias = "gen")]
     Render {
         /// What to render: rfc (default), adr, work, changelog, or all
         #[arg(value_enum, default_value = "rfc")]
         target: RenderTarget,
-        /// Specific RFC ID to render (e.g., RFC-0001)
-        #[arg(long)]
-        rfc_id: Option<String>,
         /// Dry run: show what would be written
         #[arg(long)]
         dry_run: bool,
@@ -347,6 +346,14 @@ EXAMPLES:
         #[arg(short = 'f', long)]
         force: bool,
     },
+    /// Render a single RFC to markdown
+    Render {
+        /// RFC ID to render
+        id: String,
+        /// Dry run: show what would be written
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 /// Clause commands (resource-first structure)
@@ -582,6 +589,14 @@ EXAMPLES:
         #[arg(long)]
         regex: bool,
     },
+    /// Render a single ADR to markdown
+    Render {
+        /// ADR ID to render
+        id: String,
+        /// Dry run: show what would be written
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 /// Work item commands (resource-first structure)
@@ -712,6 +727,14 @@ EXAMPLES:
         #[arg(short = 'f', long)]
         force: bool,
     },
+    /// Render a single work item to markdown
+    Render {
+        /// Work item ID to render
+        id: String,
+        /// Dry run: show what would be written
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 fn main() -> ExitCode {
@@ -765,22 +788,35 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
     let canonical = command_router::CanonicalCommand::from_parsed(&cli.command)?;
 
     // Handle render command dry-run flag combination (special case)
-    let canonical = if let command_router::CanonicalCommand::Render {
-        target,
-        rfc_id,
-        dry_run,
-        force,
-    } = canonical
-    {
-        // Combine global and command-specific dry-run flags
+    let canonical = match canonical {
         command_router::CanonicalCommand::Render {
             target,
-            rfc_id,
+            dry_run,
+            force,
+        } => command_router::CanonicalCommand::Render {
+            target,
             dry_run: cli.dry_run || dry_run,
             force,
+        },
+        command_router::CanonicalCommand::RfcRender { id, dry_run } => {
+            command_router::CanonicalCommand::RfcRender {
+                id,
+                dry_run: cli.dry_run || dry_run,
+            }
         }
-    } else {
-        canonical
+        command_router::CanonicalCommand::AdrRender { id, dry_run } => {
+            command_router::CanonicalCommand::AdrRender {
+                id,
+                dry_run: cli.dry_run || dry_run,
+            }
+        }
+        command_router::CanonicalCommand::WorkRender { id, dry_run } => {
+            command_router::CanonicalCommand::WorkRender {
+                id,
+                dry_run: cli.dry_run || dry_run,
+            }
+        }
+        other => other,
     };
 
     // Execute via canonical command pattern (single execution path)

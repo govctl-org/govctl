@@ -62,7 +62,6 @@ pub enum CanonicalCommand {
     Status,
     Render {
         target: RenderTarget,
-        rfc_id: Option<String>,
         dry_run: bool,
         force: bool,
     },
@@ -121,6 +120,10 @@ pub enum CanonicalCommand {
         id: String,
         by: String,
         force: bool,
+    },
+    RfcRender {
+        id: String,
+        dry_run: bool,
     },
 
     // ========================================
@@ -220,6 +223,10 @@ pub enum CanonicalCommand {
         match_opts: OwnedMatchOptions,
         status: TickStatus,
     },
+    AdrRender {
+        id: String,
+        dry_run: bool,
+    },
 
     // ========================================
     // Work Item Commands
@@ -269,6 +276,10 @@ pub enum CanonicalCommand {
         id: String,
         force: bool,
     },
+    WorkRender {
+        id: String,
+        dry_run: bool,
+    },
 
     // ========================================
     // Release Commands
@@ -295,12 +306,10 @@ impl CanonicalCommand {
             Commands::Status => Self::Status,
             Commands::Render {
                 target,
-                rfc_id,
                 dry_run,
                 force,
             } => Self::Render {
                 target: *target,
-                rfc_id: rfc_id.clone(),
                 dry_run: *dry_run,
                 force: *force,
             },
@@ -339,28 +348,27 @@ impl CanonicalCommand {
             Self::Status => cmd::status::show_status(config),
             Self::Render {
                 target,
-                rfc_id,
                 dry_run,
                 force,
             } => {
                 let mut all_diags = vec![];
                 match target {
                     RenderTarget::Rfc => {
-                        all_diags.extend(cmd::render::render(config, rfc_id.as_deref(), *dry_run)?);
+                        all_diags.extend(cmd::render::render(config, None, *dry_run)?);
                     }
                     RenderTarget::Adr => {
-                        all_diags.extend(cmd::render::render_adrs(config, *dry_run)?);
+                        all_diags.extend(cmd::render::render_adrs(config, None, *dry_run)?);
                     }
                     RenderTarget::Work => {
-                        all_diags.extend(cmd::render::render_work_items(config, *dry_run)?);
+                        all_diags.extend(cmd::render::render_work_items(config, None, *dry_run)?);
                     }
                     RenderTarget::Changelog => {
                         all_diags.extend(cmd::render::render_changelog(config, *dry_run, *force)?);
                     }
                     RenderTarget::All => {
-                        all_diags.extend(cmd::render::render(config, rfc_id.as_deref(), *dry_run)?);
-                        all_diags.extend(cmd::render::render_adrs(config, *dry_run)?);
-                        all_diags.extend(cmd::render::render_work_items(config, *dry_run)?);
+                        all_diags.extend(cmd::render::render(config, None, *dry_run)?);
+                        all_diags.extend(cmd::render::render_adrs(config, None, *dry_run)?);
+                        all_diags.extend(cmd::render::render_work_items(config, None, *dry_run)?);
                     }
                 }
                 Ok(all_diags)
@@ -410,6 +418,9 @@ impl CanonicalCommand {
             Self::RfcDeprecate { id, force } => cmd::lifecycle::deprecate(config, id, *force, op),
             Self::RfcSupersede { id, by, force } => {
                 cmd::lifecycle::supersede(config, id, by, *force, op)
+            }
+            Self::RfcRender { id, dry_run } => {
+                cmd::render::render(config, Some(id), *dry_run)
             }
 
             // Clause commands
@@ -517,6 +528,9 @@ impl CanonicalCommand {
                 *status,
                 op,
             ),
+            Self::AdrRender { id, dry_run } => {
+                cmd::render::render_adrs(config, Some(id), *dry_run)
+            }
 
             // Work item commands
             Self::WorkNew { title, active } => {
@@ -571,6 +585,9 @@ impl CanonicalCommand {
                 op,
             ),
             Self::WorkDelete { id, force } => cmd::edit::delete_work_item(config, id, *force, op),
+            Self::WorkRender { id, dry_run } => {
+                cmd::render::render_work_items(config, Some(id), *dry_run)
+            }
 
             // Release commands
             Self::ReleaseCut { version, date } => {
@@ -653,6 +670,10 @@ impl CanonicalCommand {
                 id: id.clone(),
                 by: by.clone(),
                 force: *force,
+            },
+            RfcCommand::Render { id, dry_run } => Self::RfcRender {
+                id: id.clone(),
+                dry_run: *dry_run,
             },
         })
     }
@@ -821,6 +842,10 @@ impl CanonicalCommand {
                     status: *status,
                 }
             }
+            AdrCommand::Render { id, dry_run } => Self::AdrRender {
+                id: id.clone(),
+                dry_run: *dry_run,
+            },
         })
     }
 
@@ -921,6 +946,10 @@ impl CanonicalCommand {
             WorkCommand::Delete { id, force } => Self::WorkDelete {
                 id: id.clone(),
                 force: *force,
+            },
+            WorkCommand::Render { id, dry_run } => Self::WorkRender {
+                id: id.clone(),
+                dry_run: *dry_run,
             },
         })
     }

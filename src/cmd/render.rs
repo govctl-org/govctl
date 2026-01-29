@@ -54,8 +54,14 @@ pub fn render(
     Ok(vec![])
 }
 
-/// Render all ADRs to markdown
-pub fn render_adrs(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Diagnostic>> {
+/// Render ADRs to markdown
+///
+/// If `adr_id` is provided, renders only that ADR. Otherwise renders all.
+pub fn render_adrs(
+    config: &Config,
+    adr_id: Option<&str>,
+    dry_run: bool,
+) -> anyhow::Result<Vec<Diagnostic>> {
     let adrs = load_adrs(config)?;
 
     if adrs.is_empty() {
@@ -63,19 +69,45 @@ pub fn render_adrs(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Diagnos
         return Ok(vec![]);
     }
 
-    for adr in &adrs {
+    // Filter to specific ADR if provided
+    let adrs_to_render: Vec<_> = if let Some(id) = adr_id {
+        adrs.into_iter()
+            .filter(|a| a.spec.govctl.id == id)
+            .collect()
+    } else {
+        adrs
+    };
+
+    if adrs_to_render.is_empty() {
+        if let Some(id) = adr_id {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("ADR not found: {id}"),
+                id,
+            )
+            .into());
+        }
+    }
+
+    for adr in &adrs_to_render {
         write_adr_md(config, adr, dry_run)?;
     }
 
     if !dry_run {
-        ui::render_summary(adrs.len(), "ADR");
+        ui::render_summary(adrs_to_render.len(), "ADR");
     }
 
     Ok(vec![])
 }
 
-/// Render all Work Items to markdown
-pub fn render_work_items(config: &Config, dry_run: bool) -> anyhow::Result<Vec<Diagnostic>> {
+/// Render Work Items to markdown
+///
+/// If `work_id` is provided, renders only that work item. Otherwise renders all.
+pub fn render_work_items(
+    config: &Config,
+    work_id: Option<&str>,
+    dry_run: bool,
+) -> anyhow::Result<Vec<Diagnostic>> {
     let items = load_work_items(config)?;
 
     if items.is_empty() {
@@ -83,12 +115,33 @@ pub fn render_work_items(config: &Config, dry_run: bool) -> anyhow::Result<Vec<D
         return Ok(vec![]);
     }
 
-    for item in &items {
+    // Filter to specific work item if provided
+    let items_to_render: Vec<_> = if let Some(id) = work_id {
+        items
+            .into_iter()
+            .filter(|w| w.spec.govctl.id == id)
+            .collect()
+    } else {
+        items
+    };
+
+    if items_to_render.is_empty() {
+        if let Some(id) = work_id {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0402WorkNotFound,
+                format!("Work item not found: {id}"),
+                id,
+            )
+            .into());
+        }
+    }
+
+    for item in &items_to_render {
         write_work_item_md(config, item, dry_run)?;
     }
 
     if !dry_run {
-        ui::render_summary(items.len(), "work item");
+        ui::render_summary(items_to_render.len(), "work item");
     }
 
     Ok(vec![])
