@@ -1,0 +1,17 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-29-002"
+title = "Use HTML del tag for superseded clause rendering"
+status = "active"
+created = "2026-01-29"
+started = "2026-01-29"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Replace ~~STATUS~~ marker with HTML del tag for strikethrough title"
+status = "pending"
+category = "chore"

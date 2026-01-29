@@ -238,19 +238,21 @@ fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEn
         ClauseKind::Informative => "(Informative)",
     };
 
-    let status_marker = match spec.status {
-        ClauseStatus::Active => "",
-        ClauseStatus::Deprecated => " ~~DEPRECATED~~",
-        ClauseStatus::Superseded => " ~~SUPERSEDED~~",
-    };
-
     // Generate anchor for clause linking (matches ref_link anchor format)
     let anchor = clause_anchor(rfc_id, &spec.clause_id);
 
+    // Format title, wrapped in <del> if deprecated/superseded
+    // Using HTML <del> instead of markdown ~~ avoids escaping issues with titles
+    let title_part = format!("[{}:{}] {}", rfc_id, spec.clause_id, spec.title);
+    let formatted_title = match spec.status {
+        ClauseStatus::Active => title_part,
+        ClauseStatus::Deprecated | ClauseStatus::Superseded => format!("<del>{}</del>", title_part),
+    };
+
     let _ = writeln!(
         out,
-        "### [{rfc_id}:{}] {} {kind_marker}{status_marker} <a id=\"{anchor}\"></a>",
-        spec.clause_id, spec.title
+        "### {} {kind_marker} <a id=\"{anchor}\"></a>",
+        formatted_title
     );
     let _ = writeln!(out);
 
