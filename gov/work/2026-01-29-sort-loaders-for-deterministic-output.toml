@@ -1,0 +1,27 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-29-001"
+title = "Sort loaders for deterministic output"
+status = "active"
+created = "2026-01-29"
+started = "2026-01-29"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "`load_work_items()` returns items sorted by ID"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "`load_adrs()` returns items sorted by ID"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "pending"
+category = "chore"
