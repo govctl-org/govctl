@@ -2,16 +2,15 @@
 schema = 1
 id = "WI-2026-01-29-002"
 title = "Use HTML del tag for superseded clause rendering"
-status = "active"
+status = "done"
 created = "2026-01-29"
 started = "2026-01-29"
+completed = "2026-01-29"
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = """Update the clause rendering to use the HTML del tag for strikethrough titles."""
 
 [[content.acceptance_criteria]]
 text = "Replace ~~STATUS~~ marker with HTML del tag for strikethrough title"
-status = "pending"
+status = "done"
 category = "chore"
