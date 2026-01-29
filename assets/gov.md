@@ -75,27 +75,13 @@ Then RFC advancement may proceed without asking.
 
 ```bash
 {{GOVCTL}} status
-
-# Detect VCS (run once, use throughout)
-if jj status >/dev/null 2>&1; then
-    VCS="jj"
-    echo "Using jujutsu"
-elif git rev-parse --git-dir >/dev/null 2>&1; then
-    VCS="git"
-    echo "Using git"
-else
-    echo "Error: not in a VCS repository" >&2
-    exit 1
-fi
 ```
+
+**Detect VCS:** Try `jj status` first. If it succeeds, use jujutsu. Otherwise use git. Error if neither works.
 
 ### 0.2 Read Project Configuration
 
-Read the governance config to understand project-specific settings:
-
-```bash
-cat gov/config.toml
-```
+Read the governance config to understand project-specific settings. Use the Read tool or your IDE to view `gov/config.toml`.
 
 Key settings to note:
 
@@ -491,7 +477,9 @@ fn process_stream() { ... }
 
 ### Multi-line Input
 
-**{{GOVCTL}}:** Use `--stdin` with heredoc:
+**{{GOVCTL}}:** Use `--stdin` with input redirection.
+
+**bash/zsh (macOS/Linux):**
 
 ```bash
 {{GOVCTL}} clause edit <clause-id> --stdin <<'EOF'
@@ -499,24 +487,41 @@ Multi-line content here.
 EOF
 ```
 
+**PowerShell (Windows):**
+
+```powershell
+@"
+Multi-line content here.
+"@ | {{GOVCTL}} clause edit <clause-id> --stdin
+```
+
 ### Multi-line Commits
 
-**jujutsu:** Use `jj describe` then `jj new`:
+**jujutsu (bash/zsh):**
 
 ```bash
-# Describe current change, then create new empty change
 jj describe --stdin <<'EOF'
 feat(scope): summary
 
 - Detail one
 - Detail two
-
-Refs: RFC-0010
 EOF
 jj new
 ```
 
-**git:** Must use `cat` heredoc (no native stdin support):
+**jujutsu (PowerShell):**
+
+```powershell
+@"
+feat(scope): summary
+
+- Detail one
+- Detail two
+"@ | jj describe --stdin
+jj new
+```
+
+**git (bash/zsh):**
 
 ```bash
 git add . && git commit -m "$(cat <<'EOF'
@@ -528,7 +533,17 @@ EOF
 )"
 ```
 
-**Key:** Always use `<<'EOF'` (quoted) to prevent variable expansion.
+**git (PowerShell):**
+
+```powershell
+git add .
+git commit -m @"
+feat(scope): summary
+
+- Detail one
+- Detail two
+"@
+```
 
 ---
 

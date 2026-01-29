@@ -79,11 +79,7 @@ Read relevant artifacts to understand existing constraints and decisions.
 
 ### 0.3 Note Project Configuration
 
-```bash
-cat gov/config.toml
-```
-
-Understand project-specific settings that may affect the design.
+Read `gov/config.toml` to understand project-specific settings that may affect the design.
 
 ---
 
@@ -424,16 +420,23 @@ In normative clauses, use these keywords (all caps):
 
 ### Multi-line Input
 
-Use `--stdin` with heredoc:
+Use `--stdin` with input redirection.
+
+**bash/zsh (macOS/Linux):**
 
 ```bash
 {{GOVCTL}} clause edit <clause-id> --stdin <<'EOF'
 Multi-line content here.
-Second line.
 EOF
 ```
 
-**Key:** Always use `<<'EOF'` (quoted) to prevent variable expansion.
+**PowerShell (Windows):**
+
+```powershell
+@"
+Multi-line content here.
+"@ | {{GOVCTL}} clause edit <clause-id> --stdin
+```
 
 ---
 

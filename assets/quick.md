@@ -20,12 +20,9 @@ Execute a lightweight workflow for trivial changes: `$ARGUMENTS`
 
 ```bash
 {{GOVCTL}} status
-
-# Detect VCS
-if jj status >/dev/null 2>&1; then VCS="jj"
-elif git rev-parse --git-dir >/dev/null 2>&1; then VCS="git"
-else echo "Error: not in a VCS repository" >&2; exit 1; fi
 ```
+
+**Detect VCS:** Try `jj status` first. If it succeeds, use jujutsu. Otherwise use git.
 
 ### 2. Create Work Item
 
