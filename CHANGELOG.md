@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.4] - 2026-01-29
+
 ### Fixed
 
 - `load_work_items()` returns items sorted by ID (WI-2026-01-29-001)
