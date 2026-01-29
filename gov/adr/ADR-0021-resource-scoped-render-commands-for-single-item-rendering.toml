@@ -1,0 +1,105 @@
+[govctl]
+schema = 1
+id = "ADR-0021"
+title = "Resource-scoped render commands for single-item rendering"
+status = "accepted"
+date = "2026-01-29"
+refs = [
+    "RFC-0002",
+    "ADR-0018",
+]
+
+[content]
+context = """
+## Context
+
+The global `govctl render` command currently has an `--rfc-id` flag for rendering a single RFC, but no equivalent flags for ADRs or work items. This creates an asymmetry in the CLI.
+
+### Problem Statement
+
+When users want to render a single artifact, the current options are:
+
+| Artifact | Current Syntax | Works? |
+|----------|---------------|--------|
+| RFC | `govctl render rfc --rfc-id RFC-0001` | ✅ Yes |
+| ADR | (none) | ❌ No |
+| Work Item | (none) | ❌ No |
+
+### Options Considered
+
+1. **Add `--adr-id` and `--work-id` flags** — Proliferates flags on global command
+2. **Add resource-scoped render verbs** — Clean separation of bulk vs single
+3. **Leave as-is** — Accept asymmetry
+
+### Constraints
+
+- [[RFC-0002:C-GLOBAL-COMMANDS]] defines `render` as a global command that "operates across all resources"
+- [[ADR-0018]] established the "one way to do it" principle
+- Resource-scoped commands follow the noun-first pattern per [[RFC-0002:C-RESOURCE-MODEL]]"""
+decision = """
+## Decision
+
+We will **add resource-scoped render commands** and **remove the `--rfc-id` flag** from the global render command.
+
+### New Commands
+
+```bash
+govctl rfc render <RFC-ID>    # Render single RFC
+govctl adr render <ADR-ID>    # Render single ADR  
+govctl work render <WI-ID>    # Render single work item
+```
+
+### Modified Command
+
+```bash
+# Global render now ONLY does bulk operations
+govctl render [rfc|adr|work|changelog|all]  # No --rfc-id flag
+```
+
+### Rationale
+
+1. **Clean separation**: Global `render` = bulk operations, resource-scoped = single-item
+2. **No flag proliferation**: Avoids `--rfc-id`, `--adr-id`, `--work-id` on global command
+3. **Discoverable**: `govctl rfc --help` shows `render` alongside other verbs
+4. **Noun-first for single items**: Consistent with `govctl rfc get`, `govctl rfc list`
+5. **RFC-0002 compatible**: `render` remains global for bulk; adding resource verbs doesn't violate this
+
+### Implementation Notes
+
+- Resource-scoped `render` shares implementation with global render (just filters to single ID)
+- Error handling: if ID not found, return clear error message
+- Output: same format as bulk render, just for one item"""
+consequences = """
+## Consequences
+
+### Positive
+
+- **Symmetric API**: All resource types support single-item render equally
+- **Cleaner global command**: No proliferation of `--*-id` flags
+- **Intuitive mental model**: "Work with RFC" → `govctl rfc render RFC-0001`
+- **Better discoverability**: `govctl rfc --help` shows all RFC operations including render
+
+### Negative
+
+- **Breaking change**: Scripts using `govctl render --rfc-id` must update
+  - Mitigation: Pre-1.0, document in CHANGELOG
+- **Two entry points for render**: Global (bulk) and resource-scoped (single)
+  - Mitigation: Clear purpose split makes this a feature, not a bug
+
+### Migration
+
+```bash
+# Old syntax (removed)
+govctl render rfc --rfc-id RFC-0001
+
+# New syntax
+govctl rfc render RFC-0001
+```"""
+
+[[content.alternatives]]
+text = "Add --adr-id and --work-id flags to global render: Proliferates flags, violates 'one way' principle"
+status = "considered"
+
+[[content.alternatives]]
+text = "Leave as-is with only --rfc-id: Asymmetric, inconsistent UX"
+status = "considered"

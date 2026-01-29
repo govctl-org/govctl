@@ -1,0 +1,38 @@
+[govctl]
+schema = 1
+id = "WI-2026-01-29-003"
+title = "Add resource-scoped render commands"
+status = "active"
+created = "2026-01-29"
+started = "2026-01-29"
+refs = ["ADR-0021"]
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Add `govctl rfc render <RFC-ID>` command"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Add `govctl adr render <ADR-ID>` command"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Add `govctl work render <WI-ID>` command"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Remove `--rfc-id` flag from global render command"
+status = "pending"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "pending"
+category = "chore"
