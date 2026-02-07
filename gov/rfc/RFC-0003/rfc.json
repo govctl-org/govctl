@@ -3,7 +3,7 @@
   "title": "TUI UX improvements",
   "version": "0.1.0",
   "status": "normative",
-  "phase": "impl",
+  "phase": "test",
   "owners": [
     "@govctl-org"
   ],
