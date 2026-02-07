@@ -1,0 +1,17 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-07-003"
+title = "Unify describe --format to --output for consistency"
+status = "done"
+created = "2026-02-07"
+started = "2026-02-07"
+completed = "2026-02-07"
+
+[content]
+description = """
+Unify describe --format to --output for consistency."""
+
+[[content.acceptance_criteria]]
+text = "Rename describe --format to --output for consistency"
+status = "done"
+category = "changed"

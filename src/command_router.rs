@@ -68,7 +68,7 @@ pub enum CanonicalCommand {
     Describe {
         context: bool,
         #[allow(dead_code)]
-        format: String,
+        output: String,
     },
     Completions {
         shell: clap_complete::Shell,
@@ -329,9 +329,9 @@ impl CanonicalCommand {
                 dry_run: *dry_run,
                 force: *force,
             },
-            Commands::Describe { context, format } => Self::Describe {
+            Commands::Describe { context, output } => Self::Describe {
                 context: *context,
-                format: format.clone(),
+                output: output.clone(),
             },
             Commands::Completions { shell } => Self::Completions { shell: *shell },
             #[cfg(feature = "tui")]
@@ -389,7 +389,7 @@ impl CanonicalCommand {
                 }
                 Ok(all_diags)
             }
-            Self::Describe { context, format: _ } => cmd::describe::describe(config, *context),
+            Self::Describe { context, output: _ } => cmd::describe::describe(config, *context),
             Self::Completions { shell } => {
                 use crate::Cli;
                 use clap::CommandFactory;

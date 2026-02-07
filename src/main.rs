@@ -130,8 +130,8 @@ enum Commands {
         #[arg(long)]
         context: bool,
         /// Output format (currently only json is supported)
-        #[arg(long, default_value = "json")]
-        format: String,
+        #[arg(short = 'o', long, default_value = "json")]
+        output: String,
     },
 
     /// Generate shell completion scripts

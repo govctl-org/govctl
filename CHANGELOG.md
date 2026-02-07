@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Support -o json for structured output (WI-2026-02-07-002)
 - Update describe output with show commands (WI-2026-02-07-002)
 
+### Changed
+
+- Rename describe --format to --output for consistency (WI-2026-02-07-003)
+
 ## [0.3.1] - 2026-02-07
 
 ### Added
