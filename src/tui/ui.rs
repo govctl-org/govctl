@@ -4,7 +4,7 @@ use super::app::{App, View};
 use ratatui::{
     prelude::*,
     symbols::border,
-    widgets::{Block, Borders, List, ListItem, Paragraph, Row, Table, Wrap},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Row, Table, Wrap},
 };
 
 // Status color helpers
@@ -37,19 +37,250 @@ fn phase_style(phase: &str) -> Style {
     }
 }
 
+fn breadcrumb(app: &App) -> String {
+    match app.view {
+        View::Dashboard => "Dashboard".to_string(),
+        View::RfcList => "Dashboard > RFCs".to_string(),
+        View::AdrList => "Dashboard > ADRs".to_string(),
+        View::WorkList => "Dashboard > Work".to_string(),
+        View::RfcDetail(idx) => app
+            .index
+            .rfcs
+            .get(idx)
+            .map(|rfc| format!("Dashboard > RFCs > {}", rfc.rfc.rfc_id))
+            .unwrap_or_else(|| "Dashboard > RFCs".to_string()),
+        View::AdrDetail(idx) => app
+            .index
+            .adrs
+            .get(idx)
+            .map(|adr| format!("Dashboard > ADRs > {}", adr.meta().id))
+            .unwrap_or_else(|| "Dashboard > ADRs".to_string()),
+        View::WorkDetail(idx) => app
+            .index
+            .work_items
+            .get(idx)
+            .map(|item| format!("Dashboard > Work > {}", item.meta().id))
+            .unwrap_or_else(|| "Dashboard > Work".to_string()),
+        View::ClauseDetail(rfc_idx, clause_idx) => app
+            .index
+            .rfcs
+            .get(rfc_idx)
+            .and_then(|rfc| rfc.clauses.get(clause_idx).map(|clause| (rfc, clause)))
+            .map(|(rfc, clause)| {
+                format!(
+                    "Dashboard > RFCs > {} > {}",
+                    rfc.rfc.rfc_id, clause.spec.clause_id
+                )
+            })
+            .unwrap_or_else(|| "Dashboard > RFCs".to_string()),
+    }
+}
+
+fn header_status(app: &App) -> String {
+    match app.view {
+        View::Dashboard => format!(
+            "RFC {} | ADR {} | Work {}",
+            app.index.rfcs.len(),
+            app.index.adrs.len(),
+            app.index.work_items.len()
+        ),
+        View::RfcList | View::AdrList | View::WorkList => {
+            let total = app.list_total_len();
+            let shown = app.list_len();
+            let mut parts = vec![format!("Shown {}/{}", shown, total)];
+            if shown > 0 {
+                parts.push(format!("Sel {}/{}", app.selected + 1, shown));
+            }
+            if app.filter_mode {
+                parts.push(format!("Filter: /{}_", app.filter_query));
+            } else if app.filter_active() {
+                parts.push(format!("Filter: {}", app.filter_query));
+            }
+            parts.join(" | ")
+        }
+        _ => String::new(),
+    }
+}
+
+// Implements [[RFC-0003:C-NAV]]
+fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_set(border::ROUNDED)
+        .border_style(Style::default().fg(Color::Cyan));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Min(10), Constraint::Length(30)])
+        .split(inner);
+
+    let left = Paragraph::new(Line::from(vec![
+        Span::styled("govctl", Style::default().fg(Color::Cyan).bold()),
+        Span::raw(" "),
+        Span::raw(breadcrumb(app)),
+    ]))
+    .alignment(Alignment::Left);
+
+    let right = Paragraph::new(header_status(app)).alignment(Alignment::Right);
+
+    frame.render_widget(left, chunks[0]);
+    frame.render_widget(right, chunks[1]);
+}
+
+fn keybind_line(bindings: &[&str]) -> Line<'static> {
+    let mut spans: Vec<Span<'static>> = vec![Span::raw(" ")];
+    for chunk in bindings.chunks(2) {
+        if chunk.len() == 2 {
+            spans.push(Span::styled("[", Style::default().fg(Color::DarkGray)));
+            spans.push(Span::styled(
+                chunk[0].to_string(),
+                Style::default().fg(Color::Cyan).bold(),
+            ));
+            spans.push(Span::styled("] ", Style::default().fg(Color::DarkGray)));
+            spans.push(Span::styled(
+                format!("{}  ", chunk[1]),
+                Style::default().fg(Color::DarkGray),
+            ));
+        }
+    }
+    Line::from(spans)
+}
+
+// Implements [[RFC-0003:C-NAV]]
+fn draw_footer(frame: &mut Frame, area: Rect, bindings: &[&str], status: Option<&str>) {
+    let block = Block::default()
+        .borders(Borders::ALL)
+        .border_set(border::ROUNDED)
+        .border_style(Style::default().fg(Color::DarkGray));
+    let inner = block.inner(area);
+    frame.render_widget(block, area);
+
+    let chunks = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Min(10), Constraint::Length(30)])
+        .split(inner);
+
+    let left = Paragraph::new(keybind_line(bindings)).alignment(Alignment::Center);
+    let right = Paragraph::new(status.unwrap_or("")).alignment(Alignment::Right);
+
+    frame.render_widget(left, chunks[0]);
+    frame.render_widget(right, chunks[1]);
+}
+
 /// Main draw function
 pub fn draw(frame: &mut Frame, app: &mut App) {
+    let area = frame.area();
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(3), // Header
+            Constraint::Min(5),    // Content
+            Constraint::Length(3), // Footer
+        ])
+        .split(area);
+
+    draw_header(frame, app, chunks[0]);
+
+    let mut footer_status = None;
+    let bindings: &[&str] = match app.view {
+        View::Dashboard => &[
+            "1/r",
+            "RFCs",
+            "2/a",
+            "ADRs",
+            "3/w",
+            "Work",
+            "?",
+            "Help",
+            "q",
+            "Quit",
+        ],
+        View::RfcList | View::AdrList | View::WorkList => &[
+            "j/k",
+            "Navigate",
+            "Enter",
+            "View",
+            "Esc",
+            "Back",
+            "/",
+            "Filter",
+            "g/G",
+            "Jump",
+            "?",
+            "Help",
+            "q",
+            "Quit",
+        ],
+        View::RfcDetail(_) => &[
+            "j/k",
+            "Navigate",
+            "Enter",
+            "View Clause",
+            "Esc",
+            "Back",
+            "?",
+            "Help",
+            "q",
+            "Quit",
+        ],
+        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => &[
+            "j/k",
+            "Scroll",
+            "Esc",
+            "Back",
+            "?",
+            "Help",
+            "q",
+            "Quit",
+        ],
+    };
+
     match app.view {
-        View::Dashboard => draw_dashboard(frame, app),
-        View::RfcList => draw_rfc_list(frame, app),
-        View::AdrList => draw_adr_list(frame, app),
-        View::WorkList => draw_work_list(frame, app),
-        View::RfcDetail(idx) => draw_rfc_detail(frame, app, idx),
-        View::AdrDetail(idx) => draw_adr_detail(frame, app, idx),
-        View::WorkDetail(idx) => draw_work_detail(frame, app, idx),
-        View::ClauseDetail(rfc_idx, clause_idx) => {
-            draw_clause_detail(frame, app, rfc_idx, clause_idx)
+        View::Dashboard => draw_dashboard(frame, app, chunks[1]),
+        View::RfcList => draw_rfc_list(frame, app, chunks[1]),
+        View::AdrList => draw_adr_list(frame, app, chunks[1]),
+        View::WorkList => draw_work_list(frame, app, chunks[1]),
+        View::RfcDetail(idx) => draw_rfc_detail(frame, app, chunks[1], idx),
+        View::AdrDetail(idx) => {
+            // Implements [[RFC-0003:C-DETAIL]]
+            let total = draw_adr_detail(frame, app, chunks[1], idx);
+            let max_scroll = total.saturating_sub(1) as u16;
+            if app.scroll > max_scroll {
+                app.scroll = max_scroll;
+            }
+            footer_status = Some(format!("Scroll {}/{}", app.scroll + 1, total));
         }
+        View::WorkDetail(idx) => {
+            // Implements [[RFC-0003:C-DETAIL]]
+            let total = draw_work_detail(frame, app, chunks[1], idx);
+            let max_scroll = total.saturating_sub(1) as u16;
+            if app.scroll > max_scroll {
+                app.scroll = max_scroll;
+            }
+            footer_status = Some(format!("Scroll {}/{}", app.scroll + 1, total));
+        }
+        View::ClauseDetail(rfc_idx, clause_idx) => {
+            // Implements [[RFC-0003:C-DETAIL]]
+            let total = draw_clause_detail(frame, app, chunks[1], rfc_idx, clause_idx);
+            let max_scroll = total.saturating_sub(1) as u16;
+            if app.scroll > max_scroll {
+                app.scroll = max_scroll;
+            }
+            footer_status = Some(format!("Scroll {}/{}", app.scroll + 1, total));
+        }
+    }
+
+    draw_footer(
+        frame,
+        chunks[2],
+        bindings,
+        footer_status.as_deref(),
+    );
+
+    if app.show_help {
+        draw_help_overlay(frame, app);
     }
 }
 
@@ -60,34 +291,7 @@ fn rounded_block(title: &str) -> Block<'_> {
         .border_set(border::ROUNDED)
 }
 
-fn draw_dashboard(frame: &mut Frame, app: &mut App) {
-    let area = frame.area();
-
-    // Split into header, content, and footer
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(3), // Header
-            Constraint::Min(10),   // Content
-            Constraint::Length(3), // Footer
-        ])
-        .split(area);
-
-    // Header with fancy title
-    let header = Paragraph::new(Line::from(vec![
-        Span::styled("╔══ ", Style::default().fg(Color::Cyan)),
-        Span::styled("govctl", Style::default().fg(Color::Cyan).bold()),
-        Span::styled(" Dashboard ══╗", Style::default().fg(Color::Cyan)),
-    ]))
-    .alignment(Alignment::Center)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::Cyan)),
-    );
-    frame.render_widget(header, chunks[0]);
-
+fn draw_dashboard(frame: &mut Frame, app: &mut App, area: Rect) {
     // Content: 3 columns for RFC, ADR, Work
     let content_chunks = Layout::default()
         .direction(Direction::Horizontal)
@@ -96,7 +300,7 @@ fn draw_dashboard(frame: &mut Frame, app: &mut App) {
             Constraint::Percentage(34),
             Constraint::Percentage(33),
         ])
-        .split(chunks[1]);
+        .split(area);
 
     // RFC stats
     let rfc_stats = build_rfc_stats(app);
@@ -109,30 +313,6 @@ fn draw_dashboard(frame: &mut Frame, app: &mut App) {
     // Work stats
     let work_stats = build_work_stats(app);
     frame.render_widget(work_stats, content_chunks[2]);
-
-    // Footer with keybindings
-    let footer = Paragraph::new(Line::from(vec![
-        Span::styled(" [", Style::default().fg(Color::DarkGray)),
-        Span::styled("1", Style::default().fg(Color::Blue).bold()),
-        Span::styled("/r] RFCs  ", Style::default().fg(Color::DarkGray)),
-        Span::styled("[", Style::default().fg(Color::DarkGray)),
-        Span::styled("2", Style::default().fg(Color::Green).bold()),
-        Span::styled("/a] ADRs  ", Style::default().fg(Color::DarkGray)),
-        Span::styled("[", Style::default().fg(Color::DarkGray)),
-        Span::styled("3", Style::default().fg(Color::Yellow).bold()),
-        Span::styled("/w] Work  ", Style::default().fg(Color::DarkGray)),
-        Span::styled("[", Style::default().fg(Color::DarkGray)),
-        Span::styled("q", Style::default().fg(Color::Red).bold()),
-        Span::styled("] Quit ", Style::default().fg(Color::DarkGray)),
-    ]))
-    .alignment(Alignment::Center)
-    .block(
-        Block::default()
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::DarkGray)),
-    );
-    frame.render_widget(footer, chunks[2]);
 }
 
 fn build_rfc_stats(app: &App) -> Paragraph<'static> {
@@ -286,19 +466,11 @@ fn build_work_stats(app: &App) -> Paragraph<'static> {
     )
 }
 
-fn draw_rfc_list(frame: &mut Frame, app: &mut App) {
-    let area = frame.area();
-
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
-        .split(area);
-
-    // Build table rows with colored status
-    let rows: Vec<Row> = app
-        .index
-        .rfcs
+fn draw_rfc_list(frame: &mut Frame, app: &mut App, area: Rect) {
+    let indices = app.list_indices();
+    let rows: Vec<Row> = indices
         .iter()
+        .filter_map(|&idx| app.index.rfcs.get(idx))
         .map(|rfc| {
             let status = rfc.rfc.status.as_ref();
             let phase = rfc.rfc.phase.as_ref();
@@ -332,26 +504,14 @@ fn draw_rfc_list(frame: &mut Frame, app: &mut App) {
     .row_highlight_style(Style::default().bg(Color::DarkGray))
     .block(rounded_block("📋 RFCs").border_style(Style::default().fg(Color::Blue)));
 
-    frame.render_stateful_widget(table, chunks[0], &mut app.table_state);
-
-    let footer = keybind_footer(&[
-        "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
-    ]);
-    frame.render_widget(footer, chunks[1]);
+    frame.render_stateful_widget(table, area, &mut app.table_state);
 }
 
-fn draw_adr_list(frame: &mut Frame, app: &mut App) {
-    let area = frame.area();
-
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
-        .split(area);
-
-    let rows: Vec<Row> = app
-        .index
-        .adrs
+fn draw_adr_list(frame: &mut Frame, app: &mut App, area: Rect) {
+    let indices = app.list_indices();
+    let rows: Vec<Row> = indices
         .iter()
+        .filter_map(|&idx| app.index.adrs.get(idx))
         .map(|adr| {
             let meta = adr.meta();
             let status = meta.status.as_ref();
@@ -383,26 +543,14 @@ fn draw_adr_list(frame: &mut Frame, app: &mut App) {
     .row_highlight_style(Style::default().bg(Color::DarkGray))
     .block(rounded_block("📝 ADRs").border_style(Style::default().fg(Color::Green)));
 
-    frame.render_stateful_widget(table, chunks[0], &mut app.table_state);
-
-    let footer = keybind_footer(&[
-        "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
-    ]);
-    frame.render_widget(footer, chunks[1]);
+    frame.render_stateful_widget(table, area, &mut app.table_state);
 }
 
-fn draw_work_list(frame: &mut Frame, app: &mut App) {
-    let area = frame.area();
-
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
-        .split(area);
-
-    let rows: Vec<Row> = app
-        .index
-        .work_items
+fn draw_work_list(frame: &mut Frame, app: &mut App, area: Rect) {
+    let indices = app.list_indices();
+    let rows: Vec<Row> = indices
         .iter()
+        .filter_map(|&idx| app.index.work_items.get(idx))
         .map(|item| {
             let meta = item.meta();
             let status = meta.status.as_ref();
@@ -434,44 +582,10 @@ fn draw_work_list(frame: &mut Frame, app: &mut App) {
     .row_highlight_style(Style::default().bg(Color::DarkGray))
     .block(rounded_block("📌 Work Items").border_style(Style::default().fg(Color::Yellow)));
 
-    frame.render_stateful_widget(table, chunks[0], &mut app.table_state);
-
-    let footer = keybind_footer(&[
-        "j/k", "Navigate", "Enter", "View", "Esc", "Back", "q", "Quit",
-    ]);
-    frame.render_widget(footer, chunks[1]);
+    frame.render_stateful_widget(table, area, &mut app.table_state);
 }
 
-fn keybind_footer(bindings: &[&str]) -> Paragraph<'static> {
-    let mut spans = vec![Span::raw(" ")];
-    for chunk in bindings.chunks(2) {
-        if chunk.len() == 2 {
-            spans.push(Span::styled("[", Style::default().fg(Color::DarkGray)));
-            spans.push(Span::styled(
-                chunk[0].to_string(),
-                Style::default().fg(Color::Cyan).bold(),
-            ));
-            spans.push(Span::styled("] ", Style::default().fg(Color::DarkGray)));
-            spans.push(Span::styled(
-                format!("{}  ", chunk[1]),
-                Style::default().fg(Color::DarkGray),
-            ));
-        }
-    }
-
-    Paragraph::new(Line::from(spans))
-        .alignment(Alignment::Center)
-        .block(
-            Block::default()
-                .borders(Borders::ALL)
-                .border_set(border::ROUNDED)
-                .border_style(Style::default().fg(Color::DarkGray)),
-        )
-}
-
-fn draw_rfc_detail(frame: &mut Frame, app: &mut App, idx: usize) {
-    let area = frame.area();
-
+fn draw_rfc_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
     let Some(rfc) = app.index.rfcs.get(idx) else {
         return;
     };
@@ -482,7 +596,6 @@ fn draw_rfc_detail(frame: &mut Frame, app: &mut App, idx: usize) {
         .constraints([
             Constraint::Length(8), // Header (metadata)
             Constraint::Min(5),    // Clause list
-            Constraint::Length(3), // Footer
         ])
         .split(area);
 
@@ -550,30 +663,16 @@ fn draw_rfc_detail(frame: &mut Frame, app: &mut App, idx: usize) {
         .highlight_symbol("▶ ");
 
     frame.render_stateful_widget(clause_list, chunks[1], &mut app.clause_list_state);
-
-    let footer = keybind_footer(&[
-        "j/k",
-        "Navigate",
-        "Enter",
-        "View Clause",
-        "Esc",
-        "Back",
-        "q",
-        "Quit",
-    ]);
-    frame.render_widget(footer, chunks[2]);
 }
 
-fn draw_adr_detail(frame: &mut Frame, app: &mut App, idx: usize) {
-    let area = frame.area();
-
+fn draw_adr_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> usize {
     let Some(adr) = app.index.adrs.get(idx) else {
-        return;
+        return 0;
     };
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
+        .constraints([Constraint::Min(5)])
         .split(area);
 
     let meta = adr.meta();
@@ -625,21 +724,17 @@ fn draw_adr_detail(frame: &mut Frame, app: &mut App, idx: usize) {
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Green)));
 
     frame.render_widget(content, chunks[0]);
-
-    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
-    frame.render_widget(footer, chunks[1]);
+    lines.len()
 }
 
-fn draw_work_detail(frame: &mut Frame, app: &mut App, idx: usize) {
-    let area = frame.area();
-
+fn draw_work_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> usize {
     let Some(item) = app.index.work_items.get(idx) else {
-        return;
+        return 0;
     };
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
+        .constraints([Constraint::Min(5)])
         .split(area);
 
     let meta = item.meta();
@@ -695,25 +790,27 @@ fn draw_work_detail(frame: &mut Frame, app: &mut App, idx: usize) {
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Yellow)));
 
     frame.render_widget(content, chunks[0]);
-
-    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
-    frame.render_widget(footer, chunks[1]);
+    lines.len()
 }
 
-fn draw_clause_detail(frame: &mut Frame, app: &mut App, rfc_idx: usize, clause_idx: usize) {
-    let area = frame.area();
-
+fn draw_clause_detail(
+    frame: &mut Frame,
+    app: &mut App,
+    area: Rect,
+    rfc_idx: usize,
+    clause_idx: usize,
+) -> usize {
     let Some(rfc) = app.index.rfcs.get(rfc_idx) else {
-        return;
+        return 0;
     };
 
     let Some(clause) = rfc.clauses.get(clause_idx) else {
-        return;
+        return 0;
     };
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5), Constraint::Length(3)])
+        .constraints([Constraint::Min(5)])
         .split(area);
 
     let status = clause.spec.status.as_ref();
@@ -768,7 +865,75 @@ fn draw_clause_detail(frame: &mut Frame, app: &mut App, rfc_idx: usize, clause_i
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Magenta)));
 
     frame.render_widget(content, chunks[0]);
+    lines.len()
+}
 
-    let footer = keybind_footer(&["j/k", "Scroll", "Esc", "Back", "q", "Quit"]);
-    frame.render_widget(footer, chunks[1]);
+fn draw_help_overlay(frame: &mut Frame, app: &App) {
+    let area = frame.area();
+    let popup = centered_rect(70, 70, area);
+    frame.render_widget(Clear, popup);
+
+    let title = "Help";
+    let block = rounded_block(title).border_style(Style::default().fg(Color::Cyan));
+
+    let mut lines = vec![
+        Line::from("Global"),
+        Line::from("  ?      Toggle help"),
+        Line::from("  q      Quit"),
+        Line::from(""),
+    ];
+
+    match app.view {
+        View::Dashboard => {
+            lines.push(Line::from("Dashboard"));
+            lines.push(Line::from("  1/r    RFC list"));
+            lines.push(Line::from("  2/a    ADR list"));
+            lines.push(Line::from("  3/w    Work list"));
+        }
+        View::RfcList | View::AdrList | View::WorkList => {
+            lines.push(Line::from("List"));
+            lines.push(Line::from("  j/k    Move selection"));
+            lines.push(Line::from("  Enter  View detail"));
+            lines.push(Line::from("  g/G    Top/Bottom"));
+            lines.push(Line::from("  /      Filter"));
+            lines.push(Line::from("  n/p    Next/Prev match (when filtered)"));
+            lines.push(Line::from("  Esc    Back (or clear filter in filter mode)"));
+        }
+        View::RfcDetail(_) => {
+            lines.push(Line::from("RFC Detail"));
+            lines.push(Line::from("  j/k    Move clause selection"));
+            lines.push(Line::from("  Enter  View clause"));
+            lines.push(Line::from("  Esc    Back"));
+        }
+        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
+            lines.push(Line::from("Detail"));
+            lines.push(Line::from("  j/k    Scroll"));
+            lines.push(Line::from("  Esc    Back"));
+        }
+    }
+
+    let content = Paragraph::new(lines).block(block).wrap(Wrap { trim: true });
+    frame.render_widget(content, popup);
+}
+
+fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
+    let vertical = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(area);
+
+    let horizontal = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(vertical[1]);
+
+    horizontal[1]
 }

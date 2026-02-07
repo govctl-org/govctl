@@ -32,6 +32,12 @@ pub struct App {
     pub clause_list_state: ListState,
     /// Scroll offset for detail views
     pub scroll: u16,
+    /// Active filter query for list views
+    pub filter_query: String,
+    /// Whether filter input mode is active
+    pub filter_mode: bool,
+    /// Show help overlay
+    pub show_help: bool,
     /// Should quit
     pub should_quit: bool,
 }
@@ -53,12 +59,15 @@ impl App {
             table_state: TableState::default().with_selected(Some(0)),
             clause_list_state: ListState::default().with_selected(Some(0)),
             scroll: 0,
+            filter_query: String::new(),
+            filter_mode: false,
+            show_help: false,
             should_quit: false,
         }
     }
 
-    /// Get the count of items in current list view
-    pub fn list_len(&self) -> usize {
+    /// Get the total count of items in current list view (unfiltered)
+    pub fn list_total_len(&self) -> usize {
         match self.view {
             View::RfcList => self.index.rfcs.len(),
             View::AdrList => self.index.adrs.len(),
@@ -67,12 +76,137 @@ impl App {
         }
     }
 
+    /// Get indices for items in current list view (filtered)
+    pub fn list_indices(&self) -> Vec<usize> {
+        let query = self.filter_query.trim().to_ascii_lowercase();
+        let has_query = !query.is_empty();
+        match self.view {
+            View::RfcList => self
+                .index
+                .rfcs
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, rfc)| {
+                    if !has_query {
+                        return Some(idx);
+                    }
+                    let status = rfc.rfc.status.as_ref().to_ascii_lowercase();
+                    let phase = rfc.rfc.phase.as_ref().to_ascii_lowercase();
+                    let id = rfc.rfc.rfc_id.to_ascii_lowercase();
+                    let title = rfc.rfc.title.to_ascii_lowercase();
+                    if id.contains(&query)
+                        || title.contains(&query)
+                        || status.contains(&query)
+                        || phase.contains(&query)
+                    {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::AdrList => self
+                .index
+                .adrs
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, adr)| {
+                    if !has_query {
+                        return Some(idx);
+                    }
+                    let meta = adr.meta();
+                    let status = meta.status.as_ref().to_ascii_lowercase();
+                    let id = meta.id.to_ascii_lowercase();
+                    let title = meta.title.to_ascii_lowercase();
+                    if id.contains(&query) || title.contains(&query) || status.contains(&query) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::WorkList => self
+                .index
+                .work_items
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, item)| {
+                    if !has_query {
+                        return Some(idx);
+                    }
+                    let meta = item.meta();
+                    let status = meta.status.as_ref().to_ascii_lowercase();
+                    let id = meta.id.to_ascii_lowercase();
+                    let title = meta.title.to_ascii_lowercase();
+                    if id.contains(&query) || title.contains(&query) || status.contains(&query) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            _ => Vec::new(),
+        }
+    }
+
+    /// Get the count of items in current list view (filtered)
+    pub fn list_len(&self) -> usize {
+        self.list_indices().len()
+    }
+
+    /// Whether a list filter is active
+    pub fn filter_active(&self) -> bool {
+        !self.filter_query.trim().is_empty()
+    }
+
+    /// Enter filter input mode
+    pub fn enter_filter_mode(&mut self) {
+        self.filter_mode = true;
+    }
+
+    /// Exit filter input mode
+    pub fn exit_filter_mode(&mut self) {
+        self.filter_mode = false;
+    }
+
+    /// Clear filter query
+    pub fn clear_filter(&mut self) {
+        self.filter_query.clear();
+        self.ensure_selection_in_bounds();
+    }
+
+    /// Append a character to the filter query
+    pub fn push_filter_char(&mut self, ch: char) {
+        self.filter_query.push(ch);
+        self.ensure_selection_in_bounds();
+    }
+
+    /// Remove last character from filter query
+    pub fn pop_filter_char(&mut self) {
+        self.filter_query.pop();
+        self.ensure_selection_in_bounds();
+    }
+
+    /// Ensure selected index is valid for current list
+    pub fn ensure_selection_in_bounds(&mut self) {
+        let len = self.list_len();
+        if len == 0 {
+            self.selected = 0;
+            self.table_state.select(None);
+            return;
+        }
+        if self.selected >= len {
+            self.selected = len - 1;
+        }
+        self.table_state.select(Some(self.selected));
+    }
+
     /// Move selection up
     pub fn select_prev(&mut self) {
         if self.selected > 0 {
             self.selected -= 1;
-            self.table_state.select(Some(self.selected));
         }
+        self.table_state.select(Some(self.selected));
     }
 
     /// Move selection down
@@ -80,22 +214,49 @@ impl App {
         let len = self.list_len();
         if len > 0 && self.selected < len - 1 {
             self.selected += 1;
-            self.table_state.select(Some(self.selected));
         }
+        self.table_state.select(Some(self.selected));
+    }
+
+    /// Jump to first item in list
+    pub fn select_top(&mut self) {
+        if self.list_len() == 0 {
+            self.table_state.select(None);
+            return;
+        }
+        self.selected = 0;
+        self.table_state.select(Some(self.selected));
+    }
+
+    /// Jump to last item in list
+    pub fn select_bottom(&mut self) {
+        let len = self.list_len();
+        if len == 0 {
+            self.table_state.select(None);
+            return;
+        }
+        self.selected = len - 1;
+        self.table_state.select(Some(self.selected));
     }
 
     /// Enter detail view for selected item
     pub fn enter_detail(&mut self) {
-        if self.list_len() == 0 {
+        let indices = self.list_indices();
+        if indices.is_empty() {
             return;
         }
+        if self.selected >= indices.len() {
+            self.ensure_selection_in_bounds();
+            return;
+        }
+        let real_idx = indices[self.selected];
         self.view = match self.view {
             View::RfcList => {
                 self.clause_list_state = ListState::default().with_selected(Some(0));
-                View::RfcDetail(self.selected)
+                View::RfcDetail(real_idx)
             }
-            View::AdrList => View::AdrDetail(self.selected),
-            View::WorkList => View::WorkDetail(self.selected),
+            View::AdrList => View::AdrDetail(real_idx),
+            View::WorkList => View::WorkDetail(real_idx),
             _ => return,
         };
         self.scroll = 0;
@@ -115,6 +276,10 @@ impl App {
             }
         };
         self.scroll = 0;
+        if self.view == View::Dashboard {
+            self.filter_mode = false;
+            self.clear_filter();
+        }
     }
 
     /// Navigate to a specific view
@@ -123,6 +288,12 @@ impl App {
         self.selected = 0;
         self.table_state = TableState::default().with_selected(Some(0));
         self.scroll = 0;
+        if matches!(self.view, View::RfcList | View::AdrList | View::WorkList) {
+            self.filter_mode = false;
+            self.clear_filter();
+        } else {
+            self.filter_mode = false;
+        }
     }
 
     /// Scroll down in detail view

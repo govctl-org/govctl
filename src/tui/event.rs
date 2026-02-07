@@ -26,10 +26,26 @@ pub fn run_event_loop(
                     continue;
                 }
 
+                if matches!(key.code, KeyCode::Char('?')) {
+                    app.show_help = !app.show_help;
+                    continue;
+                }
+
+                if app.show_help {
+                    if matches!(key.code, KeyCode::Esc) {
+                        app.show_help = false;
+                    }
+                    continue;
+                }
+
                 match app.view {
                     View::Dashboard => handle_dashboard_keys(app, key.code),
                     View::RfcList | View::AdrList | View::WorkList => {
-                        handle_list_keys(app, key.code)
+                        if app.filter_mode {
+                            handle_filter_input(app, key.code);
+                        } else {
+                            handle_list_keys(app, key.code);
+                        }
                     }
                     View::RfcDetail(_) => handle_rfc_detail_keys(app, key.code),
                     View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
@@ -62,8 +78,25 @@ fn handle_list_keys(app: &mut App, code: KeyCode) {
         KeyCode::Char('q') => app.should_quit = true,
         KeyCode::Char('j') | KeyCode::Down => app.select_next(),
         KeyCode::Char('k') | KeyCode::Up => app.select_prev(),
+        KeyCode::Char('g') => app.select_top(),
+        KeyCode::Char('G') => app.select_bottom(),
+        KeyCode::Char('n') => {
+            if app.filter_active() {
+                app.select_next();
+            }
+        }
+        KeyCode::Char('p') => {
+            if app.filter_active() {
+                app.select_prev();
+            }
+        }
         KeyCode::Enter => app.enter_detail(),
         KeyCode::Esc => app.go_back(),
+        // Implements [[RFC-0003:C-FILTER]]
+        KeyCode::Char('/') => {
+            app.clear_filter();
+            app.enter_filter_mode();
+        }
         _ => {}
     }
 }
@@ -85,6 +118,20 @@ fn handle_detail_keys(app: &mut App, code: KeyCode) {
         KeyCode::Char('j') | KeyCode::Down => app.scroll_down(),
         KeyCode::Char('k') | KeyCode::Up => app.scroll_up(),
         KeyCode::Esc => app.go_back(),
+        _ => {}
+    }
+}
+
+fn handle_filter_input(app: &mut App, code: KeyCode) {
+    match code {
+        // Implements [[RFC-0003:C-FILTER]]
+        KeyCode::Esc => {
+            app.clear_filter();
+            app.exit_filter_mode();
+        }
+        KeyCode::Enter => app.exit_filter_mode(),
+        KeyCode::Backspace => app.pop_filter_char(),
+        KeyCode::Char(ch) => app.push_filter_char(ch),
         _ => {}
     }
 }
