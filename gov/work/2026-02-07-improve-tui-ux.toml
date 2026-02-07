@@ -8,9 +8,7 @@ started = "2026-02-07"
 refs = ["RFC-0003"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Implement TUI UX improvements per [[RFC-0003]]: shared header/footer, list filtering, and detail scroll indicators."
 
 [[content.acceptance_criteria]]
 text = "Shared header/footer with breadcrumbs and counts"
