@@ -5,6 +5,7 @@ title = "Improve TUI UX"
 status = "active"
 created = "2026-02-07"
 started = "2026-02-07"
+refs = ["RFC-0003"]
 
 [content]
 description = """

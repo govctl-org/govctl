@@ -1,0 +1,7 @@
+{
+  "clause_id": "C-FILTER",
+  "title": "List filtering and quick-jump",
+  "kind": "normative",
+  "status": "active",
+  "text": "List views MUST support an inline filter mode that matches ID, title, or status.\nFilter mode MUST be entered with a single key and exited without leaving the list view.\nWhen a filter is active, the list MUST show only matching items and navigation MUST operate over the filtered set.\nList views MUST support quick-jump to top and bottom and allow stepping through matches."
+}

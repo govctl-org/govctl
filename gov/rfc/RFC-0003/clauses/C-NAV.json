@@ -1,0 +1,7 @@
+{
+  "clause_id": "C-NAV",
+  "title": "Shared header/footer navigation",
+  "kind": "normative",
+  "status": "active",
+  "text": "The TUI MUST render a persistent header and footer across all views.\nThe header MUST show the current view hierarchy (breadcrumb) and basic counts for the active view.\nThe footer MUST provide the current keymap for primary navigation, including quit and back.\nExisting navigation keys MUST remain functional."
+}
