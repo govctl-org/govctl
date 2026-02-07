@@ -9,9 +9,7 @@ completed = "2026-01-29"
 refs = ["ADR-0021"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = """Add resource-scoped render commands to the CLI per [[ADR-0021]]."""
 
 [[content.acceptance_criteria]]
 text = "Add `govctl rfc render <RFC-ID>` command"

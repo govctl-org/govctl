@@ -1,0 +1,112 @@
+[govctl]
+schema = 1
+id = "ADR-0022"
+title = "Add show command for stdout rendering"
+status = "accepted"
+date = "2026-02-07"
+refs = [
+    "RFC-0002",
+    "ADR-0021",
+]
+
+[content]
+context = """
+## Context
+
+Agents (Claude, Cursor, etc.) intuitively try `govctl rfc show RFC-0001` to read an RFC's rendered content, but this command doesn't exist. The error `unrecognized subcommand 'show'` is a recurring failure mode.
+
+### Problem Statement
+
+The current CLI has an asymmetry in read operations:
+
+| Verb | Purpose | Output |
+|------|---------|--------|
+| `get` | Read individual field value | stdout |
+| `render` | Generate full markdown | **file** (side effect) |
+| (missing) | Read full rendered content | stdout |
+
+The gap: there's no way to get the full rendered representation to stdout without writing a file.
+
+### Current Workarounds
+
+1. `govctl rfc render RFC-0002 --dry-run` — shows preview, but semantically wrong (dry-run is for previewing writes)
+2. Read `docs/rfc/RFC-0002.md` directly — requires knowing the configurable output path
+
+Both are awkward for agents who just want to "see" an artifact.
+
+### Constraints
+
+- [[RFC-0002:C-CRUD-VERBS]] defines standard CRUD verbs for resources
+- [[RFC-0002:C-OUTPUT-FORMAT]] specifies output format handling (--output flag, TTY detection)
+- [[ADR-0021]] established resource-scoped `render` for single-item file generation
+
+### Mental Model
+
+Unix convention: commands that *read* data print to stdout; commands that *generate* files write to filesystem. `show` fits the "read and display" pattern like `cat`, `kubectl get -o yaml`, or `docker inspect`."""
+decision = """
+## Decision
+
+We will **add a `show` verb** to all renderable resources that outputs content to stdout.
+
+### New Commands
+
+```bash
+govctl rfc show <RFC-ID>       # Print rendered RFC to stdout
+govctl adr show <ADR-ID>       # Print rendered ADR to stdout
+govctl work show <WI-ID>       # Print rendered work item to stdout
+govctl clause show <CLAUSE-ID> # Print clause content to stdout
+```
+
+### Output Format
+
+- **Default:** Markdown text (the human-readable rendered form)
+- **With `--output json`:** Structured JSON (equivalent to `get` with no field)
+- Respects [[RFC-0002:C-OUTPUT-FORMAT]] conventions
+
+### Semantic Distinction
+
+| Command | Purpose | Side Effects |
+|---------|---------|--------------|
+| `show` | Read and display to stdout | None |
+| `render` | Generate and write to file | Writes file |
+| `get` | Read single field value | None |
+
+### Rationale
+
+1. **Agent-friendly:** Natural command that agents try first (`show` = "let me see this")
+2. **Unix convention:** Read operations → stdout; write operations → filesystem
+3. **Minimal implementation:** Reuses existing render logic, just changes output target
+4. **Symmetric with render:** `show` is to `render` as `cat` is to `cp`
+5. **Format flexibility:** `--output json` gives structured access when needed"""
+consequences = """
+## Consequences
+
+### Positive
+
+- **Fixes agent failures:** `govctl rfc show RFC-0001` will work as expected
+- **Cleaner semantics:** Clear separation between read (show) and write (render)
+- **Pipeable:** `govctl rfc show RFC-0002 | less` or `| grep pattern` just works
+- **Consistent UX:** All renderable resources get the same `show` verb
+
+### Negative
+
+- **New verb to learn:** Users must understand show vs render distinction
+  - Mitigation: Intuitive naming makes this self-evident
+- **Slight command surface growth:** 4 new subcommands
+  - Mitigation: Natural extension of existing pattern, improves discoverability
+
+### Neutral
+
+- `--output json` on `show` is functionally equivalent to `get` with no field argument — this redundancy is acceptable for discoverability"""
+
+[[content.alternatives]]
+text = "Extend get with --rendered flag: Overloads get semantics, less discoverable"
+status = "considered"
+
+[[content.alternatives]]
+text = "Use view instead of show: Equally valid, but show is more common in CLIs (docker inspect, kubectl describe)"
+status = "considered"
+
+[[content.alternatives]]
+text = "Use cat as the verb: Unix-y but loses semantic meaning (cat is for concatenation)"
+status = "considered"

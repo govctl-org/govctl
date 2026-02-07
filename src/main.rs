@@ -354,6 +354,14 @@ EXAMPLES:
         #[arg(long)]
         dry_run: bool,
     },
+    /// Show RFC content to stdout (no file written)
+    Show {
+        /// RFC ID
+        id: String,
+        /// Output format (markdown or json)
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
+    },
 }
 
 /// Clause commands (resource-first structure)
@@ -453,6 +461,14 @@ EXAMPLES:
         /// Force without confirmation
         #[arg(short = 'f', long)]
         force: bool,
+    },
+    /// Show clause content to stdout (no file written)
+    Show {
+        /// Clause ID (e.g., RFC-0001:C-SUMMARY)
+        id: String,
+        /// Output format (markdown or json)
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
     },
 }
 
@@ -597,6 +613,14 @@ EXAMPLES:
         #[arg(long)]
         dry_run: bool,
     },
+    /// Show ADR content to stdout (no file written)
+    Show {
+        /// ADR ID
+        id: String,
+        /// Output format (markdown or json)
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
+    },
 }
 
 /// Work item commands (resource-first structure)
@@ -734,6 +758,14 @@ EXAMPLES:
         /// Dry run: show what would be written
         #[arg(long)]
         dry_run: bool,
+    },
+    /// Show work item content to stdout (no file written)
+    Show {
+        /// Work item ID
+        id: String,
+        /// Output format (markdown or json)
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
     },
 }
 

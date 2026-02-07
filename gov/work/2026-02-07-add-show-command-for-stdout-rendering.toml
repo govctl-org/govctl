@@ -1,0 +1,38 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-07-002"
+title = "Add show command for stdout rendering"
+status = "done"
+created = "2026-02-07"
+started = "2026-02-07"
+completed = "2026-02-07"
+refs = ["ADR-0022"]
+
+[content]
+description = """
+Implement `show` verb for all renderable resources per [[ADR-0022]].
+
+New commands:
+- `govctl rfc show <RFC-ID>` — Print rendered RFC to stdout
+- `govctl adr show <ADR-ID>` — Print rendered ADR to stdout
+- `govctl work show <WI-ID>` — Print rendered work item to stdout
+- `govctl clause show <CLAUSE-ID>` — Print clause content to stdout
+
+Output format:
+- Default: Markdown text
+- With `--output json`: Structured JSON"""
+
+[[content.acceptance_criteria]]
+text = "Implement rfc show, adr show, work show, clause show commands"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Support -o json for structured output"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Update describe output with show commands"
+status = "done"
+category = "added"

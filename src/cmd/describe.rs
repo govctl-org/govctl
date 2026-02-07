@@ -249,6 +249,34 @@ fn command_catalog() -> Vec<CommandInfo> {
             example: "govctl rfc supersede RFC-0001 --by RFC-0010".to_string(),
             prerequisites: vec!["Both artifacts must exist".to_string()],
         },
+        CommandInfo {
+            name: "show rfc".to_string(),
+            purpose: "Show RFC content to stdout (no file written)".to_string(),
+            when_to_use: "To read the full rendered RFC content. Use -o json for structured output.".to_string(),
+            example: "govctl rfc show RFC-0001".to_string(),
+            prerequisites: vec!["RFC must exist".to_string()],
+        },
+        CommandInfo {
+            name: "show adr".to_string(),
+            purpose: "Show ADR content to stdout (no file written)".to_string(),
+            when_to_use: "To read the full rendered ADR content. Use -o json for structured output.".to_string(),
+            example: "govctl adr show ADR-0001".to_string(),
+            prerequisites: vec!["ADR must exist".to_string()],
+        },
+        CommandInfo {
+            name: "show work".to_string(),
+            purpose: "Show work item content to stdout (no file written)".to_string(),
+            when_to_use: "To read the full rendered work item content. Use -o json for structured output.".to_string(),
+            example: "govctl work show WI-2026-01-18-001".to_string(),
+            prerequisites: vec!["Work item must exist".to_string()],
+        },
+        CommandInfo {
+            name: "show clause".to_string(),
+            purpose: "Show clause content to stdout (no file written)".to_string(),
+            when_to_use: "To read the clause text. Use -o json for structured output.".to_string(),
+            example: "govctl clause show RFC-0001:C-SUMMARY".to_string(),
+            prerequisites: vec!["Clause must exist".to_string()],
+        },
     ]
 }
 

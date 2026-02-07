@@ -125,6 +125,10 @@ pub enum CanonicalCommand {
         id: String,
         dry_run: bool,
     },
+    RfcShow {
+        id: String,
+        output: OutputFormat,
+    },
 
     // ========================================
     // Clause Commands
@@ -168,6 +172,10 @@ pub enum CanonicalCommand {
         id: String,
         by: String,
         force: bool,
+    },
+    ClauseShow {
+        id: String,
+        output: OutputFormat,
     },
 
     // ========================================
@@ -227,6 +235,10 @@ pub enum CanonicalCommand {
         id: String,
         dry_run: bool,
     },
+    AdrShow {
+        id: String,
+        output: OutputFormat,
+    },
 
     // ========================================
     // Work Item Commands
@@ -279,6 +291,10 @@ pub enum CanonicalCommand {
     WorkRender {
         id: String,
         dry_run: bool,
+    },
+    WorkShow {
+        id: String,
+        output: OutputFormat,
     },
 
     // ========================================
@@ -420,6 +436,7 @@ impl CanonicalCommand {
                 cmd::lifecycle::supersede(config, id, by, *force, op)
             }
             Self::RfcRender { id, dry_run } => cmd::render::render(config, Some(id), *dry_run),
+            Self::RfcShow { id, output } => cmd::render::show_rfc(config, id, *output),
 
             // Clause commands
             Self::ClauseNew {
@@ -474,6 +491,7 @@ impl CanonicalCommand {
             Self::ClauseSupersede { id, by, force } => {
                 cmd::lifecycle::supersede(config, id, by, *force, op)
             }
+            Self::ClauseShow { id, output } => cmd::render::show_clause(config, id, *output),
 
             // ADR commands
             Self::AdrNew { title } => {
@@ -527,6 +545,7 @@ impl CanonicalCommand {
                 op,
             ),
             Self::AdrRender { id, dry_run } => cmd::render::render_adrs(config, Some(id), *dry_run),
+            Self::AdrShow { id, output } => cmd::render::show_adr(config, id, *output),
 
             // Work item commands
             Self::WorkNew { title, active } => {
@@ -584,6 +603,7 @@ impl CanonicalCommand {
             Self::WorkRender { id, dry_run } => {
                 cmd::render::render_work_items(config, Some(id), *dry_run)
             }
+            Self::WorkShow { id, output } => cmd::render::show_work(config, id, *output),
 
             // Release commands
             Self::ReleaseCut { version, date } => {
@@ -671,6 +691,10 @@ impl CanonicalCommand {
                 id: id.clone(),
                 dry_run: *dry_run,
             },
+            RfcCommand::Show { id, output } => Self::RfcShow {
+                id: id.clone(),
+                output: *output,
+            },
         })
     }
 
@@ -736,6 +760,10 @@ impl CanonicalCommand {
                 id: id.clone(),
                 by: by.clone(),
                 force: *force,
+            },
+            ClauseCommand::Show { id, output } => Self::ClauseShow {
+                id: id.clone(),
+                output: *output,
             },
         })
     }
@@ -842,6 +870,10 @@ impl CanonicalCommand {
                 id: id.clone(),
                 dry_run: *dry_run,
             },
+            AdrCommand::Show { id, output } => Self::AdrShow {
+                id: id.clone(),
+                output: *output,
+            },
         })
     }
 
@@ -946,6 +978,10 @@ impl CanonicalCommand {
             WorkCommand::Render { id, dry_run } => Self::WorkRender {
                 id: id.clone(),
                 dry_run: *dry_run,
+            },
+            WorkCommand::Show { id, output } => Self::WorkShow {
+                id: id.clone(),
+                output: *output,
             },
         })
     }

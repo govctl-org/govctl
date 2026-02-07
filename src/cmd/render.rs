@@ -402,3 +402,201 @@ fn render_changelog_section(output: &mut String, items: &[&crate::model::WorkIte
         }
     }
 }
+
+// =============================================================================
+// Show Commands (stdout rendering per ADR-0022)
+// =============================================================================
+
+use crate::OutputFormat;
+use crate::render::{expand_inline_refs, render_adr, render_rfc, render_work_item};
+
+/// Show RFC content to stdout (no file written).
+///
+/// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
+pub fn show_rfc(
+    config: &Config,
+    id: &str,
+    output: OutputFormat,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let rfcs = load_rfcs(config).map_err(|e| {
+        let diag: Diagnostic = e.into();
+        anyhow::anyhow!("{}", diag)
+    })?;
+
+    let rfc = rfcs
+        .into_iter()
+        .find(|r| r.rfc.rfc_id == id)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("RFC not found: {id}"),
+                id,
+            )
+        })?;
+
+    match output {
+        OutputFormat::Json => {
+            // Output the raw RFC data as JSON
+            let json = serde_json::to_string_pretty(&rfc.rfc)?;
+            println!("{json}");
+        }
+        OutputFormat::Table | OutputFormat::Plain => {
+            // Render to markdown and print to stdout
+            let raw = render_rfc(&rfc)?;
+            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+            print!("{}", expanded.trim_end());
+            println!();
+        }
+    }
+
+    Ok(vec![])
+}
+
+/// Show ADR content to stdout (no file written).
+///
+/// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
+pub fn show_adr(
+    config: &Config,
+    id: &str,
+    output: OutputFormat,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let adrs = load_adrs(config)?;
+
+    let adr = adrs
+        .into_iter()
+        .find(|a| a.spec.govctl.id == id)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("ADR not found: {id}"),
+                id,
+            )
+        })?;
+
+    match output {
+        OutputFormat::Json => {
+            let json = serde_json::to_string_pretty(&adr.spec)?;
+            println!("{json}");
+        }
+        OutputFormat::Table | OutputFormat::Plain => {
+            let raw = render_adr(&adr)?;
+            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+            print!("{}", expanded.trim_end());
+            println!();
+        }
+    }
+
+    Ok(vec![])
+}
+
+/// Show work item content to stdout (no file written).
+///
+/// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
+pub fn show_work(
+    config: &Config,
+    id: &str,
+    output: OutputFormat,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let items = load_work_items(config)?;
+
+    let item = items
+        .into_iter()
+        .find(|w| w.spec.govctl.id == id)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0402WorkNotFound,
+                format!("Work item not found: {id}"),
+                id,
+            )
+        })?;
+
+    match output {
+        OutputFormat::Json => {
+            let json = serde_json::to_string_pretty(&item.spec)?;
+            println!("{json}");
+        }
+        OutputFormat::Table | OutputFormat::Plain => {
+            let raw = render_work_item(&item)?;
+            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+            print!("{}", expanded.trim_end());
+            println!();
+        }
+    }
+
+    Ok(vec![])
+}
+
+/// Show clause content to stdout (no file written).
+///
+/// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
+pub fn show_clause(
+    config: &Config,
+    id: &str,
+    output: OutputFormat,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    // Parse clause ID: RFC-NNNN:C-NAME
+    let parts: Vec<&str> = id.split(':').collect();
+    if parts.len() != 2 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0202ClauseNotFound,
+            format!("Invalid clause ID format: {id} (expected RFC-NNNN:C-NAME)"),
+            id,
+        )
+        .into());
+    }
+    let rfc_id = parts[0];
+    let clause_name = parts[1];
+
+    let rfcs = load_rfcs(config).map_err(|e| {
+        let diag: Diagnostic = e.into();
+        anyhow::anyhow!("{}", diag)
+    })?;
+
+    let rfc = rfcs
+        .into_iter()
+        .find(|r| r.rfc.rfc_id == rfc_id)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("RFC not found: {rfc_id}"),
+                rfc_id,
+            )
+        })?;
+
+    let clause = rfc
+        .clauses
+        .into_iter()
+        .find(|c| c.spec.clause_id == clause_name)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Clause not found: {id}"),
+                id,
+            )
+        })?;
+
+    match output {
+        OutputFormat::Json => {
+            let json = serde_json::to_string_pretty(&clause.spec)?;
+            println!("{json}");
+        }
+        OutputFormat::Table | OutputFormat::Plain => {
+            // Output clause text with minimal formatting
+            let kind_label = match clause.spec.kind {
+                crate::model::ClauseKind::Normative => "(Normative)",
+                crate::model::ClauseKind::Informative => "(Informative)",
+            };
+            println!("# [{id}] {} {kind_label}", clause.spec.title);
+            println!();
+            let expanded = expand_inline_refs(&clause.spec.text, &config.source_scan.pattern);
+            print!("{}", expanded.trim_end());
+            println!();
+            if let Some(ref since) = clause.spec.since {
+                println!();
+                println!("*Since: v{since}*");
+            }
+        }
+    }
+
+    Ok(vec![])
+}
