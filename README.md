@@ -7,8 +7,8 @@
 <p align="center">
   <a href="https://github.com/govctl-org/govctl/actions/workflows/ci.yml"><img src="https://github.com/govctl-org/govctl/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="https://crates.io/crates/govctl"><img src="https://img.shields.io/crates/v/govctl.svg" alt="Crates.io"></a>
-  <a href="https://coderabbit.ai"><img src="https://img.shields.io/coderabbit/prs/github/govctl-org/govctl?label=CodeRabbit" alt="CodeRabbit"></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+  <a href="https://discord.gg/buBB9G8Z6n"><img src="https://img.shields.io/discord/1466789912211620066?logo=discord&label=Discord" alt="Discord"></a>
   <a href="https://github.com/govctl-org/govctl"><img src="https://img.shields.io/badge/governed%20by-govctl-6366F1" alt="governed by govctl"></a>
 </p>
 
