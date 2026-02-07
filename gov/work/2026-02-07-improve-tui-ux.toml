@@ -1,0 +1,32 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-07-001"
+title = "Improve TUI UX"
+status = "active"
+created = "2026-02-07"
+started = "2026-02-07"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Shared header/footer with breadcrumbs and counts"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "List filter and quick-jump navigation"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Detail views show scroll position"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Document TUI keymap and UX"
+status = "pending"
+category = "changed"
