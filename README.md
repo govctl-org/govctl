@@ -121,6 +121,20 @@ For complete documentation, see the [User Guide](https://govctl-org.github.io/go
 
 ---
 
+## TUI Dashboard
+
+Run the TUI with `govctl tui` (requires `--features tui` when installing from source).
+
+Keymap highlights:
+
+- `1`/`r`, `2`/`a`, `3`/`w` to switch lists from the dashboard
+- `j`/`k` or arrows to move; `Enter` to open; `Esc` to go back
+- `/` to filter lists by ID/title/status; `Enter` to accept; `Esc` clears filter
+- `g`/`G` jump to top/bottom; `n`/`p` step through matches when filtered
+- `?` toggles help; `q` quits
+
+---
+
 ## What govctl Is NOT
 
 - **Not a code generator** — govctl doesn't write code; it ensures code follows specs
