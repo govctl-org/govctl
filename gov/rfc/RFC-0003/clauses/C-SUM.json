@@ -3,5 +3,6 @@
   "title": "Summary",
   "kind": "informative",
   "status": "active",
-  "text": "- Define a consistent TUI navigation frame with shared header and footer.\n- Add list filtering and quick-jump for faster browsing.\n- Improve detail view readability with consistent layout and scroll position."
+  "text": "- Define a consistent TUI navigation frame with shared header and footer.\n- Add list filtering and quick-jump for faster browsing.\n- Improve detail view readability with consistent layout and scroll position.",
+  "since": "0.1.0"
 }

@@ -2,12 +2,13 @@
   "rfc_id": "RFC-0003",
   "title": "TUI UX improvements",
   "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
+  "status": "normative",
+  "phase": "impl",
   "owners": [
     "@govctl-org"
   ],
   "created": "2026-02-07",
+  "updated": "2026-02-07",
   "sections": [
     {
       "title": "Summary",

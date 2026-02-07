@@ -3,5 +3,6 @@
   "title": "Shared header/footer navigation",
   "kind": "normative",
   "status": "active",
-  "text": "- The TUI MUST render a persistent header and footer across all views.\n- The header MUST show the current view hierarchy (breadcrumb) and basic counts for the active view.\n- The footer MUST provide the current keymap for primary navigation, including quit and back.\n- Existing navigation keys MUST remain functional."
+  "text": "- The TUI MUST render a persistent header and footer across all views.\n- The header MUST show the current view hierarchy (breadcrumb) and basic counts for the active view.\n- The footer MUST provide the current keymap for primary navigation, including quit and back.\n- Existing navigation keys MUST remain functional.",
+  "since": "0.1.0"
 }
