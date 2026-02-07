@@ -427,48 +427,46 @@ pub fn describe(config: &Config, context: bool) -> anyhow::Result<Vec<Diagnostic
     };
 
     // Add context-aware information if requested
-    if context {
-        if let Ok(index) = load_project(config) {
-            let rfcs: Vec<RfcState> = index
-                .rfcs
-                .iter()
-                .map(|r| RfcState {
-                    id: r.rfc.rfc_id.clone(),
-                    title: r.rfc.title.clone(),
-                    status: r.rfc.status.as_ref().to_string(),
-                    phase: r.rfc.phase.as_ref().to_string(),
-                })
-                .collect();
+    if context && let Ok(index) = load_project(config) {
+        let rfcs: Vec<RfcState> = index
+            .rfcs
+            .iter()
+            .map(|r| RfcState {
+                id: r.rfc.rfc_id.clone(),
+                title: r.rfc.title.clone(),
+                status: r.rfc.status.as_ref().to_string(),
+                phase: r.rfc.phase.as_ref().to_string(),
+            })
+            .collect();
 
-            let adrs: Vec<AdrState> = index
-                .adrs
-                .iter()
-                .map(|a| AdrState {
-                    id: a.meta().id.clone(),
-                    title: a.meta().title.clone(),
-                    status: a.meta().status.as_ref().to_string(),
-                })
-                .collect();
+        let adrs: Vec<AdrState> = index
+            .adrs
+            .iter()
+            .map(|a| AdrState {
+                id: a.meta().id.clone(),
+                title: a.meta().title.clone(),
+                status: a.meta().status.as_ref().to_string(),
+            })
+            .collect();
 
-            let work_items: Vec<WorkItemState> = index
-                .work_items
-                .iter()
-                .map(|w| WorkItemState {
-                    id: w.meta().id.clone(),
-                    title: w.meta().title.clone(),
-                    status: w.meta().status.as_ref().to_string(),
-                })
-                .collect();
+        let work_items: Vec<WorkItemState> = index
+            .work_items
+            .iter()
+            .map(|w| WorkItemState {
+                id: w.meta().id.clone(),
+                title: w.meta().title.clone(),
+                status: w.meta().status.as_ref().to_string(),
+            })
+            .collect();
 
-            let suggestions = generate_suggestions(&rfcs, &adrs, &work_items);
+        let suggestions = generate_suggestions(&rfcs, &adrs, &work_items);
 
-            output.project_state = Some(ProjectState {
-                rfcs,
-                adrs,
-                work_items,
-            });
-            output.suggested_actions = Some(suggestions);
-        }
+        output.project_state = Some(ProjectState {
+            rfcs,
+            adrs,
+            work_items,
+        });
+        output.suggested_actions = Some(suggestions);
     }
 
     // Output as JSON

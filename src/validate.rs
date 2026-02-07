@@ -368,17 +368,17 @@ fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
         .and_then(|p| p.file_name())
         .and_then(|n| n.to_str());
 
-    if let Some(name) = dir_name {
-        if name != rfc.rfc.rfc_id {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0103RfcIdMismatch,
-                format!(
-                    "RFC ID '{}' doesn't match directory '{}'",
-                    rfc.rfc.rfc_id, name
-                ),
-                rfc.path.display().to_string(),
-            ));
-        }
+    if let Some(name) = dir_name
+        && name != rfc.rfc.rfc_id
+    {
+        result.diagnostics.push(Diagnostic::new(
+            DiagnosticCode::E0103RfcIdMismatch,
+            format!(
+                "RFC ID '{}' doesn't match directory '{}'",
+                rfc.rfc.rfc_id, name
+            ),
+            rfc.path.display().to_string(),
+        ));
     }
 
     // Check changelog exists
@@ -538,17 +538,17 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
         }
 
         // Validate supersedes field
-        if let Some(ref supersedes) = rfc.rfc.supersedes {
-            if !known_ids.contains(supersedes) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0106RfcSupersedesNotFound,
-                    format!(
-                        "RFC '{}' supersedes unknown RFC: {}",
-                        rfc.rfc.rfc_id, supersedes
-                    ),
-                    rfc.path.display().to_string(),
-                ));
-            }
+        if let Some(ref supersedes) = rfc.rfc.supersedes
+            && !known_ids.contains(supersedes)
+        {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0106RfcSupersedesNotFound,
+                format!(
+                    "RFC '{}' supersedes unknown RFC: {}",
+                    rfc.rfc.rfc_id, supersedes
+                ),
+                rfc.path.display().to_string(),
+            ));
         }
     }
 

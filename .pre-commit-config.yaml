@@ -26,17 +26,17 @@ repos:
         pass_filenames: false
       - id: cargo-check
         name: cargo check
-        entry: cargo check --workspace
+        entry: cargo check --workspace --all-features
         language: system
         pass_filenames: false
       - id: cargo-clippy
         name: cargo clippy
-        entry: cargo clippy --workspace -- -D warnings
+        entry: cargo clippy --workspace --all-features -- -D warnings
         language: system
         pass_filenames: false
       - id: cargo-test
         name: cargo test runner
-        entry: cargo test --workspace
+        entry: cargo test --workspace --all-features
         language: system
         pass_filenames: false
       - id: gov-check

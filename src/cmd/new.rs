@@ -379,15 +379,13 @@ fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<D
         for entry in entries.flatten() {
             let name = entry.file_name();
             let name_str = name.to_string_lossy();
-            if name_str.starts_with("ADR-") {
-                if let Some(num_str) = name_str
+            if name_str.starts_with("ADR-")
+                && let Some(num_str) = name_str
                     .strip_prefix("ADR-")
                     .and_then(|s| s.split('-').next())
-                {
-                    if let Ok(num) = num_str.parse::<u32>() {
-                        max_num = max_num.max(num);
-                    }
-                }
+                && let Ok(num) = num_str.parse::<u32>()
+            {
+                max_num = max_num.max(num);
             }
         }
     }

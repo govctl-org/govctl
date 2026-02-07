@@ -102,10 +102,10 @@ pub fn compute_work_item_signature(item: &WorkItemEntry) -> Result<String, serde
 pub fn extract_signature(markdown: &str) -> Option<String> {
     for line in markdown.lines() {
         let trimmed = line.trim();
-        if let Some(rest) = trimmed.strip_prefix("<!-- SIGNATURE: sha256:") {
-            if let Some(sig) = rest.strip_suffix(" -->") {
-                return Some(sig.trim().to_string());
-            }
+        if let Some(rest) = trimmed.strip_prefix("<!-- SIGNATURE: sha256:")
+            && let Some(sig) = rest.strip_suffix(" -->")
+        {
+            return Some(sig.trim().to_string());
         }
     }
     None

@@ -19,38 +19,38 @@ pub fn run_event_loop(
         terminal.draw(|frame| ui::draw(frame, app))?;
 
         // Handle events with timeout for responsive UI
-        if event::poll(Duration::from_millis(100))? {
-            if let Event::Key(key) = event::read()? {
-                // Only handle key press events (not release)
-                if key.kind != KeyEventKind::Press {
-                    continue;
-                }
+        if event::poll(Duration::from_millis(100))?
+            && let Event::Key(key) = event::read()?
+        {
+            // Only handle key press events (not release)
+            if key.kind != KeyEventKind::Press {
+                continue;
+            }
 
-                if matches!(key.code, KeyCode::Char('?')) {
-                    app.show_help = !app.show_help;
-                    continue;
-                }
+            if matches!(key.code, KeyCode::Char('?')) {
+                app.show_help = !app.show_help;
+                continue;
+            }
 
-                if app.show_help {
-                    if matches!(key.code, KeyCode::Esc) {
-                        app.show_help = false;
-                    }
-                    continue;
+            if app.show_help {
+                if matches!(key.code, KeyCode::Esc) {
+                    app.show_help = false;
                 }
+                continue;
+            }
 
-                match app.view {
-                    View::Dashboard => handle_dashboard_keys(app, key.code),
-                    View::RfcList | View::AdrList | View::WorkList => {
-                        if app.filter_mode {
-                            handle_filter_input(app, key.code);
-                        } else {
-                            handle_list_keys(app, key.code);
-                        }
+            match app.view {
+                View::Dashboard => handle_dashboard_keys(app, key.code),
+                View::RfcList | View::AdrList | View::WorkList => {
+                    if app.filter_mode {
+                        handle_filter_input(app, key.code);
+                    } else {
+                        handle_list_keys(app, key.code);
                     }
-                    View::RfcDetail(_) => handle_rfc_detail_keys(app, key.code),
-                    View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
-                        handle_detail_keys(app, key.code)
-                    }
+                }
+                View::RfcDetail(_) => handle_rfc_detail_keys(app, key.code),
+                View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
+                    handle_detail_keys(app, key.code)
                 }
             }
         }

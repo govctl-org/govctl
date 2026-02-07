@@ -32,15 +32,15 @@ pub fn render(
         rfcs
     };
 
-    if rfcs_to_render.is_empty() {
-        if let Some(id) = rfc_id {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0102RfcNotFound,
-                format!("RFC not found: {id}"),
-                id,
-            )
-            .into());
-        }
+    if rfcs_to_render.is_empty()
+        && let Some(id) = rfc_id
+    {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0102RfcNotFound,
+            format!("RFC not found: {id}"),
+            id,
+        )
+        .into());
     }
 
     for rfc in &rfcs_to_render {
@@ -78,15 +78,15 @@ pub fn render_adrs(
         adrs
     };
 
-    if adrs_to_render.is_empty() {
-        if let Some(id) = adr_id {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0302AdrNotFound,
-                format!("ADR not found: {id}"),
-                id,
-            )
-            .into());
-        }
+    if adrs_to_render.is_empty()
+        && let Some(id) = adr_id
+    {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0302AdrNotFound,
+            format!("ADR not found: {id}"),
+            id,
+        )
+        .into());
     }
 
     for adr in &adrs_to_render {
@@ -125,15 +125,15 @@ pub fn render_work_items(
         items
     };
 
-    if items_to_render.is_empty() {
-        if let Some(id) = work_id {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0402WorkNotFound,
-                format!("Work item not found: {id}"),
-                id,
-            )
-            .into());
-        }
+    if items_to_render.is_empty()
+        && let Some(id) = work_id
+    {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0402WorkNotFound,
+            format!("Work item not found: {id}"),
+            id,
+        )
+        .into());
     }
 
     for item in &items_to_render {

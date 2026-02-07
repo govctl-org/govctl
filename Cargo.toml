@@ -2,7 +2,7 @@
 name = "govctl"
 version = "0.4.0"
 edition = "2024"
-rust-version = "1.86"
+rust-version = "1.88"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
 license = "MIT"
 repository = "https://github.com/govctl-org/govctl"
