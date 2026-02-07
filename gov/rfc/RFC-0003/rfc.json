@@ -10,7 +10,10 @@
   "created": "2026-02-07",
   "sections": [
     {
-      "title": "Summary"
+      "title": "Summary",
+      "clauses": [
+        "clauses/C-SUM.json"
+      ]
     },
     {
       "title": "Specification",
