@@ -3,5 +3,5 @@
   "title": "Detail view readability",
   "kind": "normative",
   "status": "active",
-  "text": "Detail views MUST present metadata and content sections consistently across artifact types.\nDetail views MUST show scroll position to indicate where the user is within the content.\nScrolling MUST not lose the current view context or selection."
+  "text": "- Detail views MUST present metadata and content sections consistently across artifact types.\n- Detail views MUST show scroll position to indicate where the user is within the content.\n- Scrolling MUST not lose the current view context or selection."
 }
