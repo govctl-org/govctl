@@ -17,58 +17,32 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux x86_64
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
-            archive: tar.gz
-          # Linux x86_64 with TUI
+          # Linux x86_64 (TUI default)
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             archive: tar.gz
             features: tui
-            suffix: -tui
-          # Linux aarch64
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
-            archive: tar.gz
-            cross: true
-          # Linux aarch64 with TUI
+          # Linux aarch64 (TUI default)
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
             archive: tar.gz
             cross: true
             features: tui
-            suffix: -tui
-          # macOS x86_64 (Intel)
-          - target: x86_64-apple-darwin
-            os: macos-latest
-            archive: tar.gz
-          # macOS x86_64 with TUI
+          # macOS x86_64 (Intel, TUI default)
           - target: x86_64-apple-darwin
             os: macos-latest
             archive: tar.gz
             features: tui
-            suffix: -tui
-          # macOS aarch64 (Apple Silicon)
-          - target: aarch64-apple-darwin
-            os: macos-latest
-            archive: tar.gz
-          # macOS aarch64 with TUI
+          # macOS aarch64 (Apple Silicon, TUI default)
           - target: aarch64-apple-darwin
             os: macos-latest
             archive: tar.gz
             features: tui
-            suffix: -tui
-          # Windows x86_64
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
-            archive: zip
-          # Windows x86_64 with TUI
+          # Windows x86_64 (TUI default)
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             archive: zip
             features: tui
-            suffix: -tui
 
     steps:
       - name: Checkout
@@ -87,11 +61,7 @@ jobs:
         shell: bash
         run: |
           FEATURES="${{ matrix.features }}"
-          if [ -n "$FEATURES" ]; then
-            FEATURE_FLAG="--features $FEATURES"
-          else
-            FEATURE_FLAG=""
-          fi
+          FEATURE_FLAG="--features $FEATURES"
 
           if [ "${{ matrix.cross }}" = "true" ]; then
             cross build --release --target ${{ matrix.target }} $FEATURE_FLAG
@@ -105,8 +75,7 @@ jobs:
         run: |
           VERSION="${GITHUB_REF#refs/tags/}"
           BINARY="govctl"
-          SUFFIX="${{ matrix.suffix }}"
-          ARCHIVE_NAME="govctl-${VERSION}-${{ matrix.target }}${SUFFIX}"
+          ARCHIVE_NAME="govctl-${VERSION}-${{ matrix.target }}"
 
           mkdir -p "dist/${ARCHIVE_NAME}"
           cp "target/${{ matrix.target }}/release/${BINARY}" "dist/${ARCHIVE_NAME}/"
@@ -121,8 +90,7 @@ jobs:
         shell: pwsh
         run: |
           $VERSION = $env:GITHUB_REF -replace 'refs/tags/', ''
-          $SUFFIX = "${{ matrix.suffix }}"
-          $ARCHIVE_NAME = "govctl-${VERSION}-${{ matrix.target }}${SUFFIX}"
+          $ARCHIVE_NAME = "govctl-${VERSION}-${{ matrix.target }}"
 
           New-Item -ItemType Directory -Force -Path "dist\${ARCHIVE_NAME}"
           Copy-Item "target\${{ matrix.target }}\release\govctl.exe" "dist\${ARCHIVE_NAME}\"
@@ -169,6 +137,8 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
           generate_release_notes: true
+          body: |
+            TUI is now enabled by default in release binaries.
           files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
