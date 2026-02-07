@@ -186,16 +186,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     let mut footer_status = None;
     let bindings: &[&str] = match app.view {
         View::Dashboard => &[
-            "1/r",
-            "RFCs",
-            "2/a",
-            "ADRs",
-            "3/w",
-            "Work",
-            "?",
-            "Help",
-            "q",
-            "Quit",
+            "1/r", "RFCs", "2/a", "ADRs", "3/w", "Work", "?", "Help", "q", "Quit",
         ],
         View::RfcList | View::AdrList | View::WorkList => &[
             "j/k",
@@ -226,14 +217,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             "Quit",
         ],
         View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => &[
-            "j/k",
-            "Scroll",
-            "Esc",
-            "Back",
-            "?",
-            "Help",
-            "q",
-            "Quit",
+            "j/k", "Scroll", "Esc", "Back", "?", "Help", "q", "Quit",
         ],
     };
 
@@ -272,12 +256,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         }
     }
 
-    draw_footer(
-        frame,
-        chunks[2],
-        bindings,
-        footer_status.as_deref(),
-    );
+    draw_footer(frame, chunks[2], bindings, footer_status.as_deref());
 
     if app.show_help {
         draw_help_overlay(frame, app);
