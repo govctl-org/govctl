@@ -2,7 +2,7 @@
 schema = 1
 id = "WI-2026-02-07-001"
 title = "Improve TUI UX"
-status = "active"
+status = "done"
 created = "2026-02-07"
 started = "2026-02-07"
 refs = ["RFC-0003"]
@@ -12,20 +12,20 @@ description = "Implement TUI UX improvements per [[RFC-0003]]: shared header/foo
 
 [[content.acceptance_criteria]]
 text = "Shared header/footer with breadcrumbs and counts"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "List filter and quick-jump navigation"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Detail views show scroll position"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Document TUI keymap and UX"
-status = "pending"
+status = "done"
 category = "changed"

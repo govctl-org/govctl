@@ -189,20 +189,8 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             "1/r", "RFCs", "2/a", "ADRs", "3/w", "Work", "?", "Help", "q", "Quit",
         ],
         View::RfcList | View::AdrList | View::WorkList => &[
-            "j/k",
-            "Navigate",
-            "Enter",
-            "View",
-            "Esc",
-            "Back",
-            "/",
-            "Filter",
-            "g/G",
-            "Jump",
-            "?",
-            "Help",
-            "q",
-            "Quit",
+            "j/k", "Navigate", "Enter", "View", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?",
+            "Help", "q", "Quit",
         ],
         View::RfcDetail(_) => &[
             "j/k",
@@ -216,9 +204,9 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             "q",
             "Quit",
         ],
-        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => &[
-            "j/k", "Scroll", "Esc", "Back", "?", "Help", "q", "Quit",
-        ],
+        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
+            &["j/k", "Scroll", "Esc", "Back", "?", "Help", "q", "Quit"]
+        }
     };
 
     match app.view {
@@ -697,13 +685,14 @@ fn draw_adr_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> 
     ];
 
     let title = format!("📝 {}", meta.id);
+    let total_lines = lines.len();
     let content = Paragraph::new(lines)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Green)));
 
     frame.render_widget(content, chunks[0]);
-    lines.len()
+    total_lines
 }
 
 fn draw_work_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> usize {
@@ -763,13 +752,14 @@ fn draw_work_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) ->
     }
 
     let title = format!("📌 {}", meta.id);
+    let total_lines = lines.len();
     let content = Paragraph::new(lines)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Yellow)));
 
     frame.render_widget(content, chunks[0]);
-    lines.len()
+    total_lines
 }
 
 fn draw_clause_detail(
@@ -838,13 +828,14 @@ fn draw_clause_detail(
     }
 
     let title = format!("📜 {}", clause.spec.clause_id);
+    let total_lines = lines.len();
     let content = Paragraph::new(lines)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(rounded_block(&title).border_style(Style::default().fg(Color::Magenta)));
 
     frame.render_widget(content, chunks[0]);
-    lines.len()
+    total_lines
 }
 
 fn draw_help_overlay(frame: &mut Frame, app: &App) {

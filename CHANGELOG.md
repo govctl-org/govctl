@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Shared header/footer with breadcrumbs and counts (WI-2026-02-07-001)
+- List filter and quick-jump navigation (WI-2026-02-07-001)
+- Detail views show scroll position (WI-2026-02-07-001)
+
+### Changed
+
+- Document TUI keymap and UX (WI-2026-02-07-001)
+
 ## [0.3.0] - 2026-01-29
 
 ### Added
