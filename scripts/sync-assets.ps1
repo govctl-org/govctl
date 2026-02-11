@@ -17,20 +17,21 @@ foreach ($category in $Categories) {
     $SrcDir = Join-Path $ProjectRoot "assets\$category"
     $OutDir = Join-Path $ProjectRoot ".claude\$category"
 
-    # Skip if source directory has no .md files
-    $templates = Get-ChildItem -Path $SrcDir -Filter "*.md" -ErrorAction SilentlyContinue
+    # Find all .md files (flat or in subdirectories)
+    $templates = Get-ChildItem -Path $SrcDir -Filter "*.md" -Recurse -ErrorAction SilentlyContinue
     if (-not $templates) {
         continue
     }
 
-    if (-not (Test-Path $OutDir)) {
-        New-Item -ItemType Directory -Path $OutDir -Force | Out-Null
-    }
-
     $templates | ForEach-Object {
         $template = $_.FullName
-        $filename = $_.Name
-        $output = Join-Path $OutDir $filename
+        $rel = $template.Substring($SrcDir.Length + 1)
+        $output = Join-Path $OutDir $rel
+
+        $outputDir = Split-Path -Parent $output
+        if (-not (Test-Path $outputDir)) {
+            New-Item -ItemType Directory -Path $outputDir -Force | Out-Null
+        }
 
         $content = Get-Content -Path $template -Raw
         $content = $content -replace [regex]::Escape($Placeholder), $Replacement

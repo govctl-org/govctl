@@ -14,25 +14,22 @@ REPLACEMENT='cargo run --quiet --'
 # Categories to sync: assets/<category>/ -> .claude/<category>/
 CATEGORIES=(commands skills agents)
 
+sync_file() {
+    local template="$1" output="$2"
+    mkdir -p "$(dirname "$output")"
+    sed "s|$PLACEHOLDER|$REPLACEMENT|g" "$template" > "$output"
+    echo "Synced: $output"
+}
+
 for category in "${CATEGORIES[@]}"; do
     src_dir="$PROJECT_ROOT/assets/$category"
     out_dir="$PROJECT_ROOT/.claude/$category"
 
-    # Skip if source directory has no .md files
-    if ! compgen -G "$src_dir"/*.md > /dev/null 2>&1; then
-        continue
-    fi
-
-    mkdir -p "$out_dir"
-
-    for template in "$src_dir"/*.md; do
-        if [[ -f "$template" ]]; then
-            filename=$(basename "$template")
-            output="$out_dir/$filename"
-            sed "s|$PLACEHOLDER|$REPLACEMENT|g" "$template" > "$output"
-            echo "Synced: $output"
-        fi
-    done
+    # Find all .md files (flat or in subdirectories)
+    while IFS= read -r -d '' template; do
+        rel="${template#"$src_dir"/}"
+        sync_file "$template" "$out_dir/$rel"
+    done < <(find "$src_dir" -name '*.md' -type f -print0 2>/dev/null)
 done
 
 echo "Done. Assets synced to .claude/"
