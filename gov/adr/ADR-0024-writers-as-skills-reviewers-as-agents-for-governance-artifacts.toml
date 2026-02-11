@@ -1,0 +1,98 @@
+[govctl]
+schema = 1
+id = "ADR-0024"
+title = "Writers as skills, reviewers as agents for governance artifacts"
+status = "proposed"
+date = "2026-02-11"
+refs = ["ADR-0023"]
+
+[content]
+context = """
+## Context
+
+govctl manages three governance artifact types — RFCs, ADRs, and work items. We need to add AI-assisted capabilities for both *creating* (writing) and *reviewing* these artifacts.
+
+Per [[ADR-0023]], the `assets/` directory is organized into `commands/`, `skills/`, and `agents/` subdirectories. Skills and agents are synced to `.claude/skills/` and `.claude/agents/` respectively.
+
+### Problem Statement
+
+Each artifact type needs writing guidance (structure, conventions, quality patterns) and review criteria (completeness checks, quality gates). The question: should each capability be a **skill** (augments the main agent inline) or an **agent** (runs as isolated subagent with its own system prompt)?
+
+### Key Distinction
+
+- **Skills** run in the main agent's context. They have full access to the conversation and codebase. They augment what the main agent knows.
+- **Agents** run in isolated contexts with custom system prompts. They receive delegated tasks and return results. They have no access to the main conversation.
+
+### Constraints
+
+- Skills MUST be <250 lines per SKILL.md (progressive disclosure via `references/`)
+- Agents MUST have focused system prompts
+- Each capability should follow "one skill, one capability" principle
+- The existing `/discuss` and `/gov` commands orchestrate workflows that need writing knowledge"""
+decision = """
+## Decision
+
+**Writers are skills. Reviewers are agents.** Six separate items total:
+
+### Skills (in `assets/skills/`)
+
+| Skill | Purpose |
+|---|---|
+| `rfc-writer` | How to write well-structured RFCs: normative language (MUST/SHOULD/MAY), clause structure, versioning, `since` fields |
+| `adr-writer` | How to write effective ADRs: context/decision/consequences, trade-off analysis, alternatives documentation |
+| `wi-writer` | How to write good work items: acceptance criteria with category prefixes, description quality |
+
+### Agents (in `assets/agents/`)
+
+| Agent | Purpose |
+|---|---|
+| `rfc-reviewer` | Review RFC drafts for completeness, normative language quality, clause coverage, cross-references |
+| `adr-reviewer` | Review ADR drafts for context quality, decision clarity, alternatives, honest consequences |
+| `wi-reviewer` | Review work items for acceptance criteria structure, category correctness, description quality |
+
+### Rationale
+
+1. **Writers need conversation context.** An RFC writer must know *why* the user is creating the RFC — what problem, what constraints, what existing artifacts relate. Skills run inline and have full context.
+
+2. **Reviewers benefit from cognitive isolation.** When the main agent writes an artifact and then reviews it, confirmation bias is unavoidable. An isolated review agent has no memory of authoring — it evaluates purely on quality criteria.
+
+3. **Six separate, not consolidated.** RFC/ADR/WI writing are genuinely different capabilities. Each skill stays well under 250 lines. The ~15% shared knowledge (govctl commands, `[[ref]]` syntax) is 3-5 lines of duplication — not worth coupling distinct capabilities to eliminate.
+
+### Integration
+
+- `/discuss` and `/gov` commands will reference writer skills for quality guidance
+- Review agents can be invoked at quality gates (e.g., after drafting, before finalization)
+- `sync-assets.sh` already syncs both `skills/` and `agents/` directories"""
+consequences = """
+## Consequences
+
+### Positive
+- Writers augment the main agent with domain knowledge while preserving conversation context
+- Reviewers provide unbiased quality checks through cognitive isolation
+- Six focused items follow "one skill, one capability" — each stays under 250 lines
+- Future artifact types get their own skill + agent pair without touching existing files
+- `sync-assets.sh` already supports the directory structure ([[ADR-0023]])
+
+### Negative
+- 6 files to maintain (mitigation: each is small and focused, changes are rare)
+- ~15% knowledge duplication across items (mitigation: 3-5 lines per file, not worth abstracting)
+- Review agents lack conversation context (mitigation: they receive artifact paths and evaluate on merit, which is the point)
+
+### Neutral
+- Existing `/discuss` and `/gov` commands continue to work unchanged initially; skills/agents integration is additive"""
+
+[[content.alternatives]]
+text = "All skills: Make both writers and reviewers skills. Rejected: reviewers lose cognitive isolation, confirmation bias when main agent reviews its own work."
+status = "considered"
+
+[[content.alternatives]]
+text = "All agents: Make both writers and reviewers agents. Rejected: writers lose conversation context, cannot access why the user is creating the artifact."
+status = "considered"
+
+[[content.alternatives]]
+text = "4 consolidated items (governance-writer + wi-writer, governance-reviewer + wi-reviewer): Rejected: RFC and ADR capabilities are genuinely different, merging creates a skill that branches on artifact type — special cases we want to eliminate."
+status = "considered"
+
+[[content.alternatives]]
+text = "2 consolidated items (one writer, one reviewer): Rejected: work items differ fundamentally from RFCs/ADRs, no shared domain knowledge worth coupling."
+status = "considered"
