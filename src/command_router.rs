@@ -52,7 +52,7 @@ pub enum CanonicalCommand {
     Init {
         force: bool,
     },
-    SyncCommands {
+    Sync {
         force: bool,
     },
     Check {
@@ -315,7 +315,7 @@ impl CanonicalCommand {
         Ok(match cmd {
             // Global commands
             Commands::Init { force } => Self::Init { force: *force },
-            Commands::SyncCommands { force } => Self::SyncCommands { force: *force },
+            Commands::Sync { force } => Self::Sync { force: *force },
             Commands::Check { deny_warnings } => Self::Check {
                 deny_warnings: *deny_warnings,
             },
@@ -359,7 +359,7 @@ impl CanonicalCommand {
         match self {
             // Global commands
             Self::Init { force } => cmd::new::init_project(config, *force, op),
-            Self::SyncCommands { force } => cmd::new::sync_commands(config, *force, op),
+            Self::Sync { force } => cmd::new::sync_commands(config, *force, op),
             Self::Check { deny_warnings: _ } => cmd::check::check_all(config),
             Self::Status => cmd::status::show_status(config),
             Self::Render {

@@ -11,11 +11,17 @@ Created: gov/adr
 Created: gov/work
 Created: gov/templates
 Created: gov/config.toml
-Created: .claude/commands
 Created: .claude/commands/gov.md
 Created: .claude/commands/quick.md
 Created: .claude/commands/status.md
 Created: .claude/commands/discuss.md
+Created: .claude/skills/rfc-writer/SKILL.md
+Created: .claude/skills/adr-writer/SKILL.md
+Created: .claude/skills/wi-writer/SKILL.md
+Created: .claude/agents/rfc-reviewer.md
+Created: .claude/agents/adr-reviewer.md
+Created: .claude/agents/wi-reviewer.md
+Created: .claude/agents/compliance-checker.md
 ✓ Project initialized
 exit: 0
 

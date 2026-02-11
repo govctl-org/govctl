@@ -13,20 +13,72 @@ use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
 use std::path::PathBuf;
 
-/// Command templates: (filename, content) pairs
-/// Source of truth lives in .claude/commands/; embedded at compile time.
+/// Command templates: (relative_path, content) pairs.
+/// Source of truth: .claude/commands/; embedded at compile time.
 const COMMAND_TEMPLATES: &[(&str, &str)] = &[
-    ("gov.md", include_str!("../../.claude/commands/gov.md")),
-    ("quick.md", include_str!("../../.claude/commands/quick.md")),
     (
-        "status.md",
+        "commands/gov.md",
+        include_str!("../../.claude/commands/gov.md"),
+    ),
+    (
+        "commands/quick.md",
+        include_str!("../../.claude/commands/quick.md"),
+    ),
+    (
+        "commands/status.md",
         include_str!("../../.claude/commands/status.md"),
     ),
     (
-        "discuss.md",
+        "commands/discuss.md",
         include_str!("../../.claude/commands/discuss.md"),
     ),
 ];
+
+/// Skill templates: (relative_path, content) pairs.
+/// Source of truth: .claude/skills/; embedded at compile time.
+const SKILL_TEMPLATES: &[(&str, &str)] = &[
+    (
+        "skills/rfc-writer/SKILL.md",
+        include_str!("../../.claude/skills/rfc-writer/SKILL.md"),
+    ),
+    (
+        "skills/adr-writer/SKILL.md",
+        include_str!("../../.claude/skills/adr-writer/SKILL.md"),
+    ),
+    (
+        "skills/wi-writer/SKILL.md",
+        include_str!("../../.claude/skills/wi-writer/SKILL.md"),
+    ),
+];
+
+/// Agent templates: (relative_path, content) pairs.
+/// Source of truth: .claude/agents/; embedded at compile time.
+const AGENT_TEMPLATES: &[(&str, &str)] = &[
+    (
+        "agents/rfc-reviewer.md",
+        include_str!("../../.claude/agents/rfc-reviewer.md"),
+    ),
+    (
+        "agents/adr-reviewer.md",
+        include_str!("../../.claude/agents/adr-reviewer.md"),
+    ),
+    (
+        "agents/wi-reviewer.md",
+        include_str!("../../.claude/agents/wi-reviewer.md"),
+    ),
+    (
+        "agents/compliance-checker.md",
+        include_str!("../../.claude/agents/compliance-checker.md"),
+    ),
+];
+
+/// All asset templates (commands + skills + agents).
+fn all_templates() -> impl Iterator<Item = &'static (&'static str, &'static str)> {
+    COMMAND_TEMPLATES
+        .iter()
+        .chain(SKILL_TEMPLATES.iter())
+        .chain(AGENT_TEMPLATES.iter())
+}
 
 /// Initialize govctl project
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
@@ -68,16 +120,13 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         ui::created_path(&config_path);
     }
 
-    // Create .claude/commands directory and write command templates
-    let claude_commands_dir = PathBuf::from(".claude/commands");
-    create_dir_all(&claude_commands_dir, op)?;
-    if !op.is_preview() {
-        ui::created_path(&claude_commands_dir);
-    }
-
-    // Write command templates
-    for (filename, template) in COMMAND_TEMPLATES {
-        let path = claude_commands_dir.join(filename);
+    // Write all .claude/ assets (commands, skills, agents)
+    let claude_dir = PathBuf::from(".claude");
+    for (rel_path, template) in all_templates() {
+        let path = claude_dir.join(rel_path);
+        if let Some(parent) = path.parent() {
+            create_dir_all(parent, op)?;
+        }
         write_file(&path, template, op)?;
         if !op.is_preview() {
             ui::created_path(&path);
@@ -90,21 +139,25 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     Ok(vec![])
 }
 
-/// Sync Claude Desktop commands from assets to .claude/commands/
+/// Sync all .claude/ assets (commands, skills, agents) to the project.
+/// Used by downstream users to update after upgrading govctl.
 pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-    let commands_dir = &config.paths.commands_dir;
-
-    // Create directory if it doesn't exist
-    create_dir_all(commands_dir, op)?;
-    if !op.is_preview() {
-        ui::created_path(commands_dir);
-    }
+    let claude_dir = config
+        .paths
+        .commands_dir
+        .parent()
+        .unwrap_or_else(|| std::path::Path::new(".claude"));
 
     let mut synced = 0;
     let mut skipped = 0;
 
-    for (filename, template) in COMMAND_TEMPLATES {
-        let path = commands_dir.join(filename);
+    for (rel_path, template) in all_templates() {
+        let path = claude_dir.join(rel_path);
+
+        // Create parent directory if needed
+        if let Some(parent) = path.parent() {
+            create_dir_all(parent, op)?;
+        }
 
         // Check if file exists and skip if not forcing
         if path.exists() && !force && !op.is_preview() {
@@ -133,16 +186,16 @@ pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Resul
 
     if !op.is_preview() {
         if synced > 0 {
-            ui::success(format!("Synced {} command(s)", synced));
+            ui::success(format!("Synced {} asset(s)", synced));
         }
         if skipped > 0 {
             ui::info(format!(
-                "{} command(s) skipped (use -f to overwrite)",
+                "{} asset(s) skipped (use -f to overwrite)",
                 skipped
             ));
         }
         if synced == 0 && skipped == 0 {
-            ui::info("No commands to sync");
+            ui::info("No assets to sync");
         }
     }
 

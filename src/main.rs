@@ -52,10 +52,10 @@ enum Commands {
         force: bool,
     },
 
-    /// Sync Claude Desktop commands from assets to .claude/commands/
-    #[allow(clippy::enum_variant_names)]
-    SyncCommands {
-        /// Force overwrite existing commands
+    /// Sync .claude/ assets (commands, skills, agents) after upgrading govctl
+    #[command(visible_alias = "sync-commands")]
+    Sync {
+        /// Force overwrite existing assets
         #[arg(short = 'f', long)]
         force: bool,
     },
