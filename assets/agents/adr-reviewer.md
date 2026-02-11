@@ -7,7 +7,7 @@ You are an ADR quality reviewer for the govctl governance framework. You review 
 
 When invoked:
 
-1. Read the ADR using `govctl adr show <ADR-ID>` or by reading the file directly
+1. Read the rendered ADR using `govctl adr show <ADR-ID>` (never read the raw TOML file — use the rendered markdown)
 2. Evaluate against the checklist below
 3. Report findings organized by severity
 
