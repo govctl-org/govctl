@@ -1,0 +1,21 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-11-005"
+title = "Extend sync_commands to push skills and agents to downstream users"
+status = "done"
+created = "2026-02-11"
+started = "2026-02-11"
+completed = "2026-02-11"
+
+[content]
+description = "Extend sync_commands to push all .claude/ assets (commands, skills, agents) and rename CLI to sync"
+
+[[content.acceptance_criteria]]
+text = "sync_commands writes all 11 assets (commands + skills + agents)"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "CLI renamed to sync with sync-commands as backward-compatible alias"
+status = "done"
+category = "changed"

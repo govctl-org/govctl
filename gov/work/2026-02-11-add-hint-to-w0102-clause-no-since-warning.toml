@@ -8,9 +8,7 @@ started = "2026-02-11"
 completed = "2026-02-11"
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Enhance W0102 clause-no-since warning to hint that since field is auto-set by rfc bump/finalize"
 
 [[content.acceptance_criteria]]
 text = "W0102 warning includes hint about auto-generation"

@@ -8,9 +8,7 @@ started = "2026-02-11"
 completed = "2026-02-11"
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Move skills and agents from assets/ to .claude/ as SSOT, eliminate {{GOVCTL}} placeholder duplication"
 
 [[content.acceptance_criteria]]
 text = "Change completed"

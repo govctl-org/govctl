@@ -9,9 +9,7 @@ completed = "2026-02-11"
 refs = ["ADR-0024"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Implement 3 writer skills and 4 reviewer/auditor agents per ADR-0024"
 
 [[content.acceptance_criteria]]
 text = "rfc-writer skill"

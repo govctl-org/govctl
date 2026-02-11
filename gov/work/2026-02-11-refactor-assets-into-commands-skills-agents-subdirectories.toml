@@ -9,9 +9,7 @@ completed = "2026-02-11"
 refs = ["ADR-0023"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Refactor assets/ into commands/, skills/, agents/ subdirectories per ADR-0023"
 
 [[content.acceptance_criteria]]
 text = "Move command assets (gov.md, quick.md, discuss.md, status.md) into assets/commands/"
@@ -21,17 +19,17 @@ category = "changed"
 [[content.acceptance_criteria]]
 text = "Update include_str paths in src/cmd/new.rs"
 status = "done"
-category = "changed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Update build.rs rerun-if-changed paths"
 status = "done"
-category = "changed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Update sync-commands scripts for new path"
 status = "done"
-category = "changed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Create assets/skills/ and assets/agents/ directories"
