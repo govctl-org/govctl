@@ -1,0 +1,42 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-11-002"
+title = "Refactor assets into commands/skills/agents subdirectories"
+status = "active"
+created = "2026-02-11"
+started = "2026-02-11"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Move command assets (gov.md, quick.md, discuss.md, status.md) into assets/commands/"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Update include_str paths in src/cmd/new.rs"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Update build.rs rerun-if-changed paths"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Update sync-commands scripts for new path"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Create assets/skills/ and assets/agents/ directories"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"
