@@ -21,10 +21,10 @@ const GOVCTL_DEFAULT: &str = "govctl";
 /// Command templates: (filename, content) pairs
 /// Single source of truth for both init_project and sync_commands
 const COMMAND_TEMPLATES: &[(&str, &str)] = &[
-    ("gov.md", include_str!("../../assets/gov.md")),
-    ("quick.md", include_str!("../../assets/quick.md")),
-    ("status.md", include_str!("../../assets/status.md")),
-    ("discuss.md", include_str!("../../assets/discuss.md")),
+    ("gov.md", include_str!("../../assets/commands/gov.md")),
+    ("quick.md", include_str!("../../assets/commands/quick.md")),
+    ("status.md", include_str!("../../assets/commands/status.md")),
+    ("discuss.md", include_str!("../../assets/commands/discuss.md")),
 ];
 
 /// Initialize govctl project
