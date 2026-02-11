@@ -137,24 +137,11 @@ Parse `$ARGUMENTS` and classify:
 
 **Important:** Work items cannot be marked done without acceptance criteria.
 
-**Category prefixes** (for changelog generation per ADR-0012/ADR-0013):
-
-| Prefix        | Changelog Section | Notes                        |
-| ------------- | ----------------- | ---------------------------- |
-| `add:`        | Added             | New features                 |
-| `changed:`    | Changed           |                              |
-| `deprecated:` | Deprecated        |                              |
-| `removed:`    | Removed           |                              |
-| `fix:`        | Fixed             |                              |
-| `security:`   | Security          |                              |
-| `chore:`      | _(excluded)_      | Internal tasks, test passing |
-
-**Note:** Explicit category is **required**. Use prefix syntax (`add: ...`) or `--category` option.
+For category prefixes and quality guidelines, follow the **wi-writer** skill.
 
 ```bash
 {{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Implement feature X"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "fix: Memory leak resolved"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: All tests pass"  # won't appear in changelog
+{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 ```
 
 ### 1.4 Record
@@ -191,20 +178,16 @@ git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description
 
 ### 2.3 Create RFC (if needed)
 
+Follow the **rfc-writer** skill for structure and quality guidelines.
+
 ```bash
-# Create RFC (auto-assigns next ID, or use --id RFC-NNNN)
 {{GOVCTL}} rfc new "<title>"
-
-# Add clauses
-{{GOVCTL}} clause new <RFC-ID>:<CLAUSE-ID> "<title>" -s "Specification" -k normative
-
-# Edit clause text via stdin
-{{GOVCTL}} clause edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
-The system MUST...
-EOF
+{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
 ```
 
 ### 2.4 Create ADR (if needed)
+
+Follow the **adr-writer** skill for structure and quality guidelines.
 
 ```bash
 {{GOVCTL}} adr new "<title>"
@@ -420,53 +403,9 @@ For all other errors: **fix and continue**.
 
 ## CONVENTIONS
 
-### Content Field Formatting
+For content field formatting and artifact reference syntax, see the **adr-writer** and **rfc-writer** skills.
 
-When editing content fields (description, context, decision, consequences, notes), use proper markdown:
-
-**Code and technical terms:** Wrap in backticks
-
-```
-# Good
-description = "Add `expand_inline_refs()` function using `Vec<String>`"
-
-# Bad - will cause mdbook warnings
-description = "Add expand_inline_refs() function using Vec<String>"
-```
-
-**Artifact references:** Use `[[artifact-id]]` syntax for inline references
-
-```
-# Good - expands to clickable link when rendered
-context = "Per [[RFC-0000]], all work items must have acceptance criteria."
-
-# Also good for clauses
-decision = "Follow [[RFC-0000:C-WORK-DEF]] requirements."
-
-# Bad - plain text, not linked
-context = "Per RFC-0000, all work items must have acceptance criteria."
-```
-
-The `[[...]]` pattern is automatically expanded to markdown links during `{{GOVCTL}} render`.
-
-**Source code comments:** Use `[[artifact-id]]` in code comments to enable validation:
-
-```rust
-// Implements [[RFC-0001:C-VALIDATION]]
-fn validate_input(data: &str) -> Result<()> { ... }
-
-// Per [[ADR-0005]], we use streaming instead of buffering
-fn process_stream() { ... }
-```
-
-`{{GOVCTL}} check` validates these references exist and warns if they're deprecated/superseded.
-
-**Note:** The `refs` field uses plain artifact IDs (not `[[...]]` syntax):
-
-```bash
-{{GOVCTL}} work add <WI-ID> refs RFC-0000      # Correct
-{{GOVCTL}} work add <WI-ID> refs "[[RFC-0000]]" # Wrong
-```
+**Key rule:** Always use `[[artifact-id]]` syntax in content fields and source code comments. The `refs` field uses plain IDs (not `[[...]]`).
 
 ### Commit Messages
 
@@ -478,26 +417,6 @@ fn process_stream() { ... }
 | `test(scope)`     | Tests         |
 | `refactor(scope)` | Restructuring |
 | `chore(scope)`    | Maintenance   |
-
-### Multi-line Input
-
-**{{GOVCTL}}:** Use `--stdin` with input redirection.
-
-**bash/zsh (macOS/Linux):**
-
-```bash
-{{GOVCTL}} clause edit <clause-id> --stdin <<'EOF'
-Multi-line content here.
-EOF
-```
-
-**PowerShell (Windows):**
-
-```powershell
-@"
-Multi-line content here.
-"@ | {{GOVCTL}} clause edit <clause-id> --stdin
-```
 
 ### Multi-line Commits
 

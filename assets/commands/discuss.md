@@ -128,132 +128,30 @@ Document this exploration — it becomes the ADR context/alternatives or RFC rat
 
 ## PHASE 2: DRAFT ARTIFACTS
 
-### 2.1 RFC Drafting (for new capabilities/specifications)
+### 2.1 RFC Drafting (if needed)
 
-**When to create an RFC:**
-
-- New feature or capability
-- Behavioral contract that code must follow
-- API or interface specification
-- Cross-cutting concern (e.g., error handling, logging)
-
-**RFC Structure:**
+For structure, templates, and quality guidelines, follow the **rfc-writer** skill.
 
 ```bash
-# Create the RFC
-{{GOVCTL}} rfc new "<descriptive-title>"
-
-# Add Summary clause (informative)
-{{GOVCTL}} clause new <RFC-ID>:C-SUMMARY "Summary" -s "Summary" -k informative
-{{GOVCTL}} clause edit <RFC-ID>:C-SUMMARY --stdin <<'EOF'
-Brief overview of what this RFC specifies and why.
-
-**Scope:** What this RFC covers and does not cover.
-
-**Rationale:** Why this specification is needed.
-
-*Since: v0.1.0*
-EOF
-
-# Add Specification clauses (normative)
-{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<Title>" -s "Specification" -k normative
+{{GOVCTL}} rfc new "<title>"
+{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
 {{GOVCTL}} clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
-The system MUST...
-The system SHOULD...
-The system MAY...
-
-**Rationale:**
-Why this requirement exists.
-
-*Since: v0.1.0*
+clause text
 EOF
 ```
 
-**RFC Writing Guidelines:**
+### 2.2 ADR Drafting (if needed)
 
-1. **Use RFC 2119 keywords:** MUST, SHOULD, MAY (all caps)
-2. **Be specific:** Avoid ambiguous terms like "appropriate" or "reasonable"
-3. **Include rationale:** Explain why, not just what
-4. **Reference existing artifacts:** Use `[[RFC-NNNN]]` or `[[ADR-NNNN]]` syntax
-5. **Add `*Since: vX.Y.Z*`:** Track when each clause was introduced
-
-### 2.2 ADR Drafting (for design decisions)
-
-**When to create an ADR:**
-
-- Choosing between alternatives (library, pattern, approach)
-- Interpreting an ambiguous RFC requirement
-- Recording architectural constraints
-- Documenting why we're NOT doing something
-
-**ADR Structure:**
+For structure, templates, and quality guidelines, follow the **adr-writer** skill.
 
 ```bash
-# Create the ADR
-{{GOVCTL}} adr new "<decision-title>"
-
-# Set context (problem statement)
-{{GOVCTL}} adr set <ADR-ID> context --stdin <<'EOF'
-## Context
-
-Describe the situation that requires a decision.
-
-### Problem Statement
-What is the issue we're addressing?
-
-### Constraints
-What existing requirements or decisions limit our options?
-
-### Options Considered
-Brief overview of alternatives (detailed in alternatives field).
-EOF
-
-# Set decision (the choice and rationale)
-{{GOVCTL}} adr set <ADR-ID> decision --stdin <<'EOF'
-## Decision
-
-We will **<action>** because:
-
-1. **Reason one:** Explanation
-2. **Reason two:** Explanation
-3. **Reason three:** Explanation
-
-### Implementation Notes
-Any specific guidance for implementing this decision.
-EOF
-
-# Set consequences (trade-offs)
-{{GOVCTL}} adr set <ADR-ID> consequences --stdin <<'EOF'
-## Consequences
-
-### Positive
-- Benefit one
-- Benefit two
-
-### Negative
-- Trade-off one (mitigation: ...)
-- Trade-off two (mitigation: ...)
-
-### Neutral
-- Side effect that is neither positive nor negative
-EOF
-
-# Add alternatives considered
-{{GOVCTL}} adr add <ADR-ID> alternatives "Option A: Description of alternative"
-{{GOVCTL}} adr add <ADR-ID> alternatives "Option B: Description of alternative"
-
-# Add references to related artifacts
-{{GOVCTL}} adr add <ADR-ID> refs RFC-0001
-{{GOVCTL}} adr add <ADR-ID> refs ADR-0005
+{{GOVCTL}} adr new "<title>"
+{{GOVCTL}} adr set <ADR-ID> context --stdin <<'EOF' ... EOF
+{{GOVCTL}} adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
+{{GOVCTL}} adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
+{{GOVCTL}} adr add <ADR-ID> alternatives "Option: Description"
+{{GOVCTL}} adr add <ADR-ID> refs RFC-NNNN
 ```
-
-**ADR Writing Guidelines:**
-
-1. **Context is crucial:** Future readers need to understand why this decision was made
-2. **Be explicit about trade-offs:** What are we giving up?
-3. **Document alternatives:** Even rejected options provide valuable context
-4. **Reference constraints:** Link to RFCs/ADRs that influenced the decision
-5. **Keep it focused:** One decision per ADR
 
 ### 2.3 RFC Amendment (for changes to existing specs)
 
@@ -393,50 +291,8 @@ fn validate() { ... }
 
 This enables `{{GOVCTL}} check` to validate all references exist and are not deprecated.
 
-### RFC 2119 Keywords
-
-In normative clauses, use these keywords (all caps):
-
-| Keyword    | Meaning                        |
-| ---------- | ------------------------------ |
-| MUST       | Absolute requirement           |
-| MUST NOT   | Absolute prohibition           |
-| SHOULD     | Recommended but not required   |
-| SHOULD NOT | Discouraged but not prohibited |
-| MAY        | Optional                       |
-
-### Section Names
-
-**For RFCs:**
-
-- "Summary" — Overview and rationale (informative)
-- "Specification" — Requirements (normative)
-- "Rationale" — Extended explanation (informative)
-
-**For ADRs:**
-
-- Context, Decision, Consequences are the standard fields
-- Use markdown headers within these fields for structure
-
-### Multi-line Input
-
-Use `--stdin` with input redirection.
-
-**bash/zsh (macOS/Linux):**
-
-```bash
-{{GOVCTL}} clause edit <clause-id> --stdin <<'EOF'
-Multi-line content here.
-EOF
-```
-
-**PowerShell (Windows):**
-
-```powershell
-@"
-Multi-line content here.
-"@ | {{GOVCTL}} clause edit <clause-id> --stdin
-```
+For RFC 2119 keywords and clause conventions, see the **rfc-writer** skill.
+For ADR structure and field conventions, see the **adr-writer** skill.
 
 ---
 
