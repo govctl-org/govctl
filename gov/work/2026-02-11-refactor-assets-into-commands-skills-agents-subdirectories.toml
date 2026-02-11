@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-02-11-002"
 title = "Refactor assets into commands/skills/agents subdirectories"
-status = "active"
+status = "done"
 created = "2026-02-11"
 started = "2026-02-11"
+completed = "2026-02-11"
 refs = ["ADR-0023"]
 
 [content]
@@ -14,30 +15,30 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "Move command assets (gov.md, quick.md, discuss.md, status.md) into assets/commands/"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Update include_str paths in src/cmd/new.rs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Update build.rs rerun-if-changed paths"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Update sync-commands scripts for new path"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Create assets/skills/ and assets/agents/ directories"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"

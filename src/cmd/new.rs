@@ -24,7 +24,10 @@ const COMMAND_TEMPLATES: &[(&str, &str)] = &[
     ("gov.md", include_str!("../../assets/commands/gov.md")),
     ("quick.md", include_str!("../../assets/commands/quick.md")),
     ("status.md", include_str!("../../assets/commands/status.md")),
-    ("discuss.md", include_str!("../../assets/commands/discuss.md")),
+    (
+        "discuss.md",
+        include_str!("../../assets/commands/discuss.md"),
+    ),
 ];
 
 /// Initialize govctl project
