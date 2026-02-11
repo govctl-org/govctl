@@ -1,0 +1,53 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-11-003"
+title = "Implement skills and agents per ADR-0024"
+status = "active"
+created = "2026-02-11"
+started = "2026-02-11"
+refs = ["ADR-0024"]
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "rfc-writer skill"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "adr-writer skill"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "wi-writer skill"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "rfc-reviewer agent"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "adr-reviewer agent"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "wi-reviewer agent"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "compliance-checker agent"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"
