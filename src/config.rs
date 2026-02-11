@@ -249,7 +249,7 @@ impl IdStrategy {
 
     /// Generate a random 4-char hex suffix
     pub fn generate_random_suffix() -> String {
-        use rand::Rng;
+        use rand::RngExt;
         let mut rng = rand::rng();
         let bytes: [u8; 2] = rng.random();
         format!("{:02x}{:02x}", bytes[0], bytes[1])
