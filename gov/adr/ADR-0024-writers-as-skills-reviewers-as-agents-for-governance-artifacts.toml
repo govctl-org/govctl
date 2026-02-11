@@ -32,7 +32,7 @@ Each artifact type needs writing guidance (structure, conventions, quality patte
 decision = """
 ## Decision
 
-**Writers are skills. Reviewers are agents.** Six separate items total:
+**Writers are skills. Reviewers and auditors are agents.** Seven items total:
 
 ### Skills (in `assets/skills/`)
 
@@ -49,6 +49,7 @@ decision = """
 | `rfc-reviewer` | Review RFC drafts for completeness, normative language quality, clause coverage, cross-references |
 | `adr-reviewer` | Review ADR drafts for context quality, decision clarity, alternatives, honest consequences |
 | `wi-reviewer` | Review work items for acceptance criteria structure, category correctness, description quality |
+| `compliance-checker` | Verify code conforms to normative RFC clauses and ADR decisions — detect spec violations in implementation |
 
 ### Rationale
 
@@ -56,12 +57,15 @@ decision = """
 
 2. **Reviewers benefit from cognitive isolation.** When the main agent writes an artifact and then reviews it, confirmation bias is unavoidable. An isolated review agent has no memory of authoring — it evaluates purely on quality criteria.
 
-3. **Six separate, not consolidated.** RFC/ADR/WI writing are genuinely different capabilities. Each skill stays well under 250 lines. The ~15% shared knowledge (govctl commands, `[[ref]]` syntax) is 3-5 lines of duplication — not worth coupling distinct capabilities to eliminate.
+3. **Compliance checking is auditing, not writing.** The `compliance-checker` agent cross-references source code against normative RFC clauses (MUST/MUST NOT) and ADR decisions. It is distinct from artifact reviewers — those check if an *artifact is well-written*, this checks if *code follows what artifacts specify*. Isolation ensures no "I wrote this code so it must conform" bias.
+
+4. **Seven separate, not consolidated.** Each capability is genuinely different. Each stays well under 250 lines. The ~15% shared knowledge (govctl commands, `[[ref]]` syntax) is 3-5 lines of duplication — not worth coupling distinct capabilities to eliminate.
 
 ### Integration
 
 - `/discuss` and `/gov` commands will reference writer skills for quality guidance
 - Review agents can be invoked at quality gates (e.g., after drafting, before finalization)
+- `compliance-checker` can be invoked during `/gov` Phase 4 (testing) or on demand
 - `sync-assets.sh` already syncs both `skills/` and `agents/` directories"""
 consequences = """
 ## Consequences
@@ -69,17 +73,20 @@ consequences = """
 ### Positive
 - Writers augment the main agent with domain knowledge while preserving conversation context
 - Reviewers provide unbiased quality checks through cognitive isolation
-- Six focused items follow "one skill, one capability" — each stays under 250 lines
+- Compliance checker catches spec violations that `govctl check` cannot (it validates references exist; the agent validates semantic conformance)
+- Seven focused items follow "one skill, one capability" — each stays under 250 lines
 - Future artifact types get their own skill + agent pair without touching existing files
 - `sync-assets.sh` already supports the directory structure ([[ADR-0023]])
 
 ### Negative
-- 6 files to maintain (mitigation: each is small and focused, changes are rare)
+- 7 files to maintain (mitigation: each is small and focused, changes are rare)
 - ~15% knowledge duplication across items (mitigation: 3-5 lines per file, not worth abstracting)
-- Review agents lack conversation context (mitigation: they receive artifact paths and evaluate on merit, which is the point)
+- Review/audit agents lack conversation context (mitigation: they evaluate on merit, which is the point)
+- Compliance checking is inherently imprecise — agent may flag false positives (mitigation: output is advisory, not blocking)
 
 ### Neutral
-- Existing `/discuss` and `/gov` commands continue to work unchanged initially; skills/agents integration is additive"""
+- Existing `/discuss` and `/gov` commands continue to work unchanged initially; skills/agents integration is additive
+- `govctl check` continues to handle structural validation; `compliance-checker` handles semantic validation — complementary, not competing"""
 
 [[content.alternatives]]
 text = "All skills: Make both writers and reviewers skills. Rejected: reviewers lose cognitive isolation, confirmation bias when main agent reviews its own work."
