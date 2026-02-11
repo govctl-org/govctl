@@ -153,12 +153,12 @@ Before requesting review: `just pre-commit`
 
 **Agents** (delegate review tasks to these via subagent):
 
-| Agent              | Path                                    | Purpose                          |
-| ------------------ | --------------------------------------- | -------------------------------- |
-| RFC Reviewer       | `.claude/agents/rfc-reviewer.md`        | RFC quality review               |
-| ADR Reviewer       | `.claude/agents/adr-reviewer.md`        | ADR quality review               |
-| WI Reviewer        | `.claude/agents/wi-reviewer.md`         | Work item quality review         |
-| Compliance Checker | `.claude/agents/compliance-checker.md`  | Code-to-spec conformance audit   |
+| Agent              | Path                                   | Purpose                        |
+| ------------------ | -------------------------------------- | ------------------------------ |
+| RFC Reviewer       | `.claude/agents/rfc-reviewer.md`       | RFC quality review             |
+| ADR Reviewer       | `.claude/agents/adr-reviewer.md`       | ADR quality review             |
+| WI Reviewer        | `.claude/agents/wi-reviewer.md`        | Work item quality review       |
+| Compliance Checker | `.claude/agents/compliance-checker.md` | Code-to-spec conformance audit |
 
 ---
 

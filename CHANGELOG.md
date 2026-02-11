@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-02-11
+
 ### Added
 
 - Create assets/skills/ and assets/agents/ directories (WI-2026-02-11-002)
@@ -21,9 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - Move command assets (gov.md, quick.md, discuss.md, status.md) into assets/commands/ (WI-2026-02-11-002)
-- Update include_str paths in src/cmd/new.rs (WI-2026-02-11-002)
-- Update build.rs rerun-if-changed paths (WI-2026-02-11-002)
-- Update sync-commands scripts for new path (WI-2026-02-11-002)
+- CLI renamed to sync with sync-commands as backward-compatible alias (WI-2026-02-11-005)
 
 ## [0.4.0] - 2026-02-07
 

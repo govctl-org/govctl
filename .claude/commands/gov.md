@@ -392,12 +392,12 @@ For all other errors: **fix and continue**.
 
 ### Recovery
 
-| Error                    | Recovery                           |
-| ------------------------ | ---------------------------------- |
+| Error                | Recovery                           |
+| -------------------- | ---------------------------------- |
 | `govctl check` fails | Read diagnostics, fix, retry       |
-| Tests fail               | Debug, fix, retry                  |
-| Lint/format fails        | Usually auto-fixes; re-run         |
-| `mv done` rejected       | Add/tick acceptance criteria first |
+| Tests fail           | Debug, fix, retry                  |
+| Lint/format fails    | Usually auto-fixes; re-run         |
+| `mv done` rejected   | Add/tick acceptance criteria first |
 
 ---
 
