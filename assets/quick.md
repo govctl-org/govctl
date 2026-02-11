@@ -16,6 +16,9 @@ Execute a lightweight workflow for trivial changes: `$ARGUMENTS`
 
 ## WORKFLOW
 
+**CRITICAL: Steps MUST be executed in exact order. Do NOT skip ahead.
+Each step MUST be fully completed before starting the next.**
+
 ### 1. Validate Environment
 
 ```bash
@@ -32,6 +35,9 @@ Execute a lightweight workflow for trivial changes: `$ARGUMENTS`
 ```
 
 ### 3. Implement
+
+**GATE: Confirm `<WI-ID>` was created in step 2 before proceeding.
+Do NOT write any code until the work item exists.**
 
 Make the changes. If referencing governance artifacts in code comments, use `[[artifact-id]]` syntax:
 

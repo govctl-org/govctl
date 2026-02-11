@@ -49,6 +49,7 @@ EOF
 4. **RFC supremacy** — behavioral changes must be grounded in RFCs
 5. **RFC advancement requires permission** — see RFC ADVANCEMENT GATE below
 6. **Reference format in code** — when referencing artifacts in source code comments, use `[[artifact-id]]` syntax (e.g., `// Implements [[RFC-0001:C-FOO]]`) to enable validation by `{{GOVCTL}} check`
+7. **Phase ordering** — Phases MUST be executed in exact order. Do NOT skip ahead. Each phase MUST be fully completed before starting the next.
 
 ---
 
@@ -228,6 +229,9 @@ git add . && git commit -m "docs(rfc): draft <RFC-ID> for <summary>"
 ---
 
 ## PHASE 3: IMPLEMENTATION
+
+**GATE: Confirm work item `<WI-ID>` was created in Phase 1 before proceeding.
+Do NOT write any code until the work item exists.**
 
 ### 3.1 Gate Check (for RFC-governed work)
 
