@@ -1,0 +1,17 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-11-001"
+title = "Add hint to W0102 clause-no-since warning"
+status = "active"
+created = "2026-02-11"
+started = "2026-02-11"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "W0102 warning includes hint about auto-generation"
+status = "pending"
+category = "chore"

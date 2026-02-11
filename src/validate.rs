@@ -399,7 +399,10 @@ fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
         if clause.spec.since.is_none() {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0102ClauseNoSince,
-                format!("Clause '{}' has no 'since' version", clause.spec.clause_id),
+                format!(
+                    "Clause '{}' has no 'since' version (hint: it will be set automatically by `govctl rfc bump` or `govctl rfc finalize`)",
+                    clause.spec.clause_id
+                ),
                 clause.path.display().to_string(),
             ));
         }
