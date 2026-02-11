@@ -17,6 +17,11 @@ Do not invent behavior, skip governance gates, or deviate silently from specific
 ## 1. Project Structure
 
 ```
+.claude/                ← Agent configuration (SSOT for commands, skills, agents)
+├── commands/              Slash commands (gov, quick, discuss, status)
+├── skills/                Writer skills (rfc-writer, adr-writer, wi-writer)
+└── agents/                Reviewer agents (rfc-reviewer, adr-reviewer, wi-reviewer, compliance-checker)
+
 gov/                    ← Source of truth (governance artifacts)
 ├── rfc/                   RFC directories with rfc.json + clauses/*.json
 ├── adr/                   ADRs (TOML files)
@@ -33,6 +38,8 @@ src/                    ← Implementation (Rust)
 ```
 
 The `gov/` directory is authoritative. The `docs/` directory is generated output.
+
+**Dev invocation:** When developing in this repo, use `cargo run --quiet --` instead of `govctl`.
 
 ---
 
@@ -134,11 +141,24 @@ Before requesting review: `just pre-commit`
 
 ---
 
-## 6. Skills
+## 6. Skills & Agents
 
-| Skill      | Path                                 | Purpose            |
-| ---------- | ------------------------------------ | ------------------ |
-| RFC Writer | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide |
+**Skills** (augment your capabilities — read and follow when relevant):
+
+| Skill      | Path                                 | Purpose                  |
+| ---------- | ------------------------------------ | ------------------------ |
+| RFC Writer | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide       |
+| ADR Writer | `.claude/skills/adr-writer/SKILL.md` | ADR creation guide       |
+| WI Writer  | `.claude/skills/wi-writer/SKILL.md`  | Work item creation guide |
+
+**Agents** (delegate review tasks to these via subagent):
+
+| Agent              | Path                                    | Purpose                          |
+| ------------------ | --------------------------------------- | -------------------------------- |
+| RFC Reviewer       | `.claude/agents/rfc-reviewer.md`        | RFC quality review               |
+| ADR Reviewer       | `.claude/agents/adr-reviewer.md`        | ADR quality review               |
+| WI Reviewer        | `.claude/agents/wi-reviewer.md`         | Work item quality review         |
+| Compliance Checker | `.claude/agents/compliance-checker.md`  | Code-to-spec conformance audit   |
 
 ---
 

@@ -13,28 +13,28 @@ Execute a complete, auditable workflow to do: `$ARGUMENTS`
 ## QUICK REFERENCE
 
 ```bash
-# {{GOVCTL}} commands
-{{GOVCTL}} status                             # Show summary
-{{GOVCTL}} work list pending                  # List queue + active items
-{{GOVCTL}} rfc list                           # List all RFCs
-{{GOVCTL}} adr list                           # List all ADRs
-{{GOVCTL}} work new --active "<title>"        # Create + activate work item
-{{GOVCTL}} work move <WI-ID> <status>         # Transition (queue|active|done|cancelled)
-{{GOVCTL}} rfc new "<title>"                  # Create RFC (auto-assigns ID)
-{{GOVCTL}} adr new "<title>"                  # Create ADR
-{{GOVCTL}} check                              # Validate everything
-{{GOVCTL}} render                             # Render to markdown
-{{GOVCTL}} render changelog                   # Generate CHANGELOG.md
-{{GOVCTL}} release <version>                  # Cut a release (e.g., 1.0.0)
+# govctl commands
+govctl status                             # Show summary
+govctl work list pending                  # List queue + active items
+govctl rfc list                           # List all RFCs
+govctl adr list                           # List all ADRs
+govctl work new --active "<title>"        # Create + activate work item
+govctl work move <WI-ID> <status>         # Transition (queue|active|done|cancelled)
+govctl rfc new "<title>"                  # Create RFC (auto-assigns ID)
+govctl adr new "<title>"                  # Create ADR
+govctl check                              # Validate everything
+govctl render                             # Render to markdown
+govctl render changelog                   # Generate CHANGELOG.md
+govctl release <version>                  # Cut a release (e.g., 1.0.0)
 
 # Checklist management (with changelog category prefixes)
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: New feature"    # → Added section
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "fix: Bug fixed"      # → Fixed section
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: Tests pass"   # → excluded from changelog
-{{GOVCTL}} work tick <WI-ID> acceptance_criteria "pattern" -s done
+govctl work add <WI-ID> acceptance_criteria "add: New feature"    # → Added section
+govctl work add <WI-ID> acceptance_criteria "fix: Bug fixed"      # → Fixed section
+govctl work add <WI-ID> acceptance_criteria "chore: Tests pass"   # → excluded from changelog
+govctl work tick <WI-ID> acceptance_criteria "pattern" -s done
 
 # Multi-line input
-{{GOVCTL}} clause edit <clause-id> --stdin <<'EOF'
+govctl clause edit <clause-id> --stdin <<'EOF'
 multi-line text here
 EOF
 ```
@@ -43,12 +43,12 @@ EOF
 
 ## CRITICAL RULES
 
-1. **All governance operations MUST use `{{GOVCTL}}` CLI** — never edit governed files directly
+1. **All governance operations MUST use `govctl` CLI** — never edit governed files directly
 2. **Proceed autonomously** unless you hit a blocking condition (see ERROR HANDLING)
 3. **Phase discipline** — follow `spec → impl → test → stable` for RFC-governed work
 4. **RFC supremacy** — behavioral changes must be grounded in RFCs
 5. **RFC advancement requires permission** — see RFC ADVANCEMENT GATE below
-6. **Reference format in code** — when referencing artifacts in source code comments, use `[[artifact-id]]` syntax (e.g., `// Implements [[RFC-0001:C-FOO]]`) to enable validation by `{{GOVCTL}} check`
+6. **Reference format in code** — when referencing artifacts in source code comments, use `[[artifact-id]]` syntax (e.g., `// Implements [[RFC-0001:C-FOO]]`) to enable validation by `govctl check`
 7. **Phase ordering** — Phases MUST be executed in exact order. Do NOT skip ahead. Each phase MUST be fully completed before starting the next.
 
 ---
@@ -57,8 +57,8 @@ EOF
 
 **Default behavior:** Ask for human permission before:
 
-- `{{GOVCTL}} rfc finalize <RFC-ID> normative`
-- `{{GOVCTL}} rfc advance <RFC-ID> <phase>`
+- `govctl rfc finalize <RFC-ID> normative`
+- `govctl rfc advance <RFC-ID> <phase>`
 
 **Override:** If `$ARGUMENTS` contains phrases like:
 
@@ -75,7 +75,7 @@ Then RFC advancement may proceed without asking.
 ### 0.1 Validate Environment
 
 ```bash
-{{GOVCTL}} status
+govctl status
 ```
 
 **Detect VCS:** Try `jj status` first. If it succeeds, use jujutsu. Otherwise use git. Error if neither works.
@@ -117,20 +117,20 @@ Parse `$ARGUMENTS` and classify:
 ### 1.1 Check Existing Work Items
 
 ```bash
-{{GOVCTL}} work list pending
+govctl work list pending
 ```
 
 **Decision:**
 
 - Active item matches → use it, proceed to Phase 2
-- Queued item matches → `{{GOVCTL}} work move <WI-ID> active`
+- Queued item matches → `govctl work move <WI-ID> active`
 - No match → create new
 
 ### 1.2 Create New Work Item
 
 ```bash
 # Create and activate in one command
-{{GOVCTL}} work new --active "<concise-title>"
+govctl work new --active "<concise-title>"
 ```
 
 ### 1.3 Add Acceptance Criteria
@@ -140,8 +140,8 @@ Parse `$ARGUMENTS` and classify:
 For category prefixes and quality guidelines, follow the **wi-writer** skill.
 
 ```bash
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Implement feature X"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: govctl check passes"
+govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
+govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 ```
 
 ### 1.4 Record
@@ -163,8 +163,8 @@ git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description
 ### 2.1 Survey Existing Governance
 
 ```bash
-{{GOVCTL}} rfc list
-{{GOVCTL}} adr list
+govctl rfc list
+govctl adr list
 ```
 
 ### 2.2 Determine Requirements
@@ -181,8 +181,8 @@ git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description
 Follow the **rfc-writer** skill for structure and quality guidelines.
 
 ```bash
-{{GOVCTL}} rfc new "<title>"
-{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
+govctl rfc new "<title>"
+govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
 ```
 
 ### 2.4 Create ADR (if needed)
@@ -190,13 +190,13 @@ Follow the **rfc-writer** skill for structure and quality guidelines.
 Follow the **adr-writer** skill for structure and quality guidelines.
 
 ```bash
-{{GOVCTL}} adr new "<title>"
+govctl adr new "<title>"
 ```
 
 ### 2.5 Link to Work Item
 
 ```bash
-{{GOVCTL}} work add <WI-ID> refs <RFC-ID>
+govctl work add <WI-ID> refs <RFC-ID>
 ```
 
 ### 2.6 Record
@@ -225,7 +225,7 @@ Before implementation, verify:
 
 ```bash
 # Check current state
-{{GOVCTL}} rfc list
+govctl rfc list
 ```
 
 **Gate conditions:**
@@ -240,8 +240,8 @@ Before implementation, verify:
 **If permission granted (or override in $ARGUMENTS):**
 
 ```bash
-{{GOVCTL}} rfc finalize <RFC-ID> normative  # if draft
-{{GOVCTL}} rfc advance <RFC-ID> impl        # if spec phase
+govctl rfc finalize <RFC-ID> normative  # if draft
+govctl rfc advance <RFC-ID> impl        # if spec phase
 ```
 
 **Amending normative RFCs during implementation:**
@@ -250,7 +250,7 @@ Per [[ADR-0016]], normative RFCs MAY be amended during implementation. Amendment
 
 ```bash
 # Edit clause content
-{{GOVCTL}} clause edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
 Updated specification text.
 EOF
 ```
@@ -267,7 +267,7 @@ EOF
 4. Run validations after substantive changes:
    ```bash
    # Run your project's lint/format checks
-   {{GOVCTL}} check
+   govctl check
    ```
 
 ### 3.3 Record
@@ -291,7 +291,7 @@ git add . && git commit -m "feat(<scope>): <description>"
 **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 
 ```bash
-{{GOVCTL}} rfc advance <RFC-ID> test
+govctl rfc advance <RFC-ID> test
 ```
 
 ### 4.2 Run Tests
@@ -320,7 +320,7 @@ git add . && git commit -m "test(<scope>): add tests for <feature>"
 
 ```bash
 # Run your project's full validation suite
-{{GOVCTL}} check
+govctl check
 ```
 
 ### 5.2 Advance RFC to Stable (if applicable)
@@ -328,7 +328,7 @@ git add . && git commit -m "test(<scope>): add tests for <feature>"
 If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
 
 ```bash
-{{GOVCTL}} rfc advance <RFC-ID> stable
+govctl rfc advance <RFC-ID> stable
 ```
 
 ### 5.3 Tick Acceptance Criteria
@@ -336,19 +336,19 @@ If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless ov
 **Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
 
 ```bash
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Feature implemented"
+govctl work add <WI-ID> acceptance_criteria "add: Feature implemented"
 ```
 
 Then tick each completed criterion:
 
 ```bash
-{{GOVCTL}} work tick <WI-ID> acceptance_criteria "Feature implemented" -s done
+govctl work tick <WI-ID> acceptance_criteria "Feature implemented" -s done
 ```
 
 ### 5.4 Mark Work Item Done
 
 ```bash
-{{GOVCTL}} work move <WI-ID> done
+govctl work move <WI-ID> done
 ```
 
 ### 5.5 Record
@@ -394,7 +394,7 @@ For all other errors: **fix and continue**.
 
 | Error                    | Recovery                           |
 | ------------------------ | ---------------------------------- |
-| `{{GOVCTL}} check` fails | Read diagnostics, fix, retry       |
+| `govctl check` fails | Read diagnostics, fix, retry       |
 | Tests fail               | Debug, fix, retry                  |
 | Lint/format fails        | Usually auto-fixes; re-run         |
 | `mv done` rejected       | Add/tick acceptance criteria first |

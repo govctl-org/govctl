@@ -10,11 +10,11 @@ Write work items with clear descriptions and actionable acceptance criteria.
 ## Quick Reference
 
 ```bash
-{{GOVCTL}} work new --active "<title>"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "<category>: <description>"
-{{GOVCTL}} work add <WI-ID> refs RFC-NNNN
-{{GOVCTL}} work tick <WI-ID> acceptance_criteria "<pattern>" -s done
-{{GOVCTL}} work move <WI-ID> done
+govctl work new --active "<title>"
+govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
+govctl work add <WI-ID> refs RFC-NNNN
+govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+govctl work move <WI-ID> done
 ```
 
 ## Work Item Structure
@@ -50,15 +50,15 @@ Replace the placeholder immediately. One paragraph explaining:
 
 ```bash
 # Feature work
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Implement clause validation"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "add: Error messages include clause ID"
+govctl work add <WI-ID> acceptance_criteria "add: Implement clause validation"
+govctl work add <WI-ID> acceptance_criteria "add: Error messages include clause ID"
 
 # Bug fix
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "fix: Duplicate clause detection"
+govctl work add <WI-ID> acceptance_criteria "fix: Duplicate clause detection"
 
 # Internal
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: All tests pass"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: govctl check passes"
+govctl work add <WI-ID> acceptance_criteria "chore: All tests pass"
+govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 ```
 
 ### References
@@ -66,8 +66,8 @@ Replace the placeholder immediately. One paragraph explaining:
 Link to governing artifacts:
 
 ```bash
-{{GOVCTL}} work add <WI-ID> refs RFC-0001
-{{GOVCTL}} work add <WI-ID> refs ADR-0023
+govctl work add <WI-ID> refs RFC-0001
+govctl work add <WI-ID> refs ADR-0023
 ```
 
 ## Writing Rules
@@ -87,10 +87,10 @@ Work items cannot be marked done without ticking all criteria:
 
 ```bash
 # Tick criteria as you complete them
-{{GOVCTL}} work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 
 # When all criteria are done, close the work item
-{{GOVCTL}} work move <WI-ID> done
+govctl work move <WI-ID> done
 ```
 
 ### The `chore:` Pattern
@@ -98,7 +98,7 @@ Work items cannot be marked done without ticking all criteria:
 Always add at least one `chore:` criterion for validation:
 
 ```bash
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: govctl check passes"
+govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 ```
 
 This ensures validation is an explicit gate, not an afterthought.

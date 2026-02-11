@@ -13,7 +13,7 @@ Display the current governance state. Read-only, no mutations.
 ## OVERVIEW
 
 ```bash
-{{GOVCTL}} status
+govctl status
 ```
 
 ---
@@ -23,23 +23,23 @@ Display the current governance state. Read-only, no mutations.
 ### RFCs
 
 ```bash
-{{GOVCTL}} rfc list
+govctl rfc list
 ```
 
 ### ADRs
 
 ```bash
-{{GOVCTL}} adr list
+govctl adr list
 ```
 
 ### Work Items
 
 ```bash
 # All pending (queue + active)
-{{GOVCTL}} work list pending
+govctl work list pending
 
 # All work items
-{{GOVCTL}} work list
+govctl work list
 ```
 
 ---
@@ -65,7 +65,7 @@ If `$ARGUMENTS` specifies a focus:
 Check for governance issues:
 
 ```bash
-{{GOVCTL}} check
+govctl check
 ```
 
 ---

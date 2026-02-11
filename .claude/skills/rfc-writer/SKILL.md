@@ -10,9 +10,9 @@ Write RFCs that are precise, complete, and follow govctl conventions.
 ## Quick Reference
 
 ```bash
-{{GOVCTL}} rfc new "<title>"
-{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-{{GOVCTL}} clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl rfc new "<title>"
+govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 clause text
 EOF
 ```
@@ -28,8 +28,8 @@ Every RFC should have:
 ### Summary Clause Template
 
 ```bash
-{{GOVCTL}} clause new <RFC-ID>:C-SUMMARY "Summary" -s "Summary" -k informative
-{{GOVCTL}} clause edit <RFC-ID>:C-SUMMARY --stdin <<'EOF'
+govctl clause new <RFC-ID>:C-SUMMARY "Summary" -s "Summary" -k informative
+govctl clause edit <RFC-ID>:C-SUMMARY --stdin <<'EOF'
 Brief overview of what this RFC specifies and why.
 
 **Scope:** What is covered and what is not.
@@ -41,8 +41,8 @@ EOF
 ### Normative Clause Template
 
 ```bash
-{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<Title>" -s "Specification" -k normative
-{{GOVCTL}} clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause new <RFC-ID>:C-<NAME> "<Title>" -s "Specification" -k normative
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 The system MUST ...
 The system SHOULD ...
 The system MAY ...

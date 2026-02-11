@@ -18,27 +18,27 @@ Facilitate a design discussion about: `$ARGUMENTS`
 
 ```bash
 # Context discovery
-{{GOVCTL}} status                             # Project overview
-{{GOVCTL}} rfc list                           # List all RFCs
-{{GOVCTL}} adr list                           # List all ADRs
+govctl status                             # Project overview
+govctl rfc list                           # List all RFCs
+govctl adr list                           # List all ADRs
 
 # RFC drafting
-{{GOVCTL}} rfc new "<title>"                  # Create RFC (auto-assigns ID)
-{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-{{GOVCTL}} clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl rfc new "<title>"                  # Create RFC (auto-assigns ID)
+govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 clause text here
 EOF
 
 # ADR drafting
-{{GOVCTL}} adr new "<title>"                  # Create ADR
-{{GOVCTL}} adr set <ADR-ID> context "..." --stdin
-{{GOVCTL}} adr set <ADR-ID> decision "..." --stdin
-{{GOVCTL}} adr set <ADR-ID> consequences "..." --stdin
-{{GOVCTL}} adr add <ADR-ID> alternatives "Option: Description"
-{{GOVCTL}} adr add <ADR-ID> refs RFC-0001
+govctl adr new "<title>"                  # Create ADR
+govctl adr set <ADR-ID> context "..." --stdin
+govctl adr set <ADR-ID> decision "..." --stdin
+govctl adr set <ADR-ID> consequences "..." --stdin
+govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr add <ADR-ID> refs RFC-0001
 
 # Validation
-{{GOVCTL}} check                              # Validate all artifacts
+govctl check                              # Validate all artifacts
 ```
 
 ---
@@ -62,9 +62,9 @@ EOF
 Before discussing, understand what already exists:
 
 ```bash
-{{GOVCTL}} status
-{{GOVCTL}} rfc list
-{{GOVCTL}} adr list
+govctl status
+govctl rfc list
+govctl adr list
 ```
 
 ### 0.2 Identify Relevant Artifacts
@@ -133,9 +133,9 @@ Document this exploration — it becomes the ADR context/alternatives or RFC rat
 For structure, templates, and quality guidelines, follow the **rfc-writer** skill.
 
 ```bash
-{{GOVCTL}} rfc new "<title>"
-{{GOVCTL}} clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-{{GOVCTL}} clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl rfc new "<title>"
+govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 clause text
 EOF
 ```
@@ -145,12 +145,12 @@ EOF
 For structure, templates, and quality guidelines, follow the **adr-writer** skill.
 
 ```bash
-{{GOVCTL}} adr new "<title>"
-{{GOVCTL}} adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-{{GOVCTL}} adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-{{GOVCTL}} adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-{{GOVCTL}} adr add <ADR-ID> alternatives "Option: Description"
-{{GOVCTL}} adr add <ADR-ID> refs RFC-NNNN
+govctl adr new "<title>"
+govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
+govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
+govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
+govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr add <ADR-ID> refs RFC-NNNN
 ```
 
 ### 2.3 RFC Amendment (for changes to existing specs)
@@ -159,7 +159,7 @@ For structure, templates, and quality guidelines, follow the **adr-writer** skil
 
 ```bash
 # Edit the clause content
-{{GOVCTL}} clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 Updated specification text.
 EOF
 
@@ -174,7 +174,7 @@ EOF
 After creating artifacts:
 
 ```bash
-{{GOVCTL}} check
+govctl check
 ```
 
 Fix any validation errors before proceeding.
@@ -289,7 +289,7 @@ fn validate() { ... }
 // Per [[ADR-0005]], we chose X over Y
 ```
 
-This enables `{{GOVCTL}} check` to validate all references exist and are not deprecated.
+This enables `govctl check` to validate all references exist and are not deprecated.
 
 For RFC 2119 keywords and clause conventions, see the **rfc-writer** skill.
 For ADR structure and field conventions, see the **adr-writer** skill.
@@ -303,7 +303,7 @@ For ADR structure and field conventions, see the **adr-writer** skill.
 - [ ] Requirements clarified (asked questions if needed)
 - [ ] Design options explored
 - [ ] Draft artifact(s) created with complete structure
-- [ ] Validation passed (`{{GOVCTL}} check`)
+- [ ] Validation passed (`govctl check`)
 - [ ] Summary presented
 - [ ] Next steps offered
 

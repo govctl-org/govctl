@@ -10,18 +10,18 @@ Write ADRs that clearly capture context, decisions, and consequences.
 ## Quick Reference
 
 ```bash
-{{GOVCTL}} adr new "<title>"
-{{GOVCTL}} adr set <ADR-ID> context --stdin <<'EOF'
+govctl adr new "<title>"
+govctl adr set <ADR-ID> context --stdin <<'EOF'
 context text
 EOF
-{{GOVCTL}} adr set <ADR-ID> decision --stdin <<'EOF'
+govctl adr set <ADR-ID> decision --stdin <<'EOF'
 decision text
 EOF
-{{GOVCTL}} adr set <ADR-ID> consequences --stdin <<'EOF'
+govctl adr set <ADR-ID> consequences --stdin <<'EOF'
 consequences text
 EOF
-{{GOVCTL}} adr add <ADR-ID> alternatives "Option: Description"
-{{GOVCTL}} adr add <ADR-ID> refs RFC-NNNN
+govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr add <ADR-ID> refs RFC-NNNN
 ```
 
 ## ADR Structure
@@ -98,7 +98,7 @@ Honest accounting of trade-offs. Structure:
 ### 4. Alternatives (recommended)
 
 ```bash
-{{GOVCTL}} adr add <ADR-ID> alternatives "Option A: Description. Rejected: reason."
+govctl adr add <ADR-ID> alternatives "Option A: Description. Rejected: reason."
 ```
 
 Document rejected options. Future readers need to know what was _not_ chosen and why.
@@ -106,8 +106,8 @@ Document rejected options. Future readers need to know what was _not_ chosen and
 ### 5. References (recommended)
 
 ```bash
-{{GOVCTL}} adr add <ADR-ID> refs RFC-0001
-{{GOVCTL}} adr add <ADR-ID> refs ADR-0005
+govctl adr add <ADR-ID> refs RFC-0001
+govctl adr add <ADR-ID> refs ADR-0005
 ```
 
 Link to artifacts that constrained or informed the decision. Use plain IDs (not `[[...]]` syntax) in the refs field.

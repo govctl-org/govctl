@@ -60,15 +60,6 @@ render:
 # Development Helpers
 # =============================================================================
 
-# Sync assets (commands, skills, agents) to .claude/ (substitutes {{GOVCTL}} -> cargo run)
-[unix]
-sync-assets:
-    ./scripts/sync-assets.sh
-
-[windows]
-sync-assets:
-    powershell -ExecutionPolicy Bypass -File scripts/sync-assets.ps1
-
 # Build with TUI feature
 build-tui:
     cargo build --release --features tui

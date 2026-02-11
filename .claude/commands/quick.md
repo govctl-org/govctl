@@ -22,7 +22,7 @@ Each step MUST be fully completed before starting the next.**
 ### 1. Validate Environment
 
 ```bash
-{{GOVCTL}} status
+govctl status
 ```
 
 **Detect VCS:** Try `jj status` first. If it succeeds, use jujutsu. Otherwise use git.
@@ -30,8 +30,8 @@ Each step MUST be fully completed before starting the next.**
 ### 2. Create Work Item
 
 ```bash
-{{GOVCTL}} work new --active "<concise-title>"
-{{GOVCTL}} work add <WI-ID> acceptance_criteria "chore: Change completed"
+govctl work new --active "<concise-title>"
+govctl work add <WI-ID> acceptance_criteria "chore: Change completed"
 ```
 
 ### 3. Implement
@@ -48,7 +48,7 @@ Make the changes. If referencing governance artifacts in code comments, use `[[a
 Run validations:
 
 ```bash
-{{GOVCTL}} check
+govctl check
 ```
 
 ### 4. Record
@@ -64,8 +64,8 @@ git add . && git commit -m "<type>(<scope>): <description>"
 ### 5. Complete
 
 ```bash
-{{GOVCTL}} work tick <WI-ID> acceptance_criteria "Change completed" -s done
-{{GOVCTL}} work move <WI-ID> done
+govctl work tick <WI-ID> acceptance_criteria "Change completed" -s done
+govctl work move <WI-ID> done
 ```
 
 ### 6. Final Record

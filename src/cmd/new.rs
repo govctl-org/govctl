@@ -13,20 +13,18 @@ use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
 use std::path::PathBuf;
 
-/// Placeholder for govctl command in templates
-const GOVCTL_PLACEHOLDER: &str = "{{GOVCTL}}";
-/// Default replacement for govctl command
-const GOVCTL_DEFAULT: &str = "govctl";
-
 /// Command templates: (filename, content) pairs
-/// Single source of truth for both init_project and sync_commands
+/// Source of truth lives in .claude/commands/; embedded at compile time.
 const COMMAND_TEMPLATES: &[(&str, &str)] = &[
-    ("gov.md", include_str!("../../assets/commands/gov.md")),
-    ("quick.md", include_str!("../../assets/commands/quick.md")),
-    ("status.md", include_str!("../../assets/commands/status.md")),
+    ("gov.md", include_str!("../../.claude/commands/gov.md")),
+    ("quick.md", include_str!("../../.claude/commands/quick.md")),
+    (
+        "status.md",
+        include_str!("../../.claude/commands/status.md"),
+    ),
     (
         "discuss.md",
-        include_str!("../../assets/commands/discuss.md"),
+        include_str!("../../.claude/commands/discuss.md"),
     ),
 ];
 
@@ -77,11 +75,10 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         ui::created_path(&claude_commands_dir);
     }
 
-    // Write command templates with {{GOVCTL}} → govctl substitution
+    // Write command templates
     for (filename, template) in COMMAND_TEMPLATES {
-        let content = template.replace(GOVCTL_PLACEHOLDER, GOVCTL_DEFAULT);
         let path = claude_commands_dir.join(filename);
-        write_file(&path, &content, op)?;
+        write_file(&path, template, op)?;
         if !op.is_preview() {
             ui::created_path(&path);
         }
@@ -121,9 +118,8 @@ pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Resul
             continue;
         }
 
-        // Write template with {{GOVCTL}} → govctl substitution
-        let content = template.replace(GOVCTL_PLACEHOLDER, GOVCTL_DEFAULT);
-        write_file(&path, &content, op)?;
+        // Write template
+        write_file(&path, template, op)?;
 
         if !op.is_preview() {
             if path.exists() && force {

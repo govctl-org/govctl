@@ -1,0 +1,18 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-11-004"
+title = "Move skills and agents from assets to .claude, eliminate {{GOVCTL}} duplication"
+status = "done"
+created = "2026-02-11"
+started = "2026-02-11"
+completed = "2026-02-11"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "Change completed"
+status = "done"
+category = "chore"
