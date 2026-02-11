@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-02-11-003"
 title = "Implement skills and agents per ADR-0024"
-status = "active"
+status = "done"
 created = "2026-02-11"
 started = "2026-02-11"
+completed = "2026-02-11"
 refs = ["ADR-0024"]
 
 [content]
@@ -14,40 +15,40 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "rfc-writer skill"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "adr-writer skill"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "wi-writer skill"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "rfc-reviewer agent"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "adr-reviewer agent"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "wi-reviewer agent"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "compliance-checker agent"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"

@@ -38,16 +38,19 @@ Explain the situation that requires a decision. Structure:
 [1-2 sentence summary of the situation]
 
 ### Problem Statement
+
 What specific issue are we addressing?
 
 ### Constraints
+
 What existing RFCs, ADRs, or technical limitations restrict our options?
 
 ### Options Considered
+
 Brief overview (details go in the alternatives field).
 ```
 
-**Key principle:** A reader 6 months from now must understand *why* this decision was needed without asking anyone.
+**Key principle:** A reader 6 months from now must understand _why_ this decision was needed without asking anyone.
 
 ### 2. Decision (required)
 
@@ -62,6 +65,7 @@ We will **[action]** because:
 2. **Reason two:** Explanation
 
 ### Implementation Notes
+
 Specific guidance for implementing this decision.
 ```
 
@@ -75,14 +79,17 @@ Honest accounting of trade-offs. Structure:
 ## Consequences
 
 ### Positive
+
 - Benefit one
 - Benefit two
 
 ### Negative
+
 - Trade-off one (mitigation: ...)
 - Trade-off two (mitigation: ...)
 
 ### Neutral
+
 - Side effect that is neither positive nor negative
 ```
 
@@ -94,7 +101,7 @@ Honest accounting of trade-offs. Structure:
 {{GOVCTL}} adr add <ADR-ID> alternatives "Option A: Description. Rejected: reason."
 ```
 
-Document rejected options. Future readers need to know what was *not* chosen and why.
+Document rejected options. Future readers need to know what was _not_ chosen and why.
 
 ### 5. References (recommended)
 
@@ -129,10 +136,10 @@ decision = "Use HashMap<String, Vec<ClauseSpec>> for clause storage"
 
 ## Common Mistakes
 
-| Mistake | Fix |
-|---------|-----|
-| Empty Negative section | Every decision has trade-offs — document them |
-| No alternatives | Add at least one rejected option |
+| Mistake                            | Fix                                                     |
+| ---------------------------------- | ------------------------------------------------------- |
+| Empty Negative section             | Every decision has trade-offs — document them           |
+| No alternatives                    | Add at least one rejected option                        |
 | Vague context: "We need to decide" | Specific: "RFC-0002 requires X but doesn't specify how" |
-| Decision buried in prose | Lead with "We will **action**" |
-| Missing refs | Link to RFCs/ADRs that constrain the decision |
+| Decision buried in prose           | Lead with "We will **action**"                          |
+| Missing refs                       | Link to RFCs/ADRs that constrain the decision           |

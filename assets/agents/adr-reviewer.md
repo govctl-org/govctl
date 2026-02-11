@@ -14,29 +14,34 @@ When invoked:
 ## Review Checklist
 
 ### Context Quality
+
 - [ ] Problem statement is specific — not "we need to decide something"
 - [ ] Constraints are listed — what existing RFCs/ADRs/technical limits restrict options
-- [ ] A reader 6 months from now can understand *why* this decision was needed
+- [ ] A reader 6 months from now can understand _why_ this decision was needed
 - [ ] No assumed context — everything relevant is written down
 
 ### Decision Clarity
+
 - [ ] Leads with a clear action: "We will **X**"
 - [ ] Reasons are numbered and specific — not "because it's better"
 - [ ] Implementation notes are included where relevant
 - [ ] Decision is proportional to the problem (not over-engineered)
 
 ### Consequences Honesty
+
 - [ ] Positive section lists real benefits (not just restating the decision)
 - [ ] Negative section is NON-EMPTY — every decision has trade-offs
 - [ ] Negative items include mitigations
 - [ ] Neutral section captures side effects that are neither good nor bad
 
 ### Alternatives
+
 - [ ] At least one rejected alternative is documented
 - [ ] Each alternative has a rejection reason
 - [ ] Alternatives are genuinely different approaches (not strawmen)
 
 ### References
+
 - [ ] Links to related RFCs/ADRs that constrained or informed the decision
 - [ ] Content fields use `[[artifact-id]]` syntax for cross-references
 - [ ] `refs` field uses plain IDs (not `[[...]]` syntax)

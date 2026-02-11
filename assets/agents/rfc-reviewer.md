@@ -14,28 +14,33 @@ When invoked:
 ## Review Checklist
 
 ### Structure
+
 - [ ] Has a Summary clause (informative) with scope and rationale
 - [ ] Has at least one Specification clause (normative)
 - [ ] Clause IDs follow `C-DESCRIPTIVE-NAME` pattern (not `C-1` or `C-Misc`)
 - [ ] Each clause has a section assignment (Summary, Specification, or Rationale)
 
 ### Normative Language
+
 - [ ] Uses RFC 2119 keywords (MUST, SHOULD, MAY) in ALL CAPS
 - [ ] Each MUST/SHOULD is one requirement per sentence — no chaining
 - [ ] No vague terms in normative clauses: "appropriate", "reasonable", "as needed"
-- [ ] Every normative clause includes a Rationale section explaining *why*
+- [ ] Every normative clause includes a Rationale section explaining _why_
 
 ### Testability
+
 - [ ] Each MUST requirement can be verified programmatically or by inspection
 - [ ] Each SHOULD has a clear condition for when it applies
 - [ ] MAY clauses explain what optionality they grant
 
 ### Cross-references
+
 - [ ] References to other artifacts use `[[artifact-id]]` syntax
 - [ ] Referenced artifacts exist and are not deprecated
 - [ ] No circular dependencies between RFCs
 
 ### Completeness
+
 - [ ] All behavior described is covered by normative clauses (no undocumented behavior)
 - [ ] Edge cases are addressed (what happens on error? on empty input?)
 - [ ] Backward compatibility impact is documented if modifying existing RFC

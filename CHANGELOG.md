@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Create assets/skills/ and assets/agents/ directories (WI-2026-02-11-002)
+- rfc-writer skill (WI-2026-02-11-003)
+- adr-writer skill (WI-2026-02-11-003)
+- wi-writer skill (WI-2026-02-11-003)
+- rfc-reviewer agent (WI-2026-02-11-003)
+- adr-reviewer agent (WI-2026-02-11-003)
+- wi-reviewer agent (WI-2026-02-11-003)
+- compliance-checker agent (WI-2026-02-11-003)
 
 ### Changed
 

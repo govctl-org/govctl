@@ -14,11 +14,13 @@ When invoked:
 ## Review Checklist
 
 ### Description
+
 - [ ] Placeholder text has been replaced with real content
-- [ ] Describes *what* will be done and *why*
+- [ ] Describes _what_ will be done and _why_
 - [ ] Technical terms are wrapped in backticks
 
 ### Acceptance Criteria
+
 - [ ] At least one criterion exists
 - [ ] Every criterion has a category prefix (`add:`, `fix:`, `chore:`, etc.)
 - [ ] Each criterion is specific and testable — can be marked done/not-done without ambiguity
@@ -26,6 +28,7 @@ When invoked:
 - [ ] No duplicate or overlapping criteria
 
 ### Category Correctness
+
 - [ ] `add:` is used for genuinely new features (not modifications)
 - [ ] `fix:` is used for bug fixes (not new features)
 - [ ] `changed:` is used for modifications to existing behavior
@@ -33,11 +36,13 @@ When invoked:
 - [ ] Categories match what will actually show up in the changelog
 
 ### References
+
 - [ ] Links to governing RFCs/ADRs where applicable
 - [ ] If implementing an RFC, the RFC ID is in refs
 - [ ] If following an ADR, the ADR ID is in refs
 
 ### Scope
+
 - [ ] Work item is focused — one logical unit of work
 - [ ] Not too broad (should be completable in one session)
 - [ ] Not too narrow (shouldn't be split into multiple WIs)

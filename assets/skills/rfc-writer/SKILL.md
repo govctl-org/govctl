@@ -58,18 +58,18 @@ EOF
 
 Use these keywords in ALL CAPS in normative clauses:
 
-| Keyword      | Meaning                        |
-|-------------|--------------------------------|
-| MUST         | Absolute requirement           |
-| MUST NOT     | Absolute prohibition           |
-| SHOULD       | Recommended but not required   |
-| SHOULD NOT   | Discouraged but not prohibited |
-| MAY          | Optional                       |
+| Keyword    | Meaning                        |
+| ---------- | ------------------------------ |
+| MUST       | Absolute requirement           |
+| MUST NOT   | Absolute prohibition           |
+| SHOULD     | Recommended but not required   |
+| SHOULD NOT | Discouraged but not prohibited |
+| MAY        | Optional                       |
 
 ### Quality Checklist
 
 - **Be specific.** Avoid vague terms: "appropriate", "reasonable", "as needed". Say exactly what.
-- **Include rationale.** Every normative clause should explain *why*, not just *what*.
+- **Include rationale.** Every normative clause should explain _why_, not just _what_.
 - **One requirement per sentence.** Don't chain MUST/SHOULD in a single sentence.
 - **Reference existing artifacts.** Use `[[RFC-NNNN]]` or `[[ADR-NNNN]]` syntax.
 - **Testable.** Each MUST/SHOULD should be verifiable — if you can't test it, rewrite it.
@@ -82,18 +82,18 @@ Use these keywords in ALL CAPS in normative clauses:
 
 ### Section Types
 
-| Section | Clause Kind | Content |
-|---------|-------------|---------|
-| Summary | informative | Overview, scope, rationale |
-| Specification | normative | MUST/SHOULD/MAY requirements |
-| Rationale | informative | Extended explanation |
+| Section       | Clause Kind | Content                      |
+| ------------- | ----------- | ---------------------------- |
+| Summary       | informative | Overview, scope, rationale   |
+| Specification | normative   | MUST/SHOULD/MAY requirements |
+| Rationale     | informative | Extended explanation         |
 
 ## Common Mistakes
 
-| Mistake | Fix |
-|---------|-----|
-| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return `Result<T, E>` with descriptive error message" |
-| No rationale | Add `**Rationale:**` section explaining why |
-| Untestable requirement | Rewrite so it can be verified programmatically |
-| Missing cross-references | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links |
-| `since` field left empty | It's OK — `govctl rfc bump` or `govctl rfc finalize` fills it automatically |
+| Mistake                                        | Fix                                                                         |
+| ---------------------------------------------- | --------------------------------------------------------------------------- |
+| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return `Result<T, E>` with descriptive error message"       |
+| No rationale                                   | Add `**Rationale:**` section explaining why                                 |
+| Untestable requirement                         | Rewrite so it can be verified programmatically                              |
+| Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                                  |
+| `since` field left empty                       | It's OK — `govctl rfc bump` or `govctl rfc finalize` fills it automatically |
