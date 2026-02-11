@@ -5,6 +5,7 @@ title = "Refactor assets into commands/skills/agents subdirectories"
 status = "active"
 created = "2026-02-11"
 started = "2026-02-11"
+refs = ["ADR-0023"]
 
 [content]
 description = """

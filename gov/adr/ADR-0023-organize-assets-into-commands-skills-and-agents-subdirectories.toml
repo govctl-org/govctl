@@ -1,0 +1,63 @@
+[govctl]
+schema = 1
+id = "ADR-0023"
+title = "Organize assets into commands, skills, and agents subdirectories"
+status = "proposed"
+date = "2026-02-11"
+
+[content]
+context = """
+## Context
+
+The `assets/` directory currently contains a flat mix of files: four command workflow definitions (`gov.md`, `quick.md`, `discuss.md`, `status.md`) and four logo SVGs. As we prepare to add **skill definitions** (specialized AI agent capabilities) and **agent definitions** (agent role/behavior configurations), the flat structure becomes ambiguous — it conflates three distinct categories of assets.
+
+### Problem Statement
+
+With new asset types incoming, a flat `assets/` directory provides no semantic separation. Developers (and tools like `sync-commands.sh`) must rely on conventions or file extensions to distinguish command templates from skills from agents.
+
+### Constraints
+
+- `govctl init` copies command templates via `include_str!` in `src/cmd/new.rs` — paths are compile-time constants
+- `build.rs` tracks command files for rebuild — paths must stay in sync
+- `scripts/sync-commands.sh` and `sync-commands.ps1` glob `assets/*.md` — pattern must be updated
+- Logo SVGs are referenced from `README.md` and are a fourth category (static images)"""
+decision = """
+## Decision
+
+Organize `assets/` into three subdirectories by category:
+
+- `assets/commands/` — AI workflow command definitions (gov.md, quick.md, discuss.md, status.md)
+- `assets/skills/` — Skill definitions (new, initially empty)
+- `assets/agents/` — Agent definitions (new, initially empty)
+
+Logo SVGs remain at the `assets/` root since they are static images, not AI-consumable definitions.
+
+All compile-time paths (`include_str!`), build system paths (`build.rs`), and script globs are updated to reference `assets/commands/`.
+
+### Rationale
+
+1. **Semantic clarity** — the directory name tells you what kind of asset it is
+2. **Minimal blast radius** — logos stay put, only command `.md` files move one level deeper
+3. **Future-proof** — skills and agents get their own home from day one"""
+consequences = """
+## Consequences
+
+### Positive
+- Clear separation of concerns for three distinct asset categories
+- New skills/agents have a designated location from the start
+- Scripts and tooling can target specific subdirectories
+
+### Negative
+- One-time update to all paths referencing command assets (4 files)
+- Test snapshots that reference output paths may need updating
+
+### Neutral
+- Logo SVGs stay at `assets/` root — no change to README references"""
+
+[[content.alternatives]]
+text = "Flat with naming conventions: Keep flat assets/ and use prefixes like cmd-gov.md, skill-foo.md. Rejected: naming conventions are fragile and don't scale."
+status = "considered"
+
+[[content.alternatives]]
+text = "Separate top-level directories: commands/ skills/ agents/ at repo root. Rejected: over-scatters related assets."
+status = "considered"
