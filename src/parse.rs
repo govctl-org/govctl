@@ -47,7 +47,7 @@ pub fn load_adrs_with_warnings(config: &Config) -> Result<LoadResult<AdrEntry>, 
                     // Record warning instead of silently skipping
                     warnings.push(Diagnostic::new(
                         DiagnosticCode::W0104AdrParseSkipped,
-                        format!("Skipped ADR (parse error): {}", e.message),
+                        format!("Skipped ADR: {} (hint: fix TOML syntax)", e.message),
                         path.display().to_string(),
                     ));
                 }
@@ -152,7 +152,7 @@ pub fn load_work_items_with_warnings(
                     // Record warning instead of silently skipping
                     warnings.push(Diagnostic::new(
                         DiagnosticCode::W0105WorkParseSkipped,
-                        format!("Skipped work item (parse error): {}", e.message),
+                        format!("Skipped work item: {} (hint: fix TOML syntax)", e.message),
                         path.display().to_string(),
                     ));
                 }

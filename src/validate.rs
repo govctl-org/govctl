@@ -270,7 +270,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         if adr.meta().refs.is_empty() {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
-                "ADR does not reference any artifacts (refs field is empty)",
+                format!("ADR has no artifact references (hint: `govctl adr add {} refs RFC-XXXX`)", adr.meta().id),
                 adr.path.display().to_string(),
             ));
         }
@@ -279,7 +279,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         if adr.spec.content.context.contains("Describe the context") {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
-                "ADR context appears to be placeholder text",
+                format!("ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)", adr.meta().id),
                 adr.path.display().to_string(),
             ));
         }
@@ -312,7 +312,7 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
             Err(e) => {
                 result.diagnostics.push(Diagnostic::new(
                     DiagnosticCode::W0106RenderedReadError,
-                    format!("Could not read rendered markdown: {}", e),
+                    format!("Could not read rendered markdown: {} (hint: run `govctl rfc render`)", e),
                     md_path.display().to_string(),
                 ));
                 continue;
@@ -385,7 +385,7 @@ fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
     if rfc.rfc.changelog.is_empty() {
         result.diagnostics.push(Diagnostic::new(
             DiagnosticCode::W0101RfcNoChangelog,
-            "RFC has no changelog entries",
+            "RFC has no changelog entries (hint: run `govctl rfc bump`)",
             rfc.path.display().to_string(),
         ));
     }
@@ -625,7 +625,7 @@ fn validate_work_item_descriptions(index: &ProjectIndex, result: &mut Validation
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0108WorkPlaceholderDescription,
                 format!(
-                    "Work item '{}' has placeholder or empty description",
+                    "Work item has placeholder description (hint: `govctl work set {} description \"...\"`)",
                     work.meta().id
                 ),
                 work.path.display().to_string(),

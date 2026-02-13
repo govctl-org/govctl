@@ -147,7 +147,7 @@ pub fn scan_source_refs(config: &Config, index: &ProjectIndex) -> ScanResult {
                 Some(ArtifactState::Outdated(reason)) => {
                     result.diagnostics.push(Diagnostic::new(
                         DiagnosticCode::W0107SourceRefOutdated,
-                        format!("Outdated artifact reference: {} ({})", artifact_id, reason),
+                        format!("Outdated reference: {} ({}) (hint: update comment or remove [[...]])", artifact_id, reason),
                         path_str.clone(),
                     ));
                 }
