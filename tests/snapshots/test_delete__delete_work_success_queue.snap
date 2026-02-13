@@ -41,5 +41,5 @@ Checked:
   0 ADRs
   1 work items
 
-warning[W0108]: Work item 'WI-<DATE>-002' has placeholder or empty description (gov/work/<DATE>-delete-this-work-item.toml)
+warning[W0108]: Work item has placeholder description (hint: `govctl work set WI-<DATE>-002 description "..."`) (gov/work/<DATE>-delete-this-work-item.toml)
 exit: 0

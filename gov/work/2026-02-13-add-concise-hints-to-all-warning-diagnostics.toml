@@ -2,15 +2,15 @@
 schema = 1
 id = "WI-2026-02-13-001"
 title = "Add concise hints to all warning diagnostics"
-status = "active"
+status = "done"
 created = "2026-02-13"
 started = "2026-02-13"
+completed = "2026-02-13"
 
 [content]
-description = """
-Add concise hints to all warning diagnostics (W01xx) so users know how to resolve them."""
+description = "Add concise hints to all warning diagnostics (W01xx) so users know how to resolve them."
 
 [[content.acceptance_criteria]]
 text = "All warnings have concise hints"
-status = "pending"
+status = "done"
 category = "chore"

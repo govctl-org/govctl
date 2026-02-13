@@ -270,7 +270,10 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         if adr.meta().refs.is_empty() {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
-                format!("ADR has no artifact references (hint: `govctl adr add {} refs RFC-XXXX`)", adr.meta().id),
+                format!(
+                    "ADR has no artifact references (hint: `govctl adr add {} refs RFC-XXXX`)",
+                    adr.meta().id
+                ),
                 adr.path.display().to_string(),
             ));
         }
@@ -279,7 +282,10 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         if adr.spec.content.context.contains("Describe the context") {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
-                format!("ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)", adr.meta().id),
+                format!(
+                    "ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)",
+                    adr.meta().id
+                ),
                 adr.path.display().to_string(),
             ));
         }
@@ -312,7 +318,10 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
             Err(e) => {
                 result.diagnostics.push(Diagnostic::new(
                     DiagnosticCode::W0106RenderedReadError,
-                    format!("Could not read rendered markdown: {} (hint: run `govctl rfc render`)", e),
+                    format!(
+                        "Could not read rendered markdown: {} (hint: run `govctl rfc render`)",
+                        e
+                    ),
                     md_path.display().to_string(),
                 ));
                 continue;
