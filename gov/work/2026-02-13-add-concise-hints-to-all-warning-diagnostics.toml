@@ -13,4 +13,4 @@ description = "Add concise hints to all warning diagnostics (W01xx) so users kno
 [[content.acceptance_criteria]]
 text = "All warnings have concise hints"
 status = "done"
-category = "chore"
+category = "fixed"
