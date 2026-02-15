@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-SUMMARY",
+  "title": "Summary",
+  "kind": "informative",
+  "status": "active",
+  "text": "This RFC specifies that govctl MUST preserve integrity of governance artifacts when multiple processes invoke write operations concurrently (e.g. agent-triggered parallel tasks creating or editing RFCs, ADRs, or work items).\n\n**Scope:** Applies to any command that modifies files under the gov root or writes rendered output under the docs root. The concrete mechanism to satisfy this requirement is an implementation detail.\n\n**Backward compatibility:** Existing command invocations and arguments remain valid. This RFC adds only coordination and failure behaviour; it does not change command semantics.\n\n**Specification outline:** The RFC defines terms (write command, read-only command, concurrent invocations, corrupted file); requires that every write command participate in a single global concurrency mechanism and that read-only commands never block on it; requires that concurrent writes never produce corrupted files, duplicate work item IDs, or lost read-modify-write updates; and requires predictable failure behaviour (bounded wait, then either proceed or fail with an actionable error) when the mechanism cannot be acquired.\n\n**Rationale:** Concurrent writes without coordination cause file corruption, duplicate IDs, and lost updates. Agents and scripts often run multiple govctl invocations in parallel; the implementation must prevent observable corruption and provide clear behaviour on conflict.",
+  "since": "0.1.0"
+}

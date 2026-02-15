@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-FAILURE-BEHAVIOUR",
+  "title": "Behaviour when concurrency mechanism is unavailable",
+  "kind": "normative",
+  "status": "active",
+  "text": "When a write command cannot obtain exclusive access (e.g. because another write command is in progress), the implementation MUST either wait for a bounded time and then proceed, or wait for a bounded time and then fail. The maximum wait time is implementation-defined and MUST be documented. Implementations SHOULD use a default maximum wait of at least 30 seconds for interoperability and testability. The maximum wait time MAY be configurable.\n\nIf the implementation chooses to fail after waiting, it MUST exit with a non-zero status and MUST emit an actionable error message that indicates that another govctl write is in progress and that the user or agent should retry later. The message MUST NOT assume a specific concurrency mechanism (e.g. must not require the word \"lock\").\n\nIf the implementation waits until access is granted, it MUST eventually proceed; it MUST NOT deadlock.\n\nImplementations SHOULD ensure that exclusive access is released on process exit or that time-based expiry or stale-lock cleanup applies, so that a crashed process does not block writers indefinitely.\n\n**Rationale:** Predictable failure behaviour allows agents and scripts to retry or serialise writes; clear errors avoid confusion. A documented, implementation-defined bound makes conformance testable; the 30-second SHOULD gives implementations and tests a shared expectation. The stale-lock note supports the \"MUST NOT deadlock\" requirement when a holder crashes.",
+  "since": "0.1.0"
+}

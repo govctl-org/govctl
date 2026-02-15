@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Exclusive gov-root lock acquired for all write commands before mutating gov/ or docs/ (WI-2026-02-15-001)
+- Read-only commands do not acquire lock or block (WI-2026-02-15-001)
+- Bounded wait with configurable or documented default (recommend >= 30s); clear error on timeout (WI-2026-02-15-001)
+- Lock released on process exit; no deadlock when holder crashes (WI-2026-02-15-001)
+
 ## [0.4.2] - 2026-02-13
 
 ### Fixed

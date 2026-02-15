@@ -1,0 +1,32 @@
+{
+  "rfc_id": "RFC-0004",
+  "title": "Concurrent write safety for governance artifacts",
+  "version": "0.1.0",
+  "status": "normative",
+  "phase": "test",
+  "owners": ["@govctl-org"],
+  "created": "2026-02-15",
+  "updated": "2026-02-15",
+  "sections": [
+    {
+      "title": "Summary",
+      "clauses": ["clauses/C-SUMMARY.json"]
+    },
+    {
+      "title": "Specification",
+      "clauses": [
+        "clauses/C-CONCURRENT-WRITE.json",
+        "clauses/C-DEFINITIONS.json",
+        "clauses/C-FAILURE-BEHAVIOUR.json",
+        "clauses/C-SCOPE.json"
+      ]
+    }
+  ],
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "date": "2026-02-15",
+      "notes": "Initial draft"
+    }
+  ]
+}

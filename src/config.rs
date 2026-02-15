@@ -19,6 +19,30 @@ pub struct Config {
     pub source_scan: SourceScanConfig,
     #[serde(default)]
     pub work_item: WorkItemConfig,
+    #[serde(default)]
+    pub concurrency: ConcurrencyConfig,
+}
+
+/// Concurrency and write-safety configuration.
+///
+/// Implements [[RFC-0004]] concurrent write safety (configurable lock timeout).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConcurrencyConfig {
+    /// Maximum seconds to wait for exclusive access before failing (default: 30).
+    #[serde(default = "default_lock_timeout_secs")]
+    pub lock_timeout_secs: u64,
+}
+
+fn default_lock_timeout_secs() -> u64 {
+    30
+}
+
+impl Default for ConcurrencyConfig {
+    fn default() -> Self {
+        Self {
+            lock_timeout_secs: default_lock_timeout_secs(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

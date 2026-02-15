@@ -307,6 +307,51 @@ pub enum CanonicalCommand {
 }
 
 impl CanonicalCommand {
+    /// Returns true if this command modifies gov/ or writes to docs/ (per RFC-0004 C-SCOPE).
+    /// Such commands must acquire the gov-root exclusive lock before running.
+    pub fn is_write_command(&self) -> bool {
+        use CanonicalCommand::*;
+        matches!(
+            self,
+            Init { .. }
+                | Sync { .. }
+                | Render { .. }
+                | RfcNew { .. }
+                | RfcSet { .. }
+                | RfcBump { .. }
+                | RfcFinalize { .. }
+                | RfcAdvance { .. }
+                | RfcDeprecate { .. }
+                | RfcSupersede { .. }
+                | RfcRender { .. }
+                | ClauseNew { .. }
+                | ClauseEdit { .. }
+                | ClauseSet { .. }
+                | ClauseDelete { .. }
+                | ClauseDeprecate { .. }
+                | ClauseSupersede { .. }
+                | AdrNew { .. }
+                | AdrSet { .. }
+                | AdrAdd { .. }
+                | AdrRemove { .. }
+                | AdrAccept { .. }
+                | AdrReject { .. }
+                | AdrDeprecate { .. }
+                | AdrSupersede { .. }
+                | AdrTick { .. }
+                | AdrRender { .. }
+                | WorkNew { .. }
+                | WorkSet { .. }
+                | WorkAdd { .. }
+                | WorkRemove { .. }
+                | WorkMove { .. }
+                | WorkTick { .. }
+                | WorkDelete { .. }
+                | WorkRender { .. }
+                | ReleaseCut { .. }
+        )
+    }
+
     /// Convert parsed CLI commands to canonical form.
     ///
     /// This is where both old (deprecated) and new (resource-first) syntaxes

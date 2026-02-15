@@ -1,0 +1,37 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-15-001"
+title = "Implement concurrent write safety (RFC-0004 file lock)"
+status = "done"
+created = "2026-02-15"
+started = "2026-02-15"
+completed = "2026-02-15"
+refs = ["RFC-0004"]
+
+[content]
+description = "Implement file-based exclusive locking for govctl write commands per RFC-0004. Uses fs2 advisory lock on gov/.govctl.lock with configurable 30s default timeout. Write commands acquire lock before mutation; read-only commands bypass lock."
+
+[[content.acceptance_criteria]]
+text = "Exclusive gov-root lock acquired for all write commands before mutating gov/ or docs/"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Read-only commands do not acquire lock or block"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Bounded wait with configurable or documented default (recommend >= 30s); clear error on timeout"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Lock released on process exit; no deadlock when holder crashes"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes; existing tests pass"
+status = "done"
+category = "chore"

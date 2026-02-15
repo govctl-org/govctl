@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-SCOPE",
+  "title": "Scope of write commands",
+  "kind": "normative",
+  "status": "active",
+  "text": "Every write command MUST participate in the concurrency mechanism before performing any mutation of the gov tree or docs output. Participation means acquiring exclusive access (or equivalent) for the duration of the write operations performed by that invocation.\n\nRead-only commands MUST NOT acquire exclusive access and MUST NOT block on the concurrency mechanism. They MAY run concurrently with each other and with at most one write command.\n\nThe concurrency mechanism SHALL apply to the entire gov root (and, when a command writes rendered output, to the docs root) as a single unit. Exclusive access MUST NOT be held by more than one write command at the same time.\n\n**Rationale:** Defining scope ensures that all mutation paths are covered and that read-only usage is never blocked by writers.",
+  "since": "0.1.0"
+}

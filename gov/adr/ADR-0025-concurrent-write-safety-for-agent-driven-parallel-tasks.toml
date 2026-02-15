@@ -1,0 +1,72 @@
+[govctl]
+schema = 1
+id = "ADR-0025"
+title = "Concurrent write safety for agent-driven parallel tasks"
+status = "accepted"
+date = "2026-02-15"
+refs = [
+    "RFC-0002",
+    "ADR-0020",
+]
+
+[content]
+context = """
+When an agent (e.g. Cursor, Claude Code) runs multiple tasks in parallel that each invoke govctl to create or modify RFCs, ADRs, or work items, concurrent writes to the same files or to the same directory can cause:
+
+1. **File corruption** — Two processes write to the same file; interleaved writes or truncate-then-write races produce partial or invalid content.
+2. **ID collision** — Work item creation uses `find_max_sequence(work_dir, id_prefix)` then writes a new file. Two processes can read the same max, both write the same ID or overwrite the same path (same date-slug).
+3. **Lost updates** — Read-modify-write (e.g. edit, set, bump) without coordination: one process overwrites the other's write.
+
+This is distinct from [[ADR-0020]], which addresses ID collision across *branches* (merge-time). Here the scenario is *same repository, multiple concurrent processes* (e.g. multiple agent tasks in one workspace).
+
+**Constraints:** govctl is a CLI; no daemon. Implementation must work across processes. No network or external services. Must remain portable (Unix/macOS/Windows where feasible).
+"""
+decision = """
+**Use process-level filesystem locking so that only one govctl process mutates the governance tree at a time.**
+
+1. **Scope of locking**
+   - Any command that modifies `gov/` or writes to `docs/` (render, new, set, add, edit, tick, bump, finalize, advance, accept, move, etc.) MUST acquire a lock before performing mutations and release it when done.
+   - Read-only commands (list, get, check, status, show) do NOT need to hold the lock.
+
+2. **Lock mechanism**
+   - A single **gov-root lock file** (e.g. `gov/.govctl.lock` or a lock in a well-known location under gov root). One lock for the entire gov tree.
+   - Acquire: exclusive (write) lock on that file (e.g. `flock(LOCK_EX)` on Unix; equivalent on Windows).
+   - Blocking: if lock is held by another process, wait with optional timeout; on timeout, fail with a clear error instructing the user to retry or avoid parallel govctl writes.
+
+3. **Granularity**
+   - Coarse-grained (one lock per gov root) is chosen over per-artifact or per-directory locks to avoid deadlock and to keep implementation and behavior simple. Parallel agents serialize at the gov root; throughput is traded for correctness and simplicity.
+"""
+consequences = """
+**Positive**
+- Prevents file corruption and ID collision under concurrent agent tasks.
+- Single lock file: no deadlock, no lock ordering, easy to reason about.
+- Portable: file locking is available on all supported platforms (flock/cfg with fallbacks).
+
+**Negative**
+- Parallel govctl write commands serialize; one task may block until another finishes. Mitigation: agents can be designed to queue writes or run write commands sequentially; CLI documents the locking behavior.
+- Stale lock if process crashes without releasing. Mitigation: lock is process-scoped (OS releases on exit); optional timeout + clear error message for "stuck" waiters.
+- Slight complexity in CLI entrypoint: acquire lock early for write commands, release on all exit paths.
+
+**Neutral**
+- Render (writing to docs/) is included in the lock scope so that render + new/edit from two processes do not interleave.
+"""
+
+[[content.alternatives]]
+text = "File lock (gov-root): One exclusive lock for entire gov/ tree. Blocks concurrent writers until release. Chosen for simplicity and no deadlock."
+status = "considered"
+
+[[content.alternatives]]
+text = "Per-artifact lock: Lock only the file or directory being written. Rejected: deadlock risk (e.g. A holds rfc/ B holds adr/; A needs adr/ B needs rfc/), more complex lock ordering."
+status = "considered"
+
+[[content.alternatives]]
+text = "Write queue / single-writer daemon: One process accepts write requests over a socket or FIFO. Rejected: requires a long-running daemon, contradicts CLI-only design."
+status = "considered"
+
+[[content.alternatives]]
+text = "Documentation-only: Tell users/agents not to run write commands in parallel. Rejected: does not prevent races; agents and scripts often parallelize by default."
+status = "considered"
+
+[[content.alternatives]]
+text = "Atomic write + retry: Write to temp then rename; for work item ID, retry on collision. Rejected: avoids partial writes but does not fix read-modify-write races or deterministic ID collision from find_max_sequence."
+status = "considered"

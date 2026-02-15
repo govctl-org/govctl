@@ -7,6 +7,7 @@ use std::process::ExitCode;
 mod config;
 mod diagnostic;
 mod load;
+mod lock;
 mod model;
 mod parse;
 mod render;
@@ -849,6 +850,21 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             }
         }
         other => other,
+    };
+
+    // Acquire gov-root exclusive lock for write commands (RFC-0004)
+    let _guard = if canonical.is_write_command() {
+        // Init creates gov_root; ensure it exists so we can create the lock file there
+        if matches!(canonical, command_router::CanonicalCommand::Init { .. }) {
+            let gov_root = config.paths.gov_root.as_path();
+            if !gov_root.exists() {
+                std::fs::create_dir_all(gov_root)
+                    .map_err(|e| anyhow::anyhow!("Failed to create gov root: {}", e))?;
+            }
+        }
+        Some(lock::acquire_gov_lock(&config)?)
+    } else {
+        None
     };
 
     // Execute via canonical command pattern (single execution path)

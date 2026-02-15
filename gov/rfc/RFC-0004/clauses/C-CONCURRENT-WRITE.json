@@ -1,0 +1,8 @@
+{
+  "clause_id": "C-CONCURRENT-WRITE",
+  "title": "Concurrent write safety",
+  "kind": "normative",
+  "status": "active",
+  "text": "Commands that modify the governance tree or rendered output MUST use a concurrency mechanism such that:\n\n1. No two concurrent invocations (across processes) produce corrupted artifact files. Corrupted means: invalid JSON/TOML, truncated content, or interleaved content from different writes.\n2. Work item creation MUST NOT assign the same ID to two items created by concurrent invocations when both use the same ID prefix (e.g. same date under sequential or author-hash strategy). The scenario is same repository, concurrent processes (distinct from branch-merge ID collision).\n3. Read-modify-write operations (e.g. edit, set, bump) MUST NOT lose updates from another concurrent invocation modifying the same artifact.\n\nThis RFC requires the observable behaviour: artifact integrity and no duplicate IDs under concurrent write load. The concrete mechanism (e.g. process-level filesystem locking) is an implementation detail.\n\n**Rationale:** Agents and CI may run multiple govctl write commands in parallel. Without a defined concurrency strategy, races are observable in practice (file corruption, duplicate WI IDs). The normative requirement ensures implementors address this.",
+  "since": "0.1.0"
+}

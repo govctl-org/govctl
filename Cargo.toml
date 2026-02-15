@@ -1,6 +1,6 @@
 [package]
 name = "govctl"
-version = "0.4.2"
+version = "0.4.3"
 edition = "2024"
 rust-version = "1.88"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
@@ -31,7 +31,7 @@ serde_json = "1"
 toml = "1"
 
 # Validation and versioning
-jsonschema = "0.41"
+jsonschema = "0.42"
 semver = { version = "1", features = ["serde"] }
 
 # Error handling
@@ -55,6 +55,9 @@ strum = { version = "0.27", features = ["derive"] }
 # File system traversal
 walkdir = "2"
 globset = "0.4"
+
+# Process-level file locking (for concurrent write safety per RFC-0004)
+fs2 = "0.4"
 
 # Terminal output
 comfy-table = "7"
