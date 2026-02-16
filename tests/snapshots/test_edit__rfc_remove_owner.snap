@@ -32,5 +32,5 @@ For more information, try '--help'.
 exit: 2
 
 $ govctl rfc get RFC-0001 owners
-@<USER>
+@test-user
 exit: 0

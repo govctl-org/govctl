@@ -11,15 +11,14 @@ $ govctl rfc finalize RFC-0001 normative
 Finalized RFC-0001 to status: normative
 exit: 0
 
-$ govctl rfc deprecate RFC-0001
-Deprecate RFC-0001? [y/N] 
-Deprecation cancelled
+$ govctl rfc deprecate RFC-0001 --force
+Finalized RFC-0001 to status: deprecated
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬─────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title   │
-╞══════════╪═════════╪═══════════╪═══════╪═════════╡
-│ RFC-0001 ┆ 0.1.0   ┆ normative ┆ spec  ┆ Old RFC │
-└──────────┴─────────┴───────────┴───────┴─────────┘
+┌──────────┬─────────┬────────────┬───────┬─────────┐
+│ RFC      ┆ Version ┆ Status     ┆ Phase ┆ Title   │
+╞══════════╪═════════╪════════════╪═══════╪═════════╡
+│ RFC-0001 ┆ 0.1.0   ┆ deprecated ┆ spec  ┆ Old RFC │
+└──────────┴─────────┴────────────┴───────┴─────────┘
 exit: 0

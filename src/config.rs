@@ -59,6 +59,11 @@ fn default_project_name() -> String {
 }
 
 fn default_owner() -> String {
+    // Check environment variable first (useful for testing)
+    if let Ok(owner) = std::env::var("GOVCTL_DEFAULT_OWNER") {
+        return owner;
+    }
+
     // Try to get git user.name, fall back to placeholder
     std::process::Command::new("git")
         .args(["config", "user.name"])

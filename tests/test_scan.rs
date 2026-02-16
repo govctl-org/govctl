@@ -159,7 +159,7 @@ fn test_scan_deprecated_rfc_reference() {
         &[
             &["rfc", "new", "Old RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &["rfc", "deprecate", "RFC-0001"],
+            &["rfc", "deprecate", "RFC-0001", "--force"],
         ],
     );
 

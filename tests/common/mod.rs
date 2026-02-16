@@ -47,6 +47,7 @@ pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> String {
             .args(*args)
             .current_dir(dir)
             .env("NO_COLOR", "1")
+            .env("GOVCTL_DEFAULT_OWNER", "@test-user")
             .output()
             .expect("failed to run govctl");
 
@@ -84,6 +85,7 @@ pub fn run_dynamic_commands(dir: &Path, commands: &[Vec<String>]) -> String {
             .args(&args_str)
             .current_dir(dir)
             .env("NO_COLOR", "1")
+            .env("GOVCTL_DEFAULT_OWNER", "@test-user")
             .output()
             .expect("failed to run govctl");
 
@@ -116,6 +118,7 @@ pub fn init_project() -> TempDir {
         .args(["init"])
         .current_dir(temp_dir.path())
         .env("NO_COLOR", "1")
+        .env("GOVCTL_DEFAULT_OWNER", "@test-user")
         .output()
         .expect("failed to run govctl init");
     assert!(result.status.success(), "govctl init failed");
