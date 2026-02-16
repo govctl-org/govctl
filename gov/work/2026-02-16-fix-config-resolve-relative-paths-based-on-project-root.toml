@@ -51,7 +51,7 @@ category = "fix"
 [[content.acceptance_criteria]]
 text = "All snapshot tests pass with relative paths"
 status = "done"
-category = "test"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Lock integration tests pass (cross-process blocking verified)"
