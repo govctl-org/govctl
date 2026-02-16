@@ -104,13 +104,15 @@ impl WriteOp {
 /// Write content to a file, respecting WriteOp mode.
 ///
 /// In Preview mode, shows what would be written instead of writing.
-pub fn write_file(path: &Path, content: &str, op: WriteOp) -> Result<()> {
+/// If `display_path` is provided, it's used for the preview output instead of `path`.
+pub fn write_file(path: &Path, content: &str, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+    let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
             std::fs::write(path, content)?;
         }
         WriteOp::Preview => {
-            ui::dry_run_file_preview(path, content);
+            ui::dry_run_file_preview(output_path, content);
         }
     }
     Ok(())
@@ -119,13 +121,15 @@ pub fn write_file(path: &Path, content: &str, op: WriteOp) -> Result<()> {
 /// Create a directory, respecting WriteOp mode.
 ///
 /// In Preview mode, shows what directory would be created.
-pub fn create_dir_all(path: &Path, op: WriteOp) -> Result<()> {
+/// If `display_path` is provided, it's used for the preview output instead of `path`.
+pub fn create_dir_all(path: &Path, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+    let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
             std::fs::create_dir_all(path)?;
         }
         WriteOp::Preview => {
-            ui::dry_run_mkdir(path);
+            ui::dry_run_mkdir(output_path);
         }
     }
     Ok(())
@@ -134,14 +138,16 @@ pub fn create_dir_all(path: &Path, op: WriteOp) -> Result<()> {
 /// Delete a file, respecting WriteOp mode.
 ///
 /// In Preview mode, shows what would be deleted instead of deleting.
-pub fn delete_file(path: &Path, op: WriteOp) -> Result<()> {
+/// If `display_path` is provided, it's used for error messages and preview output.
+pub fn delete_file(path: &Path, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+    let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
             std::fs::remove_file(path)
-                .with_context(|| format!("Failed to delete file: {}", path.display()))?;
+                .with_context(|| format!("Failed to delete file: {}", output_path.display()))?;
         }
         WriteOp::Preview => {
-            ui::info(format!("[DRY RUN] Would delete: {}", path.display()));
+            ui::info(format!("[DRY RUN] Would delete: {}", output_path.display()));
         }
     }
     Ok(())
@@ -165,9 +171,9 @@ pub fn read_rfc(path: &Path) -> Result<RfcSpec> {
 }
 
 /// Write RFC JSON to file
-pub fn write_rfc(path: &Path, rfc: &RfcSpec, op: WriteOp) -> Result<()> {
+pub fn write_rfc(path: &Path, rfc: &RfcSpec, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
     let content = serde_json::to_string_pretty(rfc)?;
-    write_file(path, &content, op)
+    write_file(path, &content, op, display_path)
 }
 
 /// Read clause JSON from file
@@ -180,9 +186,9 @@ pub fn read_clause(path: &Path) -> Result<ClauseSpec> {
 }
 
 /// Write clause JSON to file
-pub fn write_clause(path: &Path, clause: &ClauseSpec, op: WriteOp) -> Result<()> {
+pub fn write_clause(path: &Path, clause: &ClauseSpec, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
     let content = serde_json::to_string_pretty(clause)?;
-    write_file(path, &content, op)
+    write_file(path, &content, op, display_path)
 }
 
 /// Bump RFC version and add changelog entry

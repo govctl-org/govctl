@@ -278,6 +278,7 @@ fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEn
 /// Handles dry-run preview, directory creation, and consistent formatting.
 /// `preview_lines` controls how many lines to show in dry-run mode.
 fn write_rendered_md(
+    config: &Config,
     output_path: &std::path::Path,
     content: &str,
     dry_run: bool,
@@ -285,9 +286,10 @@ fn write_rendered_md(
 ) -> anyhow::Result<()> {
     // Trim trailing whitespace, ensure single trailing newline
     let content = format!("{}\n", content.trim_end());
+    let display_path = config.display_path(output_path);
 
     if dry_run {
-        ui::dry_run_preview(output_path);
+        ui::dry_run_preview(&display_path);
         for line in content.lines().take(preview_lines) {
             ui::preview_line(line);
         }
@@ -299,7 +301,7 @@ fn write_rendered_md(
         }
         let mut file = std::fs::File::create(output_path)?;
         file.write_all(content.as_bytes())?;
-        ui::rendered(output_path);
+        ui::rendered(&display_path);
     }
 
     Ok(())
@@ -313,7 +315,7 @@ pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Resu
     let raw = render_rfc(rfc)?;
     let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
 
-    write_rendered_md(&output_path, &expanded, dry_run, 20)
+    write_rendered_md(config, &output_path, &expanded, dry_run, 20)
 }
 
 // =============================================================================
@@ -405,7 +407,7 @@ pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::R
     let raw = render_adr(adr)?;
     let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
 
-    write_rendered_md(&output_path, &expanded, dry_run, 15)
+    write_rendered_md(config, &output_path, &expanded, dry_run, 15)
 }
 
 // =============================================================================
@@ -503,7 +505,7 @@ pub fn write_work_item_md(
     let raw = render_work_item(item)?;
     let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
 
-    write_rendered_md(&output_path, &expanded, dry_run, 15)
+    write_rendered_md(config, &output_path, &expanded, dry_run, 15)
 }
 
 #[cfg(test)]

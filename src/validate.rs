@@ -256,17 +256,18 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
 
     // Validate RFCs
     for rfc in &index.rfcs {
-        validate_rfc(rfc, &mut result);
+        validate_rfc(rfc, config, &mut result);
     }
 
     // Validate RFC signatures (per ADR-0003)
     validate_rfc_signatures(index, config, &mut result);
 
     // Validate cross-references
-    validate_clause_references(index, &mut result);
+    validate_clause_references(index, config, &mut result);
 
     // Validate ADRs
     for adr in &index.adrs {
+        let adr_path_display = config.display_path(&adr.path).display().to_string();
         if adr.meta().refs.is_empty() {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
@@ -274,7 +275,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
                     "ADR has no artifact references (hint: `govctl adr add {} refs RFC-XXXX`)",
                     adr.meta().id
                 ),
-                adr.path.display().to_string(),
+                adr_path_display.clone(),
             ));
         }
 
@@ -286,16 +287,16 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
                     "ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)",
                     adr.meta().id
                 ),
-                adr.path.display().to_string(),
+                adr_path_display,
             ));
         }
     }
 
     // Validate artifact references (refs fields)
-    validate_artifact_refs(index, &mut result);
+    validate_artifact_refs(index, config, &mut result);
 
     // Validate work item descriptions
-    validate_work_item_descriptions(index, &mut result);
+    validate_work_item_descriptions(index, config, &mut result);
 
     result
 }
@@ -322,11 +323,13 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
                         "Could not read rendered markdown: {} (hint: run `govctl rfc render`)",
                         e
                     ),
-                    md_path.display().to_string(),
+                    config.display_path(&md_path).display().to_string(),
                 ));
                 continue;
             }
         };
+
+        let md_path_display = config.display_path(&md_path).display().to_string();
 
         // Extract signature from rendered markdown
         let Some(existing_sig) = extract_signature(&md_content) else {
@@ -336,7 +339,7 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
                     "Rendered markdown missing signature. Run 'govctl render' to regenerate: {}",
                     rfc.rfc.rfc_id
                 ),
-                md_path.display().to_string(),
+                md_path_display.clone(),
             ));
             continue;
         };
@@ -348,7 +351,7 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
                 result.diagnostics.push(Diagnostic::new(
                     DiagnosticCode::E0601SignatureMismatch,
                     format!("Failed to compute signature for {}: {}", rfc.rfc.rfc_id, e),
-                    md_path.display().to_string(),
+                    md_path_display.clone(),
                 ));
                 continue;
             }
@@ -362,14 +365,16 @@ fn validate_rfc_signatures(index: &ProjectIndex, config: &Config, result: &mut V
                     "Signature mismatch: rendered markdown was edited directly or source changed. Run 'govctl render' to regenerate: {}",
                     rfc.rfc.rfc_id
                 ),
-                md_path.display().to_string(),
+                md_path_display,
             ));
         }
     }
 }
 
 /// Validate a single RFC
-fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
+fn validate_rfc(rfc: &RfcIndex, config: &Config, result: &mut ValidationResult) {
+    let rfc_path_display = config.display_path(&rfc.path).display().to_string();
+
     // Check RFC ID matches directory
     let dir_name = rfc
         .path
@@ -386,7 +391,7 @@ fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
                 "RFC ID '{}' doesn't match directory '{}'",
                 rfc.rfc.rfc_id, name
             ),
-            rfc.path.display().to_string(),
+            rfc_path_display.clone(),
         ));
     }
 
@@ -395,15 +400,16 @@ fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
         result.diagnostics.push(Diagnostic::new(
             DiagnosticCode::W0101RfcNoChangelog,
             "RFC has no changelog entries (hint: run `govctl rfc bump`)",
-            rfc.path.display().to_string(),
+            rfc_path_display.clone(),
         ));
     }
 
     // Validate status/phase constraints
-    validate_status_phase_constraints(rfc, result);
+    validate_status_phase_constraints(rfc, config, result);
 
     // Validate clauses
     for clause in &rfc.clauses {
+        let clause_path_display = config.display_path(&clause.path).display().to_string();
         // Check clause has 'since' field
         if clause.spec.since.is_none() {
             result.diagnostics.push(Diagnostic::new(
@@ -412,7 +418,7 @@ fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
                     "Clause '{}' has no 'since' version (hint: it will be set automatically by `govctl rfc bump` or `govctl rfc finalize`)",
                     clause.spec.clause_id
                 ),
-                clause.path.display().to_string(),
+                clause_path_display.clone(),
             ));
         }
 
@@ -430,23 +436,28 @@ fn validate_rfc(rfc: &RfcIndex, result: &mut ValidationResult) {
                     "Clause ID '{}' doesn't match filename '{}'",
                     clause.spec.clause_id, file_name
                 ),
-                clause.path.display().to_string(),
+                clause_path_display,
             ));
         }
     }
 }
 
 /// Validate status/phase constraints per RFC-0000
-fn validate_status_phase_constraints(rfc: &RfcIndex, result: &mut ValidationResult) {
+fn validate_status_phase_constraints(
+    rfc: &RfcIndex,
+    config: &Config,
+    result: &mut ValidationResult,
+) {
     let status = rfc.rfc.status;
     let phase = rfc.rfc.phase;
+    let path_display = config.display_path(&rfc.path).display().to_string();
 
     // draft + stable is forbidden
     if status == RfcStatus::Draft && phase == RfcPhase::Stable {
         result.diagnostics.push(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
             "Cannot have status=draft with phase=stable",
-            rfc.path.display().to_string(),
+            path_display.clone(),
         ));
     }
 
@@ -458,13 +469,17 @@ fn validate_status_phase_constraints(rfc: &RfcIndex, result: &mut ValidationResu
                 "Cannot have status=deprecated with phase={}",
                 phase.as_ref()
             ),
-            rfc.path.display().to_string(),
+            path_display,
         ));
     }
 }
 
 /// Validate clause cross-references (superseded_by)
-fn validate_clause_references(index: &ProjectIndex, result: &mut ValidationResult) {
+fn validate_clause_references(
+    index: &ProjectIndex,
+    config: &Config,
+    result: &mut ValidationResult,
+) {
     // Collect all active clause IDs
     let active_clauses: std::collections::HashSet<String> = index
         .iter_clauses()
@@ -475,6 +490,7 @@ fn validate_clause_references(index: &ProjectIndex, result: &mut ValidationResul
     // Check superseded_by references
     for (rfc, clause) in index.iter_clauses() {
         if let Some(ref superseded_by) = clause.spec.superseded_by {
+            let clause_path_display = config.display_path(&clause.path).display().to_string();
             // If superseded, status should be Superseded
             if clause.spec.status != ClauseStatus::Superseded {
                 result.diagnostics.push(Diagnostic::new(
@@ -483,7 +499,7 @@ fn validate_clause_references(index: &ProjectIndex, result: &mut ValidationResul
                         "Clause has superseded_by but status is not 'superseded': {}",
                         clause.spec.clause_id
                     ),
-                    clause.path.display().to_string(),
+                    clause_path_display.clone(),
                 ));
             }
 
@@ -502,7 +518,7 @@ fn validate_clause_references(index: &ProjectIndex, result: &mut ValidationResul
                         "Clause '{}' superseded by '{}' which is not active",
                         clause.spec.clause_id, superseded_by
                     ),
-                    clause.path.display().to_string(),
+                    clause_path_display,
                 ));
             }
         }
@@ -510,7 +526,11 @@ fn validate_clause_references(index: &ProjectIndex, result: &mut ValidationResul
 }
 
 /// Validate refs fields in RFCs, ADRs and Work Items
-fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
+fn validate_artifact_refs(
+    index: &ProjectIndex,
+    config: &Config,
+    result: &mut ValidationResult,
+) {
     // Build a set of all known artifact IDs (including clause references)
     let mut known_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
 
@@ -535,6 +555,7 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
 
     // Validate RFC refs and supersedes
     for rfc in &index.rfcs {
+        let rfc_path_display = config.display_path(&rfc.path).display().to_string();
         // Validate refs field
         for ref_id in &rfc.rfc.refs {
             if !known_ids.contains(ref_id) {
@@ -544,7 +565,7 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
                         "RFC '{}' references unknown artifact: {}",
                         rfc.rfc.rfc_id, ref_id
                     ),
-                    rfc.path.display().to_string(),
+                    rfc_path_display.clone(),
                 ));
             }
         }
@@ -559,13 +580,14 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
                     "RFC '{}' supersedes unknown RFC: {}",
                     rfc.rfc.rfc_id, supersedes
                 ),
-                rfc.path.display().to_string(),
+                rfc_path_display,
             ));
         }
     }
 
     // Validate ADR refs
     for adr in &index.adrs {
+        let adr_path_display = config.display_path(&adr.path).display().to_string();
         for ref_id in &adr.meta().refs {
             if !known_ids.contains(ref_id) {
                 result.diagnostics.push(Diagnostic::new(
@@ -575,7 +597,7 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
                         adr.meta().id,
                         ref_id
                     ),
-                    adr.path.display().to_string(),
+                    adr_path_display.clone(),
                 ));
             }
         }
@@ -583,6 +605,7 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
 
     // Validate Work Item refs
     for work in &index.work_items {
+        let work_path_display = config.display_path(&work.path).display().to_string();
         for ref_id in &work.meta().refs {
             if !known_ids.contains(ref_id) {
                 result.diagnostics.push(Diagnostic::new(
@@ -592,7 +615,7 @@ fn validate_artifact_refs(index: &ProjectIndex, result: &mut ValidationResult) {
                         work.meta().id,
                         ref_id
                     ),
-                    work.path.display().to_string(),
+                    work_path_display.clone(),
                 ));
             }
         }
@@ -627,17 +650,22 @@ fn is_placeholder_description(desc: &str) -> bool {
 }
 
 /// Validate work item descriptions for placeholder content (per ADR-0010)
-fn validate_work_item_descriptions(index: &ProjectIndex, result: &mut ValidationResult) {
+fn validate_work_item_descriptions(
+    index: &ProjectIndex,
+    config: &Config,
+    result: &mut ValidationResult,
+) {
     for work in &index.work_items {
         let desc = &work.spec.content.description;
         if is_placeholder_description(desc) {
+            let path_display = config.display_path(&work.path).display().to_string();
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0108WorkPlaceholderDescription,
                 format!(
                     "Work item has placeholder description (hint: `govctl work set {} description \"...\"`)",
                     work.meta().id
                 ),
-                work.path.display().to_string(),
+                path_display,
             ));
         }
     }

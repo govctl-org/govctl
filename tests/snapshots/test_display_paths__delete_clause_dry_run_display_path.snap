@@ -1,0 +1,29 @@
+---
+source: tests/test_display_paths.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl clause delete RFC-0001:C-TO-DELETE --dry-run
+Would write: gov/rfc/RFC-0001/rfc.json
+  {
+    "rfc_id": "RFC-0001",
+    "title": "Draft RFC",
+    "version": "0.1.0",
+    "status": "draft",
+    "phase": "spec",
+    "owners": [
+      "test@example.com"
+    ],
+    "created": "2026-01-01",
+    "sections": [
+      {
+        "title": "Specification"
+      }
+    ],
+    "changelog": [
+      {
+        "version": "0.1.0",
+        "date": "2026-01-01",
+        "notes": "Initial draft"
+  ...
+[DRY RUN] Would delete: gov/rfc/RFC-0001/clauses/C-TO-DELETE.json
+exit: 0

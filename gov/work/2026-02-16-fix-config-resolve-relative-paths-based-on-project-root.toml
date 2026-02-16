@@ -1,0 +1,59 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-16-001"
+title = "fix(config): resolve relative paths based on project root"
+status = "done"
+created = "2026-02-16"
+started = "2026-02-16"
+completed = "2026-02-16"
+
+[content]
+description = """
+Fix relative path resolution in config to use project root instead of CWD.
+
+Problem: When govctl is run from a subdirectory, relative paths in config 
+(gov_root, docs_output, commands_dir) were resolved against CWD instead of 
+the project root (parent of gov/).
+
+Solution:
+1. Add Config::display_path() to convert absolute paths to relative for user output
+2. Add optional display_path parameter to write_file, create_dir_all, delete_file
+3. Update all user-facing path outputs to use relative paths
+4. Add integration tests for lock behavior and display paths
+
+Changed files:
+- src/config.rs: Add display_path() method
+- src/write.rs: Unify _display functions with optional parameter
+- src/parse.rs: Use config.display_path for releases output
+- src/validate.rs: Use config.display_path for diagnostics
+- src/cmd/new.rs: Use config.display_path for init/sync
+- src/cmd/edit.rs: Use config.display_path for delete output
+- src/render.rs: Pass config to write_rendered_md for relative paths
+- src/lock.rs: Unchanged (already correct)
+- tests/test_lock.rs: New lock integration tests
+- tests/test_display_paths.rs: New display path snapshot tests"""
+
+[[content.acceptance_criteria]]
+text = "All user-facing path outputs use relative paths (gov/..., docs/...)"
+status = "done"
+category = "fix"
+
+[[content.acceptance_criteria]]
+text = "Config::display_path() converts absolute paths to project-root-relative"
+status = "done"
+category = "fix"
+
+[[content.acceptance_criteria]]
+text = "write_file, create_dir_all, delete_file have optional display_path parameter"
+status = "done"
+category = "fix"
+
+[[content.acceptance_criteria]]
+text = "All snapshot tests pass with relative paths"
+status = "done"
+category = "test"
+
+[[content.acceptance_criteria]]
+text = "Lock integration tests pass (cross-process blocking verified)"
+status = "done"
+category = "test"

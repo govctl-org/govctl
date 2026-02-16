@@ -269,11 +269,12 @@ pub fn write_releases(
     op: WriteOp,
 ) -> Result<(), Diagnostic> {
     let path = config.releases_path();
+    let path_display = config.display_path(&path);
     let content = toml::to_string_pretty(releases).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
             format!("Failed to serialize releases: {e}"),
-            path.display().to_string(),
+            path_display.display().to_string(),
         )
     })?;
 
@@ -283,12 +284,12 @@ pub fn write_releases(
                 Diagnostic::new(
                     DiagnosticCode::E0901IoError,
                     e.to_string(),
-                    path.display().to_string(),
+                    path_display.display().to_string(),
                 )
             })?;
         }
         WriteOp::Preview => {
-            ui::dry_run_file_preview(&path, &content);
+            ui::dry_run_file_preview(&path_display, &content);
         }
     }
 

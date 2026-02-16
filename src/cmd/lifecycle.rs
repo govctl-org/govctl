@@ -39,7 +39,7 @@ fn fill_pending_clause_versions(rfc_path: &Path, version: &str, op: WriteOp) -> 
 
     for (path, mut clause) in pending_clauses {
         clause.since = Some(version.to_string());
-        write_clause(&path, &clause, op)?;
+        write_clause(&path, &clause, op, None)?;
         if !op.is_preview() {
             ui::sub_info(format!("Set {}.since = {}", clause.clause_id, version));
         }
@@ -82,7 +82,7 @@ pub fn bump(
             }
 
             // Write the RFC first
-            write_rfc(&rfc_path, &rfc, op)?;
+            write_rfc(&rfc_path, &rfc, op, None)?;
 
             // Update pending clauses (since: null) with new version
             fill_pending_clause_versions(&rfc_path, &new_version, op)?;
@@ -94,7 +94,7 @@ pub fn bump(
             {
                 rfc.signature = Some(sig);
                 // Write again with updated signature
-                write_rfc(&rfc_path, &rfc, op)?;
+                write_rfc(&rfc_path, &rfc, op, None)?;
             }
 
             return Ok(vec![]);
@@ -133,7 +133,7 @@ pub fn bump(
         }
     }
 
-    write_rfc(&rfc_path, &rfc, op)?;
+    write_rfc(&rfc_path, &rfc, op, None)?;
     Ok(vec![])
 }
 
@@ -174,7 +174,7 @@ pub fn finalize(
 
     rfc.status = target_status;
     rfc.updated = Some(crate::write::today());
-    write_rfc(&rfc_path, &rfc, op)?;
+    write_rfc(&rfc_path, &rfc, op, None)?;
 
     // Update pending clauses (since: null) with current version
     // When an RFC is finalized, all clauses should have proper since values
@@ -231,7 +231,7 @@ pub fn advance(
 
     rfc.phase = phase;
     rfc.updated = Some(crate::write::today());
-    write_rfc(&rfc_path, &rfc, op)?;
+    write_rfc(&rfc_path, &rfc, op, None)?;
 
     if !op.is_preview() {
         ui::phase_advanced(rfc_id, phase.as_ref());
@@ -361,7 +361,7 @@ pub fn deprecate(
         }
 
         clause.status = ClauseStatus::Deprecated;
-        write_clause(&clause_path, &clause, op)?;
+        write_clause(&clause_path, &clause, op, None)?;
 
         if !op.is_preview() {
             ui::deprecated("clause", id);
@@ -448,7 +448,7 @@ pub fn supersede(
 
         clause.status = ClauseStatus::Superseded;
         clause.superseded_by = Some(by.to_string());
-        write_clause(&clause_path, &clause, op)?;
+        write_clause(&clause_path, &clause, op, None)?;
 
         if !op.is_preview() {
             ui::superseded("clause", id, by);
@@ -521,7 +521,7 @@ pub fn cut_release(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let releases_path = config.releases_path();
-    let releases_path_str = releases_path.display().to_string();
+    let releases_path_str = config.display_path(&releases_path).display().to_string();
 
     // Validate version is valid semver
     validate_version(version).map_err(|_| {

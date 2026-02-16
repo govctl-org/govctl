@@ -9,7 +9,8 @@ use crate::model::{AdrEntry, ClauseSpec, RfcSpec, WorkItemEntry};
 use crate::parse::{load_adrs, load_work_items, write_adr, write_work_item};
 use crate::ui;
 use crate::write::{
-    WriteOp, read_clause, read_rfc, update_clause_field, update_rfc_field, write_clause, write_rfc,
+    WriteOp, delete_file, read_clause, read_rfc, update_clause_field, update_rfc_field,
+    write_clause, write_rfc,
 };
 use anyhow::Context;
 use regex::Regex;
@@ -276,7 +277,7 @@ pub fn edit_clause(
     };
 
     clause.text = new_text;
-    write_clause(&clause_path, &clause, op)?;
+    write_clause(&clause_path, &clause, op, None)?;
 
     if !op.is_preview() {
         ui::updated("clause", clause_id);
@@ -309,7 +310,7 @@ pub fn set_field(
 
             let LoadedClause { path, mut data } = load_clause(config, id)?;
             update_clause_field(&mut data, field, value)?;
-            write_clause(&path, &data, op)?;
+            write_clause(&path, &data, op, None)?;
         }
         ArtifactType::Rfc => {
             crate::validate::validate_field(
@@ -322,7 +323,7 @@ pub fn set_field(
 
             let LoadedRfc { path, mut data } = load_rfc(config, id)?;
             update_rfc_field(&mut data, field, value)?;
-            write_rfc(&path, &data, op)?;
+            write_rfc(&path, &data, op, None)?;
         }
         ArtifactType::Adr => {
             let mut entry = load_adr(config, id)?;
@@ -572,7 +573,7 @@ pub fn add_to_field(
                 }
             }
 
-            write_rfc(&path, &data, op)?;
+            write_rfc(&path, &data, op, None)?;
         }
         ArtifactType::Clause => {
             let LoadedClause { path, mut data } = load_clause(config, id)?;
@@ -589,7 +590,7 @@ pub fn add_to_field(
                 }
             }
 
-            write_clause(&path, &data, op)?;
+            write_clause(&path, &data, op, None)?;
         }
         ArtifactType::Adr => {
             let mut entry = load_adr(config, id)?;
@@ -766,7 +767,7 @@ pub fn remove_from_field(
                 }
             };
 
-            write_rfc(&path, &data, op)?;
+            write_rfc(&path, &data, op, None)?;
             notify_removed(id, field, &removed, op);
         }
         ArtifactType::Clause => {
@@ -784,7 +785,7 @@ pub fn remove_from_field(
                 }
             };
 
-            write_clause(&path, &data, op)?;
+            write_clause(&path, &data, op, None)?;
             notify_removed(id, field, &removed, op);
         }
         ArtifactType::Adr => {
@@ -1022,7 +1023,7 @@ pub fn delete_clause(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     use crate::model::RfcStatus;
-    use crate::write::delete_file;
+    
 
     // Parse clause_id (RFC-0001:C-NAME)
     let parts: Vec<&str> = clause_id.split(':').collect();
@@ -1112,10 +1113,10 @@ pub fn delete_clause(
     }
 
     // Write updated RFC
-    write_rfc(&rfc_loaded.path, &rfc, op)?;
+    write_rfc(&rfc_loaded.path, &rfc, op, Some(&config.display_path(&rfc_loaded.path)))?;
 
     // Delete clause file
-    delete_file(&clause_path, op)?;
+    delete_file(&clause_path, op, Some(&config.display_path(&clause_path)))?;
 
     if !op.is_preview() {
         ui::success(format!("Deleted clause {}", clause_id));
@@ -1161,7 +1162,7 @@ pub fn delete_work_item(
         Ok(result) => result,
         Err(_) => {
             // If project fails to load, proceed anyway (deletion might help fix it)
-            return proceed_with_deletion(&entry.path, &wi.govctl.id, force, op);
+            return proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op);
         }
     };
 
@@ -1204,18 +1205,17 @@ pub fn delete_work_item(
         .into());
     }
 
-    proceed_with_deletion(&entry.path, &wi.govctl.id, force, op)
+    proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op)
 }
 
 /// Helper function to proceed with deletion after checks pass
 fn proceed_with_deletion(
+    config: &Config,
     path: &std::path::Path,
     id: &str,
     force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    use crate::write::delete_file;
-
     // Confirmation prompt (unless force or dry-run)
     if !force && !op.is_preview() {
         use std::io::{self, Write};
@@ -1232,7 +1232,7 @@ fn proceed_with_deletion(
     }
 
     // Delete file
-    delete_file(path, op)?;
+    delete_file(path, op, Some(&config.display_path(path)))?;
 
     if !op.is_preview() {
         ui::success(format!("Deleted work item {}", id));

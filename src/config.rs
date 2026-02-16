@@ -282,6 +282,9 @@ impl IdStrategy {
 
 impl Config {
     /// Load config from file or use defaults
+    ///
+    /// All relative paths in the config are resolved relative to the project root
+    /// (the parent of gov/config.toml), not the current working directory.
     pub fn load(path: Option<&Path>) -> Result<Self> {
         let config_path = path
             .map(PathBuf::from)
@@ -291,8 +294,23 @@ impl Config {
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path)
                 .with_context(|| format!("Failed to read config: {}", config_path.display()))?;
-            let config: Config = toml::from_str(&content)
+            let mut config: Config = toml::from_str(&content)
                 .with_context(|| format!("Failed to parse config: {}", config_path.display()))?;
+
+            // Resolve relative paths to absolute based on project root
+            // Project root is the parent of the gov/ directory
+            if let Some(project_root) = config_path.parent().and_then(|p| p.parent()) {
+                if config.paths.gov_root.is_relative() {
+                    config.paths.gov_root = project_root.join(&config.paths.gov_root);
+                }
+                if config.paths.docs_output.is_relative() {
+                    config.paths.docs_output = project_root.join(&config.paths.docs_output);
+                }
+                if config.paths.commands_dir.is_relative() {
+                    config.paths.commands_dir = project_root.join(&config.paths.commands_dir);
+                }
+            }
+
             Ok(config)
         } else {
             // Return default config if no file exists
@@ -350,6 +368,16 @@ impl Config {
     /// Releases file path (gov/releases.toml)
     pub fn releases_path(&self) -> PathBuf {
         self.paths.gov_root.join("releases.toml")
+    }
+
+    /// Path for user-facing display: relative to project root when under it.
+    pub fn display_path(&self, path: &std::path::Path) -> std::path::PathBuf {
+        self.paths
+            .gov_root
+            .parent()
+            .and_then(|root| path.strip_prefix(root).ok())
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| path.to_path_buf())
     }
 
     /// Generate default config TOML

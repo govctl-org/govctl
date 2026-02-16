@@ -1,0 +1,29 @@
+---
+source: tests/test_display_paths.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc render RFC-0001 --dry-run
+Would write: docs/rfc/RFC-0001.md
+--- Content preview ---
+<!-- GENERATED: do not edit. Source: RFC-0001 -->
+<!-- SIGNATURE: sha256:61ddb76cfb587b6be51e84d202960a419c1c3cdb136f01ccbfff817cd13fee51 -->
+
+# RFC-0001: Test RFC
+
+> **Version:** 0.1.0 | **Status:** draft | **Phase:** spec
+
+---
+
+## 1. Specification
+
+### [RFC-0001:C-TEST] Test Clause (Normative) <a id="rfc-0001c-test"></a>
+
+Test clause content.
+
+---
+
+## Changelog
+
+### v0.1.0 (2026-01-01)
+...
+exit: 0

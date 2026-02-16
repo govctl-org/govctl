@@ -1,0 +1,24 @@
+---
+source: tests/test_display_paths.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr render ADR-0001 --dry-run
+Would write: docs/adr/ADR-0001.md
+--- Content preview ---
+<!-- GENERATED: do not edit. Source: ADR-0001 -->
+<!-- SIGNATURE: sha256:1361156622c0cda06e5f42f70800f307a78793d6586e8a7d5b700a9d4326c18c -->
+
+# ADR-0001: Test Decision
+
+> **Status:** proposed | **Date:** 2026-01-01
+
+## Context
+
+Test context
+
+## Decision
+
+Test decision
+
+...
+exit: 0

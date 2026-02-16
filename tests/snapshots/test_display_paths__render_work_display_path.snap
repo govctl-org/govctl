@@ -1,0 +1,19 @@
+---
+source: tests/test_display_paths.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work render WI-<DATE>-001 --dry-run
+Would write: docs/work/WI-<DATE>-001.md
+--- Content preview ---
+<!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
+<!-- SIGNATURE: sha256:347c671cbbacc7b157591153832c6d0331be41cd25ab577b42d7725ec730dca7 -->
+
+# Test Work
+
+> **ID:** WI-<DATE>-001 | **Status:** active | **Started:** <DATE>
+
+## Description
+
+Test description
+...
+exit: 0

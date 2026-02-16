@@ -97,27 +97,27 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     }
 
     // Create directories first (config lives inside gov_root)
-    let dirs = [
-        &config.paths.gov_root,
-        &config.rfc_dir(),
-        &config.schema_dir(),
-        &config.rfc_output(),
-        &config.adr_dir(),
-        &config.work_dir(),
-        &config.templates_dir(),
+    let dirs: Vec<_> = vec![
+        config.paths.gov_root.clone(),
+        config.rfc_dir(),
+        config.schema_dir(),
+        config.rfc_output(),
+        config.adr_dir(),
+        config.work_dir(),
+        config.templates_dir(),
     ];
 
-    for dir in dirs {
-        create_dir_all(dir, op)?;
+    for dir in &dirs {
+        create_dir_all(dir, op, Some(&config.display_path(dir)))?;
         if !op.is_preview() {
-            ui::created_path(dir);
+            ui::created_path(&config.display_path(dir));
         }
     }
 
     // Write config after gov_root exists
-    write_file(&config_path, Config::default_toml(), op)?;
+    write_file(&config_path, Config::default_toml(), op, Some(&config.display_path(&config_path)))?;
     if !op.is_preview() {
-        ui::created_path(&config_path);
+        ui::created_path(&config.display_path(&config_path));
     }
 
     // Write all .claude/ assets (commands, skills, agents)
@@ -125,9 +125,9 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     for (rel_path, template) in all_templates() {
         let path = claude_dir.join(rel_path);
         if let Some(parent) = path.parent() {
-            create_dir_all(parent, op)?;
+            create_dir_all(parent, op, None)?;
         }
-        write_file(&path, template, op)?;
+        write_file(&path, template, op, None)?;
         if !op.is_preview() {
             ui::created_path(&path);
         }
@@ -156,7 +156,7 @@ pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Resul
 
         // Create parent directory if needed
         if let Some(parent) = path.parent() {
-            create_dir_all(parent, op)?;
+            create_dir_all(parent, op, None)?;
         }
 
         // Check if file exists and skip if not forcing
@@ -172,7 +172,7 @@ pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Resul
         }
 
         // Write template
-        write_file(&path, template, op)?;
+        write_file(&path, template, op, None)?;
 
         if !op.is_preview() {
             if path.exists() && force {
@@ -283,7 +283,7 @@ fn create_rfc(
     }
 
     // Create directories
-    create_dir_all(&clauses_dir, op)?;
+    create_dir_all(&clauses_dir, op, None)?;
 
     // Create rfc.json
     let rfc = RfcSpec {
@@ -323,11 +323,14 @@ fn create_rfc(
 
     let rfc_json = rfc_dir.join("rfc.json");
     let content = serde_json::to_string_pretty(&rfc)?;
-    write_file(&rfc_json, &content, op)?;
+    write_file(&rfc_json, &content, op, None)?;
 
     if !op.is_preview() {
-        ui::created("RFC", &rfc_json);
-        ui::sub_info(format!("Clauses dir: {}", clauses_dir.display()));
+        ui::created("RFC", &config.display_path(&rfc_json));
+        ui::sub_info(format!(
+            "Clauses dir: {}",
+            config.display_path(&clauses_dir).display()
+        ));
     }
 
     Ok(vec![])
@@ -388,7 +391,7 @@ fn create_clause(
         .join(format!("{clause_name}.json"));
 
     let content = serde_json::to_string_pretty(&clause)?;
-    write_file(&clause_path, &content, op)?;
+    write_file(&clause_path, &content, op, None)?;
 
     // Update RFC to include clause in section
     let clause_rel_path = format!("clauses/{clause_name}.json");
@@ -407,10 +410,10 @@ fn create_clause(
 
     // Write updated RFC
     let rfc_content = serde_json::to_string_pretty(&rfc)?;
-    write_file(&rfc_json, &rfc_content, op)?;
+    write_file(&rfc_json, &rfc_content, op, None)?;
 
     if !op.is_preview() {
-        ui::created("clause", &clause_path);
+        ui::created("clause", &config.display_path(&clause_path));
         ui::sub_info(format!(
             "Added to section '{}', path: {}",
             section, clause_rel_path
@@ -424,7 +427,7 @@ fn create_clause(
 fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     // Find next ADR number
     let adr_dir = config.adr_dir();
-    create_dir_all(&adr_dir, op)?;
+    create_dir_all(&adr_dir, op, None)?;
 
     let mut max_num = 0u32;
     if let Ok(entries) = std::fs::read_dir(&adr_dir) {
@@ -468,10 +471,10 @@ fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<D
     };
 
     let content = toml::to_string_pretty(&spec)?;
-    write_file(&adr_path, &content, op)?;
+    write_file(&adr_path, &content, op, None)?;
 
     if !op.is_preview() {
-        ui::created("ADR", &adr_path);
+        ui::created("ADR", &config.display_path(&adr_path));
     }
 
     Ok(vec![])
@@ -485,7 +488,7 @@ fn create_work_item(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let work_dir = config.work_dir();
-    create_dir_all(&work_dir, op)?;
+    create_dir_all(&work_dir, op, None)?;
 
     let date = today();
     let slug = slugify(title);
@@ -554,10 +557,11 @@ fn create_work_item(
     };
 
     let content = toml::to_string_pretty(&spec)?;
-    write_file(&work_path, &content, op)?;
+    write_file(&work_path, &content, op, None)?;
 
     if !op.is_preview() {
-        ui::created("work item", &work_path);
+        let display_path = config.display_path(&work_path);
+        ui::created("work item", &display_path);
         ui::sub_info(format!("ID: {work_id}"));
     }
 

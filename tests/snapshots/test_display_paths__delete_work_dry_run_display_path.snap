@@ -1,0 +1,7 @@
+---
+source: tests/test_display_paths.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work delete WI-<DATE>-001 --dry-run
+[DRY RUN] Would delete: gov/work/<DATE>-test-work.toml
+exit: 0
