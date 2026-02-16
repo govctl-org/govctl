@@ -1,6 +1,6 @@
 [package]
 name = "govctl"
-version = "0.4.3"
+version = "0.5.0"
 edition = "2024"
 rust-version = "1.88"
 description = "Project governance CLI for RFC, ADR, and Work Item management"

@@ -1,0 +1,45 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-16-002"
+title = "refactor(config): rename commands_dir to agent_dir"
+status = "done"
+created = "2026-02-16"
+started = "2026-02-16"
+completed = "2026-02-16"
+
+[content]
+description = """
+Rename commands_dir to agent_dir for clarity.
+
+BREAKING CHANGE: config.toml must use agent_dir instead of commands_dir.
+Old value .claude/commands should be changed to .claude.
+
+The new design is cleaner:
+- agent_dir points directly to the IDE root (e.g., .claude, .cursor)
+- Commands, skills, agents subdirs are created under it
+- No need to call .parent() to get the actual directory"""
+
+[[content.acceptance_criteria]]
+text = "commands_dir renamed to agent_dir in PathsConfig"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Default changed from .claude/commands to .claude"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "sync_commands uses agent_dir directly"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Tests for agent_dir config"
+status = "done"
+category = "chore"

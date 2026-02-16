@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-02-16
+
 ### Added
 
 - Exclusive gov-root lock acquired for all write commands before mutating gov/ or docs/ (WI-2026-02-15-001)
 - Read-only commands do not acquire lock or block (WI-2026-02-15-001)
 - Bounded wait with configurable or documented default (recommend >= 30s); clear error on timeout (WI-2026-02-15-001)
 - Lock released on process exit; no deadlock when holder crashes (WI-2026-02-15-001)
+
+### Changed
+
+- commands_dir renamed to agent_dir in PathsConfig (WI-2026-02-16-002)
+- Default changed from .claude/commands to .claude (WI-2026-02-16-002)
+- sync_commands uses agent_dir directly (WI-2026-02-16-002)
 
 ### Fixed
 

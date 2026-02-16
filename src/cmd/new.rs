@@ -144,20 +144,16 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     Ok(vec![])
 }
 
-/// Sync all .claude/ assets (commands, skills, agents) to the project.
+/// Sync all agent assets (commands, skills, agents) to the project.
 /// Used by downstream users to update after upgrading govctl.
 pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-    let claude_dir = config
-        .paths
-        .commands_dir
-        .parent()
-        .unwrap_or_else(|| std::path::Path::new(".claude"));
+    let agent_dir = &config.paths.agent_dir;
 
     let mut synced = 0;
     let mut skipped = 0;
 
     for (rel_path, template) in all_templates() {
-        let path = claude_dir.join(rel_path);
+        let path = agent_dir.join(rel_path);
 
         // Create parent directory if needed
         if let Some(parent) = path.parent() {

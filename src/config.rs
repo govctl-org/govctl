@@ -78,9 +78,10 @@ pub struct PathsConfig {
     /// Output directory for rendered docs (docs/)
     #[serde(default = "default_docs_output")]
     pub docs_output: PathBuf,
-    /// Commands directory for AI IDEs (Claude, Cursor, Windsurf, etc.)
-    #[serde(default = "default_commands_dir")]
-    pub commands_dir: PathBuf,
+    /// AI agent directory (Claude, Cursor, Windsurf, etc.)
+    /// Contains commands/, skills/, agents/ subdirs
+    #[serde(default = "default_agent_dir")]
+    pub agent_dir: PathBuf,
 }
 
 fn default_gov_root() -> PathBuf {
@@ -91,8 +92,8 @@ fn default_docs_output() -> PathBuf {
     PathBuf::from("docs")
 }
 
-fn default_commands_dir() -> PathBuf {
-    PathBuf::from(".claude/commands")
+fn default_agent_dir() -> PathBuf {
+    PathBuf::from(".claude")
 }
 
 impl Default for PathsConfig {
@@ -100,7 +101,7 @@ impl Default for PathsConfig {
         Self {
             gov_root: default_gov_root(),
             docs_output: default_docs_output(),
-            commands_dir: default_commands_dir(),
+            agent_dir: default_agent_dir(),
         }
     }
 }
@@ -306,8 +307,8 @@ impl Config {
                 if config.paths.docs_output.is_relative() {
                     config.paths.docs_output = project_root.join(&config.paths.docs_output);
                 }
-                if config.paths.commands_dir.is_relative() {
-                    config.paths.commands_dir = project_root.join(&config.paths.commands_dir);
+                if config.paths.agent_dir.is_relative() {
+                    config.paths.agent_dir = project_root.join(&config.paths.agent_dir);
                 }
             }
 
@@ -390,11 +391,11 @@ name = "my-project"
 [paths]
 gov_root = "gov"
 docs_output = "docs"
-# Commands directory for AI IDEs (Claude Desktop, Cursor, Windsurf, etc.)
-# Default: ".claude/commands"
-# For Cursor: ".cursor/commands"
-# For Windsurf: ".windsurf/commands"
-# commands_dir = ".claude/commands"
+# AI agent directory (contains commands/, skills/, agents/ subdirs)
+# Default: ".claude" (Claude Desktop)
+# For Cursor: ".cursor"
+# For Windsurf: ".windsurf"
+# agent_dir = ".claude"
 
 [schema]
 version = 1
@@ -405,6 +406,11 @@ version = 1
 # - author-hash: WI-YYYY-MM-DD-{hash}-NNN (multi-person teams, uses git email)
 # - random: WI-YYYY-MM-DD-{rand} (simple uniqueness)
 # id_strategy = "author-hash"
+
+# [concurrency]
+# Maximum seconds to wait for exclusive lock before failing (default: 30)
+# Implements [[RFC-0004]] concurrent write safety
+# lock_timeout_secs = 30
 "#
     }
 }
