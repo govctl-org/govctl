@@ -8,6 +8,8 @@ Checked:
   0 clauses
   0 ADRs
   1 work items
+  1 source files scanned
+  1 references found
 
 warning[W0108]: Work item has placeholder description (hint: `govctl work set WI-<DATE>-001 description "..."`) (gov/work/<DATE>-test-task.toml)
 exit: 0

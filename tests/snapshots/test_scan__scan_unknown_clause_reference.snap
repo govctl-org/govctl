@@ -8,6 +8,8 @@ Checked:
   0 clauses
   0 ADRs
   0 work items
+  1 source files scanned
+  1 references found
 
-✓ All checks passed
-exit: 0
+error[E0107]: Unknown artifact reference: RFC-0001:C-NONEXISTENT (src/main.rs)
+exit: 1

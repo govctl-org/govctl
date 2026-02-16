@@ -8,10 +8,25 @@ mod common;
 use common::{init_project, normalize_output, run_commands, today};
 use std::fs;
 
+/// Helper to enable source scanning in a project
+fn enable_source_scan(dir: &std::path::Path) {
+    let config_path = dir.join("gov/config.toml");
+    let config = fs::read_to_string(&config_path).unwrap();
+    // Add source_scan section if not present
+    if !config.contains("[source_scan]") {
+        let updated = format!(
+            "{}\n[source_scan]\nenabled = true\ninclude = [\"src/**/*.rs\"]\nexclude = []\n",
+            config
+        );
+        fs::write(&config_path, updated).unwrap();
+    }
+}
+
 #[test]
 fn test_scan_no_references() {
     // project with no source files should scan successfully
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     let output = run_commands(temp_dir.path(), &[&["check"]]);
@@ -22,6 +37,7 @@ fn test_scan_no_references() {
 fn test_scan_valid_rfc_reference() {
     // source file with valid RFC reference should pass
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create an RFC
@@ -49,6 +65,7 @@ fn test_scan_valid_rfc_reference() {
 fn test_scan_valid_clause_reference() {
     // source file with valid clause reference should pass
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create an RFC with a clause
@@ -86,6 +103,7 @@ fn test_scan_valid_clause_reference() {
 fn test_scan_unknown_rfc_reference() {
     // source file with unknown RFC reference should error
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create a source file with a reference to non-existent RFC
@@ -104,6 +122,7 @@ fn test_scan_unknown_rfc_reference() {
 fn test_scan_unknown_clause_reference() {
     // source file with unknown clause reference should error
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create an RFC but no clause
@@ -131,6 +150,7 @@ fn test_scan_unknown_clause_reference() {
 fn test_scan_deprecated_rfc_reference() {
     // source file with deprecated RFC reference should warn
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create and deprecate an RFC
@@ -159,6 +179,7 @@ fn test_scan_deprecated_rfc_reference() {
 fn test_scan_valid_adr_reference() {
     // source file with valid ADR reference should pass
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create an ADR
@@ -186,6 +207,7 @@ fn test_scan_valid_adr_reference() {
 fn test_scan_valid_work_item_reference() {
     // source file with valid work item reference should pass
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create a work item
@@ -215,6 +237,7 @@ fn test_scan_valid_work_item_reference() {
 fn test_scan_multiple_references_in_file() {
     // source file with multiple references should check all
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create RFCs
@@ -244,6 +267,7 @@ fn test_scan_multiple_references_in_file() {
 fn test_scan_mixed_valid_invalid_references() {
     // source file with mixed valid/invalid references should report errors
     let temp_dir = init_project();
+    enable_source_scan(temp_dir.path());
     let date = today();
 
     // Create one RFC
