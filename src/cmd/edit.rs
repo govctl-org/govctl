@@ -1023,7 +1023,6 @@ pub fn delete_clause(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     use crate::model::RfcStatus;
-    
 
     // Parse clause_id (RFC-0001:C-NAME)
     let parts: Vec<&str> = clause_id.split(':').collect();
@@ -1113,7 +1112,12 @@ pub fn delete_clause(
     }
 
     // Write updated RFC
-    write_rfc(&rfc_loaded.path, &rfc, op, Some(&config.display_path(&rfc_loaded.path)))?;
+    write_rfc(
+        &rfc_loaded.path,
+        &rfc,
+        op,
+        Some(&config.display_path(&rfc_loaded.path)),
+    )?;
 
     // Delete clause file
     delete_file(&clause_path, op, Some(&config.display_path(&clause_path)))?;

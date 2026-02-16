@@ -526,11 +526,7 @@ fn validate_clause_references(
 }
 
 /// Validate refs fields in RFCs, ADRs and Work Items
-fn validate_artifact_refs(
-    index: &ProjectIndex,
-    config: &Config,
-    result: &mut ValidationResult,
-) {
+fn validate_artifact_refs(index: &ProjectIndex, config: &Config, result: &mut ValidationResult) {
     // Build a set of all known artifact IDs (including clause references)
     let mut known_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
 

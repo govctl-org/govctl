@@ -115,7 +115,12 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     }
 
     // Write config after gov_root exists
-    write_file(&config_path, Config::default_toml(), op, Some(&config.display_path(&config_path)))?;
+    write_file(
+        &config_path,
+        Config::default_toml(),
+        op,
+        Some(&config.display_path(&config_path)),
+    )?;
     if !op.is_preview() {
         ui::created_path(&config.display_path(&config_path));
     }

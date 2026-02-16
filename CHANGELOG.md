@@ -14,6 +14,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bounded wait with configurable or documented default (recommend >= 30s); clear error on timeout (WI-2026-02-15-001)
 - Lock released on process exit; no deadlock when holder crashes (WI-2026-02-15-001)
 
+### Fixed
+
+- All user-facing path outputs use relative paths (gov/..., docs/...) (WI-2026-02-16-001)
+- Config::display_path() converts absolute paths to project-root-relative (WI-2026-02-16-001)
+- write_file, create_dir_all, delete_file have optional display_path parameter (WI-2026-02-16-001)
+
 ## [0.4.2] - 2026-02-13
 
 ### Fixed

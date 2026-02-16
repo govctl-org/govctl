@@ -27,7 +27,10 @@ fn test_write_command_creates_lock_file() {
 
     // Lock file is released after command finishes, but the file exists
     let lock_path = temp_dir.path().join("gov/.govctl.lock");
-    assert!(lock_path.exists(), "Lock file should exist after write command");
+    assert!(
+        lock_path.exists(),
+        "Lock file should exist after write command"
+    );
 }
 
 /// Test: Multiple sequential write commands work (lock is released between commands)
@@ -64,7 +67,10 @@ fn test_lock_file_location() {
     // After a write command, lock file exists (even if released)
     run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]]);
 
-    assert!(lock_path.exists(), "Lock file should be created under gov root");
+    assert!(
+        lock_path.exists(),
+        "Lock file should be created under gov root"
+    );
 }
 
 /// Test: Read-only commands don't create lock
@@ -82,12 +88,18 @@ fn test_read_commands_no_lock() {
     run_commands(temp_dir.path(), &[&["status"]]);
 
     // Read commands don't create the lock file
-    assert!(!lock_path.exists(), "Read commands should not create lock file");
+    assert!(
+        !lock_path.exists(),
+        "Read commands should not create lock file"
+    );
 
     run_commands(temp_dir.path(), &[&["check"]]);
 
     // Still no lock file
-    assert!(!lock_path.exists(), "Read commands should not create lock file");
+    assert!(
+        !lock_path.exists(),
+        "Read commands should not create lock file"
+    );
 }
 
 /// Test: Lock timeout configuration is respected

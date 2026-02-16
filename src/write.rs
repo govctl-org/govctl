@@ -105,7 +105,12 @@ impl WriteOp {
 ///
 /// In Preview mode, shows what would be written instead of writing.
 /// If `display_path` is provided, it's used for the preview output instead of `path`.
-pub fn write_file(path: &Path, content: &str, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+pub fn write_file(
+    path: &Path,
+    content: &str,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> Result<()> {
     let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
@@ -171,7 +176,12 @@ pub fn read_rfc(path: &Path) -> Result<RfcSpec> {
 }
 
 /// Write RFC JSON to file
-pub fn write_rfc(path: &Path, rfc: &RfcSpec, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+pub fn write_rfc(
+    path: &Path,
+    rfc: &RfcSpec,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> Result<()> {
     let content = serde_json::to_string_pretty(rfc)?;
     write_file(path, &content, op, display_path)
 }
@@ -186,7 +196,12 @@ pub fn read_clause(path: &Path) -> Result<ClauseSpec> {
 }
 
 /// Write clause JSON to file
-pub fn write_clause(path: &Path, clause: &ClauseSpec, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+pub fn write_clause(
+    path: &Path,
+    clause: &ClauseSpec,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> Result<()> {
     let content = serde_json::to_string_pretty(clause)?;
     write_file(path, &content, op, display_path)
 }

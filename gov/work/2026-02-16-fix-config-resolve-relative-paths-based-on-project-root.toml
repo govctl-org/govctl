@@ -11,8 +11,8 @@ completed = "2026-02-16"
 description = """
 Fix relative path resolution in config to use project root instead of CWD.
 
-Problem: When govctl is run from a subdirectory, relative paths in config 
-(gov_root, docs_output, commands_dir) were resolved against CWD instead of 
+Problem: When govctl is run from a subdirectory, relative paths in config
+(gov_root, docs_output, commands_dir) were resolved against CWD instead of
 the project root (parent of gov/).
 
 Solution:
@@ -36,17 +36,17 @@ Changed files:
 [[content.acceptance_criteria]]
 text = "All user-facing path outputs use relative paths (gov/..., docs/...)"
 status = "done"
-category = "fix"
+category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "Config::display_path() converts absolute paths to project-root-relative"
 status = "done"
-category = "fix"
+category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "write_file, create_dir_all, delete_file have optional display_path parameter"
 status = "done"
-category = "fix"
+category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "All snapshot tests pass with relative paths"
@@ -56,4 +56,4 @@ category = "chore"
 [[content.acceptance_criteria]]
 text = "Lock integration tests pass (cross-process blocking verified)"
 status = "done"
-category = "test"
+category = "chore"
