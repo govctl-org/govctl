@@ -19,6 +19,19 @@ build:
 test:
     cargo test
 
+# Test coverage (summary)
+cov:
+    cargo llvm-cov --summary-only
+
+# Test coverage (full report)
+cov-html:
+    cargo llvm-cov --html
+    @echo "Coverage report: target/llvm-cov/html/index.html"
+
+# Test coverage (lcov format for CI)
+cov-lcov:
+    cargo llvm-cov --lcov --output-path lcov.info
+
 # Update snapshots
 update-snapshots:
     cargo insta test --accept

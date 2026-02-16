@@ -1,0 +1,92 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-16-004"
+title = "Improve test coverage"
+status = "active"
+created = "2026-02-16"
+started = "2026-02-16"
+
+[content]
+description = """
+## Current State
+
+Total coverage: **53.98%**
+
+### Zero/Low Coverage Files (Priority 1)
+| File | Current | Target |
+|------|---------|--------|
+| describe.rs | 0% | 60% |
+| scan.rs | 2% | 60% |
+
+### Low Coverage Files (Priority 2)
+| File | Current | Target |
+|------|---------|--------|
+| lifecycle.rs | 34% | 60% |
+| ui.rs | 35% | 60% |
+| edit.rs | 44% | 60% |
+| move_.rs | 42% | 60% |
+| command_router.rs | 47% | 60% |
+| parse.rs | 50% | 65% |
+
+## Strategy
+
+1. **describe.rs**: Add basic integration tests for `govctl describe` command
+2. **scan.rs**: Add source scanning tests (file pattern matching)
+3. **lifecycle.rs**: Add RFC/ADR lifecycle transition tests beyond existing ones
+4. **ui.rs**: Add colorization and formatting tests
+5. **edit.rs**: Add clause/field editing tests
+6. **move_.rs**: Add work item status transition tests
+7. **command_router.rs**: Add routing and error handling tests
+8. **parse.rs**: Add parsing edge cases tests
+
+## Notes
+
+- Uses `insta` snapshot testing pattern from existing tests
+- Tests go in `tests/` directory following project conventions
+- Each file gets a dedicated test file (e.g., `test_describe.rs`)
+"""
+
+[[content.acceptance_criteria]]
+text = "Coverage target >= 70%"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Tests for describe.rs (0% -> 60%)"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests for scan.rs (2% -> 60%)"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests for lifecycle.rs (34% -> 60%)"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests for edit.rs (44% -> 60%)"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests for move_.rs (42% -> 60%)"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests for command_router.rs (47% -> 60%)"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests for parse.rs (50% -> 65%)"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests for ui.rs (35% -> 60%)"
+status = "pending"
+category = "added"
