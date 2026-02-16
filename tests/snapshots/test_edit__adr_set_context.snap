@@ -1,0 +1,34 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Test Decision
+Created ADR: gov/adr/ADR-XXXX-test-decision.toml
+exit: 0
+
+$ govctl adr set ADR-0001 context New context for the decision
+Set ADR-0001.context = New context for the decision
+exit: 0
+
+$ govctl adr show ADR-0001
+<!-- GENERATED: do not edit. Source: ADR-0001 -->
+<!-- SIGNATURE: sha256:f59d2e856e8ad13f5359221bc46b63feddeeb2b58e336b42a1461f75dac3f0c9 -->
+
+# ADR-0001: Test Decision
+
+> **Status:** proposed | **Date:** <DATE>
+
+## Context
+
+New context for the decision
+
+## Decision
+
+Describe the decision that was made.
+What is the change that we're proposing and/or doing?
+
+## Consequences
+
+Describe the resulting context after applying the decision.
+What becomes easier or more difficult to do because of this change?
+exit: 0

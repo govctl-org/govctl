@@ -1,0 +1,15 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Test Decision
+Created ADR: gov/adr/ADR-XXXX-test-decision.toml
+exit: 0
+
+$ govctl adr add ADR-0001 refs RFC-0001
+Added 'RFC-0001' to ADR-0001.refs
+exit: 0
+
+$ govctl adr get ADR-0001 refs
+RFC-0001
+exit: 0

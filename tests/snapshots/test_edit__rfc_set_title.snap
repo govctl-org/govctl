@@ -1,0 +1,20 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Original Title
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc set RFC-0001 title New Title
+Set RFC-0001.title = New Title
+exit: 0
+
+$ govctl rfc list
+┌──────────┬─────────┬────────┬───────┬───────────┐
+│ RFC      ┆ Version ┆ Status ┆ Phase ┆ Title     │
+╞══════════╪═════════╪════════╪═══════╪═══════════╡
+│ RFC-0001 ┆ 0.1.0   ┆ draft  ┆ spec  ┆ New Title │
+└──────────┴─────────┴────────┴───────┴───────────┘
+exit: 0

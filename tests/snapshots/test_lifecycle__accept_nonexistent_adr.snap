@@ -1,0 +1,7 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr accept ADR-9999
+error[E0302]: ADR not found: ADR-9999 (ADR-9999)
+exit: 1

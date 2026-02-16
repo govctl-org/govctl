@@ -54,39 +54,39 @@ category = "chore"
 [[content.acceptance_criteria]]
 text = "Tests for describe.rs (0% -> 60%)"
 status = "pending"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for scan.rs (2% -> 60%)"
 status = "pending"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for lifecycle.rs (34% -> 60%)"
 status = "pending"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for edit.rs (44% -> 60%)"
 status = "pending"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for move_.rs (42% -> 60%)"
 status = "pending"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for command_router.rs (47% -> 60%)"
 status = "pending"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for parse.rs (50% -> 65%)"
 status = "pending"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for ui.rs (35% -> 60%)"
 status = "pending"
-category = "added"
+category = "chore"

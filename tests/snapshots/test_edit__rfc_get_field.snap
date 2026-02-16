@@ -1,0 +1,20 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Test RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc get RFC-0001 title
+Test RFC
+exit: 0
+
+$ govctl rfc get RFC-0001 status
+draft
+exit: 0
+
+$ govctl rfc get RFC-0001 phase
+spec
+exit: 0

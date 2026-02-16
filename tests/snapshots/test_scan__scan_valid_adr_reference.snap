@@ -1,0 +1,14 @@
+---
+source: tests/test_scan.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl check
+Checked:
+  0 RFCs
+  0 clauses
+  1 ADRs
+  0 work items
+
+warning[W0103]: ADR has no artifact references (hint: `govctl adr add ADR-0001 refs RFC-XXXX`) (gov/adr/ADR-XXXX-test-decision.toml)
+warning[W0103]: ADR has placeholder context (hint: `govctl adr set ADR-0001 context "..."`) (gov/adr/ADR-XXXX-test-decision.toml)
+exit: 0

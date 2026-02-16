@@ -1,0 +1,7 @@
+---
+source: tests/test_move.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work move WI-9999-99-999 active
+error[E0402]: No work item found matching: WI-9999-99-999 (WI-9999-99-999)
+exit: 1

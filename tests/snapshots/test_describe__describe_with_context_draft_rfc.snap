@@ -1,0 +1,322 @@
+---
+source: tests/test_describe.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Test RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl describe --context
+{
+  "version": "0.5.0",
+  "purpose": "Enforces RFC-driven phase discipline for AI-assisted software development",
+  "philosophy": [
+    "RFC is the source of truth — No implementation without specification",
+    "Phases are enforced — spec → impl → test → stable",
+    "Governance is executable — Rules are checked, not suggested"
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "purpose": "Initialize govctl in the current directory",
+      "when_to_use": "Once per project, before any other govctl commands. Creates gov/ directory structure and config.",
+      "example": "govctl init"
+    },
+    {
+      "name": "status",
+      "purpose": "Show summary counts of all artifacts",
+      "when_to_use": "To get an overview of project governance state. Run at start of session to understand current work.",
+      "example": "govctl status",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "check",
+      "purpose": "Validate all governed documents",
+      "when_to_use": "Before committing, after edits, to verify governance compliance. Run frequently during development.",
+      "example": "govctl check",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "list rfc",
+      "purpose": "List all RFCs with their status and phase",
+      "when_to_use": "To see all specifications. Filter by status: 'govctl rfc list draft'.",
+      "example": "govctl rfc list",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "list adr",
+      "purpose": "List all ADRs (Architecture Decision Records)",
+      "when_to_use": "To see architectural decisions. Filter by status: 'govctl adr list accepted'.",
+      "example": "govctl adr list",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "list work",
+      "purpose": "List work items (defaults to pending: queue + active)",
+      "when_to_use": "To see current task queue. Use 'govctl work list all' for everything.",
+      "example": "govctl work list",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "new rfc",
+      "purpose": "Create a new RFC (specification document)",
+      "when_to_use": "Before implementing any new feature. RFCs define what must be built. No implementation without specification.",
+      "example": "govctl rfc new \"Add caching layer\"",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "new adr",
+      "purpose": "Create a new ADR (Architecture Decision Record)",
+      "when_to_use": "When making a significant design decision that should be documented. ADRs capture context, decision, and consequences.",
+      "example": "govctl adr new \"Use Redis for caching\"",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "new work",
+      "purpose": "Create a new work item",
+      "when_to_use": "When starting a task. Use --active to immediately activate it.",
+      "example": "govctl work new --active \"Implement describe command\"",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "new clause",
+      "purpose": "Create a new clause within an RFC",
+      "when_to_use": "When adding normative requirements to an RFC. Clauses are the atomic units of specification.",
+      "example": "govctl clause new RFC-0001:C-CACHE-TTL \"Cache TTL Policy\" -s Specification -k normative",
+      "prerequisites": [
+        "RFC must exist"
+      ]
+    },
+    {
+      "name": "finalize",
+      "purpose": "Transition RFC status to normative or deprecated",
+      "when_to_use": "When an RFC spec is complete and ready for implementation. 'normative' makes it binding law.",
+      "example": "govctl rfc finalize RFC-0001 normative",
+      "prerequisites": [
+        "RFC must be in draft status"
+      ]
+    },
+    {
+      "name": "advance",
+      "purpose": "Advance RFC phase (spec → impl → test → stable)",
+      "when_to_use": "After completing work for current phase. Phase discipline ensures proper workflow.",
+      "example": "govctl rfc advance RFC-0001 impl",
+      "prerequisites": [
+        "RFC should be normative",
+        "Current phase work complete"
+      ]
+    },
+    {
+      "name": "move",
+      "purpose": "Move work item to new status (queue/active/done/cancelled)",
+      "when_to_use": "To update task status. Use 'done' when complete, 'active' to start working.",
+      "example": "govctl work move WI-<DATE>-001 done",
+      "prerequisites": [
+        "Work item must exist",
+        "For 'done': acceptance criteria required"
+      ]
+    },
+    {
+      "name": "accept",
+      "purpose": "Accept an ADR (proposed → accepted)",
+      "when_to_use": "When an architectural decision is approved.",
+      "example": "govctl adr accept ADR-0001",
+      "prerequisites": [
+        "ADR must be in proposed status"
+      ]
+    },
+    {
+      "name": "set",
+      "purpose": "Set a field value on an artifact",
+      "when_to_use": "To update artifact fields. Use --stdin for multi-line content.",
+      "example": "govctl rfc set RFC-0001 title \"New Title\"",
+      "prerequisites": [
+        "Artifact must exist"
+      ]
+    },
+    {
+      "name": "get",
+      "purpose": "Get a field value from an artifact",
+      "when_to_use": "To read artifact data. Omit field name to show entire artifact.",
+      "example": "govctl rfc get RFC-0001 status",
+      "prerequisites": [
+        "Artifact must exist"
+      ]
+    },
+    {
+      "name": "add",
+      "purpose": "Add a value to an array field",
+      "when_to_use": "To add items to refs, owners, acceptance_criteria, etc.",
+      "example": "govctl work add WI-<DATE>-001 acceptance_criteria \"Tests pass\"",
+      "prerequisites": [
+        "Artifact must exist"
+      ]
+    },
+    {
+      "name": "remove",
+      "purpose": "Remove a value from an array field",
+      "when_to_use": "To remove items from array fields. Use --at for index, or pattern matching.",
+      "example": "govctl rfc remove RFC-0001 owners \"@oldowner\"",
+      "prerequisites": [
+        "Artifact must exist"
+      ]
+    },
+    {
+      "name": "tick",
+      "purpose": "Mark a checklist item as done/pending/cancelled",
+      "when_to_use": "To update acceptance criteria status on work items.",
+      "example": "govctl work tick WI-<DATE>-001 acceptance_criteria \"Tests\" -s done",
+      "prerequisites": [
+        "Work item or ADR must exist"
+      ]
+    },
+    {
+      "name": "edit",
+      "purpose": "Edit clause text",
+      "when_to_use": "To update normative clause content. Use --stdin for multi-line text.",
+      "example": "govctl clause edit RFC-0001:C-SCOPE --stdin",
+      "prerequisites": [
+        "Clause must exist"
+      ]
+    },
+    {
+      "name": "render",
+      "purpose": "Render artifacts to markdown",
+      "when_to_use": "To generate human-readable documentation from SSOT. Run after RFC changes.",
+      "example": "govctl render rfc",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "bump",
+      "purpose": "Bump RFC version",
+      "when_to_use": "When making changes to a normative RFC. Follows semver.",
+      "example": "govctl rfc bump RFC-0001 --minor -m \"Add new clause\"",
+      "prerequisites": [
+        "RFC must exist"
+      ]
+    },
+    {
+      "name": "release",
+      "purpose": "Cut a release (collect unreleased work items)",
+      "when_to_use": "When releasing a new version. Collects done work items into changelog.",
+      "example": "govctl release 0.2.0",
+      "prerequisites": [
+        "Done work items exist"
+      ]
+    },
+    {
+      "name": "deprecate",
+      "purpose": "Deprecate an artifact",
+      "when_to_use": "When an RFC, clause, or ADR is no longer relevant but kept for history.",
+      "example": "govctl rfc deprecate RFC-0001",
+      "prerequisites": [
+        "Artifact must exist"
+      ]
+    },
+    {
+      "name": "supersede",
+      "purpose": "Supersede an artifact with a replacement",
+      "when_to_use": "When replacing an artifact with a newer version.",
+      "example": "govctl rfc supersede RFC-0001 --by RFC-0010",
+      "prerequisites": [
+        "Both artifacts must exist"
+      ]
+    },
+    {
+      "name": "show rfc",
+      "purpose": "Show RFC content to stdout (no file written)",
+      "when_to_use": "To read the full rendered RFC content. Use -o json for structured output.",
+      "example": "govctl rfc show RFC-0001",
+      "prerequisites": [
+        "RFC must exist"
+      ]
+    },
+    {
+      "name": "show adr",
+      "purpose": "Show ADR content to stdout (no file written)",
+      "when_to_use": "To read the full rendered ADR content. Use -o json for structured output.",
+      "example": "govctl adr show ADR-0001",
+      "prerequisites": [
+        "ADR must exist"
+      ]
+    },
+    {
+      "name": "show work",
+      "purpose": "Show work item content to stdout (no file written)",
+      "when_to_use": "To read the full rendered work item content. Use -o json for structured output.",
+      "example": "govctl work show WI-<DATE>-001",
+      "prerequisites": [
+        "Work item must exist"
+      ]
+    },
+    {
+      "name": "show clause",
+      "purpose": "Show clause content to stdout (no file written)",
+      "when_to_use": "To read the clause text. Use -o json for structured output.",
+      "example": "govctl clause show RFC-0001:C-SUMMARY",
+      "prerequisites": [
+        "Clause must exist"
+      ]
+    }
+  ],
+  "workflow": {
+    "phases": [
+      "spec: RFC drafting and design discussion",
+      "impl: Code writing per normative RFC",
+      "test: Verification and test writing",
+      "stable: Bug fixes only, no new features"
+    ],
+    "typical_sequence": [
+      "govctl work new --active \"Feature Title\"",
+      "govctl rfc new \"Feature Title\"",
+      "govctl clause new RFC-NNNN:C-REQUIREMENT \"Requirement\" -k normative",
+      "govctl rfc finalize RFC-NNNN normative",
+      "govctl rfc advance RFC-NNNN impl",
+      "# Implement the feature",
+      "govctl rfc advance RFC-NNNN test",
+      "# Write tests",
+      "govctl rfc advance RFC-NNNN stable",
+      "govctl work tick WI-xxx acceptance_criteria \"criterion\" -s done",
+      "govctl work move WI-xxx done"
+    ]
+  },
+  "project_state": {
+    "rfcs": [
+      {
+        "id": "RFC-0001",
+        "title": "Test RFC",
+        "status": "draft",
+        "phase": "spec"
+      }
+    ],
+    "adrs": [],
+    "work_items": []
+  },
+  "suggested_actions": [
+    {
+      "command": "govctl rfc finalize RFC-0001 normative",
+      "reason": "RFC-0001 is in draft status. If the spec is complete, finalize it to make it binding.",
+      "priority": "medium"
+    }
+  ]
+}
+exit: 0

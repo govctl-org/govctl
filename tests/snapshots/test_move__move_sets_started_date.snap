@@ -1,0 +1,40 @@
+---
+source: tests/test_move.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work new Task to start
+Created work item: gov/work/<DATE>-task-to-start.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl work show WI-<DATE>-001
+<!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
+<!-- SIGNATURE: sha256:6f6421aebc89eac8ece36a931e75c7418738524fa9cd2303f789ed20873dab54 -->
+
+# Task to start
+
+> **ID:** WI-<DATE>-001 | **Status:** queue
+
+## Description
+
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?
+exit: 0
+
+$ govctl work move WI-<DATE>-001 active
+Moved <DATE>-task-to-start.toml to active
+exit: 0
+
+$ govctl work show WI-<DATE>-001
+<!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
+<!-- SIGNATURE: sha256:ec16a0888d00cbd38ec1f4cae0282168ce0098d919b0402093f7cea83ed6f3d7 -->
+
+# Task to start
+
+> **ID:** WI-<DATE>-001 | **Status:** active | **Started:** <DATE>
+
+## Description
+
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?
+exit: 0

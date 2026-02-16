@@ -1,0 +1,13 @@
+---
+source: tests/test_scan.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl check
+Checked:
+  2 RFCs
+  0 clauses
+  0 ADRs
+  0 work items
+
+✓ All checks passed
+exit: 0

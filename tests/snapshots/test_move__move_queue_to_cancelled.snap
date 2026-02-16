@@ -1,0 +1,20 @@
+---
+source: tests/test_move.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work new Skipped task
+Created work item: gov/work/<DATE>-skipped-task.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl work move WI-<DATE>-001 cancelled
+Moved <DATE>-skipped-task.toml to cancelled
+exit: 0
+
+$ govctl work list all
+┌───────────────────┬───────────┬──────────────┐
+│ ID                ┆ Status    ┆ Title        │
+╞═══════════════════╪═══════════╪══════════════╡
+│ WI-<DATE>-001 ┆ cancelled ┆ Skipped task │
+└───────────────────┴───────────┴──────────────┘
+exit: 0

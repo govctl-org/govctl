@@ -1,0 +1,20 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Obsolete RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc finalize RFC-0001 deprecated
+error[E0104]: Invalid status transition: draft -> deprecated (RFC-0001)
+exit: 1
+
+$ govctl rfc list
+┌──────────┬─────────┬────────┬───────┬──────────────┐
+│ RFC      ┆ Version ┆ Status ┆ Phase ┆ Title        │
+╞══════════╪═════════╪════════╪═══════╪══════════════╡
+│ RFC-0001 ┆ 0.1.0   ┆ draft  ┆ spec  ┆ Obsolete RFC │
+└──────────┴─────────┴────────┴───────┴──────────────┘
+exit: 0

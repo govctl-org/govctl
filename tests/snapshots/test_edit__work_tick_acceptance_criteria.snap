@@ -1,0 +1,39 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work new Test Task
+Created work item: gov/work/<DATE>-test-task.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl work add WI-<DATE>-001 acceptance_criteria add: Criterion 1
+Added 'add: Criterion 1' to WI-<DATE>-001.acceptance_criteria
+exit: 0
+
+$ govctl work add WI-<DATE>-001 acceptance_criteria add: Criterion 2
+Added 'add: Criterion 2' to WI-<DATE>-001.acceptance_criteria
+exit: 0
+
+$ govctl work tick WI-<DATE>-001 acceptance_criteria Criterion 1 -s done
+Marked 'Criterion 1' as done
+exit: 0
+
+$ govctl work show WI-<DATE>-001
+<!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
+<!-- SIGNATURE: sha256:0e050a903a1d904f9a0de35b0e7cd0c49ba71bf825bd7719335105c6946a8be9 -->
+
+# Test Task
+
+> **ID:** WI-<DATE>-001 | **Status:** queue
+
+## Description
+
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?
+
+## Acceptance Criteria
+
+- [x] Criterion 1
+- [ ] Criterion 2
+exit: 0

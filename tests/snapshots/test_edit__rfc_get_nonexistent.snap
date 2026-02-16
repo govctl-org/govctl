@@ -1,0 +1,7 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc get RFC-9999 title
+Error: RFC not found: RFC-9999
+exit: 1

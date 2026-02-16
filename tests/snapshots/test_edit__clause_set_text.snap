@@ -1,0 +1,23 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Test RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl clause new RFC-0001:C-TEST Test Clause -s Specification -k normative
+Created clause: gov/rfc/RFC-0001/clauses/C-TEST.json
+  Added to section 'Specification', path: clauses/C-TEST.json
+exit: 0
+
+$ govctl clause edit RFC-0001:C-TEST --text Updated clause text
+Updated clause: RFC-0001:C-TEST
+exit: 0
+
+$ govctl clause show RFC-0001:C-TEST
+# [RFC-0001:C-TEST] Test Clause (Normative)
+
+Updated clause text
+exit: 0

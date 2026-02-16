@@ -1,0 +1,34 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Test Decision
+Created ADR: gov/adr/ADR-XXXX-test-decision.toml
+exit: 0
+
+$ govctl adr set ADR-0001 consequences Good: faster. Bad: more memory.
+Set ADR-0001.consequences = Good: faster. Bad: more memory.
+exit: 0
+
+$ govctl adr show ADR-0001
+<!-- GENERATED: do not edit. Source: ADR-0001 -->
+<!-- SIGNATURE: sha256:e6bf80578c53d32f524613e645d2ec1d24b92a50fba604fa8e559e3935412dd4 -->
+
+# ADR-0001: Test Decision
+
+> **Status:** proposed | **Date:** <DATE>
+
+## Context
+
+Describe the context and problem statement.
+What is the issue that we're seeing that is motivating this decision?
+
+## Decision
+
+Describe the decision that was made.
+What is the change that we're proposing and/or doing?
+
+## Consequences
+
+Good: faster. Bad: more memory.
+exit: 0

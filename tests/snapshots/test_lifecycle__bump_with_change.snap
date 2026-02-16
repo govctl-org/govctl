@@ -1,0 +1,45 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Test RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc finalize RFC-0001 normative
+Finalized RFC-0001 to status: normative
+exit: 0
+
+$ govctl rfc bump RFC-0001 --change Added new clause
+Added change to RFC-0001 v0.1.0: Added new clause
+exit: 0
+
+$ govctl rfc show RFC-0001
+<!-- GENERATED: do not edit. Source: RFC-0001 -->
+<!-- SIGNATURE: sha256:2d4721d3e1ddbe803158ae373e3dda5a88a8d766dd8c8328faf893b7168a7aa9 -->
+
+# RFC-0001: Test RFC
+
+> **Version:** 0.1.0 | **Status:** normative | **Phase:** spec
+
+---
+
+## 1. Summary
+
+---
+
+## 2. Specification
+
+---
+
+## Changelog
+
+### v0.1.0 (<DATE>)
+
+Initial draft
+
+#### Added
+
+- Added new clause
+exit: 0

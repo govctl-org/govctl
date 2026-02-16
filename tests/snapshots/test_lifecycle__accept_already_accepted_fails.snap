@@ -1,0 +1,15 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Test Decision
+Created ADR: gov/adr/ADR-XXXX-test-decision.toml
+exit: 0
+
+$ govctl adr accept ADR-0001
+Accepted ADR: ADR-0001
+exit: 0
+
+$ govctl adr accept ADR-0001
+error[E0303]: Invalid ADR transition: accepted -> accepted (ADR-0001)
+exit: 1

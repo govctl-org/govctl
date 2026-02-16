@@ -1,0 +1,7 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc finalize RFC-9999 normative
+error[E0102]: RFC not found: RFC-9999 (RFC-9999)
+exit: 1

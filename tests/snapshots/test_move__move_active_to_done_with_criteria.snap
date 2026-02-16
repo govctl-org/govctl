@@ -1,0 +1,19 @@
+---
+source: tests/test_move.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work tick WI-<DATE>-001 acceptance_criteria Task done -s done
+Marked 'Task done' as done
+exit: 0
+
+$ govctl work move WI-<DATE>-001 done
+Moved <DATE>-test-task.toml to done
+exit: 0
+
+$ govctl work list all
+┌───────────────────┬────────┬───────────┐
+│ ID                ┆ Status ┆ Title     │
+╞═══════════════════╪════════╪═══════════╡
+│ WI-<DATE>-001 ┆ done   ┆ Test task │
+└───────────────────┴────────┴───────────┘
+exit: 0

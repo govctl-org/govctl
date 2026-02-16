@@ -1,0 +1,19 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Bad Decision
+Created ADR: gov/adr/ADR-XXXX-bad-decision.toml
+exit: 0
+
+$ govctl adr reject ADR-0001
+Rejected ADR: ADR-0001
+exit: 0
+
+$ govctl adr list
+┌──────────┬──────────┬────────────┬──────────────┐
+│ ADR      ┆ Status   ┆ Date       ┆ Title        │
+╞══════════╪══════════╪════════════╪══════════════╡
+│ ADR-0001 ┆ rejected ┆ <DATE> ┆ Bad Decision │
+└──────────┴──────────┴────────────┴──────────────┘
+exit: 0

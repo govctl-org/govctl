@@ -1,0 +1,16 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Test RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc finalize RFC-0001 normative
+Finalized RFC-0001 to status: normative
+exit: 0
+
+$ govctl rfc advance RFC-0001 test
+error[E0104]: Invalid phase transition: spec -> test (RFC-0001)
+exit: 1

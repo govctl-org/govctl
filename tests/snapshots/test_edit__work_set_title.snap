@@ -1,0 +1,20 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work new Original Title
+Created work item: gov/work/<DATE>-original-title.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl work set WI-<DATE>-001 title New Title
+Set WI-<DATE>-001.title = New Title
+exit: 0
+
+$ govctl work list all
+┌───────────────────┬────────┬───────────┐
+│ ID                ┆ Status ┆ Title     │
+╞═══════════════════╪════════╪═══════════╡
+│ WI-<DATE>-001 ┆ queue  ┆ New Title │
+└───────────────────┴────────┴───────────┘
+exit: 0

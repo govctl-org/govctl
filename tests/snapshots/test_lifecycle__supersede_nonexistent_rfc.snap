@@ -1,0 +1,17 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new New RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc finalize RFC-0001 normative
+Finalized RFC-0001 to status: normative
+exit: 0
+
+$ govctl rfc supersede RFC-9999 --by RFC-0001
+Supersede RFC-9999 with RFC-0001? [y/N] 
+Supersede cancelled
+exit: 0

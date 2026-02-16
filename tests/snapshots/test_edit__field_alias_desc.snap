@@ -1,0 +1,16 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work new Test Task
+Created work item: gov/work/<DATE>-test-task.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl work set WI-<DATE>-001 desc A description
+Set WI-<DATE>-001.description = A description
+exit: 0
+
+$ govctl work get WI-<DATE>-001 desc
+A description
+exit: 0

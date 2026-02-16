@@ -1,0 +1,40 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Old RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc finalize RFC-0001 normative
+Finalized RFC-0001 to status: normative
+exit: 0
+
+$ govctl rfc advance RFC-0001 stable
+error[E0104]: Invalid phase transition: spec -> stable (RFC-0001)
+exit: 1
+
+$ govctl rfc new New RFC
+Created RFC: gov/rfc/RFC-0002/rfc.json
+  Clauses dir: gov/rfc/RFC-0002/clauses
+exit: 0
+
+$ govctl rfc finalize RFC-0002 normative
+Finalized RFC-0002 to status: normative
+exit: 0
+
+$ govctl rfc supersede RFC-0001 --by RFC-0002
+Supersede RFC-0001 with RFC-0002? [y/N] 
+Supersede cancelled
+exit: 0
+
+$ govctl rfc list
+┌──────────┬─────────┬───────────┬───────┬─────────┐
+│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title   │
+╞══════════╪═════════╪═══════════╪═══════╪═════════╡
+│ RFC-0001 ┆ 0.1.0   ┆ normative ┆ spec  ┆ Old RFC │
+├╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌┤
+│ RFC-0002 ┆ 0.1.0   ┆ normative ┆ spec  ┆ New RFC │
+└──────────┴─────────┴───────────┴───────┴─────────┘
+exit: 0

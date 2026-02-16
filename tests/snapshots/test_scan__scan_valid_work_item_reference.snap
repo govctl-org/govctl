@@ -1,0 +1,13 @@
+---
+source: tests/test_scan.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl check
+Checked:
+  0 RFCs
+  0 clauses
+  0 ADRs
+  1 work items
+
+warning[W0108]: Work item has placeholder description (hint: `govctl work set WI-<DATE>-001 description "..."`) (gov/work/<DATE>-test-task.toml)
+exit: 0

@@ -1,0 +1,7 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr get ADR-9999 title
+Error: ADR not found: ADR-9999
+exit: 1

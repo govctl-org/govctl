@@ -1,0 +1,15 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Test Decision
+Created ADR: gov/adr/ADR-XXXX-test-decision.toml
+exit: 0
+
+$ govctl adr get ADR-0001 title
+Test Decision
+exit: 0
+
+$ govctl adr get ADR-0001 status
+proposed
+exit: 0
