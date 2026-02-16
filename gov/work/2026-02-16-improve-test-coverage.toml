@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-02-16-004"
 title = "Improve test coverage"
-status = "active"
+status = "done"
 created = "2026-02-16"
 started = "2026-02-16"
+completed = "2026-02-16"
 
 [content]
 description = """
@@ -48,45 +49,45 @@ Total coverage: **53.98%**
 
 [[content.acceptance_criteria]]
 text = "Coverage target >= 70%"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for describe.rs (0% -> 60%)"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for scan.rs (2% -> 60%)"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for lifecycle.rs (34% -> 60%)"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for edit.rs (44% -> 60%)"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for move_.rs (42% -> 60%)"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for command_router.rs (47% -> 60%)"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for parse.rs (50% -> 65%)"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Tests for ui.rs (35% -> 60%)"
-status = "pending"
+status = "done"
 category = "chore"

@@ -31,15 +31,34 @@ fn test_move_active_to_done_with_criteria() {
 
     // Create and set up work item
     let setup_commands: Vec<Vec<String>> = vec![
-        vec!["work".to_string(), "new".to_string(), "Test task".to_string(), "--active".to_string()],
-        vec!["work".to_string(), "add".to_string(), format!("WI-{}-001", date), "acceptance_criteria".to_string(), "add: Task done".to_string()],
+        vec![
+            "work".to_string(),
+            "new".to_string(),
+            "Test task".to_string(),
+            "--active".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "add".to_string(),
+            format!("WI-{}-001", date),
+            "acceptance_criteria".to_string(),
+            "add: Task done".to_string(),
+        ],
     ];
     let _ = run_dynamic_commands(temp_dir.path(), &setup_commands);
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["work", "tick", &format!("WI-{}-001", date), "acceptance_criteria", "Task done", "-s", "done"],
+            &[
+                "work",
+                "tick",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "Task done",
+                "-s",
+                "done",
+            ],
             &["work", "move", &format!("WI-{}-001", date), "done"],
             &["work", "list", "all"],
         ],
@@ -70,16 +89,25 @@ fn test_move_to_done_with_pending_criteria_fails() {
     let date = today();
 
     let setup_commands: Vec<Vec<String>> = vec![
-        vec!["work".to_string(), "new".to_string(), "Test task".to_string(), "--active".to_string()],
-        vec!["work".to_string(), "add".to_string(), format!("WI-{}-001", date), "acceptance_criteria".to_string(), "add: Task done".to_string()],
+        vec![
+            "work".to_string(),
+            "new".to_string(),
+            "Test task".to_string(),
+            "--active".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "add".to_string(),
+            format!("WI-{}-001", date),
+            "acceptance_criteria".to_string(),
+            "add: Task done".to_string(),
+        ],
     ];
     let _ = run_dynamic_commands(temp_dir.path(), &setup_commands);
 
     let output = run_commands(
         temp_dir.path(),
-        &[
-            &["work", "move", &format!("WI-{}-001", date), "done"],
-        ],
+        &[&["work", "move", &format!("WI-{}-001", date), "done"]],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
@@ -173,15 +201,34 @@ fn test_move_sets_completed_date() {
     let date = today();
 
     let setup_commands: Vec<Vec<String>> = vec![
-        vec!["work".to_string(), "new".to_string(), "Task to complete".to_string(), "--active".to_string()],
-        vec!["work".to_string(), "add".to_string(), format!("WI-{}-001", date), "acceptance_criteria".to_string(), "add: Done".to_string()],
+        vec![
+            "work".to_string(),
+            "new".to_string(),
+            "Task to complete".to_string(),
+            "--active".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "add".to_string(),
+            format!("WI-{}-001", date),
+            "acceptance_criteria".to_string(),
+            "add: Done".to_string(),
+        ],
     ];
     let _ = run_dynamic_commands(temp_dir.path(), &setup_commands);
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["work", "tick", &format!("WI-{}-001", date), "acceptance_criteria", "Done", "-s", "done"],
+            &[
+                "work",
+                "tick",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "Done",
+                "-s",
+                "done",
+            ],
             &["work", "show", &format!("WI-{}-001", date)],
             &["work", "move", &format!("WI-{}-001", date), "done"],
             &["work", "show", &format!("WI-{}-001", date)],

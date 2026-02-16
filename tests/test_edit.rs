@@ -111,10 +111,7 @@ fn test_rfc_get_nonexistent() {
     let temp_dir = init_project();
     let date = today();
 
-    let output = run_commands(
-        temp_dir.path(),
-        &[&["rfc", "get", "RFC-9999", "title"]],
-    );
+    let output = run_commands(temp_dir.path(), &[&["rfc", "get", "RFC-9999", "title"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -131,8 +128,23 @@ fn test_clause_set_text() {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["clause", "new", "RFC-0001:C-TEST", "Test Clause", "-s", "Specification", "-k", "normative"],
-            &["clause", "edit", "RFC-0001:C-TEST", "--text", "Updated clause text"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "--text",
+                "Updated clause text",
+            ],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
     );
@@ -148,7 +160,16 @@ fn test_clause_set_title() {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["clause", "new", "RFC-0001:C-TEST", "Original Title", "-s", "Specification", "-k", "normative"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Original Title",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
             &["clause", "set", "RFC-0001:C-TEST", "title", "New Title"],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
@@ -165,7 +186,16 @@ fn test_clause_get_field() {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["clause", "new", "RFC-0001:C-TEST", "Test Clause", "-s", "Specification", "-k", "normative"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
             &["clause", "get", "RFC-0001:C-TEST", "title"],
             &["clause", "get", "RFC-0001:C-TEST", "kind"],
             &["clause", "get", "RFC-0001:C-TEST", "status"],
@@ -250,7 +280,13 @@ fn test_adr_set_context() {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &["adr", "set", "ADR-0001", "context", "New context for the decision"],
+            &[
+                "adr",
+                "set",
+                "ADR-0001",
+                "context",
+                "New context for the decision",
+            ],
             &["adr", "show", "ADR-0001"],
         ],
     );
@@ -282,7 +318,13 @@ fn test_adr_set_consequences() {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &["adr", "set", "ADR-0001", "consequences", "Good: faster. Bad: more memory."],
+            &[
+                "adr",
+                "set",
+                "ADR-0001",
+                "consequences",
+                "Good: faster. Bad: more memory.",
+            ],
             &["adr", "show", "ADR-0001"],
         ],
     );
@@ -294,10 +336,7 @@ fn test_adr_get_nonexistent() {
     let temp_dir = init_project();
     let date = today();
 
-    let output = run_commands(
-        temp_dir.path(),
-        &[&["adr", "get", "ADR-9999", "title"]],
-    );
+    let output = run_commands(temp_dir.path(), &[&["adr", "get", "ADR-9999", "title"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -330,7 +369,13 @@ fn test_work_set_title() {
         temp_dir.path(),
         &[
             &["work", "new", "Original Title"],
-            &["work", "set", &format!("WI-{}-001", date), "title", "New Title"],
+            &[
+                "work",
+                "set",
+                &format!("WI-{}-001", date),
+                "title",
+                "New Title",
+            ],
             &["work", "list", "all"],
         ],
     );
@@ -346,8 +391,20 @@ fn test_work_add_acceptance_criteria() {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "add", &format!("WI-{}-001", date), "acceptance_criteria", "add: Criterion 1"],
-            &["work", "add", &format!("WI-{}-001", date), "acceptance_criteria", "add: Criterion 2"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: Criterion 1",
+            ],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: Criterion 2",
+            ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
     );
@@ -363,9 +420,29 @@ fn test_work_tick_acceptance_criteria() {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "add", &format!("WI-{}-001", date), "acceptance_criteria", "add: Criterion 1"],
-            &["work", "add", &format!("WI-{}-001", date), "acceptance_criteria", "add: Criterion 2"],
-            &["work", "tick", &format!("WI-{}-001", date), "acceptance_criteria", "Criterion 1", "-s", "done"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: Criterion 1",
+            ],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: Criterion 2",
+            ],
+            &[
+                "work",
+                "tick",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "Criterion 1",
+                "-s",
+                "done",
+            ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
     );
@@ -381,8 +458,22 @@ fn test_work_tick_cancel_acceptance_criteria() {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "add", &format!("WI-{}-001", date), "acceptance_criteria", "add: Criterion 1"],
-            &["work", "tick", &format!("WI-{}-001", date), "acceptance_criteria", "Criterion 1", "-s", "cancelled"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: Criterion 1",
+            ],
+            &[
+                "work",
+                "tick",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "Criterion 1",
+                "-s",
+                "cancelled",
+            ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
     );
@@ -398,7 +489,13 @@ fn test_work_add_ref() {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "add", &format!("WI-{}-001", date), "refs", "RFC-0001"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "refs",
+                "RFC-0001",
+            ],
             &["work", "get", &format!("WI-{}-001", date), "refs"],
         ],
     );
@@ -414,9 +511,27 @@ fn test_work_remove_acceptance_criteria() {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "add", &format!("WI-{}-001", date), "acceptance_criteria", "add: To remove"],
-            &["work", "add", &format!("WI-{}-001", date), "acceptance_criteria", "add: To keep"],
-            &["work", "remove", &format!("WI-{}-001", date), "acceptance_criteria", "To remove"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: To remove",
+            ],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: To keep",
+            ],
+            &[
+                "work",
+                "remove",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "To remove",
+            ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
     );
@@ -449,7 +564,13 @@ fn test_field_alias_ac() {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "add", &format!("WI-{}-001", date), "ac", "add: Test criterion"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "ac",
+                "add: Test criterion",
+            ],
             &["work", "get", &format!("WI-{}-001", date), "ac"],
         ],
     );
@@ -466,7 +587,13 @@ fn test_field_alias_desc() {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "set", &format!("WI-{}-001", date), "desc", "A description"],
+            &[
+                "work",
+                "set",
+                &format!("WI-{}-001", date),
+                "desc",
+                "A description",
+            ],
             &["work", "get", &format!("WI-{}-001", date), "desc"],
         ],
     );

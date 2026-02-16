@@ -42,10 +42,7 @@ fn test_describe_with_context_draft_rfc() {
 
     let output = run_commands(
         temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &["describe", "--context"],
-        ],
+        &[&["rfc", "new", "Test RFC"], &["describe", "--context"]],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
@@ -112,10 +109,7 @@ fn test_describe_with_context_proposed_adr() {
 
     let output = run_commands(
         temp_dir.path(),
-        &[
-            &["adr", "new", "Test Decision"],
-            &["describe", "--context"],
-        ],
+        &[&["adr", "new", "Test Decision"], &["describe", "--context"]],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }

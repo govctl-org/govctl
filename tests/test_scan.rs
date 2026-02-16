@@ -27,7 +27,10 @@ fn test_scan_valid_rfc_reference() {
     // Create an RFC
     run_commands(
         temp_dir.path(),
-        &[&["rfc", "new", "Test RFC"], &["rfc", "finalize", "RFC-0001", "normative"]],
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+        ],
     );
 
     // Create a source file with a reference to the RFC
@@ -106,7 +109,10 @@ fn test_scan_unknown_clause_reference() {
     // Create an RFC but no clause
     run_commands(
         temp_dir.path(),
-        &[&["rfc", "new", "Test RFC"], &["rfc", "finalize", "RFC-0001", "normative"]],
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+        ],
     );
 
     // Create a source file with a reference to non-existent clause
@@ -158,7 +164,10 @@ fn test_scan_valid_adr_reference() {
     // Create an ADR
     run_commands(
         temp_dir.path(),
-        &[&["adr", "new", "Test Decision"], &["adr", "accept", "ADR-0001"]],
+        &[
+            &["adr", "new", "Test Decision"],
+            &["adr", "accept", "ADR-0001"],
+        ],
     );
 
     // Create a source file with a reference to the ADR
@@ -240,7 +249,10 @@ fn test_scan_mixed_valid_invalid_references() {
     // Create one RFC
     run_commands(
         temp_dir.path(),
-        &[&["rfc", "new", "Valid RFC"], &["rfc", "finalize", "RFC-0001", "normative"]],
+        &[
+            &["rfc", "new", "Valid RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+        ],
     );
 
     // Create a source file with valid and invalid references

@@ -211,7 +211,14 @@ fn test_bump_patch_version() {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &["rfc", "bump", "RFC-0001", "--patch", "--summary", "Minor fix"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--patch",
+                "--summary",
+                "Minor fix",
+            ],
             &["rfc", "list"],
         ],
     );
@@ -228,7 +235,14 @@ fn test_bump_minor_version() {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &["rfc", "bump", "RFC-0001", "--minor", "--summary", "New feature"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--minor",
+                "--summary",
+                "New feature",
+            ],
             &["rfc", "list"],
         ],
     );
@@ -245,7 +259,14 @@ fn test_bump_major_version() {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &["rfc", "bump", "RFC-0001", "--major", "--summary", "Breaking change"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--major",
+                "--summary",
+                "Breaking change",
+            ],
             &["rfc", "list"],
         ],
     );
@@ -371,10 +392,7 @@ fn test_accept_nonexistent_adr() {
     let temp_dir = init_project();
     let date = today();
 
-    let output = run_commands(
-        temp_dir.path(),
-        &[&["adr", "accept", "ADR-9999"]],
-    );
+    let output = run_commands(temp_dir.path(), &[&["adr", "accept", "ADR-9999"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -448,10 +466,34 @@ fn test_supersede_clause() {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["clause", "new", "RFC-0001:C-OLD", "Old Clause", "-s", "Specification", "-k", "normative"],
-            &["clause", "new", "RFC-0001:C-NEW", "New Clause", "-s", "Specification", "-k", "normative"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-OLD",
+                "Old Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-NEW",
+                "New Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &["clause", "supersede", "RFC-0001:C-OLD", "--by", "RFC-0001:C-NEW"],
+            &[
+                "clause",
+                "supersede",
+                "RFC-0001:C-OLD",
+                "--by",
+                "RFC-0001:C-NEW",
+            ],
             &["clause", "list"],
         ],
     );
