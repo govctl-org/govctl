@@ -4,7 +4,7 @@ expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl describe --context
 {
-  "version": "0.5.0",
+  "version": "0.4.3",
   "purpose": "Enforces RFC-driven phase discipline for AI-assisted software development",
   "philosophy": [
     "RFC is the source of truth — No implementation without specification",
