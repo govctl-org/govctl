@@ -125,6 +125,9 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         ui::created_path(&config.display_path(&config_path));
     }
 
+    // Ensure .gitignore contains .govctl.lock
+    ensure_gitignore_lock_entry(op)?;
+
     // Write all .claude/ assets (commands, skills, agents)
     let claude_dir = PathBuf::from(".claude");
     for (rel_path, template) in all_templates() {
@@ -594,4 +597,36 @@ fn find_max_sequence(work_dir: &std::path::Path, id_prefix: &str) -> u32 {
         })
         .max()
         .unwrap_or(0)
+}
+
+/// Ensure .gitignore contains .govctl.lock entry
+fn ensure_gitignore_lock_entry(op: WriteOp) -> anyhow::Result<()> {
+    const LOCK_ENTRY: &str = ".govctl.lock";
+    let gitignore_path = PathBuf::from(".gitignore");
+
+    if gitignore_path.exists() {
+        let content = std::fs::read_to_string(&gitignore_path)?;
+        // Check if already present
+        if content.lines().any(|line| line.trim() == LOCK_ENTRY) {
+            return Ok(());
+        }
+        // Append to existing .gitignore
+        let new_content = if content.ends_with('\n') {
+            format!("{}{}\n", content, LOCK_ENTRY)
+        } else {
+            format!("{}\n{}\n", content, LOCK_ENTRY)
+        };
+        write_file(&gitignore_path, &new_content, op, None)?;
+        if !op.is_preview() {
+            ui::info(format!("Added '{}' to .gitignore", LOCK_ENTRY));
+        }
+    } else {
+        // Create new .gitignore
+        let content = format!("# govctl lock file\n{}\n", LOCK_ENTRY);
+        write_file(&gitignore_path, &content, op, None)?;
+        if !op.is_preview() {
+            ui::created_path(&gitignore_path);
+        }
+    }
+    Ok(())
 }

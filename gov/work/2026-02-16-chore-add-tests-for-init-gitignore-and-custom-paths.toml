@@ -1,0 +1,44 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-16-003"
+title = "chore: add tests for init gitignore and custom paths"
+status = "done"
+created = "2026-02-16"
+started = "2026-02-16"
+completed = "2026-02-16"
+
+[content]
+description = """
+Add test coverage for init command:
+1. .gitignore automatic handling (create, append, no duplicate)
+2. Custom paths configuration (gov_root, docs_output)"""
+
+[[content.acceptance_criteria]]
+text = "test_init_creates_gitignore"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "test_init_appends_to_existing_gitignore"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "test_init_no_duplicate_gitignore_entry"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "test_init_custom_gov_root"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "test_init_custom_docs_output"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "test_init_custom_paths_combined"
+status = "done"
+category = "chore"
