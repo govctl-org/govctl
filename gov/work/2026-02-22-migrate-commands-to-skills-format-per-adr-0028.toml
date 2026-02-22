@@ -1,0 +1,42 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-22-003"
+title = "Migrate commands to skills format per ADR-0028"
+status = "done"
+created = "2026-02-22"
+started = "2026-02-22"
+completed = "2026-02-22"
+refs = ["ADR-0028"]
+
+[content]
+description = "Migrate workflow commands (discuss, gov, quick) to skills format for cross-platform compatibility. Delete status command due to low usage."
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "src/cmd/new.rs to use unified SKILL_TEMPLATES"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "commands/status.md due to low usage"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "name field to discuss/gov/quick skill frontmatter"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "discuss/gov/quick skills in .claude/skills/"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
