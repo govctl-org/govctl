@@ -1,0 +1,18 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-22-005"
+title = "Fix non-deterministic output in rfc finalize"
+status = "done"
+created = "2026-02-22"
+started = "2026-02-22"
+completed = "2026-02-22"
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "CI test passes with deterministic output order"
+status = "done"
+category = "fixed"

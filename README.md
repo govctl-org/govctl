@@ -83,13 +83,13 @@ govctl governs itself by its own rules. This repository is the first proof.
 
 ## Who This Is For
 
-✅ **Teams frustrated by AI "code now, think later" patterns**
-✅ **Projects where specifications drift from implementations**
-✅ **Organizations needing audit trails for AI-generated code**
-✅ **Developers who believe discipline enables velocity**
+- ✅ **Teams frustrated by AI "code now, think later" patterns**
+- ✅ **Projects where specifications drift from implementations**
+- ✅ **Organizations needing audit trails for AI-generated code**
+- ✅ **Developers who believe discipline enables velocity**
 
-❌ Not for "move fast and break things" workflows
-❌ Not for projects without review processes
+- ❌ Not for "move fast and break things" workflows
+- ❌ Not for projects without review processes
 
 ---
 

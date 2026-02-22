@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- CI test passes with deterministic output order (WI-2026-02-22-005)
+
 ## [0.5.1] - 2026-02-22
 
 ### Added

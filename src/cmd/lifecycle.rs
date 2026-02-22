@@ -29,13 +29,16 @@ fn fill_pending_clause_versions(rfc_path: &Path, version: &str, op: WriteOp) -> 
         return Ok(());
     }
 
-    let pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)?
+    let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)?
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| p.extension().is_some_and(|e| e == "json"))
         .filter_map(|p| read_clause(&p).ok().map(|c| (p, c)))
         .filter(|(_, c)| c.since.is_none())
         .collect();
+
+    // Sort by clause_id for deterministic output order
+    pending_clauses.sort_by_key(|(_, c)| c.clause_id.clone());
 
     for (path, mut clause) in pending_clauses {
         clause.since = Some(version.to_string());
