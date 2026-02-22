@@ -97,11 +97,30 @@ Honest accounting of trade-offs. Structure:
 
 ### 4. Alternatives (recommended)
 
-```bash
-govctl adr add <ADR-ID> alternatives "Option A: Description. Rejected: reason."
-```
+Document options considered. Future readers need to know what was _not_ chosen and why.
 
-Document rejected options. Future readers need to know what was _not_ chosen and why.
+**Extended structure per ADR-0027:**
+
+    [[content.alternatives]]
+    text = "Option A: Description"
+    status = "rejected"
+    pros = ["Advantage 1", "Advantage 2"]
+    cons = ["Disadvantage 1"]
+    rejection_reason = "Why this was not chosen"
+
+**Field semantics:**
+
+- `text` (required): Description of the alternative
+- `status`: `considered` (default) | `accepted` | `rejected`
+- `pros`: List of advantages
+- `cons`: List of disadvantages
+- `rejection_reason`: If rejected, explains why
+
+**When to add pros/cons:**
+
+- For significant decisions with multiple options
+- When trade-offs are non-obvious
+- To help future readers understand the evaluation process
 
 ### 5. References (recommended)
 

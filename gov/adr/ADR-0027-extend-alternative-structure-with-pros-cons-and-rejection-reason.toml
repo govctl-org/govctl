@@ -1,0 +1,79 @@
+[govctl]
+schema = 1
+id = "ADR-0027"
+title = "Extend Alternative structure with pros, cons, and rejection_reason"
+status = "proposed"
+date = "2026-02-22"
+refs = ["RFC-0000:C-ADR-DEF"]
+
+[content]
+context = """
+The current `Alternative` structure in ADRs only has two fields: `text` and `status`. This is insufficient for capturing structured decision rationale:
+
+1. **No pros/cons tracking**: When comparing options, the advantages and disadvantages are key decision factors, but they cannot be structured.
+
+2. **No rejection reason**: When an alternative is rejected, the reason is often scattered in the `decision` or `context` fields instead of being directly attached to the alternative.
+
+3. **Manual workarounds**: Current practice requires authors to write Markdown tables in the `context` field to compare options, which is not structured and cannot be processed programmatically.
+
+**Example of current limitation:**
+
+    [[content.alternatives]]
+    text = "Option A: Sequential IDs"
+    status = "rejected"
+    # Where do I put the pros/cons? In context as markdown table?
+
+**Comparison with other fields:**
+- WorkItem has structured `acceptance_criteria` with status and category
+- RFC has structured `changelog` with categorized entries
+- ADR alternatives should have similar structure for decision tracking."""
+
+decision = """
+Extend the `Alternative` structure with three new optional fields:
+
+    pub struct Alternative {
+        pub text: String,
+        pub status: AlternativeStatus,
+        pub pros: Vec<String>,              // NEW: advantages
+        pub cons: Vec<String>,              // NEW: disadvantages
+        pub rejection_reason: Option<String>, // NEW: why rejected
+    }
+
+**Field semantics:**
+- `pros`: List of advantages for this alternative
+- `cons`: List of disadvantages for this alternative
+- `rejection_reason`: If status is `rejected`, explains why
+
+**Backward compatibility:**
+All new fields use `#[serde(default)]` and `skip_serializing_if_empty`, so existing ADRs remain valid without migration."""
+
+consequences = """
+**What becomes easier:**
+
+- **Structured comparison**: Each alternative has its own pros/cons attached
+- **Clearer rendering**: Rendered output can show options with their trade-offs
+- **Better tooling**: CLI can display alternatives in a structured format (e.g., comparison table)
+- **Self-documenting decisions**: The reason for rejection is directly linked to the alternative
+
+**What becomes more difficult:**
+
+- None significant. The fields are optional and additive.
+
+**Migration impact:**
+
+- No migration required
+- Existing ADRs with simple alternatives continue to work
+- New ADRs can opt into the extended structure
+
+**Rendering example:**
+
+    ## Alternatives Considered
+
+    ### Sequential IDs (rejected)
+    - Pros: Simple, Readable
+    - Cons: Collisions in teams
+    - Rejected because: Does not solve the collision problem
+
+    ### Author hash namespace (accepted)
+    - Pros: Auto isolation, Zero config
+    - Cons: Slightly less readable"""

@@ -1,0 +1,44 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-22-002"
+title = "Extend Alternative structure with pros, cons, and rejection_reason"
+status = "done"
+created = "2026-02-22"
+started = "2026-02-22"
+completed = "2026-02-22"
+refs = ["ADR-0027"]
+
+[content]
+description = """
+Describe the work to be done.
+What is the goal? What are the acceptance criteria?"""
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "rejection_reason field to Alternative struct"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "pros and cons fields to Alternative struct"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "ADR render output includes pros/cons/rejection_reason"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "adr.schema.toml with Alternative field documentation"
+status = "done"
+category = "changed"

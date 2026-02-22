@@ -26,7 +26,16 @@ Impact of this decision.
 What are the trade-offs?
 """
 
-# Optional: Alternatives that were considered
+# Optional: Alternatives that were considered (extended per [[ADR-0027]])
 [[content.alternatives]]
 text = "Option A: Description"
 status = "rejected"    # considered (default) | accepted | rejected
+pros = ["Advantage 1", "Advantage 2"]           # Optional: advantages
+cons = ["Disadvantage 1"]                       # Optional: disadvantages
+rejection_reason = "Why this was not chosen"    # Optional: if rejected, explain why
+
+[[content.alternatives]]
+text = "Option B: Description"
+status = "accepted"
+pros = ["Advantage 1", "Advantage 2"]
+cons = ["Disadvantage 1"]

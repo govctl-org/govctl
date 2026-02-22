@@ -163,12 +163,22 @@ pub enum AlternativeStatus {
     Accepted,
 }
 
-/// An alternative option considered in an ADR
+/// An alternative option considered in an ADR.
+/// Extended per [[ADR-0027]] with pros, cons, and rejection_reason.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Alternative {
     pub text: String,
     #[serde(default)]
     pub status: AlternativeStatus,
+    /// Advantages of this alternative per [[ADR-0027]]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub pros: Vec<String>,
+    /// Disadvantages of this alternative per [[ADR-0027]]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub cons: Vec<String>,
+    /// If rejected, explains why per [[ADR-0027]]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rejection_reason: Option<String>,
 }
 
 impl Alternative {
@@ -176,6 +186,9 @@ impl Alternative {
         Self {
             text: text.into(),
             status: AlternativeStatus::Considered,
+            pros: vec![],
+            cons: vec![],
+            rejection_reason: None,
         }
     }
 }

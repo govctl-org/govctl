@@ -378,21 +378,38 @@ pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
     let _ = writeln!(out, "{}", content.consequences);
     let _ = writeln!(out);
 
-    // Alternatives Considered
+    // Alternatives Considered (extended per ADR-0027)
     if !content.alternatives.is_empty() {
         use crate::model::AlternativeStatus;
         let _ = writeln!(out, "## Alternatives Considered");
         let _ = writeln!(out);
         for alt in &content.alternatives {
-            let indented_text = indent_continuation(&alt.text);
-            let line = match alt.status {
-                AlternativeStatus::Considered => format!("- [ ] {}", indented_text),
-                AlternativeStatus::Accepted => format!("- [x] {}", indented_text),
-                AlternativeStatus::Rejected => format!("- ~~{}~~", indented_text),
+            // Render as subheading with status
+            let status_suffix = match alt.status {
+                AlternativeStatus::Considered => "",
+                AlternativeStatus::Accepted => " (accepted)",
+                AlternativeStatus::Rejected => " (rejected)",
             };
-            let _ = writeln!(out, "{line}");
+            let _ = writeln!(out, "### {}{}", alt.text, status_suffix);
+            let _ = writeln!(out);
+
+            // Pros
+            if !alt.pros.is_empty() {
+                let _ = writeln!(out, "- **Pros:** {}", alt.pros.join(", "));
+            }
+
+            // Cons
+            if !alt.cons.is_empty() {
+                let _ = writeln!(out, "- **Cons:** {}", alt.cons.join(", "));
+            }
+
+            // Rejection reason
+            if let Some(ref reason) = alt.rejection_reason {
+                let _ = writeln!(out, "- **Rejected because:** {}", reason);
+            }
+
+            let _ = writeln!(out);
         }
-        let _ = writeln!(out);
     }
 
     Ok(out)
