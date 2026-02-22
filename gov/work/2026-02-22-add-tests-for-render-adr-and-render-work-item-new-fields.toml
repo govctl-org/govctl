@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-02-22-006"
 title = "Add tests for render_adr and render_work_item new fields"
-status = "active"
+status = "done"
 created = "2026-02-22"
 started = "2026-02-22"
+completed = "2026-02-22"
 
 [content]
 description = """
@@ -13,10 +14,10 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "Unit tests cover render_adr with pros, cons, rejection_reason"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Unit tests cover render_work_item with journal field"
-status = "pending"
+status = "done"
 category = "added"
