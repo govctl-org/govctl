@@ -546,6 +546,10 @@ pub fn write_work_item_md(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::{
+        AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus, JournalEntry,
+        WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus,
+    };
 
     const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]";
 
@@ -700,5 +704,154 @@ mod tests {
                 wi_id, wi_id
             )
         );
+    }
+
+    // Tests for render_adr with new Alternative fields per [[ADR-0027]]
+
+    #[test]
+    fn test_render_adr_alternatives_with_pros_cons() {
+        let adr = AdrEntry {
+            spec: AdrSpec {
+                govctl: AdrMeta {
+                    schema: 1,
+                    id: "ADR-9999".to_string(),
+                    title: "Test ADR".to_string(),
+                    status: AdrStatus::Accepted,
+                    date: "2026-02-22".to_string(),
+                    superseded_by: None,
+                    refs: vec![],
+                },
+                content: AdrContent {
+                    context: "Test context".to_string(),
+                    decision: "Test decision".to_string(),
+                    consequences: "Test consequences".to_string(),
+                    alternatives: vec![Alternative {
+                        text: "Option A".to_string(),
+                        status: AlternativeStatus::Considered,
+                        pros: vec!["Fast".to_string(), "Cheap".to_string()],
+                        cons: vec!["Less reliable".to_string()],
+                        rejection_reason: None,
+                    }],
+                },
+            },
+            path: std::path::PathBuf::new(),
+        };
+
+        let result = render_adr(&adr).unwrap();
+        assert!(result.contains("### Option A"));
+        assert!(result.contains("- **Pros:** Fast, Cheap"));
+        assert!(result.contains("- **Cons:** Less reliable"));
+    }
+
+    #[test]
+    fn test_render_adr_alternatives_rejected_with_reason() {
+        let adr = AdrEntry {
+            spec: AdrSpec {
+                govctl: AdrMeta {
+                    schema: 1,
+                    id: "ADR-9998".to_string(),
+                    title: "Test ADR Rejected".to_string(),
+                    status: AdrStatus::Accepted,
+                    date: "2026-02-22".to_string(),
+                    superseded_by: None,
+                    refs: vec![],
+                },
+                content: AdrContent {
+                    context: "Test context".to_string(),
+                    decision: "Test decision".to_string(),
+                    consequences: "Test consequences".to_string(),
+                    alternatives: vec![Alternative {
+                        text: "Option B".to_string(),
+                        status: AlternativeStatus::Rejected,
+                        pros: vec![],
+                        cons: vec!["Too expensive".to_string()],
+                        rejection_reason: Some("Budget constraints".to_string()),
+                    }],
+                },
+            },
+            path: std::path::PathBuf::new(),
+        };
+
+        let result = render_adr(&adr).unwrap();
+        assert!(result.contains("### Option B (rejected)"));
+        assert!(result.contains("- **Rejected because:** Budget constraints"));
+    }
+
+    // Tests for render_work_item with journal field per [[ADR-0026]]
+
+    #[test]
+    fn test_render_work_item_journal() {
+        let item = WorkItemEntry {
+            spec: WorkItemSpec {
+                govctl: WorkItemMeta {
+                    schema: 1,
+                    id: "WI-2026-02-22-001".to_string(),
+                    title: "Test Work Item".to_string(),
+                    status: WorkItemStatus::Active,
+                    created: Some("2026-02-22".to_string()),
+                    started: Some("2026-02-22".to_string()),
+                    completed: None,
+                    refs: vec![],
+                },
+                content: WorkItemContent {
+                    description: "Test description".to_string(),
+                    journal: vec![JournalEntry {
+                        date: "2026-02-22".to_string(),
+                        scope: None,
+                        content: "Started implementation".to_string(),
+                    }],
+                    acceptance_criteria: vec![],
+                    notes: vec![],
+                },
+            },
+            path: std::path::PathBuf::new(),
+        };
+
+        let result = render_work_item(&item).unwrap();
+        assert!(result.contains("## Journal"));
+        assert!(result.contains("### 2026-02-22"));
+        assert!(result.contains("Started implementation"));
+    }
+
+    #[test]
+    fn test_render_work_item_journal_with_scope() {
+        let item = WorkItemEntry {
+            spec: WorkItemSpec {
+                govctl: WorkItemMeta {
+                    schema: 1,
+                    id: "WI-2026-02-22-002".to_string(),
+                    title: "Test Work Item with Scope".to_string(),
+                    status: WorkItemStatus::Active,
+                    created: Some("2026-02-22".to_string()),
+                    started: Some("2026-02-22".to_string()),
+                    completed: None,
+                    refs: vec![],
+                },
+                content: WorkItemContent {
+                    description: "Test description".to_string(),
+                    journal: vec![
+                        JournalEntry {
+                            date: "2026-02-22".to_string(),
+                            scope: Some("API".to_string()),
+                            content: "Created endpoint".to_string(),
+                        },
+                        JournalEntry {
+                            date: "2026-02-23".to_string(),
+                            scope: Some("Testing".to_string()),
+                            content: "Added unit tests".to_string(),
+                        },
+                    ],
+                    acceptance_criteria: vec![],
+                    notes: vec![],
+                },
+            },
+            path: std::path::PathBuf::new(),
+        };
+
+        let result = render_work_item(&item).unwrap();
+        assert!(result.contains("### 2026-02-22 · API"));
+        assert!(result.contains("Created endpoint"));
+        assert!(result.contains("### 2026-02-23 · Testing"));
+        assert!(result.contains("Added unit tests"));
     }
 }
