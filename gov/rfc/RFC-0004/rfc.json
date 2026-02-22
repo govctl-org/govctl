@@ -3,10 +3,10 @@
   "title": "Concurrent write safety for governance artifacts",
   "version": "0.1.0",
   "status": "normative",
-  "phase": "test",
+  "phase": "stable",
   "owners": ["@govctl-org"],
   "created": "2026-02-15",
-  "updated": "2026-02-15",
+  "updated": "2026-02-22",
   "sections": [
     {
       "title": "Summary",

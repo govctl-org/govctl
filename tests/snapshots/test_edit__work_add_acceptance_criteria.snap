@@ -17,7 +17,7 @@ exit: 0
 
 $ govctl work show WI-<DATE>-001
 <!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
-<!-- SIGNATURE: sha256:654d431d791f16c2ced15b4a7447c88744cd543ddb99013c66c0a1a1c7005c69 -->
+<!-- SIGNATURE: sha256:895eeadd9e615ebc826357ff0650c0e163f1c6645c4024948a65fae3756e2175 -->
 
 # Test Task
 

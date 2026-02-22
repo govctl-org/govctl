@@ -277,11 +277,27 @@ impl ChecklistItem {
     }
 }
 
+/// A journal entry for execution tracking per [[ADR-0026]].
+/// Records progress updates with date, optional scope, and content.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct JournalEntry {
+    /// ISO date string "YYYY-MM-DD"
+    pub date: String,
+    /// Optional topic/module identifier for this entry
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    /// Markdown text with progress details
+    pub content: String,
+}
+
 /// Work Item content section `[content]`
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WorkItemContent {
     #[serde(default)]
     pub description: String,
+    /// Execution process tracking entries per [[ADR-0026]]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub journal: Vec<JournalEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub acceptance_criteria: Vec<ChecklistItem>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

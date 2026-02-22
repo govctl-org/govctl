@@ -2,7 +2,7 @@
 schema = 1
 id = "ADR-0023"
 title = "Organize assets into commands, skills, and agents subdirectories"
-status = "proposed"
+status = "accepted"
 date = "2026-02-11"
 refs = ["ADR-0024"]
 

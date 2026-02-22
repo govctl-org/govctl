@@ -6,7 +6,7 @@ $ govctl work render WI-<DATE>-001 --dry-run
 Would write: docs/work/WI-<DATE>-001.md
 --- Content preview ---
 <!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
-<!-- SIGNATURE: sha256:347c671cbbacc7b157591153832c6d0331be41cd25ab577b42d7725ec730dca7 -->
+<!-- SIGNATURE: sha256:e17d768df02867a1300c532d7780021ee93f04614f26c3f13352e082b868e501 -->
 
 # Test Work
 

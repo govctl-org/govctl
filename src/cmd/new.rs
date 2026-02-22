@@ -555,6 +555,7 @@ fn create_work_item(
             description:
                 "Describe the work to be done.\nWhat is the goal? What are the acceptance criteria?"
                     .to_string(),
+            journal: vec![],
             acceptance_criteria: vec![],
             notes: vec![],
         },

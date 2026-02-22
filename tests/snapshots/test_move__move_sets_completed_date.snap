@@ -8,7 +8,7 @@ exit: 0
 
 $ govctl work show WI-<DATE>-001
 <!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
-<!-- SIGNATURE: sha256:4498b13ec2dc612068b1a6cad328773ccce04a99b0a61dd3c2977c23a095996a -->
+<!-- SIGNATURE: sha256:4580527a6a335610f458f207dc04d1aa7b0c0256c94628265accc87e4bc0bd52 -->
 
 # Task to complete
 
@@ -30,7 +30,7 @@ exit: 0
 
 $ govctl work show WI-<DATE>-001
 <!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
-<!-- SIGNATURE: sha256:26f1e12ab96a2e2a61972539d6c675637517717f390ffc77a166212028553fa7 -->
+<!-- SIGNATURE: sha256:d584a037866cdbdba66a38e01679d0fc3e5e0af6961b0ff32352939cd63a41a5 -->
 
 # Task to complete
 

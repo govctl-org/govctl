@@ -1,0 +1,98 @@
+[govctl]
+schema = 1
+id = "ADR-0026"
+title = "Add journal field to WorkItem for execution tracking"
+status = "accepted"
+date = "2026-02-22"
+refs = ["RFC-0000"]
+
+[content]
+context = """
+During agent-driven governance workflows, agents naturally use work items as "working memory" to track execution progress. Currently, this working memory is stored in the `description` field, mixing multiple semantic purposes:
+
+1. **Task declaration** — "What needs to be done" (static scope definition)
+2. **Execution tracking** — Progress updates, bug fixes, verification results (dynamic, frequently updated)
+3. **Planning adjustments** — Next steps, design decisions (evolves during execution)
+
+This mixing causes `description` to become very long (4000+ characters in observed cases) and conflates declarative "what" with imperative "how it's going."
+
+**Example:** In `WI-2026-02-21-004`, the description field contains:
+- Initial implementation plan (Steps 1-6)
+- Multiple "Progress update (YYYY-MM-DD, scope)" sections with detailed execution notes
+- Bug fix records, verification results, and next-step planning
+
+The `notes` field exists but is underutilized because its original intent ("observations and decisions made during work") was not clear enough, and agents naturally reached for `description` as the primary writing surface.
+
+**Reference:** [[RFC-0000:C-CONTENT]] defines the content model but does not distinguish between declaration and tracking semantics."""
+decision = """
+Add a new `journal` field to `WorkItemContent` as a structured array for execution tracking, distinct from `description` (task declaration) and `notes` (ad-hoc points).
+
+**TOML structure:**
+
+Each journal entry has three fields:
+- `date` (required): ISO date string "YYYY-MM-DD"
+- `scope` (optional): Topic/module identifier for this entry
+- `content` (required): Markdown text with progress details
+
+**Example work item with journal:**
+
+    [content]
+    description = "Big-bang AST/IR v2 migration with 6 implementation steps..."
+
+    [[content.journal]]
+    date = "2026-02-21"
+    scope = "typub-html"
+    content = "v2 parse + serialize paths active; fixed footnote issues"
+
+    [[content.journal]]
+    date = "2026-02-21"
+    scope = "typub-markdown"
+    content = "Migrated renderer tests to v2 fixtures; fixed footnote refs"
+
+**Data structure (Rust):**
+
+    pub struct JournalEntry {
+        pub date: String,
+        pub scope: Option<String>,
+        pub content: String,
+    }
+
+**Semantic boundaries:**
+
+| Field | Purpose | Update Pattern |
+|-------|---------|----------------|
+| `description` | Task scope declaration | Define once, rarely change |
+| `journal` | Execution process tracking | Append on each progress |
+| `notes` | Ad-hoc key points | Add anytime, concise |
+| `acceptance_criteria` | Completion criteria | Define then tick |
+
+**Backward compatibility:** The `journal` field is optional with `#[serde(default)]`. Existing work items remain valid without migration. New work items can adopt the field incrementally.
+
+**Changes required:**
+1. Update `WorkItemContent` struct in `src/model.rs`
+2. Update `gov/schema/work.schema.toml`
+3. Update render logic in `src/render.rs` to include journal section
+4. Update wi-writer skill documentation"""
+consequences = """
+**What becomes easier:**
+
+- **Clear separation of concerns:** `description` stays focused on task scope; execution details go to `journal`
+- **Better readability:** Rendered markdown shows a clean structure with dedicated sections
+- **Agent ergonomics:** Agents have a designated place for execution tracking without polluting description
+- **Historical traceability:** journal entries preserve the execution timeline
+
+**What becomes more difficult:**
+
+- None significant. The field is optional and additive.
+
+**Migration impact:**
+
+- No migration required for existing work items
+- Agents may gradually adopt `journal` for new or active work items
+- Old work items with "progress updates" in description remain valid
+
+**Documentation updates:**
+
+- `wi-writer` skill updated with field usage guidelines
+- `work.schema.toml` updated with journal field definition
+- Rendered markdown includes "## Journal" section after description"""

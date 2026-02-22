@@ -13,12 +13,25 @@ refs = ["RFC-0001", "ADR-0002"]     # Optional: cross-references
 
 [content]
 description = """
-What needs to be done.
+Task scope declaration: what needs to be done.
 Include enough detail to understand scope.
+Define once at start, rarely change during execution.
 """
 
+# Optional: Journal entries for execution tracking (per ADR-0026)
+# Each entry records progress updates with date, optional scope, and content.
+# Use for: execution process tracking, not task scope declaration.
+[[content.journal]]
+date = "YYYY-MM-DD"              # Required: ISO date string
+scope = "module-name"            # Optional: topic/module identifier
+content = """
+Progress details, bug fixes, verification results.
+Markdown format supported.
+"""
+
+# Notes: ad-hoc key points recorded anytime
 notes = """
-Progress notes, observations, and decisions made during work.
+Key observations and points to remember.
 Updated throughout the work item lifecycle.
 """
 

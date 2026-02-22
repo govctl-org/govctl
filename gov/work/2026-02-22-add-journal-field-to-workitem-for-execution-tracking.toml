@@ -1,0 +1,42 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-22-001"
+title = "Add journal field to WorkItem for execution tracking"
+status = "done"
+created = "2026-02-22"
+started = "2026-02-22"
+completed = "2026-02-22"
+refs = ["ADR-0026"]
+
+[content]
+description = "Implement ADR-0026: Add journal field to WorkItem for execution tracking. This adds a structured journal array to WorkItemContent, enabling agents to track execution progress separately from task scope declaration."
+
+[[content.acceptance_criteria]]
+text = "Journal section in work item render output"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Journal field definition in work.schema.toml"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "wi-writer skill documentation with journal usage"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "JournalEntry struct and journal field in WorkItemContent"
+status = "done"
+category = "added"

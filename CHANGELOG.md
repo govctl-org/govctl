@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Journal section in work item render output (WI-2026-02-22-001)
+- Journal field definition in work.schema.toml (WI-2026-02-22-001)
+- JournalEntry struct and journal field in WorkItemContent (WI-2026-02-22-001)
+
+### Changed
+
+- wi-writer skill documentation with journal usage (WI-2026-02-22-001)
+
 ## [0.4.3] - 2026-02-16
 
 ### Added
