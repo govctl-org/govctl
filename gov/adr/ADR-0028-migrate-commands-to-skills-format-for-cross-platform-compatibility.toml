@@ -1,0 +1,106 @@
+[govctl]
+schema = 1
+id = "ADR-0028"
+title = "Migrate commands to skills format for cross-platform compatibility"
+status = "proposed"
+date = "2026-02-22"
+refs = [
+    "ADR-0024",
+    "ADR-0023",
+]
+
+[content]
+context = """
+The project currently has two mechanisms for AI agent capabilities:
+
+1. **Commands** (`.claude/commands/`): Slash commands for workflow orchestration
+2. **Skills** (`.claude/skills/`): Knowledge augmentation for the main agent
+
+**Industry trend:** Major AI coding platforms are converging on skills as the standard format:
+
+- **Claude/Cursor**: Skills can be triggered via slash commands (commands and skills are functionally equivalent)
+- **Codex**: Only supports skills, no commands
+
+**Current structure:**
+
+    .claude/commands/
+    ├── discuss.md    # Design discussion workflow
+    ├── gov.md        # Governed implementation workflow
+    ├── quick.md      # Fast path workflow
+    └── status.md     # Governance status (rarely used)
+
+    .claude/skills/
+    ├── rfc-writer/
+    ├── adr-writer/
+    └── wi-writer/
+
+**Problem:**
+- Two similar concepts (commands vs skills) create confusion
+- Commands are not portable to Codex
+- `status` command has very low usage frequency"""
+decision = """
+Migrate all workflow commands to skills format:
+
+**Migration:**
+
+| Source | Target | Action |
+|--------|--------|--------|
+| `commands/discuss.md` | `skills/discuss/SKILL.md` | Migrate |
+| `commands/gov.md` | `skills/gov/SKILL.md` | Migrate |
+| `commands/quick.md` | `skills/quick/SKILL.md` | Migrate |
+| `commands/status.md` | — | Delete (low usage) |
+
+**Format change:**
+
+Extend skill frontmatter to include command-specific fields:
+
+    ---
+    name: gov
+    description: "Execute governed workflow — work item, RFC/ADR, implement, test, done"
+    allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch
+    argument-hint: <what-to-do>
+    ---
+
+**Why keep current names:**
+- `discuss` - Clear intent for design discussion phase
+- `gov` - Established shorthand for governed workflow
+- `quick` - Clear intent for fast path
+
+**Why delete `status`:**
+- Very low usage frequency observed
+- Equivalent information available via `govctl status` CLI
+- Reduces maintenance burden"""
+consequences = """
+**Positive:**
+- Single unified format for all agent capabilities
+- Portable across Claude, Cursor, and Codex
+- Reduces conceptual overhead (one concept instead of two)
+- Eliminates underutilized `status` command
+
+**Negative:**
+- One-time migration effort (minimal: 3 files)
+- Breaking change for users who reference commands directly
+- Need to update any documentation referencing commands/
+
+**Migration steps:**
+1. Create skill directories for discuss, gov, quick
+2. Convert command files to skill format (add `name` field, preserve `allowed-tools`/`argument-hint`)
+3. Delete commands/ directory
+4. Update ADR-0023 to reflect new structure
+
+**Future structure:**
+
+    .claude/skills/
+    ├── discuss/
+    │   └── SKILL.md
+    ├── gov/
+    │   └── SKILL.md
+    ├── quick/
+    │   └── SKILL.md
+    ├── rfc-writer/
+    │   └── SKILL.md
+    ├── adr-writer/
+    │   └── SKILL.md
+    └── wi-writer/
+        └── SKILL.md
+"""

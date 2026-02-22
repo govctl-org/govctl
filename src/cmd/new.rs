@@ -13,30 +13,22 @@ use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
 use std::path::PathBuf;
 
-/// Command templates: (relative_path, content) pairs.
-/// Source of truth: .claude/commands/; embedded at compile time.
-const COMMAND_TEMPLATES: &[(&str, &str)] = &[
-    (
-        "commands/gov.md",
-        include_str!("../../.claude/commands/gov.md"),
-    ),
-    (
-        "commands/quick.md",
-        include_str!("../../.claude/commands/quick.md"),
-    ),
-    (
-        "commands/status.md",
-        include_str!("../../.claude/commands/status.md"),
-    ),
-    (
-        "commands/discuss.md",
-        include_str!("../../.claude/commands/discuss.md"),
-    ),
-];
-
 /// Skill templates: (relative_path, content) pairs.
 /// Source of truth: .claude/skills/; embedded at compile time.
+/// Per ADR-0028, all workflow commands are now skills for cross-platform compatibility.
 const SKILL_TEMPLATES: &[(&str, &str)] = &[
+    (
+        "skills/discuss/SKILL.md",
+        include_str!("../../.claude/skills/discuss/SKILL.md"),
+    ),
+    (
+        "skills/gov/SKILL.md",
+        include_str!("../../.claude/skills/gov/SKILL.md"),
+    ),
+    (
+        "skills/quick/SKILL.md",
+        include_str!("../../.claude/skills/quick/SKILL.md"),
+    ),
     (
         "skills/rfc-writer/SKILL.md",
         include_str!("../../.claude/skills/rfc-writer/SKILL.md"),
@@ -72,12 +64,9 @@ const AGENT_TEMPLATES: &[(&str, &str)] = &[
     ),
 ];
 
-/// All asset templates (commands + skills + agents).
+/// All asset templates (skills + agents).
 fn all_templates() -> impl Iterator<Item = &'static (&'static str, &'static str)> {
-    COMMAND_TEMPLATES
-        .iter()
-        .chain(SKILL_TEMPLATES.iter())
-        .chain(AGENT_TEMPLATES.iter())
+    SKILL_TEMPLATES.iter().chain(AGENT_TEMPLATES.iter())
 }
 
 /// Initialize govctl project

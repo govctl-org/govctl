@@ -1,4 +1,5 @@
 ---
+name: discuss
 description: Facilitate design discussion — research context, clarify requirements, draft RFC/ADR
 allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
 argument-hint: <topic-or-question>

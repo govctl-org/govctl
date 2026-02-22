@@ -1,4 +1,5 @@
 ---
+name: gov
 description: Execute governed workflow — work item, RFC/ADR, implement, test, done
 allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
 argument-hint: <what-to-do>

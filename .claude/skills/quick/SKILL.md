@@ -1,4 +1,5 @@
 ---
+name: quick
 description: Fast path for trivial changes — skip governance, minimal ceremony
 allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
 argument-hint: <what-to-do>
