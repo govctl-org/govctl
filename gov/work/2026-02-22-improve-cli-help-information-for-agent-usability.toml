@@ -1,0 +1,41 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-22-004"
+title = "Improve CLI help information for agent usability"
+status = "done"
+created = "2026-02-22"
+started = "2026-02-22"
+completed = "2026-02-22"
+
+[content]
+description = "Improve CLI help information to display valid field names for set/get/add commands, enabling agents to understand available operations without consulting external documentation."
+
+[[content.acceptance_criteria]]
+text = "adr set/get/add/remove commands with valid field list"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "rfc set/get commands with valid field list"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "clause set/get commands with valid field list"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "work set/get/add/remove commands with valid field list"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "All tests pass"
+status = "done"
+category = "chore"

@@ -2,7 +2,7 @@
 schema = 1
 id = "ADR-0027"
 title = "Extend Alternative structure with pros, cons, and rejection_reason"
-status = "proposed"
+status = "accepted"
 date = "2026-02-22"
 refs = ["RFC-0000:C-ADR-DEF"]
 
@@ -27,7 +27,6 @@ The current `Alternative` structure in ADRs only has two fields: `text` and `sta
 - WorkItem has structured `acceptance_criteria` with status and category
 - RFC has structured `changelog` with categorized entries
 - ADR alternatives should have similar structure for decision tracking."""
-
 decision = """
 Extend the `Alternative` structure with three new optional fields:
 
@@ -46,7 +45,6 @@ Extend the `Alternative` structure with three new optional fields:
 
 **Backward compatibility:**
 All new fields use `#[serde(default)]` and `skip_serializing_if_empty`, so existing ADRs remain valid without migration."""
-
 consequences = """
 **What becomes easier:**
 

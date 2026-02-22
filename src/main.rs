@@ -273,6 +273,24 @@ EXAMPLES:
         output: OutputFormat,
     },
     /// Get RFC field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields:
+    - title: RFC title
+    - version: RFC version (semver)
+    - status: RFC status (draft|normative|deprecated)
+    - phase: RFC phase (spec|impl|test|stable)
+
+  Array fields (returns JSON array):
+    - owners: RFC owners
+    - refs: Cross-references to other artifacts
+    - sections: RFC sections
+
+EXAMPLES:
+    govctl rfc get RFC-0001                    # Show all fields
+    govctl rfc get RFC-0001 title              # Get specific field
+    govctl rfc get RFC-0001 refs               # Get array field
+")]
     Get {
         /// RFC ID
         id: String,
@@ -280,6 +298,22 @@ EXAMPLES:
         field: Option<String>,
     },
     /// Set RFC field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields (use 'set'):
+    - title: RFC title
+    - version: RFC version (semver)
+    - status: RFC status (draft|normative|deprecated)
+    - phase: RFC phase (spec|impl|test|stable)
+
+  Array fields (modify via rfc.json directly):
+    - owners, refs, sections
+
+EXAMPLES:
+    govctl rfc set RFC-0001 title \"New Title\"
+    govctl rfc set RFC-0001 version 0.2.0
+    govctl rfc set RFC-0001 phase impl
+")]
     Set {
         /// RFC ID
         id: String,
@@ -403,6 +437,22 @@ EXAMPLES:
         output: OutputFormat,
     },
     /// Get clause field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields:
+    - title: Clause title
+    - kind: Clause kind (normative|informative)
+    - status: Clause status (active|deprecated|superseded)
+    - text: Clause text content
+    - since: Version when clause was added
+
+  Array fields (returns JSON array):
+    - anchors: Cross-reference anchors
+
+EXAMPLES:
+    govctl clause get RFC-0001:C-SUMMARY           # Show all fields
+    govctl clause get RFC-0001:C-SUMMARY text      # Get clause text
+")]
     Get {
         /// Clause ID (e.g., RFC-0001:C-PHASE-ORDER)
         id: String,
@@ -424,6 +474,23 @@ EXAMPLES:
         stdin: bool,
     },
     /// Set clause field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields (use 'set'):
+    - title: Clause title
+    - kind: Clause kind (normative|informative)
+    - status: Clause status (active|deprecated|superseded)
+    - text: Clause text content (use 'edit' for multi-line)
+
+  Array fields (modify via clause.json directly):
+    - anchors
+
+EXAMPLES:
+    govctl clause set RFC-0001:C-SUMMARY title \"New Title\"
+    govctl clause set RFC-0001:C-SUMMARY kind informative
+
+For editing clause text, prefer 'govctl clause edit' command.
+")]
     Set {
         /// Clause ID
         id: String,
@@ -503,6 +570,23 @@ EXAMPLES:
         output: OutputFormat,
     },
     /// Get ADR field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields:
+    - context: Background and problem description
+    - decision: The decision made and rationale
+    - consequences: Impact of this decision
+    - status: ADR status (proposed|accepted|rejected|superseded)
+
+  Array fields (returns JSON array):
+    - refs: Cross-references to RFCs/ADRs
+    - alternatives: Options that were considered
+
+EXAMPLES:
+    govctl adr get ADR-0001                    # Show all fields
+    govctl adr get ADR-0001 context            # Get specific field
+    govctl adr get ADR-0001 alternatives       # Get array field
+")]
     Get {
         /// ADR ID
         id: String,
@@ -510,6 +594,22 @@ EXAMPLES:
         field: Option<String>,
     },
     /// Set ADR field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields (use 'set'):
+    - context: Background and problem description
+    - decision: The decision made and rationale
+    - consequences: Impact of this decision
+
+  Array fields (use 'add'/'remove' instead):
+    - refs, alternatives
+
+EXAMPLES:
+    govctl adr set ADR-0001 context \"New context\"
+    govctl adr set ADR-0001 decision --stdin <<'EOF'
+    Multi-line decision here
+    EOF
+")]
     Set {
         /// ADR ID
         id: String,
@@ -523,10 +623,24 @@ EXAMPLES:
         stdin: bool,
     },
     /// Add value to ADR array field
+    #[command(after_help = "\
+VALID ARRAY FIELDS:
+    - refs: Cross-references to RFCs/ADRs (e.g., \"RFC-0001\", \"ADR-0002\")
+    - alternatives: Options that were considered
+
+ALTERNATIVES FORMAT:
+    Each alternative can have:
+    - text: Description of the option
+    - status: considered|accepted|rejected
+
+EXAMPLES:
+    govctl adr add ADR-0001 refs RFC-0001
+    govctl adr add ADR-0001 alternatives \"Option A: Description\"
+")]
     Add {
         /// ADR ID
         id: String,
-        /// Array field name
+        /// Array field name (refs, alternatives)
         field: String,
         /// Value to add (optional if --stdin)
         value: Option<String>,
@@ -535,10 +649,25 @@ EXAMPLES:
         stdin: bool,
     },
     /// Remove value from ADR array field
+    #[command(after_help = "\
+VALID ARRAY FIELDS:
+    - refs, alternatives
+
+MATCHING OPTIONS:
+    - pattern: Substring match (default)
+    - --at N: Remove by index (1-based, negative = from end)
+    - --exact: Exact string match
+    - --regex: Regex pattern match
+    - --all: Remove all matches
+
+EXAMPLES:
+    govctl adr remove ADR-0001 refs RFC-0001     # Remove first match
+    govctl adr remove ADR-0001 refs --at 1       # Remove by index
+")]
     Remove {
         /// ADR ID
         id: String,
-        /// Array field name
+        /// Array field name (refs, alternatives)
         field: String,
         /// Pattern to match
         #[arg(required_unless_present = "at")]
@@ -657,6 +786,23 @@ EXAMPLES:
         output: OutputFormat,
     },
     /// Get work item field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields:
+    - description: Task scope declaration
+    - status: Work item status (queue|active|done|cancelled)
+
+  Array fields (returns JSON array):
+    - refs: Cross-references to RFCs/ADRs
+    - journal: Execution tracking entries
+    - notes: Ad-hoc key points
+    - acceptance_criteria: Completion criteria
+
+EXAMPLES:
+    govctl work get WI-001                    # Show all fields
+    govctl work get WI-001 description        # Get specific field
+    govctl work get WI-001 refs               # Get array field
+")]
     Get {
         /// Work item ID
         id: String,
@@ -664,6 +810,22 @@ EXAMPLES:
         field: Option<String>,
     },
     /// Set work item field value
+    #[command(after_help = "\
+VALID FIELDS:
+  String fields (use 'set'):
+    - description: Task scope declaration
+    - status: Work item status (queue|active|done|cancelled)
+
+  Array fields (use 'add'/'remove' instead):
+    - refs, journal, notes, acceptance_criteria
+
+EXAMPLES:
+    govctl work set WI-001 description \"New description\"
+    govctl work set WI-001 status active
+    govctl work set WI-001 description --stdin <<'EOF'
+    Multi-line description here
+    EOF
+")]
     Set {
         /// Work item ID
         id: String,
@@ -677,10 +839,31 @@ EXAMPLES:
         stdin: bool,
     },
     /// Add value to work item array field
+    #[command(after_help = "\
+VALID ARRAY FIELDS:
+    - refs: Cross-references to RFCs/ADRs (e.g., \"RFC-0001\", \"ADR-0002\")
+    - journal: Execution tracking entries (multi-line via --stdin)
+    - notes: Ad-hoc key points (short strings)
+    - acceptance_criteria: Completion criteria with category prefix
+
+ACCEPTANCE CRITERIA FORMAT:
+    Use category prefix for changelog generation:
+    - \"add: New feature\"       → Added section
+    - \"fix: Bug fixed\"         → Fixed section
+    - \"changed: Behavior\"      → Changed section
+    - \"chore: Tests pass\"      → Excluded from changelog
+
+EXAMPLES:
+    govctl work add WI-001 refs RFC-0001
+    govctl work add WI-001 acceptance_criteria \"add: Implement feature\"
+    govctl work add WI-001 journal --stdin <<'EOF'
+    Progress update for today...
+    EOF
+")]
     Add {
         /// Work item ID
         id: String,
-        /// Array field name (e.g., refs, acceptance_criteria)
+        /// Array field name (refs, journal, notes, acceptance_criteria)
         field: String,
         /// Value to add (optional if --stdin)
         value: Option<String>,
@@ -692,10 +875,26 @@ EXAMPLES:
         category: Option<model::ChangelogCategory>,
     },
     /// Remove value from work item array field
+    #[command(after_help = "\
+VALID ARRAY FIELDS:
+    - refs, journal, notes, acceptance_criteria
+
+MATCHING OPTIONS:
+    - pattern: Substring match (default)
+    - --at N: Remove by index (1-based, negative = from end)
+    - --exact: Exact string match
+    - --regex: Regex pattern match
+    - --all: Remove all matches
+
+EXAMPLES:
+    govctl work remove WI-001 refs RFC-0001     # Remove first match
+    govctl work remove WI-001 refs --at 1       # Remove by index
+    govctl work remove WI-001 notes --all       # Remove all
+")]
     Remove {
         /// Work item ID
         id: String,
-        /// Array field name
+        /// Array field name (refs, journal, notes, acceptance_criteria)
         field: String,
         /// Pattern to match
         #[arg(required_unless_present = "at")]
