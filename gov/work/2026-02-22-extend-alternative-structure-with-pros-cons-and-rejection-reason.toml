@@ -9,9 +9,7 @@ completed = "2026-02-22"
 refs = ["ADR-0027"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Extend Alternative structure with pros, cons, and rejection_reason fields per ADR-0027. This enables structured option comparison in ADRs."
 
 [[content.acceptance_criteria]]
 text = "All tests pass"
