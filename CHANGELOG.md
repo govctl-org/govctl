@@ -14,12 +14,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - JournalEntry struct and journal field in WorkItemContent (WI-2026-02-22-001)
 - rejection_reason field to Alternative struct (WI-2026-02-22-002)
 - pros and cons fields to Alternative struct (WI-2026-02-22-002)
+- name field to discuss/gov/quick skill frontmatter (WI-2026-02-22-003)
+- discuss/gov/quick skills in .claude/skills/ (WI-2026-02-22-003)
+- commit skill with govctl integration (WI-2026-02-22-003)
 
 ### Changed
 
 - wi-writer skill documentation with journal usage (WI-2026-02-22-001)
 - ADR render output includes pros/cons/rejection_reason (WI-2026-02-22-002)
 - adr.schema.toml with Alternative field documentation (WI-2026-02-22-002)
+- src/cmd/new.rs to use unified SKILL_TEMPLATES (WI-2026-02-22-003)
+
+### Removed
+
+- commands/status.md due to low usage (WI-2026-02-22-003)
 
 ## [0.4.3] - 2026-02-16
 

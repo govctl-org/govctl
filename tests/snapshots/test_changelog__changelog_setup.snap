@@ -12,10 +12,9 @@ Created: gov/work
 Created: gov/templates
 Created: gov/config.toml
 Created: .gitignore
-Created: .claude/commands/gov.md
-Created: .claude/commands/quick.md
-Created: .claude/commands/status.md
-Created: .claude/commands/discuss.md
+Created: .claude/skills/discuss/SKILL.md
+Created: .claude/skills/gov/SKILL.md
+Created: .claude/skills/quick/SKILL.md
 Created: .claude/skills/rfc-writer/SKILL.md
 Created: .claude/skills/adr-writer/SKILL.md
 Created: .claude/skills/wi-writer/SKILL.md

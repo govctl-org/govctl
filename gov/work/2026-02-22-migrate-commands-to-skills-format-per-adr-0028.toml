@@ -40,3 +40,13 @@ category = "added"
 text = "govctl check passes"
 status = "done"
 category = "chore"
+
+[[content.acceptance_criteria]]
+text = "commit skill with govctl integration"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "test_agent_dir.rs to reflect new structure without commands"
+status = "done"
+category = "chore"

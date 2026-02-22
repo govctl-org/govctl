@@ -10,20 +10,20 @@ use std::fs;
 fn test_default_agent_dir() {
     let temp_dir = init_project();
 
-    // sync-commands should create files under .claude/commands by default
+    // sync should create files under .claude/skills by default
     let _output = run_commands(temp_dir.path(), &[&["sync-commands"]]);
 
-    // Check that .claude/commands/gov.md exists
-    let commands_dir = temp_dir.path().join(".claude/commands/gov.md");
-    assert!(
-        commands_dir.exists(),
-        "commands/gov.md should exist under .claude"
-    );
-
-    // Check that skills exist
-    let skill_dir = temp_dir.path().join(".claude/skills/rfc-writer/SKILL.md");
+    // Check that .claude/skills/gov/SKILL.md exists (commands migrated to skills)
+    let skill_dir = temp_dir.path().join(".claude/skills/gov/SKILL.md");
     assert!(
         skill_dir.exists(),
+        "skills/gov/SKILL.md should exist under .claude"
+    );
+
+    // Check that other skills exist
+    let rfc_writer = temp_dir.path().join(".claude/skills/rfc-writer/SKILL.md");
+    assert!(
+        rfc_writer.exists(),
         "skills/rfc-writer/SKILL.md should exist under .claude"
     );
 }
@@ -45,7 +45,7 @@ agent_dir = ".cursor"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
-    // sync-commands should create files under .cursor/commands
+    // sync should create files under .cursor/skills
     let output = run_commands(temp_dir.path(), &[&["sync-commands", "-f"]]);
     eprintln!("sync-commands output:\n{}", output);
 
@@ -56,16 +56,16 @@ agent_dir = ".cursor"
         }
     }
 
-    // Check that .cursor/commands/gov.md exists
-    let cursor_commands = temp_dir.path().join(".cursor/commands/gov.md");
+    // Check that .cursor/skills/gov/SKILL.md exists
+    let cursor_skill = temp_dir.path().join(".cursor/skills/gov/SKILL.md");
     assert!(
-        cursor_commands.exists(),
-        "commands/gov.md should exist under .cursor, found: {:?}",
-        cursor_commands
+        cursor_skill.exists(),
+        "skills/gov/SKILL.md should exist under .cursor, found: {:?}",
+        cursor_skill
     );
 }
 
-/// Test: agent_dir creates all subdirs (commands, skills, agents)
+/// Test: agent_dir creates all subdirs (skills, agents) - no more commands
 #[test]
 fn test_agent_dir_creates_subdirs() {
     let temp_dir = init_project();
@@ -73,8 +73,10 @@ fn test_agent_dir_creates_subdirs() {
     // sync-commands should create all subdirs
     run_commands(temp_dir.path(), &[&["sync-commands"]]);
 
-    // Verify all expected subdirs exist
-    assert!(temp_dir.path().join(".claude/commands").is_dir());
+    // Verify all expected subdirs exist (no commands/ anymore)
     assert!(temp_dir.path().join(".claude/skills").is_dir());
     assert!(temp_dir.path().join(".claude/agents").is_dir());
+
+    // Verify commands/ directory is NOT created (migrated to skills)
+    assert!(!temp_dir.path().join(".claude/commands").exists());
 }
