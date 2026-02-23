@@ -1,6 +1,6 @@
 [package]
 name = "govctl"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2024"
 rust-version = "1.88"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
@@ -13,7 +13,6 @@ keywords = ["governance", "rfc", "cli", "adr", "specification"]
 categories = ["command-line-utilities", "development-tools"]
 include = [
     ".claude/agents/*",
-    ".claude/commands/*",
     ".claude/skills/*",
     "src/**/*",
     "tests/**/*",

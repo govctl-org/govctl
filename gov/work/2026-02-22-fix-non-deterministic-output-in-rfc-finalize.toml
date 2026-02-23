@@ -15,4 +15,4 @@ What is the goal? What are the acceptance criteria?"""
 [[content.acceptance_criteria]]
 text = "CI test passes with deterministic output order"
 status = "done"
-category = "fixed"
+category = "chore"

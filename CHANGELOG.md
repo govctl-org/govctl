@@ -7,14 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Unit tests cover render_adr with pros, cons, rejection_reason (WI-2026-02-22-006)
-- Unit tests cover render_work_item with journal field (WI-2026-02-22-006)
+## [0.5.2] - 2026-02-23
 
 ### Fixed
 
-- CI test passes with deterministic output order (WI-2026-02-22-005)
+- `commit` skill is now correctly bundled
 
 ## [0.5.1] - 2026-02-22
 

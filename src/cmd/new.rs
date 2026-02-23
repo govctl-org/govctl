@@ -41,6 +41,10 @@ const SKILL_TEMPLATES: &[(&str, &str)] = &[
         "skills/wi-writer/SKILL.md",
         include_str!("../../.claude/skills/wi-writer/SKILL.md"),
     ),
+    (
+        "skills/commit/SKILL.md",
+        include_str!("../../.claude/skills/commit/SKILL.md"),
+    ),
 ];
 
 /// Agent templates: (relative_path, content) pairs.

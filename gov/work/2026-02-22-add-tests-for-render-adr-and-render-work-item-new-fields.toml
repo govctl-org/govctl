@@ -15,9 +15,9 @@ What is the goal? What are the acceptance criteria?"""
 [[content.acceptance_criteria]]
 text = "Unit tests cover render_adr with pros, cons, rejection_reason"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Unit tests cover render_work_item with journal field"
 status = "done"
-category = "added"
+category = "chore"
