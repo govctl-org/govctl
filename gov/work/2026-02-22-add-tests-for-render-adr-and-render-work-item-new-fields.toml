@@ -8,9 +8,7 @@ started = "2026-02-22"
 completed = "2026-02-22"
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Add unit tests for render_adr (pros, cons, rejection_reason) and render_work_item (journal field) to cover new ADR-0027 and ADR-0026 fields."
 
 [[content.acceptance_criteria]]
 text = "Unit tests cover render_adr with pros, cons, rejection_reason"

@@ -7,12 +7,12 @@ Created work item: gov/work/<DATE>-test-task.toml
   ID: WI-<DATE>-001
 exit: 0
 
-$ govctl work add WI-<DATE>-001 acceptance_criteria add: Criterion 1
-Added 'add: Criterion 1' to WI-<DATE>-001.acceptance_criteria
+$ govctl work add WI-<DATE>-001 journal First progress update
+Added 'First progress update' to WI-<DATE>-001.journal
 exit: 0
 
-$ govctl work tick WI-<DATE>-001 acceptance_criteria Criterion 1 -s cancelled
-Marked 'Criterion 1' as cancelled
+$ govctl work add WI-<DATE>-001 journal Second progress update
+Added 'Second progress update' to WI-<DATE>-001.journal
 exit: 0
 
 $ govctl work show WI-<DATE>-001
@@ -28,7 +28,13 @@ $ govctl work show WI-<DATE>-001
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?
 
-## Acceptance Criteria
+## Journal
 
-- ~~Criterion 1~~
+### <DATE>
+
+First progress update
+
+### <DATE>
+
+Second progress update
 exit: 0

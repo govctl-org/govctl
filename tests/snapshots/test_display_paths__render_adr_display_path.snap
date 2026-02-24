@@ -6,7 +6,7 @@ $ govctl adr render ADR-0001 --dry-run
 Would write: docs/adr/ADR-0001.md
 --- Content preview ---
 <!-- GENERATED: do not edit. Source: ADR-0001 -->
-<!-- SIGNATURE: sha256:1361156622c0cda06e5f42f70800f307a78793d6586e8a7d5b700a9d4326c18c -->
+<!-- SIGNATURE: sha256:<HASH> -->
 
 # ADR-0001: Test Decision
 

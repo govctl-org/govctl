@@ -481,6 +481,35 @@ fn test_work_tick_cancel_acceptance_criteria() {
 }
 
 #[test]
+fn test_work_add_journal() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Test Task"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "journal",
+                "First progress update",
+            ],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "journal",
+                "Second progress update",
+            ],
+            &["work", "show", &format!("WI-{}-001", date)],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
 fn test_work_add_ref() {
     let temp_dir = init_project();
     let date = today();

@@ -17,7 +17,7 @@ exit: 0
 
 $ govctl rfc show RFC-0001
 <!-- GENERATED: do not edit. Source: RFC-0001 -->
-<!-- SIGNATURE: sha256:a7b4066dff5af62ff299770989d3e597d4075e22e2059613163bf6b9c30466d7 -->
+<!-- SIGNATURE: sha256:<HASH> -->
 
 # RFC-0001: Test RFC
 

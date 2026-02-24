@@ -1,0 +1,34 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-24-001"
+title = "Fix journal add command for work items"
+status = "done"
+created = "2026-02-24"
+started = "2026-02-24"
+completed = "2026-02-24"
+
+[content]
+description = "Fix govctl work add journal command which returned E0810 (not an array or unsupported). Also fix snapshot test instability caused by date-dependent signature hashes."
+
+[[content.journal]]
+date = "2026-02-24"
+content = "Fixed missing journal arm in add_to_field match statement"
+
+[[content.journal]]
+date = "2026-02-24"
+content = "Added journal arm to add_to_field match in edit.rs. Fixed snapshot instability by normalizing sha256 hashes in test output. Added test_work_add_journal integration test. Updated 14 stale snapshots."
+
+[[content.acceptance_criteria]]
+text = "work add journal command succeeds"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "snapshot tests stable across days/machines"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "test_work_add_journal integration test"
+status = "done"
+category = "added"

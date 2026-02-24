@@ -671,6 +671,15 @@ pub fn add_to_field(
                             ));
                     }
                 }
+                "journal" => {
+                    use crate::model::JournalEntry;
+                    use crate::write::today;
+                    entry.spec.content.journal.push(JournalEntry {
+                        date: today(),
+                        scope: None,
+                        content: value.to_string(),
+                    });
+                }
                 "notes" => {
                     if !entry.spec.content.notes.contains(&value.to_string()) {
                         entry.spec.content.notes.push(value.to_string());

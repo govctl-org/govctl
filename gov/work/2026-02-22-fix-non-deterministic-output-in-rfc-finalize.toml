@@ -8,9 +8,7 @@ started = "2026-02-22"
 completed = "2026-02-22"
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Fix non-deterministic output ordering in rfc finalize command to ensure CI test stability."
 
 [[content.acceptance_criteria]]
 text = "CI test passes with deterministic output order"

@@ -33,6 +33,12 @@ pub fn normalize_output(output: &str, dir: &Path, date: &str) -> String {
         .replace_all(&normalized, "ADR-XXXX-")
         .to_string();
 
+    // Replace signature hashes (date-dependent due to embedded dates in specs)
+    let sig_pattern = regex::Regex::new(r"sha256:[0-9a-f]{64}").unwrap();
+    normalized = sig_pattern
+        .replace_all(&normalized, "sha256:<HASH>")
+        .to_string();
+
     normalized
 }
 

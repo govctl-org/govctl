@@ -12,7 +12,7 @@ exit: 0
 
 $ govctl adr show ADR-0001
 <!-- GENERATED: do not edit. Source: ADR-0001 -->
-<!-- SIGNATURE: sha256:cdde59cc41263090ba911686d92e53d573c18ee07b1da911cfe778e8390d2a69 -->
+<!-- SIGNATURE: sha256:<HASH> -->
 
 # ADR-0001: Test Decision
 
