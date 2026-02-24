@@ -628,14 +628,19 @@ VALID ARRAY FIELDS:
     - refs: Cross-references to RFCs/ADRs (e.g., \"RFC-0001\", \"ADR-0002\")
     - alternatives: Options that were considered
 
-ALTERNATIVES FORMAT:
-    Each alternative can have:
-    - text: Description of the option
-    - status: considered|accepted|rejected
+ALTERNATIVES FORMAT (per ADR-0027):
+    Each alternative has:
+    - text: Description of the option (required)
+    - status: considered | accepted | rejected
+    - pros: List of advantages (edit via adr.json directly)
+    - cons: List of disadvantages (edit via adr.json directly)
+    - rejection_reason: Why rejected (if status=rejected)
+
+    Note: pros/cons/rejection_reason require direct TOML editing.
 
 EXAMPLES:
     govctl adr add ADR-0001 refs RFC-0001
-    govctl adr add ADR-0001 alternatives \"Option A: Description\"
+    govctl adr add ADR-0001 alternatives \"Option A: Use PostgreSQL\"
 ")]
     Add {
         /// ADR ID
@@ -817,7 +822,15 @@ VALID FIELDS:
     - status: Work item status (queue|active|done|cancelled)
 
   Array fields (use 'add'/'remove' instead):
-    - refs, journal, notes, acceptance_criteria
+    - refs: Cross-references to RFCs/ADRs
+    - journal: Execution tracking entries (date + content)
+    - notes: Ad-hoc key points (short strings)
+    - acceptance_criteria: Completion criteria with category
+
+FIELD SEMANTICS (per ADR-0026):
+  - description: Task scope - define once, rarely change
+  - journal: Execution tracking - append on each progress (has date, scope, content)
+  - notes: Ad-hoc points - add anytime, keep concise
 
 EXAMPLES:
     govctl work set WI-001 description \"New description\"
@@ -842,9 +855,16 @@ EXAMPLES:
     #[command(after_help = "\
 VALID ARRAY FIELDS:
     - refs: Cross-references to RFCs/ADRs (e.g., \"RFC-0001\", \"ADR-0002\")
-    - journal: Execution tracking entries (multi-line via --stdin)
+    - journal: Execution tracking entries - append progress with date
     - notes: Ad-hoc key points (short strings)
     - acceptance_criteria: Completion criteria with category prefix
+
+FIELD SEMANTICS:
+  - description: Task scope - define once, rarely change
+  - journal: Execution tracking - append on each progress
+    * Each entry has: date (auto-filled), scope (optional), content
+    * Use --stdin for multi-line entries
+  - notes: Ad-hoc points - add anytime, keep concise
 
 ACCEPTANCE CRITERIA FORMAT:
     Use category prefix for changelog generation:
@@ -859,6 +879,7 @@ EXAMPLES:
     govctl work add WI-001 journal --stdin <<'EOF'
     Progress update for today...
     EOF
+    govctl work add WI-001 notes \"Remember to test edge cases\"
 ")]
     Add {
         /// Work item ID
