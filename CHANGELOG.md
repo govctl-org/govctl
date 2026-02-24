@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Support both X.Y.Z and vX.Y.Z version formats in matching (WI-2026-02-25-001)
+
+### Changed
+
+- Rewrite incremental rendering to parse ALL existing releases into a map (WI-2026-02-25-001)
+- Use relative 'docs' path instead of absolute path for inline ref expansion (WI-2026-02-25-001)
+
+### Fixed
+
+- Inline refs in CHANGELOG expanded to absolute paths instead of relative (WI-2026-02-25-001)
+- Older release sections had inline refs re-expanded on each render (WI-2026-02-25-001)
+- Version matching failed for v-prefixed versions (v0.3.0 vs 0.3.0) (WI-2026-02-25-001)
+- Releases not in releases.toml were discarded from CHANGELOG (WI-2026-02-25-001)
+
 ## [0.5.2] - 2026-02-24
 
 ### Added
@@ -37,6 +53,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ADR render output includes pros/cons/rejection_reason (WI-2026-02-22-002)
 - adr.schema.toml with Alternative field documentation (WI-2026-02-22-002)
 - src/cmd/new.rs to use unified SKILL_TEMPLATES (WI-2026-02-22-003)
+- adr set/get/add/remove commands with valid field list (WI-2026-02-22-004)
+- rfc set/get commands with valid field list (WI-2026-02-22-004)
+- clause set/get commands with valid field list (WI-2026-02-22-004)
+- work set/get/add/remove commands with valid field list (WI-2026-02-22-004)
 
 ### Removed
 

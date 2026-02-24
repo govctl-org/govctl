@@ -220,24 +220,31 @@ fn render_changelog_full(
         .collect();
 
     let mut output = String::new();
+
+    // Header
     output.push_str("# Changelog\n\n");
     output.push_str("All notable changes to this project will be documented in this file.\n\n");
     output.push_str(
         "The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),\n",
     );
-    output.push_str(
-        "and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n",
-    );
+    output.push_str("and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).\n\n");
 
-    // Always render Unreleased section header
-    output.push_str("## [Unreleased]\n\n");
+    // Unreleased section
+    let mut unreleased_content = String::new();
+    unreleased_content.push_str("## [Unreleased]\n\n");
     if !unreleased.is_empty() {
-        render_changelog_section(&mut output, unreleased);
+        render_changelog_section(&mut unreleased_content, unreleased);
     }
+    // Expand inline refs in unreleased section
+    let unreleased_expanded =
+        expand_inline_refs_from_root(&unreleased_content, &config.source_scan.pattern, "docs");
+    output.push_str(unreleased_expanded.trim_end());
+    output.push('\n');
 
-    // Render each release (already sorted newest first)
+    // Released sections (newest first per releases.toml order)
     for release in &releases_file.releases {
-        output.push_str(&format!("## [{}] - {}\n\n", release.version, release.date));
+        let mut release_content = String::new();
+        release_content.push_str(&format!("## [{}] - {}\n\n", release.version, release.date));
 
         let items: Vec<_> = release
             .refs
@@ -246,16 +253,20 @@ fn render_changelog_full(
             .collect();
 
         if items.is_empty() {
-            output.push_str("*No changes recorded.*\n\n");
+            release_content.push_str("*No changes recorded.*\n");
         } else {
-            render_changelog_section(&mut output, &items);
+            render_changelog_section(&mut release_content, &items);
         }
+
+        // Expand inline refs in this release section
+        let release_expanded =
+            expand_inline_refs_from_root(&release_content, &config.source_scan.pattern, "docs");
+        output.push('\n');
+        output.push_str(release_expanded.trim_end());
+        output.push('\n');
     }
 
-    // Expand inline references and trim trailing whitespace
-    let docs_output = config.paths.docs_output.to_string_lossy();
-    let expanded = expand_inline_refs_from_root(&output, &config.source_scan.pattern, &docs_output);
-    Ok(format!("{}\n", expanded.trim_end()))
+    Ok(format!("{}\n", output.trim_end()))
 }
 
 /// Update Unreleased section and add missing releases, preserving existing sections (default mode)
@@ -306,42 +317,75 @@ fn render_changelog_incremental(
         (existing.clone(), String::new())
     };
 
-    // Generate new Unreleased section
+    // Parse ALL existing release sections into a map (to preserve ALL versions)
+    // Each section: "## [version] - date\n\ncontent"
+    let mut existing_releases: std::collections::BTreeMap<String, String> =
+        std::collections::BTreeMap::new();
+
+    if !existing_released.is_empty() {
+        let mut current_pos = 0;
+        let content = &existing_released;
+
+        while current_pos < content.len() {
+            // Find the next "## [" marker
+            if !content[current_pos..].starts_with("## [") {
+                break;
+            }
+
+            // Find the end of this section (next "## [" or EOF)
+            let rest = &content[current_pos..];
+            let section_end = rest[4..] // skip "## ["
+                .find("\n## [")
+                .map(|p| p + 4 + 1) // adjust for the skip and the newline
+                .unwrap_or(rest.len());
+
+            let section = &rest[..section_end];
+
+            // Extract version from the section header (handles both "## [X.Y.Z]" and "## [vX.Y.Z]")
+            let version = if let Some(bracket_end) = section.find(']') {
+                section[4..bracket_end].to_string() // skip "## ["
+            } else {
+                current_pos += section.len();
+                continue;
+            };
+
+            existing_releases.insert(version, section.to_string());
+            current_pos += section.len();
+        }
+    };
+
+    // Generate new Unreleased section and expand inline refs
     let mut unreleased_content = String::new();
     unreleased_content.push_str("## [Unreleased]\n\n");
     if !unreleased.is_empty() {
         render_changelog_section(&mut unreleased_content, unreleased);
     }
+    // Expand inline refs in unreleased section only (preserves older versions)
+    let unreleased_expanded =
+        expand_inline_refs_from_root(&unreleased_content, &config.source_scan.pattern, "docs");
 
     // Build output: header + unreleased + (new releases + existing releases merged)
     let mut output = header;
-    output.push_str(unreleased_content.trim_end());
+    output.push_str(unreleased_expanded.trim_end());
     output.push('\n');
 
-    // Process releases in order (newest first from releases.toml)
-    // Insert missing ones, preserve existing ones
+    // Add releases from releases.toml that don't exist yet
     for release in &releases_file.releases {
-        let version_header = format!("## [{}]", release.version);
-
-        if existing_released.contains(&version_header) {
-            // This release exists in the file - extract and preserve it
-            if let Some(start) = existing_released.find(&version_header) {
-                // Find the end of this section (next ## [ or EOF)
-                let after_header = &existing_released[start..];
-                let end = after_header[1..] // skip first char to avoid matching self
-                    .find("\n## [")
-                    .map(|p| p + 1) // adjust for the skip
-                    .unwrap_or(after_header.len());
-
-                let section = &after_header[..end];
-                output.push('\n');
-                output.push_str(section.trim_end());
-                output.push('\n');
-            }
+        // Check both "X.Y.Z" and "vX.Y.Z" variants
+        let version_variants = if release.version.starts_with('v') {
+            vec![release.version.clone(), release.version[1..].to_string()]
         } else {
-            // This release is missing - generate it
-            output.push('\n');
-            output.push_str(&format!("## [{}] - {}\n\n", release.version, release.date));
+            vec![release.version.clone(), format!("v{}", release.version)]
+        };
+
+        let exists = version_variants
+            .iter()
+            .any(|v| existing_releases.contains_key(v));
+
+        if !exists {
+            // This release is missing - generate it and add to map
+            let mut release_content = String::new();
+            release_content.push_str(&format!("## [{}] - {}\n\n", release.version, release.date));
 
             let items: Vec<_> = release
                 .refs
@@ -350,20 +394,53 @@ fn render_changelog_incremental(
                 .collect();
 
             if items.is_empty() {
-                output.push_str("*No changes recorded.*\n");
+                release_content.push_str("*No changes recorded.*\n");
             } else {
-                let mut section = String::new();
-                render_changelog_section(&mut section, &items);
-                output.push_str(section.trim_end());
-                output.push('\n');
+                render_changelog_section(&mut release_content, &items);
             }
+
+            // Expand inline refs in new release section
+            let release_expanded =
+                expand_inline_refs_from_root(&release_content, &config.source_scan.pattern, "docs");
+            existing_releases.insert(
+                release.version.clone(),
+                release_expanded.trim_end().to_string(),
+            );
+        }
+        // If exists, we keep the existing section (preserve manual edits)
+    }
+
+    // Output all releases in reverse semver order (newest first)
+    // Sort by version number (parse and compare)
+    let mut versions: Vec<String> = existing_releases.keys().cloned().collect();
+    versions.sort_by(|a, b| {
+        // Compare versions: strip 'v' prefix if present, then compare semantically
+        let a_stripped = a.strip_prefix('v').unwrap_or(a);
+        let b_stripped = b.strip_prefix('v').unwrap_or(b);
+
+        // Parse version parts
+        let a_parts: Vec<u32> = a_stripped
+            .split('.')
+            .filter_map(|s| s.parse().ok())
+            .collect();
+        let b_parts: Vec<u32> = b_stripped
+            .split('.')
+            .filter_map(|s| s.parse().ok())
+            .collect();
+
+        // Compare in reverse order (newest first)
+        b_parts.cmp(&a_parts)
+    });
+
+    for version in versions {
+        if let Some(section) = existing_releases.get(&version) {
+            output.push('\n');
+            output.push_str(section.trim_end());
+            output.push('\n');
         }
     }
 
-    // Expand inline references and trim trailing whitespace
-    let docs_output = config.paths.docs_output.to_string_lossy();
-    let expanded = expand_inline_refs_from_root(&output, &config.source_scan.pattern, &docs_output);
-    Ok(format!("{}\n", expanded.trim_end()))
+    Ok(format!("{}\n", output.trim_end()))
 }
 
 /// Render a changelog section from work items, grouped by category

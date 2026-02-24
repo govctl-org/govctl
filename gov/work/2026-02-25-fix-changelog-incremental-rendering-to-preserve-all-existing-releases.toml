@@ -1,0 +1,66 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-25-001"
+title = "Fix changelog incremental rendering to preserve all existing releases"
+status = "done"
+created = "2026-02-25"
+started = "2026-02-25"
+completed = "2026-02-25"
+
+[content]
+description = """
+Fix critical bugs in changelog incremental rendering that caused manual content to be lost and releases not in releases.toml to be discarded. This work item addresses four related bugs:
+
+1. **Absolute path issue**: Inline refs like [[ADR-0014]] were expanded to absolute paths instead of relative paths, making CHANGELOG non-portable.
+
+2. **Re-expansion of older versions**: Existing release sections had their inline refs re-expanded on each render, violating the 'keep older versions untouched' principle.
+
+3. **Version prefix mismatch**: Version matching failed when releases.toml used '0.3.0' but CHANGELOG used 'v0.3.0' (or vice versa), causing sections to be regenerated and manual content lost.
+
+4. **Discarded releases**: Only releases in releases.toml were preserved; older versions (e.g., 0.2.1, 0.2.0) were completely discarded from CHANGELOG.
+
+The fix rewrites the incremental rendering logic to:
+- Parse ALL existing release sections into a map (preserving all versions)
+- Only generate new releases that don't exist
+- Use relative 'docs' path for inline ref expansion
+- Support both X.Y.Z and vX.Y.Z version formats in matching"""
+
+[[content.acceptance_criteria]]
+text = "Inline refs in CHANGELOG expanded to absolute paths instead of relative"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Older release sections had inline refs re-expanded on each render"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Version matching failed for v-prefixed versions (v0.3.0 vs 0.3.0)"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Releases not in releases.toml were discarded from CHANGELOG"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Rewrite incremental rendering to parse ALL existing releases into a map"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Use relative 'docs' path instead of absolute path for inline ref expansion"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Support both X.Y.Z and vX.Y.Z version formats in matching"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "All existing tests pass"
+status = "done"
+category = "chore"
