@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Add semantic field descriptions to work set help (WI-2026-02-25-002)
+
 ## [0.5.3] - 2026-02-25
 
 ### Added

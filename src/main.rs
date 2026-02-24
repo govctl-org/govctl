@@ -632,15 +632,15 @@ ALTERNATIVES FORMAT (per ADR-0027):
     Each alternative has:
     - text: Description of the option (required)
     - status: considered | accepted | rejected
-    - pros: List of advantages (edit via adr.json directly)
-    - cons: List of disadvantages (edit via adr.json directly)
-    - rejection_reason: Why rejected (if status=rejected)
-
-    Note: pros/cons/rejection_reason require direct TOML editing.
+    - pros: Advantages (use --pro to add)
+    - cons: Disadvantages (use --con to add)
+    - rejection_reason: Why rejected (use --reject-reason)
 
 EXAMPLES:
     govctl adr add ADR-0001 refs RFC-0001
     govctl adr add ADR-0001 alternatives \"Option A: Use PostgreSQL\"
+    govctl adr add ADR-0001 alternatives \"Option B: Use Redis\" --pro \"Fast caching\" --con \"Additional infrastructure\"
+    govctl adr add ADR-0001 alternatives \"Option C: No cache\" --reject-reason \"Performance issues\"
 ")]
     Add {
         /// ADR ID
@@ -652,6 +652,15 @@ EXAMPLES:
         /// Read value from stdin
         #[arg(long)]
         stdin: bool,
+        /// Pro/advantage for this alternative (can be specified multiple times)
+        #[arg(long)]
+        pro: Vec<String>,
+        /// Con/disadvantage for this alternative (can be specified multiple times)
+        #[arg(long)]
+        con: Vec<String>,
+        /// Reason for rejection (if rejected)
+        #[arg(long)]
+        reject_reason: Option<String>,
     },
     /// Remove value from ADR array field
     #[command(after_help = "\
@@ -864,6 +873,7 @@ FIELD SEMANTICS:
   - journal: Execution tracking - append on each progress
     * Each entry has: date (auto-filled), scope (optional), content
     * Use --stdin for multi-line entries
+    * Use --scope to set the scope/topic
   - notes: Ad-hoc points - add anytime, keep concise
 
 ACCEPTANCE CRITERIA FORMAT:
@@ -876,7 +886,7 @@ ACCEPTANCE CRITERIA FORMAT:
 EXAMPLES:
     govctl work add WI-001 refs RFC-0001
     govctl work add WI-001 acceptance_criteria \"add: Implement feature\"
-    govctl work add WI-001 journal --stdin <<'EOF'
+    govctl work add WI-001 journal --scope typub-html --stdin <<'EOF'
     Progress update for today...
     EOF
     govctl work add WI-001 notes \"Remember to test edge cases\"
@@ -894,6 +904,9 @@ EXAMPLES:
         /// Changelog category for acceptance_criteria (alternative to prefix)
         #[arg(short = 'c', long, value_enum)]
         category: Option<model::ChangelogCategory>,
+        /// Scope/topic for journal entry (e.g., "backend", "frontend", "docs")
+        #[arg(long)]
+        scope: Option<String>,
     },
     /// Remove value from work item array field
     #[command(after_help = "\

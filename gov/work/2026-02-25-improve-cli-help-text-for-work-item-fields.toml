@@ -1,18 +1,26 @@
 [govctl]
 schema = 1
 id = "WI-2026-02-25-002"
-title = "Improve CLI help text for work item fields"
+title = "Support new ADR/WI fields"
 status = "done"
 created = "2026-02-25"
 started = "2026-02-25"
 completed = "2026-02-25"
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = """Add concrete support for new ADR/WI fields"""
 
 [[content.acceptance_criteria]]
 text = "Add semantic field descriptions to work set help"
 status = "done"
-category = "chore"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Add CLI option to set ADR alternative pros/cons/reject_reason"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Add CLI option to set WI journal's scope"
+status = "pending"
+category = "fixed"

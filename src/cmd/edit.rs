@@ -543,6 +543,7 @@ fn push_unique(vec: &mut Vec<String>, value: &str) {
 }
 
 /// Add a value to an array field
+#[allow(clippy::too_many_arguments)]
 pub fn add_to_field(
     config: &Config,
     id: &str,
@@ -550,6 +551,10 @@ pub fn add_to_field(
     value: Option<&str>,
     stdin: bool,
     category_override: Option<crate::model::ChangelogCategory>,
+    scope_override: Option<&str>,
+    pros: Option<Vec<String>>,
+    cons: Option<Vec<String>>,
+    reject_reason: Option<String>,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let field = normalize_field(field);
@@ -598,7 +603,7 @@ pub fn add_to_field(
             match field {
                 "refs" => push_unique(&mut entry.spec.govctl.refs, value),
                 "alternatives" => {
-                    use crate::model::Alternative;
+                    use crate::model::{Alternative, AlternativeStatus};
                     if !entry
                         .spec
                         .content
@@ -606,11 +611,19 @@ pub fn add_to_field(
                         .iter()
                         .any(|a| a.text == value)
                     {
-                        entry
-                            .spec
-                            .content
-                            .alternatives
-                            .push(Alternative::new(value));
+                        // Determine status based on reject_reason
+                        let status = if reject_reason.is_some() {
+                            AlternativeStatus::Rejected
+                        } else {
+                            AlternativeStatus::Considered
+                        };
+                        entry.spec.content.alternatives.push(Alternative {
+                            text: value.to_string(),
+                            status,
+                            pros: pros.unwrap_or_default(),
+                            cons: cons.unwrap_or_default(),
+                            rejection_reason: reject_reason,
+                        });
                     }
                 }
                 _ => {
@@ -676,7 +689,7 @@ pub fn add_to_field(
                     use crate::write::today;
                     entry.spec.content.journal.push(JournalEntry {
                         date: today(),
-                        scope: None,
+                        scope: scope_override.map(String::from),
                         content: value.to_string(),
                     });
                 }

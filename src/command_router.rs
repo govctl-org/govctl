@@ -204,6 +204,9 @@ pub enum CanonicalCommand {
         field: String,
         value: Option<String>,
         stdin: bool,
+        pro: Vec<String>,
+        con: Vec<String>,
+        reject_reason: Option<String>,
     },
     AdrRemove {
         id: String,
@@ -268,6 +271,7 @@ pub enum CanonicalCommand {
         value: Option<String>,
         stdin: bool,
         category: Option<ChangelogCategory>,
+        scope: Option<String>,
     },
     WorkRemove {
         id: String,
@@ -562,7 +566,22 @@ impl CanonicalCommand {
                 field,
                 value,
                 stdin,
-            } => cmd::edit::add_to_field(config, id, field, value.as_deref(), *stdin, None, op),
+                pro,
+                con,
+                reject_reason,
+            } => cmd::edit::add_to_field(
+                config,
+                id,
+                field,
+                value.as_deref(),
+                *stdin,
+                None,
+                None,
+                Some(pro.clone()),
+                Some(con.clone()),
+                reject_reason.clone(),
+                op,
+            ),
             Self::AdrRemove {
                 id,
                 field,
@@ -618,9 +637,20 @@ impl CanonicalCommand {
                 value,
                 stdin,
                 category,
-            } => {
-                cmd::edit::add_to_field(config, id, field, value.as_deref(), *stdin, *category, op)
-            }
+                scope,
+            } => cmd::edit::add_to_field(
+                config,
+                id,
+                field,
+                value.as_deref(),
+                *stdin,
+                *category,
+                scope.as_deref(),
+                None,
+                None,
+                None,
+                op,
+            ),
             Self::WorkRemove {
                 id,
                 field,
@@ -849,11 +879,17 @@ impl CanonicalCommand {
                 field,
                 value,
                 stdin,
+                pro: adr_pro,
+                con: adr_con,
+                reject_reason,
             } => Self::AdrAdd {
                 id: id.clone(),
                 field: field.clone(),
                 value: value.clone(),
                 stdin: *stdin,
+                pro: adr_pro.to_vec(),
+                con: adr_con.to_vec(),
+                reject_reason: reject_reason.clone(),
             },
             AdrCommand::Remove {
                 id,
@@ -960,12 +996,14 @@ impl CanonicalCommand {
                 value,
                 stdin,
                 category,
+                scope,
             } => Self::WorkAdd {
                 id: id.clone(),
                 field: field.clone(),
                 value: value.clone(),
                 stdin: *stdin,
                 category: *category,
+                scope: scope.clone(),
             },
             WorkCommand::Remove {
                 id,

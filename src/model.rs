@@ -182,6 +182,7 @@ pub struct Alternative {
 }
 
 impl Alternative {
+    #[cfg(test)]
     pub fn new(text: impl Into<String>) -> Self {
         Self {
             text: text.into(),
