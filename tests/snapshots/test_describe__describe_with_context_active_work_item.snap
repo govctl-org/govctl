@@ -9,7 +9,7 @@ exit: 0
 
 $ govctl describe --context
 {
-  "version": "0.5.2",
+  "version": "0.5.3",
   "purpose": "Enforces RFC-driven phase discipline for AI-assisted software development",
   "philosophy": [
     "RFC is the source of truth — No implementation without specification",

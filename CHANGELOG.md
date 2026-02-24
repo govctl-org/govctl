@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.3] - 2026-02-25
+
 ### Added
 
 - Support both X.Y.Z and vX.Y.Z version formats in matching (WI-2026-02-25-001)
