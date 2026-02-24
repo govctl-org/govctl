@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-02-25-002"
 title = "Improve CLI help text for work item fields"
-status = "active"
+status = "done"
 created = "2026-02-25"
 started = "2026-02-25"
+completed = "2026-02-25"
 
 [content]
 description = """
@@ -13,5 +14,5 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "Add semantic field descriptions to work set help"
-status = "pending"
+status = "done"
 category = "chore"
