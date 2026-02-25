@@ -1,0 +1,314 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Edit Operation Rules SSOT",
+  "description": "Single-source-of-truth rules for path normalization, validation, and handler table generation.",
+  "type": "object",
+  "required": [
+    "version",
+    "aliases",
+    "legacy_prefixes",
+    "simple_rules",
+    "runtime_fields",
+    "nested_rules",
+    "validation_rules"
+  ],
+  "properties": {
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "aliases": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/aliasRule" },
+      "minItems": 1
+    },
+    "legacy_prefixes": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/legacyPrefixRule" },
+      "minItems": 1
+    },
+    "simple_rules": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/simpleFieldRule" },
+      "minItems": 1
+    },
+    "runtime_fields": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/runtimeFieldRule" },
+      "minItems": 1
+    },
+    "nested_rules": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/nestedRootRule" },
+      "minItems": 1
+    },
+    "validation_rules": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/fieldValidationRule" }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "aliasRule": {
+      "type": "object",
+      "required": ["alias", "canonical"],
+      "properties": {
+        "alias": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "canonical": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "legacyPrefixRule": {
+      "type": "object",
+      "required": ["prefix", "allowed_fields"],
+      "properties": {
+        "prefix": {
+          "type": "string",
+          "enum": ["content", "govctl"]
+        },
+        "allowed_fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_][a-z0-9_]*$"
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "nestedRootRule": {
+      "type": "object",
+      "required": [
+        "artifact",
+        "root",
+        "requires_index",
+        "max_depth",
+        "fields"
+      ],
+      "properties": {
+        "artifact": {
+          "type": "string",
+          "enum": ["adr", "work"]
+        },
+        "root": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "requires_index": {
+          "type": "boolean"
+        },
+        "max_depth": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "fields": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/nestedFieldRule" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "nestedFieldRule": {
+      "type": "object",
+      "required": ["name", "kind", "verbs"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["scalar", "list"]
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["get", "set", "add", "remove", "tick"]
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "simpleFieldRule": {
+      "type": "object",
+      "required": ["artifact", "name", "kind", "verbs"],
+      "properties": {
+        "artifact": {
+          "type": "string",
+          "enum": ["rfc", "clause", "adr", "work"]
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["scalar", "list"]
+        },
+        "verbs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["get", "set", "add", "remove", "tick"]
+          },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtimeFieldRule": {
+      "type": "object",
+      "required": ["artifact", "name", "get", "set", "list_path"],
+      "properties": {
+        "artifact": {
+          "type": "string",
+          "enum": ["rfc", "clause", "adr", "work"]
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "get": {
+          "oneOf": [
+            { "$ref": "#/definitions/runtimeGetRule" },
+            { "type": "null" }
+          ]
+        },
+        "set": {
+          "oneOf": [
+            { "$ref": "#/definitions/runtimeSetRule" },
+            { "type": "null" }
+          ]
+        },
+        "list_path": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^[a-z_][a-z0-9_]*$"
+              },
+              "minItems": 1
+            },
+            { "type": "null" }
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtimeGetRule": {
+      "type": "object",
+      "required": ["path", "render"],
+      "properties": {
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_][a-z0-9_]*$"
+          },
+          "minItems": 1
+        },
+        "render": {
+          "type": "string",
+          "enum": ["scalar", "csv_strings", "line_strings", "status_lines"]
+        },
+        "status_key": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "text_key": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtimeSetRule": {
+      "type": "object",
+      "required": ["path", "mode"],
+      "properties": {
+        "path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_][a-z0-9_]*$"
+          },
+          "minItems": 1
+        },
+        "mode": {
+          "$ref": "#/definitions/runtimeSetMode"
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtimeSetMode": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string", "enum": ["string"] }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "empty_as_null"],
+          "properties": {
+            "type": { "type": "string", "enum": ["optional_string"] },
+            "empty_as_null": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type", "allowed", "invalid_msg", "code"],
+          "properties": {
+            "type": { "type": "string", "enum": ["enum"] },
+            "allowed": {
+              "type": "array",
+              "items": { "type": "string" },
+              "minItems": 1
+            },
+            "invalid_msg": { "type": "string", "minLength": 1 },
+            "code": {
+              "oneOf": [
+                { "type": "string", "pattern": "^E[0-9A-Za-z_]+$" },
+                { "type": "null" }
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      ]
+    },
+    "fieldValidationRule": {
+      "type": "object",
+      "required": ["artifact", "field", "rule"],
+      "properties": {
+        "artifact": {
+          "type": "string",
+          "enum": ["rfc", "clause", "adr", "work"]
+        },
+        "field": {
+          "type": "string",
+          "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "rule": {
+          "type": "string",
+          "enum": ["semver", "clause_superseded_by", "artifact_ref", "enum_value"]
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

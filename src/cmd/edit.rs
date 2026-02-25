@@ -2,22 +2,21 @@
 //!
 //! Implements [[ADR-0007]] ergonomic array field matching for remove and tick commands.
 
+use crate::cmd::edit_adapter::{
+    AdrTomlAdapter, ClauseJsonAdapter, JsonAdapter, RfcJsonAdapter, TomlAdapter, WorkTomlAdapter,
+};
+use crate::cmd::path::{self, FieldPath};
+use crate::cmd::{edit_engine, edit_rules, edit_runtime};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::load::{find_clause_json, find_rfc_json};
-use crate::model::{AdrEntry, ClauseSpec, RfcSpec, WorkItemEntry};
-use crate::parse::{load_adrs, load_work_items, write_adr, write_work_item};
+use crate::model::{AdrEntry, AdrSpec, WorkItemEntry, WorkItemSpec};
 use crate::ui;
-use crate::write::{
-    WriteOp, delete_file, read_clause, read_rfc, update_clause_field, update_rfc_field,
-    write_clause, write_rfc,
-};
+use crate::write::{WriteOp, delete_file, today};
 use anyhow::Context;
 use regex::Regex;
 use std::io::Read;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-/// Artifact type determined from ID
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ArtifactType {
     Clause,
@@ -27,7 +26,6 @@ pub enum ArtifactType {
 }
 
 impl ArtifactType {
-    /// Parse artifact type from ID string
     pub fn from_id(id: &str) -> Option<Self> {
         if id.contains(':') {
             Some(Self::Clause)
@@ -42,100 +40,66 @@ impl ArtifactType {
         }
     }
 
-    /// Error message for unknown artifact type
     pub fn unknown_error(id: &str) -> anyhow::Error {
         anyhow::anyhow!("Unknown artifact type: {id}")
     }
-}
 
-/// Normalize field name aliases to canonical form.
-///
-/// Supports short aliases for commonly used fields:
-/// - `ac` → `acceptance_criteria`
-/// - `alt` → `alternatives`
-/// - `desc` → `description`
-fn normalize_field(field: &str) -> &str {
-    match field {
-        "ac" => "acceptance_criteria",
-        "alt" => "alternatives",
-        "desc" => "description",
-        _ => field,
+    pub fn rule_key(self) -> &'static str {
+        match self {
+            Self::Clause => "clause",
+            Self::Rfc => "rfc",
+            Self::Adr => "adr",
+            Self::WorkItem => "work",
+        }
     }
 }
 
-/// Loaded RFC with its path
-pub struct LoadedRfc {
-    pub path: PathBuf,
-    pub data: RfcSpec,
-}
+// Field normalization is centralized in edit_engine::plan_request.
 
-/// Loaded Clause with its path
-pub struct LoadedClause {
-    pub path: PathBuf,
-    pub data: ClauseSpec,
-}
-
-/// Load an RFC by ID
-fn load_rfc(config: &Config, id: &str) -> anyhow::Result<LoadedRfc> {
-    let path = find_rfc_json(config, id).ok_or_else(|| anyhow::anyhow!("RFC not found: {id}"))?;
-    let data = read_rfc(&path)?;
-    Ok(LoadedRfc { path, data })
-}
-
-/// Load a Clause by ID
-fn load_clause(config: &Config, id: &str) -> anyhow::Result<LoadedClause> {
-    let path =
-        find_clause_json(config, id).ok_or_else(|| anyhow::anyhow!("Clause not found: {id}"))?;
-    let data = read_clause(&path)?;
-    Ok(LoadedClause { path, data })
-}
-
-/// Load an ADR by ID
-fn load_adr(config: &Config, id: &str) -> anyhow::Result<AdrEntry> {
-    load_adrs(config)?
-        .into_iter()
-        .find(|a| a.spec.govctl.id == id)
-        .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))
-}
-
-/// Load a Work Item by ID
-fn load_work_item(config: &Config, id: &str) -> anyhow::Result<WorkItemEntry> {
-    load_work_items(config)?
-        .into_iter()
-        .find(|w| w.spec.govctl.id == id || w.path.to_string_lossy().contains(id))
-        .ok_or_else(|| anyhow::anyhow!("Work item not found: {id}"))
-}
-
-/// Options for matching array elements (per ADR-0007)
 #[derive(Debug, Clone, Default)]
 pub struct MatchOptions<'a> {
-    /// Pattern to match (substring by default)
     pub pattern: Option<&'a str>,
-    /// Match by index (0-based, negative from end)
     pub at: Option<i32>,
-    /// Exact match (case-sensitive)
     pub exact: bool,
-    /// Regex pattern
     pub regex: bool,
-    /// Allow removing all matches
     pub all: bool,
 }
 
-/// Result of matching against an array
-#[derive(Debug)]
-pub enum MatchResult {
-    /// No matches found
-    None,
-    /// Single match at index
-    Single(usize),
-    /// Multiple matches at indices
-    Multiple(Vec<usize>),
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MatchUse {
+    Remove,
+    TickSingle,
 }
 
-/// Find matching indices in a list of strings
-fn find_matches(items: &[&str], opts: &MatchOptions) -> anyhow::Result<MatchResult> {
-    // Index-based matching
-    if let Some(idx) = opts.at {
+fn resolve_match_indices(
+    id: &str,
+    field: &str,
+    items: &[&str],
+    opts: &MatchOptions,
+    use_case: MatchUse,
+) -> anyhow::Result<Vec<usize>> {
+    if items.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0812FieldEmpty,
+            format!("Field {}.{} is empty", id, field),
+            id,
+        )
+        .into());
+    }
+
+    if opts.pattern.is_none() && opts.at.is_none() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            format!(
+                "Remove from {}.{} requires a pattern or --at <index>",
+                id, field
+            ),
+            id,
+        )
+        .into());
+    }
+
+    let indices: Vec<usize> = if let Some(idx) = opts.at {
         let len = items.len() as i32;
         let actual_idx = if idx < 0 { len + idx } else { idx };
         if actual_idx < 0 || actual_idx >= len {
@@ -150,55 +114,55 @@ fn find_matches(items: &[&str], opts: &MatchOptions) -> anyhow::Result<MatchResu
             )
             .into());
         }
-        return Ok(MatchResult::Single(actual_idx as usize));
-    }
-
-    // Pattern-based matching
-    let pattern = opts
-        .pattern
-        .ok_or_else(|| anyhow::anyhow!("No pattern or index provided"))?;
-
-    let matches: Vec<usize> = if opts.regex {
-        let re = Regex::new(pattern).map_err(|e| anyhow::anyhow!("Invalid regex: {}", e))?;
-        items
-            .iter()
-            .enumerate()
-            .filter(|(_, s)| re.is_match(s))
-            .map(|(i, _)| i)
-            .collect()
-    } else if opts.exact {
-        items
-            .iter()
-            .enumerate()
-            .filter(|(_, s)| **s == pattern)
-            .map(|(i, _)| i)
-            .collect()
+        vec![actual_idx as usize]
     } else {
-        // Default: case-insensitive substring
-        let pattern_lower = pattern.to_lowercase();
-        items
-            .iter()
-            .enumerate()
-            .filter(|(_, s)| s.to_lowercase().contains(&pattern_lower))
-            .map(|(i, _)| i)
-            .collect()
+        let pattern = opts.pattern.unwrap_or("<index>");
+        let matches = if opts.regex {
+            let re = Regex::new(pattern).map_err(|e| anyhow::anyhow!("Invalid regex: {}", e))?;
+            items
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| re.is_match(s))
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        } else if opts.exact {
+            items
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| **s == pattern)
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        } else {
+            let pattern_lower = pattern.to_lowercase();
+            items
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| s.to_lowercase().contains(&pattern_lower))
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        };
+
+        if matches.is_empty() {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0806InvalidPattern,
+                format!("No items match '{}' in {}.{}", pattern, id, field),
+                id,
+            )
+            .into());
+        }
+        matches
     };
 
-    Ok(match matches.len() {
-        0 => MatchResult::None,
-        1 => MatchResult::Single(matches[0]),
-        _ => MatchResult::Multiple(matches),
-    })
-}
+    if indices.len() == 1 || (use_case == MatchUse::Remove && opts.all) {
+        return Ok(indices);
+    }
 
-/// Format error message for multiple matches
-fn format_multiple_match_error(
-    id: &str,
-    field: &str,
-    pattern: &str,
-    items: &[&str],
-    indices: &[usize],
-) -> String {
+    let pattern = opts.pattern.unwrap_or("");
+    let hint = if use_case == MatchUse::Remove {
+        "Options:\n  • Use more specific pattern\n  • Use --at <index> to select one\n  • Use --all to remove all matches"
+    } else {
+        "Use more specific pattern or --at <index> to select one"
+    };
     let mut msg = format!(
         "{} items match '{}' in {}.{}:\n",
         indices.len(),
@@ -206,17 +170,14 @@ fn format_multiple_match_error(
         id,
         field
     );
-    for &i in indices {
+    for &i in &indices {
         msg.push_str(&format!("  [{}] {}\n", i, items[i]));
     }
-    msg.push_str("\nOptions:\n");
-    msg.push_str(
-        "  • Use more specific pattern\n  • Use --at <index> to select one\n  • Use --all to remove all matches"
-    );
-    msg
+    msg.push('\n');
+    msg.push_str(hint);
+    Err(Diagnostic::new(DiagnosticCode::E0807AmbiguousMatch, msg, id).into())
 }
 
-/// Read value from stdin, trimming trailing newline
 fn read_stdin() -> anyhow::Result<String> {
     let mut buffer = String::new();
     std::io::stdin()
@@ -226,7 +187,6 @@ fn read_stdin() -> anyhow::Result<String> {
     Ok(buffer.trim_end_matches('\n').to_string())
 }
 
-/// Resolve value from either argument or stdin
 fn resolve_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
     match (value, stdin) {
         (Some(v), false) => Ok(v.to_string()),
@@ -246,7 +206,82 @@ fn resolve_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
     }
 }
 
-/// Edit clause text
+fn cannot_add_to_field_error(id: &str, field: &str) -> anyhow::Error {
+    Diagnostic::new(
+        DiagnosticCode::E0810CannotAddToField,
+        format!("Cannot add to field: {field} (not an array or unsupported)"),
+        id,
+    )
+    .into()
+}
+
+fn cannot_remove_from_field_error(id: &str, field: &str) -> anyhow::Error {
+    Diagnostic::new(
+        DiagnosticCode::E0811CannotRemoveFromField,
+        format!("Cannot remove from field: {field}"),
+        id,
+    )
+    .into()
+}
+
+fn require_simple_field<'a>(fp: &'a FieldPath, id: &str, message: &str) -> anyhow::Result<&'a str> {
+    fp.as_simple()
+        .ok_or_else(|| Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id).into())
+}
+
+fn plan_edit_with_field(id: &str, field: &str) -> anyhow::Result<(ArtifactType, FieldPath)> {
+    let plan = edit_engine::plan_request(id, Some(field))?;
+    let fp = plan
+        .field_path
+        .ok_or_else(|| anyhow::anyhow!("Field path required"))?;
+    Ok((plan.artifact, fp))
+}
+
+struct AdrAddContext {
+    pros: Option<Vec<String>>,
+    cons: Option<Vec<String>>,
+    reject_reason: Option<String>,
+}
+
+struct WorkAddContext<'a> {
+    category_override: Option<crate::model::ChangelogCategory>,
+    scope_override: Option<&'a str>,
+}
+
+trait TomlEditableEntry {
+    type Spec: serde::Serialize + serde::de::DeserializeOwned;
+    fn spec(&self) -> &Self::Spec;
+    fn spec_mut(&mut self) -> &mut Self::Spec;
+}
+impl TomlEditableEntry for AdrEntry {
+    type Spec = AdrSpec;
+    fn spec(&self) -> &Self::Spec {
+        &self.spec
+    }
+    fn spec_mut(&mut self) -> &mut Self::Spec {
+        &mut self.spec
+    }
+}
+impl TomlEditableEntry for WorkItemEntry {
+    type Spec = WorkItemSpec;
+    fn spec(&self) -> &Self::Spec {
+        &self.spec
+    }
+    fn spec_mut(&mut self) -> &mut Self::Spec {
+        &mut self.spec
+    }
+}
+
+const TICK_NESTED_PATH_ERROR: &str = "tick does not support nested paths";
+const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
+const ADR_NESTED_ERROR: &str = "ADR nested paths only support 'alternatives' (got '{}')";
+const WORK_NESTED_GET_ERROR: &str =
+    "Work item nested paths support journal, acceptance_criteria, or notes (got '{}')";
+const WORK_NESTED_SET_ERROR: &str =
+    "Work item nested set supports journal or acceptance_criteria (got '{}')";
+const WORK_NESTED_REMOVE_ERROR: &str =
+    "Work item nested remove supports notes, acceptance_criteria, or journal (got '{}')";
+
 pub fn edit_clause(
     config: &Config,
     clause_id: &str,
@@ -255,10 +290,7 @@ pub fn edit_clause(
     stdin: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let clause_path = find_clause_json(config, clause_id)
-        .ok_or_else(|| anyhow::anyhow!("Clause not found: {clause_id}"))?;
-
-    let mut clause = read_clause(&clause_path)?;
+    let mut clause_doc = ClauseJsonAdapter::load(config, clause_id)?;
 
     let new_text = match (text, text_file, stdin) {
         (Some(t), None, false) => t.to_string(),
@@ -276,8 +308,8 @@ pub fn edit_clause(
         _ => unreachable!("clap arg group ensures mutual exclusivity"),
     };
 
-    clause.text = new_text;
-    write_clause(&clause_path, &clause, op, None)?;
+    clause_doc.data.text = new_text;
+    ClauseJsonAdapter::write(config, &clause_doc, op)?;
 
     if !op.is_preview() {
         ui::updated("clause", clause_id);
@@ -285,7 +317,6 @@ pub fn edit_clause(
     Ok(vec![])
 }
 
-/// Set a field value
 pub fn set_field(
     config: &Config,
     id: &str,
@@ -294,255 +325,864 @@ pub fn set_field(
     stdin: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let field = normalize_field(field);
+    let (artifact, fp) = plan_edit_with_field(id, field)?;
     let value = resolve_value(value, stdin)?;
-    let value = value.as_str();
-
-    match ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))? {
-        ArtifactType::Clause => {
-            crate::validate::validate_field(
-                config,
-                id,
-                crate::validate::ArtifactKind::Clause,
-                field,
-                value,
-            )?;
-
-            let LoadedClause { path, mut data } = load_clause(config, id)?;
-            update_clause_field(&mut data, field, value)?;
-            write_clause(&path, &data, op, None)?;
-        }
-        ArtifactType::Rfc => {
-            crate::validate::validate_field(
-                config,
-                id,
-                crate::validate::ArtifactKind::Rfc,
-                field,
-                value,
-            )?;
-
-            let LoadedRfc { path, mut data } = load_rfc(config, id)?;
-            update_rfc_field(&mut data, field, value)?;
-            write_rfc(&path, &data, op, None)?;
-        }
-        ArtifactType::Adr => {
-            let mut entry = load_adr(config, id)?;
-
-            match field {
-                "status" | "govctl.status" => {
-                    entry.spec.govctl.status = serde_json::from_str(&format!("\"{value}\""))
-                        .map_err(|_| anyhow::anyhow!("Invalid status: {value}"))?;
-                }
-                "title" | "govctl.title" => entry.spec.govctl.title = value.to_string(),
-                "date" | "govctl.date" => entry.spec.govctl.date = value.to_string(),
-                "context" | "content.context" => entry.spec.content.context = value.to_string(),
-                "decision" | "content.decision" => entry.spec.content.decision = value.to_string(),
-                "consequences" | "content.consequences" => {
-                    entry.spec.content.consequences = value.to_string()
-                }
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0803UnknownField,
-                        format!("Unknown ADR field: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            }
-
-            write_adr(&entry.path, &entry.spec, op)?;
-        }
-        ArtifactType::WorkItem => {
-            let mut entry = load_work_item(config, id)?;
-
-            match field {
-                "status" | "govctl.status" => {
-                    entry.spec.govctl.status = serde_json::from_str(&format!("\"{value}\""))
-                        .map_err(|_| anyhow::anyhow!("Invalid status: {value}"))?;
-                }
-                "title" | "govctl.title" => entry.spec.govctl.title = value.to_string(),
-                "description" | "content.description" => {
-                    entry.spec.content.description = value.to_string()
-                }
-                "notes" | "content.notes" => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0804FieldNotEditable,
-                        "Use 'add' to append notes and 'remove' to delete them",
-                        id,
-                    )
-                    .into());
-                }
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0803UnknownField,
-                        format!("Unknown work item field: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            }
-
-            write_work_item(&entry.path, &entry.spec, op)?;
-        }
-    }
+    apply_set_field(config, id, &fp, artifact, value.as_str(), op)?;
 
     if !op.is_preview() {
-        ui::field_set(id, field, value);
+        let display_field = format_path(&fp);
+        ui::field_set(id, &display_field, value.as_str());
     }
 
     Ok(vec![])
 }
 
-/// Get a field value
+pub(crate) fn set_field_direct(
+    config: &Config,
+    id: &str,
+    field: &str,
+    value: &str,
+    op: WriteOp,
+) -> anyhow::Result<()> {
+    let (artifact, fp) = plan_edit_with_field(id, field)?;
+    apply_set_field(config, id, &fp, artifact, value, op)
+}
+
+fn apply_set_field(
+    config: &Config,
+    id: &str,
+    fp: &FieldPath,
+    artifact: ArtifactType,
+    value: &str,
+    op: WriteOp,
+) -> anyhow::Result<()> {
+    match artifact {
+        ArtifactType::Adr => set_toml_field::<AdrTomlAdapter>(
+            config,
+            id,
+            fp,
+            value,
+            op,
+            ArtifactType::Adr,
+            adr_nested_set_alternatives,
+        )?,
+        ArtifactType::WorkItem => {
+            if fp.as_simple() == Some("notes") {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0804FieldNotEditable,
+                    "Use 'add' to append notes and 'remove' to delete them",
+                    id,
+                )
+                .into());
+            }
+            set_toml_field::<WorkTomlAdapter>(
+                config,
+                id,
+                fp,
+                value,
+                op,
+                ArtifactType::WorkItem,
+                work_nested_set_dispatch,
+            )?
+        }
+        ArtifactType::Rfc => set_json_field::<RfcJsonAdapter, _>(
+            config,
+            id,
+            fp,
+            value,
+            op,
+            ArtifactType::Rfc,
+            crate::validate::ArtifactKind::Rfc,
+            "RFC fields do not support nested paths",
+            |spec| {
+                spec.updated = Some(today());
+            },
+        )?,
+        ArtifactType::Clause => set_json_field::<ClauseJsonAdapter, _>(
+            config,
+            id,
+            fp,
+            value,
+            op,
+            ArtifactType::Clause,
+            crate::validate::ArtifactKind::Clause,
+            "Clause fields do not support nested paths",
+            |_spec| {},
+        )?,
+    }
+    Ok(())
+}
+
 pub fn get_field(
     config: &Config,
     id: &str,
     field: Option<&str>,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let field = field.map(normalize_field);
-    match ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))? {
-        ArtifactType::Clause => {
-            let LoadedClause { data: clause, .. } = load_clause(config, id)?;
-
-            if let Some(f) = field {
-                let value = match f {
-                    "text" => clause.text,
-                    "title" => clause.title,
-                    "status" => clause.status.as_ref().to_string(),
-                    "kind" => clause.kind.as_ref().to_string(),
-                    "superseded_by" => clause.superseded_by.unwrap_or_default(),
-                    "since" => clause.since.unwrap_or_default(),
-                    _ => {
-                        return Err(Diagnostic::new(
-                            DiagnosticCode::E0803UnknownField,
-                            format!("Unknown clause field: {f}"),
-                            id,
-                        )
-                        .into());
-                    }
-                };
-                println!("{value}");
-            } else {
-                println!("{}", serde_json::to_string_pretty(&clause)?);
-            }
-        }
-        ArtifactType::Rfc => {
-            let LoadedRfc { data: rfc, .. } = load_rfc(config, id)?;
-
-            if let Some(f) = field {
-                let value = match f {
-                    "status" => rfc.status.as_ref().to_string(),
-                    "phase" => rfc.phase.as_ref().to_string(),
-                    "title" => rfc.title,
-                    "version" => rfc.version,
-                    "owners" => rfc.owners.join(", "),
-                    "refs" => rfc.refs.join(", "),
-                    "supersedes" => rfc.supersedes.unwrap_or_default(),
-                    "created" => rfc.created,
-                    "updated" => rfc.updated.unwrap_or_default(),
-                    _ => {
-                        return Err(Diagnostic::new(
-                            DiagnosticCode::E0803UnknownField,
-                            format!("Unknown RFC field: {f}"),
-                            id,
-                        )
-                        .into());
-                    }
-                };
-                println!("{value}");
-            } else {
-                println!("{}", serde_json::to_string_pretty(&rfc)?);
-            }
-        }
-        ArtifactType::Adr => {
-            let entry = load_adr(config, id)?;
-
-            if let Some(f) = field {
-                let value = match f {
-                    "status" => entry.spec.govctl.status.as_ref().to_string(),
-                    "title" => entry.spec.govctl.title,
-                    "date" => entry.spec.govctl.date,
-                    "superseded_by" => entry.spec.govctl.superseded_by.unwrap_or_default(),
-                    "refs" => entry.spec.govctl.refs.join(", "),
-                    "context" => entry.spec.content.context,
-                    "decision" => entry.spec.content.decision,
-                    "consequences" => entry.spec.content.consequences,
-                    "alternatives" => format_status_items(
-                        &entry.spec.content.alternatives,
-                        |a| a.status.as_ref(),
-                        |a| &a.text,
-                    ),
-                    _ => {
-                        return Err(Diagnostic::new(
-                            DiagnosticCode::E0803UnknownField,
-                            format!("Unknown ADR field: {f}"),
-                            id,
-                        )
-                        .into());
-                    }
-                };
-                println!("{value}");
-            } else {
-                println!("{}", toml::to_string_pretty(&entry.spec)?);
-            }
-        }
-        ArtifactType::WorkItem => {
-            let entry = load_work_item(config, id)?;
-
-            if let Some(f) = field {
-                let value = match f {
-                    "status" => entry.spec.govctl.status.as_ref().to_string(),
-                    "title" => entry.spec.govctl.title,
-                    "started" => entry.spec.govctl.started.unwrap_or_default(),
-                    "completed" => entry.spec.govctl.completed.unwrap_or_default(),
-                    "refs" => entry.spec.govctl.refs.join(", "),
-                    "description" => entry.spec.content.description,
-                    "acceptance_criteria" => format_status_items(
-                        &entry.spec.content.acceptance_criteria,
-                        |c| c.status.as_ref(),
-                        |c| &c.text,
-                    ),
-                    "notes" => entry.spec.content.notes.join("\n"),
-                    _ => {
-                        return Err(Diagnostic::new(
-                            DiagnosticCode::E0803UnknownField,
-                            format!("Unknown work item field: {f}"),
-                            id,
-                        )
-                        .into());
-                    }
-                };
-                println!("{value}");
-            } else {
-                println!("{}", toml::to_string_pretty(&entry.spec)?);
-            }
-        }
+    let plan = edit_engine::plan_request(id, field)?;
+    match plan.artifact {
+        ArtifactType::Adr => get_toml_field::<AdrTomlAdapter>(
+            config,
+            id,
+            plan.field_path.as_ref(),
+            ArtifactType::Adr,
+            adr_nested_get_alternatives,
+        )?,
+        ArtifactType::WorkItem => get_toml_field::<WorkTomlAdapter>(
+            config,
+            id,
+            plan.field_path.as_ref(),
+            ArtifactType::WorkItem,
+            work_nested_get_dispatch,
+        )?,
+        ArtifactType::Rfc => get_json_field::<RfcJsonAdapter>(
+            config,
+            id,
+            plan.field_path.as_ref(),
+            ArtifactType::Rfc,
+            "RFC fields do not support nested paths",
+        )?,
+        ArtifactType::Clause => get_json_field::<ClauseJsonAdapter>(
+            config,
+            id,
+            plan.field_path.as_ref(),
+            ArtifactType::Clause,
+            "Clause fields do not support nested paths",
+        )?,
     }
 
     Ok(vec![])
 }
 
-/// Format items with status as "[status] text" lines
-fn format_status_items<T, S, X>(items: &[T], get_status: S, get_text: X) -> String
+fn get_toml_field<A>(
+    config: &Config,
+    id: &str,
+    fp: Option<&FieldPath>,
+    artifact: ArtifactType,
+    nested_handler: fn(&A::Entry, &FieldPath, &str) -> anyhow::Result<String>,
+) -> anyhow::Result<()>
 where
-    S: Fn(&T) -> &str,
-    X: Fn(&T) -> &str,
+    A: TomlAdapter,
+    A::Entry: TomlEditableEntry,
 {
-    items
-        .iter()
-        .map(|item| format!("[{}] {}", get_status(item), get_text(item)))
-        .collect::<Vec<_>>()
-        .join("\n")
+    let entry = A::load(config, id)?;
+    if let Some(fp) = fp {
+        if let Some(simple) = fp.as_simple() {
+            let doc = serde_json::to_value(entry.spec())?;
+            println!(
+                "{}",
+                edit_runtime::get_simple_field(artifact, &doc, simple, id)?
+            );
+        } else {
+            println!("{}", nested_handler(&entry, fp, id)?);
+        }
+    } else {
+        println!("{}", toml::to_string_pretty(entry.spec())?);
+    }
+    Ok(())
 }
 
-/// Add unique value to a string array (no-op if already present)
-fn push_unique(vec: &mut Vec<String>, value: &str) {
-    if !vec.contains(&value.to_string()) {
-        vec.push(value.to_string());
+fn set_toml_field<A>(
+    config: &Config,
+    id: &str,
+    fp: &FieldPath,
+    value: &str,
+    op: WriteOp,
+    artifact: ArtifactType,
+    nested_handler: fn(&mut A::Entry, &FieldPath, &str, &str) -> anyhow::Result<()>,
+) -> anyhow::Result<()>
+where
+    A: TomlAdapter,
+    A::Entry: TomlEditableEntry,
+{
+    let mut entry = A::load(config, id)?;
+    if let Some(simple) = fp.as_simple() {
+        let mut doc = serde_json::to_value(entry.spec())?;
+        edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
+        *entry.spec_mut() = serde_json::from_value(doc)?;
+    } else {
+        nested_handler(&mut entry, fp, value, id)?;
+    }
+    A::write(config, &entry, op)?;
+    Ok(())
+}
+
+fn get_json_field<A>(
+    config: &Config,
+    id: &str,
+    fp: Option<&FieldPath>,
+    artifact: ArtifactType,
+    nested_error: &str,
+) -> anyhow::Result<()>
+where
+    A: JsonAdapter,
+    A::Data: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let loaded = A::load(config, id)?;
+    if let Some(fp) = fp {
+        let simple = require_simple_field(fp, id, nested_error)?;
+        let doc = serde_json::to_value(&loaded.data)?;
+        println!(
+            "{}",
+            edit_runtime::get_simple_field(artifact, &doc, simple, id)?
+        );
+    } else {
+        println!("{}", serde_json::to_string_pretty(&loaded.data)?);
+    }
+    Ok(())
+}
+
+fn set_json_field<A, F>(
+    config: &Config,
+    id: &str,
+    fp: &FieldPath,
+    value: &str,
+    op: WriteOp,
+    artifact: ArtifactType,
+    kind: crate::validate::ArtifactKind,
+    nested_error: &str,
+    post_update: F,
+) -> anyhow::Result<()>
+where
+    A: JsonAdapter,
+    A::Data: serde::Serialize + serde::de::DeserializeOwned,
+    F: FnOnce(&mut A::Data),
+{
+    let simple = require_simple_field(fp, id, nested_error)?;
+    if !edit_runtime::supports_simple_set_field(artifact, simple) {
+        let code = match kind {
+            crate::validate::ArtifactKind::Rfc => DiagnosticCode::E0101RfcSchemaInvalid,
+            crate::validate::ArtifactKind::Clause => DiagnosticCode::E0201ClauseSchemaInvalid,
+            _ => DiagnosticCode::E0803UnknownField,
+        };
+        return Err(Diagnostic::new(code, format!("Unknown field: {simple}"), "").into());
+    }
+    crate::validate::validate_field(config, id, kind, simple, value)?;
+    let mut loaded = A::load(config, id)?;
+    let mut doc = serde_json::to_value(&loaded.data)?;
+    edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
+    loaded.data = serde_json::from_value(doc)?;
+    post_update(&mut loaded.data);
+    A::write(config, &loaded, op)?;
+    Ok(())
+}
+
+macro_rules! define_object_scalar_access {
+    ($get_fn:ident, $set_fn:ident, $ty:ty, get: { $($gname:literal => |$gobj:ident| $gexpr:expr),+ $(,)? }, set: { $($sname:literal => |$sobj:ident, $svalue:ident| $sexpr:expr),+ $(,)? }) => {
+        fn $get_fn(item: &$ty, field: &str) -> Option<anyhow::Result<String>> {
+            match field {
+                $(
+                    $gname => {
+                        let $gobj = item;
+                        Some(Ok($gexpr))
+                    }
+                ),+,
+                _ => None,
+            }
+        }
+
+        fn $set_fn(item: &mut $ty, field: &str, value: &str) -> Option<anyhow::Result<()>> {
+            match field {
+                $(
+                    $sname => {
+                        let $sobj = item;
+                        let $svalue = value;
+                        Some($sexpr)
+                    }
+                ),+,
+                _ => None,
+            }
+        }
+    };
+}
+
+define_object_scalar_access!(
+    adr_alt_get_scalar,
+    adr_alt_set_scalar,
+    crate::model::Alternative,
+    get: {
+        "text" => |alt| alt.text.clone(),
+        "status" => |alt| alt.status.as_ref().to_string(),
+        "rejection_reason" => |alt| alt.rejection_reason.clone().unwrap_or_default()
+    },
+    set: {
+        "text" => |alt, value| { alt.text = value.to_string(); Ok(()) },
+        "status" => |alt, value| parse_enum_field(value, "Invalid alternative status").map(|status| { alt.status = status; }),
+        "rejection_reason" => |alt, value| { set_option_string_field(&mut alt.rejection_reason, value); Ok(()) }
+    }
+);
+
+fn adr_alt_list_field_mut<'a>(
+    alt: &'a mut crate::model::Alternative,
+    field: &str,
+) -> Option<&'a mut Vec<String>> {
+    match field {
+        "pros" => Some(&mut alt.pros),
+        "cons" => Some(&mut alt.cons),
+        _ => None,
     }
 }
 
-/// Add a value to an array field
+fn adr_alt_index_and_subfield<'a>(
+    fp: &'a FieldPath,
+    id: &str,
+    len: usize,
+    verb: edit_rules::Verb,
+) -> anyhow::Result<(usize, Option<&'a path::PathSegment>)> {
+    if fp.segments[0].name != "alternatives" {
+        return nested_root_field_not_found(id, fp.segments[0].name.as_str(), ADR_NESTED_ERROR);
+    }
+    let (idx, max_depth) = nested_index_and_depth(fp, len, "adr", "alternatives")?;
+    if fp.segments.len() == 1 {
+        let missing_subfield_error = match verb {
+            edit_rules::Verb::Set => {
+                Some("Cannot set an entire alternative; use a sub-field (e.g., alt[0].text)")
+            }
+            edit_rules::Verb::Add => {
+                Some("Cannot add to alternative without sub-field (use alt[0].pros or alt[0].cons)")
+            }
+            _ => None,
+        };
+        if let Some(msg) = missing_subfield_error {
+            return Err(Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, msg, id).into());
+        }
+        return Ok((idx, None));
+    }
+    ensure_nested_depth(fp, max_depth, "ADR alternatives", id)?;
+    let seg1 = &fp.segments[1];
+    let unsupported = match verb {
+        edit_rules::Verb::Get => "Cannot get alternative field '{}'",
+        edit_rules::Verb::Set => "Cannot set alternative field '{}'",
+        edit_rules::Verb::Add => {
+            "Cannot add to alternative field '{}' (only pros and cons support add)"
+        }
+        edit_rules::Verb::Remove => {
+            "Cannot remove from alternative field '{}' (only pros and cons support remove)"
+        }
+        edit_rules::Verb::Tick => unreachable!("adr alternative nested does not support tick"),
+    };
+    ensure_nested_field_for_verb(
+        "adr",
+        "alternatives",
+        seg1,
+        verb,
+        fp,
+        id,
+        format!(
+            "Unknown alternative field: '{}' (expected text, status, pros, cons, or rejection_reason)",
+            seg1.name
+        ),
+        unsupported.replace("{}", seg1.name.as_str()),
+    )?;
+    Ok((idx, Some(seg1)))
+}
+
+fn adr_nested_get_alternatives(
+    entry: &AdrEntry,
+    fp: &FieldPath,
+    id: &str,
+) -> anyhow::Result<String> {
+    let alts = &entry.spec.content.alternatives;
+    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Get)?;
+    let alt = &alts[idx];
+    let Some(seg1) = seg1 else {
+        return Ok(toml::to_string_pretty(alt)?);
+    };
+    let items = match seg1.name.as_str() {
+        "pros" => Some(alt.pros.as_slice()),
+        "cons" => Some(alt.cons.as_slice()),
+        _ => None,
+    };
+    if let Some(items) = items {
+        if let Some(j) = seg1.index {
+            return Ok(items[path::resolve_index(j, items.len())?].clone());
+        }
+        return Ok(items.join("\n"));
+    }
+    match adr_alt_get_scalar(alt, seg1.name.as_str()) {
+        Some(v) => v,
+        None => unreachable!("validated by edit rules"),
+    }
+}
+
+fn adr_nested_set_alternatives(
+    entry: &mut AdrEntry,
+    fp: &FieldPath,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    let alts = &mut entry.spec.content.alternatives;
+    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Set)?;
+    let seg1 = seg1.expect("set requires subfield by construction");
+    let alt = &mut alts[idx];
+    if let Some(items) = adr_alt_list_field_mut(alt, seg1.name.as_str()) {
+        let j = seg1.index.ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!(
+                    "Use 'add' to append to {}, or provide an index (e.g., alt[0].{}[0])",
+                    seg1.name, seg1.name
+                ),
+                id,
+            )
+        })?;
+        let ji = path::resolve_index(j, items.len())?;
+        items[ji] = value.to_string();
+        return Ok(());
+    }
+    match adr_alt_set_scalar(alt, seg1.name.as_str(), value) {
+        Some(v) => v,
+        None => unreachable!("validated by edit rules"),
+    }
+}
+
+fn adr_nested_add_alternatives(
+    entry: &mut AdrEntry,
+    fp: &FieldPath,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    let alts = &mut entry.spec.content.alternatives;
+    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Add)?;
+    let seg1 = seg1.expect("add requires subfield by construction");
+    let alt = &mut alts[idx];
+    let items = adr_alt_list_field_mut(alt, seg1.name.as_str()).expect("validated by edit rules");
+    if seg1.index.is_some() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!(
+                "Cannot add to indexed path '{}' (use set/remove for a specific element)",
+                format_path(fp)
+            ),
+            id,
+        )
+        .into());
+    }
+    if !items.iter().any(|item| item == value) {
+        items.push(value.to_string());
+    }
+    Ok(())
+}
+
+fn adr_nested_remove_alternatives(
+    entry: &mut AdrEntry,
+    fp: &FieldPath,
+    opts: &MatchOptions,
+    id: &str,
+) -> anyhow::Result<Vec<String>> {
+    let alts = &mut entry.spec.content.alternatives;
+    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Remove)?;
+    let Some(seg1) = seg1 else {
+        let removed = alts.remove(idx);
+        return Ok(vec![removed.text]);
+    };
+
+    let alt = &mut alts[idx];
+    let items = adr_alt_list_field_mut(alt, seg1.name.as_str()).expect("validated by edit rules");
+    if let Some(j) = seg1.index {
+        return Ok(vec![items.remove(path::resolve_index(j, items.len())?)]);
+    }
+
+    let texts: Vec<&str> = items.iter().map(|s| s.as_str()).collect();
+    let to_remove = resolve_match_indices(id, seg1.name.as_str(), &texts, opts, MatchUse::Remove)?;
+    let removed: Vec<String> = to_remove.iter().map(|&i| items[i].clone()).collect();
+    let mut sorted = to_remove;
+    sorted.sort_by(|a, b| b.cmp(a));
+    for i in sorted {
+        items.remove(i);
+    }
+    Ok(removed)
+}
+
+#[derive(Clone, Copy)]
+struct WorkNestedObjectSpec {
+    root: &'static str,
+    scope: &'static str,
+    expected: &'static str,
+    whole_item_error: &'static str,
+}
+
+const WORK_JOURNAL_SPEC: WorkNestedObjectSpec = WorkNestedObjectSpec {
+    root: "journal",
+    scope: "journal entries",
+    expected: "content, date, or scope",
+    whole_item_error: "Cannot set an entire journal entry; use a sub-field (e.g., journal[0].content)",
+};
+
+const WORK_ACCEPTANCE_CRITERIA_SPEC: WorkNestedObjectSpec = WorkNestedObjectSpec {
+    root: "acceptance_criteria",
+    scope: "acceptance criteria",
+    expected: "text, status, or category",
+    whole_item_error: "Cannot set an entire acceptance criterion; use a sub-field (e.g., ac[0].text)",
+};
+
+define_object_scalar_access!(
+    journal_get_field,
+    journal_set_field,
+    crate::model::JournalEntry,
+    get: {
+        "content" => |item| item.content.clone(),
+        "date" => |item| item.date.clone(),
+        "scope" => |item| item.scope.clone().unwrap_or_default()
+    },
+    set: {
+        "content" => |item, value| { item.content = value.to_string(); Ok(()) },
+        "date" => |item, value| { item.date = value.to_string(); Ok(()) },
+        "scope" => |item, value| { set_option_string_field(&mut item.scope, value); Ok(()) }
+    }
+);
+
+define_object_scalar_access!(
+    ac_get_field,
+    ac_set_field,
+    crate::model::ChecklistItem,
+    get: {
+        "text" => |item| item.text.clone(),
+        "status" => |item| item.status.as_ref().to_string(),
+        "category" => |item| item.category.as_ref().to_string()
+    },
+    set: {
+        "text" => |item, value| { item.text = value.to_string(); Ok(()) },
+        "status" => |item, value| parse_enum_field(value, "Invalid checklist status").map(|status| { item.status = status; }),
+        "category" => |item, value| parse_enum_field(value, "Invalid category").map(|category| { item.category = category; })
+    }
+);
+
+fn work_nested_get_dispatch(
+    entry: &WorkItemEntry,
+    fp: &FieldPath,
+    id: &str,
+) -> anyhow::Result<String> {
+    match fp.segments[0].name.as_str() {
+        "journal" => work_nested_get_object_item(
+            &entry.spec.content.journal,
+            fp,
+            id,
+            WORK_JOURNAL_SPEC,
+            |item| Ok(toml::to_string_pretty(item)?),
+            journal_get_field,
+        ),
+        "acceptance_criteria" => work_nested_get_object_item(
+            &entry.spec.content.acceptance_criteria,
+            fp,
+            id,
+            WORK_ACCEPTANCE_CRITERIA_SPEC,
+            |item| Ok(format!("[{}] {}", item.status.as_ref(), item.text)),
+            ac_get_field,
+        ),
+        "notes" => {
+            ensure_no_subfields(
+                fp,
+                id,
+                "Notes entries do not have sub-fields (use notes[index])",
+            )?;
+            let (idx, _max_depth) =
+                nested_index_and_depth(fp, entry.spec.content.notes.len(), "work", "notes")?;
+            Ok(entry.spec.content.notes[idx].clone())
+        }
+        root => nested_root_field_not_found(id, root, WORK_NESTED_GET_ERROR),
+    }
+}
+
+fn work_nested_set_dispatch(
+    entry: &mut WorkItemEntry,
+    fp: &FieldPath,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    match fp.segments[0].name.as_str() {
+        "journal" => work_nested_set_object_item(
+            &mut entry.spec.content.journal,
+            fp,
+            value,
+            id,
+            WORK_JOURNAL_SPEC,
+            journal_set_field,
+        ),
+        "acceptance_criteria" => work_nested_set_object_item(
+            &mut entry.spec.content.acceptance_criteria,
+            fp,
+            value,
+            id,
+            WORK_ACCEPTANCE_CRITERIA_SPEC,
+            ac_set_field,
+        ),
+        root => nested_root_field_not_found(id, root, WORK_NESTED_SET_ERROR),
+    }
+}
+
+fn work_nested_remove_dispatch(
+    entry: &mut WorkItemEntry,
+    fp: &FieldPath,
+    _opts: &MatchOptions,
+    id: &str,
+) -> anyhow::Result<Vec<String>> {
+    match fp.segments[0].name.as_str() {
+        "journal" => remove_work_nested_root_item(
+            &mut entry.spec.content.journal,
+            fp,
+            id,
+            "journal",
+            |item| item.content,
+        ),
+        "acceptance_criteria" => remove_work_nested_root_item(
+            &mut entry.spec.content.acceptance_criteria,
+            fp,
+            id,
+            "acceptance_criteria",
+            |item| item.text,
+        ),
+        "notes" => remove_work_nested_root_item(
+            &mut entry.spec.content.notes,
+            fp,
+            id,
+            "notes",
+            std::convert::identity,
+        ),
+        root => nested_root_field_not_found(id, root, WORK_NESTED_REMOVE_ERROR),
+    }
+}
+
+fn nested_root_field_not_found<T>(id: &str, root: &str, fmt: &str) -> anyhow::Result<T> {
+    Err(Diagnostic::new(
+        DiagnosticCode::E0815PathFieldNotFound,
+        fmt.replace("{}", root),
+        id,
+    )
+    .into())
+}
+
+fn work_nested_get_object_item<T, FRoot, FGet>(
+    items: &[T],
+    fp: &FieldPath,
+    id: &str,
+    spec: WorkNestedObjectSpec,
+    render_root: FRoot,
+    get_field: FGet,
+) -> anyhow::Result<String>
+where
+    FRoot: Fn(&T) -> anyhow::Result<String>,
+    FGet: Fn(&T, &str) -> Option<anyhow::Result<String>>,
+{
+    let (idx, seg1) =
+        work_nested_object_index_and_field(fp, id, items.len(), spec, edit_rules::Verb::Get)?;
+    let item = &items[idx];
+    let Some(seg1) = seg1 else {
+        return render_root(item);
+    };
+    match get_field(item, seg1.name.as_str()) {
+        Some(value) => value,
+        None => unreachable!("validated by edit rules"),
+    }
+}
+
+#[allow(clippy::too_many_arguments)]
+fn work_nested_set_object_item<T, FSet>(
+    items: &mut [T],
+    fp: &FieldPath,
+    value: &str,
+    id: &str,
+    spec: WorkNestedObjectSpec,
+    set_field: FSet,
+) -> anyhow::Result<()>
+where
+    FSet: Fn(&mut T, &str, &str) -> Option<anyhow::Result<()>>,
+{
+    let (idx, seg1) =
+        work_nested_object_index_and_field(fp, id, items.len(), spec, edit_rules::Verb::Set)?;
+    let Some(seg1) = seg1 else {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            spec.whole_item_error,
+            id,
+        )
+        .into());
+    };
+    let item = &mut items[idx];
+    match set_field(item, seg1.name.as_str(), value) {
+        Some(result) => result,
+        None => unreachable!("validated by edit rules"),
+    }
+}
+
+fn work_nested_object_index_and_field<'a>(
+    fp: &'a FieldPath,
+    id: &str,
+    len: usize,
+    spec: WorkNestedObjectSpec,
+    verb: edit_rules::Verb,
+) -> anyhow::Result<(usize, Option<&'a path::PathSegment>)> {
+    let (idx, max_depth) = nested_index_and_depth(fp, len, "work", spec.root)?;
+    if fp.segments.len() == 1 {
+        return Ok((idx, None));
+    }
+
+    ensure_nested_depth(fp, max_depth, spec.scope, id)?;
+    let seg1 = &fp.segments[1];
+    let unsupported = match verb {
+        edit_rules::Verb::Get => format!("Cannot get {} field '{}'", spec.root, seg1.name),
+        edit_rules::Verb::Set => format!("Cannot set {} field '{}'", spec.root, seg1.name),
+        _ => unreachable!("work nested object fields only support get/set"),
+    };
+    ensure_nested_field_for_verb(
+        "work",
+        spec.root,
+        seg1,
+        verb,
+        fp,
+        id,
+        format!(
+            "Unknown {} field: '{}' (expected {})",
+            spec.root, seg1.name, spec.expected
+        ),
+        unsupported,
+    )?;
+    Ok((idx, Some(seg1)))
+}
+
+fn nested_index_and_depth(
+    fp: &FieldPath,
+    len: usize,
+    artifact: &str,
+    root: &str,
+) -> anyhow::Result<(usize, usize)> {
+    let seg0 = &fp.segments[0];
+    let idx = path::require_index(seg0, len)?;
+    let max_depth = edit_rules::nested_root_rule(artifact, root)
+        .map(|r| r.max_depth)
+        .unwrap_or(2);
+    Ok((idx, max_depth))
+}
+
+fn remove_work_nested_root_item<T, F>(
+    items: &mut Vec<T>,
+    fp: &FieldPath,
+    id: &str,
+    root: &str,
+    to_removed_text: F,
+) -> anyhow::Result<Vec<String>>
+where
+    F: FnOnce(T) -> String,
+{
+    ensure_no_subfields(
+        fp,
+        id,
+        "Work item nested remove only supports top-level indexed removal (e.g., notes[0], ac[0], journal[0])",
+    )?;
+    let (idx, _max_depth) = nested_index_and_depth(fp, items.len(), "work", root)?;
+    let removed = items.remove(idx);
+    Ok(vec![to_removed_text(removed)])
+}
+
+fn ensure_no_subfields(fp: &FieldPath, id: &str, message: &str) -> anyhow::Result<()> {
+    if fp.segments.len() > 1 {
+        return Err(Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id).into());
+    }
+    Ok(())
+}
+
+fn set_option_string_field(dst: &mut Option<String>, value: &str) {
+    *dst = (!value.is_empty()).then(|| value.to_string());
+}
+
+fn parse_enum_field<T>(value: &str, err_prefix: &str) -> anyhow::Result<T>
+where
+    T: serde::de::DeserializeOwned,
+{
+    serde_json::from_str(&format!("\"{value}\""))
+        .map_err(|_| anyhow::anyhow!("{err_prefix}: {value}"))
+}
+
+fn adr_add_alternatives(
+    entry: &mut AdrEntry,
+    value: &str,
+    ctx: &AdrAddContext,
+) -> anyhow::Result<()> {
+    use crate::model::{Alternative, AlternativeStatus};
+    if entry
+        .spec
+        .content
+        .alternatives
+        .iter()
+        .any(|a| a.text == value)
+    {
+        return Ok(());
+    }
+
+    let status = if ctx.reject_reason.is_some() {
+        AlternativeStatus::Rejected
+    } else {
+        AlternativeStatus::Considered
+    };
+
+    entry.spec.content.alternatives.push(Alternative {
+        text: value.to_string(),
+        status,
+        pros: ctx.pros.clone().unwrap_or_default(),
+        cons: ctx.cons.clone().unwrap_or_default(),
+        rejection_reason: ctx.reject_reason.clone(),
+    });
+    Ok(())
+}
+
+fn work_add_acceptance_criteria(
+    entry: &mut WorkItemEntry,
+    value: &str,
+    ctx: &WorkAddContext,
+) -> anyhow::Result<()> {
+    use crate::model::ChecklistItem;
+    use crate::write::parse_changelog_change;
+    let parsed = parse_changelog_change(value)?;
+
+    let final_category = if let Some(cat) = ctx.category_override {
+        cat
+    } else if parsed.explicit {
+        parsed.category
+    } else {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0408WorkCriteriaMissingCategory,
+            format!(
+                "Acceptance criteria requires category. Use prefix (e.g., 'fix: {}') or --category",
+                parsed.message
+            ),
+            &entry.spec.govctl.id,
+        )
+        .into());
+    };
+
+    if !entry
+        .spec
+        .content
+        .acceptance_criteria
+        .iter()
+        .any(|c| c.text == parsed.message)
+    {
+        entry
+            .spec
+            .content
+            .acceptance_criteria
+            .push(ChecklistItem::with_category(
+                &parsed.message,
+                final_category,
+            ));
+    }
+    Ok(())
+}
+
+fn work_add_journal(
+    entry: &mut WorkItemEntry,
+    value: &str,
+    ctx: &WorkAddContext,
+) -> anyhow::Result<()> {
+    use crate::model::JournalEntry;
+    use crate::write::today;
+    entry.spec.content.journal.push(JournalEntry {
+        date: today(),
+        scope: ctx.scope_override.map(String::from),
+        content: value.to_string(),
+    });
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn add_to_field(
     config: &Config,
@@ -557,204 +1197,152 @@ pub fn add_to_field(
     reject_reason: Option<String>,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let field = normalize_field(field);
+    let (artifact, fp) = plan_edit_with_field(id, field)?;
     let value = resolve_value(value, stdin)?;
     let value = value.as_str();
-
-    match ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))? {
-        ArtifactType::Rfc => {
-            let LoadedRfc { path, mut data } = load_rfc(config, id)?;
-
-            match field {
-                "owners" => push_unique(&mut data.owners, value),
-                "refs" => push_unique(&mut data.refs, value),
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0810CannotAddToField,
-                        format!("Cannot add to field: {field} (not an array or unsupported)"),
-                        id,
-                    )
-                    .into());
-                }
-            }
-
-            write_rfc(&path, &data, op, None)?;
-        }
-        ArtifactType::Clause => {
-            let LoadedClause { path, mut data } = load_clause(config, id)?;
-
-            match field {
-                "anchors" => push_unique(&mut data.anchors, value),
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0810CannotAddToField,
-                        format!("Cannot add to field: {field} (not an array or unsupported)"),
-                        id,
-                    )
-                    .into());
-                }
-            }
-
-            write_clause(&path, &data, op, None)?;
-        }
+    match artifact {
         ArtifactType::Adr => {
-            let mut entry = load_adr(config, id)?;
-
-            match field {
-                "refs" => push_unique(&mut entry.spec.govctl.refs, value),
-                "alternatives" => {
-                    use crate::model::{Alternative, AlternativeStatus};
-                    if !entry
-                        .spec
-                        .content
-                        .alternatives
-                        .iter()
-                        .any(|a| a.text == value)
-                    {
-                        // Determine status based on reject_reason
-                        let status = if reject_reason.is_some() {
-                            AlternativeStatus::Rejected
-                        } else {
-                            AlternativeStatus::Considered
-                        };
-                        entry.spec.content.alternatives.push(Alternative {
-                            text: value.to_string(),
-                            status,
-                            pros: pros.unwrap_or_default(),
-                            cons: cons.unwrap_or_default(),
-                            rejection_reason: reject_reason,
-                        });
-                    }
-                }
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0810CannotAddToField,
-                        format!("Cannot add to field: {field} (not an array or unsupported)"),
-                        id,
-                    )
-                    .into());
-                }
+            let ctx = AdrAddContext {
+                pros,
+                cons,
+                reject_reason,
+            };
+            if fp.is_simple() {
+                add_toml_simple_field::<AdrTomlAdapter, AdrAddContext>(
+                    config,
+                    id,
+                    &fp,
+                    value,
+                    op,
+                    ArtifactType::Adr,
+                    &ctx,
+                    |entry, simple, value, ctx| match simple {
+                        "alternatives" => adr_add_alternatives(entry, value, ctx),
+                        _ => unreachable!("validated by edit rules"),
+                    },
+                )?;
+            } else {
+                let mut entry = AdrTomlAdapter::load(config, id)?;
+                adr_nested_add_alternatives(&mut entry, &fp, value, id)?;
+                AdrTomlAdapter::write(config, &entry, op)?;
             }
-
-            write_adr(&entry.path, &entry.spec, op)?;
         }
         ArtifactType::WorkItem => {
-            let mut entry = load_work_item(config, id)?;
-
-            match field {
-                "refs" => push_unique(&mut entry.spec.govctl.refs, value),
-                "acceptance_criteria" => {
-                    use crate::model::ChecklistItem;
-                    use crate::write::parse_changelog_change;
-                    // Parse prefix per ADR-0012/ADR-0013
-                    let parsed = parse_changelog_change(value)?;
-
-                    // Determine final category: explicit override > parsed prefix > error
-                    let final_category = if let Some(cat) = category_override {
-                        cat
-                    } else if parsed.explicit {
-                        parsed.category
-                    } else {
-                        // No explicit category specified - require prefix or --category
-                        return Err(Diagnostic::new(
-                            DiagnosticCode::E0408WorkCriteriaMissingCategory,
-                            format!(
-                                "Acceptance criteria requires category. Use prefix (e.g., 'fix: {}') or --category",
-                                parsed.message
-                            ),
-                            id,
-                        )
-                        .into());
-                    };
-
-                    if !entry
-                        .spec
-                        .content
-                        .acceptance_criteria
-                        .iter()
-                        .any(|c| c.text == parsed.message)
-                    {
-                        entry
-                            .spec
-                            .content
-                            .acceptance_criteria
-                            .push(ChecklistItem::with_category(
-                                &parsed.message,
-                                final_category,
-                            ));
-                    }
-                }
-                "journal" => {
-                    use crate::model::JournalEntry;
-                    use crate::write::today;
-                    entry.spec.content.journal.push(JournalEntry {
-                        date: today(),
-                        scope: scope_override.map(String::from),
-                        content: value.to_string(),
-                    });
-                }
-                "notes" => {
-                    if !entry.spec.content.notes.contains(&value.to_string()) {
-                        entry.spec.content.notes.push(value.to_string());
-                    }
-                }
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0810CannotAddToField,
-                        format!("Cannot add to field: {field} (not an array or unsupported)"),
-                        id,
-                    )
-                    .into());
-                }
+            if !fp.is_simple() {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    format!(
+                        "Work item nested add is not supported for path '{}'",
+                        format_path(&fp)
+                    ),
+                    id,
+                )
+                .into());
             }
-
-            write_work_item(&entry.path, &entry.spec, op)?;
+            let ctx = WorkAddContext {
+                category_override,
+                scope_override,
+            };
+            add_toml_simple_field::<WorkTomlAdapter, WorkAddContext<'_>>(
+                config,
+                id,
+                &fp,
+                value,
+                op,
+                ArtifactType::WorkItem,
+                &ctx,
+                |entry, simple, value, ctx| match simple {
+                    "acceptance_criteria" => work_add_acceptance_criteria(entry, value, ctx),
+                    "journal" => work_add_journal(entry, value, ctx),
+                    _ => unreachable!("validated by edit rules"),
+                },
+            )?;
         }
+        ArtifactType::Rfc => add_json_simple_list_field::<RfcJsonAdapter>(
+            config,
+            id,
+            &fp,
+            value,
+            op,
+            ArtifactType::Rfc,
+            "RFC fields do not support nested paths for add",
+        )?,
+        ArtifactType::Clause => add_json_simple_list_field::<ClauseJsonAdapter>(
+            config,
+            id,
+            &fp,
+            value,
+            op,
+            ArtifactType::Clause,
+            "Clause fields do not support nested paths for add",
+        )?,
     }
 
     if !op.is_preview() {
-        ui::field_added(id, field, value);
+        let display_field = format_path(&fp);
+        ui::field_added(id, &display_field, value);
     }
 
     Ok(vec![])
 }
 
-/// Remove matching items from a Vec<String> and return the removed items
-fn remove_matching_strings(
-    vec: &mut Vec<String>,
+fn add_json_simple_list_field<A>(
+    config: &Config,
     id: &str,
-    field: &str,
-    opts: &MatchOptions,
-) -> anyhow::Result<Vec<String>> {
-    let items: Vec<&str> = vec.iter().map(|s| s.as_str()).collect();
-    let to_remove = resolve_matches(id, field, &items, opts)?;
-    let removed: Vec<String> = to_remove.iter().map(|&i| vec[i].clone()).collect();
-    remove_indices(vec, &to_remove);
-    Ok(removed)
-}
-
-/// Remove matching items from a Vec<T> where T has a text field, return removed texts
-fn remove_matching_items<T, F>(
-    vec: &mut Vec<T>,
-    get_text: F,
-    id: &str,
-    field: &str,
-    opts: &MatchOptions,
-) -> anyhow::Result<Vec<String>>
+    fp: &FieldPath,
+    value: &str,
+    op: WriteOp,
+    artifact: ArtifactType,
+    nested_error: &str,
+) -> anyhow::Result<()>
 where
-    F: Fn(&T) -> &str,
+    A: JsonAdapter,
+    A::Data: serde::Serialize + serde::de::DeserializeOwned,
 {
-    let items: Vec<&str> = vec.iter().map(&get_text).collect();
-    let to_remove = resolve_matches(id, field, &items, opts)?;
-    let removed: Vec<String> = to_remove
-        .iter()
-        .map(|&i| get_text(&vec[i]).to_string())
-        .collect();
-    remove_indices(vec, &to_remove);
-    Ok(removed)
+    let simple = require_simple_field(fp, id, nested_error)?;
+    let mut loaded = A::load(config, id)?;
+    let mut doc = serde_json::to_value(&loaded.data)?;
+    if !edit_runtime::add_simple_list_value(artifact, &mut doc, simple, value, id)? {
+        return Err(cannot_add_to_field_error(id, simple));
+    }
+    loaded.data = serde_json::from_value(doc)?;
+    A::write(config, &loaded, op)?;
+    Ok(())
 }
 
-/// Notify UI about removed items
+fn add_toml_simple_field<A, C>(
+    config: &Config,
+    id: &str,
+    fp: &FieldPath,
+    value: &str,
+    op: WriteOp,
+    artifact: ArtifactType,
+    ctx: &C,
+    special_handler: fn(&mut A::Entry, &str, &str, &C) -> anyhow::Result<()>,
+) -> anyhow::Result<()>
+where
+    A: TomlAdapter,
+    A::Entry: TomlEditableEntry,
+{
+    let simple = fp.as_simple().expect("simple path expected");
+    let mut entry = A::load(config, id)?;
+    let mut doc = serde_json::to_value(entry.spec())?;
+    if edit_runtime::add_simple_list_value(artifact, &mut doc, simple, value, id)? {
+        *entry.spec_mut() = serde_json::from_value(doc)?;
+    } else {
+        if !edit_rules::simple_field_supports_verb(
+            artifact.rule_key(),
+            simple,
+            edit_rules::Verb::Add,
+        ) {
+            return Err(cannot_add_to_field_error(id, simple));
+        }
+        special_handler(&mut entry, simple, value, ctx)?;
+    }
+    A::write(config, &entry, op)?;
+    Ok(())
+}
+
 fn notify_removed(id: &str, field: &str, removed: &[String], op: WriteOp) {
     if !op.is_preview() {
         for item in removed {
@@ -763,7 +1351,6 @@ fn notify_removed(id: &str, field: &str, removed: &[String], op: WriteOp) {
     }
 }
 
-/// Remove matching items from an array field (per ADR-0007)
 pub fn remove_from_field(
     config: &Config,
     id: &str,
@@ -771,174 +1358,65 @@ pub fn remove_from_field(
     opts: &MatchOptions,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let field = normalize_field(field);
-    match ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))? {
-        ArtifactType::Rfc => {
-            let LoadedRfc { path, mut data } = load_rfc(config, id)?;
+    let (artifact, fp) = plan_edit_with_field(id, field)?;
 
-            let removed = match field {
-                "owners" => remove_matching_strings(&mut data.owners, id, field, opts)?,
-                "refs" => remove_matching_strings(&mut data.refs, id, field, opts)?,
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0811CannotRemoveFromField,
-                        format!("Cannot remove from field: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            };
-
-            write_rfc(&path, &data, op, None)?;
-            notify_removed(id, field, &removed, op);
+    if !fp.is_simple() && fp.has_terminal_index() {
+        let has_match_opts =
+            opts.pattern.is_some() || opts.at.is_some() || opts.exact || opts.regex || opts.all;
+        if has_match_opts {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0818PathIndexConflict,
+                "Cannot combine indexed path (e.g., alt[0].cons[1]) with match flags (--at, --exact, --regex, --all, or pattern)",
+                id,
+            )
+            .into());
         }
-        ArtifactType::Clause => {
-            let LoadedClause { path, mut data } = load_clause(config, id)?;
+    }
 
-            let removed = match field {
-                "anchors" => remove_matching_strings(&mut data.anchors, id, field, opts)?,
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0811CannotRemoveFromField,
-                        format!("Cannot remove from field: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            };
-
-            write_clause(&path, &data, op, None)?;
-            notify_removed(id, field, &removed, op);
-        }
-        ArtifactType::Adr => {
-            let mut entry = load_adr(config, id)?;
-
-            let removed = match field {
-                "refs" => remove_matching_strings(&mut entry.spec.govctl.refs, id, field, opts)?,
-                "alternatives" => remove_matching_items(
-                    &mut entry.spec.content.alternatives,
-                    |a| &a.text,
-                    id,
-                    field,
-                    opts,
-                )?,
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0811CannotRemoveFromField,
-                        format!("Cannot remove from field: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            };
-
-            write_adr(&entry.path, &entry.spec, op)?;
-            notify_removed(id, field, &removed, op);
-        }
-        ArtifactType::WorkItem => {
-            let mut entry = load_work_item(config, id)?;
-
-            let removed = match field {
-                "refs" => remove_matching_strings(&mut entry.spec.govctl.refs, id, field, opts)?,
-                "acceptance_criteria" => remove_matching_items(
-                    &mut entry.spec.content.acceptance_criteria,
-                    |c| &c.text,
-                    id,
-                    field,
-                    opts,
-                )?,
-                "notes" => remove_matching_strings(&mut entry.spec.content.notes, id, field, opts)?,
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0811CannotRemoveFromField,
-                        format!("Cannot remove from field: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            };
-
-            write_work_item(&entry.path, &entry.spec, op)?;
-            notify_removed(id, field, &removed, op);
-        }
+    match artifact {
+        ArtifactType::Adr => remove_toml_field::<AdrTomlAdapter>(
+            config,
+            id,
+            &fp,
+            field,
+            opts,
+            op,
+            ArtifactType::Adr,
+            adr_nested_remove_alternatives,
+        )?,
+        ArtifactType::WorkItem => remove_toml_field::<WorkTomlAdapter>(
+            config,
+            id,
+            &fp,
+            field,
+            opts,
+            op,
+            ArtifactType::WorkItem,
+            work_nested_remove_dispatch,
+        )?,
+        ArtifactType::Rfc => remove_json_simple_list_field::<RfcJsonAdapter>(
+            config,
+            id,
+            &fp,
+            opts,
+            op,
+            ArtifactType::Rfc,
+            "RFC fields do not support nested paths for remove",
+        )?,
+        ArtifactType::Clause => remove_json_simple_list_field::<ClauseJsonAdapter>(
+            config,
+            id,
+            &fp,
+            opts,
+            op,
+            ArtifactType::Clause,
+            "Clause fields do not support nested paths for remove",
+        )?,
     }
 
     Ok(vec![])
 }
 
-/// Resolve match result to list of indices, handling errors for no/multiple matches
-fn resolve_matches(
-    id: &str,
-    field: &str,
-    items: &[&str],
-    opts: &MatchOptions,
-) -> anyhow::Result<Vec<usize>> {
-    if items.is_empty() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0812FieldEmpty,
-            format!("Field {}.{} is empty", id, field),
-            id,
-        )
-        .into());
-    }
-
-    match find_matches(items, opts)? {
-        MatchResult::None => {
-            let pattern = opts.pattern.unwrap_or("<index>");
-            Err(Diagnostic::new(
-                DiagnosticCode::E0806InvalidPattern,
-                format!("No items match '{}' in {}.{}", pattern, id, field),
-                id,
-            )
-            .into())
-        }
-        MatchResult::Single(idx) => Ok(vec![idx]),
-        MatchResult::Multiple(indices) => {
-            if opts.all {
-                Ok(indices)
-            } else {
-                let pattern = opts.pattern.unwrap_or("");
-                Err(Diagnostic::new(
-                    DiagnosticCode::E0807AmbiguousMatch,
-                    format_multiple_match_error(id, field, pattern, items, &indices),
-                    id,
-                )
-                .into())
-            }
-        }
-    }
-}
-
-/// Remove items at given indices (must be sorted descending to avoid index shift)
-fn remove_indices<T>(vec: &mut Vec<T>, indices: &[usize]) {
-    let mut sorted: Vec<usize> = indices.to_vec();
-    sorted.sort_by(|a, b| b.cmp(a)); // descending
-    for i in sorted {
-        vec.remove(i);
-    }
-}
-
-/// Find single match and update status, returning the matched text
-fn tick_checklist<T, S, F>(
-    items: &mut [T],
-    get_text: F,
-    set_status: S,
-    id: &str,
-    field: &str,
-    opts: &MatchOptions,
-) -> anyhow::Result<String>
-where
-    F: Fn(&T) -> &str,
-    S: FnOnce(&mut T),
-{
-    let texts: Vec<&str> = items.iter().map(&get_text).collect();
-    let idx = resolve_single_match(id, field, &texts, opts)?;
-    let text = get_text(&items[idx]).to_string();
-    set_status(&mut items[idx]);
-    Ok(text)
-}
-
-/// Mark a checklist item with a new status (per ADR-0007)
 pub fn tick_item(
     config: &Config,
     id: &str,
@@ -947,97 +1425,265 @@ pub fn tick_item(
     status: crate::TickStatus,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    use crate::model::{AlternativeStatus, ChecklistStatus};
+    let (artifact, fp) = plan_edit_with_field(id, field)?;
+    if !fp.is_simple() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            TICK_NESTED_PATH_ERROR,
+            id,
+        )
+        .into());
+    }
+    let field = fp.as_simple().unwrap();
 
-    let field = normalize_field(field);
-    let artifact_type = ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))?;
-
-    let (ticked_text, status_str): (String, String) = match artifact_type {
-        ArtifactType::WorkItem => {
-            let mut entry = load_work_item(config, id)?;
-
-            let new_status = match status {
-                crate::TickStatus::Done => ChecklistStatus::Done,
-                crate::TickStatus::Pending => ChecklistStatus::Pending,
-                crate::TickStatus::Cancelled => ChecklistStatus::Cancelled,
-            };
-            let status_str = new_status.as_ref().to_string();
-
-            let ticked_text = match field {
-                "acceptance_criteria" => tick_checklist(
-                    &mut entry.spec.content.acceptance_criteria,
-                    |c| &c.text,
-                    |c| c.status = new_status,
-                    id,
-                    field,
-                    opts,
-                )?,
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0803UnknownField,
-                        format!("Unknown field for tick: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            };
-
-            write_work_item(&entry.path, &entry.spec, op)?;
-            (ticked_text, status_str)
-        }
-        ArtifactType::Adr => {
-            let mut entry = load_adr(config, id)?;
-
-            let new_status = match status {
-                crate::TickStatus::Done => AlternativeStatus::Accepted,
-                crate::TickStatus::Pending => AlternativeStatus::Considered,
-                crate::TickStatus::Cancelled => AlternativeStatus::Rejected,
-            };
-            let status_str = new_status.as_ref().to_string();
-
-            let ticked_text = match field {
-                "alternatives" => tick_checklist(
-                    &mut entry.spec.content.alternatives,
-                    |a| &a.text,
-                    |a| a.status = new_status,
-                    id,
-                    field,
-                    opts,
-                )?,
-                _ => {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0803UnknownField,
-                        format!("Unknown field for tick: {field}"),
-                        id,
-                    )
-                    .into());
-                }
-            };
-
-            write_adr(&entry.path, &entry.spec, op)?;
-            (ticked_text, status_str)
-        }
-        _ => {
+    let status_str = match (artifact, status) {
+        (ArtifactType::Adr, crate::TickStatus::Done) => "accepted",
+        (ArtifactType::Adr, crate::TickStatus::Pending) => "considered",
+        (ArtifactType::Adr, crate::TickStatus::Cancelled) => "rejected",
+        (ArtifactType::WorkItem, crate::TickStatus::Done) => "done",
+        (ArtifactType::WorkItem, crate::TickStatus::Pending) => "pending",
+        (ArtifactType::WorkItem, crate::TickStatus::Cancelled) => "cancelled",
+        (ArtifactType::Rfc | ArtifactType::Clause, _) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0813SupersedeNotSupported,
-                format!("Tick only works for work items and ADRs: {id}"),
+                TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
                 id,
             )
             .into());
         }
     };
+    let ticked_text = match artifact {
+        ArtifactType::Adr => tick_toml_field::<AdrTomlAdapter>(
+            config,
+            id,
+            field,
+            opts,
+            op,
+            ArtifactType::Adr,
+            status_str,
+        )?,
+        ArtifactType::WorkItem => tick_toml_field::<WorkTomlAdapter>(
+            config,
+            id,
+            field,
+            opts,
+            op,
+            ArtifactType::WorkItem,
+            status_str,
+        )?,
+        ArtifactType::Rfc | ArtifactType::Clause => unreachable!("handled above"),
+    };
 
     if !op.is_preview() {
-        ui::ticked(&ticked_text, &status_str);
+        ui::ticked(&ticked_text, status_str);
     }
 
     Ok(vec![])
 }
 
-/// Delete a clause from a draft RFC.
-///
-/// Safety: Only clauses in draft RFCs can be deleted per [[RFC-0000:C-STATUS-LIFECYCLE]].
-/// Atomically removes the clause JSON file and updates the parent RFC's clauses array.
+fn remove_simple_values_from_doc(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    field: &str,
+    id: &str,
+    opts: &MatchOptions,
+) -> anyhow::Result<Option<Vec<String>>> {
+    if let Some(removed) =
+        edit_runtime::remove_simple_list_values_with_matcher(artifact, doc, field, id, |items| {
+            resolve_match_indices(id, field, items, opts, MatchUse::Remove)
+        })?
+    {
+        return Ok(Some(removed));
+    }
+    edit_runtime::remove_simple_status_list_values_with_matcher(artifact, doc, field, id, |items| {
+        resolve_match_indices(id, field, items, opts, MatchUse::Remove)
+    })
+}
+
+fn remove_toml_field<A>(
+    config: &Config,
+    id: &str,
+    fp: &FieldPath,
+    field: &str,
+    opts: &MatchOptions,
+    op: WriteOp,
+    artifact: ArtifactType,
+    nested_handler: fn(
+        &mut A::Entry,
+        &FieldPath,
+        &MatchOptions,
+        &str,
+    ) -> anyhow::Result<Vec<String>>,
+) -> anyhow::Result<()>
+where
+    A: TomlAdapter,
+    A::Entry: TomlEditableEntry,
+{
+    let mut entry = A::load(config, id)?;
+    if let Some(simple) = fp.as_simple() {
+        let mut doc = serde_json::to_value(entry.spec())?;
+        let removed = remove_simple_values_from_doc(artifact, &mut doc, simple, id, opts)?
+            .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
+        *entry.spec_mut() = serde_json::from_value(doc)?;
+        A::write(config, &entry, op)?;
+        notify_removed(id, simple, &removed, op);
+    } else {
+        let removed = nested_handler(&mut entry, fp, opts, id)?;
+        A::write(config, &entry, op)?;
+        notify_removed(id, field, &removed, op);
+    }
+    Ok(())
+}
+
+fn remove_json_simple_list_field<A>(
+    config: &Config,
+    id: &str,
+    fp: &FieldPath,
+    opts: &MatchOptions,
+    op: WriteOp,
+    artifact: ArtifactType,
+    nested_error: &str,
+) -> anyhow::Result<()>
+where
+    A: JsonAdapter,
+    A::Data: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let simple = require_simple_field(fp, id, nested_error)?;
+    let mut loaded = A::load(config, id)?;
+    let mut doc = serde_json::to_value(&loaded.data)?;
+    let removed = remove_simple_values_from_doc(artifact, &mut doc, simple, id, opts)?
+        .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
+    loaded.data = serde_json::from_value(doc)?;
+    A::write(config, &loaded, op)?;
+    notify_removed(id, simple, &removed, op);
+    Ok(())
+}
+
+fn tick_toml_field<A>(
+    config: &Config,
+    id: &str,
+    field: &str,
+    opts: &MatchOptions,
+    op: WriteOp,
+    artifact: ArtifactType,
+    status_str: &str,
+) -> anyhow::Result<String>
+where
+    A: TomlAdapter,
+    A::Entry: TomlEditableEntry,
+{
+    if !edit_rules::simple_field_supports_verb(artifact.rule_key(), field, edit_rules::Verb::Tick) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0803UnknownField,
+            format!("Unknown field for tick: {field}"),
+            id,
+        )
+        .into());
+    }
+    let mut entry = A::load(config, id)?;
+    let mut doc = serde_json::to_value(entry.spec())?;
+    let ticked_text = edit_runtime::tick_simple_status_list_item_with_matcher(
+        artifact,
+        &mut doc,
+        field,
+        id,
+        status_str,
+        |items| resolve_match_indices(id, field, items, opts, MatchUse::TickSingle),
+    )?
+    .unwrap_or_else(|| unreachable!("validated fields with tick verb must be status lists"));
+    *entry.spec_mut() = serde_json::from_value(doc)?;
+    A::write(config, &entry, op)?;
+    Ok(ticked_text)
+}
+
+fn ensure_nested_depth(
+    fp: &FieldPath,
+    max_depth: usize,
+    scope: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    if fp.segments.len() > max_depth {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!(
+                "Path '{}' is too deep for {} (max {} segments)",
+                format_path(fp),
+                scope,
+                max_depth
+            ),
+            id,
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn ensure_nested_field_for_verb(
+    artifact: &str,
+    root: &str,
+    seg: &path::PathSegment,
+    verb: edit_rules::Verb,
+    fp: &FieldPath,
+    id: &str,
+    unknown_message: String,
+    unsupported_message: String,
+) -> anyhow::Result<edit_rules::FieldKind> {
+    let rule =
+        edit_rules::nested_field_rule(artifact, root, seg.name.as_str()).ok_or_else(|| {
+            Diagnostic::new(DiagnosticCode::E0815PathFieldNotFound, unknown_message, id)
+        })?;
+
+    if !edit_rules::nested_field_supports_verb(artifact, root, seg.name.as_str(), verb) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            unsupported_message,
+            id,
+        )
+        .into());
+    }
+
+    if matches!(rule.kind, edit_rules::FieldKind::Scalar) && seg.index.is_some() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!(
+                "Field '{}' does not support index in path '{}'",
+                seg.name,
+                format_path(fp)
+            ),
+            id,
+        )
+        .into());
+    }
+    Ok(rule.kind)
+}
+
+fn format_path(fp: &FieldPath) -> String {
+    fp.segments
+        .iter()
+        .map(|seg| match seg.index {
+            Some(idx) => format!("{}[{idx}]", seg.name),
+            None => seg.name.clone(),
+        })
+        .collect::<Vec<_>>()
+        .join(".")
+}
+
+fn confirm_delete_prompt(force: bool, op: WriteOp, prompt: &str) -> anyhow::Result<bool> {
+    if force || op.is_preview() {
+        return Ok(true);
+    }
+    use std::io::{self, Write};
+    print!("{prompt} [y/N] ");
+    io::stdout().flush()?;
+    let mut response = String::new();
+    io::stdin().read_line(&mut response)?;
+    if !response.trim().eq_ignore_ascii_case("y") {
+        ui::info("Deletion cancelled");
+        return Ok(false);
+    }
+    Ok(true)
+}
+
 pub fn delete_clause(
     config: &Config,
     clause_id: &str,
@@ -1046,7 +1692,6 @@ pub fn delete_clause(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     use crate::model::RfcStatus;
 
-    // Parse clause_id (RFC-0001:C-NAME)
     let parts: Vec<&str> = clause_id.split(':').collect();
     if parts.len() != 2 {
         return Err(Diagnostic::new(
@@ -1060,10 +1705,7 @@ pub fn delete_clause(
     let rfc_id = parts[0];
     let clause_name = parts[1];
 
-    // Load RFC and check status
-    let rfc_loaded = load_rfc(config, rfc_id)?;
-
-    // Safety check: Only draft RFCs allow clause deletion per [[RFC-0000:C-STATUS-LIFECYCLE]]
+    let rfc_loaded = RfcJsonAdapter::load(config, rfc_id)?;
     if rfc_loaded.data.status != RfcStatus::Draft {
         return Err(Diagnostic::new(
             DiagnosticCode::E0110RfcInvalidId,
@@ -1077,7 +1719,6 @@ pub fn delete_clause(
         .into());
     }
 
-    // Verify clause exists
     let clause_path = config
         .rfc_dir()
         .join(rfc_id)
@@ -1093,22 +1734,14 @@ pub fn delete_clause(
         .into());
     }
 
-    // Confirmation prompt (unless force or dry-run)
-    if !force && !op.is_preview() {
-        use std::io::{self, Write};
-        print!("Delete clause {} from {}? [y/N] ", clause_name, rfc_id);
-        io::stdout().flush()?;
-
-        let mut response = String::new();
-        io::stdin().read_line(&mut response)?;
-
-        if !response.trim().eq_ignore_ascii_case("y") {
-            ui::info("Deletion cancelled");
-            return Ok(vec![]);
-        }
+    if !confirm_delete_prompt(
+        force,
+        op,
+        &format!("Delete clause {} from {}?", clause_name, rfc_id),
+    )? {
+        return Ok(vec![]);
     }
 
-    // Update RFC to remove clause from sections
     let mut rfc = rfc_loaded.data.clone();
     let clause_rel_path = format!("clauses/{}.json", clause_name);
 
@@ -1133,15 +1766,13 @@ pub fn delete_clause(
         .into());
     }
 
-    // Write updated RFC
-    write_rfc(
+    crate::write::write_rfc(
         &rfc_loaded.path,
         &rfc,
         op,
         Some(&config.display_path(&rfc_loaded.path)),
     )?;
 
-    // Delete clause file
     delete_file(&clause_path, op, Some(&config.display_path(&clause_path)))?;
 
     if !op.is_preview() {
@@ -1151,10 +1782,6 @@ pub fn delete_clause(
     Ok(vec![])
 }
 
-/// Delete a queued work item.
-///
-/// Safety: Only work items in queue status can be deleted.
-/// Work items that have been activated should use 'cancelled' status instead.
 pub fn delete_work_item(
     config: &Config,
     id: &str,
@@ -1164,11 +1791,9 @@ pub fn delete_work_item(
     use crate::load::load_project_with_warnings;
     use crate::model::WorkItemStatus;
 
-    // Load work item
-    let entry = load_work_item(config, id)?;
+    let entry = WorkTomlAdapter::load(config, id)?;
     let wi = &entry.spec;
 
-    // Safety check: Only queue-status work items can be deleted
     if wi.govctl.status != WorkItemStatus::Queue {
         return Err(Diagnostic::new(
             DiagnosticCode::E0402WorkNotFound,
@@ -1187,7 +1812,6 @@ pub fn delete_work_item(
     let load_result = match load_project_with_warnings(config) {
         Ok(result) => result,
         Err(_) => {
-            // If project fails to load, proceed anyway (deletion might help fix it)
             return proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op);
         }
     };
@@ -1195,21 +1819,18 @@ pub fn delete_work_item(
     let index = &load_result.index;
     let mut referenced_by = Vec::new();
 
-    // Check RFCs
     for rfc in &index.rfcs {
         if rfc.rfc.refs.contains(&wi.govctl.id) {
             referenced_by.push(rfc.rfc.rfc_id.clone());
         }
     }
 
-    // Check ADRs
     for adr in &index.adrs {
         if adr.spec.govctl.refs.contains(&wi.govctl.id) {
             referenced_by.push(adr.spec.govctl.id.clone());
         }
     }
 
-    // Check other work items
     for other_wi in &index.work_items {
         if other_wi.spec.govctl.id != wi.govctl.id
             && other_wi.spec.govctl.refs.contains(&wi.govctl.id)
@@ -1234,7 +1855,6 @@ pub fn delete_work_item(
     proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op)
 }
 
-/// Helper function to proceed with deletion after checks pass
 fn proceed_with_deletion(
     config: &Config,
     path: &std::path::Path,
@@ -1242,22 +1862,10 @@ fn proceed_with_deletion(
     force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    // Confirmation prompt (unless force or dry-run)
-    if !force && !op.is_preview() {
-        use std::io::{self, Write};
-        print!("Delete work item {}? [y/N] ", id);
-        io::stdout().flush()?;
-
-        let mut response = String::new();
-        io::stdin().read_line(&mut response)?;
-
-        if !response.trim().eq_ignore_ascii_case("y") {
-            ui::info("Deletion cancelled");
-            return Ok(vec![]);
-        }
+    if !confirm_delete_prompt(force, op, &format!("Delete work item {}?", id))? {
+        return Ok(vec![]);
     }
 
-    // Delete file
     delete_file(path, op, Some(&config.display_path(path)))?;
 
     if !op.is_preview() {
@@ -1267,37 +1875,74 @@ fn proceed_with_deletion(
     Ok(vec![])
 }
 
-/// Resolve match result to a single index (tick doesn't allow multiple)
-fn resolve_single_match(
-    id: &str,
-    field: &str,
-    items: &[&str],
-    opts: &MatchOptions,
-) -> anyhow::Result<usize> {
-    let indices = resolve_matches(id, field, items, opts)?;
-    if indices.len() == 1 {
-        Ok(indices[0])
-    } else {
-        // Multiple matches not allowed for tick operations
-        let pattern = opts.pattern.unwrap_or("");
-        let mut msg = format!(
-            "{} items match '{}' in {}.{}:\n",
-            indices.len(),
-            pattern,
-            id,
-            field
-        );
-        for &i in &indices {
-            msg.push_str(&format!("  [{}] {}\n", i, items[i]));
-        }
-        msg.push_str("\nUse more specific pattern or --at <index> to select one");
-        Err(Diagnostic::new(DiagnosticCode::E0807AmbiguousMatch, msg, id).into())
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    enum MatchResult {
+        None,
+        Single(usize),
+        Multiple(Vec<usize>),
+    }
+
+    fn find_matches(items: &[&str], opts: &MatchOptions) -> anyhow::Result<MatchResult> {
+        if let Some(idx) = opts.at {
+            let len = items.len() as i32;
+            let resolved = if idx < 0 { len + idx } else { idx };
+            if resolved < 0 || resolved >= len {
+                return Err(anyhow::anyhow!(
+                    "Index {} out of range (array has {} items)",
+                    idx,
+                    items.len()
+                ));
+            }
+            return Ok(MatchResult::Single(resolved as usize));
+        }
+
+        let pattern = opts
+            .pattern
+            .ok_or_else(|| anyhow::anyhow!("Pattern or --at is required"))?;
+
+        let indices = if opts.regex {
+            let re = Regex::new(pattern).map_err(|e| anyhow::anyhow!("Invalid regex: {e}"))?;
+            items
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| re.is_match(s))
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        } else if opts.exact {
+            items
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| **s == pattern)
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        } else {
+            let pattern_lower = pattern.to_lowercase();
+            items
+                .iter()
+                .enumerate()
+                .filter(|(_, s)| s.to_lowercase().contains(&pattern_lower))
+                .map(|(i, _)| i)
+                .collect::<Vec<_>>()
+        };
+
+        Ok(match indices.len() {
+            0 => MatchResult::None,
+            1 => MatchResult::Single(indices[0]),
+            _ => MatchResult::Multiple(indices),
+        })
+    }
+
+    fn remove_indices<T>(vec: &mut Vec<T>, indices: &[usize]) {
+        let mut sorted: Vec<usize> = indices.to_vec();
+        sorted.sort_by(|a, b| b.cmp(a)); // descending
+        for i in sorted {
+            vec.remove(i);
+        }
+    }
 
     // =========================================================================
     // ArtifactType::from_id Tests

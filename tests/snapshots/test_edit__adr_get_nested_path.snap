@@ -1,0 +1,39 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Path Test
+Created ADR: gov/adr/ADR-XXXX-path-test.toml
+exit: 0
+
+$ govctl adr add ADR-0001 alternatives Use traits --pro Flexible --pro Reusable --con Complex
+Added 'Use traits' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].text
+Use traits
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].pros
+Flexible
+Reusable
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].pros[0]
+Flexible
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].cons
+Complex
+exit: 0
+
+$ govctl adr get ADR-0001 alternatives[0]
+text = "Use traits"
+status = "considered"
+pros = [
+    "Flexible",
+    "Reusable",
+]
+cons = ["Complex"]
+
+exit: 0

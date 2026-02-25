@@ -1,0 +1,23 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Compat Test
+Created ADR: gov/adr/ADR-XXXX-compat-test.toml
+exit: 0
+
+$ govctl adr set ADR-0001 content.decision A dotted decision
+Set ADR-0001.decision = A dotted decision
+exit: 0
+
+$ govctl adr get ADR-0001 content.decision
+A dotted decision
+exit: 0
+
+$ govctl adr set ADR-0001 govctl.title Compat Title
+Set ADR-0001.title = Compat Title
+exit: 0
+
+$ govctl adr get ADR-0001 govctl.title
+Compat Title
+exit: 0

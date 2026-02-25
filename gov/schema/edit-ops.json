@@ -1,0 +1,192 @@
+{
+  "version": 1,
+  "aliases": [
+    { "alias": "ac", "canonical": "acceptance_criteria" },
+    { "alias": "alt", "canonical": "alternatives" },
+    { "alias": "desc", "canonical": "description" },
+    { "alias": "pro", "canonical": "pros" },
+    { "alias": "con", "canonical": "cons" },
+    { "alias": "reason", "canonical": "rejection_reason" }
+  ],
+  "legacy_prefixes": [
+    {
+      "prefix": "content",
+      "allowed_fields": [
+        "context",
+        "decision",
+        "consequences",
+        "description",
+        "alternatives",
+        "acceptance_criteria",
+        "journal",
+        "notes"
+      ]
+    },
+    {
+      "prefix": "govctl",
+      "allowed_fields": [
+        "id",
+        "status",
+        "title",
+        "date",
+        "refs",
+        "superseded_by",
+        "started",
+        "completed",
+        "created",
+        "phase",
+        "version",
+        "owners"
+      ]
+    }
+  ],
+  "simple_rules": [
+    { "artifact": "clause", "name": "text", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "clause", "name": "title", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "clause", "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "clause", "name": "kind", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "clause", "name": "superseded_by", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "clause", "name": "since", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "clause", "name": "anchors", "kind": "list", "verbs": ["add", "remove"] },
+
+    { "artifact": "rfc", "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "rfc", "name": "phase", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "rfc", "name": "title", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "rfc", "name": "version", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "rfc", "name": "owners", "kind": "list", "verbs": ["get", "add", "remove"] },
+    { "artifact": "rfc", "name": "refs", "kind": "list", "verbs": ["get", "add", "remove"] },
+    { "artifact": "rfc", "name": "supersedes", "kind": "scalar", "verbs": ["get"] },
+    { "artifact": "rfc", "name": "created", "kind": "scalar", "verbs": ["get"] },
+    { "artifact": "rfc", "name": "updated", "kind": "scalar", "verbs": ["get"] },
+
+    { "artifact": "adr", "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "adr", "name": "title", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "adr", "name": "date", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "adr", "name": "superseded_by", "kind": "scalar", "verbs": ["get"] },
+    { "artifact": "adr", "name": "refs", "kind": "list", "verbs": ["get", "add", "remove"] },
+    { "artifact": "adr", "name": "context", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "adr", "name": "decision", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "adr", "name": "consequences", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "adr", "name": "alternatives", "kind": "list", "verbs": ["get", "add", "remove", "tick"] },
+
+    { "artifact": "work", "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "work", "name": "title", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "work", "name": "started", "kind": "scalar", "verbs": ["get"] },
+    { "artifact": "work", "name": "completed", "kind": "scalar", "verbs": ["get"] },
+    { "artifact": "work", "name": "refs", "kind": "list", "verbs": ["get", "add", "remove"] },
+    { "artifact": "work", "name": "description", "kind": "scalar", "verbs": ["get", "set"] },
+    { "artifact": "work", "name": "acceptance_criteria", "kind": "list", "verbs": ["get", "add", "remove", "tick"] },
+    { "artifact": "work", "name": "journal", "kind": "list", "verbs": ["add"] },
+    { "artifact": "work", "name": "notes", "kind": "list", "verbs": ["get", "add", "remove"] }
+  ],
+  "runtime_fields": [
+    { "artifact": "rfc", "name": "status", "get": { "path": ["status"], "render": "scalar" }, "set": { "path": ["status"], "mode": { "type": "enum", "allowed": ["draft", "normative", "deprecated"], "invalid_msg": "Invalid status value", "code": "E0101RfcSchemaInvalid" } }, "list_path": null },
+    { "artifact": "rfc", "name": "phase", "get": { "path": ["phase"], "render": "scalar" }, "set": { "path": ["phase"], "mode": { "type": "enum", "allowed": ["spec", "impl", "test", "stable"], "invalid_msg": "Invalid phase value", "code": "E0101RfcSchemaInvalid" } }, "list_path": null },
+    { "artifact": "rfc", "name": "title", "get": { "path": ["title"], "render": "scalar" }, "set": { "path": ["title"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "rfc", "name": "version", "get": { "path": ["version"], "render": "scalar" }, "set": { "path": ["version"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "rfc", "name": "owners", "get": { "path": ["owners"], "render": "csv_strings" }, "set": null, "list_path": ["owners"] },
+    { "artifact": "rfc", "name": "refs", "get": { "path": ["refs"], "render": "csv_strings" }, "set": null, "list_path": ["refs"] },
+    { "artifact": "rfc", "name": "supersedes", "get": { "path": ["supersedes"], "render": "scalar" }, "set": null, "list_path": null },
+    { "artifact": "rfc", "name": "created", "get": { "path": ["created"], "render": "scalar" }, "set": null, "list_path": null },
+    { "artifact": "rfc", "name": "updated", "get": { "path": ["updated"], "render": "scalar" }, "set": null, "list_path": null },
+
+    { "artifact": "clause", "name": "text", "get": { "path": ["text"], "render": "scalar" }, "set": { "path": ["text"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "clause", "name": "title", "get": { "path": ["title"], "render": "scalar" }, "set": { "path": ["title"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "clause", "name": "status", "get": { "path": ["status"], "render": "scalar" }, "set": { "path": ["status"], "mode": { "type": "enum", "allowed": ["active", "deprecated", "superseded"], "invalid_msg": "Invalid status value", "code": "E0201ClauseSchemaInvalid" } }, "list_path": null },
+    { "artifact": "clause", "name": "kind", "get": { "path": ["kind"], "render": "scalar" }, "set": { "path": ["kind"], "mode": { "type": "enum", "allowed": ["normative", "informative"], "invalid_msg": "Invalid kind value", "code": "E0201ClauseSchemaInvalid" } }, "list_path": null },
+    { "artifact": "clause", "name": "superseded_by", "get": { "path": ["superseded_by"], "render": "scalar" }, "set": { "path": ["superseded_by"], "mode": { "type": "optional_string", "empty_as_null": true } }, "list_path": null },
+    { "artifact": "clause", "name": "since", "get": { "path": ["since"], "render": "scalar" }, "set": { "path": ["since"], "mode": { "type": "optional_string", "empty_as_null": false } }, "list_path": null },
+    { "artifact": "clause", "name": "anchors", "get": null, "set": null, "list_path": ["anchors"] },
+
+    { "artifact": "adr", "name": "status", "get": { "path": ["govctl", "status"], "render": "scalar" }, "set": { "path": ["govctl", "status"], "mode": { "type": "enum", "allowed": ["proposed", "accepted", "rejected", "superseded"], "invalid_msg": "Invalid status", "code": null } }, "list_path": null },
+    { "artifact": "adr", "name": "title", "get": { "path": ["govctl", "title"], "render": "scalar" }, "set": { "path": ["govctl", "title"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "adr", "name": "date", "get": { "path": ["govctl", "date"], "render": "scalar" }, "set": { "path": ["govctl", "date"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "adr", "name": "superseded_by", "get": { "path": ["govctl", "superseded_by"], "render": "scalar" }, "set": null, "list_path": null },
+    { "artifact": "adr", "name": "refs", "get": { "path": ["govctl", "refs"], "render": "csv_strings" }, "set": null, "list_path": ["govctl", "refs"] },
+    { "artifact": "adr", "name": "context", "get": { "path": ["content", "context"], "render": "scalar" }, "set": { "path": ["content", "context"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "adr", "name": "decision", "get": { "path": ["content", "decision"], "render": "scalar" }, "set": { "path": ["content", "decision"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "adr", "name": "consequences", "get": { "path": ["content", "consequences"], "render": "scalar" }, "set": { "path": ["content", "consequences"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "adr", "name": "alternatives", "get": { "path": ["content", "alternatives"], "render": "status_lines", "status_key": "status", "text_key": "text" }, "set": null, "list_path": null },
+
+    { "artifact": "work", "name": "status", "get": { "path": ["govctl", "status"], "render": "scalar" }, "set": { "path": ["govctl", "status"], "mode": { "type": "enum", "allowed": ["queue", "active", "done", "cancelled"], "invalid_msg": "Invalid status", "code": null } }, "list_path": null },
+    { "artifact": "work", "name": "title", "get": { "path": ["govctl", "title"], "render": "scalar" }, "set": { "path": ["govctl", "title"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "work", "name": "started", "get": { "path": ["govctl", "started"], "render": "scalar" }, "set": null, "list_path": null },
+    { "artifact": "work", "name": "completed", "get": { "path": ["govctl", "completed"], "render": "scalar" }, "set": null, "list_path": null },
+    { "artifact": "work", "name": "refs", "get": { "path": ["govctl", "refs"], "render": "csv_strings" }, "set": null, "list_path": ["govctl", "refs"] },
+    { "artifact": "work", "name": "description", "get": { "path": ["content", "description"], "render": "scalar" }, "set": { "path": ["content", "description"], "mode": { "type": "string" } }, "list_path": null },
+    { "artifact": "work", "name": "acceptance_criteria", "get": { "path": ["content", "acceptance_criteria"], "render": "status_lines", "status_key": "status", "text_key": "text" }, "set": null, "list_path": null },
+    { "artifact": "work", "name": "notes", "get": { "path": ["content", "notes"], "render": "line_strings" }, "set": null, "list_path": ["content", "notes"] }
+  ],
+  "nested_rules": [
+    {
+      "artifact": "adr",
+      "root": "alternatives",
+      "requires_index": true,
+      "max_depth": 2,
+      "fields": [
+        { "name": "text", "kind": "scalar", "verbs": ["get", "set"] },
+        { "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+        {
+          "name": "rejection_reason",
+          "kind": "scalar",
+          "verbs": ["get", "set"]
+        },
+        {
+          "name": "pros",
+          "kind": "list",
+          "verbs": ["get", "set", "add", "remove"]
+        },
+        {
+          "name": "cons",
+          "kind": "list",
+          "verbs": ["get", "set", "add", "remove"]
+        }
+      ]
+    },
+    {
+      "artifact": "work",
+      "root": "journal",
+      "requires_index": true,
+      "max_depth": 2,
+      "fields": [
+        { "name": "content", "kind": "scalar", "verbs": ["get", "set"] },
+        { "name": "date", "kind": "scalar", "verbs": ["get", "set"] },
+        { "name": "scope", "kind": "scalar", "verbs": ["get", "set"] }
+      ]
+    },
+    {
+      "artifact": "work",
+      "root": "acceptance_criteria",
+      "requires_index": true,
+      "max_depth": 2,
+      "fields": [
+        { "name": "text", "kind": "scalar", "verbs": ["get", "set"] },
+        { "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+        { "name": "category", "kind": "scalar", "verbs": ["get", "set"] }
+      ]
+    },
+    {
+      "artifact": "work",
+      "root": "notes",
+      "requires_index": true,
+      "max_depth": 1,
+      "fields": []
+    }
+  ],
+  "validation_rules": [
+    { "artifact": "clause", "field": "since", "rule": "semver" },
+    {
+      "artifact": "clause",
+      "field": "superseded_by",
+      "rule": "clause_superseded_by"
+    },
+    { "artifact": "clause", "field": "status", "rule": "enum_value" },
+    { "artifact": "clause", "field": "kind", "rule": "enum_value" },
+    { "artifact": "rfc", "field": "version", "rule": "semver" },
+    { "artifact": "rfc", "field": "status", "rule": "enum_value" },
+    { "artifact": "rfc", "field": "phase", "rule": "enum_value" },
+    { "artifact": "adr", "field": "status", "rule": "enum_value" },
+    { "artifact": "adr", "field": "superseded_by", "rule": "artifact_ref" },
+    { "artifact": "work", "field": "status", "rule": "enum_value" }
+  ]
+}

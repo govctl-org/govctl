@@ -1,0 +1,144 @@
+[govctl]
+schema = 1
+id = "ADR-0030"
+title = "Parser strategy for path-based field expressions"
+status = "accepted"
+date = "2026-02-25"
+refs = [
+    "ADR-0029",
+    "ADR-0017",
+    "ADR-0007",
+    "RFC-0002",
+]
+
+[content]
+context = """
+`govctl` recently introduced path-based field addressing in [[ADR-0029]] for commands like `get/set/add/remove`. During implementation review, we identified parser correctness risks in the current hand-written parser flow (for example, extra trailing segments being ignored, and some path-shape rules enforced inconsistently by verb).
+
+### Problem Statement
+
+We need a parser design that guarantees strict grammar handling, full-input consumption, and stable diagnostics, while preserving existing CLI compatibility behavior for legacy field forms.
+
+### Scope
+
+This ADR focuses on parser architecture for field-path expressions only:
+- grammar parsing and AST shape
+- parser technology choice
+- legacy compatibility policy (`content.*`, `govctl.*`, aliases)
+- validation layering (parse-time vs verb/resolution-time)
+
+It does not decide broader CLI command architecture, which remains governed by [[RFC-0002]] and [[ADR-0017]].
+
+### Constraints
+
+- Maintain resource-first and verb-separated CLI semantics from [[RFC-0002]] and [[ADR-0017]].
+- Keep compatibility commitments from [[ADR-0029]] for legacy dotted prefixes and short aliases.
+- Preserve deterministic diagnostic behavior (`E0814` to `E0818`) for automation and tests.
+- Keep parser dependency and complexity proportionate to grammar size.
+
+### Options Considered
+
+- Option 1: Keep manual parser and harden it.
+- Option 2: Use a parser combinator library (`winnow`) with a typed AST.
+- Option 3: Use a PEG/grammar generator approach (`pest`/similar)."""
+decision = """
+We will adopt **`winnow`-based strict parsing with a typed `FieldPath` AST**, replacing the ad-hoc character-walk parser for path expressions.
+
+### Technical Selection
+
+`winnow` is selected because it gives us:
+- explicit grammar composition in Rust types
+- full-input consumption checks by default pattern (`terminated(parser, eof)`)
+- precise, testable parse failures without introducing a full external DSL/toolchain
+- lower operational overhead than a separate grammar generator for this small grammar
+
+### Grammar Contract
+
+- `path := segment (("." segment) | ("[" index "]"))*`
+- `segment := [a-z_][a-z0-9_]*`
+- `index := -?[0-9]+`
+
+Parsing MUST fail if any trailing tokens remain unconsumed.
+
+### Legacy Field Compatibility Policy
+
+Compatibility is preserved as a **normalization layer after parse, before resolution**:
+- canonical field names always win over aliases in the same scope
+- supported aliases remain: `ac`, `alt`, `desc`, `pro`, `con`, `reason`
+- legacy two-segment prefixes remain: `content.<field>`, `govctl.<field>`
+- prefix collapse is limited to compatibility-allowed roots and known simple fields; invalid combinations fail with diagnostics
+
+### Validation Layering
+
+- Parse-time validation: lexical/grammar correctness, token class, full consumption
+- Normalization-time validation: alias/prefix compatibility rules
+- Resolution-time validation: existence, index bounds, verb/path shape constraints, type mismatch
+
+### Non-Goals
+
+- No expression language expansion (wildcards, slices, recursive descent) in this ADR
+- No change to command verbs or lifecycle semantics
+
+### Migration Plan
+
+1. Introduce `winnow` parser behind current `parse_field_path` API.
+2. Keep current diagnostics mapping (`E0814`/`E0815`/`E0816`/`E0817`/`E0818`).
+3. Add golden tests for legacy compatibility inputs.
+4. Add negative tests for over-deep/over-specified paths and verb-shape violations.
+5. Remove old parser implementation after parity tests pass."""
+consequences = """
+### Positive
+
+- Eliminates a class of silent-acceptance bugs via full-input consumption.
+- Makes grammar behavior explicit and easier to reason about during review.
+- Provides a stable foundation for future extensions without reintroducing ad-hoc state logic.
+- Improves confidence in diagnostics by separating parse/normalize/resolve phases.
+
+### Negative
+
+- Adds a third-party parsing dependency.
+  - Mitigation: keep dependency surface small and isolate parser module behind a narrow API.
+- Introduces a learning curve for maintainers unfamiliar with parser combinators.
+  - Mitigation: document grammar and parser module invariants with examples and tests.
+- Migration requires careful parity testing to avoid compatibility regressions.
+  - Mitigation: snapshot parity suite for legacy field forms and aliases before rollout.
+
+### Neutral
+
+- Runtime cost is expected to be negligible for CLI-scale path strings; this should be verified by micro-benchmarks in CI but is not expected to be user-visible."""
+
+[[content.alternatives]]
+text = "Option 1: Keep manual parser and harden it"
+status = "rejected"
+pros = [
+    "No new dependencies",
+    "Minimal refactor scope",
+]
+cons = [
+    "Higher long-term maintenance risk for state-machine edge cases",
+    "Harder to prove full-consumption and grammar invariants",
+]
+rejection_reason = "Recent review findings indicate brittle behavior under malformed or over-specified paths"
+
+[[content.alternatives]]
+text = "Option 2: Use winnow parser combinators with typed AST"
+status = "accepted"
+pros = [
+    "Strict grammar with full-input consumption",
+    "Rust-native and testable composition",
+    "Balanced complexity for small grammar",
+]
+cons = ["Adds dependency and parser-combinator learning curve"]
+
+[[content.alternatives]]
+text = "Option 3: Use PEG/grammar generator approach"
+status = "rejected"
+pros = [
+    "Clear formal grammar artifacts",
+    "Good for larger language evolution",
+]
+cons = [
+    "Heavier tooling/runtime surface for current grammar size",
+    "Additional integration overhead without near-term need",
+]
+rejection_reason = "Overkill for current path grammar scope"

@@ -1,0 +1,162 @@
+[govctl]
+schema = 1
+id = "ADR-0029"
+title = "Path-based nested field addressing for artifact edits"
+status = "accepted"
+date = "2026-02-25"
+refs = [
+    "RFC-0002",
+    "ADR-0007",
+    "ADR-0017",
+    "ADR-0027",
+]
+
+[content]
+context = """
+`govctl` currently edits artifacts with resource-scoped verbs (`set`, `add`, `remove`, `tick`), matching [[ADR-0017]].
+
+### Problem Statement
+
+The current CLI shape becomes verbose and awkward when users need to edit deeply nested fields, especially ADR alternatives extended by [[ADR-0027]] (`pros`, `cons`, `rejection_reason`).
+
+Concrete pain point today:
+
+```bash
+# Create or replace whole alternative entries
+govctl adr add ADR-0001 alternatives "Option 3: Use Raft" --pro "Strong consistency"
+
+# Remove by match or index
+govctl adr remove ADR-0001 alternatives "Option 3" --exact
+```
+
+What is missing is direct nested addressing, for example: update only the second pro of the second alternative without rewriting the entire object.
+
+### Constraints
+
+- Preserve resource-first command architecture from [[RFC-0002]].
+- Preserve verb semantics from [[ADR-0017]] instead of replacing everything with a new universal verb.
+- Reuse existing array matching behavior from [[ADR-0007]] where possible.
+- Keep backward compatibility for existing scripts and habits.
+
+### Options Considered
+
+- Option 1: Keep current field-only operations and rely on manual TOML edits for nested changes.
+- Option 2: Introduce a new universal `edit` command with JSONPath-like syntax.
+- Option 3: Keep current verbs, but allow a path expression in the field position for nested addressing."""
+decision = """
+We will **introduce path-based nested field addressing as an additive capability**, while keeping existing resource-scoped verbs (`set`, `add`, `remove`, `tick`) defined in [[ADR-0017]].
+
+This decision is primarily motivated by [[ADR-0027]], which introduced structured ADR alternatives (`pros`, `cons`, `rejection_reason`) that need precise nested edits.
+
+Path expressions will be accepted where a field name is currently accepted for `get`, `set`, `add`, and `remove`.
+
+### Path Syntax (proposed)
+
+- Grammar (strict): `path := segment ('.' segment | "[" index "]")*`
+- Segment token: `segment := [a-z_][a-z0-9_]*`
+- Index token: `index := -?[0-9]+`
+- Dot notation for object traversal: `content.alternatives`
+- Bracket notation for array indexing: `alternatives[2].pros[2]`
+- Index semantics: **0-based**, with optional negative index for from-end addressing (aligned with [[ADR-0007]] `--at` semantics)
+- Aliases for ergonomics:
+  - `alt` -> `alternatives`
+  - `pro` -> `pros`
+  - `con` -> `cons`
+  - `reason` -> `rejection_reason`
+
+### Alias Collision Rule
+
+Canonical field names take precedence. Alias expansion applies only when the token is not an exact field name in the current object scope. This keeps future schema evolution safe and predictable.
+
+### Verb Semantics
+
+- `get`: existing read verb, now path-aware for scalar/object/array reads
+- `set`: replace scalar value at resolved path
+- `add`: append into array resolved by path
+- `remove`: remove by explicit indexed path, or by existing matcher options when path resolves to an array
+- `remove` conflict rule: explicit indexed paths and matcher flags (`--exact`, `--regex`, `--all`, pattern args) are mutually exclusive; the CLI MUST fail fast with a usage error when mixed.
+- `tick`: unchanged behavior; only checklist roots are supported (`alternatives` for ADR, `acceptance_criteria` for work item). Nested paths for `tick` are invalid.
+
+### Before and After Example
+
+```bash
+# Before: remove and re-add an entire alternative to change one nested value
+govctl adr remove ADR-0001 alternatives "Option 3" --exact
+govctl adr add ADR-0001 alternatives "Option 3: Use Raft" --pro "Updated pro"
+
+# After: direct nested edit
+govctl adr set ADR-0001 alt[2].pro[0] "Updated pro"
+```
+
+### Validation Timing
+
+- Eager validation (parse time): path grammar, token class, alias normalization
+- Resolution-time validation: field existence, index bounds, target type compatibility for verb
+
+### Compatibility and Convergence
+
+- Existing top-level field syntax remains valid.
+- Existing `adr add ... alternatives --pro/--con/--reject-reason` remains supported during migration.
+- Convergence plan: docs and examples immediately prefer path syntax; legacy alternative-specific flags receive deprecation warnings after rollout stabilizes (target: two minor releases), then are removed only in a major release."""
+consequences = """
+### Positive
+
+- Enables concise, direct nested edits such as `alt[2].pro[2]` without editing raw TOML.
+- Preserves current mental model (`set/add/remove/tick`) and command discoverability.
+- Reuses existing match semantics from [[ADR-0007]], reducing conceptual fragmentation.
+- Creates a reusable abstraction for nested fields across ADRs and work items.
+
+### Negative
+
+- Adds parser and resolver complexity in the edit pipeline.
+  - Mitigation: strict grammar, bounded depth, and dedicated parser tests (including fuzz/property tests).
+- Requires broader validation and diagnostics coverage.
+  - Mitigation: explicit diagnostic matrix for parse/resolution/type errors and snapshot tests for representative failures.
+- Dual syntax during migration (`--pro/--con` and path syntax) can confuse users.
+  - Mitigation: docs prefer path syntax immediately, deprecation warnings for legacy flags after rollout, and a published convergence timeline.
+- Documentation and examples require coordinated updates across guides and help text.
+  - Mitigation: track doc updates in implementation work items and gate release on docs parity checks.
+
+### Neutral
+
+- No data migration is required for existing ADR files; the change is CLI-surface and parser behavior.
+- Alias set is intentionally small and closed (`alt`, `pro`, `con`, `reason`); future alias additions require explicit schema/governance update to avoid accidental drift."""
+
+[[content.alternatives]]
+text = "Option 1: Keep current field-only operations and use manual TOML edits for nested changes"
+status = "rejected"
+pros = [
+    "No new parser or resolver",
+    "Lowest immediate implementation risk",
+]
+cons = [
+    "Poor CLI ergonomics for nested edits",
+    "Hard to script precise updates for ADR-0027 nested fields",
+]
+rejection_reason = "Does not address the primary usability gap"
+
+[[content.alternatives]]
+text = "Option 2: Add a universal edit verb with JSONPath-like expressions"
+status = "rejected"
+pros = [
+    "Single conceptual mutation entry point",
+    "Potentially expressive for advanced operations",
+]
+cons = [
+    "Conflicts with verb separation rationale in ADR-0017",
+    "Higher migration and discoverability cost",
+]
+rejection_reason = "Overlaps existing verbs and weakens current command architecture"
+
+[[content.alternatives]]
+text = "Option 3: Keep verbs and add path-based field addressing"
+status = "accepted"
+pros = [
+    "Compatible with existing command model",
+    "Directly solves nested edit ergonomics",
+    "Supports incremental rollout with low script breakage",
+]
+cons = [
+    "Introduces parser and resolver complexity",
+    "Creates temporary dual-syntax cognitive load during migration",
+]

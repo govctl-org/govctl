@@ -82,6 +82,11 @@ pub enum DiagnosticCode {
     E0811CannotRemoveFromField,
     E0812FieldEmpty,
     E0813SupersedeNotSupported,
+    E0814InvalidPath,
+    E0815PathFieldNotFound,
+    E0816PathIndexOutOfBounds,
+    E0817PathTypeMismatch,
+    E0818PathIndexConflict,
 
     // General errors (E09xx)
     E0901IoError,
@@ -178,6 +183,11 @@ impl DiagnosticCode {
             Self::E0811CannotRemoveFromField => "E0811",
             Self::E0812FieldEmpty => "E0812",
             Self::E0813SupersedeNotSupported => "E0813",
+            Self::E0814InvalidPath => "E0814",
+            Self::E0815PathFieldNotFound => "E0815",
+            Self::E0816PathIndexOutOfBounds => "E0816",
+            Self::E0817PathTypeMismatch => "E0817",
+            Self::E0818PathIndexConflict => "E0818",
             // E09xx - General
             Self::E0901IoError => "E0901",
             Self::E0902JsonParseError => "E0902",

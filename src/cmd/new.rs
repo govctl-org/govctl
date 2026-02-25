@@ -150,10 +150,12 @@ pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Resul
 
     for (rel_path, template) in all_templates() {
         let path = agent_dir.join(rel_path);
+        let display_path = config.display_path(&path);
 
         // Create parent directory if needed
         if let Some(parent) = path.parent() {
-            create_dir_all(parent, op, None)?;
+            let display_parent = config.display_path(parent);
+            create_dir_all(parent, op, Some(&display_parent))?;
         }
 
         // Check if file exists and skip if not forcing
@@ -169,13 +171,13 @@ pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Resul
         }
 
         // Write template
-        write_file(&path, template, op, None)?;
+        write_file(&path, template, op, Some(&display_path))?;
 
         if !op.is_preview() {
             if path.exists() && force {
-                ui::info(format!("Updated {}", path.display()));
+                ui::info(format!("Updated {}", display_path.display()));
             } else {
-                ui::created_path(&path);
+                ui::created_path(&display_path);
             }
         }
         synced += 1;
@@ -280,7 +282,8 @@ fn create_rfc(
     }
 
     // Create directories
-    create_dir_all(&clauses_dir, op, None)?;
+    let display_clauses_dir = config.display_path(&clauses_dir);
+    create_dir_all(&clauses_dir, op, Some(&display_clauses_dir))?;
 
     // Create rfc.json
     let rfc = RfcSpec {
@@ -320,7 +323,8 @@ fn create_rfc(
 
     let rfc_json = rfc_dir.join("rfc.json");
     let content = serde_json::to_string_pretty(&rfc)?;
-    write_file(&rfc_json, &content, op, None)?;
+    let display_rfc_json = config.display_path(&rfc_json);
+    write_file(&rfc_json, &content, op, Some(&display_rfc_json))?;
 
     if !op.is_preview() {
         ui::created("RFC", &config.display_path(&rfc_json));
@@ -388,7 +392,8 @@ fn create_clause(
         .join(format!("{clause_name}.json"));
 
     let content = serde_json::to_string_pretty(&clause)?;
-    write_file(&clause_path, &content, op, None)?;
+    let display_clause_path = config.display_path(&clause_path);
+    write_file(&clause_path, &content, op, Some(&display_clause_path))?;
 
     // Update RFC to include clause in section
     let clause_rel_path = format!("clauses/{clause_name}.json");
@@ -407,7 +412,8 @@ fn create_clause(
 
     // Write updated RFC
     let rfc_content = serde_json::to_string_pretty(&rfc)?;
-    write_file(&rfc_json, &rfc_content, op, None)?;
+    let display_rfc_json = config.display_path(&rfc_json);
+    write_file(&rfc_json, &rfc_content, op, Some(&display_rfc_json))?;
 
     if !op.is_preview() {
         ui::created("clause", &config.display_path(&clause_path));
@@ -424,7 +430,8 @@ fn create_clause(
 fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     // Find next ADR number
     let adr_dir = config.adr_dir();
-    create_dir_all(&adr_dir, op, None)?;
+    let display_adr_dir = config.display_path(&adr_dir);
+    create_dir_all(&adr_dir, op, Some(&display_adr_dir))?;
 
     let mut max_num = 0u32;
     if let Ok(entries) = std::fs::read_dir(&adr_dir) {
@@ -468,7 +475,8 @@ fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<D
     };
 
     let content = toml::to_string_pretty(&spec)?;
-    write_file(&adr_path, &content, op, None)?;
+    let display_adr_path = config.display_path(&adr_path);
+    write_file(&adr_path, &content, op, Some(&display_adr_path))?;
 
     if !op.is_preview() {
         ui::created("ADR", &config.display_path(&adr_path));
@@ -485,7 +493,8 @@ fn create_work_item(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let work_dir = config.work_dir();
-    create_dir_all(&work_dir, op, None)?;
+    let display_work_dir = config.display_path(&work_dir);
+    create_dir_all(&work_dir, op, Some(&display_work_dir))?;
 
     let date = today();
     let slug = slugify(title);
@@ -555,7 +564,8 @@ fn create_work_item(
     };
 
     let content = toml::to_string_pretty(&spec)?;
-    write_file(&work_path, &content, op, None)?;
+    let display_work_path = config.display_path(&work_path);
+    write_file(&work_path, &content, op, Some(&display_work_path))?;
 
     if !op.is_preview() {
         let display_path = config.display_path(&work_path);

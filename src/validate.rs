@@ -4,6 +4,7 @@
 //! - [[ADR-0003]] signature verification for rendered projections
 //! - [[ADR-0010]] placeholder description detection
 
+use crate::cmd::edit_rules;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::find_clause_json;
@@ -34,6 +35,17 @@ pub enum ArtifactKind {
     WorkItem,
 }
 
+impl ArtifactKind {
+    fn as_ssot_artifact(self) -> &'static str {
+        match self {
+            Self::Rfc => "rfc",
+            Self::Clause => "clause",
+            Self::Adr => "adr",
+            Self::WorkItem => "work",
+        }
+    }
+}
+
 /// Field validation rules
 #[derive(Debug, Clone)]
 pub enum FieldValidation {
@@ -52,27 +64,12 @@ pub enum FieldValidation {
 impl FieldValidation {
     /// Get the validation rule for a field
     pub fn for_field(kind: ArtifactKind, field: &str) -> Self {
-        match (kind, field) {
-            // Clause fields
-            (ArtifactKind::Clause, "since") => Self::Semver,
-            (ArtifactKind::Clause, "superseded_by") => Self::ClauseSupersededBy,
-            (ArtifactKind::Clause, "status") => Self::EnumValue,
-            (ArtifactKind::Clause, "kind") => Self::EnumValue,
-
-            // RFC fields
-            (ArtifactKind::Rfc, "version") => Self::Semver,
-            (ArtifactKind::Rfc, "status") => Self::EnumValue,
-            (ArtifactKind::Rfc, "phase") => Self::EnumValue,
-
-            // ADR fields
-            (ArtifactKind::Adr, "status") => Self::EnumValue,
-            (ArtifactKind::Adr, "superseded_by") => Self::ArtifactRef,
-
-            // Work item fields
-            (ArtifactKind::WorkItem, "status") => Self::EnumValue,
-
-            // Default: no validation
-            _ => Self::None,
+        match edit_rules::field_validation_kind(kind.as_ssot_artifact(), field) {
+            Some(edit_rules::ValidationKind::Semver) => Self::Semver,
+            Some(edit_rules::ValidationKind::ClauseSupersededBy) => Self::ClauseSupersededBy,
+            Some(edit_rules::ValidationKind::ArtifactRef) => Self::ArtifactRef,
+            Some(edit_rules::ValidationKind::EnumValue) => Self::EnumValue,
+            None => Self::None,
         }
     }
 
@@ -940,33 +937,33 @@ mod tests {
 
     #[test]
     fn test_field_validation_clause_since() {
-        matches!(
+        assert!(matches!(
             FieldValidation::for_field(ArtifactKind::Clause, "since"),
             FieldValidation::Semver
-        );
+        ));
     }
 
     #[test]
     fn test_field_validation_clause_superseded_by() {
-        matches!(
+        assert!(matches!(
             FieldValidation::for_field(ArtifactKind::Clause, "superseded_by"),
             FieldValidation::ClauseSupersededBy
-        );
+        ));
     }
 
     #[test]
     fn test_field_validation_rfc_version() {
-        matches!(
+        assert!(matches!(
             FieldValidation::for_field(ArtifactKind::Rfc, "version"),
             FieldValidation::Semver
-        );
+        ));
     }
 
     #[test]
     fn test_field_validation_unknown_field() {
-        matches!(
+        assert!(matches!(
             FieldValidation::for_field(ArtifactKind::Rfc, "unknown"),
             FieldValidation::None
-        );
+        ));
     }
 }

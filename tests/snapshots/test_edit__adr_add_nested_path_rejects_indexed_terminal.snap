@@ -1,0 +1,16 @@
+---
+source: tests/test_edit.rs
+assertion_line: 777
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Indexed Add Test
+Created ADR: gov/adr/ADR-XXXX-indexed-add-test.toml
+exit: 0
+
+$ govctl adr add ADR-0001 alternatives Option X --pro Fast
+Added 'Option X' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr add ADR-0001 alt[0].pros[999] Ignored
+error[E0817]: Cannot add to indexed path 'alternatives[0].pros[999]' (use set/remove for a specific element) (ADR-0001)
+exit: 1

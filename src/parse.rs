@@ -89,7 +89,12 @@ pub fn load_adr(path: &Path) -> Result<AdrEntry, Diagnostic> {
 }
 
 /// Write an ADR to TOML file
-pub fn write_adr(path: &Path, spec: &AdrSpec, op: WriteOp) -> Result<(), Diagnostic> {
+pub fn write_adr(
+    path: &Path,
+    spec: &AdrSpec,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> Result<(), Diagnostic> {
     let content = toml::to_string_pretty(spec).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -109,7 +114,8 @@ pub fn write_adr(path: &Path, spec: &AdrSpec, op: WriteOp) -> Result<(), Diagnos
             })?;
         }
         WriteOp::Preview => {
-            ui::dry_run_file_preview(path, &content);
+            let output_path = display_path.unwrap_or(path);
+            ui::dry_run_file_preview(output_path, &content);
         }
     }
 
@@ -191,7 +197,12 @@ pub fn load_work_item(path: &Path) -> Result<WorkItemEntry, Diagnostic> {
 }
 
 /// Write a work item to TOML file
-pub fn write_work_item(path: &Path, spec: &WorkItemSpec, op: WriteOp) -> Result<(), Diagnostic> {
+pub fn write_work_item(
+    path: &Path,
+    spec: &WorkItemSpec,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> Result<(), Diagnostic> {
     let content = toml::to_string_pretty(spec).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -211,7 +222,8 @@ pub fn write_work_item(path: &Path, spec: &WorkItemSpec, op: WriteOp) -> Result<
             })?;
         }
         WriteOp::Preview => {
-            ui::dry_run_file_preview(path, &content);
+            let output_path = display_path.unwrap_or(path);
+            ui::dry_run_file_preview(output_path, &content);
         }
     }
 

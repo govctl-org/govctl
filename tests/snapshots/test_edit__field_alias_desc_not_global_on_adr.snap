@@ -1,0 +1,11 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Alias Scope
+Created ADR: gov/adr/ADR-XXXX-alias-scope.toml
+exit: 0
+
+$ govctl adr set ADR-0001 desc nope
+error[E0803]: Unknown ADR field: desc (ADR-0001)
+exit: 1

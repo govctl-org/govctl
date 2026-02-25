@@ -31,6 +31,17 @@ govctl adr get ADR-0003 status
 govctl adr set ADR-0003 status accepted
 ```
 
+For alternatives (pros/cons/rejection reason), path-based edits are supported:
+
+```bash
+# Before: remove and re-add whole alternative to change one pro
+govctl adr remove ADR-0001 alternatives "Option 3" --exact
+govctl adr add ADR-0001 alternatives "Option 3: Use Raft" --pro "Updated pro"
+
+# After: direct nested edit
+govctl adr set ADR-0001 alt[2].pro[0] "Updated pro"
+```
+
 ## Status Lifecycle
 
 ```

@@ -1,0 +1,27 @@
+---
+source: tests/test_lifecycle.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc new Supersede Then Deprecate RFC
+Created RFC: gov/rfc/RFC-0001/rfc.json
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl clause new RFC-0001:C-OLD Old Clause -s Specification -k normative
+Created clause: gov/rfc/RFC-0001/clauses/C-OLD.json
+  Added to section 'Specification', path: clauses/C-OLD.json
+exit: 0
+
+$ govctl clause new RFC-0001:C-NEW New Clause -s Specification -k normative
+Created clause: gov/rfc/RFC-0001/clauses/C-NEW.json
+  Added to section 'Specification', path: clauses/C-NEW.json
+exit: 0
+
+$ govctl clause supersede RFC-0001:C-OLD --by RFC-0001:C-NEW --force
+Superseded clause: RFC-0001:C-OLD
+  Replaced by: RFC-0001:C-NEW
+exit: 0
+
+$ govctl clause deprecate RFC-0001:C-OLD --force
+error[E0209]: Clause is superseded, cannot deprecate (RFC-0001:C-OLD)
+exit: 1

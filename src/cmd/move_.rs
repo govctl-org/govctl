@@ -106,7 +106,12 @@ pub fn move_item(
         WorkItemStatus::Queue => {}
     }
 
-    write_work_item(&work_path, &entry.spec, op)?;
+    write_work_item(
+        &work_path,
+        &entry.spec,
+        op,
+        Some(&config.display_path(&work_path)),
+    )?;
 
     if !op.is_preview() {
         let filename = work_path

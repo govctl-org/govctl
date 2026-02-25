@@ -1,0 +1,19 @@
+---
+source: tests/test_display_paths.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work new New Work --dry-run
+Would create dir: gov/work
+Would write: gov/work/<DATE>-new-work.toml
+  [govctl]
+  schema = 1
+  id = "WI-<DATE>-001"
+  title = "New Work"
+  status = "queue"
+  created = "<DATE>"
+  
+  [content]
+  description = """
+  Describe the work to be done.
+  What is the goal? What are the acceptance criteria?"""
+exit: 0

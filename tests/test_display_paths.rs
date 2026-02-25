@@ -234,3 +234,124 @@ fn test_delete_clause_dry_run_display_path() {
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
+
+/// Test: RFC set dry-run shows relative path
+#[test]
+fn test_rfc_set_dry_run_display_path() {
+    let temp_dir = init_project();
+    let date = today();
+
+    // Create draft RFC
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::write(
+        rfc_dir.join("rfc.json"),
+        r#"{
+  "rfc_id": "RFC-0001",
+  "title": "Draft RFC",
+  "version": "0.1.0",
+  "status": "draft",
+  "phase": "spec",
+  "owners": ["test@example.com"],
+  "created": "2026-01-01",
+  "sections": [
+    {
+      "title": "Specification",
+      "clauses": []
+    }
+  ],
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "date": "2026-01-01",
+      "notes": "Initial draft"
+    }
+  ]
+}"#,
+    )
+    .unwrap();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "set",
+            "RFC-0001",
+            "title",
+            "Updated Title",
+            "--dry-run",
+        ]],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+/// Test: RFC bump dry-run shows relative path
+#[test]
+fn test_rfc_bump_dry_run_display_path() {
+    let temp_dir = init_project();
+    let date = today();
+
+    // Create draft RFC
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::write(
+        rfc_dir.join("rfc.json"),
+        r#"{
+  "rfc_id": "RFC-0001",
+  "title": "Draft RFC",
+  "version": "0.1.0",
+  "status": "draft",
+  "phase": "spec",
+  "owners": ["test@example.com"],
+  "created": "2026-01-01",
+  "sections": [
+    {
+      "title": "Specification",
+      "clauses": []
+    }
+  ],
+  "changelog": [
+    {
+      "version": "0.1.0",
+      "date": "2026-01-01",
+      "notes": "Initial draft"
+    }
+  ]
+}"#,
+    )
+    .unwrap();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--change",
+            "fix: test change",
+            "--dry-run",
+        ]],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+/// Test: RFC new dry-run shows relative paths
+#[test]
+fn test_rfc_new_dry_run_display_path() {
+    let temp_dir = init_project();
+    let date = today();
+    let output = run_commands(temp_dir.path(), &[&["rfc", "new", "New RFC", "--dry-run"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+/// Test: work new dry-run shows relative paths
+#[test]
+fn test_work_new_dry_run_display_path() {
+    let temp_dir = init_project();
+    let date = today();
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["work", "new", "New Work", "--dry-run"]],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}

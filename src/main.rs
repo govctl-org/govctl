@@ -669,7 +669,7 @@ VALID ARRAY FIELDS:
 
 MATCHING OPTIONS:
     - pattern: Substring match (default)
-    - --at N: Remove by index (1-based, negative = from end)
+    - --at N: Remove by index (0-based, negative = from end)
     - --exact: Exact string match
     - --regex: Regex pattern match
     - --all: Remove all matches
@@ -681,10 +681,9 @@ EXAMPLES:
     Remove {
         /// ADR ID
         id: String,
-        /// Array field name (refs, alternatives)
+        /// Array field name (refs, alternatives, or nested path like alt[0].pros)
         field: String,
-        /// Pattern to match
-        #[arg(required_unless_present = "at")]
+        /// Pattern to match (not required for indexed paths like alt[0].pros[0])
         pattern: Option<String>,
         /// Remove by index
         #[arg(long, allow_hyphen_values = true)]
@@ -915,7 +914,7 @@ VALID ARRAY FIELDS:
 
 MATCHING OPTIONS:
     - pattern: Substring match (default)
-    - --at N: Remove by index (1-based, negative = from end)
+    - --at N: Remove by index (0-based, negative = from end)
     - --exact: Exact string match
     - --regex: Regex pattern match
     - --all: Remove all matches
@@ -928,10 +927,9 @@ EXAMPLES:
     Remove {
         /// Work item ID
         id: String,
-        /// Array field name (refs, journal, notes, acceptance_criteria)
+        /// Array field name (refs, journal, notes, acceptance_criteria, or nested path)
         field: String,
-        /// Pattern to match
-        #[arg(required_unless_present = "at")]
+        /// Pattern to match (not required for indexed paths)
         pattern: Option<String>,
         /// Remove by index
         #[arg(long, allow_hyphen_values = true)]

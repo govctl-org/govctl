@@ -1,0 +1,100 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-25-003"
+title = "Implement ADR-0029 path-based nested field addressing"
+status = "done"
+created = "2026-02-25"
+started = "2026-02-25"
+completed = "2026-02-26"
+refs = [
+    "ADR-0029",
+    "ADR-0030",
+]
+
+[content]
+description = """
+Implement ADR-0029 and ADR-0030 by introducing path-based nested field addressing with strict parsing, JSON SSOT plus JSON Schema validation, and macro/codegen-driven dispatch for edit verbs.
+
+Execution plan:
+- Phase 1 (Parser correctness): strict grammar parser, full-input consumption, normalization layer for aliases and legacy prefixes, and structured diagnostics for malformed/over-deep paths.
+- Phase 2 (Spec and generation): introduce edit-ops.json + edit-ops.schema.json, compile validated spec to generated rule table or macro-backed dispatch, and wire get/set/add/remove binding to spec rules.
+- Phase 3 (Hardening and rollout): parity and regression snapshots, docs and help updates, and compatibility behavior verification for legacy field forms."""
+notes = [
+    "Phase 1 focus: strict parser plus parse/normalize/resolve separation and E0814-E0818 diagnostics stability",
+    "Phase 2 focus: JSON SSOT and JSON Schema validation feeding macro/generated dispatch for edit rules",
+    "Phase 3 focus: parity snapshots docs help text and migration compatibility verification",
+]
+
+[[content.journal]]
+date = "2026-02-25"
+scope = "cli"
+content = "Kickoff implementation for ADR-0029; start with parser and command wiring"
+
+[[content.journal]]
+date = "2026-02-25"
+scope = "design"
+content = "Expanded scope with ADR-0030: adopt strict parser strategy and JSON SSOT plus schema-driven generation for edit rules."
+
+[[content.journal]]
+date = "2026-02-25"
+scope = "planning"
+content = "Reorganized WI into Phase 1/2/3 execution plan and aligned scope with ADR-0030 parser strategy."
+
+[[content.journal]]
+date = "2026-02-26"
+content = "Implemented JSON SSOT for edit rules (edit-ops.json + schema), build-time schema validation/code generation in build.rs, generated alias/prefix macro resolvers, strict lowercase segment parser policy, and wired nested depth checks to generated rules."
+
+[[content.acceptance_criteria]]
+text = "Path parser supports segment/index grammar with tests"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "ADR set/get/add/remove accept path-based field addressing for alternatives/pros/cons/rejection_reason"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "remove rejects mixed indexed-path and matcher-flag usage with clear usage error"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "ADR and work docs include before/after examples for path-based edits"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "regression tests cover index semantics alias resolution and error diagnostics"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "edit-ops.json SSOT and edit-ops.schema.json are introduced with build-time validation"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "path parser enforces full-input consumption and strict grammar per ADR-0030"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "alias and legacy prefix compatibility rules are normalized via a single spec-backed layer"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "macro or generated rule table drives get/set/add/remove path binding dispatch"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "over-deep or over-specified paths fail with structured diagnostics instead of silent acceptance"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "parity snapshots cover legacy fields aliases and nested path error matrix"
+status = "done"
+category = "chore"

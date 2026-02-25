@@ -1,6 +1,7 @@
 //! Lifecycle command implementations.
 
 use crate::FinalizeStatus;
+use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::{find_clause_json, find_rfc_json};
@@ -23,7 +24,12 @@ use std::path::Path;
 ///
 /// Clauses are created with `since: None` and filled in when the RFC
 /// is bumped or finalized.
-fn fill_pending_clause_versions(rfc_path: &Path, version: &str, op: WriteOp) -> anyhow::Result<()> {
+fn fill_pending_clause_versions(
+    config: &Config,
+    rfc_path: &Path,
+    version: &str,
+    op: WriteOp,
+) -> anyhow::Result<()> {
     let clauses_dir = rfc_path.parent().unwrap().join("clauses");
     if !clauses_dir.exists() {
         return Ok(());
@@ -42,7 +48,7 @@ fn fill_pending_clause_versions(rfc_path: &Path, version: &str, op: WriteOp) -> 
 
     for (path, mut clause) in pending_clauses {
         clause.since = Some(version.to_string());
-        write_clause(&path, &clause, op, None)?;
+        write_clause(&path, &clause, op, Some(&config.display_path(&path)))?;
         if !op.is_preview() {
             ui::sub_info(format!("Set {}.since = {}", clause.clause_id, version));
         }
@@ -85,10 +91,10 @@ pub fn bump(
             }
 
             // Write the RFC first
-            write_rfc(&rfc_path, &rfc, op, None)?;
+            write_rfc(&rfc_path, &rfc, op, Some(&config.display_path(&rfc_path)))?;
 
             // Update pending clauses (since: null) with new version
-            fill_pending_clause_versions(&rfc_path, &new_version, op)?;
+            fill_pending_clause_versions(config, &rfc_path, &new_version, op)?;
 
             // Then recompute and store signature after version bump per [[ADR-0016]]
             // Load full RFC with clauses to compute accurate signature
@@ -97,7 +103,7 @@ pub fn bump(
             {
                 rfc.signature = Some(sig);
                 // Write again with updated signature
-                write_rfc(&rfc_path, &rfc, op, None)?;
+                write_rfc(&rfc_path, &rfc, op, Some(&config.display_path(&rfc_path)))?;
             }
 
             return Ok(vec![]);
@@ -136,7 +142,7 @@ pub fn bump(
         }
     }
 
-    write_rfc(&rfc_path, &rfc, op, None)?;
+    write_rfc(&rfc_path, &rfc, op, Some(&config.display_path(&rfc_path)))?;
     Ok(vec![])
 }
 
@@ -155,7 +161,7 @@ pub fn finalize(
         )
     })?;
 
-    let mut rfc = read_rfc(&rfc_path)?;
+    let rfc = read_rfc(&rfc_path)?;
 
     let target_status = match status {
         FinalizeStatus::Normative => RfcStatus::Normative,
@@ -175,13 +181,11 @@ pub fn finalize(
         .into());
     }
 
-    rfc.status = target_status;
-    rfc.updated = Some(crate::write::today());
-    write_rfc(&rfc_path, &rfc, op, None)?;
+    edit::set_field_direct(config, rfc_id, "status", target_status.as_ref(), op)?;
 
     // Update pending clauses (since: null) with current version
     // When an RFC is finalized, all clauses should have proper since values
-    fill_pending_clause_versions(&rfc_path, &rfc.version, op)?;
+    fill_pending_clause_versions(config, &rfc_path, &rfc.version, op)?;
 
     if !op.is_preview() {
         ui::finalized(rfc_id, target_status.as_ref());
@@ -204,7 +208,7 @@ pub fn advance(
         )
     })?;
 
-    let mut rfc = read_rfc(&rfc_path)?;
+    let rfc = read_rfc(&rfc_path)?;
 
     // Check status constraint: cannot advance to impl+ without normative status
     if rfc.status == RfcStatus::Draft && phase != RfcPhase::Spec {
@@ -232,9 +236,7 @@ pub fn advance(
         .into());
     }
 
-    rfc.phase = phase;
-    rfc.updated = Some(crate::write::today());
-    write_rfc(&rfc_path, &rfc, op, None)?;
+    edit::set_field_direct(config, rfc_id, "phase", phase.as_ref(), op)?;
 
     if !op.is_preview() {
         ui::phase_advanced(rfc_id, phase.as_ref());
@@ -244,7 +246,7 @@ pub fn advance(
 
 /// Accept an ADR
 pub fn accept_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-    let mut entry = load_adrs(config)?
+    let entry = load_adrs(config)?
         .into_iter()
         .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
         .ok_or_else(|| {
@@ -267,8 +269,7 @@ pub fn accept_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
         .into());
     }
 
-    entry.spec.govctl.status = AdrStatus::Accepted;
-    write_adr(&entry.path, &entry.spec, op)?;
+    edit::set_field_direct(config, adr_id, "status", "accepted", op)?;
 
     if !op.is_preview() {
         ui::accepted("ADR", adr_id);
@@ -278,7 +279,7 @@ pub fn accept_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
 
 /// Reject an ADR
 pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-    let mut entry = load_adrs(config)?
+    let entry = load_adrs(config)?
         .into_iter()
         .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
         .ok_or_else(|| {
@@ -301,8 +302,7 @@ pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
         .into());
     }
 
-    entry.spec.govctl.status = AdrStatus::Rejected;
-    write_adr(&entry.path, &entry.spec, op)?;
+    edit::set_field_direct(config, adr_id, "status", "rejected", op)?;
 
     if !op.is_preview() {
         ui::rejected("ADR", adr_id);
@@ -344,7 +344,7 @@ pub fn deprecate(
             )
         })?;
 
-        let mut clause = read_clause(&clause_path)?;
+        let clause = read_clause(&clause_path)?;
 
         if clause.status == ClauseStatus::Deprecated {
             return Err(Diagnostic::new(
@@ -363,8 +363,7 @@ pub fn deprecate(
             .into());
         }
 
-        clause.status = ClauseStatus::Deprecated;
-        write_clause(&clause_path, &clause, op, None)?;
+        edit::set_field_direct(config, id, "status", "deprecated", op)?;
 
         if !op.is_preview() {
             ui::deprecated("clause", id);
@@ -451,7 +450,12 @@ pub fn supersede(
 
         clause.status = ClauseStatus::Superseded;
         clause.superseded_by = Some(by.to_string());
-        write_clause(&clause_path, &clause, op, None)?;
+        write_clause(
+            &clause_path,
+            &clause,
+            op,
+            Some(&config.display_path(&clause_path)),
+        )?;
 
         if !op.is_preview() {
             ui::superseded("clause", id, by);
@@ -498,7 +502,12 @@ pub fn supersede(
 
         entry.spec.govctl.status = AdrStatus::Superseded;
         entry.spec.govctl.superseded_by = Some(by.to_string());
-        write_adr(&entry.path, &entry.spec, op)?;
+        write_adr(
+            &entry.path,
+            &entry.spec,
+            op,
+            Some(&config.display_path(&entry.path)),
+        )?;
 
         if !op.is_preview() {
             ui::superseded("ADR", id, by);

@@ -1,0 +1,59 @@
+[govctl]
+schema = 1
+id = "WI-2026-02-27-001"
+title = "Implement ADR-0031 unified edit engine (SSOT + adapters)"
+status = "done"
+created = "2026-02-27"
+started = "2026-02-27"
+completed = "2026-03-01"
+refs = [
+    "ADR-0031",
+    "ADR-0030",
+    "ADR-0029",
+    "ADR-0007",
+    "ADR-0001",
+    "RFC-0002",
+]
+
+[content]
+description = "Implement ADR-0031 by replacing the current mixed edit flow with a single SSOT-driven semantic engine and explicit JSON/TOML format adapters. The work must deliver a unified parse/canonicalize/resolve/plan/validate/execute pipeline, preserve ADR-0029 compatibility semantics, and retire redundant hand-written dispatch paths once parity is proven."
+
+[[content.acceptance_criteria]]
+text = "Introduce V2 edit SSOT model and schema for fields, verbs, aliases, and legacy mappings"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Implement winnow-based path parser and canonicalization pipeline producing typed EditPlan"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Implement unified semantic edit engine with JsonAdapter and TomlAdapter interfaces"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Migrate ADR and Work edit execution to V2 engine with compatibility parity tests"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Migrate RFC and Clause edit execution to V2 engine after ADR/Work parity is verified"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Remove obsolete V1 hand-written dispatch branches after cutover"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test -p govctl --test test_edit passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

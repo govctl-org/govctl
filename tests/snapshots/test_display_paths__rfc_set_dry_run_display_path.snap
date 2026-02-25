@@ -1,0 +1,28 @@
+---
+source: tests/test_display_paths.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc set RFC-0001 title Updated Title --dry-run
+Would write: gov/rfc/RFC-0001/rfc.json
+  {
+    "rfc_id": "RFC-0001",
+    "title": "Updated Title",
+    "version": "0.1.0",
+    "status": "draft",
+    "phase": "spec",
+    "owners": [
+      "test@example.com"
+    ],
+    "created": "2026-01-01",
+    "updated": "<DATE>",
+    "sections": [
+      {
+        "title": "Specification"
+      }
+    ],
+    "changelog": [
+      {
+        "version": "0.1.0",
+        "date": "2026-01-01",
+  ...
+exit: 0

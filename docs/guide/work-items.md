@@ -67,6 +67,16 @@ Add context or progress notes:
 govctl work add WI-2026-01-17-001 notes "Discovered edge case in validation"
 ```
 
+Nested path edits are also available for structured fields:
+
+```bash
+# Before: append a replacement journal entry to adjust one field
+govctl work add WI-2026-01-17-001 journal --scope parser "Fixed parser edge case"
+
+# After: direct nested update
+govctl work set WI-2026-01-17-001 journal[0].scope "parser"
+```
+
 ## Removing Items
 
 Remove items from array fields using flexible matching:

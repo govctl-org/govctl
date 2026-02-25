@@ -197,6 +197,48 @@ fn test_advance_backwards_fails() {
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
+#[test]
+fn test_advance_nonexistent_rfc() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-9999", "impl"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_finalize_sets_updated_field() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Updated RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "get", "RFC-0001", "updated"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_advance_sets_updated_field() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Updated RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "get", "RFC-0001", "updated"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
 // ============================================================================
 // RFC Bump Tests
 // ============================================================================
@@ -495,6 +537,101 @@ fn test_supersede_clause() {
                 "RFC-0001:C-NEW",
             ],
             &["clause", "list"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_deprecate_clause_force() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Deprecate Clause RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-ONE",
+                "Clause One",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &["clause", "deprecate", "RFC-0001:C-ONE", "--force"],
+            &["clause", "list"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_deprecate_clause_already_deprecated_fails() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Deprecate Twice RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-ONE",
+                "Clause One",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &["clause", "deprecate", "RFC-0001:C-ONE", "--force"],
+            &["clause", "deprecate", "RFC-0001:C-ONE", "--force"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_deprecate_clause_superseded_fails() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Supersede Then Deprecate RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-OLD",
+                "Old Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-NEW",
+                "New Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "supersede",
+                "RFC-0001:C-OLD",
+                "--by",
+                "RFC-0001:C-NEW",
+                "--force",
+            ],
+            &["clause", "deprecate", "RFC-0001:C-OLD", "--force"],
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));

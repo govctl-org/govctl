@@ -1,0 +1,16 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work new Nested Tick
+Created work item: gov/work/<DATE>-nested-tick.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl work add WI-<DATE>-001 acceptance_criteria add: Criterion 1
+Added 'add: Criterion 1' to WI-<DATE>-001.acceptance_criteria
+exit: 0
+
+$ govctl work tick WI-<DATE>-001 ac[0].text Criterion 1 -s done
+error[E0817]: tick does not support nested paths (WI-<DATE>-001)
+exit: 1

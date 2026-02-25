@@ -1,0 +1,28 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Add Test
+Created ADR: gov/adr/ADR-XXXX-add-test.toml
+exit: 0
+
+$ govctl adr add ADR-0001 alternatives Option X --pro Cheap
+Added 'Option X' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr add ADR-0001 alt[0].pros Reliable
+Added 'Reliable' to ADR-0001.alternatives[0].pros
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].pros
+Cheap
+Reliable
+exit: 0
+
+$ govctl adr add ADR-0001 alt[0].cons Slow
+Added 'Slow' to ADR-0001.alternatives[0].cons
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].cons
+Slow
+exit: 0

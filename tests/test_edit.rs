@@ -628,3 +628,378 @@ fn test_field_alias_desc() {
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
+
+#[test]
+fn test_field_alias_desc_under_legacy_prefix() {
+    // content.desc should resolve to description on work items
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Test Task"],
+            &[
+                "work",
+                "set",
+                &format!("WI-{}-001", date),
+                "content.desc",
+                "Legacy-prefixed description",
+            ],
+            &["work", "get", &format!("WI-{}-001", date), "description"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_field_alias_desc_not_global_on_adr() {
+    // desc is not a valid ADR root field alias and should not be rewritten globally
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Alias Scope"],
+            &["adr", "set", "ADR-0001", "desc", "nope"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_tick_rejects_nested_path() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Nested Tick"],
+            &[
+                "work",
+                "add",
+                &format!("WI-{}-001", date),
+                "acceptance_criteria",
+                "add: Criterion 1",
+            ],
+            &[
+                "work",
+                "tick",
+                &format!("WI-{}-001", date),
+                "ac[0].text",
+                "Criterion 1",
+                "-s",
+                "done",
+            ],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+// ============================================================================
+// Nested Path Tests (ADR-0029)
+// ============================================================================
+
+#[test]
+fn test_adr_get_nested_path() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Path Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Use traits",
+                "--pro",
+                "Flexible",
+                "--pro",
+                "Reusable",
+                "--con",
+                "Complex",
+            ],
+            &["adr", "get", "ADR-0001", "alt[0].text"],
+            &["adr", "get", "ADR-0001", "alt[0].pros"],
+            &["adr", "get", "ADR-0001", "alt[0].pros[0]"],
+            &["adr", "get", "ADR-0001", "alt[0].cons"],
+            &["adr", "get", "ADR-0001", "alternatives[0]"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_set_nested_path() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Set Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Option A",
+                "--pro",
+                "Fast",
+                "--con",
+                "Fragile",
+            ],
+            &["adr", "set", "ADR-0001", "alt[0].text", "Option A Revised"],
+            &["adr", "get", "ADR-0001", "alt[0].text"],
+            &["adr", "set", "ADR-0001", "alt[0].pros[0]", "Very fast"],
+            &["adr", "get", "ADR-0001", "alt[0].pros[0]"],
+            &[
+                "adr",
+                "set",
+                "ADR-0001",
+                "alt[0].rejection_reason",
+                "Superseded by Option B",
+            ],
+            &["adr", "get", "ADR-0001", "alt[0].rejection_reason"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_add_nested_path() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Add Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Option X",
+                "--pro",
+                "Cheap",
+            ],
+            &["adr", "add", "ADR-0001", "alt[0].pros", "Reliable"],
+            &["adr", "get", "ADR-0001", "alt[0].pros"],
+            &["adr", "add", "ADR-0001", "alt[0].cons", "Slow"],
+            &["adr", "get", "ADR-0001", "alt[0].cons"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_nested_path_rejects_extra_segments() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Depth Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Option X",
+                "--pro",
+                "Fast",
+            ],
+            &["adr", "get", "ADR-0001", "alt[0].pros[0].oops"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_add_nested_path_rejects_indexed_terminal() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Indexed Add Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Option X",
+                "--pro",
+                "Fast",
+            ],
+            &["adr", "add", "ADR-0001", "alt[0].pros[999]", "Ignored"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_get_nested_scalar_rejects_index() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Scalar Index Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Option X",
+                "--pro",
+                "Fast",
+            ],
+            &["adr", "get", "ADR-0001", "alt[0].text[0]"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_remove_nested_path() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Remove Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Opt1",
+                "--pro",
+                "Good",
+                "--pro",
+                "Great",
+                "--con",
+                "Bad",
+            ],
+            // Remove by sub-index
+            &["adr", "remove", "ADR-0001", "alt[0].pros[0]"],
+            &["adr", "get", "ADR-0001", "alt[0].pros"],
+            // Remove con by pattern match (no terminal index)
+            &["adr", "remove", "ADR-0001", "alt[0].cons", "Bad"],
+            &["adr", "get", "ADR-0001", "alt[0].cons"],
+            // Remove entire alternative
+            &["adr", "remove", "ADR-0001", "alt[0]"],
+            &["adr", "get", "ADR-0001", "alternatives"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_work_get_nested_scalar_rejects_index() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let wi_id = format!("WI-{}-001", date);
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Work Scalar Index Test"],
+            &["work", "add", &wi_id, "journal", "Did something"],
+            &["work", "get", &wi_id, "journal[0].content[0]"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_remove_nested_path_requires_selector() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Selector Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Opt1",
+                "--con",
+                "Bad",
+            ],
+            &["adr", "remove", "ADR-0001", "alt[0].cons"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_remove_indexed_path_conflict() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Conflict Test"],
+            &[
+                "adr",
+                "add",
+                "ADR-0001",
+                "alternatives",
+                "Opt1",
+                "--con",
+                "Bad",
+            ],
+            // Indexed path + --exact should produce E0818
+            &[
+                "adr",
+                "remove",
+                "ADR-0001",
+                "alt[0].cons[0]",
+                "--exact",
+                "Bad",
+            ],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_path_backward_compat() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Compat Test"],
+            // Legacy dotted paths should still work
+            &[
+                "adr",
+                "set",
+                "ADR-0001",
+                "content.decision",
+                "A dotted decision",
+            ],
+            &["adr", "get", "ADR-0001", "content.decision"],
+            &["adr", "set", "ADR-0001", "govctl.title", "Compat Title"],
+            &["adr", "get", "ADR-0001", "govctl.title"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}

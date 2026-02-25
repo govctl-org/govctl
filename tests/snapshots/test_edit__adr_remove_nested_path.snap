@@ -1,0 +1,35 @@
+---
+source: tests/test_edit.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr new Remove Test
+Created ADR: gov/adr/ADR-XXXX-remove-test.toml
+exit: 0
+
+$ govctl adr add ADR-0001 alternatives Opt1 --pro Good --pro Great --con Bad
+Added 'Opt1' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr remove ADR-0001 alt[0].pros[0]
+Removed 'Good' from ADR-0001.alt[0].pros[0]
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].pros
+Great
+exit: 0
+
+$ govctl adr remove ADR-0001 alt[0].cons Bad
+Removed 'Bad' from ADR-0001.alt[0].cons
+exit: 0
+
+$ govctl adr get ADR-0001 alt[0].cons
+
+exit: 0
+
+$ govctl adr remove ADR-0001 alt[0]
+Removed 'Opt1' from ADR-0001.alt[0]
+exit: 0
+
+$ govctl adr get ADR-0001 alternatives
+
+exit: 0
