@@ -531,6 +531,7 @@ where
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn set_json_field<A, F>(
     config: &Config,
     id: &str,
@@ -1310,6 +1311,7 @@ where
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn add_toml_simple_field<A, C>(
     config: &Config,
     id: &str,
@@ -1500,6 +1502,7 @@ fn remove_simple_values_from_doc(
     })
 }
 
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn remove_toml_field<A>(
     config: &Config,
     id: &str,
@@ -1618,6 +1621,7 @@ fn ensure_nested_depth(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn ensure_nested_field_for_verb(
     artifact: &str,
     root: &str,
