@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-03-01-001"
 title = "Implement ADR-0031 Phases 2-4: Unified SSOT-driven edit engine"
-status = "active"
+status = "done"
 created = "2026-03-01"
 started = "2026-03-01"
+completed = "2026-03-01"
 refs = ["ADR-0031"]
 
 [content]
@@ -14,30 +15,30 @@ What is the goal? What are the acceptance criteria?"""
 
 [[content.acceptance_criteria]]
 text = "Add content_path to SSOT nested rules and code generation"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Generic nested field operations in edit_runtime replace hand-written handlers"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "V1 manual dispatch removed from edit.rs (macros, per-artifact nested handlers)"
-status = "pending"
+status = "done"
 category = "removed"
 
 [[content.acceptance_criteria]]
 text = "All existing tests pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "cargo clippy -D warnings passes"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"
