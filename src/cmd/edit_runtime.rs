@@ -1,4 +1,6 @@
 use crate::cmd::edit::ArtifactType;
+use crate::cmd::edit_rules::{self, FieldKind, NestedRootRule, Verb};
+use crate::cmd::path::{self, FieldPath};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde_json::Value;
 
@@ -473,4 +475,450 @@ fn ensure_array_path_mut<'a>(
         cur = obj.get_mut(*key).expect("inserted above");
     }
     Ok(cur)
+}
+
+// ===========================================================================
+// Generic nested field operations (ADR-0031 V2)
+// ===========================================================================
+
+/// Resolve a nested root rule from the SSOT, returning an error if not found.
+fn resolve_nested_root(
+    artifact: ArtifactType,
+    root: &str,
+    id: &str,
+) -> anyhow::Result<&'static NestedRootRule> {
+    edit_rules::nested_root_rule(artifact.rule_key(), root).ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0815PathFieldNotFound,
+            format!(
+                "Unknown nested root '{}' for {}",
+                root,
+                artifact.rule_key()
+            ),
+            id,
+        )
+        .into()
+    })
+}
+
+/// Validate a nested field path against SSOT rules for a given verb.
+///
+/// Returns (root_rule, resolved_root_index). Validates depth, index
+/// requirements, and subfield verb support.
+fn validate_nested_path(
+    artifact: ArtifactType,
+    fp: &FieldPath,
+    verb: Verb,
+    root_array_len: usize,
+    id: &str,
+) -> anyhow::Result<(&'static NestedRootRule, usize)> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+
+    // Validate depth
+    if fp.segments.len() > rule.max_depth {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0814InvalidPath,
+            format!(
+                "Path '{}' exceeds max depth {} for {}.{}",
+                format_path(fp),
+                rule.max_depth,
+                artifact.rule_key(),
+                root_name
+            ),
+            id,
+        )
+        .into());
+    }
+
+    // Resolve root index
+    let root_idx = path::require_index(&fp.segments[0], root_array_len)?;
+
+    // Validate subfield if present
+    if fp.segments.len() >= 2 {
+        let subfield = &fp.segments[1].name;
+        let field_rule =
+            edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).ok_or_else(
+                || {
+                    Diagnostic::new(
+                        DiagnosticCode::E0815PathFieldNotFound,
+                        format!(
+                            "Unknown field '{}' under {}.{}",
+                            subfield,
+                            artifact.rule_key(),
+                            root_name
+                        ),
+                        id,
+                    )
+                },
+            )?;
+        if !field_rule.verbs.contains(&verb.as_str()) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!(
+                    "Field '{}.{}' does not support verb '{}'",
+                    root_name,
+                    subfield,
+                    verb.as_str()
+                ),
+                id,
+            )
+            .into());
+        }
+    }
+
+    Ok((rule, root_idx))
+}
+
+/// Navigate to the root array in a JSON document using the SSOT content_path.
+fn root_array<'a>(doc: &'a Value, rule: &NestedRootRule, id: &str) -> anyhow::Result<&'a Vec<Value>> {
+    value_at_path(doc, rule.content_path)
+        .and_then(Value::as_array)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Expected array at path '{}'", rule.content_path.join(".")),
+                id,
+            )
+            .into()
+        })
+}
+
+/// Navigate to the root array (mutable) in a JSON document.
+fn root_array_mut<'a>(
+    doc: &'a mut Value,
+    rule: &NestedRootRule,
+    id: &str,
+) -> anyhow::Result<&'a mut Vec<Value>> {
+    ensure_array_path_mut(doc, rule.content_path, id)?
+        .as_array_mut()
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Expected array at path '{}'", rule.content_path.join(".")),
+                id,
+            )
+            .into()
+        })
+}
+
+/// GET a nested field value. Handles:
+/// - `root[i]` → render all fields of the item
+/// - `root[i].scalar` → render scalar value
+/// - `root[i].list` → render all list items
+/// - `root[i].list[j]` → render one list item
+pub fn get_nested_field(
+    artifact: ArtifactType,
+    doc: &Value,
+    fp: &FieldPath,
+    id: &str,
+) -> anyhow::Result<String> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let arr = root_array(doc, rule, id)?;
+    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Get, arr.len(), id)?;
+    let item = &arr[root_idx];
+
+    if fp.segments.len() == 1 {
+        // Render whole item
+        return render_nested_item(item, rule, id);
+    }
+
+    let subfield = &fp.segments[1].name;
+    let field_rule =
+        edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).unwrap();
+
+    match field_rule.kind {
+        FieldKind::Scalar => {
+            if fp.segments[1].index.is_some() {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    format!("Cannot index into scalar field '{subfield}'"),
+                    id,
+                )
+                .into());
+            }
+            Ok(render_scalar(item.get(subfield)))
+        }
+        FieldKind::List => {
+            let list = item
+                .get(subfield)
+                .and_then(Value::as_array)
+                .cloned()
+                .unwrap_or_default();
+            if let Some(sub_idx) = fp.segments[1].index {
+                let resolved = path::resolve_index(sub_idx, list.len())?;
+                Ok(render_scalar(list.get(resolved)))
+            } else {
+                let strs: Vec<String> = list
+                    .iter()
+                    .map(|v| render_scalar(Some(v)))
+                    .collect();
+                Ok(strs.join("\n"))
+            }
+        }
+    }
+}
+
+/// SET a nested field value. Handles:
+/// - `root[i].scalar "value"` → set scalar field
+/// - `root[i].list[j] "value"` → replace list item at index
+pub fn set_nested_field(
+    artifact: ArtifactType,
+    doc: &mut Value,
+    fp: &FieldPath,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let arr = root_array_mut(doc, rule, id)?;
+    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Set, arr.len(), id)?;
+
+    if fp.segments.len() < 2 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!(
+                "Cannot set entire '{}' item directly; specify a subfield",
+                root_name
+            ),
+            id,
+        )
+        .into());
+    }
+
+    let subfield = &fp.segments[1].name;
+    let field_rule =
+        edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).unwrap();
+    let item = arr[root_idx]
+        .as_object_mut()
+        .ok_or_else(|| type_mismatch("Expected object item in array", id))?;
+
+    match field_rule.kind {
+        FieldKind::Scalar => {
+            // For optional fields (current value is null), empty → null
+            let json_value = if value.is_empty()
+                && item
+                    .get(subfield)
+                    .is_none_or(|v| v.is_null())
+            {
+                Value::Null
+            } else {
+                Value::String(value.to_string())
+            };
+            item.insert(subfield.to_string(), json_value);
+        }
+        FieldKind::List => {
+            let sub_idx = fp.segments[1].index.ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    format!("Field '{subfield}' is a list; use an index to set a specific item, or use 'add'/'remove'"),
+                    id,
+                )
+            })?;
+            let list = item
+                .entry(subfield)
+                .or_insert_with(|| Value::Array(Vec::new()))
+                .as_array_mut()
+                .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+            let resolved = path::resolve_index(sub_idx, list.len())?;
+            list[resolved] = Value::String(value.to_string());
+        }
+    }
+    Ok(())
+}
+
+/// ADD a value to a nested list field: `root[i].list "value"`.
+pub fn add_nested_list_value(
+    artifact: ArtifactType,
+    doc: &mut Value,
+    fp: &FieldPath,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let arr = root_array_mut(doc, rule, id)?;
+    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Add, arr.len(), id)?;
+
+    if fp.segments.len() < 2 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!("Cannot add to '{}' without specifying a list subfield", root_name),
+            id,
+        )
+        .into());
+    }
+
+    // Reject indexed terminal paths: e.g., alt[0].pros[999]
+    if fp.segments[1].index.is_some() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!(
+                "Cannot add to indexed path '{}' (use set/remove for a specific element)",
+                format_path(fp)
+            ),
+            id,
+        )
+        .into());
+    }
+
+    let subfield = &fp.segments[1].name;
+    let field_rule =
+        edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).unwrap();
+    if field_rule.kind != FieldKind::List {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!("Field '{subfield}' is not a list; cannot add to it"),
+            id,
+        )
+        .into());
+    }
+
+    let item = arr[root_idx]
+        .as_object_mut()
+        .ok_or_else(|| type_mismatch("Expected object item in array", id))?;
+    let list = item
+        .entry(subfield)
+        .or_insert_with(|| Value::Array(Vec::new()))
+        .as_array_mut()
+        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+
+    // Duplicate check
+    if !list.iter().any(|v| v.as_str() == Some(value)) {
+        list.push(Value::String(value.to_string()));
+    }
+    Ok(())
+}
+
+/// REMOVE values from a nested list field: `root[i].list` with matcher.
+/// Returns the removed values.
+pub fn remove_nested_list_values<F>(
+    artifact: ArtifactType,
+    doc: &mut Value,
+    fp: &FieldPath,
+    id: &str,
+    resolve: F,
+) -> anyhow::Result<Vec<String>>
+where
+    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
+{
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let arr = root_array_mut(doc, rule, id)?;
+    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Remove, arr.len(), id)?;
+
+    if fp.segments.len() < 2 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!("Cannot remove from '{}' without specifying a list subfield", root_name),
+            id,
+        )
+        .into());
+    }
+
+    let subfield = &fp.segments[1].name;
+    let item = arr[root_idx]
+        .as_object_mut()
+        .ok_or_else(|| type_mismatch("Expected object item in array", id))?;
+    let list = item
+        .get_mut(subfield)
+        .and_then(Value::as_array_mut)
+        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+
+    let texts: Vec<&str> = list
+        .iter()
+        .map(|v| {
+            v.as_str().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    "Expected string items in list",
+                    id,
+                )
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+
+    let indices = resolve(&texts)?;
+    let mut sorted = indices;
+    sorted.sort_unstable_by(|a, b| b.cmp(a));
+
+    let mut removed = Vec::with_capacity(sorted.len());
+    for idx in sorted {
+        let val = list.remove(idx);
+        removed.push(val.as_str().unwrap_or_default().to_string());
+    }
+    removed.reverse();
+    Ok(removed)
+}
+
+/// REMOVE an entire item from the root array by index: `root[i]`.
+/// Returns a display text for the removed item.
+pub fn remove_nested_root_item(
+    artifact: ArtifactType,
+    doc: &mut Value,
+    fp: &FieldPath,
+    id: &str,
+) -> anyhow::Result<String> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let arr = root_array_mut(doc, rule, id)?;
+    let root_idx = path::require_index(&fp.segments[0], arr.len())?;
+    let removed = arr.remove(root_idx);
+
+    // Extract display text from the removed item
+    let text = removed
+        .get("text")
+        .and_then(Value::as_str)
+        .or_else(|| removed.as_str())
+        .unwrap_or("<item>")
+        .to_string();
+    Ok(text)
+}
+
+/// Render all fields of a nested object item for display.
+fn render_nested_item(item: &Value, rule: &NestedRootRule, _id: &str) -> anyhow::Result<String> {
+    let mut lines = Vec::new();
+    if let Some(obj) = item.as_object() {
+        for field in rule.fields {
+            if let Some(val) = obj.get(field.name) {
+                match field.kind {
+                    FieldKind::Scalar => {
+                        lines.push(format!("{}: {}", field.name, render_scalar(Some(val))));
+                    }
+                    FieldKind::List => {
+                        if let Some(arr) = val.as_array() {
+                            let items: Vec<&str> = arr
+                                .iter()
+                                .filter_map(Value::as_str)
+                                .collect();
+                            lines.push(format!("{}: {}", field.name, items.join(", ")));
+                        }
+                    }
+                }
+            }
+        }
+    } else if let Some(s) = item.as_str() {
+        // Simple string items (e.g., notes)
+        lines.push(s.to_string());
+    }
+    Ok(lines.join("\n"))
+}
+
+fn type_mismatch(msg: &str, id: &str) -> Diagnostic {
+    Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, msg, id)
+}
+
+fn format_path(fp: &FieldPath) -> String {
+    let mut out = String::new();
+    for (i, seg) in fp.segments.iter().enumerate() {
+        if i > 0 {
+            out.push('.');
+        }
+        out.push_str(&seg.name);
+        if let Some(idx) = seg.index {
+            out.push_str(&format!("[{idx}]"));
+        }
+    }
+    out
 }

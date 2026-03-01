@@ -88,6 +88,7 @@
       "required": [
         "artifact",
         "root",
+        "content_path",
         "requires_index",
         "max_depth",
         "fields"
@@ -100,6 +101,14 @@
         "root": {
           "type": "string",
           "pattern": "^[a-z_][a-z0-9_]*$"
+        },
+        "content_path": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z_][a-z0-9_]*$"
+          },
+          "minItems": 1
         },
         "requires_index": {
           "type": "boolean"

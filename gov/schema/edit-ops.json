@@ -121,6 +121,7 @@
     {
       "artifact": "adr",
       "root": "alternatives",
+      "content_path": ["content", "alternatives"],
       "requires_index": true,
       "max_depth": 2,
       "fields": [
@@ -146,6 +147,7 @@
     {
       "artifact": "work",
       "root": "journal",
+      "content_path": ["content", "journal"],
       "requires_index": true,
       "max_depth": 2,
       "fields": [
@@ -157,6 +159,7 @@
     {
       "artifact": "work",
       "root": "acceptance_criteria",
+      "content_path": ["content", "acceptance_criteria"],
       "requires_index": true,
       "max_depth": 2,
       "fields": [
@@ -168,6 +171,7 @@
     {
       "artifact": "work",
       "root": "notes",
+      "content_path": ["content", "notes"],
       "requires_index": true,
       "max_depth": 1,
       "fields": []

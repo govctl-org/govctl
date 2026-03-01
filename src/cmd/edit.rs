@@ -274,13 +274,6 @@ impl TomlEditableEntry for WorkItemEntry {
 
 const TICK_NESTED_PATH_ERROR: &str = "tick does not support nested paths";
 const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
-const ADR_NESTED_ERROR: &str = "ADR nested paths only support 'alternatives' (got '{}')";
-const WORK_NESTED_GET_ERROR: &str =
-    "Work item nested paths support journal, acceptance_criteria, or notes (got '{}')";
-const WORK_NESTED_SET_ERROR: &str =
-    "Work item nested set supports journal or acceptance_criteria (got '{}')";
-const WORK_NESTED_REMOVE_ERROR: &str =
-    "Work item nested remove supports notes, acceptance_criteria, or journal (got '{}')";
 
 pub fn edit_clause(
     config: &Config,
@@ -357,15 +350,9 @@ fn apply_set_field(
     op: WriteOp,
 ) -> anyhow::Result<()> {
     match artifact {
-        ArtifactType::Adr => set_toml_field::<AdrTomlAdapter>(
-            config,
-            id,
-            fp,
-            value,
-            op,
-            ArtifactType::Adr,
-            adr_nested_set_alternatives,
-        )?,
+        ArtifactType::Adr => {
+            set_toml_field::<AdrTomlAdapter>(config, id, fp, value, op, ArtifactType::Adr)?
+        }
         ArtifactType::WorkItem => {
             if fp.as_simple() == Some("notes") {
                 return Err(Diagnostic::new(
@@ -382,7 +369,6 @@ fn apply_set_field(
                 value,
                 op,
                 ArtifactType::WorkItem,
-                work_nested_set_dispatch,
             )?
         }
         ArtifactType::Rfc => set_json_field::<RfcJsonAdapter, _>(
@@ -425,14 +411,12 @@ pub fn get_field(
             id,
             plan.field_path.as_ref(),
             ArtifactType::Adr,
-            adr_nested_get_alternatives,
         )?,
         ArtifactType::WorkItem => get_toml_field::<WorkTomlAdapter>(
             config,
             id,
             plan.field_path.as_ref(),
             ArtifactType::WorkItem,
-            work_nested_get_dispatch,
         )?,
         ArtifactType::Rfc => get_json_field::<RfcJsonAdapter>(
             config,
@@ -458,7 +442,6 @@ fn get_toml_field<A>(
     id: &str,
     fp: Option<&FieldPath>,
     artifact: ArtifactType,
-    nested_handler: fn(&A::Entry, &FieldPath, &str) -> anyhow::Result<String>,
 ) -> anyhow::Result<()>
 where
     A: TomlAdapter,
@@ -466,14 +449,14 @@ where
 {
     let entry = A::load(config, id)?;
     if let Some(fp) = fp {
+        let doc = serde_json::to_value(entry.spec())?;
         if let Some(simple) = fp.as_simple() {
-            let doc = serde_json::to_value(entry.spec())?;
             println!(
                 "{}",
                 edit_runtime::get_simple_field(artifact, &doc, simple, id)?
             );
         } else {
-            println!("{}", nested_handler(&entry, fp, id)?);
+            println!("{}", edit_runtime::get_nested_field(artifact, &doc, fp, id)?);
         }
     } else {
         println!("{}", toml::to_string_pretty(entry.spec())?);
@@ -488,20 +471,19 @@ fn set_toml_field<A>(
     value: &str,
     op: WriteOp,
     artifact: ArtifactType,
-    nested_handler: fn(&mut A::Entry, &FieldPath, &str, &str) -> anyhow::Result<()>,
 ) -> anyhow::Result<()>
 where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,
 {
     let mut entry = A::load(config, id)?;
+    let mut doc = serde_json::to_value(entry.spec())?;
     if let Some(simple) = fp.as_simple() {
-        let mut doc = serde_json::to_value(entry.spec())?;
         edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
-        *entry.spec_mut() = serde_json::from_value(doc)?;
     } else {
-        nested_handler(&mut entry, fp, value, id)?;
+        edit_runtime::set_nested_field(artifact, &mut doc, fp, value, id)?;
     }
+    *entry.spec_mut() = serde_json::from_value(doc)?;
     A::write(config, &entry, op)?;
     Ok(())
 }
@@ -565,532 +547,6 @@ where
     post_update(&mut loaded.data);
     A::write(config, &loaded, op)?;
     Ok(())
-}
-
-macro_rules! define_object_scalar_access {
-    ($get_fn:ident, $set_fn:ident, $ty:ty, get: { $($gname:literal => |$gobj:ident| $gexpr:expr),+ $(,)? }, set: { $($sname:literal => |$sobj:ident, $svalue:ident| $sexpr:expr),+ $(,)? }) => {
-        fn $get_fn(item: &$ty, field: &str) -> Option<anyhow::Result<String>> {
-            match field {
-                $(
-                    $gname => {
-                        let $gobj = item;
-                        Some(Ok($gexpr))
-                    }
-                ),+,
-                _ => None,
-            }
-        }
-
-        fn $set_fn(item: &mut $ty, field: &str, value: &str) -> Option<anyhow::Result<()>> {
-            match field {
-                $(
-                    $sname => {
-                        let $sobj = item;
-                        let $svalue = value;
-                        Some($sexpr)
-                    }
-                ),+,
-                _ => None,
-            }
-        }
-    };
-}
-
-define_object_scalar_access!(
-    adr_alt_get_scalar,
-    adr_alt_set_scalar,
-    crate::model::Alternative,
-    get: {
-        "text" => |alt| alt.text.clone(),
-        "status" => |alt| alt.status.as_ref().to_string(),
-        "rejection_reason" => |alt| alt.rejection_reason.clone().unwrap_or_default()
-    },
-    set: {
-        "text" => |alt, value| { alt.text = value.to_string(); Ok(()) },
-        "status" => |alt, value| parse_enum_field(value, "Invalid alternative status").map(|status| { alt.status = status; }),
-        "rejection_reason" => |alt, value| { set_option_string_field(&mut alt.rejection_reason, value); Ok(()) }
-    }
-);
-
-fn adr_alt_list_field_mut<'a>(
-    alt: &'a mut crate::model::Alternative,
-    field: &str,
-) -> Option<&'a mut Vec<String>> {
-    match field {
-        "pros" => Some(&mut alt.pros),
-        "cons" => Some(&mut alt.cons),
-        _ => None,
-    }
-}
-
-fn adr_alt_index_and_subfield<'a>(
-    fp: &'a FieldPath,
-    id: &str,
-    len: usize,
-    verb: edit_rules::Verb,
-) -> anyhow::Result<(usize, Option<&'a path::PathSegment>)> {
-    if fp.segments[0].name != "alternatives" {
-        return nested_root_field_not_found(id, fp.segments[0].name.as_str(), ADR_NESTED_ERROR);
-    }
-    let (idx, max_depth) = nested_index_and_depth(fp, len, "adr", "alternatives")?;
-    if fp.segments.len() == 1 {
-        let missing_subfield_error = match verb {
-            edit_rules::Verb::Set => {
-                Some("Cannot set an entire alternative; use a sub-field (e.g., alt[0].text)")
-            }
-            edit_rules::Verb::Add => {
-                Some("Cannot add to alternative without sub-field (use alt[0].pros or alt[0].cons)")
-            }
-            _ => None,
-        };
-        if let Some(msg) = missing_subfield_error {
-            return Err(Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, msg, id).into());
-        }
-        return Ok((idx, None));
-    }
-    ensure_nested_depth(fp, max_depth, "ADR alternatives", id)?;
-    let seg1 = &fp.segments[1];
-    let unsupported = match verb {
-        edit_rules::Verb::Get => "Cannot get alternative field '{}'",
-        edit_rules::Verb::Set => "Cannot set alternative field '{}'",
-        edit_rules::Verb::Add => {
-            "Cannot add to alternative field '{}' (only pros and cons support add)"
-        }
-        edit_rules::Verb::Remove => {
-            "Cannot remove from alternative field '{}' (only pros and cons support remove)"
-        }
-        edit_rules::Verb::Tick => unreachable!("adr alternative nested does not support tick"),
-    };
-    ensure_nested_field_for_verb(
-        "adr",
-        "alternatives",
-        seg1,
-        verb,
-        fp,
-        id,
-        format!(
-            "Unknown alternative field: '{}' (expected text, status, pros, cons, or rejection_reason)",
-            seg1.name
-        ),
-        unsupported.replace("{}", seg1.name.as_str()),
-    )?;
-    Ok((idx, Some(seg1)))
-}
-
-fn adr_nested_get_alternatives(
-    entry: &AdrEntry,
-    fp: &FieldPath,
-    id: &str,
-) -> anyhow::Result<String> {
-    let alts = &entry.spec.content.alternatives;
-    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Get)?;
-    let alt = &alts[idx];
-    let Some(seg1) = seg1 else {
-        return Ok(toml::to_string_pretty(alt)?);
-    };
-    let items = match seg1.name.as_str() {
-        "pros" => Some(alt.pros.as_slice()),
-        "cons" => Some(alt.cons.as_slice()),
-        _ => None,
-    };
-    if let Some(items) = items {
-        if let Some(j) = seg1.index {
-            return Ok(items[path::resolve_index(j, items.len())?].clone());
-        }
-        return Ok(items.join("\n"));
-    }
-    match adr_alt_get_scalar(alt, seg1.name.as_str()) {
-        Some(v) => v,
-        None => unreachable!("validated by edit rules"),
-    }
-}
-
-fn adr_nested_set_alternatives(
-    entry: &mut AdrEntry,
-    fp: &FieldPath,
-    value: &str,
-    id: &str,
-) -> anyhow::Result<()> {
-    let alts = &mut entry.spec.content.alternatives;
-    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Set)?;
-    let seg1 = seg1.expect("set requires subfield by construction");
-    let alt = &mut alts[idx];
-    if let Some(items) = adr_alt_list_field_mut(alt, seg1.name.as_str()) {
-        let j = seg1.index.ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!(
-                    "Use 'add' to append to {}, or provide an index (e.g., alt[0].{}[0])",
-                    seg1.name, seg1.name
-                ),
-                id,
-            )
-        })?;
-        let ji = path::resolve_index(j, items.len())?;
-        items[ji] = value.to_string();
-        return Ok(());
-    }
-    match adr_alt_set_scalar(alt, seg1.name.as_str(), value) {
-        Some(v) => v,
-        None => unreachable!("validated by edit rules"),
-    }
-}
-
-fn adr_nested_add_alternatives(
-    entry: &mut AdrEntry,
-    fp: &FieldPath,
-    value: &str,
-    id: &str,
-) -> anyhow::Result<()> {
-    let alts = &mut entry.spec.content.alternatives;
-    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Add)?;
-    let seg1 = seg1.expect("add requires subfield by construction");
-    let alt = &mut alts[idx];
-    let items = adr_alt_list_field_mut(alt, seg1.name.as_str()).expect("validated by edit rules");
-    if seg1.index.is_some() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!(
-                "Cannot add to indexed path '{}' (use set/remove for a specific element)",
-                format_path(fp)
-            ),
-            id,
-        )
-        .into());
-    }
-    if !items.iter().any(|item| item == value) {
-        items.push(value.to_string());
-    }
-    Ok(())
-}
-
-fn adr_nested_remove_alternatives(
-    entry: &mut AdrEntry,
-    fp: &FieldPath,
-    opts: &MatchOptions,
-    id: &str,
-) -> anyhow::Result<Vec<String>> {
-    let alts = &mut entry.spec.content.alternatives;
-    let (idx, seg1) = adr_alt_index_and_subfield(fp, id, alts.len(), edit_rules::Verb::Remove)?;
-    let Some(seg1) = seg1 else {
-        let removed = alts.remove(idx);
-        return Ok(vec![removed.text]);
-    };
-
-    let alt = &mut alts[idx];
-    let items = adr_alt_list_field_mut(alt, seg1.name.as_str()).expect("validated by edit rules");
-    if let Some(j) = seg1.index {
-        return Ok(vec![items.remove(path::resolve_index(j, items.len())?)]);
-    }
-
-    let texts: Vec<&str> = items.iter().map(|s| s.as_str()).collect();
-    let to_remove = resolve_match_indices(id, seg1.name.as_str(), &texts, opts, MatchUse::Remove)?;
-    let removed: Vec<String> = to_remove.iter().map(|&i| items[i].clone()).collect();
-    let mut sorted = to_remove;
-    sorted.sort_by(|a, b| b.cmp(a));
-    for i in sorted {
-        items.remove(i);
-    }
-    Ok(removed)
-}
-
-#[derive(Clone, Copy)]
-struct WorkNestedObjectSpec {
-    root: &'static str,
-    scope: &'static str,
-    expected: &'static str,
-    whole_item_error: &'static str,
-}
-
-const WORK_JOURNAL_SPEC: WorkNestedObjectSpec = WorkNestedObjectSpec {
-    root: "journal",
-    scope: "journal entries",
-    expected: "content, date, or scope",
-    whole_item_error: "Cannot set an entire journal entry; use a sub-field (e.g., journal[0].content)",
-};
-
-const WORK_ACCEPTANCE_CRITERIA_SPEC: WorkNestedObjectSpec = WorkNestedObjectSpec {
-    root: "acceptance_criteria",
-    scope: "acceptance criteria",
-    expected: "text, status, or category",
-    whole_item_error: "Cannot set an entire acceptance criterion; use a sub-field (e.g., ac[0].text)",
-};
-
-define_object_scalar_access!(
-    journal_get_field,
-    journal_set_field,
-    crate::model::JournalEntry,
-    get: {
-        "content" => |item| item.content.clone(),
-        "date" => |item| item.date.clone(),
-        "scope" => |item| item.scope.clone().unwrap_or_default()
-    },
-    set: {
-        "content" => |item, value| { item.content = value.to_string(); Ok(()) },
-        "date" => |item, value| { item.date = value.to_string(); Ok(()) },
-        "scope" => |item, value| { set_option_string_field(&mut item.scope, value); Ok(()) }
-    }
-);
-
-define_object_scalar_access!(
-    ac_get_field,
-    ac_set_field,
-    crate::model::ChecklistItem,
-    get: {
-        "text" => |item| item.text.clone(),
-        "status" => |item| item.status.as_ref().to_string(),
-        "category" => |item| item.category.as_ref().to_string()
-    },
-    set: {
-        "text" => |item, value| { item.text = value.to_string(); Ok(()) },
-        "status" => |item, value| parse_enum_field(value, "Invalid checklist status").map(|status| { item.status = status; }),
-        "category" => |item, value| parse_enum_field(value, "Invalid category").map(|category| { item.category = category; })
-    }
-);
-
-fn work_nested_get_dispatch(
-    entry: &WorkItemEntry,
-    fp: &FieldPath,
-    id: &str,
-) -> anyhow::Result<String> {
-    match fp.segments[0].name.as_str() {
-        "journal" => work_nested_get_object_item(
-            &entry.spec.content.journal,
-            fp,
-            id,
-            WORK_JOURNAL_SPEC,
-            |item| Ok(toml::to_string_pretty(item)?),
-            journal_get_field,
-        ),
-        "acceptance_criteria" => work_nested_get_object_item(
-            &entry.spec.content.acceptance_criteria,
-            fp,
-            id,
-            WORK_ACCEPTANCE_CRITERIA_SPEC,
-            |item| Ok(format!("[{}] {}", item.status.as_ref(), item.text)),
-            ac_get_field,
-        ),
-        "notes" => {
-            ensure_no_subfields(
-                fp,
-                id,
-                "Notes entries do not have sub-fields (use notes[index])",
-            )?;
-            let (idx, _max_depth) =
-                nested_index_and_depth(fp, entry.spec.content.notes.len(), "work", "notes")?;
-            Ok(entry.spec.content.notes[idx].clone())
-        }
-        root => nested_root_field_not_found(id, root, WORK_NESTED_GET_ERROR),
-    }
-}
-
-fn work_nested_set_dispatch(
-    entry: &mut WorkItemEntry,
-    fp: &FieldPath,
-    value: &str,
-    id: &str,
-) -> anyhow::Result<()> {
-    match fp.segments[0].name.as_str() {
-        "journal" => work_nested_set_object_item(
-            &mut entry.spec.content.journal,
-            fp,
-            value,
-            id,
-            WORK_JOURNAL_SPEC,
-            journal_set_field,
-        ),
-        "acceptance_criteria" => work_nested_set_object_item(
-            &mut entry.spec.content.acceptance_criteria,
-            fp,
-            value,
-            id,
-            WORK_ACCEPTANCE_CRITERIA_SPEC,
-            ac_set_field,
-        ),
-        root => nested_root_field_not_found(id, root, WORK_NESTED_SET_ERROR),
-    }
-}
-
-fn work_nested_remove_dispatch(
-    entry: &mut WorkItemEntry,
-    fp: &FieldPath,
-    _opts: &MatchOptions,
-    id: &str,
-) -> anyhow::Result<Vec<String>> {
-    match fp.segments[0].name.as_str() {
-        "journal" => remove_work_nested_root_item(
-            &mut entry.spec.content.journal,
-            fp,
-            id,
-            "journal",
-            |item| item.content,
-        ),
-        "acceptance_criteria" => remove_work_nested_root_item(
-            &mut entry.spec.content.acceptance_criteria,
-            fp,
-            id,
-            "acceptance_criteria",
-            |item| item.text,
-        ),
-        "notes" => remove_work_nested_root_item(
-            &mut entry.spec.content.notes,
-            fp,
-            id,
-            "notes",
-            std::convert::identity,
-        ),
-        root => nested_root_field_not_found(id, root, WORK_NESTED_REMOVE_ERROR),
-    }
-}
-
-fn nested_root_field_not_found<T>(id: &str, root: &str, fmt: &str) -> anyhow::Result<T> {
-    Err(Diagnostic::new(
-        DiagnosticCode::E0815PathFieldNotFound,
-        fmt.replace("{}", root),
-        id,
-    )
-    .into())
-}
-
-fn work_nested_get_object_item<T, FRoot, FGet>(
-    items: &[T],
-    fp: &FieldPath,
-    id: &str,
-    spec: WorkNestedObjectSpec,
-    render_root: FRoot,
-    get_field: FGet,
-) -> anyhow::Result<String>
-where
-    FRoot: Fn(&T) -> anyhow::Result<String>,
-    FGet: Fn(&T, &str) -> Option<anyhow::Result<String>>,
-{
-    let (idx, seg1) =
-        work_nested_object_index_and_field(fp, id, items.len(), spec, edit_rules::Verb::Get)?;
-    let item = &items[idx];
-    let Some(seg1) = seg1 else {
-        return render_root(item);
-    };
-    match get_field(item, seg1.name.as_str()) {
-        Some(value) => value,
-        None => unreachable!("validated by edit rules"),
-    }
-}
-
-#[allow(clippy::too_many_arguments)]
-fn work_nested_set_object_item<T, FSet>(
-    items: &mut [T],
-    fp: &FieldPath,
-    value: &str,
-    id: &str,
-    spec: WorkNestedObjectSpec,
-    set_field: FSet,
-) -> anyhow::Result<()>
-where
-    FSet: Fn(&mut T, &str, &str) -> Option<anyhow::Result<()>>,
-{
-    let (idx, seg1) =
-        work_nested_object_index_and_field(fp, id, items.len(), spec, edit_rules::Verb::Set)?;
-    let Some(seg1) = seg1 else {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            spec.whole_item_error,
-            id,
-        )
-        .into());
-    };
-    let item = &mut items[idx];
-    match set_field(item, seg1.name.as_str(), value) {
-        Some(result) => result,
-        None => unreachable!("validated by edit rules"),
-    }
-}
-
-fn work_nested_object_index_and_field<'a>(
-    fp: &'a FieldPath,
-    id: &str,
-    len: usize,
-    spec: WorkNestedObjectSpec,
-    verb: edit_rules::Verb,
-) -> anyhow::Result<(usize, Option<&'a path::PathSegment>)> {
-    let (idx, max_depth) = nested_index_and_depth(fp, len, "work", spec.root)?;
-    if fp.segments.len() == 1 {
-        return Ok((idx, None));
-    }
-
-    ensure_nested_depth(fp, max_depth, spec.scope, id)?;
-    let seg1 = &fp.segments[1];
-    let unsupported = match verb {
-        edit_rules::Verb::Get => format!("Cannot get {} field '{}'", spec.root, seg1.name),
-        edit_rules::Verb::Set => format!("Cannot set {} field '{}'", spec.root, seg1.name),
-        _ => unreachable!("work nested object fields only support get/set"),
-    };
-    ensure_nested_field_for_verb(
-        "work",
-        spec.root,
-        seg1,
-        verb,
-        fp,
-        id,
-        format!(
-            "Unknown {} field: '{}' (expected {})",
-            spec.root, seg1.name, spec.expected
-        ),
-        unsupported,
-    )?;
-    Ok((idx, Some(seg1)))
-}
-
-fn nested_index_and_depth(
-    fp: &FieldPath,
-    len: usize,
-    artifact: &str,
-    root: &str,
-) -> anyhow::Result<(usize, usize)> {
-    let seg0 = &fp.segments[0];
-    let idx = path::require_index(seg0, len)?;
-    let max_depth = edit_rules::nested_root_rule(artifact, root)
-        .map(|r| r.max_depth)
-        .unwrap_or(2);
-    Ok((idx, max_depth))
-}
-
-fn remove_work_nested_root_item<T, F>(
-    items: &mut Vec<T>,
-    fp: &FieldPath,
-    id: &str,
-    root: &str,
-    to_removed_text: F,
-) -> anyhow::Result<Vec<String>>
-where
-    F: FnOnce(T) -> String,
-{
-    ensure_no_subfields(
-        fp,
-        id,
-        "Work item nested remove only supports top-level indexed removal (e.g., notes[0], ac[0], journal[0])",
-    )?;
-    let (idx, _max_depth) = nested_index_and_depth(fp, items.len(), "work", root)?;
-    let removed = items.remove(idx);
-    Ok(vec![to_removed_text(removed)])
-}
-
-fn ensure_no_subfields(fp: &FieldPath, id: &str, message: &str) -> anyhow::Result<()> {
-    if fp.segments.len() > 1 {
-        return Err(Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id).into());
-    }
-    Ok(())
-}
-
-fn set_option_string_field(dst: &mut Option<String>, value: &str) {
-    *dst = (!value.is_empty()).then(|| value.to_string());
-}
-
-fn parse_enum_field<T>(value: &str, err_prefix: &str) -> anyhow::Result<T>
-where
-    T: serde::de::DeserializeOwned,
-{
-    serde_json::from_str(&format!("\"{value}\""))
-        .map_err(|_| anyhow::anyhow!("{err_prefix}: {value}"))
 }
 
 fn adr_add_alternatives(
@@ -1203,12 +659,12 @@ pub fn add_to_field(
     let value = value.as_str();
     match artifact {
         ArtifactType::Adr => {
-            let ctx = AdrAddContext {
-                pros,
-                cons,
-                reject_reason,
-            };
             if fp.is_simple() {
+                let ctx = AdrAddContext {
+                    pros,
+                    cons,
+                    reject_reason,
+                };
                 add_toml_simple_field::<AdrTomlAdapter, AdrAddContext>(
                     config,
                     id,
@@ -1223,8 +679,11 @@ pub fn add_to_field(
                     },
                 )?;
             } else {
+                // Nested add via V2 engine: e.g., alt[0].pros "value"
                 let mut entry = AdrTomlAdapter::load(config, id)?;
-                adr_nested_add_alternatives(&mut entry, &fp, value, id)?;
+                let mut doc = serde_json::to_value(entry.spec())?;
+                edit_runtime::add_nested_list_value(ArtifactType::Adr, &mut doc, &fp, value, id)?;
+                *entry.spec_mut() = serde_json::from_value(doc)?;
                 AdrTomlAdapter::write(config, &entry, op)?;
             }
         }
@@ -1384,7 +843,6 @@ pub fn remove_from_field(
             opts,
             op,
             ArtifactType::Adr,
-            adr_nested_remove_alternatives,
         )?,
         ArtifactType::WorkItem => remove_toml_field::<WorkTomlAdapter>(
             config,
@@ -1394,7 +852,6 @@ pub fn remove_from_field(
             opts,
             op,
             ArtifactType::WorkItem,
-            work_nested_remove_dispatch,
         )?,
         ArtifactType::Rfc => remove_json_simple_list_field::<RfcJsonAdapter>(
             config,
@@ -1502,7 +959,6 @@ fn remove_simple_values_from_doc(
     })
 }
 
-#[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn remove_toml_field<A>(
     config: &Config,
     id: &str,
@@ -1511,29 +967,43 @@ fn remove_toml_field<A>(
     opts: &MatchOptions,
     op: WriteOp,
     artifact: ArtifactType,
-    nested_handler: fn(
-        &mut A::Entry,
-        &FieldPath,
-        &MatchOptions,
-        &str,
-    ) -> anyhow::Result<Vec<String>>,
 ) -> anyhow::Result<()>
 where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,
 {
     let mut entry = A::load(config, id)?;
+    let mut doc = serde_json::to_value(entry.spec())?;
     if let Some(simple) = fp.as_simple() {
-        let mut doc = serde_json::to_value(entry.spec())?;
         let removed = remove_simple_values_from_doc(artifact, &mut doc, simple, id, opts)?
             .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
         *entry.spec_mut() = serde_json::from_value(doc)?;
         A::write(config, &entry, op)?;
         notify_removed(id, simple, &removed, op);
-    } else {
-        let removed = nested_handler(&mut entry, fp, opts, id)?;
+    } else if fp.segments.len() >= 2 {
+        // Nested subfield remove: e.g., alt[0].pros or alt[0].cons[1]
+        let removed = if fp.has_terminal_index() {
+            // Direct indexed removal: alt[0].cons[1]
+            let sub_idx = fp.segments[1].index.unwrap();
+            edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
+                let resolved = path::resolve_index(sub_idx, items.len())?;
+                Ok(vec![resolved])
+            })?
+        } else {
+            // Matcher-based removal: alt[0].pros "pattern"
+            edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
+                resolve_match_indices(id, field, items, opts, MatchUse::Remove)
+            })?
+        };
+        *entry.spec_mut() = serde_json::from_value(doc)?;
         A::write(config, &entry, op)?;
         notify_removed(id, field, &removed, op);
+    } else {
+        // Root item remove: e.g., alt[0], journal[0], notes[0]
+        let removed = edit_runtime::remove_nested_root_item(artifact, &mut doc, fp, id)?;
+        *entry.spec_mut() = serde_json::from_value(doc)?;
+        A::write(config, &entry, op)?;
+        notify_removed(id, field, &[removed], op);
     }
     Ok(())
 }
@@ -1597,68 +1067,6 @@ where
     *entry.spec_mut() = serde_json::from_value(doc)?;
     A::write(config, &entry, op)?;
     Ok(ticked_text)
-}
-
-fn ensure_nested_depth(
-    fp: &FieldPath,
-    max_depth: usize,
-    scope: &str,
-    id: &str,
-) -> anyhow::Result<()> {
-    if fp.segments.len() > max_depth {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!(
-                "Path '{}' is too deep for {} (max {} segments)",
-                format_path(fp),
-                scope,
-                max_depth
-            ),
-            id,
-        )
-        .into());
-    }
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn ensure_nested_field_for_verb(
-    artifact: &str,
-    root: &str,
-    seg: &path::PathSegment,
-    verb: edit_rules::Verb,
-    fp: &FieldPath,
-    id: &str,
-    unknown_message: String,
-    unsupported_message: String,
-) -> anyhow::Result<edit_rules::FieldKind> {
-    let rule =
-        edit_rules::nested_field_rule(artifact, root, seg.name.as_str()).ok_or_else(|| {
-            Diagnostic::new(DiagnosticCode::E0815PathFieldNotFound, unknown_message, id)
-        })?;
-
-    if !edit_rules::nested_field_supports_verb(artifact, root, seg.name.as_str(), verb) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            unsupported_message,
-            id,
-        )
-        .into());
-    }
-
-    if matches!(rule.kind, edit_rules::FieldKind::Scalar) && seg.index.is_some() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!(
-                "Field '{}' does not support index in path '{}'",
-                seg.name,
-                format_path(fp)
-            ),
-            id,
-        )
-        .into());
-    }
-    Ok(rule.kind)
 }
 
 fn format_path(fp: &FieldPath) -> String {

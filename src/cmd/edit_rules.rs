@@ -17,6 +17,7 @@ pub struct NestedFieldRule {
 pub struct NestedRootRule {
     pub artifact: &'static str,
     pub root: &'static str,
+    pub content_path: &'static [&'static str],
     pub requires_index: bool,
     pub max_depth: usize,
     pub fields: &'static [NestedFieldRule],
@@ -114,6 +115,7 @@ pub fn nested_field_rule(
     nested_root_rule(artifact, root).and_then(|rule| rule.fields.iter().find(|f| f.name == field))
 }
 
+#[cfg_attr(not(test), allow(dead_code))]
 pub fn nested_field_supports_verb(artifact: &str, root: &str, field: &str, verb: Verb) -> bool {
     nested_field_rule(artifact, root, field).is_some_and(|rule| rule.verbs.contains(&verb.as_str()))
 }
