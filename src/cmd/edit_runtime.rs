@@ -503,17 +503,17 @@ fn resolve_nested_root(
 
 /// Validate a nested field path against SSOT rules for a given verb.
 ///
-/// Returns (root_rule, resolved_root_index). Validates depth, index
-/// requirements, and subfield verb support.
+/// Validates depth, index requirements, and subfield verb support.
+/// Returns the resolved root index.
 fn validate_nested_path(
     artifact: ArtifactType,
+    rule: &NestedRootRule,
     fp: &FieldPath,
     verb: Verb,
     root_array_len: usize,
     id: &str,
-) -> anyhow::Result<(&'static NestedRootRule, usize)> {
+) -> anyhow::Result<usize> {
     let root_name = &fp.segments[0].name;
-    let rule = resolve_nested_root(artifact, root_name, id)?;
 
     // Validate depth
     if fp.segments.len() > rule.max_depth {
@@ -521,7 +521,7 @@ fn validate_nested_path(
             DiagnosticCode::E0814InvalidPath,
             format!(
                 "Path '{}' exceeds max depth {} for {}.{}",
-                format_path(fp),
+                fp,
                 rule.max_depth,
                 artifact.rule_key(),
                 root_name
@@ -552,7 +552,12 @@ fn validate_nested_path(
                     )
                 },
             )?;
-        if !field_rule.verbs.contains(&verb.as_str()) {
+        if !edit_rules::nested_field_supports_verb(
+            artifact.rule_key(),
+            root_name,
+            subfield,
+            verb,
+        ) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0817PathTypeMismatch,
                 format!(
@@ -565,9 +570,11 @@ fn validate_nested_path(
             )
             .into());
         }
+        // Ensure unused binding is consumed for the existence check
+        let _ = field_rule;
     }
 
-    Ok((rule, root_idx))
+    Ok(root_idx)
 }
 
 /// Navigate to the root array in a JSON document using the SSOT content_path.
@@ -616,7 +623,7 @@ pub fn get_nested_field(
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
     let arr = root_array(doc, rule, id)?;
-    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Get, arr.len(), id)?;
+    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Get, arr.len(), id)?;
     let item = &arr[root_idx];
 
     if fp.segments.len() == 1 {
@@ -673,7 +680,7 @@ pub fn set_nested_field(
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
     let arr = root_array_mut(doc, rule, id)?;
-    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Set, arr.len(), id)?;
+    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Set, arr.len(), id)?;
 
     if fp.segments.len() < 2 {
         return Err(Diagnostic::new(
@@ -739,7 +746,7 @@ pub fn add_nested_list_value(
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
     let arr = root_array_mut(doc, rule, id)?;
-    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Add, arr.len(), id)?;
+    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Add, arr.len(), id)?;
 
     if fp.segments.len() < 2 {
         return Err(Diagnostic::new(
@@ -756,7 +763,7 @@ pub fn add_nested_list_value(
             DiagnosticCode::E0817PathTypeMismatch,
             format!(
                 "Cannot add to indexed path '{}' (use set/remove for a specific element)",
-                format_path(fp)
+                fp
             ),
             id,
         )
@@ -806,7 +813,7 @@ where
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
     let arr = root_array_mut(doc, rule, id)?;
-    let (_, root_idx) = validate_nested_path(artifact, fp, Verb::Remove, arr.len(), id)?;
+    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Remove, arr.len(), id)?;
 
     if fp.segments.len() < 2 {
         return Err(Diagnostic::new(
@@ -866,10 +873,10 @@ pub fn remove_nested_root_item(
     let root_idx = path::require_index(&fp.segments[0], arr.len())?;
     let removed = arr.remove(root_idx);
 
-    // Extract display text from the removed item
-    let text = removed
-        .get("text")
-        .and_then(Value::as_str)
+    // Extract display text using SSOT text_key, falling back to bare string items
+    let text = rule
+        .text_key
+        .and_then(|key| removed.get(key).and_then(Value::as_str))
         .or_else(|| removed.as_str())
         .unwrap_or("<item>")
         .to_string();
@@ -907,18 +914,4 @@ fn render_nested_item(item: &Value, rule: &NestedRootRule, _id: &str) -> anyhow:
 
 fn type_mismatch(msg: &str, id: &str) -> Diagnostic {
     Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, msg, id)
-}
-
-fn format_path(fp: &FieldPath) -> String {
-    let mut out = String::new();
-    for (i, seg) in fp.segments.iter().enumerate() {
-        if i > 0 {
-            out.push('.');
-        }
-        out.push_str(&seg.name);
-        if let Some(idx) = seg.index {
-            out.push_str(&format!("[{idx}]"));
-        }
-    }
-    out
 }

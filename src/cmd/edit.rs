@@ -323,7 +323,7 @@ pub fn set_field(
     apply_set_field(config, id, &fp, artifact, value.as_str(), op)?;
 
     if !op.is_preview() {
-        let display_field = format_path(&fp);
+        let display_field = fp.to_string();
         ui::field_set(id, &display_field, value.as_str());
     }
 
@@ -371,30 +371,8 @@ fn apply_set_field(
                 ArtifactType::WorkItem,
             )?
         }
-        ArtifactType::Rfc => set_json_field::<RfcJsonAdapter, _>(
-            config,
-            id,
-            fp,
-            value,
-            op,
-            ArtifactType::Rfc,
-            crate::validate::ArtifactKind::Rfc,
-            "RFC fields do not support nested paths",
-            |spec| {
-                spec.updated = Some(today());
-            },
-        )?,
-        ArtifactType::Clause => set_json_field::<ClauseJsonAdapter, _>(
-            config,
-            id,
-            fp,
-            value,
-            op,
-            ArtifactType::Clause,
-            crate::validate::ArtifactKind::Clause,
-            "Clause fields do not support nested paths",
-            |_spec| {},
-        )?,
+        ArtifactType::Rfc => set_rfc_field(config, id, fp, value, op)?,
+        ArtifactType::Clause => set_clause_field(config, id, fp, value, op)?,
     }
     Ok(())
 }
@@ -513,39 +491,60 @@ where
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
-fn set_json_field<A, F>(
+fn set_rfc_field(
     config: &Config,
     id: &str,
     fp: &FieldPath,
     value: &str,
     op: WriteOp,
-    artifact: ArtifactType,
-    kind: crate::validate::ArtifactKind,
-    nested_error: &str,
-    post_update: F,
-) -> anyhow::Result<()>
-where
-    A: JsonAdapter,
-    A::Data: serde::Serialize + serde::de::DeserializeOwned,
-    F: FnOnce(&mut A::Data),
-{
-    let simple = require_simple_field(fp, id, nested_error)?;
-    if !edit_runtime::supports_simple_set_field(artifact, simple) {
-        let code = match kind {
-            crate::validate::ArtifactKind::Rfc => DiagnosticCode::E0101RfcSchemaInvalid,
-            crate::validate::ArtifactKind::Clause => DiagnosticCode::E0201ClauseSchemaInvalid,
-            _ => DiagnosticCode::E0803UnknownField,
-        };
-        return Err(Diagnostic::new(code, format!("Unknown field: {simple}"), "").into());
+) -> anyhow::Result<()> {
+    let simple = require_simple_field(fp, id, "RFC fields do not support nested paths")?;
+    if !edit_runtime::supports_simple_set_field(ArtifactType::Rfc, simple) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Unknown field: {simple}"),
+            "",
+        )
+        .into());
     }
-    crate::validate::validate_field(config, id, kind, simple, value)?;
-    let mut loaded = A::load(config, id)?;
+    crate::validate::validate_field(config, id, crate::validate::ArtifactKind::Rfc, simple, value)?;
+    let mut loaded = RfcJsonAdapter::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
-    edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
+    edit_runtime::set_simple_field(ArtifactType::Rfc, &mut doc, simple, value, id)?;
     loaded.data = serde_json::from_value(doc)?;
-    post_update(&mut loaded.data);
-    A::write(config, &loaded, op)?;
+    loaded.data.updated = Some(today());
+    RfcJsonAdapter::write(config, &loaded, op)?;
+    Ok(())
+}
+
+fn set_clause_field(
+    config: &Config,
+    id: &str,
+    fp: &FieldPath,
+    value: &str,
+    op: WriteOp,
+) -> anyhow::Result<()> {
+    let simple = require_simple_field(fp, id, "Clause fields do not support nested paths")?;
+    if !edit_runtime::supports_simple_set_field(ArtifactType::Clause, simple) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0201ClauseSchemaInvalid,
+            format!("Unknown field: {simple}"),
+            "",
+        )
+        .into());
+    }
+    crate::validate::validate_field(
+        config,
+        id,
+        crate::validate::ArtifactKind::Clause,
+        simple,
+        value,
+    )?;
+    let mut loaded = ClauseJsonAdapter::load(config, id)?;
+    let mut doc = serde_json::to_value(&loaded.data)?;
+    edit_runtime::set_simple_field(ArtifactType::Clause, &mut doc, simple, value, id)?;
+    loaded.data = serde_json::from_value(doc)?;
+    ClauseJsonAdapter::write(config, &loaded, op)?;
     Ok(())
 }
 
@@ -659,64 +658,49 @@ pub fn add_to_field(
     let value = value.as_str();
     match artifact {
         ArtifactType::Adr => {
+            let mut entry = AdrTomlAdapter::load(config, id)?;
             if fp.is_simple() {
-                let ctx = AdrAddContext {
-                    pros,
-                    cons,
-                    reject_reason,
-                };
-                add_toml_simple_field::<AdrTomlAdapter, AdrAddContext>(
-                    config,
-                    id,
-                    &fp,
-                    value,
-                    op,
-                    ArtifactType::Adr,
-                    &ctx,
-                    |entry, simple, value, ctx| match simple {
-                        "alternatives" => adr_add_alternatives(entry, value, ctx),
-                        _ => unreachable!("validated by edit rules"),
-                    },
-                )?;
+                let simple = fp.as_simple().unwrap();
+                let mut doc = serde_json::to_value(entry.spec())?;
+                if edit_runtime::add_simple_list_value(ArtifactType::Adr, &mut doc, simple, value, id)? {
+                    *entry.spec_mut() = serde_json::from_value(doc)?;
+                } else if simple == "alternatives" {
+                    let ctx = AdrAddContext { pros, cons, reject_reason };
+                    adr_add_alternatives(&mut entry, value, &ctx)?;
+                } else {
+                    return Err(cannot_add_to_field_error(id, simple));
+                }
             } else {
-                // Nested add via V2 engine: e.g., alt[0].pros "value"
-                let mut entry = AdrTomlAdapter::load(config, id)?;
                 let mut doc = serde_json::to_value(entry.spec())?;
                 edit_runtime::add_nested_list_value(ArtifactType::Adr, &mut doc, &fp, value, id)?;
                 *entry.spec_mut() = serde_json::from_value(doc)?;
-                AdrTomlAdapter::write(config, &entry, op)?;
             }
+            AdrTomlAdapter::write(config, &entry, op)?;
         }
         ArtifactType::WorkItem => {
             if !fp.is_simple() {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0817PathTypeMismatch,
-                    format!(
-                        "Work item nested add is not supported for path '{}'",
-                        format_path(&fp)
-                    ),
+                    format!("Work item nested add is not supported for path '{fp}'"),
                     id,
                 )
                 .into());
             }
-            let ctx = WorkAddContext {
-                category_override,
-                scope_override,
-            };
-            add_toml_simple_field::<WorkTomlAdapter, WorkAddContext<'_>>(
-                config,
-                id,
-                &fp,
-                value,
-                op,
-                ArtifactType::WorkItem,
-                &ctx,
-                |entry, simple, value, ctx| match simple {
-                    "acceptance_criteria" => work_add_acceptance_criteria(entry, value, ctx),
-                    "journal" => work_add_journal(entry, value, ctx),
-                    _ => unreachable!("validated by edit rules"),
-                },
-            )?;
+            let simple = fp.as_simple().unwrap();
+            let mut entry = WorkTomlAdapter::load(config, id)?;
+            let mut doc = serde_json::to_value(entry.spec())?;
+            if edit_runtime::add_simple_list_value(ArtifactType::WorkItem, &mut doc, simple, value, id)? {
+                *entry.spec_mut() = serde_json::from_value(doc)?;
+            } else if simple == "acceptance_criteria" {
+                let ctx = WorkAddContext { category_override, scope_override };
+                work_add_acceptance_criteria(&mut entry, value, &ctx)?;
+            } else if simple == "journal" {
+                let ctx = WorkAddContext { category_override, scope_override };
+                work_add_journal(&mut entry, value, &ctx)?;
+            } else {
+                return Err(cannot_add_to_field_error(id, simple));
+            }
+            WorkTomlAdapter::write(config, &entry, op)?;
         }
         ArtifactType::Rfc => add_json_simple_list_field::<RfcJsonAdapter>(
             config,
@@ -739,7 +723,7 @@ pub fn add_to_field(
     }
 
     if !op.is_preview() {
-        let display_field = format_path(&fp);
+        let display_field = fp.to_string();
         ui::field_added(id, &display_field, value);
     }
 
@@ -767,40 +751,6 @@ where
     }
     loaded.data = serde_json::from_value(doc)?;
     A::write(config, &loaded, op)?;
-    Ok(())
-}
-
-#[allow(clippy::too_many_arguments)]
-fn add_toml_simple_field<A, C>(
-    config: &Config,
-    id: &str,
-    fp: &FieldPath,
-    value: &str,
-    op: WriteOp,
-    artifact: ArtifactType,
-    ctx: &C,
-    special_handler: fn(&mut A::Entry, &str, &str, &C) -> anyhow::Result<()>,
-) -> anyhow::Result<()>
-where
-    A: TomlAdapter,
-    A::Entry: TomlEditableEntry,
-{
-    let simple = fp.as_simple().expect("simple path expected");
-    let mut entry = A::load(config, id)?;
-    let mut doc = serde_json::to_value(entry.spec())?;
-    if edit_runtime::add_simple_list_value(artifact, &mut doc, simple, value, id)? {
-        *entry.spec_mut() = serde_json::from_value(doc)?;
-    } else {
-        if !edit_rules::simple_field_supports_verb(
-            artifact.rule_key(),
-            simple,
-            edit_rules::Verb::Add,
-        ) {
-            return Err(cannot_add_to_field_error(id, simple));
-        }
-        special_handler(&mut entry, simple, value, ctx)?;
-    }
-    A::write(config, &entry, op)?;
     Ok(())
 }
 
@@ -974,37 +924,34 @@ where
 {
     let mut entry = A::load(config, id)?;
     let mut doc = serde_json::to_value(entry.spec())?;
-    if let Some(simple) = fp.as_simple() {
+
+    let (display_field, removed) = if let Some(simple) = fp.as_simple() {
         let removed = remove_simple_values_from_doc(artifact, &mut doc, simple, id, opts)?
             .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
-        *entry.spec_mut() = serde_json::from_value(doc)?;
-        A::write(config, &entry, op)?;
-        notify_removed(id, simple, &removed, op);
+        (simple.to_string(), removed)
     } else if fp.segments.len() >= 2 {
         // Nested subfield remove: e.g., alt[0].pros or alt[0].cons[1]
         let removed = if fp.has_terminal_index() {
-            // Direct indexed removal: alt[0].cons[1]
             let sub_idx = fp.segments[1].index.unwrap();
             edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
                 let resolved = path::resolve_index(sub_idx, items.len())?;
                 Ok(vec![resolved])
             })?
         } else {
-            // Matcher-based removal: alt[0].pros "pattern"
             edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
                 resolve_match_indices(id, field, items, opts, MatchUse::Remove)
             })?
         };
-        *entry.spec_mut() = serde_json::from_value(doc)?;
-        A::write(config, &entry, op)?;
-        notify_removed(id, field, &removed, op);
+        (field.to_string(), removed)
     } else {
         // Root item remove: e.g., alt[0], journal[0], notes[0]
         let removed = edit_runtime::remove_nested_root_item(artifact, &mut doc, fp, id)?;
-        *entry.spec_mut() = serde_json::from_value(doc)?;
-        A::write(config, &entry, op)?;
-        notify_removed(id, field, &[removed], op);
-    }
+        (field.to_string(), vec![removed])
+    };
+
+    *entry.spec_mut() = serde_json::from_value(doc)?;
+    A::write(config, &entry, op)?;
+    notify_removed(id, &display_field, &removed, op);
     Ok(())
 }
 
@@ -1067,17 +1014,6 @@ where
     *entry.spec_mut() = serde_json::from_value(doc)?;
     A::write(config, &entry, op)?;
     Ok(ticked_text)
-}
-
-fn format_path(fp: &FieldPath) -> String {
-    fp.segments
-        .iter()
-        .map(|seg| match seg.index {
-            Some(idx) => format!("{}[{idx}]", seg.name),
-            None => seg.name.clone(),
-        })
-        .collect::<Vec<_>>()
-        .join(".")
 }
 
 fn confirm_delete_prompt(force: bool, op: WriteOp, prompt: &str) -> anyhow::Result<bool> {

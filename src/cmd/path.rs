@@ -75,6 +75,21 @@ impl FieldPath {
     }
 }
 
+impl std::fmt::Display for FieldPath {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, seg) in self.segments.iter().enumerate() {
+            if i > 0 {
+                f.write_str(".")?;
+            }
+            f.write_str(&seg.name)?;
+            if let Some(idx) = seg.index {
+                write!(f, "[{idx}]")?;
+            }
+        }
+        Ok(())
+    }
+}
+
 /// Normalize a single field name, expanding aliases to canonical form.
 fn normalize_segment_name(name: &str) -> String {
     edit_rules::normalize_alias(name).to_string()

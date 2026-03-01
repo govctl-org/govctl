@@ -34,6 +34,7 @@ struct NestedRootRule {
     artifact: String,
     root: String,
     content_path: Vec<String>,
+    text_key: Option<String>,
     requires_index: bool,
     max_depth: usize,
     fields: Vec<NestedFieldRule>,
@@ -256,6 +257,13 @@ fn render_edit_rules(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
         out.push_str(&format!(
             "        content_path: {},\n",
             runtime_path_expr(&root.content_path)
+        ));
+        out.push_str(&format!(
+            "        text_key: {},\n",
+            match &root.text_key {
+                Some(k) => format!("Some({k:?})"),
+                None => "None".to_string(),
+            }
         ));
         out.push_str(&format!(
             "        requires_index: {},\n",

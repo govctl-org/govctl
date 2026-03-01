@@ -89,6 +89,7 @@
         "artifact",
         "root",
         "content_path",
+        "text_key",
         "requires_index",
         "max_depth",
         "fields"
@@ -109,6 +110,12 @@
             "pattern": "^[a-z_][a-z0-9_]*$"
           },
           "minItems": 1
+        },
+        "text_key": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[a-z_][a-z0-9_]*$" },
+            { "type": "null" }
+          ]
         },
         "requires_index": {
           "type": "boolean"
