@@ -1,0 +1,121 @@
+[govctl]
+schema = 1
+id = "ADR-0032"
+title = "Migration skill for adopting govctl in existing projects"
+status = "proposed"
+date = "2026-03-02"
+refs = [
+    "ADR-0023",
+    "ADR-0024",
+    "ADR-0028",
+]
+
+[content]
+context = """
+govctl currently assumes greenfield projects — `govctl init` creates the governance directory structure from scratch, and all workflows (skills, agents) assume artifacts exist from day zero.
+
+### Problem Statement
+
+The majority of real-world projects that would benefit from govctl are **existing codebases** that lack formal governance. These projects have:
+
+- **Undocumented architectural decisions** embedded in code, comments, and tribal knowledge
+- **Existing specifications** scattered across markdown docs, wikis, or issue trackers
+- **In-progress work** tracked informally (GitHub Issues, Jira, sticky notes)
+- **No artifact cross-references** in source code
+
+Adopting govctl today requires teams to either:
+1. Start fresh (losing existing context), or
+2. Manually create dozens of ADRs, RFCs, and work items — a tedious process that discourages adoption
+
+### Requirements
+
+A migration skill should:
+
+- Guide an AI agent through systematically discovering and codifying existing decisions
+- Use only existing `govctl` CLI commands (no new CLI capabilities needed)
+- Support incremental migration (not all-or-nothing)
+- Produce well-structured artifacts that pass `govctl check`
+- Add `[[...]]` references to existing source code where decisions are implemented"""
+decision = """
+We will create a **migrate skill** (`.claude/skills/migrate/SKILL.md`) that guides the agent through a multi-phase migration workflow using existing govctl commands only.
+
+### Migration Phases
+
+**Phase 0: Scaffold** — Initialize govctl in the existing project.
+- Run `govctl init` (safe alongside existing files)
+- Read project structure (README, docs, config files) to understand the codebase
+
+**Phase 1: Discover** — Systematically scan the project for implicit governance artifacts.
+- **Decisions:** Read architecture docs, README sections, config comments, and code patterns to identify undocumented architectural decisions
+- **Specifications:** Find existing specs, API contracts, or design docs that could become RFCs
+- **Work in progress:** Check issue trackers, TODO comments, and branch names for active work
+
+**Phase 2: Backfill ADRs** — Create ADRs for discovered decisions.
+- For each significant decision found, create an ADR using `govctl adr new`
+- Populate context (what prompted the decision), decision (what was chosen), consequences
+- Add alternatives where the rejected options are known
+- Accept the ADR immediately (`govctl adr accept`) since these are historical records
+
+**Phase 3: Backfill RFCs** (optional) — Create RFCs for existing specifications.
+- Only for projects that have existing specification documents
+- Create RFC + clauses from existing spec content
+- Finalize as normative and advance to stable (these specs are already implemented)
+
+**Phase 4: Annotate source** — Add `[[...]]` references to existing code.
+- Scan source files for implementations of newly-created ADRs/RFCs
+- Insert `// Implements [[ADR-NNNN]]` or `// Per [[RFC-NNNN:C-NAME]]` comments
+- Run `govctl check` to verify references resolve
+
+**Phase 5: Establish baseline** — Create work items for any in-progress work.
+- Create work items for known active tasks
+- Going forward, all new work uses the `/gov` workflow
+
+### Skill Properties
+
+- **Interactive:** The skill prompts the user at each phase to confirm discoveries and prioritize what to backfill
+- **Incremental:** Each phase can be run independently; partial migration is valid
+- **Non-destructive:** Never overwrites existing files; only adds governance artifacts alongside existing content
+- **Idempotent:** Running the skill again skips already-created artifacts"""
+consequences = """
+### Positive
+
+- **Lowers adoption barrier** — Existing projects can adopt govctl without starting from scratch.
+- **Preserves institutional knowledge** — Undocumented decisions get codified as searchable, cross-referenced ADRs.
+- **Gradual onboarding** — Teams can migrate incrementally, one module or decision at a time.
+- **Agent-native** — The skill leverages Claude Code's ability to read codebases and synthesize decisions, making backfill practical.
+
+### Negative
+
+- **Quality depends on agent understanding** — Auto-discovered decisions may be incomplete or inaccurately described.
+  - Mitigation: Interactive confirmation at each step; user reviews all generated artifacts.
+- **Source annotation churn** — Adding `[[...]]` references to existing code creates a large diff.
+  - Mitigation: Phase 4 is optional and can be done incrementally per-module.
+- **Historical ADRs may lack alternatives** — Old decisions often don't have documented rejected options.
+  - Mitigation: The skill accepts "considered" as the only alternative when history is unclear.
+
+### Neutral
+
+- No new govctl CLI commands are needed — the skill composes existing commands.
+- The skill is bundled with govctl and installed via `govctl sync`, like other skills."""
+
+[[content.alternatives]]
+text = "Agent-assisted skill using existing govctl commands"
+status = "accepted"
+pros = [
+    "Zero new CLI code needed",
+    "Ships immediately as a bundled skill",
+]
+cons = ["Requires an AI agent to execute the workflow"]
+
+[[content.alternatives]]
+text = "New govctl migrate CLI command with auto-detection"
+status = "rejected"
+pros = [
+    "Works without AI agent",
+    "Deterministic output",
+]
+cons = [
+    "Significant new CLI code to write and maintain",
+    "Auto-detection heuristics are brittle across project types",
+]
+rejection_reason = "The discovery and synthesis tasks are inherently judgment-heavy — an AI agent handles ambiguity better than heuristic code. CLI commands can be added later if common patterns emerge."

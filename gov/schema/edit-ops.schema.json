@@ -321,7 +321,12 @@
         },
         "rule": {
           "type": "string",
-          "enum": ["semver", "clause_superseded_by", "artifact_ref", "enum_value"]
+          "enum": [
+            "semver",
+            "clause_superseded_by",
+            "artifact_ref",
+            "enum_value"
+          ]
         }
       },
       "additionalProperties": false
