@@ -337,10 +337,6 @@ git add . && git commit -m "test(<scope>): add tests for <feature>"
 ### 5.1 Final Validation
 
 ```bash
-# Run full validation suite
-just pre-commit
-
-# If `just` is not available, run individually:
 govctl check
 govctl render
 ```
