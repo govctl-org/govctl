@@ -35,14 +35,17 @@ Options:
 ### Edit Clause Text
 
 ```bash
-# From stdin
+# From stdin (recommended for multi-line)
 govctl clause edit RFC-0010:C-SCOPE --stdin <<'EOF'
 The system MUST validate all inputs.
 The system SHOULD log validation failures.
 EOF
 
-# Open in editor
-govctl clause edit RFC-0010:C-SCOPE
+# Inline text
+govctl clause edit RFC-0010:C-SCOPE --text "The system MUST validate all inputs."
+
+# From file
+govctl clause edit RFC-0010:C-SCOPE --text-file clause-text.md
 ```
 
 ### Delete a Clause
@@ -50,9 +53,7 @@ govctl clause edit RFC-0010:C-SCOPE
 Accidentally created clauses can be deleted from **draft** RFCs only:
 
 ```bash
-govctl delete RFC-0010:C-MISTAKE -f
-# Or explicitly specify it's a clause:
-govctl delete --clause RFC-0010:C-MISTAKE -f
+govctl clause delete RFC-0010:C-MISTAKE -f
 ```
 
 **Safety:** Deletion is only allowed when:

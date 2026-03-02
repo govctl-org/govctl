@@ -19,16 +19,17 @@ Work items are automatically assigned IDs like `WI-2026-01-17-001`.
 Work items contain:
 
 - **Title** — Brief description
-- **Notes** — Detailed context (array of strings)
-- **Acceptance Criteria** — Checkable completion criteria
+- **Description** — Task scope declaration
+- **Journal** — Execution tracking entries with date and scope (per [[ADR-0026]])
+- **Notes** — Ad-hoc key points (array of strings)
+- **Acceptance Criteria** — Checkable completion criteria with changelog category
 - **Refs** — Links to related RFCs, ADRs, or external resources
 
 ## Status Lifecycle
 
 ```
 queue → active → done
-              ↘ blocked
-              ↘ cancelled
+    ↘        ↘ cancelled
 ```
 
 ### Move Between States
@@ -47,9 +48,11 @@ govctl work move implement-caching.toml active
 ### Add Criteria
 
 ```bash
-govctl work add WI-2026-01-17-001 acceptance_criteria "Unit tests pass"
-govctl work add WI-2026-01-17-001 acceptance_criteria "Documentation updated"
+govctl work add WI-2026-01-17-001 acceptance_criteria "chore: Unit tests pass"
+govctl work add WI-2026-01-17-001 acceptance_criteria "add: Documentation updated"
 ```
+
+Category prefixes (`add:`, `fix:`, `changed:`, `chore:`, etc.) are required and drive changelog generation.
 
 ### Mark Criteria Complete
 
@@ -106,9 +109,7 @@ govctl work remove WI-2026-01-17-001 refs "obsolete" --all
 Accidentally created work items can be deleted if they're still in **queue** status:
 
 ```bash
-govctl delete WI-2026-01-17-999 -f
-# Or explicitly specify it's a work item:
-govctl delete --work WI-2026-01-17-999 -f
+govctl work delete WI-2026-01-17-999 -f
 ```
 
 **Safety:** Deletion is only allowed when:

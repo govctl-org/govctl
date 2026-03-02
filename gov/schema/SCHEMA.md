@@ -225,26 +225,33 @@ Impact of the decision.
 [[content.alternatives]]
 text = "Option A"
 status = "rejected"
+rejection_reason = "Does not meet performance requirements"
+cons = ["Slow", "Hard to maintain"]
 
 [[content.alternatives]]
 text = "Option B"
 status = "accepted"
+pros = ["Fast", "Simple"]
+cons = ["Requires new dependency"]
 ```
 
-| Field                           | Required | Type   | Description                                            |
-| ------------------------------- | -------- | ------ | ------------------------------------------------------ |
-| `govctl.id`                     | yes      | string | Unique identifier `ADR-NNNN`                           |
-| `govctl.title`                  | yes      | string | Decision title                                         |
-| `govctl.status`                 | yes      | enum   | `proposed` \| `accepted` \| `rejected` \| `superseded` |
-| `govctl.date`                   | yes      | date   | Decision date                                          |
-| `govctl.superseded_by`          | no       | string | ADR ID that replaces this                              |
-| `govctl.refs`                   | no       | array  | Cross-references                                       |
-| `content.context`               | yes      | string | Problem description                                    |
-| `content.decision`              | yes      | string | Decision and rationale                                 |
-| `content.consequences`          | yes      | string | Impact analysis                                        |
-| `content.alternatives`          | no       | array  | Options considered                                     |
-| `content.alternatives[].text`   | yes      | string | Option description                                     |
-| `content.alternatives[].status` | no       | enum   | `considered` \| `rejected` \| `accepted`               |
+| Field                                      | Required | Type   | Description                                            |
+| ------------------------------------------ | -------- | ------ | ------------------------------------------------------ |
+| `govctl.id`                                | yes      | string | Unique identifier `ADR-NNNN`                           |
+| `govctl.title`                             | yes      | string | Decision title                                         |
+| `govctl.status`                            | yes      | enum   | `proposed` \| `accepted` \| `rejected` \| `superseded` |
+| `govctl.date`                              | yes      | date   | Decision date                                          |
+| `govctl.superseded_by`                     | no       | string | ADR ID that replaces this                              |
+| `govctl.refs`                              | no       | array  | Cross-references                                       |
+| `content.context`                          | yes      | string | Problem description                                    |
+| `content.decision`                         | yes      | string | Decision and rationale                                 |
+| `content.consequences`                     | yes      | string | Impact analysis                                        |
+| `content.alternatives`                     | no       | array  | Options considered                                     |
+| `content.alternatives[].text`              | yes      | string | Option description                                     |
+| `content.alternatives[].status`            | no       | enum   | `considered` \| `rejected` \| `accepted`               |
+| `content.alternatives[].pros`              | no       | array  | Advantages (per [[ADR-0027]])                          |
+| `content.alternatives[].cons`              | no       | array  | Disadvantages (per [[ADR-0027]])                       |
+| `content.alternatives[].rejection_reason`  | no       | string | Why rejected (per [[ADR-0027]])                        |
 
 ### Work Item (TOML)
 
@@ -263,33 +270,43 @@ description = """
 What needs to be done.
 """
 
-notes = """
-Progress notes and observations.
-"""
+notes = ["Key observation", "Remember edge case"]
+
+[[content.journal]]
+date = "2026-01-17"
+scope = "backend"
+content = "Implemented the core logic."
 
 [[content.acceptance_criteria]]
 text = "First criterion"
 status = "done"
+category = "add"
 
 [[content.acceptance_criteria]]
 text = "Second criterion"
 status = "pending"
+category = "chore"
 ```
 
-| Field                                  | Required | Type   | Description                                  |
-| -------------------------------------- | -------- | ------ | -------------------------------------------- |
-| `govctl.id`                            | yes      | string | Unique identifier `WI-YYYY-MM-DD-NNN`        |
-| `govctl.title`                         | yes      | string | Work item title                              |
-| `govctl.status`                        | yes      | enum   | `queue` \| `active` \| `done` \| `cancelled` |
-| `govctl.created`                       | yes      | date   | Creation date                                |
-| `govctl.started`                       | no       | date   | When work began                              |
-| `govctl.completed`                     | no       | date   | When work finished                           |
-| `govctl.refs`                          | no       | array  | Cross-references                             |
-| `content.description`                  | yes      | string | Work description                             |
-| `content.notes`                        | no       | string | Progress notes                               |
-| `content.acceptance_criteria`          | no       | array  | Completion checklist                         |
-| `content.acceptance_criteria[].text`   | yes      | string | Criterion text                               |
-| `content.acceptance_criteria[].status` | no       | enum   | `pending` \| `done` \| `cancelled`           |
+| Field                                      | Required | Type   | Description                                    |
+| ------------------------------------------ | -------- | ------ | ---------------------------------------------- |
+| `govctl.id`                                | yes      | string | Unique identifier `WI-YYYY-MM-DD-NNN`          |
+| `govctl.title`                             | yes      | string | Work item title                                |
+| `govctl.status`                            | yes      | enum   | `queue` \| `active` \| `done` \| `cancelled`   |
+| `govctl.created`                           | yes      | date   | Creation date                                  |
+| `govctl.started`                           | no       | date   | When work began                                |
+| `govctl.completed`                         | no       | date   | When work finished                             |
+| `govctl.refs`                              | no       | array  | Cross-references                               |
+| `content.description`                      | yes      | string | Work description                               |
+| `content.journal`                          | no       | array  | Execution tracking entries (per [[ADR-0026]])  |
+| `content.journal[].date`                   | yes      | string | ISO date `YYYY-MM-DD`                          |
+| `content.journal[].scope`                  | no       | string | Topic/module identifier                        |
+| `content.journal[].content`                | yes      | string | Progress details (Markdown)                    |
+| `content.notes`                            | no       | array  | Ad-hoc key points (string array)               |
+| `content.acceptance_criteria`              | no       | array  | Completion checklist                           |
+| `content.acceptance_criteria[].text`       | yes      | string | Criterion text                                 |
+| `content.acceptance_criteria[].status`     | no       | enum   | `pending` \| `done` \| `cancelled`             |
+| `content.acceptance_criteria[].category`   | no       | enum   | Changelog category (`add` \| `fix` \| `chore` etc.) |
 
 ---
 

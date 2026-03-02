@@ -17,7 +17,8 @@ ADRs contain:
 - **Context** — The situation requiring a decision
 - **Decision** — What was decided
 - **Consequences** — Expected outcomes (positive and negative)
-- **Status** — `proposed`, `accepted`, `deprecated`, or `superseded`
+- **Alternatives** — Options considered with pros, cons, and rejection reasons (per [[ADR-0027]])
+- **Status** — `proposed`, `accepted`, `rejected`, or `superseded`
 
 ## Editing ADRs
 
@@ -45,8 +46,8 @@ govctl adr set ADR-0001 alt[2].pro[0] "Updated pro"
 ## Status Lifecycle
 
 ```
-proposed → accepted → deprecated
-                   ↘ superseded
+proposed → accepted → superseded
+         ↘ rejected
 ```
 
 ### Accept a Decision

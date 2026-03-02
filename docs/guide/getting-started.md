@@ -4,7 +4,7 @@ This guide walks you through installing govctl and creating your first governed 
 
 ## Requirements
 
-- **Rust 1.85+** (uses edition 2024)
+- **Rust 1.88+** (uses edition 2024)
 
 ## Installation
 
