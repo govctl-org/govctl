@@ -1,0 +1,36 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-03-001"
+title = "Implement ADR-0032 migrate skill"
+status = "active"
+created = "2026-03-03"
+started = "2026-03-03"
+refs = ["ADR-0032"]
+
+[content]
+description = "Create the /migrate skill (.claude/skills/migrate/SKILL.md) per ADR-0032. The skill guides an AI agent through adopting govctl in an existing project: scaffold, discover decisions, backfill ADRs, optionally backfill RFCs, annotate source, and establish baseline."
+
+[[content.acceptance_criteria]]
+text = "Migrate skill created at .claude/skills/migrate/SKILL.md"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Skill covers all 5 phases from ADR-0032"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "ADR-0032 accepted"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Skill registered in src/cmd/new.rs sync_commands"
+status = "pending"
+category = "chore"
