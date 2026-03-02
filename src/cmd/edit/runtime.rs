@@ -1,6 +1,6 @@
-use crate::cmd::edit::ArtifactType;
-use crate::cmd::edit_rules::{self, FieldKind, NestedRootRule, Verb};
-use crate::cmd::path::{self, FieldPath};
+use super::ArtifactType;
+use super::rules::{self as edit_rules, FieldKind, NestedRootRule, Verb};
+use super::path::{self, FieldPath};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde_json::Value;
 
@@ -552,12 +552,7 @@ fn validate_nested_path(
                     )
                 },
             )?;
-        if !edit_rules::nested_field_supports_verb(
-            artifact.rule_key(),
-            root_name,
-            subfield,
-            verb,
-        ) {
+        if !field_rule.verbs.contains(&verb.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0817PathTypeMismatch,
                 format!(
@@ -570,8 +565,6 @@ fn validate_nested_path(
             )
             .into());
         }
-        // Ensure unused binding is consumed for the existence check
-        let _ = field_rule;
     }
 
     Ok(root_idx)

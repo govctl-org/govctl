@@ -3,7 +3,7 @@
 //! Parses field paths like `alt[0].pros[1]` into structured segments
 //! for nested access into ADR alternatives, work item journal entries, etc.
 
-use crate::cmd::edit_rules;
+use super::rules as edit_rules;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use winnow::Parser;
 use winnow::ascii::digit1;

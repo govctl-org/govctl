@@ -4,9 +4,9 @@
 //! `parse -> canonicalize -> resolve -> classify`.
 //! Execution is still delegated to legacy handlers during migration.
 
-use crate::cmd::edit::ArtifactType;
-use crate::cmd::edit_rules;
-use crate::cmd::path::{self, FieldPath};
+use super::ArtifactType;
+use super::rules as edit_rules;
+use super::path::{self, FieldPath};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EditPlan {

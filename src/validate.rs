@@ -4,7 +4,7 @@
 //! - [[ADR-0003]] signature verification for rendered projections
 //! - [[ADR-0010]] placeholder description detection
 
-use crate::cmd::edit_rules;
+use crate::cmd::edit::rules as edit_rules;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::find_clause_json;

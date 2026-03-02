@@ -2,11 +2,17 @@
 //!
 //! Implements [[ADR-0007]] ergonomic array field matching for remove and tick commands.
 
-use crate::cmd::edit_adapter::{
+pub mod adapter;
+pub mod engine;
+pub mod path;
+pub mod rules;
+pub mod runtime;
+
+use self::adapter::{
     AdrTomlAdapter, ClauseJsonAdapter, JsonAdapter, RfcJsonAdapter, TomlAdapter, WorkTomlAdapter,
 };
-use crate::cmd::path::{self, FieldPath};
-use crate::cmd::{edit_engine, edit_rules, edit_runtime};
+use self::path::FieldPath;
+use self::{engine as edit_engine, rules as edit_rules, runtime as edit_runtime};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{AdrEntry, AdrSpec, WorkItemEntry, WorkItemSpec};
@@ -691,14 +697,15 @@ pub fn add_to_field(
             let mut doc = serde_json::to_value(entry.spec())?;
             if edit_runtime::add_simple_list_value(ArtifactType::WorkItem, &mut doc, simple, value, id)? {
                 *entry.spec_mut() = serde_json::from_value(doc)?;
-            } else if simple == "acceptance_criteria" {
-                let ctx = WorkAddContext { category_override, scope_override };
-                work_add_acceptance_criteria(&mut entry, value, &ctx)?;
-            } else if simple == "journal" {
-                let ctx = WorkAddContext { category_override, scope_override };
-                work_add_journal(&mut entry, value, &ctx)?;
             } else {
-                return Err(cannot_add_to_field_error(id, simple));
+                let ctx = WorkAddContext { category_override, scope_override };
+                if simple == "acceptance_criteria" {
+                    work_add_acceptance_criteria(&mut entry, value, &ctx)?;
+                } else if simple == "journal" {
+                    work_add_journal(&mut entry, value, &ctx)?;
+                } else {
+                    return Err(cannot_add_to_field_error(id, simple));
+                }
             }
             WorkTomlAdapter::write(config, &entry, op)?;
         }
@@ -934,7 +941,7 @@ where
         let removed = if fp.has_terminal_index() {
             let sub_idx = fp.segments[1].index.unwrap();
             edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
-                let resolved = path::resolve_index(sub_idx, items.len())?;
+                let resolved = self::path::resolve_index(sub_idx, items.len())?;
                 Ok(vec![resolved])
             })?
         } else {
