@@ -5,8 +5,8 @@
 //! Execution is still delegated to legacy handlers during migration.
 
 use super::ArtifactType;
-use super::rules as edit_rules;
 use super::path::{self, FieldPath};
+use super::rules as edit_rules;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EditPlan {

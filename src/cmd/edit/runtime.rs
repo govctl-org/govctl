@@ -1,6 +1,6 @@
 use super::ArtifactType;
-use super::rules::{self as edit_rules, FieldKind, NestedRootRule, Verb};
 use super::path::{self, FieldPath};
+use super::rules::{self as edit_rules, FieldKind, NestedRootRule, Verb};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde_json::Value;
 
@@ -490,11 +490,7 @@ fn resolve_nested_root(
     edit_rules::nested_root_rule(artifact.rule_key(), root).ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0815PathFieldNotFound,
-            format!(
-                "Unknown nested root '{}' for {}",
-                root,
-                artifact.rule_key()
-            ),
+            format!("Unknown nested root '{}' for {}", root, artifact.rule_key()),
             id,
         )
         .into()
@@ -537,21 +533,19 @@ fn validate_nested_path(
     // Validate subfield if present
     if fp.segments.len() >= 2 {
         let subfield = &fp.segments[1].name;
-        let field_rule =
-            edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).ok_or_else(
-                || {
-                    Diagnostic::new(
-                        DiagnosticCode::E0815PathFieldNotFound,
-                        format!(
-                            "Unknown field '{}' under {}.{}",
-                            subfield,
-                            artifact.rule_key(),
-                            root_name
-                        ),
-                        id,
-                    )
-                },
-            )?;
+        let field_rule = edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield)
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0815PathFieldNotFound,
+                    format!(
+                        "Unknown field '{}' under {}.{}",
+                        subfield,
+                        artifact.rule_key(),
+                        root_name
+                    ),
+                    id,
+                )
+            })?;
         if !field_rule.verbs.contains(&verb.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0817PathTypeMismatch,
@@ -571,7 +565,11 @@ fn validate_nested_path(
 }
 
 /// Navigate to the root array in a JSON document using the SSOT content_path.
-fn root_array<'a>(doc: &'a Value, rule: &NestedRootRule, id: &str) -> anyhow::Result<&'a Vec<Value>> {
+fn root_array<'a>(
+    doc: &'a Value,
+    rule: &NestedRootRule,
+    id: &str,
+) -> anyhow::Result<&'a Vec<Value>> {
     value_at_path(doc, rule.content_path)
         .and_then(Value::as_array)
         .ok_or_else(|| {
@@ -650,10 +648,7 @@ pub fn get_nested_field(
                 let resolved = path::resolve_index(sub_idx, list.len())?;
                 Ok(render_scalar(list.get(resolved)))
             } else {
-                let strs: Vec<String> = list
-                    .iter()
-                    .map(|v| render_scalar(Some(v)))
-                    .collect();
+                let strs: Vec<String> = list.iter().map(|v| render_scalar(Some(v))).collect();
                 Ok(strs.join("\n"))
             }
         }
@@ -697,11 +692,7 @@ pub fn set_nested_field(
     match field_rule.kind {
         FieldKind::Scalar => {
             // For optional fields (current value is null), empty → null
-            let json_value = if value.is_empty()
-                && item
-                    .get(subfield)
-                    .is_none_or(|v| v.is_null())
-            {
+            let json_value = if value.is_empty() && item.get(subfield).is_none_or(|v| v.is_null()) {
                 Value::Null
             } else {
                 Value::String(value.to_string())
@@ -744,7 +735,10 @@ pub fn add_nested_list_value(
     if fp.segments.len() < 2 {
         return Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
-            format!("Cannot add to '{}' without specifying a list subfield", root_name),
+            format!(
+                "Cannot add to '{}' without specifying a list subfield",
+                root_name
+            ),
             id,
         )
         .into());
@@ -811,7 +805,10 @@ where
     if fp.segments.len() < 2 {
         return Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
-            format!("Cannot remove from '{}' without specifying a list subfield", root_name),
+            format!(
+                "Cannot remove from '{}' without specifying a list subfield",
+                root_name
+            ),
             id,
         )
         .into());
@@ -888,10 +885,7 @@ fn render_nested_item(item: &Value, rule: &NestedRootRule, _id: &str) -> anyhow:
                     }
                     FieldKind::List => {
                         if let Some(arr) = val.as_array() {
-                            let items: Vec<&str> = arr
-                                .iter()
-                                .filter_map(Value::as_str)
-                                .collect();
+                            let items: Vec<&str> = arr.iter().filter_map(Value::as_str).collect();
                             lines.push(format!("{}: {}", field.name, items.join(", ")));
                         }
                     }

@@ -7,20 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Add semantic field descriptions to work set help (WI-2026-02-25-002)
-
-## [0.5.3] - 2026-02-25
+## [0.5.3] - 2026-03-02
 
 ### Added
 
 - Support both X.Y.Z and vX.Y.Z version formats in matching (WI-2026-02-25-001)
+- Path parser supports segment/index grammar with tests (WI-2026-02-25-003)
+- ADR set/get/add/remove accept path-based field addressing for alternatives/pros/cons/rejection_reason (WI-2026-02-25-003)
+- edit-ops.json SSOT and edit-ops.schema.json are introduced with build-time validation (WI-2026-02-25-003)
+- path parser enforces full-input consumption and strict grammar per ADR-0030 (WI-2026-02-25-003)
+- alias and legacy prefix compatibility rules are normalized via a single spec-backed layer (WI-2026-02-25-003)
+- macro or generated rule table drives get/set/add/remove path binding dispatch (WI-2026-02-25-003)
+- Introduce V2 edit SSOT model and schema for fields, verbs, aliases, and legacy mappings (WI-2026-02-27-001)
+- Implement winnow-based path parser and canonicalization pipeline producing typed EditPlan (WI-2026-02-27-001)
+- Implement unified semantic edit engine with JsonAdapter and TomlAdapter interfaces (WI-2026-02-27-001)
 
 ### Changed
 
 - Rewrite incremental rendering to parse ALL existing releases into a map (WI-2026-02-25-001)
 - Use relative 'docs' path instead of absolute path for inline ref expansion (WI-2026-02-25-001)
+- ADR and work docs include before/after examples for path-based edits (WI-2026-02-25-003)
+- Migrate ADR and Work edit execution to V2 engine with compatibility parity tests (WI-2026-02-27-001)
+- Migrate RFC and Clause edit execution to V2 engine after ADR/Work parity is verified (WI-2026-02-27-001)
+- Add content_path to SSOT nested rules and code generation (WI-2026-03-01-001)
+- Generic nested field operations in edit_runtime replace hand-written handlers (WI-2026-03-01-001)
+
+### Removed
+
+- V1 manual dispatch removed from edit.rs (macros, per-artifact nested handlers) (WI-2026-03-01-001)
 
 ### Fixed
 
@@ -28,6 +42,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Older release sections had inline refs re-expanded on each render (WI-2026-02-25-001)
 - Version matching failed for v-prefixed versions (v0.3.0 vs 0.3.0) (WI-2026-02-25-001)
 - Releases not in releases.toml were discarded from CHANGELOG (WI-2026-02-25-001)
+- Add semantic field descriptions to work set help (WI-2026-02-25-002)
+- remove rejects mixed indexed-path and matcher-flag usage with clear usage error (WI-2026-02-25-003)
+- over-deep or over-specified paths fail with structured diagnostics instead of silent acceptance (WI-2026-02-25-003)
 
 ## [0.5.2] - 2026-02-24
 

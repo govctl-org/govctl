@@ -368,14 +368,7 @@ fn apply_set_field(
                 )
                 .into());
             }
-            set_toml_field::<WorkTomlAdapter>(
-                config,
-                id,
-                fp,
-                value,
-                op,
-                ArtifactType::WorkItem,
-            )?
+            set_toml_field::<WorkTomlAdapter>(config, id, fp, value, op, ArtifactType::WorkItem)?
         }
         ArtifactType::Rfc => set_rfc_field(config, id, fp, value, op)?,
         ArtifactType::Clause => set_clause_field(config, id, fp, value, op)?,
@@ -440,7 +433,10 @@ where
                 edit_runtime::get_simple_field(artifact, &doc, simple, id)?
             );
         } else {
-            println!("{}", edit_runtime::get_nested_field(artifact, &doc, fp, id)?);
+            println!(
+                "{}",
+                edit_runtime::get_nested_field(artifact, &doc, fp, id)?
+            );
         }
     } else {
         println!("{}", toml::to_string_pretty(entry.spec())?);
@@ -513,7 +509,13 @@ fn set_rfc_field(
         )
         .into());
     }
-    crate::validate::validate_field(config, id, crate::validate::ArtifactKind::Rfc, simple, value)?;
+    crate::validate::validate_field(
+        config,
+        id,
+        crate::validate::ArtifactKind::Rfc,
+        simple,
+        value,
+    )?;
     let mut loaded = RfcJsonAdapter::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
     edit_runtime::set_simple_field(ArtifactType::Rfc, &mut doc, simple, value, id)?;
@@ -668,10 +670,20 @@ pub fn add_to_field(
             if fp.is_simple() {
                 let simple = fp.as_simple().unwrap();
                 let mut doc = serde_json::to_value(entry.spec())?;
-                if edit_runtime::add_simple_list_value(ArtifactType::Adr, &mut doc, simple, value, id)? {
+                if edit_runtime::add_simple_list_value(
+                    ArtifactType::Adr,
+                    &mut doc,
+                    simple,
+                    value,
+                    id,
+                )? {
                     *entry.spec_mut() = serde_json::from_value(doc)?;
                 } else if simple == "alternatives" {
-                    let ctx = AdrAddContext { pros, cons, reject_reason };
+                    let ctx = AdrAddContext {
+                        pros,
+                        cons,
+                        reject_reason,
+                    };
                     adr_add_alternatives(&mut entry, value, &ctx)?;
                 } else {
                     return Err(cannot_add_to_field_error(id, simple));
@@ -695,10 +707,19 @@ pub fn add_to_field(
             let simple = fp.as_simple().unwrap();
             let mut entry = WorkTomlAdapter::load(config, id)?;
             let mut doc = serde_json::to_value(entry.spec())?;
-            if edit_runtime::add_simple_list_value(ArtifactType::WorkItem, &mut doc, simple, value, id)? {
+            if edit_runtime::add_simple_list_value(
+                ArtifactType::WorkItem,
+                &mut doc,
+                simple,
+                value,
+                id,
+            )? {
                 *entry.spec_mut() = serde_json::from_value(doc)?;
             } else {
-                let ctx = WorkAddContext { category_override, scope_override };
+                let ctx = WorkAddContext {
+                    category_override,
+                    scope_override,
+                };
                 if simple == "acceptance_criteria" {
                     work_add_acceptance_criteria(&mut entry, value, &ctx)?;
                 } else if simple == "journal" {
