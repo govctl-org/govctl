@@ -34,6 +34,11 @@ govctl work add <WI-ID> acceptance_criteria "fix: Bug fixed"      # → Fixed se
 govctl work add <WI-ID> acceptance_criteria "chore: Tests pass"   # → excluded from changelog
 govctl work tick <WI-ID> acceptance_criteria "pattern" -s done
 
+# Work item tracking
+govctl work set <WI-ID> description "Task scope description"
+govctl work add <WI-ID> journal "Progress update" --scope module
+govctl work add <WI-ID> notes "Key observation"
+
 # Multi-line input
 govctl clause edit <clause-id> --stdin <<'EOF'
 multi-line text here
@@ -134,7 +139,15 @@ govctl work list pending
 govctl work new --active "<concise-title>"
 ```
 
-### 1.3 Add Acceptance Criteria
+### 1.3 Set Description
+
+Replace the placeholder description immediately:
+
+```bash
+govctl work set <WI-ID> description "Brief scope: what and why"
+```
+
+### 1.4 Add Acceptance Criteria
 
 **Important:** Work items cannot be marked done without acceptance criteria.
 
@@ -145,7 +158,7 @@ govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
 govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 ```
 
-### 1.4 Record
+### 1.5 Record
 
 ```bash
 # jj
@@ -270,6 +283,10 @@ EOF
    # Run your project's lint/format checks
    govctl check
    ```
+5. **Add journal entry** to track progress:
+   ```bash
+   govctl work add <WI-ID> journal "<summary of what was implemented>"
+   ```
 
 ### 3.3 Record
 
@@ -320,8 +337,12 @@ git add . && git commit -m "test(<scope>): add tests for <feature>"
 ### 5.1 Final Validation
 
 ```bash
-# Run your project's full validation suite
+# Run full validation suite
+just pre-commit
+
+# If `just` is not available, run individually:
 govctl check
+govctl render
 ```
 
 ### 5.2 Advance RFC to Stable (if applicable)

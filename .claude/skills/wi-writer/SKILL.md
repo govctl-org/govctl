@@ -11,7 +11,10 @@ Write work items with clear descriptions and actionable acceptance criteria.
 
 ```bash
 govctl work new --active "<title>"
+govctl work set <WI-ID> description "Task scope description"
 govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
+govctl work add <WI-ID> journal "Progress update" --scope module
+govctl work add <WI-ID> notes "Key observation"
 govctl work add <WI-ID> refs RFC-NNNN
 govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 govctl work move <WI-ID> done
@@ -49,12 +52,17 @@ Journal entries record progress updates, bug fixes, and verification results dur
 - `content` (required): Markdown text with details
 
 ```bash
-# Add journal entry via TOML editing (no CLI command yet)
-# In work item TOML file:
-[[content.journal]]
-date = "2026-02-22"
-scope = "render"
-content = "Added journal section rendering to work item output."
+# Add journal entry (date is auto-filled to today)
+govctl work add <WI-ID> journal "Added journal section rendering to work item output."
+
+# With scope (topic/module tag)
+govctl work add <WI-ID> journal "Fixed parser edge case" --scope parser
+
+# Multi-line via stdin
+govctl work add <WI-ID> journal --scope render --stdin <<'EOF'
+Completed the rendering pipeline.
+All snapshot tests updated.
+EOF
 ```
 
 **When to add journal entries:**
@@ -75,10 +83,8 @@ Notes are concise points recorded anytime, not just at completion. Use for:
 - Brief insights that don't fit in journal
 
 ```bash
-# Add note
-# In work item TOML file:
-[content]
-notes = ["Remember to update migration guide", "API is now async"]
+govctl work add <WI-ID> notes "Remember to update migration guide"
+govctl work add <WI-ID> notes "API is now async"
 ```
 
 ### Acceptance Criteria

@@ -116,6 +116,24 @@ Document options considered. Future readers need to know what was _not_ chosen a
 - `cons`: List of disadvantages
 - `rejection_reason`: If rejected, explains why
 
+**CLI commands:**
+
+```bash
+# Simple alternative
+govctl adr add <ADR-ID> alternatives "Option A: Use PostgreSQL"
+
+# With pros, cons, and rejection reason
+govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
+  --pro "Fast caching" --pro "Simple API" \
+  --con "Additional infrastructure" \
+  --reject-reason "Overkill for our scale"
+
+# Edit nested fields after creation
+govctl adr set <ADR-ID> alt[0].status "rejected"
+govctl adr add <ADR-ID> alt[0].pros "New advantage"
+govctl adr remove <ADR-ID> alt[0].cons "Outdated disadvantage"
+```
+
 **When to add pros/cons:**
 
 - For significant decisions with multiple options
