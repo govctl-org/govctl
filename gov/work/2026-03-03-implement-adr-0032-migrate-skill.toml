@@ -10,6 +10,10 @@ refs = ["ADR-0032"]
 [content]
 description = "Create the /migrate skill (.claude/skills/migrate/SKILL.md) per ADR-0032. The skill guides an AI agent through adopting govctl in an existing project: scaffold, discover decisions, backfill ADRs, optionally backfill RFCs, annotate source, and establish baseline."
 
+[[content.journal]]
+date = "2026-03-03"
+content = "Implemented migrate skill with 6 phases (scaffold, discover, backfill ADRs, backfill RFCs, annotate source, establish baseline). Registered in sync_commands and fixed stale build.rs rerun-if-changed paths."
+
 [[content.acceptance_criteria]]
 text = "Migrate skill created at .claude/skills/migrate/SKILL.md"
 status = "pending"

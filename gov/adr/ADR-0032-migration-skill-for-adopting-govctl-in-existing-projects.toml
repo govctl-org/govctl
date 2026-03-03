@@ -2,7 +2,7 @@
 schema = 1
 id = "ADR-0032"
 title = "Migration skill for adopting govctl in existing projects"
-status = "proposed"
+status = "accepted"
 date = "2026-03-02"
 refs = [
     "ADR-0023",

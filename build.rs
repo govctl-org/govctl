@@ -102,13 +102,14 @@ struct FieldValidationRule {
 fn main() {
     // Recompile if any embedded .claude/ assets change
     // Skills
-    println!("cargo:rerun-if-changed=.claude/skills/gov.md");
-    println!("cargo:rerun-if-changed=.claude/skills/quick.md");
-    println!("cargo:rerun-if-changed=.claude/skills/status.md");
-    println!("cargo:rerun-if-changed=.claude/skills/discuss.md");
+    println!("cargo:rerun-if-changed=.claude/skills/discuss/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/gov/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/quick/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/rfc-writer/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/adr-writer/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/wi-writer/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/commit/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/migrate/SKILL.md");
     // Agents
     println!("cargo:rerun-if-changed=.claude/agents/rfc-reviewer.md");
     println!("cargo:rerun-if-changed=.claude/agents/adr-reviewer.md");
