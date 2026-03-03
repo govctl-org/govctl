@@ -147,8 +147,8 @@ Before requesting review: `just pre-commit`
 
 **Skills** (augment your capabilities — read and follow when relevant):
 
-| Skill      | Path                                 | Purpose                           |
-| ---------- | ------------------------------------ | --------------------------------- |
+| Skill      | Path                                 | Purpose                            |
+| ---------- | ------------------------------------ | ---------------------------------- |
 | Gov        | `.claude/skills/gov/SKILL.md`        | Full governed workflow             |
 | Quick      | `.claude/skills/quick/SKILL.md`      | Fast path for trivial changes      |
 | Discuss    | `.claude/skills/discuss/SKILL.md`    | Design discussion, draft RFC/ADR   |

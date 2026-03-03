@@ -14,7 +14,8 @@
 </p>
 
 <p align="center">
-  <strong>Opinionated governance CLI for RFC-driven AI-assisted software development.</strong>
+  <strong>Governance-as-code for AI-assisted software development.</strong><br>
+  <em>Enforce spec-first discipline. Every feature starts with an RFC, not a prompt.</em>
 </p>
 
 ---
@@ -23,9 +24,9 @@
 
 AI-assisted coding is powerful but undisciplined:
 
-- **Phase skipping**: Jumping from idea to implementation without specification
-- **Documentation drift**: Specs and code diverge silently
-- **No enforceable governance**: "Best practices" become optional suggestions
+- **Phase skipping** — Jumping from idea to implementation without specification
+- **Documentation drift** — Specs and code diverge silently
+- **No enforceable governance** — "Best practices" become optional suggestions
 
 The result: faster typing, slower thinking, unmaintainable systems.
 
@@ -46,26 +47,43 @@ Day 1:  govctl rfc new "Caching Strategy"
 Day 2:  RFC-0015 defines: Redis, TTL policy, invalidation rules
 Day 3:  govctl rfc advance RFC-0015 impl
 Day 7:  Implementation complete, traceable to spec
-Day 10: govctl rfc advance RFC-0015 test
 Day 14: Tests pass, govctl rfc advance RFC-0015 stable
 ```
 
 ---
 
-## What govctl Is
+## Quick Start
+
+```bash
+cargo install govctl
+govctl init
+```
+
+That's it. `govctl init` creates the governance structure and installs AI agent skills.
+
+For complete documentation, see the [User Guide](https://govctl-org.github.io/govctl/).
+
+---
+
+## AI Agent Integration
+
+govctl is built for AI-native development. `govctl init` installs workflow skills that any Claude Code / Cursor / Codex agent can invoke:
+
+| Skill              | Purpose                                                                                 |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `/gov <task>`      | Complete governed workflow: work item, RFC/ADR, implement, test, done                   |
+| `/migrate`         | Adopt govctl in an existing project: discover decisions, backfill ADRs, annotate source |
+| `/discuss <topic>` | Design discussion: explore options, draft RFC or ADR                                    |
+| `/commit`          | Smart commit: VCS detection, govctl checks, work item journal updates                   |
+| `/quick <task>`    | Fast path for trivial changes (skip governance ceremony)                                |
+
+Every govctl operation is a single CLI call. No MCP server needed -- the CLI is the universal interface. Every shell-capable agent already speaks it.
+
+---
+
+## What govctl Does
 
 govctl enforces **phase discipline** on software development:
-
-1. **RFC is the source of truth** — No implementation without specification
-2. **Phases are enforced** — Each phase has explicit gates and invariants
-3. **Governance is executable** — Rules are checked, not suggested
-4. **Work is traceable** — Tasks link back to the specs that authorized them
-
-govctl manages three artifact types:
-
-- **RFCs** — Specifications that must exist before implementation
-- **ADRs** — Architectural decisions with explicit consequences
-- **Work Items** — Tracked tasks tied to governance artifacts
 
 ```
 ┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
@@ -77,84 +95,43 @@ govctl manages three artifact types:
   be normative     match spec      pass gates       only
 ```
 
+Three artifact types, one lifecycle:
+
+- **RFCs** -- Specifications that must exist before implementation
+- **ADRs** -- Architectural decisions with explicit trade-offs
+- **Work Items** -- Tracked tasks tied to governance artifacts
+
 govctl governs itself by its own rules. This repository is the first proof.
 
 ---
 
 ## Who This Is For
 
-- ✅ **Teams frustrated by AI "code now, think later" patterns**
-- ✅ **Projects where specifications drift from implementations**
-- ✅ **Organizations needing audit trails for AI-generated code**
-- ✅ **Developers who believe discipline enables velocity**
+- **Teams frustrated by AI "code now, think later" patterns**
+- **Existing projects** that need to retroactively establish governance (`/migrate`)
+- **Organizations needing audit trails** for AI-generated code
+- **Developers who believe discipline enables velocity**
 
-- ❌ Not for "move fast and break things" workflows
-- ❌ Not for projects without review processes
-
----
-
-## Quick Start
-
-### New project
-
-```bash
-cargo install govctl
-govctl init
-govctl rfc new "Feature Title"
-govctl check
-```
-
-### Existing project
-
-```bash
-cargo install govctl
-govctl init          # Safe alongside existing files
-# Then use /migrate to discover and codify existing decisions
-```
-
-Optionally, show the project is governed by govctl:
-
-```markdown
-[![governed by govctl](https://img.shields.io/badge/governed%20by-govctl-6366F1)](https://github.com/govctl-org/govctl)
-```
-
-For complete documentation, see the [User Guide](https://govctl-org.github.io/govctl/).
+Not for "move fast and break things" workflows. Not for projects without review processes.
 
 ---
 
 ## TUI Dashboard
 
-Run the TUI with `govctl tui` (requires `--features tui` when installing from source).
+```bash
+cargo install govctl --features tui
+govctl tui
+```
 
-Keymap highlights:
-
-- `1`/`r`, `2`/`a`, `3`/`w` to switch lists from the dashboard
-- `j`/`k` or arrows to move; `Enter` to open; `Esc` to go back
-- `/` to filter lists by ID/title/status; `Enter` to accept; `Esc` clears filter
-- `g`/`G` jump to top/bottom; `n`/`p` step through matches when filtered
-- `?` toggles help; `q` quits
+Keymap: `1`/`2`/`3` to switch lists, `j`/`k` to move, `Enter` to open, `/` to filter, `?` for help.
 
 ---
 
-## What govctl Is NOT
+## Community
 
-- **Not a code generator** — govctl doesn't write code; it ensures code follows specs
-- **Not a documentation editor** — govctl enforces structure, not style
-- **Not about "faster coding"** — govctl is about _correct_ coding
-- **Not a framework** — govctl is a constraint system
-- **Not a general issue tracker** — Work items exist to trace work back to specs, not to replace Jira
-
----
-
-## Why No MCP?
-
-govctl doesn't need a dedicated [MCP (Model Context Protocol)](https://modelcontextprotocol.io/) integration because **the CLI itself is the tool**.
-
-Modern AI coding agents (Claude, Cursor, Codex, etc.) can already invoke shell commands. Every govctl operation is a single CLI call. MCP would add complexity without adding capability.
-
-The CLI is the universal interface. Every shell-capable agent already speaks it.
-
-**For Claude/Cursor users:** `govctl init` installs workflow skills: `/gov <task>` for governed development, `/migrate` for adopting govctl in existing projects, `/discuss` for design discussions, and more.
+- [Discord](https://discord.gg/buBB9G8Z6n) -- Questions, discussions, feedback
+- [GitHub Issues](https://github.com/govctl-org/govctl/issues) -- Bug reports and feature requests
+- [GitHub Discussions](https://github.com/govctl-org/govctl/discussions) -- Design conversations
 
 ---
 
@@ -164,7 +141,7 @@ govctl has an opinionated workflow. Before contributing:
 
 1. Read the [governance RFC](docs/rfc/RFC-0000.md) to understand the model
 2. All features require an RFC before implementation
-3. Phase gates are enforced — this is the point, not bureaucracy
+3. Phase gates are enforced -- this is the point, not bureaucracy
 
 **This workflow isn't for everyone, and that's okay.** If you thrive in structured, spec-driven development, we'd welcome your contributions.
 
