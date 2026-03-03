@@ -358,8 +358,15 @@ pub enum ChangelogCategory {
 
 impl ChangelogCategory {
     /// Canonical category prefixes shown in error messages and docs.
+    /// All verb forms for consistency with imperative acceptance criteria.
     pub const VALID_PREFIXES: &'static [&'static str] = &[
-        "add", "fix", "changed", "removed", "deprecated", "security", "chore",
+        "add",
+        "fix",
+        "change",
+        "remove",
+        "deprecate",
+        "security",
+        "chore",
     ];
 
     /// Parse a prefix string into a category.

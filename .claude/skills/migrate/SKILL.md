@@ -11,6 +11,7 @@ Migrate an existing codebase to govctl governance per [[ADR-0032]].
 **Purpose:** Systematically discover undocumented decisions and specifications in an existing project, codify them as govctl artifacts, and annotate source code with cross-references.
 
 **Properties:**
+
 - **Interactive** — Confirms discoveries with the user before creating artifacts
 - **Incremental** — Each phase can be run independently; partial migration is valid
 - **Non-destructive** — Never overwrites existing files; only adds governance artifacts
@@ -97,16 +98,17 @@ Read these files (if they exist) to understand the project:
 
 Scan for implicit decisions in:
 
-| Source | What to look for |
-|--------|-----------------|
-| README/docs | "We chose X because...", "This project uses..." |
-| Config files | Framework choices, database configs, deployment targets |
-| Dependencies | Major library choices (ORM, web framework, test framework) |
-| Directory structure | Architectural patterns (monorepo, microservices, MVC, hexagonal) |
-| Code comments | "TODO: migrate to...", "HACK: because X doesn't support...", "We use X instead of Y" |
-| Git/jj history | Large refactors, technology migrations, design pivots |
+| Source              | What to look for                                                                     |
+| ------------------- | ------------------------------------------------------------------------------------ |
+| README/docs         | "We chose X because...", "This project uses..."                                      |
+| Config files        | Framework choices, database configs, deployment targets                              |
+| Dependencies        | Major library choices (ORM, web framework, test framework)                           |
+| Directory structure | Architectural patterns (monorepo, microservices, MVC, hexagonal)                     |
+| Code comments       | "TODO: migrate to...", "HACK: because X doesn't support...", "We use X instead of Y" |
+| Git/jj history      | Large refactors, technology migrations, design pivots                                |
 
 For each discovered decision, note:
+
 - **What** was decided
 - **Why** (if discernible from context)
 - **What alternatives** existed (if known)
@@ -124,6 +126,7 @@ Look for documents that function as specifications:
 ### 1.4 Discover In-Progress Work
 
 Check for:
+
 - Open issues in the repo (if accessible)
 - TODO/FIXME/HACK comments in code
 - Feature branches
@@ -392,6 +395,7 @@ Next steps:
 ### Prioritization
 
 Not everything needs an ADR. Focus on decisions that:
+
 - **Affect multiple developers** (framework choice, API conventions)
 - **Are hard to reverse** (database choice, authentication strategy)
 - **Generate recurring questions** ("Why do we use X instead of Y?")
@@ -401,6 +405,7 @@ Skip trivial decisions (indentation style, variable naming) — those belong in 
 ### Handling Uncertainty
 
 When discovering decisions:
+
 - If you can identify the decision but not the rationale → say so in the context. "The rationale is not documented; this ADR records the current state."
 - If alternatives are unknown → create only the accepted alternative.
 - If consequences are unclear → document what you can observe. "The negative consequences of this decision have not been formally evaluated."
@@ -408,6 +413,7 @@ When discovering decisions:
 ### Incremental Migration
 
 It's fine to migrate in stages:
+
 - **Week 1:** Scaffold + top 5 most important ADRs
 - **Week 2:** Annotate the most-touched modules
 - **Later:** Backfill as you encounter undocumented decisions during regular work

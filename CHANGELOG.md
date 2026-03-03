@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Migrate skill created at .claude/skills/migrate/SKILL.md (WI-2026-03-03-001)
+- Skill covers all 5 phases from ADR-0032 (WI-2026-03-03-001)
+
 ## [0.5.3] - 2026-03-02
 
 ### Added
