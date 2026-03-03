@@ -13,7 +13,10 @@ keywords = ["governance", "rfc", "cli", "adr", "specification"]
 categories = ["command-line-utilities", "development-tools"]
 include = [
     ".claude/agents/*",
-    ".claude/skills/*",
+    ".claude/skills/**/*",
+    "gov/schema/edit-ops.json",
+    "gov/schema/edit-ops.schema.json",
+    "gov/templates/*",
     "src/**/*",
     "tests/**/*",
     "build.rs",
