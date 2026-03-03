@@ -52,7 +52,7 @@ govctl work add WI-2026-01-17-001 acceptance_criteria "chore: Unit tests pass"
 govctl work add WI-2026-01-17-001 acceptance_criteria "add: Documentation updated"
 ```
 
-Category prefixes (`add:`, `fix:`, `changed:`, `chore:`, etc.) are required and drive changelog generation.
+Category prefixes (`add:`, `fix:`, `change:`, `chore:`, etc.) are required and drive changelog generation. Conventional-commit aliases like `feat:`, `refactor:`, `test:`, `docs:` are also accepted.
 
 ### Mark Criteria Complete
 
@@ -61,6 +61,23 @@ govctl work tick WI-2026-01-17-001 acceptance_criteria "Unit tests" -s done
 ```
 
 The pattern matches case-insensitively by substring.
+
+## Journal
+
+Track execution progress with dated journal entries:
+
+```bash
+govctl work add WI-2026-01-17-001 journal "Implemented core logic"
+
+# With scope tag
+govctl work add WI-2026-01-17-001 journal "Fixed edge case" --scope parser
+
+# Multi-line via stdin
+govctl work add WI-2026-01-17-001 journal --scope backend --stdin <<'EOF'
+Completed the API layer.
+All integration tests passing.
+EOF
+```
 
 ## Notes
 

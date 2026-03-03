@@ -95,21 +95,21 @@ govctl governs itself by its own rules. This repository is the first proof.
 
 ## Quick Start
 
+### New project
+
 ```bash
-# Install
 cargo install govctl
-
-# Or with TUI dashboard
-cargo install govctl --features tui
-
-# Initialize project
 govctl init
-
-# Create your first RFC
 govctl rfc new "Feature Title"
-
-# Validate
 govctl check
+```
+
+### Existing project
+
+```bash
+cargo install govctl
+govctl init          # Safe alongside existing files
+# Then use /migrate to discover and codify existing decisions
 ```
 
 Optionally, show the project is governed by govctl:
@@ -154,7 +154,7 @@ Modern AI coding agents (Claude, Cursor, Codex, etc.) can already invoke shell c
 
 The CLI is the universal interface. Every shell-capable agent already speaks it.
 
-**For Claude/Cursor users:** `govctl init` installs a `/gov <task>` command — a complete governed workflow in one invocation.
+**For Claude/Cursor users:** `govctl init` installs workflow skills: `/gov <task>` for governed development, `/migrate` for adopting govctl in existing projects, `/discuss` for design discussions, and more.
 
 ---
 

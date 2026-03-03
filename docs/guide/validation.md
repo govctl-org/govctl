@@ -17,14 +17,6 @@ This validates:
 - Cross-references (refs point to existing artifacts)
 - Clause structure (normative clauses in spec sections)
 
-### Check Specific Types
-
-```bash
-govctl check rfc
-govctl check adr
-govctl check work
-```
-
 ### Exit Codes
 
 - `0` — All validations passed
@@ -40,8 +32,8 @@ Render governance artifacts to markdown for documentation.
 # All RFCs (committed to repo)
 govctl render
 
-# Specific RFC
-govctl render --rfc-id RFC-0010
+# Single RFC
+govctl rfc render RFC-0010
 ```
 
 Output goes to `docs/rfc/RFC-NNNN.md`.
@@ -51,9 +43,20 @@ Output goes to `docs/rfc/RFC-NNNN.md`.
 ADRs and work items render to `.gitignore`d local files by default:
 
 ```bash
-govctl render adr      # → docs/adr/
-govctl render work     # → docs/work/
-govctl render all      # Everything
+govctl render adr        # → docs/adr/
+govctl render work       # → docs/work/
+govctl render all        # Everything
+govctl render changelog  # → CHANGELOG.md
+```
+
+### Render Single Items
+
+Each resource type supports single-item rendering:
+
+```bash
+govctl rfc render RFC-0010
+govctl adr render ADR-0005
+govctl work render WI-2026-01-17-001
 ```
 
 ### Hash Signatures

@@ -17,9 +17,8 @@ Do not invent behavior, skip governance gates, or deviate silently from specific
 ## 1. Project Structure
 
 ```
-.claude/                ← Agent configuration (SSOT for commands, skills, agents)
-├── commands/              Slash commands (gov, quick, discuss, status)
-├── skills/                Writer skills (rfc-writer, adr-writer, wi-writer)
+.claude/                ← Agent configuration (SSOT for skills and agents)
+├── skills/                Workflow skills (gov, quick, discuss, commit, migrate) + writer skills (rfc-writer, adr-writer, wi-writer)
 └── agents/                Reviewer agents (rfc-reviewer, adr-reviewer, wi-reviewer, compliance-checker)
 
 gov/                    ← Source of truth (governance artifacts)
@@ -116,25 +115,28 @@ Execution MUST NOT begin on new features until RFC is normative.
 ## 5. CLI Reference
 
 ```bash
-# Validation
+# Validation & status
 govctl check                    # Validate all artifacts
+govctl status                   # Project overview
+
+# Creating artifacts
+govctl rfc new "Title"          # New RFC
+govctl adr new "Title"          # New ADR
+govctl work new "Title"         # New work item
 
 # Listing
 govctl rfc list                 # List RFCs
 govctl adr list                 # List ADRs
 govctl work list                # List work items
 
-# Status
-govctl status                   # Project overview
-
 # Lifecycle transitions
-govctl rfc set RFC-0001 status normative
+govctl rfc finalize RFC-0001 normative
 govctl rfc advance RFC-0001 impl
 
-# Creating artifacts
-govctl rfc new "Title"          # New RFC
-govctl adr new "Title"          # New ADR
-govctl work new "Title"         # New work item
+# Nested field editing (path-based per ADR-0029)
+govctl adr set ADR-0001 "alt[0].text" "Updated option"
+govctl adr add ADR-0001 "alt[0].pros" "New advantage"
+govctl work set WI-001 "journal[0].scope" "backend"
 ```
 
 Before requesting review: `just pre-commit`
@@ -145,11 +147,16 @@ Before requesting review: `just pre-commit`
 
 **Skills** (augment your capabilities — read and follow when relevant):
 
-| Skill      | Path                                 | Purpose                  |
-| ---------- | ------------------------------------ | ------------------------ |
-| RFC Writer | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide       |
-| ADR Writer | `.claude/skills/adr-writer/SKILL.md` | ADR creation guide       |
-| WI Writer  | `.claude/skills/wi-writer/SKILL.md`  | Work item creation guide |
+| Skill      | Path                                 | Purpose                           |
+| ---------- | ------------------------------------ | --------------------------------- |
+| Gov        | `.claude/skills/gov/SKILL.md`        | Full governed workflow             |
+| Quick      | `.claude/skills/quick/SKILL.md`      | Fast path for trivial changes      |
+| Discuss    | `.claude/skills/discuss/SKILL.md`    | Design discussion, draft RFC/ADR   |
+| Commit     | `.claude/skills/commit/SKILL.md`     | VCS commit with govctl integration |
+| Migrate    | `.claude/skills/migrate/SKILL.md`    | Adopt govctl in existing projects  |
+| RFC Writer | `.claude/skills/rfc-writer/SKILL.md` | RFC creation guide                 |
+| ADR Writer | `.claude/skills/adr-writer/SKILL.md` | ADR creation guide                 |
+| WI Writer  | `.claude/skills/wi-writer/SKILL.md`  | Work item creation guide           |
 
 **Agents** (delegate review tasks to these via subagent):
 

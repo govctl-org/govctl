@@ -111,6 +111,12 @@ govctl render
 
 Generates human-readable markdown in `docs/rfc/RFC-0000.md`.
 
+## Adopting govctl in an Existing Project
+
+`govctl init` is safe to run in existing repositories — it only creates the `gov/` directory structure alongside existing files.
+
+For AI-assisted migration, use the `/migrate` skill to systematically discover undocumented decisions, backfill ADRs, and annotate source code with `[[...]]` references.
+
 ## Next Steps
 
 - [Working with RFCs](./rfcs.md) — Full RFC lifecycle
