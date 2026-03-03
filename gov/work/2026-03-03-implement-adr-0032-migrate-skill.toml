@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-03-03-001"
 title = "Implement ADR-0032 migrate skill"
-status = "active"
+status = "done"
 created = "2026-03-03"
 started = "2026-03-03"
+completed = "2026-03-03"
 refs = ["ADR-0032"]
 
 [content]
@@ -16,25 +17,25 @@ content = "Implemented migrate skill with 6 phases (scaffold, discover, backfill
 
 [[content.acceptance_criteria]]
 text = "Migrate skill created at .claude/skills/migrate/SKILL.md"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Skill covers all 5 phases from ADR-0032"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "ADR-0032 accepted"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Skill registered in src/cmd/new.rs sync_commands"
-status = "pending"
+status = "done"
 category = "chore"
