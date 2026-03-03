@@ -357,27 +357,34 @@ pub enum ChangelogCategory {
 }
 
 impl ChangelogCategory {
-    /// All valid category prefixes for parsing
+    /// Canonical category prefixes shown in error messages and docs.
     pub const VALID_PREFIXES: &'static [&'static str] = &[
-        "add",
-        "changed",
-        "deprecated",
-        "removed",
-        "fix",
-        "security",
-        "chore",
+        "add", "fix", "changed", "removed", "deprecated", "security", "chore",
     ];
 
-    /// Parse a prefix string into a category
+    /// Parse a prefix string into a category.
+    ///
+    /// Accepts canonical Keep-a-Changelog names, verb forms, and
+    /// conventional-commit aliases so agents and humans can use
+    /// whichever style they reach for first.
     pub fn from_prefix(prefix: &str) -> Option<Self> {
         match prefix.to_lowercase().as_str() {
-            "add" | "added" => Some(Self::Added),
-            "changed" | "change" => Some(Self::Changed),
+            // Added: new features and capabilities
+            "add" | "added" | "feat" | "feature" => Some(Self::Added),
+            // Changed: modifications to existing behavior
+            "changed" | "change" | "refactor" | "perf" => Some(Self::Changed),
+            // Deprecated: features marked for future removal
             "deprecated" | "deprecate" => Some(Self::Deprecated),
+            // Removed: deleted features
             "removed" | "remove" => Some(Self::Removed),
+            // Fixed: bug fixes
             "fix" | "fixed" => Some(Self::Fixed),
+            // Security: vulnerability fixes
             "security" | "sec" => Some(Self::Security),
-            "chore" | "internal" => Some(Self::Chore),
+            // Chore: internal tasks excluded from changelog
+            "chore" | "internal" | "test" | "tests" | "doc" | "docs" | "ci" | "build" => {
+                Some(Self::Chore)
+            }
             _ => None,
         }
     }

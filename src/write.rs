@@ -388,4 +388,35 @@ mod tests {
         assert_eq!(result.message, "See https://example.com for details");
         assert!(!result.explicit, "URL colon means not explicit");
     }
+
+    #[test]
+    fn test_parse_changelog_conventional_commit_aliases() {
+        // feat → Added
+        let r = parse_changelog_change("feat: new CLI flag").unwrap();
+        assert_eq!(r.category, ChangelogCategory::Added);
+
+        // refactor → Changed
+        let r = parse_changelog_change("refactor: extract module").unwrap();
+        assert_eq!(r.category, ChangelogCategory::Changed);
+
+        // perf → Changed
+        let r = parse_changelog_change("perf: optimize hot path").unwrap();
+        assert_eq!(r.category, ChangelogCategory::Changed);
+
+        // test → Chore
+        let r = parse_changelog_change("test: add snapshot tests").unwrap();
+        assert_eq!(r.category, ChangelogCategory::Chore);
+
+        // docs → Chore
+        let r = parse_changelog_change("docs: update README").unwrap();
+        assert_eq!(r.category, ChangelogCategory::Chore);
+
+        // ci → Chore
+        let r = parse_changelog_change("ci: fix pipeline").unwrap();
+        assert_eq!(r.category, ChangelogCategory::Chore);
+
+        // build → Chore
+        let r = parse_changelog_change("build: update dependencies").unwrap();
+        assert_eq!(r.category, ChangelogCategory::Chore);
+    }
 }

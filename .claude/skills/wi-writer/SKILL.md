@@ -91,15 +91,15 @@ govctl work add <WI-ID> notes "API is now async"
 
 **Every criterion MUST have a category prefix** for changelog generation:
 
-| Prefix        | Changelog Section | Use for                            |
-| ------------- | ----------------- | ---------------------------------- |
-| `add:`        | Added             | New features, capabilities         |
-| `changed:`    | Changed           | Modifications to existing behavior |
-| `deprecated:` | Deprecated        | Features marked for removal        |
-| `removed:`    | Removed           | Deleted features                   |
-| `fix:`        | Fixed             | Bug fixes                          |
-| `security:`   | Security          | Security-related changes           |
-| `chore:`      | _(excluded)_      | Internal tasks, tests, maintenance |
+| Prefix        | Changelog Section | Aliases                        |
+| ------------- | ----------------- | ------------------------------ |
+| `add:`        | Added             | `feat:`, `feature:`            |
+| `fix:`        | Fixed             | `fixed:`                       |
+| `changed:`    | Changed           | `refactor:`, `perf:`           |
+| `removed:`    | Removed           | `remove:`                      |
+| `deprecated:` | Deprecated        | `deprecate:`                   |
+| `security:`   | Security          | `sec:`                         |
+| `chore:`      | _(excluded)_      | `test:`, `docs:`, `ci:`, `build:` |
 
 ```bash
 # Feature work
