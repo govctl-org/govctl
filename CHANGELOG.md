@@ -7,12 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-
-- Migrate skill created at .claude/skills/migrate/SKILL.md (WI-2026-03-03-001)
-- Skill covers all 5 phases from ADR-0032 (WI-2026-03-03-001)
-
-## [0.5.3] - 2026-03-02
+## [0.5.3] - 2026-03-03
 
 ### Added
 
@@ -26,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Introduce V2 edit SSOT model and schema for fields, verbs, aliases, and legacy mappings (WI-2026-02-27-001)
 - Implement winnow-based path parser and canonicalization pipeline producing typed EditPlan (WI-2026-02-27-001)
 - Implement unified semantic edit engine with JsonAdapter and TomlAdapter interfaces (WI-2026-02-27-001)
+- Migrate skill created at .claude/skills/migrate/SKILL.md (WI-2026-03-03-001)
+- Skill covers all 5 phases from ADR-0032 (WI-2026-03-03-001)
 
 ### Changed
 
