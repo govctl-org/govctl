@@ -160,13 +160,7 @@ govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 
 ### 1.5 Record
 
-```bash
-# jj
-jj commit -m "chore(work): activate <WI-ID> for <brief-description>"
-
-# git
-git add . && git commit -m "chore(work): activate <WI-ID> for <brief-description>"
-```
+Commit: `chore(work): activate <WI-ID> for <brief-description>`
 
 ---
 
@@ -207,21 +201,24 @@ Follow the **adr-writer** skill for structure and quality guidelines.
 govctl adr new "<title>"
 ```
 
-### 2.5 Link to Work Item
+### 2.5 Review Drafts
+
+After creating RFC or ADR artifacts, invoke the appropriate reviewer agent:
+
+- **RFC created** → invoke the **rfc-reviewer** agent on the draft
+- **ADR created** → invoke the **adr-reviewer** agent on the draft
+
+Fix any issues flagged as Critical before proceeding.
+
+### 2.6 Link to Work Item
 
 ```bash
 govctl work add <WI-ID> refs <RFC-ID>
 ```
 
-### 2.6 Record
+### 2.7 Record
 
-```bash
-# jj
-jj commit -m "docs(rfc): draft <RFC-ID> for <summary>"
-
-# git
-git add . && git commit -m "docs(rfc): draft <RFC-ID> for <summary>"
-```
+Commit: `docs(rfc): draft <RFC-ID> for <summary>` or `docs(adr): draft <ADR-ID> for <summary>`
 
 ---
 
@@ -290,13 +287,7 @@ EOF
 
 ### 3.3 Record
 
-```bash
-# jj
-jj commit -m "feat(<scope>): <description>"
-
-# git
-git add . && git commit -m "feat(<scope>): <description>"
-```
+Commit: `feat(<scope>): <description>`
 
 ---
 
@@ -322,13 +313,7 @@ If tests fail, fix implementation and re-run. Do not proceed until green.
 
 ### 4.3 Record
 
-```bash
-# jj
-jj commit -m "test(<scope>): add tests for <feature>"
-
-# git
-git add . && git commit -m "test(<scope>): add tests for <feature>"
-```
+Commit: `test(<scope>): add tests for <feature>`
 
 ---
 
@@ -349,7 +334,11 @@ If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless ov
 govctl rfc advance <RFC-ID> stable
 ```
 
-### 5.3 Tick Acceptance Criteria
+### 5.3 Review Work Item
+
+Invoke the **wi-reviewer** agent on `<WI-ID>` to verify acceptance criteria quality before closing.
+
+### 5.4 Tick Acceptance Criteria
 
 **Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
 
@@ -363,23 +352,17 @@ Then tick each completed criterion:
 govctl work tick <WI-ID> acceptance_criteria "Feature implemented" -s done
 ```
 
-### 5.4 Mark Work Item Done
+### 5.5 Mark Work Item Done
 
 ```bash
 govctl work move <WI-ID> done
 ```
 
-### 5.5 Record
+### 5.6 Record
 
-```bash
-# jj
-jj commit -m "chore(work): complete <WI-ID> — <summary>"
+Commit: `chore(work): complete <WI-ID> — <summary>`
 
-# git
-git add . && git commit -m "chore(work): complete <WI-ID> — <summary>"
-```
-
-### 5.6 Summary Report
+### 5.7 Summary Report
 
 ```
 === WORKFLOW COMPLETE ===
@@ -436,55 +419,7 @@ For content field formatting and artifact reference syntax, see the **adr-writer
 | `refactor(scope)` | Restructuring |
 | `chore(scope)`    | Maintenance   |
 
-### Multi-line Commits
-
-**jujutsu (bash/zsh):**
-
-```bash
-jj describe --stdin <<'EOF'
-feat(scope): summary
-
-- Detail one
-- Detail two
-EOF
-jj new
-```
-
-**jujutsu (PowerShell):**
-
-```powershell
-@"
-feat(scope): summary
-
-- Detail one
-- Detail two
-"@ | jj describe --stdin
-jj new
-```
-
-**git (bash/zsh):**
-
-```bash
-git add . && git commit -m "$(cat <<'EOF'
-feat(scope): summary
-
-- Detail one
-- Detail two
-EOF
-)"
-```
-
-**git (PowerShell):**
-
-```powershell
-git add .
-git commit -m @"
-feat(scope): summary
-
-- Detail one
-- Detail two
-"@
-```
+For multi-line commit messages, use the **commit** skill.
 
 ---
 

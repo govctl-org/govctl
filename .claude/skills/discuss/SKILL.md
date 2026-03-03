@@ -180,17 +180,18 @@ govctl check
 
 Fix any validation errors before proceeding.
 
-### 2.5 Record (Optional)
+### 2.5 Review Drafts
 
-If you want to save progress:
+Invoke the appropriate reviewer agent on each draft artifact:
 
-```bash
-# jj
-jj commit -m "docs(rfc): draft <RFC-ID> for <summary>"
+- **RFC drafted** → invoke the **rfc-reviewer** agent
+- **ADR drafted** → invoke the **adr-reviewer** agent
 
-# git
-git add . && git commit -m "docs(rfc): draft <RFC-ID> for <summary>"
-```
+Address Critical issues before handoff.
+
+### 2.6 Record (Optional)
+
+Commit: `docs(rfc): draft <RFC-ID> for <summary>` or `docs(adr): draft <ADR-ID> for <summary>`
 
 ---
 

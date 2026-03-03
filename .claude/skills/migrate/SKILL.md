@@ -217,7 +217,11 @@ govctl adr accept <ADR-ID>
 govctl adr add <ADR-ID> refs <related-ADR-or-RFC>
 ```
 
-### 2.5 Commit Batch
+### 2.5 Review Backfilled ADRs
+
+Invoke the **adr-reviewer** agent on each newly created ADR. For large batches, review the most important 3-5 ADRs and spot-check the rest.
+
+### 2.6 Commit Batch
 
 Group related ADRs into logical commits:
 
