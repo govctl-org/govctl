@@ -1,0 +1,30 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-04-003"
+title = "Add --has-active flag to govctl check command"
+status = "active"
+created = "2026-03-04"
+started = "2026-03-04"
+
+[content]
+description = "Add --has-active flag to govctl check that exits non-zero when no active work item exists. Used as a pre-edit guard in /gov and /quick skills."
+
+[[content.acceptance_criteria]]
+text = "govctl check --has-active exits 0 when active work item exists"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check --has-active exits non-zero when no active work item"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "pending"
+category = "chore"
