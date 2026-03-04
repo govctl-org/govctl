@@ -54,12 +54,24 @@ Day 14: Tests pass, govctl rfc advance RFC-0015 stable
 
 ## Quick Start
 
+### Claude Code Plugin
+
+```
+/plugin marketplace add govctl-org/govctl
+/plugin install govctl@govctl
+/govctl:init
+```
+
+The plugin provides workflow skills, reviewer agents, and enforcement hooks out of the box.
+
+### CLI Only
+
 ```bash
 cargo install govctl
 govctl init
 ```
 
-That's it. `govctl init` creates the governance structure and installs AI agent skills.
+`govctl init` creates the governance structure and installs AI agent skills into `.claude/`.
 
 For complete documentation, see the [User Guide](https://govctl-org.github.io/govctl/).
 
@@ -67,7 +79,7 @@ For complete documentation, see the [User Guide](https://govctl-org.github.io/go
 
 ## AI Agent Integration
 
-govctl is built for AI-native development. `govctl init` installs workflow skills that any Claude Code / Cursor / Codex agent can invoke:
+govctl is built for AI-native development. Install the [Claude Code plugin](#quick-start) or run `govctl init` to get workflow skills that any Claude Code / Cursor / Codex agent can invoke:
 
 | Skill              | Purpose                                                                                 |
 | ------------------ | --------------------------------------------------------------------------------------- |
@@ -76,6 +88,8 @@ govctl is built for AI-native development. `govctl init` installs workflow skill
 | `/discuss <topic>` | Design discussion: explore options, draft RFC or ADR                                    |
 | `/commit`          | Smart commit: VCS detection, govctl checks, work item journal updates                   |
 | `/quick <task>`    | Fast path for trivial changes (skip governance ceremony)                                |
+
+The plugin also includes enforcement hooks: `govctl status` runs at session start for context, `govctl check` runs at session end as a gate.
 
 Every govctl operation is a single CLI call. No MCP server needed -- the CLI is the universal interface. Every shell-capable agent already speaks it.
 
