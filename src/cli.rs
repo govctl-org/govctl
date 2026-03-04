@@ -45,6 +45,10 @@ pub(crate) enum Commands {
         /// Treat warnings as errors
         #[arg(short = 'W', long)]
         deny_warnings: bool,
+
+        /// Assert that an active work item exists (exits non-zero if none)
+        #[arg(long)]
+        has_active: bool,
     },
 
     /// Show summary counts

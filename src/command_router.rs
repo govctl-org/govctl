@@ -58,6 +58,7 @@ pub enum CanonicalCommand {
     Check {
         #[allow(dead_code)]
         deny_warnings: bool,
+        has_active: bool,
     },
     Status,
     Render {
@@ -365,8 +366,12 @@ impl CanonicalCommand {
             // Global commands
             Commands::Init { force } => Self::Init { force: *force },
             Commands::Sync { force } => Self::Sync { force: *force },
-            Commands::Check { deny_warnings } => Self::Check {
+            Commands::Check {
+                deny_warnings,
+                has_active,
+            } => Self::Check {
                 deny_warnings: *deny_warnings,
+                has_active: *has_active,
             },
             Commands::Status => Self::Status,
             Commands::Render {
@@ -409,7 +414,14 @@ impl CanonicalCommand {
             // Global commands
             Self::Init { force } => cmd::new::init_project(config, *force, op),
             Self::Sync { force } => cmd::new::sync_commands(config, *force, op),
-            Self::Check { deny_warnings: _ } => cmd::check::check_all(config),
+            Self::Check {
+                deny_warnings: _,
+                has_active: true,
+            } => cmd::check::check_has_active(config),
+            Self::Check {
+                deny_warnings: _,
+                has_active: false,
+            } => cmd::check::check_all(config),
             Self::Status => cmd::status::show_status(config),
             Self::Render {
                 target,

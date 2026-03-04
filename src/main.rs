@@ -49,6 +49,9 @@ fn main() -> ExitCode {
                     Commands::Check {
                         deny_warnings: true,
                         ..
+                    } | Commands::Check {
+                        has_active: true,
+                        ..
                     }
                 ) {
                     ExitCode::FAILURE

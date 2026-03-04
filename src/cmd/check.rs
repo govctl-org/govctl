@@ -1,8 +1,10 @@
 //! Check/lint command implementation.
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::load_project_with_warnings;
+use crate::model::WorkItemStatus;
+use crate::parse::load_work_items;
 use crate::scan::scan_source_refs;
 use crate::ui;
 use crate::validate::validate_project;
@@ -46,4 +48,22 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     }
 
     Ok(all_diagnostics)
+}
+
+/// Fast-path: assert that at least one active work item exists.
+pub fn check_has_active(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
+    let items = load_work_items(config)?;
+    let has_active = items
+        .iter()
+        .any(|w| w.meta().status == WorkItemStatus::Active);
+
+    if has_active {
+        Ok(vec![])
+    } else {
+        Ok(vec![Diagnostic::new(
+            DiagnosticCode::W0109WorkNoActive,
+            "No active work item (hint: `govctl work new --active \"<title>\"`)",
+            "",
+        )])
+    }
 }
