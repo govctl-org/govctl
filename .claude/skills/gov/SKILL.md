@@ -224,8 +224,13 @@ Commit: `docs(rfc): draft <RFC-ID> for <summary>` or `docs(adr): draft <ADR-ID> 
 
 ## PHASE 3: IMPLEMENTATION
 
-**GATE: Confirm work item `<WI-ID>` was created in Phase 1 before proceeding.
-Do NOT write any code until the work item exists.**
+**GATE: Verify an active work item exists before writing any code.**
+
+```bash
+govctl check --has-active
+```
+
+If this fails, return to Phase 1 and create a work item first.
 
 ### 3.1 Gate Check (for RFC-governed work)
 

@@ -37,8 +37,13 @@ govctl work add <WI-ID> acceptance_criteria "chore: Change completed"
 
 ### 3. Implement
 
-**GATE: Confirm `<WI-ID>` was created in step 2 before proceeding.
-Do NOT write any code until the work item exists.**
+**GATE: Verify an active work item exists before writing any code.**
+
+```bash
+govctl check --has-active
+```
+
+If this fails, return to step 2 and create a work item first.
 
 Make the changes. If referencing governance artifacts in code comments, use `[[artifact-id]]` syntax:
 

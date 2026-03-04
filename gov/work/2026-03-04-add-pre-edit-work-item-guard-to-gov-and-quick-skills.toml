@@ -1,0 +1,15 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-04-002"
+title = "Add pre-edit work item guard to gov and quick skills"
+status = "active"
+created = "2026-03-04"
+started = "2026-03-04"
+
+[content]
+description = "Add govctl check --has-active as a pre-edit guard step in /gov and /quick skills"
+
+[[content.acceptance_criteria]]
+text = "Change completed"
+status = "pending"
+category = "chore"
