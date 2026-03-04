@@ -101,11 +101,11 @@ Clause text should contain only the specification prose, rationale, and `[[...]]
 
 ## Common Mistakes
 
-| Mistake                                        | Fix                                                                         |
-| ---------------------------------------------- | --------------------------------------------------------------------------- |
-| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return `Result<T, E>` with descriptive error message"       |
-| No rationale                                   | Add `**Rationale:**` section explaining why                                 |
-| Untestable requirement                         | Rewrite so it can be verified programmatically                              |
-| Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                                  |
-| Including `Since:` in clause text              | Don't — the renderer adds it from the `since` field automatically           |
-| Including clause heading in text               | Don't — the renderer generates `### [RFC:C-NAME] Title` from metadata       |
+| Mistake                                        | Fix                                                                   |
+| ---------------------------------------------- | --------------------------------------------------------------------- |
+| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return `Result<T, E>` with descriptive error message" |
+| No rationale                                   | Add `**Rationale:**` section explaining why                           |
+| Untestable requirement                         | Rewrite so it can be verified programmatically                        |
+| Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                            |
+| Including `Since:` in clause text              | Don't — the renderer adds it from the `since` field automatically     |
+| Including clause heading in text               | Don't — the renderer generates `### [RFC:C-NAME] Title` from metadata |

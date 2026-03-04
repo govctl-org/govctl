@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Plugin manifest (.claude-plugin/marketplace.json) with correct metadata (WI-2026-03-04-001)
+- Plugin directory with skills, agents, and hooks (WI-2026-03-04-001)
+- SessionStart hook injects govctl status context (WI-2026-03-04-001)
+- Stop hook warns if govctl check has pending failures (WI-2026-03-04-001)
+
 ## [0.5.3] - 2026-03-03
 
 ### Added

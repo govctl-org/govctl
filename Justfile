@@ -80,3 +80,16 @@ build-tui:
 # Launch TUI dashboard
 tui:
     cargo run --quiet --features tui -- tui
+
+# =============================================================================
+# Plugin Management
+# =============================================================================
+
+# Stamp plugin version from Cargo.toml into marketplace.json
+stamp-plugin-version:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    version=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
+    jq --arg v "$version" '.plugins[0].version = $v' .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
+    mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
+    echo "Plugin version stamped: $version"

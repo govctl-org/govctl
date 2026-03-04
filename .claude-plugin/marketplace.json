@@ -1,0 +1,32 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "govctl",
+  "description": "Governance framework for software projects — RFCs, ADRs, work items with lifecycle enforcement",
+  "owner": {
+    "name": "govctl-org",
+    "email": "govctl@users.noreply.github.com"
+  },
+  "plugins": [
+    {
+      "name": "govctl",
+      "description": "Governed workflow skills, reviewer agents, and enforcement hooks for govctl",
+      "version": "0.5.3",
+      "source": "./.claude",
+      "author": {
+        "name": "govctl-org"
+      },
+      "homepage": "https://github.com/govctl-org/govctl",
+      "repository": "https://github.com/govctl-org/govctl",
+      "license": "MIT",
+      "category": "productivity",
+      "tags": [
+        "governance",
+        "rfc",
+        "adr",
+        "work-items",
+        "lifecycle",
+        "compliance"
+      ]
+    }
+  ]
+}

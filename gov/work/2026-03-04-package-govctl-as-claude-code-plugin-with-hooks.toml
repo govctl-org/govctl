@@ -1,0 +1,47 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-04-001"
+title = "Package govctl as Claude Code plugin with hooks"
+status = "done"
+created = "2026-03-04"
+started = "2026-03-04"
+completed = "2026-03-04"
+refs = ["ADR-0033"]
+
+[content]
+description = "Create a Claude Code plugin that packages govctl skills, agents, and enforcement hooks for one-step installation in any project. The plugin provides governance workflow automation (PostToolUse validation, SessionStart context injection) without requiring MCP server complexity."
+
+[[content.journal]]
+date = "2026-03-04"
+scope = "plugin"
+content = "Created plugin directory structure with manifest, hooks, scripts, and synced skills/agents. Added sync-plugin task to Justfile."
+
+[[content.acceptance_criteria]]
+text = "Plugin manifest (.claude-plugin/marketplace.json) with correct metadata"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Plugin directory with skills, agents, and hooks"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "SessionStart hook injects govctl status context"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Stop hook warns if govctl check has pending failures"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "ADR documenting plugin design decision"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

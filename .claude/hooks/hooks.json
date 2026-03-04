@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "govctl status || echo \"⚠️ govctl not found. Install: cargo install govctl\"",
+            "timeout": 15
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "govctl check",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

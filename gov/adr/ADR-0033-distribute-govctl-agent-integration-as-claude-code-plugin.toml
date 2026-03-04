@@ -1,0 +1,150 @@
+[govctl]
+schema = 1
+id = "ADR-0033"
+title = "Distribute govctl agent integration as Claude Code plugin"
+status = "proposed"
+date = "2026-03-04"
+refs = [
+    "ADR-0015",
+    "ADR-0024",
+    "ADR-0028",
+]
+
+[content]
+context = """
+govctl has a mature agent integration layer: 8 skills (gov, quick, discuss, commit, migrate, rfc-writer, adr-writer, wi-writer) and 4 agents (compliance-checker, adr-reviewer, wi-reviewer, rfc-reviewer) in `.claude/`. This works well for developing govctl itself, but creates a distribution problem for adopters.
+
+### Problem Statement
+
+Every project that adopts govctl must manually recreate the agent configuration: copy skills, agents, and `CLAUDE.md` into their `.claude/` directory. `govctl init` scaffolds a basic `CLAUDE.md`, but the full skill/agent suite requires manual setup and ongoing maintenance when govctl updates its workflows.
+
+Claude Code's plugin system (introduced in v1.0.33, documented at https://docs.claude.com/en/plugins) solves exactly this: a standardized package format with skills, agents, hooks, and MCP servers that can be installed once and used across all projects.
+
+### Constraints
+
+- [[ADR-0015]] decided against MCP in favor of CLI-based agent discoverability — maintaining two interfaces (CLI + MCP) is a maintenance burden
+- [[ADR-0024]] established writers as skills and reviewers as agents — this architecture maps directly to the plugin format
+- [[ADR-0028]] migrated commands to skills for cross-platform compatibility — the unified skill format is already plugin-compatible
+- The plugin must work with any shell-capable agent, not just Claude Code (graceful degradation)
+- Plugin skills are namespaced (e.g., `/govctl:gov` instead of `/gov`)"""
+decision = """
+We will **package govctl's agent integration as a Claude Code plugin with enforcement hooks**, following the oh-my-claudecode pattern. The `.claude/` directory IS the plugin content. The marketplace catalog at the repo root points to it.
+
+### Structure
+
+```
+govctl/
+├── .claude-plugin/
+│   └── marketplace.json      ← source: "./.claude"
+├── .claude/                   ← plugin content (auto-discovered)
+│   ├── skills/                ← already exists
+│   ├── agents/                ← already exists
+│   ├── hooks/
+│   │   └── hooks.json
+│   ├── scripts/
+│   │   ├── post-edit-check.sh
+│   │   ├── session-start.sh
+│   │   └── pre-stop-check.sh
+│   └── settings.local.json   ← gitignored, not copied
+├── src/
+├── gov/
+└── Cargo.toml
+```
+
+No `plugin.json` inside `.claude/` — the marketplace entry provides all metadata, and Claude Code auto-discovers `skills/`, `agents/`, `hooks/` from the plugin directory.
+
+### Hook Enforcement
+
+Three hooks provide automatic governance enforcement:
+
+1. **PostToolUse** (matcher: `Write|Edit`): Inspects the edited file path. If under `gov/`, runs `govctl check` and surfaces validation errors.
+
+2. **SessionStart**: Runs `govctl status` for context. Checks `govctl` binary availability.
+
+3. **Stop**: Runs `govctl check`. Warns about pending failures before session ends.
+
+### Distribution
+
+```bash
+cargo install govctl
+/plugin marketplace add govctl-org/govctl
+/plugin install govctl@govctl
+/govctl:gov "implement feature X"
+```
+
+- **Zero duplication**: `.claude/` is the SSOT for skills, agents, and plugin content
+- **One `.claude-plugin/`**: marketplace.json at repo root, no nested manifest
+- **Versioning**: `just stamp-plugin-version` updates marketplace.json from Cargo.toml"""
+consequences = """
+### Positive
+
+- Zero duplication: `.claude/` is both the local dev config and the plugin content
+- One-step installation for adopters: `/plugin install govctl@govctl`
+- Automatic governance enforcement via hooks
+- No build step, no sync task, no symlinks — just files in `.claude/`
+- No MCP server complexity — single codebase, single distribution, per [[ADR-0015]]
+- Plugin format is the Claude Code standard — compatible with marketplace distribution
+
+### Negative
+
+- Plugin skills are namespaced (`/govctl:gov` vs `/gov`) when installed as plugin (mitigation: only affects plugin users, not in-repo developers)
+- Hook scripts are shell-only — Windows users need WSL or Git Bash (mitigation: hooks are additive enforcement, not required functionality)
+- Binary dependency: plugin requires `govctl` installed separately (mitigation: SessionStart hook checks and provides install instructions)
+- Plugin format is Claude Code-specific — non-Claude-Code agents cannot use hooks or plugin metadata (mitigation: skills and agents are plain markdown, usable by any agent)
+- `.claude/` directory gains additional files (hooks/, scripts/, .claude-plugin/) that are plugin-specific (mitigation: these are small, clearly organized, and don't interfere with local dev)
+
+### Neutral
+
+- `govctl init` still works for non-Claude-Code users
+- Future MCP integration remains possible per [[ADR-0015]] — the plugin format supports `.mcp.json`
+- Developers working on govctl see `.claude/` as both their local config and the plugin source — this is a feature, not a bug"""
+
+[[content.alternatives]]
+text = "Option A — Thin Plugin (skills + agents only, no hooks): Simplest approach, zero new code, but no automatic enforcement. Agent must remember to run govctl check manually."
+status = "rejected"
+pros = [
+    "Zero new code",
+    "No shell scripts to maintain",
+]
+cons = [
+    "No automatic governance enforcement",
+    "Agent must remember validation",
+]
+rejection_reason = "Hooks are the high-leverage differentiator between 'works with Claude Code' and 'great Claude Code plugin'. Without them, the plugin is just a file distribution mechanism."
+
+[[content.alternatives]]
+text = "Option C — Plugin + MCP Server: Full structured integration wrapping govctl CLI as MCP tools. Richest agent experience but doubles the API surface."
+status = "rejected"
+pros = [
+    "Structured tool interface with typed parameters",
+    "Richer error handling",
+]
+cons = [
+    "Two interfaces to maintain (CLI + MCP)",
+    "MCP server is a separate process to manage",
+    "Significant new code (~1000+ lines)",
+]
+rejection_reason = "Per ADR-0015, maintaining two interfaces is a maintenance nightmare for marginal parsing convenience. The CLI works. Shell-capable agents invoke it fine. The door remains open if demand materializes."
+
+[[content.alternatives]]
+text = "Option D — Separate repository (govctl-plugin): Independent repo with its own release cycle."
+status = "rejected"
+pros = [
+    "Independent versioning",
+    "Smaller repo for plugin contributors",
+]
+cons = [
+    "Sync between repos is error-prone",
+    "Skills and agents drift from main codebase",
+]
+rejection_reason = "The skills and agents ARE the govctl agent layer. Splitting them into a separate repo creates a sync problem that doesn't need to exist."
+
+[[content.alternatives]]
+text = "Separate plugin/ directory with symlinks or copied files: Duplicates .claude/ content or requires symlinks and build steps. Creates a maintenance burden solving a problem that doesn't need to exist — .claude/ already IS the plugin structure."
+status = "rejected"
+cons = [
+    "File duplication or symlink fragility",
+    "Requires build/sync step",
+    "Extra directory to maintain",
+]
+rejection_reason = "The .claude/ directory already has the exact structure a Claude Code plugin expects (skills/, agents/). Adding a second directory is solving a problem that doesn't exist."
