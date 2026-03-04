@@ -88,6 +88,17 @@ Use these keywords in ALL CAPS in normative clauses:
 | Specification | normative   | MUST/SHOULD/MAY requirements |
 | Rationale     | informative | Extended explanation         |
 
+## Rendering Rules
+
+The renderer auto-generates structural elements. **Do NOT include these in clause `text`:**
+
+- Clause heading (`### [RFC-XXXX:C-NAME] Title`) — auto-generated from metadata
+- `*Since: vX.Y.Z*` — auto-generated from the `since` JSON field
+- `> **Superseded by:** ...` — auto-generated from the `superseded_by` field
+- `Amended: ...` — **does not exist**; do not hallucinate this
+
+Clause text should contain only the specification prose, rationale, and `[[...]]` references.
+
 ## Common Mistakes
 
 | Mistake                                        | Fix                                                                         |
@@ -96,4 +107,5 @@ Use these keywords in ALL CAPS in normative clauses:
 | No rationale                                   | Add `**Rationale:**` section explaining why                                 |
 | Untestable requirement                         | Rewrite so it can be verified programmatically                              |
 | Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                                  |
-| `since` field left empty                       | It's OK — `govctl rfc bump` or `govctl rfc finalize` fills it automatically |
+| Including `Since:` in clause text              | Don't — the renderer adds it from the `since` field automatically           |
+| Including clause heading in text               | Don't — the renderer generates `### [RFC:C-NAME] Title` from metadata       |

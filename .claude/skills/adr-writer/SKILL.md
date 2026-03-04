@@ -32,9 +32,9 @@ Every ADR has three required fields and two optional fields:
 
 Explain the situation that requires a decision. Structure:
 
-```markdown
-## Context
+> **Do NOT include `## Context` heading** — the renderer adds it automatically.
 
+```markdown
 [1-2 sentence summary of the situation]
 
 ### Problem Statement
@@ -56,9 +56,9 @@ Brief overview (details go in the alternatives field).
 
 State what was decided and why. Structure:
 
-```markdown
-## Decision
+> **Do NOT include `## Decision` heading** — the renderer adds it automatically.
 
+```markdown
 We will **[action]** because:
 
 1. **Reason one:** Explanation
@@ -75,9 +75,9 @@ Specific guidance for implementing this decision.
 
 Honest accounting of trade-offs. Structure:
 
-```markdown
-## Consequences
+> **Do NOT include `## Consequences` heading** — the renderer adds it automatically.
 
+```markdown
 ### Positive
 
 - Benefit one
@@ -171,10 +171,23 @@ decision = "Use `HashMap<String, Vec<ClauseSpec>>` for clause storage"
 decision = "Use HashMap<String, Vec<ClauseSpec>> for clause storage"
 ```
 
+## Rendering Rules
+
+The renderer auto-generates structural elements from TOML metadata. **Do NOT include these in content fields:**
+
+- `## Context`, `## Decision`, `## Consequences` headings — auto-generated for each section
+- `## Alternatives Considered` heading — auto-generated if alternatives exist
+- `### Option Name (status)` headings — auto-generated from `alternatives[].text` + `status`
+- `- **Pros:**`, `- **Cons:**`, `- **Rejected because:**` — auto-generated from structured fields
+- ADR title (`# ADR-NNNN: Title`) — auto-generated from metadata
+
+Content fields should contain only the body prose and `[[...]]` references.
+
 ## Common Mistakes
 
 | Mistake                            | Fix                                                     |
 | ---------------------------------- | ------------------------------------------------------- |
+| `## Context` in content field      | Don't — the renderer adds section headings automatically |
 | Empty Negative section             | Every decision has trade-offs — document them           |
 | No alternatives                    | Add at least one rejected option                        |
 | Vague context: "We need to decide" | Specific: "RFC-0002 requires X but doesn't specify how" |
