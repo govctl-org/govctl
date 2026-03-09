@@ -2,7 +2,7 @@
 schema = 1
 id = "ADR-0033"
 title = "Distribute govctl agent integration as Claude Code plugin"
-status = "proposed"
+status = "accepted"
 date = "2026-03-04"
 refs = [
     "ADR-0015",
