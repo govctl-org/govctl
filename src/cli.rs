@@ -93,6 +93,7 @@ pub(crate) enum Commands {
     },
 
     /// Work item operations
+    #[command(visible_alias = "wi")]
     Work {
         #[command(subcommand)]
         command: WorkCommand,

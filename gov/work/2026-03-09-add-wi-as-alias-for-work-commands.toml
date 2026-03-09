@@ -1,0 +1,21 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-09-001"
+title = "Add wi as alias for work commands"
+status = "done"
+created = "2026-03-09"
+started = "2026-03-09"
+completed = "2026-03-09"
+
+[content]
+description = "Add 'wi' as a visible alias for the work subcommand so that agents typing govctl wi new (e.g. after seeing WI-001) succeed instead of failing."
+
+[[content.acceptance_criteria]]
+text = "CLI accepts 'wi' as alias for work subcommand"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

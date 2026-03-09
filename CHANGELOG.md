@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Stop hook warns if govctl check has pending failures (WI-2026-03-04-001)
 - govctl check --has-active exits 0 when active work item exists (WI-2026-03-04-003)
 - govctl check --has-active exits non-zero when no active work item (WI-2026-03-04-003)
+- CLI accepts 'wi' as alias for work subcommand (WI-2026-03-09-001)
 
 ## [0.5.3] - 2026-03-03
 
