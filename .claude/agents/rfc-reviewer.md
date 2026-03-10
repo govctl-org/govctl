@@ -44,6 +44,7 @@ When invoked:
 - [ ] All behavior described is covered by normative clauses (no undocumented behavior)
 - [ ] Edge cases are addressed (what happens on error? on empty input?)
 - [ ] Backward compatibility impact is documented if modifying existing RFC
+- [ ] Draft stays at the specification level; execution logs or task-progress notes are not mixed into the RFC
 
 ## Output Format
 
@@ -62,4 +63,4 @@ Suggestions (consider improving):
 Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 ```
 
-Focus on substance, not style. Flag real problems — missing requirements, untestable clauses, vague normative language. Don't nitpick formatting.
+Focus on substance, not style. Flag real problems — missing requirements, untestable clauses, vague normative language, or workflow chatter mixed into the spec. Don't nitpick formatting.

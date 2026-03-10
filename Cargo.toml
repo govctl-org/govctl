@@ -63,7 +63,7 @@ rand = "0.10"
 # Text processing
 regex = "1"
 slug = "0.1"
-strum = { version = "0.27", features = ["derive"] }
+strum = { version = "0.28", features = ["derive"] }
 winnow = "0.7"
 
 # File system traversal

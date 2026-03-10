@@ -39,7 +39,7 @@ Replace the placeholder immediately. One paragraph explaining:
 - Why it's needed
 - Any relevant context
 
-**Important:** Description is for task scope, NOT execution tracking. Use `journal` for progress updates.
+**Important:** Description is for task scope, NOT execution tracking. Use `journal` for progress and outcomes, and `notes` for durable learnings.
 
 ### Journal
 
@@ -70,17 +70,17 @@ EOF
 - After completing a significant chunk of work
 - When fixing bugs during implementation
 - After running verification gates
-- When making design decisions mid-execution
+- After a failed attempt that changed the next step
 
 ### Notes
 
-**Purpose:** Ad-hoc key points — quick observations to remember.
+**Purpose:** Durable learnings — constraints, decisions, and retry rules to remember before the next step.
 
 Notes are concise points recorded anytime, not just at completion. Use for:
 
-- Key observations discovered during work
-- Reminders for future maintainers
-- Brief insights that don't fit in journal
+- Why an approach failed
+- What not to retry
+- Constraints or decisions future steps must obey
 
 ```bash
 govctl work add <WI-ID> notes "Remember to update migration guide"
@@ -125,14 +125,14 @@ govctl work add <WI-ID> refs ADR-0023
 
 ## Field Semantics Summary
 
-| Field                 | Purpose                    | Update Pattern             |
-| --------------------- | -------------------------- | -------------------------- |
-| `description`         | Task scope declaration     | Define once, rarely change |
-| `journal`             | Execution process tracking | Append on each progress    |
-| `notes`               | Ad-hoc key points          | Add anytime, concise       |
-| `acceptance_criteria` | Completion criteria        | Define then tick           |
+| Field                 | Purpose                    | Update Pattern                                |
+| --------------------- | -------------------------- | --------------------------------------------- |
+| `description`         | Task scope declaration     | Define once, rarely change                    |
+| `journal`             | Execution process tracking | Append on each progress                       |
+| `notes`               | Durable learnings          | Add when future steps must remember something |
+| `acceptance_criteria` | Completion criteria        | Define then tick                              |
 
-**Per ADR-0026:** Keep description focused on "what" - use journal for "how it's going."
+**Per ADR-0026:** Keep description focused on "what", journal on "what happened", and notes on "what to remember next".
 
 ## Writing Rules
 

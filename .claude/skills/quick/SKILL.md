@@ -1,61 +1,82 @@
 ---
 name: quick
-description: Fast path for trivial changes — skip governance, minimal ceremony
+description: "Execute the fast path for trivial changes with minimal governance ceremony. Use when: (1) User invokes /quick, (2) Change is doc-only or non-behavioral, (3) No RFC or ADR work is needed"
 allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
 argument-hint: <what-to-do>
 ---
 
-# /quick — Fast Path Workflow
+# /quick - Fast Path Workflow
 
-Execute a lightweight workflow for trivial changes: `$ARGUMENTS`
+Execute the lightweight workflow for: `$ARGUMENTS`
 
-**Use for:** Documentation fixes, typos, comments, small refactors, non-behavioral changes.
+Use this only for trivial, non-behavioral changes such as typos, comments, docs fixes, or small internal cleanup.
 
-**Do NOT use for:** New features, behavioral changes, anything requiring RFC/ADR.
+Do not use this for new behavior, RFC-governed work, or architecture decisions. If the task stops being trivial, switch to `/gov`.
 
----
+## Critical Rules
 
-## WORKFLOW
+1. Keep the fast path small. Do not invent governance work the change does not need.
+2. Still use a work item. `govctl check --has-active` is the gate before editing.
+3. Read the active work item with `govctl work show <WI-ID>`.
+4. Use work item fields correctly:
+   - `description`: scope and why
+   - `journal`: what you did and what happened
+   - `notes`: constraints or lessons future steps must remember
+5. If the change becomes behavioral, ambiguous, or architectural, stop using `/quick` and switch to `/gov`.
 
-**CRITICAL: Steps MUST be executed in exact order. Do NOT skip ahead.
-Each step MUST be fully completed before starting the next.**
+## Workflow
 
-### 1. Validate Environment
+### 1. Validate and classify
 
 ```bash
 govctl status
 ```
 
-**Detect VCS:** Try `jj status` first. If it succeeds, use jujutsu. Otherwise use git.
+- Detect VCS: prefer `jj` if `jj status` succeeds, otherwise use git.
+- Confirm the change is still trivial and non-behavioral.
 
-### 2. Create Work Item
+### 2. Resolve the work item
 
 ```bash
-govctl work new --active "<concise-title>"
+govctl work list pending
+```
+
+- Matching active item: use it
+- Matching queued item: `govctl work move <WI-ID> active`
+- No match: `govctl work new --active "<concise-title>"`
+
+Then:
+
+```bash
+govctl work show <WI-ID>
+govctl work set <WI-ID> description "Brief scope: what and why"
 govctl work add <WI-ID> acceptance_criteria "chore: Change completed"
 ```
 
 ### 3. Implement
 
-**GATE: Verify an active work item exists before writing any code.**
+Before editing:
 
 ```bash
 govctl check --has-active
 ```
 
-If this fails, return to step 2 and create a work item first.
+Make the change. If code comments reference governance artifacts, use `[[artifact-id]]`.
 
-Make the changes. If referencing governance artifacts in code comments, use `[[artifact-id]]` syntax:
-
-```rust
-// Implements [[RFC-0001:C-FOO]]
-```
-
-Run validations:
+Run the relevant validation:
 
 ```bash
 govctl check
 ```
+
+Update working memory as needed:
+
+```bash
+govctl work add <WI-ID> journal "Updated docs; govctl check passes"
+govctl work add <WI-ID> notes "Do not use old command name in examples"
+```
+
+For very small changes, `journal` may be enough. Add `notes` only when there is something future steps should remember.
 
 ### 4. Record
 
@@ -74,7 +95,7 @@ govctl work tick <WI-ID> acceptance_criteria "Change completed" -s done
 govctl work move <WI-ID> done
 ```
 
-### 6. Final Record
+### 6. Final record
 
 ```bash
 # jj
@@ -84,14 +105,11 @@ jj commit -m "chore(work): complete <WI-ID>"
 git add . && git commit -m "chore(work): complete <WI-ID>"
 ```
 
----
+## Switch to /gov when
 
-## WHEN TO SWITCH TO /gov
-
-If during implementation you discover:
-
-- This requires behavioral changes → switch to `/gov`
-- This needs RFC specification → switch to `/gov`
-- This is an architectural decision → switch to `/gov`
+- The change affects behavior
+- The governing RFC is unclear or missing
+- An ADR-level design choice appears
+- The task stops being obviously trivial
 
 **BEGIN EXECUTION NOW.**

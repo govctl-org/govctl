@@ -1,442 +1,259 @@
 ---
 name: gov
-description: Execute governed workflow — work item, RFC/ADR, implement, test, done
+description: "Execute governed implementation workflow with work items, RFC/ADR checks, phase gates, testing, and closure. Use when: (1) User invokes /gov, (2) A non-trivial change needs work item tracking, (3) Implementation may require RFC/ADR handling"
 allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
 argument-hint: <what-to-do>
 ---
 
-# /gov — Governed Workflow
+# /gov - Governed Workflow
 
-Execute a complete, auditable workflow to do: `$ARGUMENTS`
+Execute a complete, auditable workflow for: `$ARGUMENTS`
 
----
+## Agent Patterns
 
-## QUICK REFERENCE
+### CLI choice
+
+Use `govctl` for governance operations.
+
+When working on the `govctl` repo itself, use `cargo run --quiet --` instead. Commands below use `govctl` for brevity.
+
+### Non-interactive commands
+
+Use non-interactive CLI commands only. Prefer `--stdin` for multi-line content.
+
+### Verification
+
+After each governance write or substantive code change, run the relevant validation (`govctl check`, tests, render when needed).
+
+## Quick Reference
 
 ```bash
-# govctl commands
-govctl status                             # Show summary
-govctl work list pending                  # List queue + active items
-govctl rfc list                           # List all RFCs
-govctl adr list                           # List all ADRs
-govctl work new --active "<title>"        # Create + activate work item
-govctl work move <WI-ID> <status>         # Transition (queue|active|done|cancelled)
-govctl rfc new "<title>"                  # Create RFC (auto-assigns ID)
-govctl adr new "<title>"                  # Create ADR
-govctl check                              # Validate everything
-govctl render                             # Render to markdown
-govctl render changelog                   # Generate CHANGELOG.md
-govctl release <version>                  # Cut a release (e.g., 1.0.0)
-
-# Checklist management (with changelog category prefixes)
-govctl work add <WI-ID> acceptance_criteria "add: New feature"    # → Added section
-govctl work add <WI-ID> acceptance_criteria "fix: Bug fixed"      # → Fixed section
-govctl work add <WI-ID> acceptance_criteria "chore: Tests pass"   # → excluded from changelog
-govctl work tick <WI-ID> acceptance_criteria "pattern" -s done
-
-# Work item tracking
-govctl work set <WI-ID> description "Task scope description"
-govctl work add <WI-ID> journal "Progress update" --scope module
-govctl work add <WI-ID> notes "Key observation"
-
-# Multi-line input
-govctl clause edit <clause-id> --stdin <<'EOF'
-multi-line text here
-EOF
+govctl status
+govctl work list pending
+govctl work show <WI-ID>
+govctl work new --active "<title>"
+govctl work move <WI-ID> <status>
+govctl work set <WI-ID> description "Scope and why"
+govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
+govctl work add <WI-ID> journal "Ran tests; fixed parser bug" --scope parser
+govctl work add <WI-ID> notes "Do not retry old fixture path; it fails because snapshots are stale"
+govctl work add <WI-ID> refs RFC-0001
+govctl rfc list
+govctl adr list
+govctl rfc new "<title>"
+govctl adr new "<title>"
+govctl rfc finalize <RFC-ID> normative
+govctl rfc advance <RFC-ID> <impl|test|stable>
+govctl check
+govctl render
 ```
 
----
+## Critical Rules
 
-## CRITICAL RULES
+1. Use `govctl` for governance operations. Never edit governed files directly.
+2. Respect phase discipline: `spec -> impl -> test -> stable`.
+3. Behavior changes must be grounded in a normative RFC. If behavior is unspecified or ambiguous, stop and escalate.
+4. Ask permission before `govctl rfc finalize ...` or `govctl rfc advance ...` unless `$ARGUMENTS` explicitly grant full authority.
+5. Keep an active work item before implementation. `govctl check --has-active` is the gate.
+6. In source comments, reference artifacts with `[[artifact-id]]`.
+7. Use work item fields correctly:
+   - `description`: task scope and why; set once, rarely change
+   - `journal`: execution log; append actions and outcomes
+   - `notes`: durable learnings; record constraints, decisions, retry rules, and failure causes
+8. Avoid loops. If the same approach already failed, do not repeat it unchanged.
 
-1. **All governance operations MUST use `govctl` CLI** — never edit governed files directly
-2. **Proceed autonomously** unless you hit a blocking condition (see ERROR HANDLING)
-3. **Phase discipline** — follow `spec → impl → test → stable` for RFC-governed work
-4. **RFC supremacy** — behavioral changes must be grounded in RFCs
-5. **RFC advancement requires permission** — see RFC ADVANCEMENT GATE below
-6. **Reference format in code** — when referencing artifacts in source code comments, use `[[artifact-id]]` syntax (e.g., `// Implements [[RFC-0001:C-FOO]]`) to enable validation by `govctl check`
-7. **Phase ordering** — Phases MUST be executed in exact order. Do NOT skip ahead. Each phase MUST be fully completed before starting the next.
+## Working Memory
 
----
+The active work item is persistent working memory. Read it with `govctl work show <WI-ID>`; do not rely on raw TOML.
 
-## RFC ADVANCEMENT GATE
+### Read order
 
-**Default behavior:** Ask for human permission before:
+1. `description` tells you the scope.
+2. `journal` tells you what was tried and what happened.
+3. `notes` tells you what to remember before the next attempt.
+4. `acceptance_criteria` tells you what must be true before closure.
 
-- `govctl rfc finalize <RFC-ID> normative`
-- `govctl rfc advance <RFC-ID> <phase>`
+### Write rules
 
-**Override:** If `$ARGUMENTS` contains phrases like:
+- Add a `journal` entry after meaningful progress, verification, or failure.
+- Add a `notes` entry when you learn something future steps must obey.
+- On failure, write both when appropriate:
+  - `journal`: what you ran and what failed
+  - `notes`: why it failed, what not to retry, or what to try instead
 
-- "free", "autonomous", "all allowed", "no permission needed", "full authority"
+## Workflow
 
-Then RFC advancement may proceed without asking.
-
-**Rationale:** RFC status/phase changes are significant governance actions. They should not happen silently unless explicitly authorized.
-
----
-
-## PHASE 0: INITIALIZATION
-
-### 0.1 Validate Environment
+### 0. Initialize
 
 ```bash
 govctl status
 ```
 
-**Detect VCS:** Try `jj status` first. If it succeeds, use jujutsu. Otherwise use git. Error if neither works.
+- Read `gov/config.toml`.
+- Detect VCS: prefer `jj` if `jj status` succeeds, otherwise use git.
+- Classify the task:
+  - Doc-only: skip governance analysis, but still use a work item
+  - Bug fix: usually no new RFC if behavior is already specified
+  - Feature: likely requires an RFC or ADR
+  - Refactor: ADR may be needed if it changes architecture
 
-### 0.2 Read Project Configuration
-
-Read the governance config to understand project-specific settings. Use the Read tool or your IDE to view `gov/config.toml`.
-
-Key settings to note:
-
-- `source_scan.pattern` — the `[[...]]` pattern used for inline artifact references
-- Output directories for rendered artifacts
-- Any project-specific overrides
-
-**VCS commands (use detected VCS throughout):**
-
-| Action        | jj                                              | git                                  |
-| ------------- | ----------------------------------------------- | ------------------------------------ |
-| Simple commit | `jj commit -m "<msg>"`                          | `git add . && git commit -m "<msg>"` |
-| Multi-line    | `jj describe --stdin <<'EOF' ... EOF && jj new` | See CONVENTIONS section              |
-
-### 0.3 Classify the Target
-
-Parse `$ARGUMENTS` and classify:
-
-| Type         | Examples                 | Workflow                 |
-| ------------ | ------------------------ | ------------------------ |
-| **Doc-only** | README, comments, typos  | Fast path (skip Phase 2) |
-| **Bug fix**  | Existing behavior broken | May skip RFC creation    |
-| **Feature**  | New capability           | Full workflow with RFC   |
-| **Refactor** | Internal restructure     | ADR recommended          |
-
-**Fast path for doc-only changes:** Skip to Phase 1, then directly to Phase 3 (implementation). No RFC/ADR required.
-
----
-
-## PHASE 1: WORK ITEM MANAGEMENT
-
-### 1.1 Check Existing Work Items
+### 1. Resolve the work item
 
 ```bash
 govctl work list pending
 ```
 
-**Decision:**
+- Matching active item: use it
+- Matching queued item: `govctl work move <WI-ID> active`
+- No match: `govctl work new --active "<concise-title>"`
 
-- Active item matches → use it, proceed to Phase 2
-- Queued item matches → `govctl work move <WI-ID> active`
-- No match → create new
-
-### 1.2 Create New Work Item
+Then immediately:
 
 ```bash
-# Create and activate in one command
-govctl work new --active "<concise-title>"
-```
-
-### 1.3 Set Description
-
-Replace the placeholder description immediately:
-
-```bash
+govctl work show <WI-ID>
 govctl work set <WI-ID> description "Brief scope: what and why"
-```
-
-### 1.4 Add Acceptance Criteria
-
-**Important:** Work items cannot be marked done without acceptance criteria.
-
-For category prefixes and quality guidelines, follow the **wi-writer** skill.
-
-```bash
-govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
 govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 ```
 
-### 1.5 Record
+Add task-specific acceptance criteria and refs as needed:
 
-Commit: `chore(work): activate <WI-ID> for <brief-description>`
+```bash
+govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
+govctl work add <WI-ID> refs RFC-0001
+```
 
----
+Follow the **wi-writer** skill for acceptance criteria quality.
 
-## PHASE 2: GOVERNANCE ANALYSIS
+### 2. Analyze governance
 
-> **Skip this phase** for doc-only changes (README, comments, typos).
-
-### 2.1 Survey Existing Governance
+Skip this step for doc-only changes.
 
 ```bash
 govctl rfc list
 govctl adr list
 ```
 
-### 2.2 Determine Requirements
+Choose the smallest thing that matches reality:
 
-| Situation                           | Action             |
-| ----------------------------------- | ------------------ |
-| New feature not covered by RFC      | Create RFC         |
-| Ambiguous RFC interpretation        | Create ADR         |
-| Architectural decision              | Create ADR         |
-| Pure implementation of existing RFC | Proceed to Phase 3 |
+- New behavior not covered by an RFC: draft an RFC
+- Ambiguous interpretation or architectural choice: draft an ADR
+- Existing normative RFC already specifies the change: proceed
 
-### 2.3 Create RFC (if needed)
+If you create artifacts:
 
-Follow the **rfc-writer** skill for structure and quality guidelines.
+- Follow `rfc-writer` or `adr-writer`
+- Review drafts with the appropriate reviewer agent
+- Fix critical findings before implementation
 
-```bash
-govctl rfc new "<title>"
-govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-```
+### 3. Enter implementation
 
-### 2.4 Create ADR (if needed)
-
-Follow the **adr-writer** skill for structure and quality guidelines.
-
-```bash
-govctl adr new "<title>"
-```
-
-### 2.5 Review Drafts
-
-After creating RFC or ADR artifacts, invoke the appropriate reviewer agent:
-
-- **RFC created** → invoke the **rfc-reviewer** agent on the draft
-- **ADR created** → invoke the **adr-reviewer** agent on the draft
-
-Fix any issues flagged as Critical before proceeding.
-
-### 2.6 Link to Work Item
-
-```bash
-govctl work add <WI-ID> refs <RFC-ID>
-```
-
-### 2.7 Record
-
-Commit: `docs(rfc): draft <RFC-ID> for <summary>` or `docs(adr): draft <ADR-ID> for <summary>`
-
----
-
-## PHASE 3: IMPLEMENTATION
-
-**GATE: Verify an active work item exists before writing any code.**
+Before writing code:
 
 ```bash
 govctl check --has-active
 ```
 
-If this fails, return to Phase 1 and create a work item first.
+For RFC-governed work, verify the RFC state:
 
-### 3.1 Gate Check (for RFC-governed work)
+- `draft/spec`: ask permission, then finalize and advance to `impl`
+- `normative/spec`: ask permission, then advance to `impl`
+- `normative/impl+`: proceed
+- `deprecated`: stop
 
-Before implementation, verify:
+If implementation reveals a spec bug, do not silently deviate. Amend the RFC per [[ADR-0016]] or stop and ask.
 
-- RFC **status** is `normative` (required for production features)
-- RFC **phase** is `impl` or later
+Implementation rules:
 
-```bash
-# Check current state
-govctl rfc list
-```
-
-**Gate conditions:**
-
-| RFC Status | RFC Phase | Action                                              |
-| ---------- | --------- | --------------------------------------------------- |
-| draft      | spec      | **ASK PERMISSION** → Finalize → advance → implement |
-| normative  | spec      | **ASK PERMISSION** → Advance → implement            |
-| normative  | impl+     | Proceed directly                                    |
-| deprecated | any       | ❌ No new implementation allowed                    |
-
-**If permission granted (or override in $ARGUMENTS):**
+1. Keep changes focused.
+2. Follow RFC clauses and cite them in source comments when useful.
+3. After each substantive change, run the relevant validation.
+4. Update working memory as you go:
 
 ```bash
-govctl rfc finalize <RFC-ID> normative  # if draft
-govctl rfc advance <RFC-ID> impl        # if spec phase
+govctl work add <WI-ID> journal "Implemented X; govctl check passes" --scope <scope>
+govctl work add <WI-ID> notes "Do not retry Y; it fails because Z"
 ```
 
-**Amending normative RFCs during implementation:**
+### 4. Test
 
-Per [[ADR-0016]], normative RFCs MAY be amended during implementation. Amendments MUST bump version and add changelog entry:
+If an RFC exists, ask permission before `govctl rfc advance <RFC-ID> test` unless full authority was granted.
 
-```bash
-# Edit clause content
-govctl clause edit <RFC-ID>:<CLAUSE-ID> --stdin <<'EOF'
-Updated specification text.
-EOF
-```
+Run the relevant verification for the change:
 
-### 3.2 Implement
+- `govctl check`
+- Project tests
+- Render commands when governed output changed
 
-1. Write code following RFC clauses (if applicable)
-2. **Reference artifacts in comments** — use `[[artifact-id]]` syntax:
-   ```rust
-   // Implements [[RFC-0001:C-VALIDATION]]
-   fn validate() { ... }
-   ```
-3. Keep changes focused — one logical change per commit
-4. Run validations after substantive changes:
-   ```bash
-   # Run your project's lint/format checks
-   govctl check
-   ```
-5. **Add journal entry** to track progress:
-   ```bash
-   govctl work add <WI-ID> journal "<summary of what was implemented>"
-   ```
+If a check fails:
 
-### 3.3 Record
+- Record the failed attempt in `journal`
+- Record the lesson or retry rule in `notes`
+- Change approach before retrying
 
-Commit: `feat(<scope>): <description>`
+Do not continue until green.
 
----
+### 5. Complete
 
-## PHASE 4: TESTING
-
-> **For doc-only changes:** Run tests to verify no regressions, but skip RFC phase advancement.
-
-### 4.1 Advance Phase (if RFC exists)
-
-**ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
-
-```bash
-govctl rfc advance <RFC-ID> test
-```
-
-### 4.2 Run Tests
-
-```bash
-# Run your project's test command
-```
-
-If tests fail, fix implementation and re-run. Do not proceed until green.
-
-### 4.3 Record
-
-Commit: `test(<scope>): add tests for <feature>`
-
----
-
-## PHASE 5: COMPLETION
-
-### 5.1 Final Validation
+Run final validation:
 
 ```bash
 govctl check
 govctl render
 ```
 
-### 5.2 Advance RFC to Stable (if applicable)
+If an RFC exists and all required testing is done, ask permission before `govctl rfc advance <RFC-ID> stable` unless full authority was granted.
 
-If RFC exists and all tests pass, **ASK PERMISSION** before advancing (unless override in $ARGUMENTS):
+Before closing the work item:
 
-```bash
-govctl rfc advance <RFC-ID> stable
-```
+1. Review the work item with `wi-reviewer`
+2. Tick completed acceptance criteria
+3. Move the work item to `done`
 
-### 5.3 Review Work Item
-
-Invoke the **wi-reviewer** agent on `<WI-ID>` to verify acceptance criteria quality before closing.
-
-### 5.4 Tick Acceptance Criteria
-
-**Pre-flight:** Verify acceptance criteria were added in Phase 1. If missing, add now:
+Example:
 
 ```bash
-govctl work add <WI-ID> acceptance_criteria "add: Feature implemented"
-```
-
-Then tick each completed criterion:
-
-```bash
-govctl work tick <WI-ID> acceptance_criteria "Feature implemented" -s done
-```
-
-### 5.5 Mark Work Item Done
-
-```bash
+govctl work show <WI-ID>
+govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 govctl work move <WI-ID> done
 ```
 
-### 5.6 Record
+## Error Handling
 
-Commit: `chore(work): complete <WI-ID> — <summary>`
+### Stop and ask when
 
-### 5.7 Summary Report
+1. Requirements are ambiguous.
+2. A normative RFC conflicts with the requested change.
+3. The change would break existing behavior.
+4. Security or secret-handling issues appear.
+5. The task grows beyond the original scope.
+6. The same failure recurs and you do not have a materially different next step.
 
-```
-=== WORKFLOW COMPLETE ===
+### Otherwise recover and continue
 
-Target: $ARGUMENTS
-Work Item: <WI-ID>
-Status: done
+| Problem                       | Recovery                                                        |
+| ----------------------------- | --------------------------------------------------------------- |
+| `govctl check` fails          | Read diagnostics, fix, rerun                                    |
+| Tests fail                    | Debug, fix, rerun                                               |
+| `work move ... done` rejected | Add or tick acceptance criteria first                           |
+| Same failure repeats          | Read `notes`, then `journal`; record a new plan or stop and ask |
 
-Governance: <RFC/ADR list or "none">
-Files modified: <count>
+## Commit Conventions
 
-All validations passed.
-```
+- `chore(work)`: activate or complete a work item
+- `docs(rfc)` / `docs(adr)`: draft governance artifacts
+- `feat(scope)` / `fix(scope)` / `refactor(scope)` / `docs(scope)` / `test(scope)`: implementation commits
 
----
+Use the `commit` skill for multi-line commit messages.
 
-## ERROR HANDLING
+## Execution Checklist
 
-### When to Stop and Ask
-
-1. **Ambiguous requirements** — cannot determine actionable items
-2. **RFC conflict** — implementation conflicts with normative RFC
-3. **Breaking change** — would break existing behavior
-4. **Security concern** — credentials, secrets, sensitive data
-5. **Scope explosion** — task grew beyond reasonable bounds
-
-For all other errors: **fix and continue**.
-
-### Recovery
-
-| Error                | Recovery                           |
-| -------------------- | ---------------------------------- |
-| `govctl check` fails | Read diagnostics, fix, retry       |
-| Tests fail           | Debug, fix, retry                  |
-| Lint/format fails    | Usually auto-fixes; re-run         |
-| `mv done` rejected   | Add/tick acceptance criteria first |
-
----
-
-## CONVENTIONS
-
-For content field formatting and artifact reference syntax, see the **adr-writer** and **rfc-writer** skills.
-
-**Key rule:** Always use `[[artifact-id]]` syntax in content fields and source code comments. The `refs` field uses plain IDs (not `[[...]]`).
-
-### Commit Messages
-
-| Prefix            | Usage         |
-| ----------------- | ------------- |
-| `feat(scope)`     | New feature   |
-| `fix(scope)`      | Bug fix       |
-| `docs(scope)`     | Documentation |
-| `test(scope)`     | Tests         |
-| `refactor(scope)` | Restructuring |
-| `chore(scope)`    | Maintenance   |
-
-For multi-line commit messages, use the **commit** skill.
-
----
-
-## EXECUTION CHECKLIST
-
-- [ ] Environment validated, VCS detected
-- [ ] Work item active with acceptance criteria
-- [ ] Governance analysis (skip for doc-only)
-- [ ] Implementation complete
-- [ ] Tests passing
+- [ ] Environment validated; config read; VCS detected
+- [ ] Active work item exists
+- [ ] `govctl work show <WI-ID>` read before implementation
+- [ ] `description`, `journal`, and `notes` used correctly
+- [ ] Governance analysis completed or explicitly skipped
+- [ ] Validation and tests passed
 - [ ] Acceptance criteria ticked
-- [ ] Work item marked done
-- [ ] Summary reported
+- [ ] Work item closed
 
 **BEGIN EXECUTION NOW.**

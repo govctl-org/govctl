@@ -24,7 +24,7 @@ When invoked:
 
 - [ ] Leads with a clear action: "We will **X**"
 - [ ] Reasons are numbered and specific — not "because it's better"
-- [ ] Implementation notes are included where relevant
+- [ ] Decision is concrete enough to guide implementation without turning into a work-item execution log
 - [ ] Decision is proportional to the problem (not over-engineered)
 
 ### Consequences Honesty
@@ -63,4 +63,4 @@ Suggestions (consider improving):
 Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 ```
 
-The most common failure mode is an empty or dishonest Negative section. If the review finds no negatives listed, flag it as Critical — every decision has trade-offs.
+The most common failure modes are an empty or dishonest Negative section and ADRs that drift into execution tracking. If the review finds either, flag it as Critical.

@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "Commit changes with govctl integration — check work item status, update journal, run govctl check"
+description: "Commit changes with govctl integration — check work item status, update journal or notes, and run govctl check"
 allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS
 argument-hint: [optional commit message hint]
 ---
@@ -39,8 +39,8 @@ govctl work list pending
 
 **If active work item exists:**
 
-1. **Journal update**: Ask user if they want to add a journal entry documenting progress
-2. **Notes update**: Ask if any notes should be recorded
+1. **Journal update**: Ask user if they want to add a journal entry documenting what was done and what happened
+2. **Notes update**: Ask if any learnings, constraints, or retry rules should be recorded
 3. **Acceptance criteria**: Check if any criteria can be ticked:
    ```bash
    govctl work show <WI-ID>

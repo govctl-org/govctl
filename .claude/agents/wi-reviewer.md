@@ -17,7 +17,15 @@ When invoked:
 
 - [ ] Placeholder text has been replaced with real content
 - [ ] Describes _what_ will be done and _why_
+- [ ] Is not being used as an execution log
 - [ ] Technical terms are wrapped in backticks
+
+### Working Memory Fields
+
+- [ ] `journal`, if present, records actions and outcomes rather than task scope
+- [ ] `notes`, if present, record durable learnings, constraints, decisions, or retry rules
+- [ ] `notes` do not merely duplicate `journal`
+- [ ] Missing `journal` or `notes` is acceptable for very small work items
 
 ### Acceptance Criteria
 
@@ -31,7 +39,7 @@ When invoked:
 
 - [ ] `add:` is used for genuinely new features (not modifications)
 - [ ] `fix:` is used for bug fixes (not new features)
-- [ ] `changed:` is used for modifications to existing behavior
+- [ ] `change:` is used for modifications to existing behavior
 - [ ] `chore:` is used for internal/maintenance tasks that don't appear in changelog
 - [ ] Categories match what will actually show up in the changelog
 
@@ -64,4 +72,4 @@ Suggestions (consider improving):
 Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 ```
 
-The most common failure: placeholder descriptions left unchanged and vague acceptance criteria like "Feature works". Flag both as Critical.
+The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", and description fields that were abused as execution logs. Flag those as Critical.

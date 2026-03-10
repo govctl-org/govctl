@@ -81,10 +81,10 @@ EOF
 
 ## Notes
 
-Add context or progress notes:
+Add durable notes for future steps:
 
 ```bash
-govctl work add WI-2026-01-17-001 notes "Discovered edge case in validation"
+govctl work add WI-2026-01-17-001 notes "Do not retry the old validation path; it fails on missing refs"
 ```
 
 Nested path edits are also available for structured fields:
