@@ -144,8 +144,8 @@ fn generate_edit_rules() -> Result<(), Box<dyn Error>> {
 }
 
 fn validate_spec_against_schema(schema: &Value, instance: &Value) -> Result<(), Box<dyn Error>> {
-    let compiled =
-        jsonschema::validator_for(schema).map_err(|err| format!("invalid edit-ops schema: {err}"))?;
+    let compiled = jsonschema::validator_for(schema)
+        .map_err(|err| format!("invalid edit-ops schema: {err}"))?;
     let mut diagnostics: Vec<String> = compiled
         .iter_errors(instance)
         .map(|err| err.to_string())
