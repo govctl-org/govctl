@@ -2,9 +2,10 @@
 schema = 1
 id = "WI-2026-03-10-001"
 title = "Fix jsonschema 0.45 API compatibility in build.rs"
-status = "active"
+status = "done"
 created = "2026-03-10"
 started = "2026-03-10"
+completed = "2026-03-10"
 
 [content]
 description = "Update build.rs to use jsonschema 0.45 API: JSONSchema::compile -> validator_for, validate -> iter_errors"
@@ -15,5 +16,5 @@ content = "Removed use jsonschema::JSONSchema import; replaced JSONSchema::compi
 
 [[content.acceptance_criteria]]
 text = "build.rs compiles with jsonschema 0.45"
-status = "pending"
+status = "done"
 category = "chore"
