@@ -1,4 +1,3 @@
-use jsonschema::JSONSchema;
 use serde::Deserialize;
 use serde_json::Value;
 use std::collections::HashSet;
@@ -146,9 +145,12 @@ fn generate_edit_rules() -> Result<(), Box<dyn Error>> {
 
 fn validate_spec_against_schema(schema: &Value, instance: &Value) -> Result<(), Box<dyn Error>> {
     let compiled =
-        JSONSchema::compile(schema).map_err(|err| format!("invalid edit-ops schema: {err}"))?;
-    if let Err(errors) = compiled.validate(instance) {
-        let mut diagnostics: Vec<String> = errors.map(|err| err.to_string()).collect();
+        jsonschema::validator_for(schema).map_err(|err| format!("invalid edit-ops schema: {err}"))?;
+    let mut diagnostics: Vec<String> = compiled
+        .iter_errors(instance)
+        .map(|err| err.to_string())
+        .collect();
+    if !diagnostics.is_empty() {
         diagnostics.sort();
         diagnostics.dedup();
         let body = diagnostics

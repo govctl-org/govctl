@@ -1,0 +1,19 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-10-001"
+title = "Fix jsonschema 0.45 API compatibility in build.rs"
+status = "active"
+created = "2026-03-10"
+started = "2026-03-10"
+
+[content]
+description = "Update build.rs to use jsonschema 0.45 API: JSONSchema::compile -> validator_for, validate -> iter_errors"
+
+[[content.journal]]
+date = "2026-03-10"
+content = "Removed use jsonschema::JSONSchema import; replaced JSONSchema::compile with jsonschema::validator_for; replaced validate+Err pattern with iter_errors; cargo check passes"
+
+[[content.acceptance_criteria]]
+text = "build.rs compiles with jsonschema 0.45"
+status = "pending"
+category = "chore"
