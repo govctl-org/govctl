@@ -1,7 +1,0 @@
----
-source: tests/test_changelog.rs
-expression: "normalize_output(&render_output, dir, &date)"
----
-$ govctl render changelog
-Rendered CHANGELOG to CHANGELOG.md (2 releases, 0 unreleased)
-exit: 0

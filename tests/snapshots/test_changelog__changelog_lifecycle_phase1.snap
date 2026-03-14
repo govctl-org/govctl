@@ -1,0 +1,44 @@
+---
+source: tests/test_changelog.rs
+expression: "normalize_output(&rendered, dir, &date)"
+---
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [Unreleased]
+
+## [1.0.0] - 2026-03-01
+
+### Added
+
+- Governance structure per [ADR-0014](docs/adr/ADR-0014.md) (WI-<DATE>-001)
+
+## [0.9.0] - 2025-06-01
+
+### Added
+
+- Widget subsystem with drag-and-drop support
+- Keyboard navigation for accessibility
+
+### Fixed
+
+- Race condition in event dispatcher (#42)
+
+## [v0.8.0] - 2025-03-15
+
+### Changed
+
+- Migrated from Webpack to Vite
+- Upgraded tokio to 1.28
+
+### Deprecated
+
+- Legacy plugin API (use v2 hooks instead)
+
+## [0.7.0] - 2025-01-10
+
+### Added
+
+- Initial public release
+- REST API with OpenAPI spec

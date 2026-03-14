@@ -267,33 +267,75 @@ fn test_changelog_release_workflow() {
     );
 }
 
-/// Test that changelog incremental rendering preserves ALL existing releases,
-/// including those not in releases.toml, and preserves manual content.
-/// Covers bugs fixed in WI-2026-02-25-001:
-/// - Releases not in releases.toml were discarded
-/// - Manual content was lost on re-render
-/// - Version prefix matching (v0.3.0 vs 0.3.0)
-/// - Inline refs used absolute paths
-/// - Older versions were re-expanded
+/// Integration test: changelog preservation across the full adoption lifecycle.
+///
+/// Phase 1 — Brownfield: legacy CHANGELOG pre-dates govctl. First govctl
+/// release is cut and rendered on top of it. Verifies legacy versions and
+/// content survive, inline refs in new releases use relative paths, and
+/// v-prefix versions are handled.
+///
+/// Phase 2 — Steady state: user manually edits the rendered CHANGELOG
+/// (adds a patch release not in releases.toml, appends content to an
+/// existing section, adds inline refs). A second govctl release is cut
+/// and re-rendered. Verifies manual edits, hand-written versions, and
+/// unexpanded inline refs are all preserved.
 #[test]
-fn test_changelog_preserves_existing_releases() {
+fn test_changelog_preservation_lifecycle() {
     let temp_dir = TempDir::new().expect("failed to create temp dir");
     let dir = temp_dir.path();
     let date = today();
 
-    // Build work item IDs with actual date
     let wi1 = format!("WI-{}-001", date);
     let wi2 = format!("WI-{}-002", date);
 
-    // Phase 1: Initialize project
+    // ── Phase 1: Brownfield adoption ──────────────────────────────────
+
     let _ = run_commands(dir, &[&["init"]]);
 
-    // Phase 2: Create work items and releases
-    let setup_commands: Vec<Vec<String>> = vec![
+    // Legacy CHANGELOG: no [Unreleased], no govctl artifacts, mixed v-prefix
+    let legacy_changelog = "\
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+## [0.9.0] - 2025-06-01
+
+### Added
+
+- Widget subsystem with drag-and-drop support
+- Keyboard navigation for accessibility
+
+### Fixed
+
+- Race condition in event dispatcher (#42)
+
+## [v0.8.0] - 2025-03-15
+
+### Changed
+
+- Migrated from Webpack to Vite
+- Upgraded tokio to 1.28
+
+### Deprecated
+
+- Legacy plugin API (use v2 hooks instead)
+
+## [0.7.0] - 2025-01-10
+
+### Added
+
+- Initial public release
+- REST API with OpenAPI spec
+";
+    std::fs::write(dir.join("CHANGELOG.md"), legacy_changelog)
+        .expect("failed to write legacy CHANGELOG.md");
+
+    // First govctl work item — includes an inline ref
+    let phase1_commands: Vec<Vec<String>> = vec![
         vec![
             "work".to_string(),
             "new".to_string(),
-            "Feature A".to_string(),
+            "Govctl adoption".to_string(),
             "--active".to_string(),
         ],
         vec![
@@ -301,14 +343,14 @@ fn test_changelog_preserves_existing_releases() {
             "add".to_string(),
             wi1.clone(),
             "acceptance_criteria".to_string(),
-            "added: Feature A implementation".to_string(),
+            "added: Governance structure per [[ADR-0014]]".to_string(),
         ],
         vec![
             "work".to_string(),
             "tick".to_string(),
             wi1.clone(),
             "acceptance_criteria".to_string(),
-            "Feature A".to_string(),
+            "Governance".to_string(),
             "-s".to_string(),
             "done".to_string(),
         ],
@@ -320,50 +362,72 @@ fn test_changelog_preserves_existing_releases() {
         ],
         vec![
             "release".to_string(),
-            "0.2.0".to_string(),
+            "1.0.0".to_string(),
             "--date".to_string(),
-            "2026-01-15".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Feature B".to_string(),
-            "--active".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi2.clone(),
-            "acceptance_criteria".to_string(),
-            "added: Feature B implementation".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "tick".to_string(),
-            wi2.clone(),
-            "acceptance_criteria".to_string(),
-            "Feature B".to_string(),
-            "-s".to_string(),
-            "done".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "move".to_string(),
-            wi2.clone(),
-            "done".to_string(),
-        ],
-        vec![
-            "release".to_string(),
-            "0.3.0".to_string(),
-            "--date".to_string(),
-            "2026-01-20".to_string(),
+            "2026-03-01".to_string(),
         ],
     ];
-    let _ = run_dynamic_commands(dir, &setup_commands);
+    let _ = run_dynamic_commands(dir, &phase1_commands);
 
-    // Phase 3: Create CHANGELOG with manual content and multiple versions
-    // Include versions 0.3.0, 0.2.1, 0.2.0, 0.1.0 but releases.toml only has 0.3.0, 0.2.0
-    let changelog_content = format!(
+    let _ = run_commands(dir, &[&["render", "changelog"]]);
+    let rendered = std::fs::read_to_string(dir.join("CHANGELOG.md"))
+        .expect("failed to read CHANGELOG.md after phase 1");
+
+    // New govctl release appears
+    assert!(rendered.contains("## [1.0.0]"), "1.0.0 should be present");
+    assert!(
+        rendered.contains("Governance structure"),
+        "work item content should appear in 1.0.0"
+    );
+
+    // Inline ref in NEW release expanded to relative path
+    assert!(
+        rendered.contains("[ADR-0014](docs/adr/ADR-0014.md)"),
+        "inline refs in new releases should expand to relative docs/ path"
+    );
+    assert!(
+        !rendered.contains("/Users/"),
+        "phase 1: no absolute paths (macOS)"
+    );
+    assert!(
+        !rendered.contains("/home/"),
+        "phase 1: no absolute paths (Linux)"
+    );
+
+    // Legacy versions preserved (handle v-prefix)
+    assert!(rendered.contains("## [0.9.0]"), "legacy 0.9.0 preserved");
+    let has_080 = rendered.contains("## [0.8.0]") || rendered.contains("## [v0.8.0]");
+    assert!(has_080, "legacy 0.8.0 preserved (v-prefix ok)");
+    assert!(rendered.contains("## [0.7.0]"), "legacy 0.7.0 preserved");
+
+    // Legacy content intact
+    assert!(rendered.contains("Widget subsystem with drag-and-drop support"));
+    assert!(rendered.contains("Race condition in event dispatcher (#42)"));
+    assert!(rendered.contains("Migrated from Webpack to Vite"));
+    assert!(rendered.contains("Legacy plugin API (use v2 hooks instead)"));
+    assert!(rendered.contains("Initial public release"));
+
+    // Semver descending
+    let versions_p1: Vec<&str> = rendered
+        .lines()
+        .filter(|l| l.starts_with("## [") && !l.contains("Unreleased"))
+        .collect();
+    assert_eq!(versions_p1.len(), 4, "phase 1: 4 versions");
+    assert!(versions_p1[0].contains("1.0.0"), "newest first");
+    assert!(versions_p1[3].contains("0.7.0"), "oldest last");
+
+    insta::assert_snapshot!(
+        "changelog_lifecycle_phase1",
+        normalize_output(&rendered, dir, &date)
+    );
+
+    // ── Phase 2: Manual edits + second release ───────────────────────
+
+    // Simulate user manually editing the rendered CHANGELOG:
+    // - Insert a hand-written 1.0.1 patch (not in releases.toml)
+    //   with an inline ref that should stay unexpanded on re-render
+    // - Add manual BREAKING note to the 1.0.0 section
+    let phase2_changelog = format!(
         r#"# Changelog
 
 All notable changes to this project will be documented in this file.
@@ -373,210 +437,168 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [v0.3.0] - 2026-01-20
-
-### Added
-
-- Feature B implementation ({wi2})
-
-### Changed
-
-- **BREAKING**: Manual content in 0.3.0 that should be preserved
-  - This tests that manual changes are not lost on re-render
-
-## [0.2.1] - 2026-01-18
+## [1.0.1] - 2026-03-05
 
 ### Fixed
 
-- Manual bug fix entry (no work item)
-  - This tests releases not in releases.toml are preserved
+- Hotfix for config loading edge case (see [[ADR-0014]])
 
-## [v0.2.0] - 2026-01-15
+## [1.0.0] - 2026-03-01
 
 ### Added
 
-- Feature A implementation ({wi1})
+- Governance structure per [ADR-0014](docs/adr/ADR-0014.md) ({wi1})
 
 ### Changed
 
-- **BREAKING**: Manual content in 0.2.0
-  - Tests preservation of existing releases
-  - Tests inline ref: See [[ADR-0014]] for details
+- **BREAKING**: Manual note added after initial render
+  - This content was hand-edited by a human
 
-## [0.1.0] - 2026-01-10
+## [0.9.0] - 2025-06-01
 
 ### Added
 
-- Initial release
+- Widget subsystem with drag-and-drop support
+- Keyboard navigation for accessibility
 
+### Fixed
+
+- Race condition in event dispatcher (#42)
+
+## [v0.8.0] - 2025-03-15
+
+### Changed
+
+- Migrated from Webpack to Vite
+- Upgraded tokio to 1.28
+
+### Deprecated
+
+- Legacy plugin API (use v2 hooks instead)
+
+## [0.7.0] - 2025-01-10
+
+### Added
+
+- Initial public release
+- REST API with OpenAPI spec
 "#,
         wi1 = wi1,
-        wi2 = wi2
     );
+    std::fs::write(dir.join("CHANGELOG.md"), &phase2_changelog)
+        .expect("failed to write edited CHANGELOG.md");
 
-    std::fs::write(dir.join("CHANGELOG.md"), &changelog_content)
-        .expect("failed to write CHANGELOG.md");
-
-    // Phase 4: Render changelog (should preserve all content)
-    let render_output = run_commands(dir, &[&["render", "changelog"]]);
-
-    // Verify the output
-    let rendered =
-        std::fs::read_to_string(dir.join("CHANGELOG.md")).expect("failed to read CHANGELOG.md");
-
-    // Test 1: All versions should be preserved (even those not in releases.toml)
-    // Check for version headers (support both X.Y.Z and vX.Y.Z formats)
-    let has_030 = rendered.contains("## [0.3.0]") || rendered.contains("## [v0.3.0]");
-    assert!(has_030, "0.3.0 should be preserved (v prefix version)");
-
-    assert!(
-        rendered.contains("## [0.2.1]"),
-        "0.2.1 should be preserved (not in releases.toml)"
-    );
-
-    let has_020 = rendered.contains("## [0.2.0]") || rendered.contains("## [v0.2.0]");
-    assert!(has_020, "0.2.0 should be preserved");
-
-    assert!(
-        rendered.contains("## [0.1.0]"),
-        "0.1.0 should be preserved (not in releases.toml)"
-    );
-
-    // Test 2: Manual content should be preserved
-    assert!(
-        rendered.contains("BREAKING**: Manual content in 0.3.0"),
-        "Manual content in 0.3.0 should be preserved"
-    );
-    assert!(
-        rendered.contains("BREAKING**: Manual content in 0.2.0"),
-        "Manual content in 0.2.0 should be preserved"
-    );
-    assert!(
-        rendered.contains("Manual bug fix entry"),
-        "Manual entry in 0.2.1 should be preserved"
-    );
-
-    // Test 3: Work item content should be present
-    assert!(
-        rendered.contains(&format!("Feature A implementation ({wi1})", wi1 = wi1)),
-        "Feature A should be in changelog"
-    );
-    assert!(
-        rendered.contains(&format!("Feature B implementation ({wi2})", wi2 = wi2)),
-        "Feature B should be in changelog"
-    );
-
-    // Test 4: Inline refs in PRESERVED releases should stay as-is (not re-expanded)
-    // The [[ADR-0014]] in 0.2.0 section was in original CHANGELOG, should remain unexpanded
-    assert!(
-        rendered.contains("[[ADR-0014]]"),
-        "Inline refs in preserved releases should stay as-is (not re-expanded)"
-    );
-    // Test 4b: Inline refs should NOT use absolute paths anywhere
-    assert!(
-        !rendered.contains("/Users/"),
-        "CHANGELOG should NOT contain absolute paths"
-    );
-    assert!(
-        !rendered.contains("/home/"),
-        "CHANGELOG should NOT contain absolute paths"
-    );
-
-    // Test 5: Versions should be in semver descending order
-    let lines: Vec<&str> = rendered.lines().collect();
-    let version_indices: Vec<(usize, &str)> = lines
-        .iter()
-        .enumerate()
-        .filter(|(_, line)| line.starts_with("## [") && !line.contains("Unreleased"))
-        .map(|(i, line)| (i, *line))
-        .collect();
-
-    // Should have 4 versions
-    assert_eq!(version_indices.len(), 4, "Should have 4 release versions");
-
-    // First version should be 0.3.0 (newest)
-    assert!(
-        version_indices[0].1.contains("0.3.0"),
-        "First version should be 0.3.0"
-    );
-
-    insta::assert_snapshot!(
-        "changelog_preserve_all",
-        normalize_output(&render_output, dir, &date)
-    );
-}
-
-/// Test that inline refs in NEW releases are expanded with relative paths.
-/// This tests bug fix: inline refs now use relative 'docs/' path instead of absolute.
-#[test]
-fn test_changelog_inline_refs_use_relative_paths() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
-    let dir = temp_dir.path();
-    let date = today();
-
-    let wi1 = format!("WI-{}-001", date);
-
-    // Initialize and create work item with inline ref
-    let _ = run_commands(dir, &[&["init"]]);
-
-    let setup_commands: Vec<Vec<String>> = vec![
+    // Second govctl release
+    let phase2_commands: Vec<Vec<String>> = vec![
         vec![
             "work".to_string(),
             "new".to_string(),
-            "Feature with ref".to_string(),
+            "Breaking changes".to_string(),
             "--active".to_string(),
         ],
         vec![
             "work".to_string(),
             "add".to_string(),
-            wi1.clone(),
+            wi2.clone(),
             "acceptance_criteria".to_string(),
-            "added: Feature per [[ADR-0014]] requirements".to_string(),
+            "changed: Response format to JSON".to_string(),
         ],
         vec![
             "work".to_string(),
             "tick".to_string(),
-            wi1.clone(),
+            wi2.clone(),
             "acceptance_criteria".to_string(),
-            "Feature per".to_string(),
+            "Response".to_string(),
             "-s".to_string(),
             "done".to_string(),
         ],
         vec![
             "work".to_string(),
             "move".to_string(),
-            wi1.clone(),
+            wi2.clone(),
             "done".to_string(),
         ],
         vec![
             "release".to_string(),
-            "0.1.0".to_string(),
+            "2.0.0".to_string(),
             "--date".to_string(),
-            "2026-01-15".to_string(),
+            "2026-03-14".to_string(),
         ],
     ];
-    let _ = run_dynamic_commands(dir, &setup_commands);
+    let _ = run_dynamic_commands(dir, &phase2_commands);
 
-    // Render changelog
     let _ = run_commands(dir, &[&["render", "changelog"]]);
+    let rendered = std::fs::read_to_string(dir.join("CHANGELOG.md"))
+        .expect("failed to read CHANGELOG.md after phase 2");
 
-    // Verify inline ref is expanded with relative path
-    let rendered =
-        std::fs::read_to_string(dir.join("CHANGELOG.md")).expect("failed to read CHANGELOG.md");
-
-    // Inline ref should be expanded to relative path
+    // New release appears
+    assert!(rendered.contains("## [2.0.0]"), "2.0.0 should be present");
     assert!(
-        rendered.contains("[ADR-0014](docs/adr/ADR-0014.md)"),
-        "Inline refs in new releases should be expanded with relative 'docs/' path"
+        rendered.contains("Response format to JSON"),
+        "work item content should appear in 2.0.0"
     );
 
-    // Should NOT contain absolute paths
+    // Hand-written 1.0.1 preserved (not in releases.toml)
+    assert!(
+        rendered.contains("## [1.0.1]"),
+        "hand-written 1.0.1 preserved"
+    );
+    assert!(
+        rendered.contains("Hotfix for config loading edge case"),
+        "1.0.1 content preserved"
+    );
+
+    // Inline ref in PRESERVED section stays as-is
+    assert!(
+        rendered.contains("[[ADR-0014]]"),
+        "inline refs in preserved sections should NOT be expanded"
+    );
+
+    // Manual content in 1.0.0 preserved
+    assert!(
+        rendered.contains("BREAKING**: Manual note added after initial render"),
+        "manual BREAKING content in 1.0.0 preserved"
+    );
+    assert!(
+        rendered.contains("hand-edited by a human"),
+        "manual sub-bullet in 1.0.0 preserved"
+    );
+
+    // All legacy versions still present
+    assert!(rendered.contains("## [0.9.0]"), "legacy 0.9.0 still there");
+    let has_080 = rendered.contains("## [0.8.0]") || rendered.contains("## [v0.8.0]");
+    assert!(has_080, "legacy 0.8.0 still there");
+    assert!(rendered.contains("## [0.7.0]"), "legacy 0.7.0 still there");
+
+    // No absolute paths
     assert!(
         !rendered.contains("/Users/"),
-        "New release inline refs should NOT use absolute paths"
+        "phase 2: no absolute paths (macOS)"
     );
     assert!(
         !rendered.contains("/home/"),
-        "New release inline refs should NOT use absolute paths"
+        "phase 2: no absolute paths (Linux)"
+    );
+
+    // Semver descending: 2.0.0 > 1.0.1 > 1.0.0 > 0.9.0 > 0.8.0 > 0.7.0
+    let versions_p2: Vec<&str> = rendered
+        .lines()
+        .filter(|l| l.starts_with("## [") && !l.contains("Unreleased"))
+        .collect();
+    assert_eq!(versions_p2.len(), 6, "phase 2: 6 versions");
+    assert!(versions_p2[0].contains("2.0.0"), "newest first");
+    assert!(
+        versions_p2[1].contains("1.0.1"),
+        "hand-written patch second"
+    );
+    assert!(
+        versions_p2[2].contains("1.0.0"),
+        "first govctl release third"
+    );
+    assert!(versions_p2[5].contains("0.7.0"), "oldest last");
+
+    insta::assert_snapshot!(
+        "changelog_lifecycle_phase2",
+        normalize_output(&rendered, dir, &date)
     );
 }
