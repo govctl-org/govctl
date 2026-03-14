@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.4] - 2026-03-14
+
 ### Added
 
 - Plugin manifest (.claude-plugin/marketplace.json) with correct metadata (WI-2026-03-04-001)
