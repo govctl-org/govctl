@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0017"
 title = "CLI Command Implementation Details"
 status = "accepted"

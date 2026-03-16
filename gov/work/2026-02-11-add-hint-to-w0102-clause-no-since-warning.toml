@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-11-001"
 title = "Add hint to W0102 clause-no-since warning"
 status = "done"

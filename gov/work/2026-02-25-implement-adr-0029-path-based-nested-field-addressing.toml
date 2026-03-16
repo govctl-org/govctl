@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-25-003"
 title = "Implement ADR-0029 path-based nested field addressing"
 status = "done"

@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0019"
 title = "Change -n from dry-run to limit for better Unix convention alignment"
 status = "accepted"

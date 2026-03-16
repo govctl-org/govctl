@@ -1,7 +1,6 @@
 #:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0000"
 title = "govctl Governance Framework"
 version = "1.1.0"

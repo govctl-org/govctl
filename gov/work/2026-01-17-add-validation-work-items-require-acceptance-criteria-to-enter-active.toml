@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-17-018"
 title = "Add validation: work items require acceptance criteria to enter active"
 status = "done"

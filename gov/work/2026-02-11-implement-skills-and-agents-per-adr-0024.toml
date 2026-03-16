@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-11-003"
 title = "Implement skills and agents per ADR-0024"
 status = "done"

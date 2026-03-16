@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0018"
 title = "Global Command Shortcuts vs Strict Resource-First Syntax"
 status = "accepted"

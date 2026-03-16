@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-RFC-PHASE"
 title = "RFC Phase Transitions"
 kind = "normative"

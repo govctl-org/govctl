@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-RELEASE-DEF"
 title = "Release Definition"
 kind = "normative"
@@ -13,10 +12,9 @@ text = """
 A Release tracks a published version and the set of work items included in that version.
 
 Release data MUST be stored as a TOML file at `gov/releases.toml` containing:
-- `[govctl]` section with: `schema`
 - `[[releases]]` array with entries containing: `version`, `date`, `refs`
 
-For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
+Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 
 Each `releases[].version` MUST be a valid semantic version.
 

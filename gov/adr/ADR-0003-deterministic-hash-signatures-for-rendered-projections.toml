@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0003"
 title = "Deterministic hash signatures for rendered projections"
 status = "accepted"

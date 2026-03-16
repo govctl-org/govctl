@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-25-002"
 title = "Fix changelog inline reference expansion"
 status = "done"

@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-25-001"
 title = "Fix changelog incremental rendering to preserve all existing releases"
 status = "done"

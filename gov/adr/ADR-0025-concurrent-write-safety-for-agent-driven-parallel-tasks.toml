@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0025"
 title = "Concurrent write safety for agent-driven parallel tasks"
 status = "accepted"

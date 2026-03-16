@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-19-010"
 title = "Add migration tooling for ADR-0019 breaking changes"
 status = "done"

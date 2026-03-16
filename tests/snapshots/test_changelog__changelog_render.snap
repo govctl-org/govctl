@@ -50,7 +50,6 @@ Would write: gov/releases.toml
   #:schema schema/release.schema.json
   
   [govctl]
-  schema = 1
   
   [[releases]]
   version = "0.2.0"

@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-REFERENCE-HIERARCHY"
 title = "Artifact Reference Hierarchy"
 kind = "normative"

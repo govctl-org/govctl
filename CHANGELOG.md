@@ -18,16 +18,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Work items can require extra guards and record structured waivers instead of raw disable flags (WI-2026-03-17-004)
 - All generated TOML artifacts include #:schema comment headers with deterministic relative paths (WI-2026-03-17-005)
 - Migration handles legacy JSON and old-format TOML to header-based spec-aligned TOML (WI-2026-03-17-005)
+- Generic stage/backup/commit/rollback engine operates on Vec<FileOp> (WI-2026-03-17-006)
+- config.toml [schema] version bumped to 2 after successful migration (WI-2026-03-17-006)
+- Migration step v2->v3 strips govctl.schema from existing files (WI-2026-03-17-007)
 
 ### Changed
 
 - Fresh projects and packaged builds include required artifact schema files (WI-2026-03-16-001)
 - post-migration lifecycle and lookup paths no longer assume .json RFC/clause files (WI-2026-03-16-002)
 - RFC/clause TOML uses [govctl] metadata + [content] sections (spec alignment) (WI-2026-03-17-005)
+- MigrationStep struct + FileOp enum replace monolithic MigrationPlan (WI-2026-03-17-006)
+- Existing v0.5->v0.6 migration extracted into plan_v1_to_v2 (WI-2026-03-17-006)
 
 ### Removed
 
 - Configurable gov_root from config; hardcode to gov/ (WI-2026-03-17-005)
+- govctl.schema field from AdrMeta, WorkItemMeta, GuardMeta, ReleasesMeta, RfcMeta, ClauseMeta (WI-2026-03-17-007)
+- schema from required in all 6 JSON schemas (WI-2026-03-17-007)
 
 ### Fixed
 

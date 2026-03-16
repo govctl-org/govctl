@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-26-004"
 title = "Changelog render preserves released sections"
 status = "done"

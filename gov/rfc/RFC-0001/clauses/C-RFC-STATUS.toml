@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-RFC-STATUS"
 title = "RFC Status Transitions"
 kind = "normative"

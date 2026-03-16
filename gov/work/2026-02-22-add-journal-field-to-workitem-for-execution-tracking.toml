@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-22-001"
 title = "Add journal field to WorkItem for execution tracking"
 status = "done"

@@ -1,7 +1,6 @@
 #:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0004"
 title = "Concurrent write safety for governance artifacts"
 version = "0.1.0"

@@ -7,12 +7,8 @@
   "properties": {
     "govctl": {
       "type": "object",
-      "required": ["schema", "id", "title", "kind"],
+      "required": ["id", "title", "kind"],
       "properties": {
-        "schema": {
-          "type": "integer",
-          "const": 1
-        },
         "id": {
           "type": "string",
           "pattern": "^C-[A-Z0-9-]+$"
@@ -41,6 +37,9 @@
         "anchors": {
           "type": "array",
           "items": { "type": "string" }
+        },
+        "schema": {
+          "type": "integer"
         }
       },
       "additionalProperties": false

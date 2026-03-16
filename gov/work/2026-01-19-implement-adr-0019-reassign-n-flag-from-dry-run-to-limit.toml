@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-19-009"
 title = "Implement ADR-0019: Reassign -n flag from dry-run to limit"
 status = "done"

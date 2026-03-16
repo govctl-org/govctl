@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0011"
 title = "Inline reference expansion in rendered content"
 status = "accepted"

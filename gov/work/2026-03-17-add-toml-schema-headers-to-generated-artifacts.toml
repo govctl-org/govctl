@@ -1,7 +1,6 @@
 #:schema ../schema/work.schema.json
 
 [govctl]
-schema = 1
 id = "WI-2026-03-17-005"
 title = "Add TOML schema headers to generated artifacts"
 status = "done"

@@ -1,0 +1,47 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-17-006"
+title = "Redesign migrate API with versioned step pipeline"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+
+[content]
+description = "Replace monolithic migrate with a versioned step pipeline driven by [schema] version in config.toml. Each step is a function from version N to N+1 producing Vec<FileOp>. Existing v0.5->v0.6 logic becomes step v1->v2."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "migrate"
+content = "Rewrote src/cmd/migrate.rs as versioned step pipeline: FileOp enum, MigrationStep struct with MIGRATIONS registry, generic stage/backup/commit engine, version bump to config.toml. Existing v0.5->v0.6 logic is plan_v1_to_v2. Added test_migrate_bumps_version_even_without_file_changes. All 313 tests pass."
+
+[[content.acceptance_criteria]]
+text = "MigrationStep struct + FileOp enum replace monolithic MigrationPlan"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing v0.5->v0.6 migration extracted into plan_v1_to_v2"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Generic stage/backup/commit/rollback engine operates on Vec<FileOp>"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "config.toml [schema] version bumped to 2 after successful migration"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"

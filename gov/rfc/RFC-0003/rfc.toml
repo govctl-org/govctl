@@ -1,7 +1,6 @@
 #:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0003"
 title = "TUI UX improvements"
 version = "0.1.0"

@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0023"
 title = "Organize assets into commands, skills, and agents subdirectories"
 status = "accepted"

@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-16-003"
 title = "chore: add tests for init gitignore and custom paths"
 status = "done"

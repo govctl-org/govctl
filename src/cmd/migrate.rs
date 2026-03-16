@@ -1,109 +1,299 @@
-//! Deterministic repository-local storage migration.
+//! Versioned migration pipeline for governance artifact storage.
+//!
+//! Each migration is a step from schema version N to N+1.
+//! The current version is tracked in `gov/config.toml` under `[schema] version`.
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ClauseSpec, ClauseWire, ReleasesFile, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
 use crate::ui;
-use crate::write::{WriteOp, delete_file, read_clause, read_rfc};
+use crate::write::{WriteOp, read_clause, read_rfc};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug)]
-struct PlannedFile {
-    relative_path: PathBuf,
-    target_path: PathBuf,
-    content: String,
+/// Latest schema version. Bump when adding a new migration step.
+pub const CURRENT_SCHEMA_VERSION: u32 = 2;
+
+// =============================================================================
+// Core types
+// =============================================================================
+
+/// A single file operation produced by a migration step.
+#[derive(Debug, Clone)]
+pub enum FileOp {
+    Write { path: PathBuf, content: String },
+    Delete { path: PathBuf },
 }
 
-#[derive(Debug)]
-struct RfcMigrationPlan {
-    rfc_id: String,
-    source_dir: PathBuf,
-    legacy_paths: Vec<PathBuf>,
-    files: Vec<PlannedFile>,
+/// A versioned migration step.
+struct MigrationStep {
+    from: u32,
+    to: u32,
+    name: &'static str,
+    plan_fn: fn(&Config) -> anyhow::Result<Vec<FileOp>>,
 }
 
-#[derive(Debug)]
-struct MigrationPlan {
-    rfcs: Vec<RfcMigrationPlan>,
-    release_upgrade: Option<String>,
-}
+/// All registered migrations, ordered by version.
+const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
+    from: 1,
+    to: 2,
+    name: "structured wire format and schema headers",
+    plan_fn: plan_v1_to_v2,
+}];
 
-impl MigrationPlan {
-    fn is_noop(&self) -> bool {
-        self.rfcs.is_empty() && self.release_upgrade.is_none()
-    }
-
-    fn clause_count(&self) -> usize {
-        self.rfcs
-            .iter()
-            .map(|plan| {
-                plan.files
-                    .iter()
-                    .filter(|file| *file.relative_path != *"rfc.toml")
-                    .count()
-            })
-            .sum()
-    }
-}
+// =============================================================================
+// Public API
+// =============================================================================
 
 pub fn migrate(config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-    let plan = build_plan(config)?;
-
-    if plan.is_noop() {
-        ui::info("Repository already migrated");
+    let current = config.schema.version;
+    if current >= CURRENT_SCHEMA_VERSION {
+        ui::info(format!(
+            "Repository already at schema version {CURRENT_SCHEMA_VERSION}"
+        ));
         return Ok(vec![]);
     }
 
+    let pending: Vec<&MigrationStep> = MIGRATIONS
+        .iter()
+        .filter(|s| s.from >= current && s.to <= CURRENT_SCHEMA_VERSION)
+        .collect();
+
+    let mut all_ops = Vec::new();
+    let mut step_names = Vec::new();
+    for step in &pending {
+        let ops = (step.plan_fn)(config)?;
+        step_names.push(format!("v{} -> v{}: {}", step.from, step.to, step.name));
+        all_ops.extend(ops);
+    }
+
     if op.is_preview() {
-        preview_plan(config, &plan)?;
+        if all_ops.is_empty() {
+            ui::info(format!(
+                "No file changes needed; version bump {} -> {CURRENT_SCHEMA_VERSION}",
+                current
+            ));
+        } else {
+            preview_ops(config, &all_ops);
+        }
     } else {
-        execute_plan(config, &plan)?;
-        ui::success(format!(
-            "Migrated {} RFC(s), {} clause file(s){}",
-            plan.rfcs.len(),
-            plan.clause_count(),
-            if plan.release_upgrade.is_some() {
-                ", and upgraded releases.toml metadata"
-            } else {
-                ""
+        if !all_ops.is_empty() {
+            execute_ops(config, &all_ops)?;
+        }
+        bump_config_version(config, CURRENT_SCHEMA_VERSION)?;
+        for name in &step_names {
+            ui::sub_info(name);
+        }
+        let writes = all_ops
+            .iter()
+            .filter(|o| matches!(o, FileOp::Write { .. }))
+            .count();
+        let deletes = all_ops
+            .iter()
+            .filter(|o| matches!(o, FileOp::Delete { .. }))
+            .count();
+        if writes > 0 || deletes > 0 {
+            let mut parts = vec![format!("{writes} file(s) written")];
+            if deletes > 0 {
+                parts.push(format!("{deletes} file(s) deleted"));
             }
-        ));
+            ui::success(format!("Migrated: {}", parts.join(", ")));
+        } else {
+            ui::success(format!("Schema version bumped to {CURRENT_SCHEMA_VERSION}"));
+        }
     }
 
     Ok(vec![])
 }
 
-fn build_plan(config: &Config) -> anyhow::Result<MigrationPlan> {
-    let mut rfcs = Vec::new();
-    let rfc_root = config.rfc_dir();
+// =============================================================================
+// Generic execution engine
+// =============================================================================
 
-    if rfc_root.exists() {
-        let mut dirs: Vec<_> = fs::read_dir(&rfc_root)?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|path| path.is_dir())
-            .collect();
-        dirs.sort();
+fn preview_ops(config: &Config, ops: &[FileOp]) {
+    for op in ops {
+        match op {
+            FileOp::Write { path, content } => {
+                ui::dry_run_file_preview(&config.display_path(path), content);
+            }
+            FileOp::Delete { path } => {
+                ui::info(format!(
+                    "[DRY RUN] Would delete: {}",
+                    config.display_path(path).display()
+                ));
+            }
+        }
+    }
+}
 
-        for dir in dirs {
-            if let Some(plan) = build_rfc_plan(config, &dir)? {
-                rfcs.push(plan);
+fn execute_ops(config: &Config, ops: &[FileOp]) -> anyhow::Result<()> {
+    let gov_root = &config.gov_root;
+    let stage_root = gov_root.join(".migrate-stage");
+    let backup_root = gov_root.join(".migrate-backup");
+
+    if stage_root.exists() || backup_root.exists() {
+        return Err(anyhow::anyhow!(
+            "Migration staging directories already exist under {}",
+            config.display_path(gov_root).display()
+        ));
+    }
+
+    fs::create_dir_all(&stage_root)?;
+    fs::create_dir_all(&backup_root)?;
+
+    // Stage: write all new content to staging area
+    if let Err(err) = materialize_stage(&stage_root, ops) {
+        let _ = fs::remove_dir_all(&stage_root);
+        let _ = fs::remove_dir_all(&backup_root);
+        return Err(err);
+    }
+
+    // Commit: backup originals then apply staged content
+    let result = commit_ops(&stage_root, &backup_root, ops);
+    let _ = fs::remove_dir_all(&stage_root);
+    if result.is_ok() {
+        let _ = fs::remove_dir_all(&backup_root);
+    }
+    result
+}
+
+fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> anyhow::Result<()> {
+    for (i, op) in ops.iter().enumerate() {
+        if let FileOp::Write { content, .. } = op {
+            let staged = stage_root.join(format!("{i}"));
+            fs::write(staged, content)?;
+        }
+    }
+    Ok(())
+}
+
+fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> anyhow::Result<()> {
+    let mut applied: Vec<usize> = Vec::new();
+
+    let result = (|| -> anyhow::Result<()> {
+        for (i, op) in ops.iter().enumerate() {
+            let backup_path = backup_root.join(format!("{i}"));
+            match op {
+                FileOp::Write { path, .. } => {
+                    if path.exists() {
+                        fs::copy(path, &backup_path)?;
+                    }
+                    if let Some(parent) = path.parent() {
+                        fs::create_dir_all(parent)?;
+                    }
+                    let staged = stage_root.join(format!("{i}"));
+                    fs::copy(&staged, path)?;
+                }
+                FileOp::Delete { path } => {
+                    if path.exists() {
+                        fs::copy(path, &backup_path)?;
+                        fs::remove_file(path)?;
+                    }
+                }
+            }
+            applied.push(i);
+        }
+        Ok(())
+    })();
+
+    if result.is_err() {
+        for &i in applied.iter().rev() {
+            let backup_path = backup_root.join(format!("{i}"));
+            if !backup_path.exists() {
+                continue;
+            }
+            match &ops[i] {
+                FileOp::Write { path, .. } | FileOp::Delete { path } => {
+                    let _ = fs::copy(&backup_path, path);
+                }
             }
         }
     }
 
-    let release_upgrade = build_release_upgrade(config)?;
-
-    Ok(MigrationPlan {
-        rfcs,
-        release_upgrade,
-    })
+    result
 }
 
-fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcMigrationPlan>> {
+/// Bump `[schema] version` in config.toml preserving the rest of the file.
+fn bump_config_version(config: &Config, new_version: u32) -> anyhow::Result<()> {
+    let path = config.gov_root.join("config.toml");
+    let content = fs::read_to_string(&path)?;
+
+    let mut lines: Vec<String> = content.lines().map(String::from).collect();
+    let mut in_schema = false;
+    let mut found = false;
+
+    for line in &mut lines {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_schema = trimmed == "[schema]";
+        }
+        if in_schema && trimmed.starts_with("version") && trimmed.contains('=') {
+            *line = format!("version = {new_version}");
+            found = true;
+            break;
+        }
+    }
+
+    if !found {
+        lines.push(String::new());
+        lines.push("[schema]".to_string());
+        lines.push(format!("version = {new_version}"));
+    }
+
+    let mut output = lines.join("\n");
+    if !output.ends_with('\n') {
+        output.push('\n');
+    }
+    fs::write(&path, output)?;
+    Ok(())
+}
+
+// =============================================================================
+// v1 -> v2: structured wire format + schema headers
+// =============================================================================
+
+fn plan_v1_to_v2(config: &Config) -> anyhow::Result<Vec<FileOp>> {
+    let mut ops = Vec::new();
+
+    // 1. JSON RFC/clause -> TOML wire format
+    let rfc_root = config.rfc_dir();
+    let mut converted_rfc_dirs = Vec::new();
+    if rfc_root.exists() {
+        let mut dirs: Vec<_> = fs::read_dir(&rfc_root)?
+            .filter_map(Result::ok)
+            .map(|e| e.path())
+            .filter(|p| p.is_dir())
+            .collect();
+        dirs.sort();
+
+        for dir in dirs {
+            if let Some((rfc_ops, rfc_id)) = plan_rfc_json_to_toml(config, &dir)? {
+                ops.extend(rfc_ops);
+                converted_rfc_dirs.push(rfc_id);
+            }
+        }
+    }
+
+    // 2. Release metadata normalization
+    let mut skip_releases = false;
+    if let Some(release_ops) = plan_release_upgrade(config)? {
+        ops.extend(release_ops);
+        skip_releases = true;
+    }
+
+    // 3. Rewrite all artifacts: add #:schema headers + strip govctl.schema
+    let rewrite_ops = plan_toml_rewrites(config, &converted_rfc_dirs, skip_releases)?;
+    ops.extend(rewrite_ops);
+
+    Ok(ops)
+}
+
+fn plan_rfc_json_to_toml(
+    config: &Config,
+    rfc_dir: &Path,
+) -> anyhow::Result<Option<(Vec<FileOp>, String)>> {
     let rfc_json = rfc_dir.join("rfc.json");
     let rfc_toml = rfc_dir.join("rfc.toml");
 
@@ -147,7 +337,7 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
     let mut rfc: RfcSpec = read_rfc(config, &rfc_json)?;
     let clauses_dir = rfc_dir.join("clauses");
     let mut clause_map: BTreeMap<String, ClauseSpec> = BTreeMap::new();
-    let mut legacy_paths = vec![rfc_json.clone()];
+    let mut ops = Vec::new();
 
     if clauses_dir.exists() {
         for entry in fs::read_dir(&clauses_dir)? {
@@ -158,7 +348,7 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0201ClauseSchemaInvalid,
                     format!(
-                        "Mixed clause storage detected in {}: TOML clause exists before migration",
+                        "Mixed clause storage in {}: TOML clause exists before migration",
                         config.display_path(&clauses_dir).display()
                     ),
                     config.display_path(&path).display().to_string(),
@@ -168,18 +358,13 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
             if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0201ClauseSchemaInvalid,
-                    format!(
-                        "Unexpected file in clauses directory during migration: {}",
-                        name
-                    ),
+                    format!("Unexpected file in clauses directory: {name}"),
                     config.display_path(&path).display().to_string(),
                 )
                 .into());
             }
-
             let clause = read_clause(config, &path)?;
             clause_map.insert(name, clause);
-            legacy_paths.push(path);
         }
     }
 
@@ -188,7 +373,7 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
             if clause_path.contains("..") {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0204ClausePathInvalid,
-                    format!("Invalid clause path during migration: {}", clause_path),
+                    format!("Invalid clause path: {clause_path}"),
                     config.display_path(&rfc_json).display().to_string(),
                 )
                 .into());
@@ -196,25 +381,19 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
             if !clause_path.ends_with(".json") {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0204ClausePathInvalid,
-                    format!(
-                        "Mixed clause path formats are not supported during migration: {}",
-                        clause_path
-                    ),
+                    format!("Mixed clause path formats not supported: {clause_path}"),
                     config.display_path(&rfc_json).display().to_string(),
                 )
                 .into());
             }
             let file_name = Path::new(clause_path)
                 .file_name()
-                .and_then(|name| name.to_str())
-                .ok_or_else(|| anyhow::anyhow!("Invalid clause path: {}", clause_path))?;
+                .and_then(|n| n.to_str())
+                .ok_or_else(|| anyhow::anyhow!("Invalid clause path: {clause_path}"))?;
             if !clause_map.contains_key(file_name) {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0202ClauseNotFound,
-                    format!(
-                        "Referenced clause missing during migration: {}",
-                        clause_path
-                    ),
+                    format!("Referenced clause missing: {clause_path}"),
                     config.display_path(&rfc_json).display().to_string(),
                 )
                 .into());
@@ -234,11 +413,11 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
         &rfc_raw,
     )?;
 
-    let mut files = vec![PlannedFile {
-        relative_path: PathBuf::from("rfc.toml"),
-        target_path: rfc_dir.join("rfc.toml"),
+    ops.push(FileOp::Write {
+        path: rfc_dir.join("rfc.toml"),
         content: with_schema_header(ArtifactSchema::Rfc, &rfc_body),
-    }];
+    });
+    ops.push(FileOp::Delete { path: rfc_json });
 
     for (file_name, clause) in clause_map {
         let toml_name = file_name.trim_end_matches(".json").to_string() + ".toml";
@@ -251,213 +430,201 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
             &clauses_dir.join(&toml_name),
             &raw,
         )?;
-        files.push(PlannedFile {
-            relative_path: PathBuf::from("clauses").join(&toml_name),
-            target_path: clauses_dir.join(&toml_name),
+
+        ops.push(FileOp::Write {
+            path: clauses_dir.join(&toml_name),
             content: with_schema_header(ArtifactSchema::Clause, &body),
+        });
+        ops.push(FileOp::Delete {
+            path: clauses_dir.join(&file_name),
         });
     }
 
-    Ok(Some(RfcMigrationPlan {
-        rfc_id,
-        source_dir: rfc_dir.to_path_buf(),
-        legacy_paths,
-        files,
-    }))
+    Ok(Some((ops, rfc_id)))
 }
 
-fn build_release_upgrade(config: &Config) -> anyhow::Result<Option<String>> {
-    let releases_path = config.releases_path();
-    if !releases_path.exists() {
+fn plan_release_upgrade(config: &Config) -> anyhow::Result<Option<Vec<FileOp>>> {
+    let path = config.releases_path();
+    if !path.exists() {
         return Ok(None);
     }
 
-    let content = fs::read_to_string(&releases_path)?;
+    let content = fs::read_to_string(&path)?;
     let mut raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0704ReleaseSchemaInvalid,
-            format!("Invalid releases.toml: {}", e),
-            config.display_path(&releases_path).display().to_string(),
+            format!("Invalid releases.toml: {e}"),
+            config.display_path(&path).display().to_string(),
         )
     })?;
 
-    if !needs_release_upgrade(&raw) {
+    let needs_upgrade = {
+        let table = raw.as_table();
+        let govctl = table
+            .and_then(|t| t.get("govctl"))
+            .and_then(toml::Value::as_table);
+        let has_schema = govctl
+            .and_then(|g| g.get("schema"))
+            .and_then(toml::Value::as_integer)
+            == Some(1);
+        !has_schema
+    };
+
+    if !needs_upgrade {
         return Ok(None);
     }
 
-    normalize_release_value(&mut raw);
-    validate_toml_value(ArtifactSchema::Release, config, &releases_path, &raw)?;
+    // Normalize: ensure [govctl] schema = 1
+    if let Some(root) = raw.as_table_mut() {
+        let govctl = root
+            .entry("govctl".to_string())
+            .or_insert_with(|| toml::Value::Table(toml::map::Map::new()));
+        if let Some(table) = govctl.as_table_mut() {
+            table
+                .entry("schema".to_string())
+                .or_insert(toml::Value::Integer(1));
+        }
+    }
+
+    validate_toml_value(ArtifactSchema::Release, config, &path, &raw)?;
     let releases: ReleasesFile = raw.try_into().map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0704ReleaseSchemaInvalid,
-            format!("Invalid normalized releases structure: {}", e),
-            config.display_path(&releases_path).display().to_string(),
+            format!("Invalid releases structure: {e}"),
+            config.display_path(&path).display().to_string(),
         )
     })?;
     let body = toml::to_string_pretty(&releases)?;
-    Ok(Some(with_schema_header(ArtifactSchema::Release, &body)))
+    Ok(Some(vec![FileOp::Write {
+        path,
+        content: with_schema_header(ArtifactSchema::Release, &body),
+    }]))
 }
 
-fn needs_release_upgrade(raw: &toml::Value) -> bool {
-    let Some(table) = raw.as_table() else {
-        return true;
-    };
-    let Some(govctl) = table.get("govctl").and_then(toml::Value::as_table) else {
-        return true;
-    };
-    !matches!(
-        govctl.get("schema").and_then(toml::Value::as_integer),
-        Some(1)
-    )
-}
-
-fn normalize_release_value(raw: &mut toml::Value) {
-    let Some(root) = raw.as_table_mut() else {
-        return;
-    };
-    let govctl = root
-        .entry("govctl".to_string())
-        .or_insert_with(|| toml::Value::Table(toml::map::Map::new()));
-    if let Some(table) = govctl.as_table_mut() {
-        table
-            .entry("schema".to_string())
-            .or_insert(toml::Value::Integer(1));
-    }
-}
-
-fn preview_plan(config: &Config, plan: &MigrationPlan) -> anyhow::Result<()> {
-    for rfc in &plan.rfcs {
-        for file in &rfc.files {
-            ui::dry_run_file_preview(&config.display_path(&file.target_path), &file.content);
+/// Strip `schema = N` lines from a `[govctl]` section in raw TOML text.
+fn strip_govctl_schema(content: &str) -> String {
+    let mut lines: Vec<&str> = content.lines().collect();
+    let mut in_govctl = false;
+    lines.retain(|line| {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_govctl = trimmed == "[govctl]";
         }
-        for legacy in &rfc.legacy_paths {
-            delete_file(legacy, WriteOp::Preview, Some(&config.display_path(legacy)))?;
-        }
-    }
-
-    if let Some(content) = &plan.release_upgrade {
-        let path = config.releases_path();
-        ui::dry_run_file_preview(&config.display_path(&path), content);
-    }
-
-    Ok(())
-}
-
-fn execute_plan(config: &Config, plan: &MigrationPlan) -> anyhow::Result<()> {
-    let gov_root = &config.gov_root;
-    let stage_root = gov_root.join(".migrate-stage");
-    let backup_root = gov_root.join(".migrate-backup");
-
-    if stage_root.exists() || backup_root.exists() {
-        return Err(anyhow::anyhow!(
-            "Migration staging directories already exist under {}",
-            config.display_path(gov_root).display()
-        ));
-    }
-
-    fs::create_dir_all(&stage_root)?;
-    fs::create_dir_all(&backup_root)?;
-
-    if let Err(err) = materialize_stage(&stage_root, plan) {
-        let _ = fs::remove_dir_all(&stage_root);
-        let _ = fs::remove_dir_all(&backup_root);
-        return Err(err);
-    }
-
-    let result = commit_stage(config, &stage_root, &backup_root, plan);
-    if result.is_ok() {
-        let _ = fs::remove_dir_all(&stage_root);
-        let _ = fs::remove_dir_all(&backup_root);
+        !(in_govctl && trimmed.starts_with("schema") && trimmed.contains('='))
+    });
+    let mut result = lines.join("\n");
+    if !result.ends_with('\n') {
+        result.push('\n');
     }
     result
 }
 
-fn materialize_stage(stage_root: &Path, plan: &MigrationPlan) -> anyhow::Result<()> {
-    for rfc in &plan.rfcs {
-        let stage_dir = stage_root.join("rfc").join(&rfc.rfc_id);
-        for file in &rfc.files {
-            let target = stage_dir.join(&file.relative_path);
-            if let Some(parent) = target.parent() {
-                fs::create_dir_all(parent)?;
-            }
-            fs::write(target, &file.content)?;
+/// Check if a TOML file needs rewrite (missing header or has `govctl.schema`).
+fn needs_rewrite(content: &str) -> bool {
+    if !content.starts_with("#:schema ") {
+        return true;
+    }
+    let mut in_govctl = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('[') {
+            in_govctl = trimmed == "[govctl]";
+        }
+        if in_govctl && trimmed.starts_with("schema") && trimmed.contains('=') {
+            return true;
         }
     }
-
-    if let Some(content) = &plan.release_upgrade {
-        fs::write(stage_root.join("releases.toml"), content)?;
-    }
-
-    Ok(())
+    false
 }
 
-fn commit_stage(
+/// Rewrite a TOML file: ensure `#:schema` header and strip `govctl.schema`.
+fn rewrite_toml(content: &str, schema: ArtifactSchema) -> String {
+    let cleaned = strip_govctl_schema(content);
+    if cleaned.starts_with("#:schema ") {
+        cleaned
+    } else {
+        with_schema_header(schema, &cleaned)
+    }
+}
+
+/// Collect TOML files in a directory that need rewriting.
+fn collect_rewrites(dir: &Path, schema: ArtifactSchema) -> Vec<FileOp> {
+    let Ok(entries) = fs::read_dir(dir) else {
+        return vec![];
+    };
+    let mut ops: Vec<(PathBuf, String)> = Vec::new();
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().and_then(|e| e.to_str()) != Some("toml") {
+            continue;
+        }
+        if let Ok(content) = fs::read_to_string(&path)
+            && needs_rewrite(&content)
+        {
+            ops.push((path, rewrite_toml(&content, schema)));
+        }
+    }
+    ops.sort_by(|a, b| a.0.cmp(&b.0));
+    ops.into_iter()
+        .map(|(path, content)| FileOp::Write { path, content })
+        .collect()
+}
+
+/// Plan header + schema-strip rewrites for all TOML artifacts.
+fn plan_toml_rewrites(
     config: &Config,
-    stage_root: &Path,
-    backup_root: &Path,
-    plan: &MigrationPlan,
-) -> anyhow::Result<()> {
-    let mut moved_rfcs: Vec<(PathBuf, PathBuf)> = Vec::new();
-    let mut release_backup: Option<PathBuf> = None;
-    let mut release_target_written = false;
-    let release_target = config.releases_path();
+    skip_rfc_ids: &[String],
+    skip_releases: bool,
+) -> anyhow::Result<Vec<FileOp>> {
+    let mut ops = Vec::new();
 
-    let commit_result = (|| -> anyhow::Result<()> {
-        if !plan.rfcs.is_empty() {
-            fs::create_dir_all(backup_root.join("rfc"))?;
-        }
+    ops.extend(collect_rewrites(&config.adr_dir(), ArtifactSchema::Adr));
+    ops.extend(collect_rewrites(
+        &config.work_dir(),
+        ArtifactSchema::WorkItem,
+    ));
+    ops.extend(collect_rewrites(&config.guard_dir(), ArtifactSchema::Guard));
 
-        for rfc in &plan.rfcs {
-            let source_dir = rfc.source_dir.clone();
-            let backup_dir = backup_root.join("rfc").join(&rfc.rfc_id);
-            let staged_dir = stage_root.join("rfc").join(&rfc.rfc_id);
-
-            fs::rename(&source_dir, &backup_dir)?;
-            fs::rename(&staged_dir, &source_dir)?;
-            moved_rfcs.push((source_dir, backup_dir));
-        }
-
-        if plan.release_upgrade.is_some() {
-            let staged_release = stage_root.join("releases.toml");
-            if release_target.exists() {
-                let backup_path = backup_root.join("releases.toml");
-                fs::rename(&release_target, &backup_path)?;
-                release_backup = Some(backup_path);
+    let rfc_root = config.rfc_dir();
+    if rfc_root.exists() {
+        for entry in fs::read_dir(&rfc_root)?.flatten() {
+            let dir = entry.path();
+            if !dir.is_dir() {
+                continue;
             }
-            fs::rename(&staged_release, &release_target)?;
-            release_target_written = true;
-        }
-
-        Ok(())
-    })();
-
-    if commit_result.is_err() {
-        rollback_commit(
-            &moved_rfcs,
-            release_backup.as_ref(),
-            &release_target,
-            release_target_written,
-        );
-    }
-
-    commit_result
-}
-
-fn rollback_commit(
-    moved_rfcs: &[(PathBuf, PathBuf)],
-    release_backup: Option<&PathBuf>,
-    release_target: &Path,
-    release_target_written: bool,
-) {
-    if release_target_written {
-        let _ = fs::remove_file(release_target);
-        if let Some(backup) = release_backup {
-            let _ = fs::rename(backup, release_target);
+            let dir_name = dir.file_name().and_then(|n| n.to_str()).unwrap_or_default();
+            if skip_rfc_ids.iter().any(|id| id == dir_name) {
+                continue;
+            }
+            let rfc_toml = dir.join("rfc.toml");
+            if rfc_toml.exists()
+                && let Ok(content) = fs::read_to_string(&rfc_toml)
+                && needs_rewrite(&content)
+            {
+                ops.push(FileOp::Write {
+                    path: rfc_toml,
+                    content: rewrite_toml(&content, ArtifactSchema::Rfc),
+                });
+            }
+            ops.extend(collect_rewrites(
+                &dir.join("clauses"),
+                ArtifactSchema::Clause,
+            ));
         }
     }
 
-    for (final_dir, backup_dir) in moved_rfcs.iter().rev() {
-        let _ = fs::remove_dir_all(final_dir);
-        let _ = fs::rename(backup_dir, final_dir);
+    if !skip_releases {
+        let releases_path = config.releases_path();
+        if releases_path.exists()
+            && let Ok(content) = fs::read_to_string(&releases_path)
+            && needs_rewrite(&content)
+        {
+            ops.push(FileOp::Write {
+                path: releases_path,
+                content: rewrite_toml(&content, ArtifactSchema::Release),
+            });
+        }
     }
+
+    Ok(ops)
 }

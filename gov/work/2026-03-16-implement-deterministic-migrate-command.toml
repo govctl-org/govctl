@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-03-16-002"
 title = "Implement deterministic migrate command"
 status = "done"

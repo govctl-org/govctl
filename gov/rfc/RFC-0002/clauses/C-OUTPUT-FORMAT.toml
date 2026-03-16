@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-OUTPUT-FORMAT"
 title = "Output Format Control"
 kind = "normative"

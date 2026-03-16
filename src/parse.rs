@@ -2,7 +2,6 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::ReleasesMeta;
 use crate::model::{
     AdrEntry, AdrSpec, GuardEntry, GuardSpec, ReleasesFile, WorkItemEntry, WorkItemSpec,
 };
@@ -328,14 +327,13 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
         )
     })?;
 
-    let mut raw: toml::Value = toml::from_str(&content).map_err(|e| {
+    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0704ReleaseSchemaInvalid,
             format!("Invalid releases.toml: {e}"),
             path.display().to_string(),
         )
     })?;
-    normalize_release_value(&mut raw);
     validate_toml_value(ArtifactSchema::Release, config, &path, &raw)?;
     let releases: ReleasesFile = raw.try_into().map_err(|e| {
         Diagnostic::new(
@@ -362,26 +360,6 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
 /// Validate a version string as semver
 pub fn validate_version(version: &str) -> Result<semver::Version, String> {
     semver::Version::parse(version).map_err(|_| format!("Invalid semver: {version}"))
-}
-
-fn normalize_release_value(raw: &mut toml::Value) {
-    let Some(root) = raw.as_table_mut() else {
-        return;
-    };
-
-    if !root.contains_key("govctl") {
-        let mut govctl = toml::map::Map::new();
-        govctl.insert("schema".to_string(), toml::Value::Integer(1));
-        root.insert("govctl".to_string(), toml::Value::Table(govctl));
-        return;
-    }
-
-    let Some(govctl) = root.get_mut("govctl").and_then(toml::Value::as_table_mut) else {
-        return;
-    };
-    govctl
-        .entry("schema".to_string())
-        .or_insert(toml::Value::Integer(ReleasesMeta::default().schema.into()));
 }
 
 /// Write releases to gov/releases.toml

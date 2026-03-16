@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-19-006"
 title = "Allow RFC amendments during implementation via versioning"
 status = "done"

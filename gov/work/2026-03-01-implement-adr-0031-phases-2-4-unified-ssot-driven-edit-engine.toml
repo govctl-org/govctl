@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-03-01-001"
 title = "Implement ADR-0031 Phases 2-4: Unified SSOT-driven edit engine"
 status = "done"

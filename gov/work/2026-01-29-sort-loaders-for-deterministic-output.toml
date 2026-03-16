@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-29-001"
 title = "Sort loaders for deterministic output"
 status = "done"

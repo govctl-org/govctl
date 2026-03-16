@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-19-005"
 title = "Improve delete command with auto-detection and optional type flags"
 status = "done"

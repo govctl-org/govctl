@@ -1,5 +1,6 @@
+#:schema ../schema/guard.schema.json
+
 [govctl]
-schema = 1
 id = "GUARD-CARGO-TEST"
 title = "cargo test passes"
 refs = ["RFC-0000", "RFC-0001", "RFC-0002"]

@@ -8,7 +8,6 @@ Would write: gov/rfc/RFC-0001/rfc.toml
   #:schema ../../schema/rfc.schema.json
   
   [govctl]
-  schema = 1
   id = "RFC-0001"
   title = "New RFC"
   version = "0.1.0"
@@ -25,5 +24,6 @@ Would write: gov/rfc/RFC-0001/rfc.toml
   
   [[changelog]]
   version = "0.1.0"
+  date = "<DATE>"
   ...
 exit: 0

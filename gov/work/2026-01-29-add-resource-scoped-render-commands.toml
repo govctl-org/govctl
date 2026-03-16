@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-29-003"
 title = "Add resource-scoped render commands"
 status = "done"

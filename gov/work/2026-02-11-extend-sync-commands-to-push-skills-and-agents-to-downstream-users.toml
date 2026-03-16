@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-11-005"
 title = "Extend sync_commands to push skills and agents to downstream users"
 status = "done"

@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0006"
 title = "Global dry-run support for content-modifying commands"
 status = "accepted"

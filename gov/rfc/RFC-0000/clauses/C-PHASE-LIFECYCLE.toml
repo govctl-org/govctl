@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-PHASE-LIFECYCLE"
 title = "RFC Phase Lifecycle"
 kind = "normative"

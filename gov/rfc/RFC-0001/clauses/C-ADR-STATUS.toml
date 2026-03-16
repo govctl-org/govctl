@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-ADR-STATUS"
 title = "ADR Status Transitions"
 kind = "normative"

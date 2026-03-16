@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-17-022"
 title = "Fix tick command syntax in README"
 status = "done"

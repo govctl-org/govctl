@@ -1,5 +1,6 @@
+#:schema schema/release.schema.json
+
 [govctl]
-schema = 1
 
 [[releases]]
 version = "0.5.4"

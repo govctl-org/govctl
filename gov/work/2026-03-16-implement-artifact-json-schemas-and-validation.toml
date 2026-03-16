@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-03-16-001"
 title = "Implement artifact JSON schemas and validation"
 status = "done"

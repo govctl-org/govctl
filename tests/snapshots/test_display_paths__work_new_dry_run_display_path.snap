@@ -8,7 +8,6 @@ Would write: gov/work/<DATE>-new-work.toml
   #:schema ../schema/work.schema.json
   
   [govctl]
-  schema = 1
   id = "WI-<DATE>-001"
   title = "New Work"
   status = "queue"

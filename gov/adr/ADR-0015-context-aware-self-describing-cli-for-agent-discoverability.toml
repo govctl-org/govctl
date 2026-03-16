@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0015"
 title = "Context-aware self-describing CLI for agent discoverability"
 status = "accepted"

@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-26-006"
 title = "Implement remaining ADR-0017 CLI conventions"
 status = "done"

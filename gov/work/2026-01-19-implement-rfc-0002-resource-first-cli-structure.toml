@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-19-008"
 title = "Implement RFC-0002 resource-first CLI structure"
 status = "done"

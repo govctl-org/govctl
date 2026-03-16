@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0030"
 title = "Parser strategy for path-based field expressions"
 status = "accepted"

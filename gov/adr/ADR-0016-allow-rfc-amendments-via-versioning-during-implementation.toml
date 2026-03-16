@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0016"
 title = "Allow RFC amendments via versioning during implementation"
 status = "accepted"

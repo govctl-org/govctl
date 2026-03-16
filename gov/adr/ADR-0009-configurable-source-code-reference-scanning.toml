@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0009"
 title = "Configurable source code reference scanning"
 status = "accepted"

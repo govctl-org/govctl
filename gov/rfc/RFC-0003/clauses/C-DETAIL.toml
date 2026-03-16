@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-DETAIL"
 title = "Detail view readability"
 kind = "normative"

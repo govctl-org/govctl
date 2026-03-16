@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-CLAUSE-STATUS"
 title = "Clause Status Transitions"
 kind = "normative"

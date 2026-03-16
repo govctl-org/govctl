@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0007"
 title = "Ergonomic array field matching for remove and tick commands"
 status = "accepted"

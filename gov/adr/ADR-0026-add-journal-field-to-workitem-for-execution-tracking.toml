@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0026"
 title = "Add journal field to WorkItem for execution tracking"
 status = "accepted"

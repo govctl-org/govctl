@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-03-10-001"
 title = "Fix jsonschema 0.45 API compatibility in build.rs"
 status = "done"

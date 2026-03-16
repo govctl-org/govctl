@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-SCOPE"
 title = "Scope of write commands"
 kind = "normative"

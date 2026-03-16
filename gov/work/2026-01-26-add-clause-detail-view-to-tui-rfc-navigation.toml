@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-26-010"
 title = "Add clause detail view to TUI RFC navigation"
 status = "done"

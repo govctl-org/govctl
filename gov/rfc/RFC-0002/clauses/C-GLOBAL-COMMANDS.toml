@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-GLOBAL-COMMANDS"
 title = "Global Commands"
 kind = "normative"
@@ -36,7 +35,6 @@ Behavior:
 - Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, release, and verification guard
 - These schemas MUST be JSON files stored under `gov/schema/`
 - For TOML artifacts, MUST validate structure against the corresponding JSON Schema after parsing and normalization
-- The `govctl.schema` field in TOML artifacts MUST select the corresponding schema version for that artifact type
 - Checks state machine invariants
 - Verifies cross-references
 - Validates the semantic correctness of the optional `[verification]` section in `gov/config.toml`, including that configured default guard IDs resolve
@@ -103,19 +101,17 @@ Behavior:
 
 **7. `govctl migrate`**
 
-Performs deterministic repository-local format migration for legacy governance artifacts.
+Performs versioned repository-local format migration for governance artifacts.
 
 Syntax: `govctl migrate [--dry-run]`
 
 Behavior:
-- Detects legacy JSON RFC and clause files in the current repository
-- Converts legacy JSON RFC and clause files to TOML equivalents
-- Updates govctl-managed internal RFC clause-path references from `.json` paths to `.toml` paths
-- Applies any deterministic file-structure upgrades required by current TOML artifact schemas, including release-file metadata upgrades
-- Preserves artifact IDs, ordering, and semantic content during conversion
-- MUST validate converted artifacts before reporting success
-- MUST leave the repository unchanged if conversion or validation fails at any step
-- MUST be safe to run on an already-migrated repository and report a no-op result in that case
+- Reads the current schema version from `gov/config.toml` `[schema] version`
+- Runs all pending migration steps from the current version to the latest
+- Each step produces a set of file operations (writes and deletes) executed transactionally
+- Bumps `[schema] version` in `gov/config.toml` after successful migration
+- MUST leave the repository unchanged if any step fails
+- MUST be safe to run on an already-migrated repository and report a no-op result
 - MUST NOT perform heuristic project discovery or broad adoption tasks
 
 **8. `govctl verify`**

@@ -1,4 +1,4 @@
-//! Tests for deterministic storage migration.
+//! Tests for versioned storage migration pipeline.
 
 mod common;
 
@@ -65,7 +65,11 @@ date = "2026-01-01"
     .unwrap();
 
     let output = run_commands(temp_dir.path(), &[&["migrate"], &["check"]]);
-    assert!(output.contains("Migrated 1 RFC(s), 1 clause file(s)"));
+    assert!(
+        output.contains("file(s) written"),
+        "should report written files: {}",
+        output
+    );
     assert!(output.contains("exit: 0"), "output: {}", output);
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
@@ -75,8 +79,19 @@ date = "2026-01-01"
     assert!(!rfc_dir.join("clauses/C-LEGACY.json").exists());
 
     let releases = fs::read_to_string(temp_dir.path().join("gov/releases.toml")).unwrap();
-    assert!(releases.contains("[govctl]"));
-    assert!(releases.contains("schema = 1"));
+    assert!(releases.contains("#:schema"));
+    assert!(
+        !releases.contains("schema = 1"),
+        "govctl.schema should be stripped: {}",
+        releases
+    );
+
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
+    assert!(
+        config.contains("version = 2"),
+        "schema version should be bumped to 2: {}",
+        config
+    );
 }
 
 #[test]
@@ -93,13 +108,21 @@ fn test_migrate_dry_run_preserves_legacy_files() {
     assert!(rfc_dir.join("clauses/C-LEGACY.json").exists());
     assert!(!rfc_dir.join("rfc.toml").exists());
     assert!(!rfc_dir.join("clauses/C-LEGACY.toml").exists());
+
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
+    assert!(
+        config.contains("version = 1"),
+        "dry-run should not bump version: {}",
+        config
+    );
 }
 
 #[test]
-fn test_migrate_is_noop_on_migrated_repo() {
+fn test_migrate_is_noop_on_current_version() {
     let temp_dir = init_project();
 
-    let output = run_commands(
+    // Create an RFC so the project isn't empty, then migrate to bump version
+    run_commands(
         temp_dir.path(),
         &[
             &["rfc", "new", "Migrated RFC"],
@@ -115,10 +138,38 @@ fn test_migrate_is_noop_on_migrated_repo() {
         ],
     );
 
+    // Second migrate should be a noop
+    let output = run_commands(temp_dir.path(), &[&["migrate"]]);
     assert!(
-        output.contains("Repository already migrated"),
+        output.contains("already at schema version 2"),
         "output: {}",
         output
+    );
+}
+
+#[test]
+fn test_migrate_bumps_version_even_without_file_changes() {
+    let temp_dir = init_project();
+
+    // Create artifacts using govctl (already in new format with headers)
+    run_commands(temp_dir.path(), &[&["rfc", "new", "New Format RFC"]]);
+
+    // Config still says version = 1, but files are already in v2 format
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
+    assert!(config.contains("version = 1"));
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]]);
+    assert!(
+        output.contains("Schema version bumped to 2"),
+        "should bump version even with no file ops: {}",
+        output
+    );
+
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
+    assert!(
+        config.contains("version = 2"),
+        "config should now be version 2: {}",
+        config
     );
 }
 
@@ -160,4 +211,11 @@ fn test_migrate_failure_leaves_legacy_repo_unchanged() {
 
     assert!(rfc_dir.join("rfc.json").exists());
     assert!(!rfc_dir.join("rfc.toml").exists());
+
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
+    assert!(
+        config.contains("version = 1"),
+        "version should not be bumped on failure: {}",
+        config
+    );
 }

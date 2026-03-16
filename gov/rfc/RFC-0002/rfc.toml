@@ -1,7 +1,6 @@
 #:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
 version = "0.3.0"

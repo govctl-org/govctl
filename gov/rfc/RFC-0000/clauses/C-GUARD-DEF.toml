@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-GUARD-DEF"
 title = "Verification Guard Definition"
 kind = "normative"
@@ -13,12 +12,12 @@ text = """
 A Verification Guard defines a reusable executable completion check for a govctl project.
 
 Every Verification Guard MUST be stored as a TOML file under `gov/guard/` containing:
-- `[govctl]` section with: `schema`, `id`, `title`
+- `[govctl]` section with: `id`, `title`
 - optional `[govctl]` field: `refs`
 - `[check]` section with: `command`
 - optional `[check]` fields: `timeout_secs`, `pattern`
 
-For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
+Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 
 Implementations MUST define a machine-readable JSON Schema for the Verification Guard file structure and MUST validate guard files during project validation.
 

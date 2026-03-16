@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0004"
 title = "Adopt Keep a Changelog format for RFC changelogs"
 status = "accepted"

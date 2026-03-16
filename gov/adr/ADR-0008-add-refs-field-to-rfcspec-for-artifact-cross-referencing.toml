@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0008"
 title = "Add refs field to RfcSpec for artifact cross-referencing"
 status = "accepted"

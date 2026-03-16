@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-16-002"
 title = "refactor(config): rename commands_dir to agent_dir"
 status = "done"

@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-17-007"
+title = "Remove per-artifact govctl.schema field"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+
+[content]
+description = "Remove govctl.schema field from all artifact structs, JSON schemas, and generated TOML. Per-artifact schema versioning is redundant; format evolution is tracked by project-level [schema] version in config.toml."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "schema-removal"
+content = "Removed govctl.schema from all 6 Meta structs (skip_serializing, allow(dead_code) for backward compat read). Removed from required in all JSON schemas (kept as optional property for old files). Removed release normalization. Updated v1->v2 migration to strip schema fields. All 313 tests pass."
+
+[[content.acceptance_criteria]]
+text = "govctl.schema field from AdrMeta, WorkItemMeta, GuardMeta, ReleasesMeta, RfcMeta, ClauseMeta"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "schema from required in all 6 JSON schemas"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Migration step v2->v3 strips govctl.schema from existing files"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"

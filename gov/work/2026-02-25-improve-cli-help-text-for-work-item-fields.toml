@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-02-25-002"
 title = "Support new ADR/WI fields"
 status = "done"

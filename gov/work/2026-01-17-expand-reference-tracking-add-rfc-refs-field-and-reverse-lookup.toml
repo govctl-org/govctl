@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-17-023"
 title = "Expand reference tracking: add RFC refs field and reverse lookup"
 status = "done"

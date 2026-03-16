@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-NAV"
 title = "Shared header/footer navigation"
 kind = "normative"

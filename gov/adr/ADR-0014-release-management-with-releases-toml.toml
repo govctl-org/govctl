@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0014"
 title = "Release management with releases.toml"
 status = "accepted"

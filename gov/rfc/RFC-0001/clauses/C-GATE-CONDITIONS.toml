@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-GATE-CONDITIONS"
 title = "Transition Gate Conditions"
 kind = "normative"

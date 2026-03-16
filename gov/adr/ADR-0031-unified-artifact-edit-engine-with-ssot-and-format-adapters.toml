@@ -1,5 +1,6 @@
+#:schema ../schema/adr.schema.json
+
 [govctl]
-schema = 1
 id = "ADR-0031"
 title = "Unified Artifact Edit Engine with SSOT and Format Adapters"
 status = "accepted"

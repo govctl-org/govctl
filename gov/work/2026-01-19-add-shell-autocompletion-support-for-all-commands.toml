@@ -1,5 +1,6 @@
+#:schema ../schema/work.schema.json
+
 [govctl]
-schema = 1
 id = "WI-2026-01-19-004"
 title = "Add shell autocompletion support for all commands"
 status = "done"

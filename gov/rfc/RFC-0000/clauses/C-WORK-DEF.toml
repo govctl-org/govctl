@@ -1,7 +1,6 @@
 #:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-WORK-DEF"
 title = "Work Item Definition"
 kind = "normative"
@@ -13,12 +12,12 @@ text = """
 A Work Item tracks a unit of work from inception to completion.
 
 Every Work Item MUST be stored as a TOML file containing:
-- `[govctl]` section with: `schema`, `id`, `title`, `status`, `created`, `refs`
+- `[govctl]` section with: `id`, `title`, `status`, `created`, `refs`
 - optional `[govctl]` fields: `started`, `completed`
 - `[content]` section with: `description`, `acceptance_criteria`, `journal`, `notes`
 - optional `[verification]` section with: `required_guards`, `waivers`
 
-For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
+Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 
 Implementations MUST define a machine-readable JSON Schema for the Work Item file structure and MUST validate Work Item files against that schema during project validation.
 

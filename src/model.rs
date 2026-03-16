@@ -82,6 +82,9 @@ pub struct RfcWire {
 /// RFC metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RfcMeta {
+    /// Backward-compat: accepted on read, never written. See `config.toml [schema] version`.
+    #[allow(dead_code)]
+    #[serde(default, skip_serializing)]
     pub schema: u32,
     pub id: String,
     pub title: String,
@@ -153,6 +156,8 @@ pub struct ClauseWire {
 /// Clause metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClauseMeta {
+    #[allow(dead_code)]
+    #[serde(default, skip_serializing)]
     pub schema: u32,
     pub id: String,
     pub title: String,
@@ -282,6 +287,8 @@ pub enum ClauseStatus {
 /// ADR metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdrMeta {
+    #[allow(dead_code)]
+    #[serde(default, skip_serializing)]
     pub schema: u32,
     pub id: String,
     pub title: String,
@@ -374,7 +381,8 @@ pub enum AdrStatus {
 /// Work Item metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemMeta {
-    #[serde(default)]
+    #[allow(dead_code)]
+    #[serde(default, skip_serializing)]
     pub schema: u32,
     pub id: String,
     pub title: String,
@@ -528,6 +536,8 @@ pub enum ChangelogCategory {
 /// Verification Guard metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuardMeta {
+    #[allow(dead_code)]
+    #[serde(default, skip_serializing)]
     pub schema: u32,
     pub id: String,
     pub title: String,
@@ -604,7 +614,8 @@ impl ChangelogCategory {
 /// Release file metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReleasesMeta {
-    #[serde(default = "default_schema_version")]
+    #[allow(dead_code)]
+    #[serde(default, skip_serializing)]
     pub schema: u32,
 }
 
