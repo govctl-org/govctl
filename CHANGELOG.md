@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Runtime validation uses JSON Schemas for RFC, clause, ADR, work item, and release artifacts (WI-2026-03-16-001)
+- govctl check validates releases as first-class artifacts (WI-2026-03-16-001)
+- govctl migrate converts legacy JSON RFC and clause files to TOML and rewrites govctl-managed clause paths (WI-2026-03-16-002)
+- govctl migrate upgrades legacy releases.toml files to include schema metadata (WI-2026-03-16-002)
+
+### Changed
+
+- Fresh projects and packaged builds include required artifact schema files (WI-2026-03-16-001)
+- post-migration lifecycle and lookup paths no longer assume .json RFC/clause files (WI-2026-03-16-002)
+
+### Fixed
+
+- migrated repositories fail if any converted artifact would be invalid instead of leaving mixed-format partial writes (WI-2026-03-16-002)
+
 ## [0.5.4] - 2026-03-14
 
 ### Added

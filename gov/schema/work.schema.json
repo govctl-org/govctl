@@ -91,7 +91,15 @@
               },
               "category": {
                 "type": "string",
-                "enum": ["added", "changed", "deprecated", "removed", "fixed", "security", "chore"]
+                "enum": [
+                  "added",
+                  "changed",
+                  "deprecated",
+                  "removed",
+                  "fixed",
+                  "security",
+                  "chore"
+                ]
               }
             },
             "additionalProperties": false

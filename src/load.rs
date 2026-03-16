@@ -61,11 +61,11 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
         })?;
 
         let path = entry.path();
-        if path.is_dir() {
-            if let Some(rfc_path) = find_rfc_in_dir(&path) {
-                let rfc_index = load_rfc(config, &rfc_path)?;
-                rfcs.push(rfc_index);
-            }
+        if path.is_dir()
+            && let Some(rfc_path) = find_rfc_in_dir(&path)
+        {
+            let rfc_index = load_rfc(config, &rfc_path)?;
+            rfcs.push(rfc_index);
         }
     }
 

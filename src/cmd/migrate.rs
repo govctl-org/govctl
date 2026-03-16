@@ -42,7 +42,7 @@ impl MigrationPlan {
             .map(|plan| {
                 plan.files
                     .iter()
-                    .filter(|file| file.relative_path != PathBuf::from("rfc.toml"))
+                    .filter(|file| *file.relative_path != *"rfc.toml")
                     .count()
             })
             .sum()
