@@ -1,0 +1,24 @@
+clause_id = "C-RFC-DEF"
+title = "RFC Definition"
+kind = "normative"
+status = "active"
+text = """
+An RFC (Request for Comments) is a normative document that defines intent, constraints, or decisions governing implementation.
+
+An RFC is not a suggestion. It is law.
+
+The current canonical RFC storage format is TOML. New repositories and repositories that have completed the RFC/clause migration MUST store each RFC as a TOML file (`rfc.toml`) containing:
+- `[govctl]` section with: `schema`, `id`, `title`, `version`, `status`, `phase`, `owners`, `created`
+- optional `[govctl]` fields: `updated`, `supersedes`, `refs`, `signature`
+- `[[sections]]` array with ordered section definitions and clause references
+- `[[changelog]]` array for version history
+
+For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
+
+Entries in `sections[].clauses` MUST reference clause TOML files by relative path (for example `clauses/C-EXAMPLE.toml`) in migrated repositories.
+
+Repositories that have not yet completed the RFC/clause migration MAY retain legacy JSON RFC files temporarily. After `govctl migrate` has completed for a repository, normal govctl operations MUST create and modify RFCs only in TOML form.
+
+**Rationale:**
+This removes the last storage-format split from RFC handling without forcing a silent in-place break for repositories that still need an explicit migration step."""
+since = "1.0.0"

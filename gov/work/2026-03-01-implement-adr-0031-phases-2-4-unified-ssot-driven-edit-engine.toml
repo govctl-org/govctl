@@ -9,9 +9,7 @@ completed = "2026-03-01"
 refs = ["ADR-0031"]
 
 [content]
-description = """
-Describe the work to be done.
-What is the goal? What are the acceptance criteria?"""
+description = "Complete ADR-0031 phases 2-4 by replacing the remaining hand-written edit dispatch with the unified SSOT-driven runtime path, removing duplicated nested-field handlers, and keeping the edit, test, and validation workflows green."
 
 [[content.acceptance_criteria]]
 text = "Add content_path to SSOT nested rules and code generation"

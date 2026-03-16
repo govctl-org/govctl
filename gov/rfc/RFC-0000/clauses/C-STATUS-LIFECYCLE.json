@@ -1,8 +1,0 @@
-{
-  "clause_id": "C-STATUS-LIFECYCLE",
-  "title": "RFC Status Lifecycle",
-  "kind": "normative",
-  "status": "active",
-  "text": "RFC status follows this lifecycle:\n\n    draft → normative → deprecated\n\n**draft**: Under discussion. Implementation MUST NOT depend on draft RFCs.\n\n**normative**: Frozen and ratified. Implementation MUST conform to normative RFCs.\n\n**deprecated**: Superseded or obsolete. Implementation SHOULD migrate away.\n\nTransition rules:\n- draft → normative: Requires explicit finalization\n- normative → deprecated: Requires a superseding RFC or explicit deprecation\n- Reverse transitions are FORBIDDEN",
-  "since": "1.0.0"
-}

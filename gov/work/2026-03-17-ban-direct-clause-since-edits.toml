@@ -1,0 +1,45 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-17-002"
+title = "Ban direct clause since edits"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+refs = [
+    "RFC-0000",
+    "ADR-0016",
+]
+
+[content]
+description = "Correct the governance model for clause since handling by banning direct clause.since edits, updating the edit SSOT/tests accordingly, and assigning C-RELEASE-DEF.since through an RFC version bump instead of a direct field set."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "governance"
+content = """
+Corrected clause `since` handling to match the governance model.
+
+Removed direct `clause.since` set support from the edit SSOT and command path, replaced the test with a rejection case, repaired the incorrect direct metadata stamp on `C-RELEASE-DEF`, and then bumped `RFC-0000` to 1.0.2 so the clause received `since = 1.0.2` through the normal RFC versioning flow.
+
+Verified with `cargo run --quiet -- check`, `cargo run --quiet -- render rfc`, and the targeted edit test that direct `since` edits are now rejected."""
+
+[[content.acceptance_criteria]]
+text = "clause since is no longer directly settable through govctl clause set"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "C-RELEASE-DEF receives its since version via RFC-0000 bump rather than direct mutation"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

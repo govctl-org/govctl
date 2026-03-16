@@ -1,0 +1,26 @@
+clause_id = "C-RELEASE-DEF"
+title = "Release Definition"
+kind = "normative"
+status = "active"
+text = """
+A Release tracks a published version and the set of work items included in that version.
+
+Release data MUST be stored as a TOML file at `gov/releases.toml` containing:
+- `[govctl]` section with: `schema`
+- `[[releases]]` array with entries containing: `version`, `date`, `refs`
+
+For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
+
+Each `releases[].version` MUST be a valid semantic version.
+
+Each `releases[].date` MUST use ISO 8601 calendar date format `YYYY-MM-DD`.
+
+Each `releases[].refs` entry MUST reference an existing Work Item ID.
+
+A release entry has no lifecycle and MUST be treated as immutable once created.
+
+Implementations MUST define a machine-readable JSON Schema for the release file structure and MUST validate `gov/releases.toml` against that schema during project validation.
+
+**Rationale:**
+Releases are first-class governance artifacts because changelog generation and release membership depend on them. Giving releases a defined TOML structure and required JSON Schema removes the remaining schema-less storage special case."""
+since = "1.0.2"

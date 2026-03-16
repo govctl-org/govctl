@@ -1,0 +1,21 @@
+clause_id = "C-RFC-STATUS"
+title = "RFC Status Transitions"
+kind = "normative"
+status = "active"
+text = """
+An RFC MUST have exactly one of the following status values:
+
+1. **draft** — Initial state. The RFC is under development and not yet binding.
+2. **normative** — The RFC defines required behavior. Implementations MUST conform. Normative RFCs MAY be amended via version bumping; amendments MUST include a changelog entry documenting the change.
+3. **deprecated** — The RFC is no longer recommended. Existing conforming implementations MAY continue, but new implementations SHOULD NOT use this RFC.
+
+Valid transitions:
+- draft → normative (via `finalize` command)
+- normative → deprecated (via `deprecate` command)
+
+Invalid transitions (MUST be rejected):
+- normative → draft (no "un-finalize")
+- deprecated → normative (no resurrection)
+- deprecated → draft (no resurrection)
+- Any skip (e.g., draft → deprecated directly)"""
+since = "0.1.0"

@@ -326,7 +326,7 @@ pub fn set_field(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let (artifact, fp) = plan_edit_with_field(id, field)?;
     let value = resolve_value(value, stdin)?;
-    apply_set_field(config, id, &fp, artifact, value.as_str(), op)?;
+    apply_set_field(config, id, &fp, artifact, value.as_str(), op, true)?;
 
     if !op.is_preview() {
         let display_field = fp.to_string();
@@ -344,7 +344,7 @@ pub(crate) fn set_field_direct(
     op: WriteOp,
 ) -> anyhow::Result<()> {
     let (artifact, fp) = plan_edit_with_field(id, field)?;
-    apply_set_field(config, id, &fp, artifact, value, op)
+    apply_set_field(config, id, &fp, artifact, value, op, false)
 }
 
 fn apply_set_field(
@@ -354,11 +354,21 @@ fn apply_set_field(
     artifact: ArtifactType,
     value: &str,
     op: WriteOp,
+    enforce_verb_ownership: bool,
 ) -> anyhow::Result<()> {
+    if enforce_verb_ownership {
+        reject_verb_owned_set(artifact, fp, id)?;
+    }
     match artifact {
-        ArtifactType::Adr => {
-            set_toml_field::<AdrTomlAdapter>(config, id, fp, value, op, ArtifactType::Adr)?
-        }
+        ArtifactType::Adr => set_toml_field::<AdrTomlAdapter>(
+            config,
+            id,
+            fp,
+            value,
+            op,
+            ArtifactType::Adr,
+            !enforce_verb_ownership,
+        )?,
         ArtifactType::WorkItem => {
             if fp.as_simple() == Some("notes") {
                 return Err(Diagnostic::new(
@@ -368,11 +378,87 @@ fn apply_set_field(
                 )
                 .into());
             }
-            set_toml_field::<WorkTomlAdapter>(config, id, fp, value, op, ArtifactType::WorkItem)?
+            set_toml_field::<WorkTomlAdapter>(
+                config,
+                id,
+                fp,
+                value,
+                op,
+                ArtifactType::WorkItem,
+                !enforce_verb_ownership,
+            )?
         }
-        ArtifactType::Rfc => set_rfc_field(config, id, fp, value, op)?,
-        ArtifactType::Clause => set_clause_field(config, id, fp, value, op)?,
+        ArtifactType::Rfc => set_rfc_field(config, id, fp, value, op, !enforce_verb_ownership)?,
+        ArtifactType::Clause => {
+            set_clause_field(config, id, fp, value, op, !enforce_verb_ownership)?
+        }
     }
+    Ok(())
+}
+
+fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> anyhow::Result<()> {
+    let path = fp.to_string();
+    let msg = match artifact {
+        ArtifactType::Rfc => match fp.as_simple() {
+            Some("status") => Some(
+                "RFC status is lifecycle-owned. Use `govctl rfc finalize`, `govctl rfc deprecate`, or `govctl rfc supersede`.",
+            ),
+            Some("phase") => Some("RFC phase is lifecycle-owned. Use `govctl rfc advance`."),
+            Some("version") => Some("RFC version is lifecycle-owned. Use `govctl rfc bump`."),
+            _ => None,
+        },
+        ArtifactType::Clause => match fp.as_simple() {
+            Some("text") => Some("Clause text is edit-owned. Use `govctl clause edit`."),
+            Some("status") => Some(
+                "Clause status is lifecycle-owned. Use `govctl clause deprecate` or `govctl clause supersede`.",
+            ),
+            Some("superseded_by") => {
+                Some("Clause supersession is lifecycle-owned. Use `govctl clause supersede`.")
+            }
+            Some("since") => Some(
+                "Clause 'since' is derived from RFC versioning. Use `govctl rfc bump` or `govctl rfc finalize`.",
+            ),
+            _ => None,
+        },
+        ArtifactType::Adr => {
+            if fp.as_simple() == Some("status") || fp.as_simple() == Some("superseded_by") {
+                Some(
+                    "ADR lifecycle fields are verb-owned. Use `govctl adr accept`, `govctl adr reject`, or `govctl adr supersede`.",
+                )
+            } else if fp.segments.len() == 2
+                && fp.segments[0].name == "alternatives"
+                && fp.segments[1].name == "status"
+            {
+                Some(
+                    "ADR alternative status is tick-owned. Use `govctl adr tick ... alternatives ...`.",
+                )
+            } else {
+                None
+            }
+        }
+        ArtifactType::WorkItem => {
+            if fp.as_simple() == Some("status") {
+                Some("Work item status is lifecycle-owned. Use `govctl work move`.")
+            } else if fp.segments.len() == 2
+                && fp.segments[0].name == "acceptance_criteria"
+                && fp.segments[1].name == "status"
+            {
+                Some("Acceptance criteria status is tick-owned. Use `govctl work tick`.")
+            } else {
+                None
+            }
+        }
+    };
+
+    if let Some(message) = msg {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0804FieldNotEditable,
+            format!("{message} (field: `{path}`)"),
+            id,
+        )
+        .into());
+    }
+
     Ok(())
 }
 
@@ -451,6 +537,7 @@ fn set_toml_field<A>(
     value: &str,
     op: WriteOp,
     artifact: ArtifactType,
+    allow_forced_simple_set: bool,
 ) -> anyhow::Result<()>
 where
     A: TomlAdapter,
@@ -459,7 +546,11 @@ where
     let mut entry = A::load(config, id)?;
     let mut doc = serde_json::to_value(entry.spec())?;
     if let Some(simple) = fp.as_simple() {
-        edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
+        if allow_forced_simple_set {
+            edit_runtime::set_simple_field_forced(artifact, &mut doc, simple, value, id)?;
+        } else {
+            edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
+        }
     } else {
         edit_runtime::set_nested_field(artifact, &mut doc, fp, value, id)?;
     }
@@ -499,9 +590,12 @@ fn set_rfc_field(
     fp: &FieldPath,
     value: &str,
     op: WriteOp,
+    allow_forced_simple_set: bool,
 ) -> anyhow::Result<()> {
     let simple = require_simple_field(fp, id, "RFC fields do not support nested paths")?;
-    if !edit_runtime::supports_simple_set_field(ArtifactType::Rfc, simple) {
+    if !allow_forced_simple_set
+        && !edit_runtime::supports_simple_set_field(ArtifactType::Rfc, simple)
+    {
         return Err(Diagnostic::new(
             DiagnosticCode::E0101RfcSchemaInvalid,
             format!("Unknown field: {simple}"),
@@ -518,7 +612,11 @@ fn set_rfc_field(
     )?;
     let mut loaded = RfcJsonAdapter::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
-    edit_runtime::set_simple_field(ArtifactType::Rfc, &mut doc, simple, value, id)?;
+    if allow_forced_simple_set {
+        edit_runtime::set_simple_field_forced(ArtifactType::Rfc, &mut doc, simple, value, id)?;
+    } else {
+        edit_runtime::set_simple_field(ArtifactType::Rfc, &mut doc, simple, value, id)?;
+    }
     loaded.data = serde_json::from_value(doc)?;
     loaded.data.updated = Some(today());
     RfcJsonAdapter::write(config, &loaded, op)?;
@@ -531,9 +629,12 @@ fn set_clause_field(
     fp: &FieldPath,
     value: &str,
     op: WriteOp,
+    allow_forced_simple_set: bool,
 ) -> anyhow::Result<()> {
     let simple = require_simple_field(fp, id, "Clause fields do not support nested paths")?;
-    if !edit_runtime::supports_simple_set_field(ArtifactType::Clause, simple) {
+    if !allow_forced_simple_set
+        && !edit_runtime::supports_simple_set_field(ArtifactType::Clause, simple)
+    {
         return Err(Diagnostic::new(
             DiagnosticCode::E0201ClauseSchemaInvalid,
             format!("Unknown field: {simple}"),
@@ -550,7 +651,11 @@ fn set_clause_field(
     )?;
     let mut loaded = ClauseJsonAdapter::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
-    edit_runtime::set_simple_field(ArtifactType::Clause, &mut doc, simple, value, id)?;
+    if allow_forced_simple_set {
+        edit_runtime::set_simple_field_forced(ArtifactType::Clause, &mut doc, simple, value, id)?;
+    } else {
+        edit_runtime::set_simple_field(ArtifactType::Clause, &mut doc, simple, value, id)?;
+    }
     loaded.data = serde_json::from_value(doc)?;
     ClauseJsonAdapter::write(config, &loaded, op)?;
     Ok(())

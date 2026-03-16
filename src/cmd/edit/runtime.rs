@@ -24,6 +24,7 @@ struct SimpleFieldSpec {
 #[derive(Clone, Copy)]
 enum SetMode {
     String,
+    #[allow(dead_code)]
     OptionalString {
         empty_as_null: bool,
     },
@@ -89,6 +90,29 @@ pub fn set_simple_field(
         return Err(unknown_field_error(artifact, field, id).into());
     };
     apply_set(doc, spec, value, id)
+}
+
+/// Set a simple field bypassing user-facing verb ownership checks.
+///
+/// Used by dedicated lifecycle verbs that still need to mutate fields
+/// whose generic `set` entry points are intentionally banned.
+pub fn set_simple_field_forced(
+    artifact: ArtifactType,
+    doc: &mut Value,
+    field: &str,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    if let Some(spec) = simple_set_spec(artifact, field) {
+        return apply_set(doc, spec, value, id);
+    }
+
+    let Some(spec) = simple_field_spec(artifact, field) else {
+        return Err(unknown_field_error(artifact, field, id).into());
+    };
+    let slot = ensure_value_path_mut(doc, spec.path, id)?;
+    *slot = Value::String(value.to_string());
+    Ok(())
 }
 
 pub fn supports_simple_set_field(artifact: ArtifactType, field: &str) -> bool {
@@ -405,13 +429,7 @@ fn render_status_lines(
 }
 
 fn apply_set(doc: &mut Value, spec: SimpleSetSpec, value: &str, id: &str) -> anyhow::Result<()> {
-    let slot = value_at_path_mut(doc, spec.path).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!("Cannot resolve field path '{}'", spec.path.join(".")),
-            id,
-        )
-    })?;
+    let slot = ensure_value_path_mut(doc, spec.path, id)?;
 
     match spec.mode {
         SetMode::String => *slot = Value::String(value.to_string()),
@@ -440,12 +458,33 @@ fn apply_set(doc: &mut Value, spec: SimpleSetSpec, value: &str, id: &str) -> any
     Ok(())
 }
 
-fn value_at_path_mut<'a>(v: &'a mut Value, path: &[&str]) -> Option<&'a mut Value> {
-    let mut cur = v;
-    for key in path {
-        cur = cur.get_mut(*key)?;
+fn ensure_value_path_mut<'a>(
+    mut cur: &'a mut Value,
+    path: &[&str],
+    id: &str,
+) -> anyhow::Result<&'a mut Value> {
+    for (idx, key) in path.iter().enumerate() {
+        let is_leaf = idx + 1 == path.len();
+        let obj = cur.as_object_mut().ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Cannot resolve field path '{}'", path.join(".")),
+                id,
+            )
+        })?;
+        if !obj.contains_key(*key) {
+            obj.insert(
+                (*key).to_string(),
+                if is_leaf {
+                    Value::Null
+                } else {
+                    Value::Object(serde_json::Map::new())
+                },
+            );
+        }
+        cur = obj.get_mut(*key).expect("inserted above");
     }
-    Some(cur)
+    Ok(cur)
 }
 
 fn ensure_array_path_mut<'a>(

@@ -107,6 +107,40 @@ fn test_rfc_set_nonexistent_field() {
 }
 
 #[test]
+fn test_rfc_set_version_rejected() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "set", "RFC-0001", "version", "0.2.0"],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(
+        output.contains("Use `govctl rfc bump`"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
+fn test_rfc_set_status_rejected() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "set", "RFC-0001", "status", "normative"],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(output.contains("govctl rfc finalize"), "output: {}", output);
+}
+
+#[test]
 fn test_rfc_get_nonexistent() {
     let temp_dir = init_project();
     let date = today();
@@ -205,6 +239,89 @@ fn test_clause_get_field() {
 }
 
 #[test]
+fn test_clause_set_since_rejected() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &["clause", "set", "RFC-0001:C-TEST", "since", "0.1.0"],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(
+        output.contains("Clause 'since' is derived from RFC versioning"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
+fn test_clause_set_text_rejected() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &["clause", "set", "RFC-0001:C-TEST", "text", "new text"],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(output.contains("govctl clause edit"), "output: {}", output);
+}
+
+#[test]
+fn test_clause_set_status_rejected() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &["clause", "set", "RFC-0001:C-TEST", "status", "deprecated"],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(
+        output.contains("govctl clause deprecate"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
 fn test_clause_edit_nonexistent() {
     let temp_dir = init_project();
     let date = today();
@@ -253,6 +370,43 @@ fn test_adr_set_title() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_set_status_rejected() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Test Decision"],
+            &["adr", "set", "ADR-0001", "status", "accepted"],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(output.contains("govctl adr accept"), "output: {}", output);
+}
+
+#[test]
+fn test_adr_set_alternative_status_rejected() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Test Decision"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &[
+                "adr",
+                "set",
+                "ADR-0001",
+                "alternatives[0].status",
+                "accepted",
+            ],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(output.contains("govctl adr tick"), "output: {}", output);
 }
 
 #[test]
@@ -380,6 +534,53 @@ fn test_work_set_title() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_work_set_status_rejected() {
+    let temp_dir = init_project();
+    let date = today();
+    let work_id = format!("WI-{}-001", date);
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Test Task"],
+            &["work", "set", &work_id, "status", "active"],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(output.contains("govctl work move"), "output: {}", output);
+}
+
+#[test]
+fn test_work_set_acceptance_criteria_status_rejected() {
+    let temp_dir = init_project();
+    let date = today();
+    let work_id = format!("WI-{}-001", date);
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Test Task"],
+            &[
+                "work",
+                "add",
+                &work_id,
+                "acceptance_criteria",
+                "add: Test criterion",
+            ],
+            &[
+                "work",
+                "set",
+                &work_id,
+                "acceptance_criteria[0].status",
+                "done",
+            ],
+        ],
+    );
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(output.contains("govctl work tick"), "output: {}", output);
 }
 
 #[test]

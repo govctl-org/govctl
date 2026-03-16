@@ -1,0 +1,6 @@
+clause_id = "C-SUMMARY"
+title = "Summary"
+kind = "informative"
+status = "active"
+text = "This RFC defines state machines governing RFC, ADR, Work Item, and Clause lifecycles."
+since = "0.1.0"

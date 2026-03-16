@@ -1,0 +1,38 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-17-001"
+title = "Fix remaining governance warnings"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+refs = [
+    "RFC-0000",
+    "ADR-0031",
+]
+
+[content]
+description = "Clear the remaining governance check warnings by setting the release clause since-version explicitly and replacing the leftover placeholder description in the ADR-0031 phase-2-4 work item."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "warnings"
+content = """
+Fixed the remaining governance warnings by setting `RFC-0000:C-RELEASE-DEF.since = 1.0.1` and replacing the leftover placeholder description in `WI-2026-03-01-001`.
+
+Also fixed the clause scalar-set path bug so missing optional fields like `since` can be created through `govctl clause set`, rerendered RFC docs, and verified with `cargo run --quiet -- check` plus the targeted edit test."""
+
+[[content.acceptance_criteria]]
+text = "C-RELEASE-DEF has an explicit since version"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "WI-2026-03-01-001 no longer uses placeholder description text"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes without those two warnings"
+status = "done"
+category = "chore"

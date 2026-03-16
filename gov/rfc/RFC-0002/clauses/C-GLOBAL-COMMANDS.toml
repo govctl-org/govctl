@@ -1,0 +1,129 @@
+clause_id = "C-GLOBAL-COMMANDS"
+title = "Global Commands"
+kind = "normative"
+status = "active"
+text = """
+The following commands operate across all resources and MUST remain at the global namespace level:
+
+**1. `govctl init`**
+
+Initializes a new govctl project in the current directory.
+
+Syntax: `govctl init [--force]`
+
+Behavior:
+- Creates `gov/` directory structure
+- Generates `gov/config.toml`
+- Creates subdirectories for rfcs, adrs, work items
+- Optionally creates `.claude/commands/` with workflow templates
+- MUST error if already initialized (unless `--force`)
+
+**2. `govctl check`**
+
+Validates all governance artifacts across the project.
+
+Syntax: `govctl check [--deny-warnings]`
+
+Behavior:
+- Validates RFCs, ADRs, clauses, work items, and releases
+- Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, and release
+- These schemas MUST be JSON files stored under `gov/schema/`
+- For TOML artifacts, MUST validate structure against the corresponding JSON Schema after parsing and normalization
+- The `govctl.schema` field in TOML artifacts MUST select the corresponding schema version for that artifact type
+- Checks state machine invariants
+- Verifies cross-references
+- Scans source code for references (if enabled in config)
+- In repositories that have completed RFC/clause migration, if legacy JSON RFC or clause files are detected, MUST fail with a migration-required diagnostic that points to `govctl migrate`
+- Returns exit code 0 if valid, non-zero if errors
+- With `--deny-warnings`: treats warnings as errors
+
+**3. `govctl status`**
+
+Shows summary counts of all artifacts grouped by status.
+
+Syntax: `govctl status`
+
+Behavior:
+- Displays counts by status/phase for each resource type
+- Highlights active work items
+- Shows pending decisions (proposed ADRs, draft RFCs)
+- Uses colors in TTY mode for visual scanning
+- No output format flag (always human-readable table)
+
+**4. `govctl render`**
+
+Generates markdown documentation from source-of-truth governance artifacts.
+
+Syntax: `govctl render [targets...] [--output-dir PATH] [--dry-run]`
+
+Behavior:
+- In repositories that have completed RFC/clause migration, renders RFCs from TOML to markdown (published)
+- Renders ADRs from TOML to markdown (local only)
+- Renders work items from TOML to markdown (local only)
+- Generates CHANGELOG.md from releases
+- Default: renders RFCs only
+- With targets: `rfc`, `adr`, `work`, `changelog`, `all`
+- MUST validate before rendering
+
+**5. `govctl describe`**
+
+Outputs machine-readable CLI metadata for agent/tool integration.
+
+Syntax: `govctl describe [--context]`
+
+Behavior:
+- Outputs JSON with command catalog
+- Includes workflow information
+- With `--context`: adds current project state and suggested actions
+- Enables machine agents and automation to discover capabilities safely
+
+**Stability Contract:**
+
+The JSON schema of `govctl describe` output MUST be versioned. The schema version MUST be included in the output. Backward-incompatible changes to the schema require a major version bump of govctl.
+
+This ensures agents and automation tools can rely on stable introspection.
+
+**6. `govctl completions`**
+
+Generates shell completion scripts.
+
+Syntax: `govctl completions <bash|zsh|fish|powershell>`
+
+Behavior:
+- Outputs completion script for specified shell
+- Can be sourced or installed per shell conventions
+
+**7. `govctl migrate`**
+
+Performs deterministic repository-local format migration for legacy governance artifacts.
+
+Syntax: `govctl migrate [--dry-run]`
+
+Behavior:
+- Detects legacy JSON RFC and clause files in the current repository
+- Converts legacy JSON RFC and clause files to TOML equivalents
+- Updates govctl-managed internal RFC clause-path references from `.json` paths to `.toml` paths
+- Applies any deterministic file-structure upgrades required by current TOML artifact schemas, including release-file metadata upgrades
+- Preserves artifact IDs, ordering, and semantic content during conversion
+- MUST validate converted artifacts before reporting success
+- MUST leave the repository unchanged if conversion or validation fails at any step
+- MUST be safe to run on an already-migrated repository and report a no-op result in that case
+- MUST NOT perform heuristic project discovery or broad adoption tasks
+
+**Rationale:**
+
+These commands are global because they:
+1. Operate on multiple resource types simultaneously
+2. Don't fit the `<resource> <verb>` pattern semantically
+3. Are project-level operations, not resource-level
+4. Match user mental model of "project commands" vs "resource commands"
+
+`govctl migrate` qualifies because it operates across the governance repository as a whole and changes multiple resource types in one coordinated step.
+
+**Future Additions:**
+
+New global commands MAY be added via RFC amendment. They MUST meet at least one criterion:
+1. Operate on multiple resource types
+2. Perform project-level initialization or cleanup
+3. Provide meta-information about the CLI itself"""
+since = "0.1.0"

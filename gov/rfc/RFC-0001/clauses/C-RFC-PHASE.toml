@@ -1,0 +1,24 @@
+clause_id = "C-RFC-PHASE"
+title = "RFC Phase Transitions"
+kind = "normative"
+status = "active"
+text = """
+An RFC MUST have exactly one of the following phase values:
+
+1. **spec** — Specification phase. The RFC text is being written. No implementation work.
+2. **impl** — Implementation phase. Code is being written to conform to the RFC.
+3. **test** — Testing phase. Implementation is complete; tests are being written and validated.
+4. **stable** — Stable phase. Implementation and tests are complete. No further changes expected.
+
+Valid transitions (forward only, via `advance` command):
+- spec → impl
+- impl → test
+- test → stable
+
+Invalid transitions (MUST be rejected):
+- Any backward transition (e.g., impl → spec)
+- Any skip (e.g., spec → test, spec → stable)
+- stable → any (stable is terminal for phase)
+
+Rationale: Phase discipline ensures specification precedes implementation, and testing validates implementation before stabilization."""
+since = "0.1.0"

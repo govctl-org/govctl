@@ -1,0 +1,40 @@
+rfc_id = "RFC-0001"
+title = "Lifecycle State Machines"
+version = "0.2.1"
+status = "normative"
+phase = "stable"
+owners = ["@govctl-org"]
+created = "2026-01-17"
+updated = "2026-01-26"
+signature = "498d533563be84685abee578b2c169b1b21656bc8e9d814c5aa31e86232e4ba2"
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-RFC-STATUS.toml",
+    "clauses/C-RFC-PHASE.toml",
+    "clauses/C-WORK-STATUS.toml",
+    "clauses/C-ADR-STATUS.toml",
+    "clauses/C-CLAUSE-STATUS.toml",
+    "clauses/C-GATE-CONDITIONS.toml",
+]
+
+[[changelog]]
+version = "0.2.1"
+date = "2026-01-26"
+notes = "Remove ADR reference from C-RFC-STATUS; RFCs are self-contained and should not reference ADRs"
+added = ["Inline amendment rule in C-RFC-STATUS clause (was referencing ADR-0016)"]
+
+[[changelog]]
+version = "0.2.0"
+date = "2026-01-19"
+notes = "Clarify that normative RFCs may be amended via version bumping"
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-17"
+notes = "Initial draft"

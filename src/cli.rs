@@ -288,17 +288,17 @@ EXAMPLES:
 VALID FIELDS:
   String fields (use 'set'):
     - title: RFC title
-    - version: RFC version (semver)
-    - status: RFC status (draft|normative|deprecated)
-    - phase: RFC phase (spec|impl|test|stable)
 
   Array fields (modify via the RFC source file directly):
     - owners, refs, sections
 
 EXAMPLES:
     govctl rfc set RFC-0001 title \"New Title\"
-    govctl rfc set RFC-0001 version 0.2.0
-    govctl rfc set RFC-0001 phase impl
+
+Use dedicated lifecycle verbs instead of `set` for:
+    - version → `govctl rfc bump`
+    - status → `govctl rfc finalize` / `govctl rfc deprecate` / `govctl rfc supersede`
+    - phase → `govctl rfc advance`
 ")]
     Set {
         /// RFC ID
@@ -465,8 +465,6 @@ VALID FIELDS:
   String fields (use 'set'):
     - title: Clause title
     - kind: Clause kind (normative|informative)
-    - status: Clause status (active|deprecated|superseded)
-    - text: Clause text content (use 'edit' for multi-line)
 
   Array fields (modify via the clause source file directly):
     - anchors
@@ -475,7 +473,10 @@ EXAMPLES:
     govctl clause set RFC-0001:C-SUMMARY title \"New Title\"
     govctl clause set RFC-0001:C-SUMMARY kind informative
 
-For editing clause text, prefer 'govctl clause edit' command.
+Use dedicated verbs instead of `set` for:
+    - text → `govctl clause edit`
+    - status / superseded_by → `govctl clause deprecate` / `govctl clause supersede`
+    - since → `govctl rfc bump` / `govctl rfc finalize`
 ")]
     Set {
         /// Clause ID
@@ -586,6 +587,8 @@ VALID FIELDS:
     - context: Background and problem description
     - decision: The decision made and rationale
     - consequences: Impact of this decision
+    - title: ADR title
+    - date: ADR date
 
   Array fields (use 'add'/'remove' instead):
     - refs, alternatives
@@ -595,6 +598,9 @@ EXAMPLES:
     govctl adr set ADR-0001 decision --stdin <<'EOF'
     Multi-line decision here
     EOF
+
+Use dedicated lifecycle verbs instead of `set` for:
+    - status / superseded_by → `govctl adr accept` / `govctl adr reject` / `govctl adr supersede`
 ")]
     Set {
         /// ADR ID
@@ -813,7 +819,7 @@ EXAMPLES:
 VALID FIELDS:
   String fields (use 'set'):
     - description: Task scope declaration
-    - status: Work item status (queue|active|done|cancelled)
+    - title: Work item title
 
   Array fields (use 'add'/'remove' instead):
     - refs: Cross-references to RFCs/ADRs
@@ -828,10 +834,13 @@ FIELD SEMANTICS (per ADR-0026):
 
 EXAMPLES:
     govctl work set WI-001 description \"New description\"
-    govctl work set WI-001 status active
     govctl work set WI-001 description --stdin <<'EOF'
     Multi-line description here
     EOF
+
+Use dedicated verbs instead of `set` for:
+    - status → `govctl work move`
+    - acceptance_criteria[*].status → `govctl work tick`
 ")]
     Set {
         /// Work item ID

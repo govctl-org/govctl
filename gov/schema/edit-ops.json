@@ -75,7 +75,7 @@
       "artifact": "clause",
       "name": "since",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "clause",
@@ -88,13 +88,13 @@
       "artifact": "rfc",
       "name": "status",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "rfc",
       "name": "phase",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "rfc",
@@ -106,7 +106,7 @@
       "artifact": "rfc",
       "name": "version",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "rfc",
@@ -143,7 +143,7 @@
       "artifact": "adr",
       "name": "status",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "adr",
@@ -198,7 +198,7 @@
       "artifact": "work",
       "name": "status",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "work",
@@ -249,30 +249,14 @@
       "artifact": "rfc",
       "name": "status",
       "get": { "path": ["status"], "render": "scalar" },
-      "set": {
-        "path": ["status"],
-        "mode": {
-          "type": "enum",
-          "allowed": ["draft", "normative", "deprecated"],
-          "invalid_msg": "Invalid status value",
-          "code": "E0101RfcSchemaInvalid"
-        }
-      },
+      "set": null,
       "list_path": null
     },
     {
       "artifact": "rfc",
       "name": "phase",
       "get": { "path": ["phase"], "render": "scalar" },
-      "set": {
-        "path": ["phase"],
-        "mode": {
-          "type": "enum",
-          "allowed": ["spec", "impl", "test", "stable"],
-          "invalid_msg": "Invalid phase value",
-          "code": "E0101RfcSchemaInvalid"
-        }
-      },
+      "set": null,
       "list_path": null
     },
     {
@@ -286,7 +270,7 @@
       "artifact": "rfc",
       "name": "version",
       "get": { "path": ["version"], "render": "scalar" },
-      "set": { "path": ["version"], "mode": { "type": "string" } },
+      "set": null,
       "list_path": null
     },
     {
@@ -329,7 +313,7 @@
       "artifact": "clause",
       "name": "text",
       "get": { "path": ["text"], "render": "scalar" },
-      "set": { "path": ["text"], "mode": { "type": "string" } },
+      "set": null,
       "list_path": null
     },
     {
@@ -343,15 +327,7 @@
       "artifact": "clause",
       "name": "status",
       "get": { "path": ["status"], "render": "scalar" },
-      "set": {
-        "path": ["status"],
-        "mode": {
-          "type": "enum",
-          "allowed": ["active", "deprecated", "superseded"],
-          "invalid_msg": "Invalid status value",
-          "code": "E0201ClauseSchemaInvalid"
-        }
-      },
+      "set": null,
       "list_path": null
     },
     {
@@ -373,20 +349,14 @@
       "artifact": "clause",
       "name": "superseded_by",
       "get": { "path": ["superseded_by"], "render": "scalar" },
-      "set": {
-        "path": ["superseded_by"],
-        "mode": { "type": "optional_string", "empty_as_null": true }
-      },
+      "set": null,
       "list_path": null
     },
     {
       "artifact": "clause",
       "name": "since",
       "get": { "path": ["since"], "render": "scalar" },
-      "set": {
-        "path": ["since"],
-        "mode": { "type": "optional_string", "empty_as_null": false }
-      },
+      "set": null,
       "list_path": null
     },
     {
@@ -401,15 +371,7 @@
       "artifact": "adr",
       "name": "status",
       "get": { "path": ["govctl", "status"], "render": "scalar" },
-      "set": {
-        "path": ["govctl", "status"],
-        "mode": {
-          "type": "enum",
-          "allowed": ["proposed", "accepted", "rejected", "superseded"],
-          "invalid_msg": "Invalid status",
-          "code": null
-        }
-      },
+      "set": null,
       "list_path": null
     },
     {
@@ -481,15 +443,7 @@
       "artifact": "work",
       "name": "status",
       "get": { "path": ["govctl", "status"], "render": "scalar" },
-      "set": {
-        "path": ["govctl", "status"],
-        "mode": {
-          "type": "enum",
-          "allowed": ["queue", "active", "done", "cancelled"],
-          "invalid_msg": "Invalid status",
-          "code": null
-        }
-      },
+      "set": null,
       "list_path": null
     },
     {
@@ -560,7 +514,7 @@
       "max_depth": 2,
       "fields": [
         { "name": "text", "kind": "scalar", "verbs": ["get", "set"] },
-        { "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+        { "name": "status", "kind": "scalar", "verbs": ["get"] },
         {
           "name": "rejection_reason",
           "kind": "scalar",
@@ -600,7 +554,7 @@
       "max_depth": 2,
       "fields": [
         { "name": "text", "kind": "scalar", "verbs": ["get", "set"] },
-        { "name": "status", "kind": "scalar", "verbs": ["get", "set"] },
+        { "name": "status", "kind": "scalar", "verbs": ["get"] },
         { "name": "category", "kind": "scalar", "verbs": ["get", "set"] }
       ]
     },

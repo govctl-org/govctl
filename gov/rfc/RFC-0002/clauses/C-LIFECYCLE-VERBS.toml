@@ -1,0 +1,72 @@
+clause_id = "C-LIFECYCLE-VERBS"
+title = "Resource-Specific Lifecycle Verbs"
+kind = "normative"
+status = "active"
+text = """
+Resource-specific lifecycle verbs implement state transitions defined in [[RFC-0001]]. These verbs MUST be scoped to their resource namespace.
+
+**RFC Lifecycle Verbs:**
+
+1. `govctl rfc finalize <id> <normative|deprecated>`
+   - Implements [[RFC-0001:C-RFC-STATUS]] transitions
+   - draft → normative or draft → deprecated
+
+2. `govctl rfc advance <id> <spec|impl|test|stable>`
+   - Implements [[RFC-0001:C-RFC-PHASE]] transitions
+   - Forward-only phase progression
+
+3. `govctl rfc bump <id> <patch|minor|major> -m <message>`
+   - Version bumping per semantic versioning
+   - Updates changelog automatically
+   - Optional: `--change <description>` for additional changelog entries
+
+4. `govctl rfc supersede <id> --by <replacement-id>`
+   - Marks RFC as superseded by another RFC
+   - Both RFCs must exist
+
+**ADR Lifecycle Verbs:**
+
+1. `govctl adr accept <id>`
+   - Implements [[RFC-0001:C-ADR-STATUS]] proposed → accepted
+
+2. `govctl adr reject <id>`
+   - Implements [[RFC-0001:C-ADR-STATUS]] proposed → rejected
+
+3. `govctl adr supersede <id> --by <replacement-id>`
+   - Implements [[RFC-0001:C-ADR-STATUS]] accepted → superseded
+   - Both ADRs must exist
+
+**Work Lifecycle Verbs:**
+
+1. `govctl work move <id> <queue|active|done|cancelled>`
+   - Implements [[RFC-0001:C-WORK-STATUS]] transitions
+   - Validates gate conditions (e.g., acceptance criteria for done)
+   - Updates timestamp fields automatically
+
+**Clause Lifecycle Verbs:**
+
+1. `govctl clause deprecate <id>`
+   - Implements [[RFC-0001:C-CLAUSE-STATUS]] active → deprecated
+
+2. `govctl clause supersede <id> --by <replacement-id>`
+   - Implements [[RFC-0001:C-CLAUSE-STATUS]] active/deprecated → superseded
+   - Both clauses must exist
+
+**Consistency Requirements:**
+
+1. All lifecycle verbs MUST validate transitions per [[RFC-0001]]
+2. All lifecycle verbs MUST update timestamp fields where applicable
+3. All lifecycle verbs MUST be atomic (no partial state changes)
+4. All lifecycle verbs MUST support global `--dry-run` flag
+5. Invalid transitions MUST error with clear explanation of valid transitions
+
+**Rationale:**
+
+Lifecycle verbs are resource-specific because:
+- RFCs have status AND phase (two dimensions of state)
+- ADRs can be rejected (not applicable to RFCs)
+- Work items have gate conditions (acceptance criteria)
+- Each resource has different valid transitions
+
+Scoping these verbs to resources makes their applicability explicit and prevents confusion."""
+since = "0.1.0"

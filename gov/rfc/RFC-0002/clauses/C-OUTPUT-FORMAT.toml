@@ -1,0 +1,73 @@
+clause_id = "C-OUTPUT-FORMAT"
+title = "Output Format Control"
+kind = "normative"
+status = "active"
+text = """
+All commands that output resource data MUST support the `--output` (or `-o`) flag with the following format options:
+
+**Required Output Formats:**
+
+1. **`table`** (default for human use)
+   - Formatted tables with headers and aligned columns
+   - MAY use colors when terminal supports them
+   - MUST be readable in plain text (no control codes in non-TTY)
+
+2. **`json`**
+   - Valid JSON output
+   - Pretty-printed with 2-space indentation
+   - MUST be parseable by standard JSON tools
+
+3. **`yaml`**
+   - Valid YAML output
+   - Formatted for readability
+   - MUST be parseable by standard YAML tools
+
+4. **`toml`**
+   - Valid TOML output (native format for governance artifacts)
+   - MUST be parseable by standard TOML tools
+
+5. **`plain`**
+   - Plain text values with no formatting
+   - One value per line for lists
+   - Single value (no newline) for scalar fields
+   - Suitable for shell scripting and piping
+
+**Applicability:**
+
+Commands MUST support output formats as follows:
+
+- `get` with no field: table, json, yaml, toml
+- `get` with field: plain (default), json, yaml
+- `list`: table (default), json, yaml
+
+Commands MAY add format-specific flags (e.g., `--format-json-compact`) but MUST NOT remove or change behavior of standard formats.
+
+**Format Selection:**
+
+1. Explicit `--output <format>` takes precedence
+2. If not specified:
+   - For TTY: default is `table`
+   - For non-TTY: default MUST be `json`
+3. Invalid format names MUST error with list of valid formats
+
+**Exceptions:**
+
+`govctl status` is exempt from output format requirements and always produces human-readable tabular output intended for interactive use only.
+
+**Consistency Requirements:**
+
+1. JSON/YAML/TOML output MUST match the internal schema exactly
+2. Table format MAY omit fields for readability but MUST show all critical fields
+3. Plain format MUST output stable, parseable text (no decorations)
+4. Output format MUST NOT affect command semantics (same data, different representation)
+
+**Rationale:**
+
+Universal output format control enables:
+- Human readability (table)
+- Script automation (json/yaml)
+- Integration with standard tools (jq, yq)
+- Native format inspection (toml for governance artifacts)
+
+This pattern follows kubectl and Docker conventions where `-o json` works on all read operations."""
+since = "0.1.0"

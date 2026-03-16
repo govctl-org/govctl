@@ -1,0 +1,25 @@
+rfc_id = "RFC-0003"
+title = "TUI UX improvements"
+version = "0.1.0"
+status = "normative"
+phase = "stable"
+owners = ["@govctl-org"]
+created = "2026-02-07"
+updated = "2026-02-07"
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUM.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-NAV.toml",
+    "clauses/C-FILTER.toml",
+    "clauses/C-DETAIL.toml",
+]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-02-07"
+notes = "Initial draft"

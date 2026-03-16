@@ -1,0 +1,105 @@
+clause_id = "C-CRUD-VERBS"
+title = "Universal CRUD Verbs"
+kind = "normative"
+status = "active"
+text = """
+All resource types MUST support the following CRUD (Create, Read, Update, Delete) verbs where applicable:
+
+**1. `new` - Create Resource**
+
+Syntax: `govctl <resource> new <arguments>`
+
+Creates a new instance of the resource. Required arguments vary by resource type but typically include a title or primary identifier.
+
+MUST support for: rfc, adr, work, clause, release
+Behavior:
+- Generates unique ID if not provided
+- Initializes resource with default values
+- Creates necessary filesystem structure
+- Validates inputs per resource schema
+
+**2. `list` - List Resources**
+
+Syntax: `govctl <resource> list [filter]`
+
+Lists all instances of the resource type. Optional filter narrows results.
+
+MUST support for: rfc, adr, work, clause, release
+Behavior:
+- Returns tabular output by default
+- Supports filtering (exact match or substring)
+- Sorted by ID (lexicographic order)
+- MUST respect [[RFC-0002:C-OUTPUT-FORMAT]] flags
+
+**3. `get` - Read Resource**
+
+Syntax: `govctl <resource> get <id> [field]`
+
+Retrieves a resource by ID. If field is specified, returns only that field value.
+
+MUST support for: rfc, adr, work, clause
+Behavior:
+- Returns full resource if no field specified
+- Returns field value if field specified
+- MUST respect [[RFC-0002:C-OUTPUT-FORMAT]] flags
+- MUST error if resource or field does not exist
+
+**Field Name Stability:**
+
+Field names exposed via `get <id> <field>` MUST be stable identifiers defined by the resource schema. Field names MAY NOT be renamed without a major version bump of govctl.
+
+**4. `edit` - Update Resource**
+
+Syntax: `govctl <resource> edit <id> <field> [value]`
+
+Updates a single field on a resource. Value can be provided as argument or via stdin.
+
+MUST support for: rfc, adr, work, clause
+Behavior:
+- Simple fields: replace value
+- Array fields: special syntax (see ADR-0017 for implementation details)
+- MUST validate field names per resource schema
+- MUST validate values per field type
+- MUST support `--stdin` flag for multiline content
+
+**5. `delete` - Delete Resource**
+
+Syntax: `govctl <resource> delete <id>`
+
+Removes a resource permanently.
+
+MUST support for: work, clause
+MUST NOT support for: rfc, adr (use lifecycle verbs instead)
+
+**Deletion Safety Constraints:**
+
+For clauses:
+- MUST only allow deletion if containing RFC is in `draft` status
+- MUST verify no other artifacts reference the clause ID before deletion
+- MUST error with list of referencing artifacts if references exist
+
+For work items:
+- MUST only allow deletion if status is `queue`
+- MUST verify no other artifacts reference the work item ID before deletion
+- MUST error with list of referencing artifacts if references exist
+
+**General Deletion Behavior:**
+- SHOULD require confirmation unless `--force` flag provided
+- MUST be atomic (either fully succeeds or fully fails)
+
+**Rationale:**
+Permanent deletion breaks referential integrity. These constraints ensure deletions are safe and don't leave dangling references in the governance graph.
+
+**Consistency Requirements:**
+
+1. All CRUD verbs MUST use the same flag names across resource types
+2. Error messages MUST follow the same format across all verbs
+3. Exit codes MUST be consistent (0 = success, non-zero = error)
+4. Stdin handling MUST work identically across all verbs that accept it
+
+**Forbidden Variations:**
+
+- MUST NOT use different verb names for the same operation (e.g., "show" vs "get")
+- MUST NOT reorder arguments between resource types (ID always comes before field)
+- MUST NOT have resource-specific flags for universal operations"""
+since = "0.1.0"

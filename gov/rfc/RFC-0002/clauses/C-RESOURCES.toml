@@ -1,0 +1,67 @@
+clause_id = "C-RESOURCES"
+title = "Resource Types"
+kind = "normative"
+status = "active"
+text = """
+The following resource types MUST be supported as top-level command namespaces:
+
+**1. `rfc` - Request for Comments**
+
+Manages RFC specifications (normative documents defining system behavior).
+
+- ID Format: `RFC-NNNN` (e.g., RFC-0001)
+- Lifecycle: draft → normative → deprecated (per [[RFC-0001:C-RFC-STATUS]])
+- Phase: spec → impl → test → stable (per [[RFC-0001:C-RFC-PHASE]])
+
+**2. `adr` - Architecture Decision Record**
+
+Manages ADRs (records of architectural decisions).
+
+- ID Format: `ADR-NNNN` (e.g., ADR-0001)
+- Lifecycle: proposed → accepted → superseded, or proposed → rejected (per [[RFC-0001:C-ADR-STATUS]])
+
+**3. `work` - Work Item**
+
+Manages work items (tasks, features, bugs).
+
+- ID Format: `WI-YYYY-MM-DD-NNN` (e.g., WI-2026-01-19-001)
+- Lifecycle: queue → active → done, with cancellation at any stage (per [[RFC-0001:C-WORK-STATUS]])
+
+**4. `clause` - RFC Clause**
+
+Manages individual clauses within RFCs.
+
+- ID Format: `RFC-NNNN:C-NAME` (e.g., RFC-0001:C-SUMMARY)
+- Lifecycle: active → deprecated → superseded (per [[RFC-0001:C-CLAUSE-STATUS]])
+
+**Clause Namespace vs Storage:**
+
+Clauses remain at the CLI top-level namespace despite being child resources of RFCs because their ID format (RFC-NNNN:C-NAME) is self-scoping and unambiguous.
+
+The CLI namespace is independent of filesystem layout. Implementations MAY store clause files nested under RFC directories (e.g., `gov/rfc/RFC-0001/clauses/C-NAME.toml`) while maintaining the flat CLI command structure (`govctl clause get RFC-0001:C-NAME`).
+
+**5. `release` - Release Version**
+
+Manages published versions and their included work item references.
+
+- ID Format: Semantic version (e.g., 1.0.0)
+- Storage: `gov/releases.toml` as defined by [[RFC-0000:C-RELEASE-DEF]]
+- No lifecycle (immutable once created)
+
+**Resource Identification:**
+
+Each resource type MUST have a unique, predictable ID format that:
+1. Is stable across filesystem operations
+2. Can be referenced in other artifacts
+3. Clearly identifies the resource type without context
+4. Supports lexicographic sorting where meaningful
+5. Is case-sensitive (RFC-0001 ≠ rfc-0001)
+
+**Date Format:**
+
+All date-valued resource metadata fields (such as `created`, `updated`, `started`, `completed`, and `date`) MUST use ISO 8601 calendar date format `YYYY-MM-DD`.
+
+**Future Extensions:**
+
+Additional resource types MAY be added via RFC amendment. New resource types MUST follow the same structural patterns defined in [[RFC-0002:C-CRUD-VERBS]]."""
+since = "0.1.0"

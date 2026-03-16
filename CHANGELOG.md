@@ -22,6 +22,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - migrated repositories fail if any converted artifact would be invalid instead of leaving mixed-format partial writes (WI-2026-03-16-002)
+- C-RELEASE-DEF has an explicit since version (WI-2026-03-17-001)
+- WI-2026-03-01-001 no longer uses placeholder description text (WI-2026-03-17-001)
+- clause since is no longer directly settable through govctl clause set (WI-2026-03-17-002)
+- C-RELEASE-DEF receives its since version via RFC-0000 bump rather than direct mutation (WI-2026-03-17-002)
+- generic set rejects RFC lifecycle-owned fields like version, status, and phase (WI-2026-03-17-003)
+- generic set rejects clause lifecycle-owned or edit-owned fields like text, status, superseded_by, and since (WI-2026-03-17-003)
+- generic set rejects ADR/work status fields and tick-owned nested status fields (WI-2026-03-17-003)
 
 ## [0.5.4] - 2026-03-14
 

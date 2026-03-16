@@ -1,0 +1,46 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-17-003"
+title = "Ban set on verb-owned fields"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+
+[content]
+description = "Audit verb-owned and derived fields that generic set should not mutate directly, remove those setters from the edit SSOT and command path, and enforce dedicated lifecycle or tick verbs instead."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "policy"
+content = """
+Audited verb-owned and derived fields reachable through generic `set` and removed the remaining bypasses.
+
+`set` now rejects RFC lifecycle-owned fields (`version`, `status`, `phase`), clause edit/lifecycle-owned fields (`text`, `status`, `superseded_by`, `since`), ADR/work top-level status fields, and tick-owned nested status fields on ADR alternatives and work acceptance criteria. The edit SSOT was updated to stop advertising those fields as settable, and the CLI help text now points users at the dedicated verbs.
+
+Verified with the full edit integration suite and `cargo run --quiet -- check`."""
+
+[[content.acceptance_criteria]]
+text = "generic set rejects RFC lifecycle-owned fields like version, status, and phase"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "generic set rejects clause lifecycle-owned or edit-owned fields like text, status, superseded_by, and since"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "generic set rejects ADR/work status fields and tick-owned nested status fields"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

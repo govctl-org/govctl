@@ -1,0 +1,29 @@
+clause_id = "C-ADR-DEF"
+title = "ADR Definition"
+kind = "normative"
+status = "active"
+text = """
+An ADR (Architectural Decision Record) documents a significant design decision.
+
+Every ADR MUST be stored as a TOML file containing:
+- `[govctl]` section with: `schema`, `id`, `title`, `status`, `date`, `refs`
+- optional `[govctl]` field: `superseded_by`
+- `[content]` section with: `context`, `decision`, `consequences`
+
+For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
+
+Implementations MUST define a machine-readable JSON Schema for the ADR file structure and MUST validate ADR files against that schema during project validation.
+
+ADR status lifecycle:
+
+    proposed → accepted → superseded
+             → rejected
+
+**proposed**: Under consideration. Not yet binding.
+
+**accepted**: Ratified. Design SHOULD follow this decision.
+
+**rejected**: Declined after consideration. Reason documented in decision field.
+
+**superseded**: Replaced by a newer ADR. Listed in `superseded_by` field."""
+since = "1.0.0"

@@ -1,8 +1,0 @@
-{
-  "clause_id": "C-WORK-DEF",
-  "title": "Work Item Definition",
-  "kind": "normative",
-  "status": "active",
-  "text": "A Work Item tracks a unit of work from inception to completion.\n\nEvery Work Item MUST be stored as a TOML file containing:\n- `[govctl]` section with: `schema`, `id`, `title`, `status`, `created`, `refs`\n- optional `[govctl]` fields: `started`, `completed`\n- `[content]` section with: `description`, `acceptance_criteria`, `journal`, `notes`\n\nFor the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.\n\nImplementations MUST define a machine-readable JSON Schema for the Work Item file structure and MUST validate Work Item files against that schema during project validation.\n\nWork Item status lifecycle:\n\n    queue → active → done\n        ↘        ↘ cancelled\n\n**queue**: Planned but not started.\n\n**active**: Currently in progress. Only one active item recommended per focus area.\n\n**done**: Completed. All acceptance criteria met.\n\n**cancelled**: Abandoned from queue or active. Reason documented in notes.\n\nA Work Item MUST NOT transition to done if any acceptance_criteria are pending.",
-  "since": "1.0.0"
-}
