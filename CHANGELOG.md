@@ -13,11 +13,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - govctl check validates releases as first-class artifacts (WI-2026-03-16-001)
 - govctl migrate converts legacy JSON RFC and clause files to TOML and rewrites govctl-managed clause paths (WI-2026-03-16-002)
 - govctl migrate upgrades legacy releases.toml files to include schema metadata (WI-2026-03-16-002)
+- Guard artifacts define reusable executable verification checks (WI-2026-03-17-004)
+- gov/config.toml can enable guard enforcement and define default guard requirements (WI-2026-03-17-004)
+- Work items can require extra guards and record structured waivers instead of raw disable flags (WI-2026-03-17-004)
+- All generated TOML artifacts include #:schema comment headers with deterministic relative paths (WI-2026-03-17-005)
+- Migration handles legacy JSON and old-format TOML to header-based spec-aligned TOML (WI-2026-03-17-005)
 
 ### Changed
 
 - Fresh projects and packaged builds include required artifact schema files (WI-2026-03-16-001)
 - post-migration lifecycle and lookup paths no longer assume .json RFC/clause files (WI-2026-03-16-002)
+- RFC/clause TOML uses [govctl] metadata + [content] sections (spec alignment) (WI-2026-03-17-005)
+
+### Removed
+
+- Configurable gov_root from config; hardcode to gov/ (WI-2026-03-17-005)
 
 ### Fixed
 
@@ -29,6 +39,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - generic set rejects RFC lifecycle-owned fields like version, status, and phase (WI-2026-03-17-003)
 - generic set rejects clause lifecycle-owned or edit-owned fields like text, status, superseded_by, and since (WI-2026-03-17-003)
 - generic set rejects ADR/work status fields and tick-owned nested status fields (WI-2026-03-17-003)
+- work move done rejects unresolved required guards (WI-2026-03-17-004)
 
 ## [0.5.4] - 2026-03-14
 

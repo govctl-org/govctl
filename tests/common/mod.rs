@@ -39,6 +39,10 @@ pub fn normalize_output(output: &str, dir: &Path, date: &str) -> String {
         .replace_all(&normalized, "sha256:<HASH>")
         .to_string();
 
+    // Replace govctl version to avoid snapshot churn on version bumps
+    let version = env!("CARGO_PKG_VERSION");
+    normalized = normalized.replace(version, "<VERSION>");
+
     normalized
 }
 

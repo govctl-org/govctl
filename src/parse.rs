@@ -6,7 +6,7 @@ use crate::model::ReleasesMeta;
 use crate::model::{
     AdrEntry, AdrSpec, GuardEntry, GuardSpec, ReleasesFile, WorkItemEntry, WorkItemSpec,
 };
-use crate::schema::{ArtifactSchema, validate_toml_value};
+use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
 use crate::ui;
 use crate::write::WriteOp;
 use std::path::Path;
@@ -100,17 +100,18 @@ pub fn write_adr(
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    let content = toml::to_string_pretty(spec).map_err(|e| {
+    let body = toml::to_string_pretty(spec).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
             format!("Failed to serialize TOML: {e}"),
             path.display().to_string(),
         )
     })?;
+    let content = with_schema_header(ArtifactSchema::Adr, &body);
 
     match op {
         WriteOp::Execute => {
-            std::fs::write(path, content).map_err(|e| {
+            std::fs::write(path, &content).map_err(|e| {
                 Diagnostic::new(
                     DiagnosticCode::E0901IoError,
                     e.to_string(),
@@ -282,17 +283,18 @@ pub fn write_work_item(
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    let content = toml::to_string_pretty(spec).map_err(|e| {
+    let body = toml::to_string_pretty(spec).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
             format!("Failed to serialize TOML: {e}"),
             path.display().to_string(),
         )
     })?;
+    let content = with_schema_header(ArtifactSchema::WorkItem, &body);
 
     match op {
         WriteOp::Execute => {
-            std::fs::write(path, content).map_err(|e| {
+            std::fs::write(path, &content).map_err(|e| {
                 Diagnostic::new(
                     DiagnosticCode::E0901IoError,
                     e.to_string(),
@@ -390,17 +392,18 @@ pub fn write_releases(
 ) -> Result<(), Diagnostic> {
     let path = config.releases_path();
     let path_display = config.display_path(&path);
-    let content = toml::to_string_pretty(releases).map_err(|e| {
+    let body = toml::to_string_pretty(releases).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
             format!("Failed to serialize releases: {e}"),
             path_display.display().to_string(),
         )
     })?;
+    let content = with_schema_header(ArtifactSchema::Release, &body);
 
     match op {
         WriteOp::Execute => {
-            std::fs::write(&path, content).map_err(|e| {
+            std::fs::write(&path, &content).map_err(|e| {
                 Diagnostic::new(
                     DiagnosticCode::E0901IoError,
                     e.to_string(),

@@ -113,7 +113,6 @@ fn test_lock_timeout_configurable() {
 name = "test-project"
 
 [paths]
-gov_root = "gov"
 docs_output = "docs"
 
 [concurrency]
@@ -183,7 +182,6 @@ fn create_config_with_timeout(temp_dir: &std::path::Path, timeout_secs: u64) {
 name = "test-project"
 
 [paths]
-gov_root = "gov"
 docs_output = "docs"
 
 [concurrency]

@@ -2,8 +2,8 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{ClauseSpec, ReleasesFile, RfcSpec};
-use crate::schema::{ArtifactSchema, validate_toml_value};
+use crate::model::{ClauseSpec, ClauseWire, ReleasesFile, RfcSpec, RfcWire};
+use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
 use crate::ui;
 use crate::write::{WriteOp, delete_file, read_clause, read_rfc};
 use std::collections::BTreeMap;
@@ -223,8 +223,10 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
         }
     }
 
-    let rfc_content = toml::to_string_pretty(&rfc)?;
-    let rfc_raw: toml::Value = toml::from_str(&rfc_content)?;
+    let rfc_id = rfc.rfc_id.clone();
+    let rfc_wire: RfcWire = rfc.into();
+    let rfc_body = toml::to_string_pretty(&rfc_wire)?;
+    let rfc_raw: toml::Value = toml::from_str(&rfc_body)?;
     validate_toml_value(
         ArtifactSchema::Rfc,
         config,
@@ -235,13 +237,14 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
     let mut files = vec![PlannedFile {
         relative_path: PathBuf::from("rfc.toml"),
         target_path: rfc_dir.join("rfc.toml"),
-        content: rfc_content,
+        content: with_schema_header(ArtifactSchema::Rfc, &rfc_body),
     }];
 
     for (file_name, clause) in clause_map {
         let toml_name = file_name.trim_end_matches(".json").to_string() + ".toml";
-        let content = toml::to_string_pretty(&clause)?;
-        let raw: toml::Value = toml::from_str(&content)?;
+        let clause_wire: ClauseWire = clause.into();
+        let body = toml::to_string_pretty(&clause_wire)?;
+        let raw: toml::Value = toml::from_str(&body)?;
         validate_toml_value(
             ArtifactSchema::Clause,
             config,
@@ -251,11 +254,9 @@ fn build_rfc_plan(config: &Config, rfc_dir: &Path) -> anyhow::Result<Option<RfcM
         files.push(PlannedFile {
             relative_path: PathBuf::from("clauses").join(&toml_name),
             target_path: clauses_dir.join(&toml_name),
-            content,
+            content: with_schema_header(ArtifactSchema::Clause, &body),
         });
     }
-
-    let rfc_id = rfc.rfc_id.clone();
 
     Ok(Some(RfcMigrationPlan {
         rfc_id,
@@ -293,7 +294,8 @@ fn build_release_upgrade(config: &Config) -> anyhow::Result<Option<String>> {
             config.display_path(&releases_path).display().to_string(),
         )
     })?;
-    Ok(Some(toml::to_string_pretty(&releases)?))
+    let body = toml::to_string_pretty(&releases)?;
+    Ok(Some(with_schema_header(ArtifactSchema::Release, &body)))
 }
 
 fn needs_release_upgrade(raw: &toml::Value) -> bool {
@@ -342,7 +344,7 @@ fn preview_plan(config: &Config, plan: &MigrationPlan) -> anyhow::Result<()> {
 }
 
 fn execute_plan(config: &Config, plan: &MigrationPlan) -> anyhow::Result<()> {
-    let gov_root = &config.paths.gov_root;
+    let gov_root = &config.gov_root;
     let stage_root = gov_root.join(".migrate-stage");
     let backup_root = gov_root.join(".migrate-backup");
 

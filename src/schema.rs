@@ -66,6 +66,24 @@ impl ArtifactSchema {
             Self::Guard => "verification guard",
         }
     }
+
+    /// Deterministic relative path from an artifact's canonical location to its JSON Schema.
+    /// Paths are fixed because the directory layout under `gov/` is not configurable.
+    pub fn relative_schema_path(self) -> &'static str {
+        match self {
+            Self::Rfc => "../../schema/rfc.schema.json",
+            Self::Clause => "../../../schema/clause.schema.json",
+            Self::Adr => "../schema/adr.schema.json",
+            Self::WorkItem => "../schema/work.schema.json",
+            Self::Release => "schema/release.schema.json",
+            Self::Guard => "../schema/guard.schema.json",
+        }
+    }
+}
+
+/// Prepend a `#:schema` comment header to TOML content for IDE schema association.
+pub fn with_schema_header(kind: ArtifactSchema, body: &str) -> String {
+    format!("#:schema {}\n\n{}", kind.relative_schema_path(), body)
 }
 
 pub const ARTIFACT_SCHEMA_TEMPLATES: &[SchemaTemplate] = &[

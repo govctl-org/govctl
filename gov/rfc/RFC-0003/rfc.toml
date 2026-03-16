@@ -1,11 +1,15 @@
-rfc_id = "RFC-0003"
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0003"
 title = "TUI UX improvements"
 version = "0.1.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-02-07"
-updated = "2026-02-07"
+updated = "2026-03-17"
 
 [[sections]]
 title = "Summary"

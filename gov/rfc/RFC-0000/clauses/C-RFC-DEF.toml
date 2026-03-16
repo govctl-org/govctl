@@ -1,7 +1,14 @@
-clause_id = "C-RFC-DEF"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-RFC-DEF"
 title = "RFC Definition"
 kind = "normative"
 status = "active"
+since = "1.0.0"
+
+[content]
 text = """
 An RFC (Request for Comments) is a normative document that defines intent, constraints, or decisions governing implementation.
 
@@ -21,4 +28,3 @@ Repositories that have not yet completed the RFC/clause migration MAY retain leg
 
 **Rationale:**
 This removes the last storage-format split from RFC handling without forcing a silent in-place break for repositories that still need an explicit migration step."""
-since = "1.0.0"

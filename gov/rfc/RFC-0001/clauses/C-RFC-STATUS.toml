@@ -1,7 +1,14 @@
-clause_id = "C-RFC-STATUS"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-RFC-STATUS"
 title = "RFC Status Transitions"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 An RFC MUST have exactly one of the following status values:
 
@@ -18,4 +25,3 @@ Invalid transitions (MUST be rejected):
 - deprecated → normative (no resurrection)
 - deprecated → draft (no resurrection)
 - Any skip (e.g., draft → deprecated directly)"""
-since = "0.1.0"

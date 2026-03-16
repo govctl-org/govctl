@@ -1,10 +1,16 @@
-clause_id = "C-NAV"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-NAV"
 title = "Shared header/footer navigation"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 - The TUI MUST render a persistent header and footer across all views.
 - The header MUST show the current view hierarchy (breadcrumb) and basic counts for the active view.
 - The footer MUST provide the current keymap for primary navigation, including quit and back.
 - Existing navigation keys MUST remain functional."""
-since = "0.1.0"

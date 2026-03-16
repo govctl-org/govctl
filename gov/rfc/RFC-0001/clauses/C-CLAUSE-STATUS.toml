@@ -1,7 +1,14 @@
-clause_id = "C-CLAUSE-STATUS"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-CLAUSE-STATUS"
 title = "Clause Status Transitions"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 A Clause MUST have exactly one of the following status values:
 
@@ -21,4 +28,3 @@ Invalid transitions (MUST be rejected):
 When a clause is superseded:
 - The `superseded_by` field MUST be set to the ID of the replacing clause
 - The replacing clause SHOULD have a `since` field indicating the version it was introduced"""
-since = "0.1.0"

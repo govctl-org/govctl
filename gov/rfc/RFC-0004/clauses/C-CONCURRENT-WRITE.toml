@@ -1,7 +1,14 @@
-clause_id = "C-CONCURRENT-WRITE"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-CONCURRENT-WRITE"
 title = "Concurrent write safety"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 Commands that modify the governance tree or rendered output MUST use a concurrency mechanism such that:
 
@@ -12,4 +19,3 @@ Commands that modify the governance tree or rendered output MUST use a concurren
 This RFC requires the observable behaviour: artifact integrity and no duplicate IDs under concurrent write load. The concrete mechanism (e.g. process-level filesystem locking) is an implementation detail.
 
 **Rationale:** Agents and CI may run multiple govctl write commands in parallel. Without a defined concurrency strategy, races are observable in practice (file corruption, duplicate WI IDs). The normative requirement ensures implementors address this."""
-since = "0.1.0"

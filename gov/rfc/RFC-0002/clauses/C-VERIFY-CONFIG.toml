@@ -1,7 +1,14 @@
-clause_id = "C-VERIFY-CONFIG"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-VERIFY-CONFIG"
 title = "Verification Configuration"
 kind = "normative"
 status = "active"
+since = "0.3.0"
+
+[content]
 text = """
 The project config file `gov/config.toml` MAY include an optional `[verification]` section.
 
@@ -18,4 +25,3 @@ When `enabled = false`, project-level default guards MUST NOT be applied automat
 Work Item `verification.required_guards` remain effective regardless of the project-level `enabled` value.
 
 **Rationale:** The project config controls whether shared default guard policy is active. Explicit Work Item requirements remain local and auditable instead of becoming inert metadata."""
-since = "0.3.0"

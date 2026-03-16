@@ -5,6 +5,8 @@ expression: "normalize_output(&output, temp_dir.path(), &date)"
 $ govctl work new New Work --dry-run
 Would create dir: gov/work
 Would write: gov/work/<DATE>-new-work.toml
+  #:schema ../schema/work.schema.json
+  
   [govctl]
   schema = 1
   id = "WI-<DATE>-001"

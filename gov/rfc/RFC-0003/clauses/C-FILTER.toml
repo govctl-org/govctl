@@ -1,10 +1,16 @@
-clause_id = "C-FILTER"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-FILTER"
 title = "List filtering and quick-jump"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 - List views MUST support an inline filter mode that matches ID, title, or status.
 - Filter mode MUST be entered with a single key and exited without leaving the list view.
 - When a filter is active, the list MUST show only matching items and navigation MUST operate over the filtered set.
 - List views MUST support quick-jump to top and bottom and allow stepping through matches."""
-since = "0.1.0"

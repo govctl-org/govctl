@@ -1,7 +1,14 @@
-clause_id = "C-STATUS-LIFECYCLE"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-STATUS-LIFECYCLE"
 title = "RFC Status Lifecycle"
 kind = "normative"
 status = "active"
+since = "1.0.0"
+
+[content]
 text = """
 RFC status follows this lifecycle:
 
@@ -17,4 +24,3 @@ Transition rules:
 - draft → normative: Requires explicit finalization
 - normative → deprecated: Requires a superseding RFC or explicit deprecation
 - Reverse transitions are FORBIDDEN"""
-since = "1.0.0"

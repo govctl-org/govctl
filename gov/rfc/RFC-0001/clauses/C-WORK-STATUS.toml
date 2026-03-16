@@ -1,7 +1,14 @@
-clause_id = "C-WORK-STATUS"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-WORK-STATUS"
 title = "Work Item Status Transitions"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 A Work Item MUST have exactly one of the following status values:
 
@@ -26,4 +33,3 @@ Timestamp behavior:
 - queue → active: Sets `started` date if not already set
 - active → done: Sets `completed` date
 - active → cancelled: Sets `completed` date"""
-since = "0.1.0"

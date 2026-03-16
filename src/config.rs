@@ -7,8 +7,11 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 
 /// Project configuration (gov/config.toml)
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
+    /// Absolute path to `gov/` — not configurable, derived from config file location.
+    #[serde(skip)]
+    pub gov_root: PathBuf,
     #[serde(default)]
     pub project: ProjectConfig,
     #[serde(default)]
@@ -23,6 +26,21 @@ pub struct Config {
     pub verification: VerificationConfig,
     #[serde(default)]
     pub concurrency: ConcurrencyConfig,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            gov_root: PathBuf::from("gov"),
+            project: ProjectConfig::default(),
+            paths: PathsConfig::default(),
+            schema: SchemaConfig::default(),
+            source_scan: SourceScanConfig::default(),
+            work_item: WorkItemConfig::default(),
+            verification: VerificationConfig::default(),
+            concurrency: ConcurrencyConfig::default(),
+        }
+    }
 }
 
 /// Project-level verification guard policy.
@@ -88,9 +106,6 @@ fn default_owner() -> String {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PathsConfig {
-    /// Root directory for governance SSOT (gov/)
-    #[serde(default = "default_gov_root")]
-    pub gov_root: PathBuf,
     /// Output directory for rendered docs (docs/)
     #[serde(default = "default_docs_output")]
     pub docs_output: PathBuf,
@@ -98,10 +113,6 @@ pub struct PathsConfig {
     /// Contains commands/, skills/, agents/ subdirs
     #[serde(default = "default_agent_dir")]
     pub agent_dir: PathBuf,
-}
-
-fn default_gov_root() -> PathBuf {
-    PathBuf::from("gov")
 }
 
 fn default_docs_output() -> PathBuf {
@@ -115,57 +126,9 @@ fn default_agent_dir() -> PathBuf {
 impl Default for PathsConfig {
     fn default() -> Self {
         Self {
-            gov_root: default_gov_root(),
             docs_output: default_docs_output(),
             agent_dir: default_agent_dir(),
         }
-    }
-}
-
-impl PathsConfig {
-    /// RFC SSOT directory (gov/rfc/)
-    pub fn rfc_dir(&self) -> PathBuf {
-        self.gov_root.join("rfc")
-    }
-
-    /// ADR SSOT directory (gov/adr/)
-    pub fn adr_dir(&self) -> PathBuf {
-        self.gov_root.join("adr")
-    }
-
-    /// Work item SSOT directory (gov/work/)
-    pub fn work_dir(&self) -> PathBuf {
-        self.gov_root.join("work")
-    }
-
-    /// Schema directory (gov/schema/)
-    pub fn schema_dir(&self) -> PathBuf {
-        self.gov_root.join("schema")
-    }
-
-    /// Templates directory (gov/templates/)
-    pub fn templates_dir(&self) -> PathBuf {
-        self.gov_root.join("templates")
-    }
-
-    /// Verification guard directory (gov/guard/)
-    pub fn guard_dir(&self) -> PathBuf {
-        self.gov_root.join("guard")
-    }
-
-    /// RFC rendered output (docs/rfc/)
-    pub fn rfc_output(&self) -> PathBuf {
-        self.docs_output.join("rfc")
-    }
-
-    /// ADR rendered output (docs/adr/)
-    pub fn adr_output(&self) -> PathBuf {
-        self.docs_output.join("adr")
-    }
-
-    /// Work item rendered output (docs/work/)
-    pub fn work_output(&self) -> PathBuf {
-        self.docs_output.join("work")
     }
 }
 
@@ -319,12 +282,9 @@ impl Config {
             let mut config: Config = toml::from_str(&content)
                 .with_context(|| format!("Failed to parse config: {}", config_path.display()))?;
 
-            // Resolve relative paths to absolute based on project root
-            // Project root is the parent of the gov/ directory
+            // Resolve paths to absolute. gov_root is always <project_root>/gov.
             if let Some(project_root) = config_path.parent().and_then(|p| p.parent()) {
-                if config.paths.gov_root.is_relative() {
-                    config.paths.gov_root = project_root.join(&config.paths.gov_root);
-                }
+                config.gov_root = project_root.join("gov");
                 if config.paths.docs_output.is_relative() {
                     config.paths.docs_output = project_root.join(&config.paths.docs_output);
                 }
@@ -354,52 +314,49 @@ impl Config {
         }
     }
 
-    // Convenience accessors that delegate to paths
     pub fn rfc_dir(&self) -> PathBuf {
-        self.paths.rfc_dir()
+        self.gov_root.join("rfc")
     }
 
     pub fn adr_dir(&self) -> PathBuf {
-        self.paths.adr_dir()
+        self.gov_root.join("adr")
     }
 
     pub fn work_dir(&self) -> PathBuf {
-        self.paths.work_dir()
+        self.gov_root.join("work")
     }
 
     pub fn schema_dir(&self) -> PathBuf {
-        self.paths.schema_dir()
+        self.gov_root.join("schema")
     }
 
     pub fn guard_dir(&self) -> PathBuf {
-        self.paths.guard_dir()
+        self.gov_root.join("guard")
     }
 
     pub fn templates_dir(&self) -> PathBuf {
-        self.paths.templates_dir()
+        self.gov_root.join("templates")
     }
 
     pub fn rfc_output(&self) -> PathBuf {
-        self.paths.rfc_output()
+        self.paths.docs_output.join("rfc")
     }
 
     pub fn adr_output(&self) -> PathBuf {
-        self.paths.adr_output()
+        self.paths.docs_output.join("adr")
     }
 
     pub fn work_output(&self) -> PathBuf {
-        self.paths.work_output()
+        self.paths.docs_output.join("work")
     }
 
-    /// Releases file path (gov/releases.toml)
     pub fn releases_path(&self) -> PathBuf {
-        self.paths.gov_root.join("releases.toml")
+        self.gov_root.join("releases.toml")
     }
 
     /// Path for user-facing display: relative to project root when under it.
     pub fn display_path(&self, path: &std::path::Path) -> std::path::PathBuf {
-        self.paths
-            .gov_root
+        self.gov_root
             .parent()
             .and_then(|root| path.strip_prefix(root).ok())
             .map(std::path::PathBuf::from)
@@ -414,7 +371,6 @@ name = "my-project"
 # default_owner = "@your-handle"
 
 [paths]
-gov_root = "gov"
 docs_output = "docs"
 # AI agent directory (contains commands/, skills/, agents/ subdirs)
 # Default: ".claude" (Claude Desktop)

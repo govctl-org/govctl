@@ -1,0 +1,69 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+schema = 1
+id = "WI-2026-03-17-005"
+title = "Add TOML schema headers to generated artifacts"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+refs = ["ADR-0034"]
+
+[content]
+description = "Switch all governance TOML artifacts to IDE-discoverable #:schema comment headers, remove configurable gov_root, and align RFC/clause TOML to the spec-defined metadata layout. Migration limited to legacy JSON inputs."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "schema-headers"
+content = "Implemented #:schema header writer: added ArtifactSchema::relative_schema_path() and with_schema_header() to src/schema.rs. Updated all 6 write paths (write_rfc, write_clause, write_adr, write_work_item, write_releases, migrate). Updated 3 snapshot files. All 304 tests pass, govctl check passes."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "config"
+content = "Removed configurable gov_root: field moved from PathsConfig to Config with #[serde(skip)], always resolved to <project_root>/gov. Removed test_init_custom_gov_root. Updated gov/config.toml and all test configs. All tests pass."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "wire-structs"
+content = "Implemented RFC/clause wire structs (RfcWire, ClauseWire, RfcMeta, ClauseMeta, ClauseContent) with From conversions. Updated JSON schemas to [govctl] layout. Added normalize_rfc_value/normalize_clause_value for backward-compat reading of flat TOML/JSON. Updated all write paths (write_rfc, write_clause, create_clause, migrate). All 304 tests pass, govctl check passes, render passes."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "finalize"
+content = "Rewrote all 5 RFCs and 34 clauses from flat TOML to [govctl] wire format with #:schema headers. Re-rendered all RFC docs, recomputed signatures. All 304 tests pass, govctl check passes."
+
+[[content.acceptance_criteria]]
+text = "All generated TOML artifacts include #:schema comment headers with deterministic relative paths"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "RFC/clause TOML uses [govctl] metadata + [content] sections (spec alignment)"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Configurable gov_root from config; hardcode to gov/"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "govctl.schema field removed from artifact schemas; header-based association only"
+status = "cancelled"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Migration handles legacy JSON and old-format TOML to header-based spec-aligned TOML"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"

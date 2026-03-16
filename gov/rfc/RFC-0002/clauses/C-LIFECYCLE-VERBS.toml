@@ -1,7 +1,14 @@
-clause_id = "C-LIFECYCLE-VERBS"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-LIFECYCLE-VERBS"
 title = "Resource-Specific Lifecycle Verbs"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 Resource-specific lifecycle verbs implement state transitions defined in [[RFC-0001]]. These verbs MUST be scoped to their resource namespace.
 
@@ -69,4 +76,3 @@ Lifecycle verbs are resource-specific because:
 - Each resource has different valid transitions
 
 Scoping these verbs to resources makes their applicability explicit and prevents confusion."""
-since = "0.1.0"

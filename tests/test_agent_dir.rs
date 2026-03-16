@@ -40,7 +40,6 @@ fn test_custom_agent_dir() {
 name = "test-project"
 
 [paths]
-gov_root = "gov"
 docs_output = "docs"
 agent_dir = ".custom-agent"
 "#;

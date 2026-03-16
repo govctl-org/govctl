@@ -1,7 +1,14 @@
-clause_id = "C-REFERENCE-HIERARCHY"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-REFERENCE-HIERARCHY"
 title = "Artifact Reference Hierarchy"
 kind = "normative"
 status = "active"
+since = "1.0.1"
+
+[content]
 text = """
 Governance artifacts follow a strict authority hierarchy. References between artifact types MUST respect this hierarchy.
 
@@ -23,4 +30,3 @@ Work Items MAY reference any artifact type. Work Items typically reference the R
 This hierarchy prevents circular dependencies and maintains clear authority chains. An RFC that references an ADR inverts the hierarchy — the ADR becomes the authority, which defeats the purpose of having RFCs as constitutional law.
 
 Changelog entries and informative notes MAY mention ADRs for historical context, but normative clause text MUST remain self-contained."""
-since = "1.0.1"

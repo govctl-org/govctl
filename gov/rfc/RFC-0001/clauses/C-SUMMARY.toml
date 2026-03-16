@@ -1,6 +1,12 @@
-clause_id = "C-SUMMARY"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-SUMMARY"
 title = "Summary"
 kind = "informative"
 status = "active"
-text = "This RFC defines state machines governing RFC, ADR, Work Item, and Clause lifecycles, including the additional transition gates that control when work may be treated as complete."
 since = "0.1.0"
+
+[content]
+text = "This RFC defines state machines governing RFC, ADR, Work Item, and Clause lifecycles, including the additional transition gates that control when work may be treated as complete."

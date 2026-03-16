@@ -1,7 +1,14 @@
-clause_id = "C-OUTPUT-FORMAT"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-OUTPUT-FORMAT"
 title = "Output Format Control"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 All commands that output resource data MUST support the `--output` (or `-o`) flag with the following format options:
 
@@ -70,4 +77,3 @@ Universal output format control enables:
 - Native format inspection (toml for governance artifacts)
 
 This pattern follows kubectl and Docker conventions where `-o json` works on all read operations."""
-since = "0.1.0"

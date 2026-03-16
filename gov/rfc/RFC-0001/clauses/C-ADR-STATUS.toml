@@ -1,7 +1,14 @@
-clause_id = "C-ADR-STATUS"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-ADR-STATUS"
 title = "ADR Status Transitions"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 An ADR MUST have exactly one of the following status values:
 
@@ -29,4 +36,3 @@ When an ADR is superseded:
 When an ADR is rejected:
 - The ADR MUST remain available as historical record
 - The `superseded_by` field MUST NOT be set"""
-since = "0.1.0"

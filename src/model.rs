@@ -12,10 +12,10 @@ use serde::{Deserialize, Serialize};
 use strum::AsRefStr;
 
 // =============================================================================
-// RFC Models (JSON SSOT)
+// RFC Models — runtime domain structs
 // =============================================================================
 
-/// RFC specification (rfc.json)
+/// RFC specification — runtime domain model used throughout the codebase.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RfcSpec {
     pub rfc_id: String,
@@ -63,6 +63,147 @@ pub struct ClauseSpec {
     pub superseded_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub since: Option<String>,
+}
+
+// =============================================================================
+// RFC / Clause TOML wire structs — serialization boundary
+// =============================================================================
+
+/// RFC TOML wire format: `[govctl]` metadata + top-level `[[sections]]` / `[[changelog]]`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RfcWire {
+    pub govctl: RfcMeta,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub sections: Vec<SectionSpec>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub changelog: Vec<ChangelogEntry>,
+}
+
+/// RFC metadata section `[govctl]`
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RfcMeta {
+    pub schema: u32,
+    pub id: String,
+    pub title: String,
+    pub version: String,
+    pub status: RfcStatus,
+    pub phase: RfcPhase,
+    pub owners: Vec<String>,
+    pub created: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supersedes: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub refs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub signature: Option<String>,
+}
+
+impl From<RfcSpec> for RfcWire {
+    fn from(s: RfcSpec) -> Self {
+        Self {
+            govctl: RfcMeta {
+                schema: 1,
+                id: s.rfc_id,
+                title: s.title,
+                version: s.version,
+                status: s.status,
+                phase: s.phase,
+                owners: s.owners,
+                created: s.created,
+                updated: s.updated,
+                supersedes: s.supersedes,
+                refs: s.refs,
+                signature: s.signature,
+            },
+            sections: s.sections,
+            changelog: s.changelog,
+        }
+    }
+}
+
+impl From<RfcWire> for RfcSpec {
+    fn from(w: RfcWire) -> Self {
+        Self {
+            rfc_id: w.govctl.id,
+            title: w.govctl.title,
+            version: w.govctl.version,
+            status: w.govctl.status,
+            phase: w.govctl.phase,
+            owners: w.govctl.owners,
+            created: w.govctl.created,
+            updated: w.govctl.updated,
+            supersedes: w.govctl.supersedes,
+            refs: w.govctl.refs,
+            sections: w.sections,
+            changelog: w.changelog,
+            signature: w.govctl.signature,
+        }
+    }
+}
+
+/// Clause TOML wire format: `[govctl]` metadata + `[content]`.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClauseWire {
+    pub govctl: ClauseMeta,
+    pub content: ClauseContent,
+}
+
+/// Clause metadata section `[govctl]`
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClauseMeta {
+    pub schema: u32,
+    pub id: String,
+    pub title: String,
+    pub kind: ClauseKind,
+    #[serde(default)]
+    pub status: ClauseStatus,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub anchors: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub superseded_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub since: Option<String>,
+}
+
+/// Clause content section `[content]`
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClauseContent {
+    pub text: String,
+}
+
+impl From<ClauseSpec> for ClauseWire {
+    fn from(s: ClauseSpec) -> Self {
+        Self {
+            govctl: ClauseMeta {
+                schema: 1,
+                id: s.clause_id,
+                title: s.title,
+                kind: s.kind,
+                status: s.status,
+                anchors: s.anchors,
+                superseded_by: s.superseded_by,
+                since: s.since,
+            },
+            content: ClauseContent { text: s.text },
+        }
+    }
+}
+
+impl From<ClauseWire> for ClauseSpec {
+    fn from(w: ClauseWire) -> Self {
+        Self {
+            clause_id: w.govctl.id,
+            title: w.govctl.title,
+            kind: w.govctl.kind,
+            status: w.govctl.status,
+            text: w.content.text,
+            anchors: w.govctl.anchors,
+            superseded_by: w.govctl.superseded_by,
+            since: w.govctl.since,
+        }
+    }
 }
 
 /// Changelog entry for RFC versioning (Keep a Changelog format)

@@ -1,7 +1,14 @@
-clause_id = "C-ADR-DEF"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-ADR-DEF"
 title = "ADR Definition"
 kind = "normative"
 status = "active"
+since = "1.0.0"
+
+[content]
 text = """
 An ADR (Architectural Decision Record) documents a significant design decision.
 
@@ -26,4 +33,3 @@ ADR status lifecycle:
 **rejected**: Declined after consideration. Reason documented in decision field.
 
 **superseded**: Replaced by a newer ADR. Listed in `superseded_by` field."""
-since = "1.0.0"

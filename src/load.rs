@@ -2,7 +2,7 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{ClauseEntry, ClauseSpec, ProjectIndex, RfcIndex, RfcSpec};
+use crate::model::{ClauseEntry, ClauseWire, ProjectIndex, RfcIndex, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value};
 use std::path::{Path, PathBuf};
 
@@ -84,37 +84,41 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
 
     let rfc: RfcSpec = match rfc_path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
-            let raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
+            let mut raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
                 file: rfc_path.display().to_string(),
                 message: e.to_string(),
             })?;
+            crate::write::normalize_rfc_value(&mut raw);
             validate_toml_value(ArtifactSchema::Rfc, config, rfc_path, &raw).map_err(|e| {
                 LoadError::RfcSchema {
                     file: rfc_path.display().to_string(),
                     message: e.message,
                 }
             })?;
-            raw.try_into().map_err(|e| LoadError::Json {
+            let wire: RfcWire = raw.try_into().map_err(|e| LoadError::Json {
                 file: rfc_path.display().to_string(),
                 message: e.to_string(),
-            })?
+            })?;
+            wire.into()
         }
         _ => {
-            let raw: serde_json::Value =
+            let mut raw: serde_json::Value =
                 serde_json::from_str(&content).map_err(|e| LoadError::Json {
                     file: rfc_path.display().to_string(),
                     message: e.to_string(),
                 })?;
+            crate::write::normalize_rfc_json(&mut raw);
             validate_json_value(ArtifactSchema::Rfc, config, rfc_path, &raw).map_err(|e| {
                 LoadError::RfcSchema {
                     file: rfc_path.display().to_string(),
                     message: e.message,
                 }
             })?;
-            serde_json::from_value(raw).map_err(|e| LoadError::Json {
+            let wire: RfcWire = serde_json::from_value(raw).map_err(|e| LoadError::Json {
                 file: rfc_path.display().to_string(),
                 message: e.to_string(),
-            })?
+            })?;
+            wire.into()
         }
     };
 
@@ -157,39 +161,44 @@ pub fn load_clause(config: &Config, path: &Path) -> Result<ClauseEntry, LoadErro
         message: e.to_string(),
     })?;
 
-    let spec: ClauseSpec = match path.extension().and_then(|ext| ext.to_str()) {
+    let spec = match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
-            let raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
+            let mut raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
                 file: path.display().to_string(),
                 message: e.to_string(),
             })?;
+            crate::write::normalize_clause_value(&mut raw);
             validate_toml_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
                 LoadError::ClauseSchema {
                     file: path.display().to_string(),
                     message: e.message,
                 }
             })?;
-            raw.try_into().map_err(|e| LoadError::Json {
+            let wire: ClauseWire = raw.try_into().map_err(|e| LoadError::Json {
                 file: path.display().to_string(),
                 message: e.to_string(),
-            })?
+            })?;
+            let spec: crate::model::ClauseSpec = wire.into();
+            spec
         }
         _ => {
-            let raw: serde_json::Value =
+            let mut raw: serde_json::Value =
                 serde_json::from_str(&content).map_err(|e| LoadError::Json {
                     file: path.display().to_string(),
                     message: e.to_string(),
                 })?;
+            crate::write::normalize_clause_json(&mut raw);
             validate_json_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
                 LoadError::ClauseSchema {
                     file: path.display().to_string(),
                     message: e.message,
                 }
             })?;
-            serde_json::from_value(raw).map_err(|e| LoadError::Json {
+            let wire: ClauseWire = serde_json::from_value(raw).map_err(|e| LoadError::Json {
                 file: path.display().to_string(),
                 message: e.to_string(),
-            })?
+            })?;
+            wire.into()
         }
     };
 

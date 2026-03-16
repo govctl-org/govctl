@@ -47,6 +47,8 @@ exit: 0
 
 $ govctl release 0.2.0 --dry-run
 Would write: gov/releases.toml
+  #:schema schema/release.schema.json
+  
   [govctl]
   schema = 1
   

@@ -1,7 +1,14 @@
-clause_id = "C-GLOBAL-COMMANDS"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-GLOBAL-COMMANDS"
 title = "Global Commands"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 The following commands operate across all resources and MUST remain at the global namespace level:
 
@@ -148,4 +155,3 @@ New global commands MAY be added via RFC amendment. They MUST meet at least one 
 1. Operate on multiple resource types
 2. Perform project-level initialization or cleanup
 3. Provide meta-information about the CLI itself"""
-since = "0.1.0"

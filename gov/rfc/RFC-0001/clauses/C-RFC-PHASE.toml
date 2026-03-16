@@ -1,7 +1,14 @@
-clause_id = "C-RFC-PHASE"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-RFC-PHASE"
 title = "RFC Phase Transitions"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 An RFC MUST have exactly one of the following phase values:
 
@@ -21,4 +28,3 @@ Invalid transitions (MUST be rejected):
 - stable → any (stable is terminal for phase)
 
 Rationale: Phase discipline ensures specification precedes implementation, and testing validates implementation before stabilization."""
-since = "0.1.0"

@@ -1,11 +1,15 @@
-rfc_id = "RFC-0004"
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0004"
 title = "Concurrent write safety for governance artifacts"
 version = "0.1.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-02-15"
-updated = "2026-02-22"
+updated = "2026-03-17"
 
 [[sections]]
 title = "Summary"

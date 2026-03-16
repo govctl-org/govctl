@@ -1,0 +1,14 @@
+---
+source: tests/test_errors.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl check
+Checked:
+  1 RFCs
+  1 clauses
+  0 ADRs
+  0 work items
+  0 verification guards
+
+warning[W0101]: RFC has no changelog entries (hint: run `govctl rfc bump`) (gov/rfc/RFC-0001/rfc.toml)
+exit: 0

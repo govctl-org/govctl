@@ -1,7 +1,14 @@
-clause_id = "C-SUMMARY"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-SUMMARY"
 title = "Framework Summary"
 kind = "informative"
 status = "active"
+since = "1.0.0"
+
+[content]
 text = """
 govctl is a governance CLI that manages six artifact types:
 
@@ -13,4 +20,3 @@ govctl is a governance CLI that manages six artifact types:
 - **Verification Guards**: Reusable executable checks that turn completion requirements into auditable pass/fail gates
 
 All artifacts follow explicit lifecycle states, phase gates, or immutability rules to ensure disciplined development."""
-since = "1.0.0"

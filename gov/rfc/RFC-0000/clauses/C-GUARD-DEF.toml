@@ -1,7 +1,14 @@
-clause_id = "C-GUARD-DEF"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-GUARD-DEF"
 title = "Verification Guard Definition"
 kind = "normative"
 status = "active"
+since = "1.1.0"
+
+[content]
 text = """
 A Verification Guard defines a reusable executable completion check for a govctl project.
 
@@ -28,4 +35,3 @@ A guard check MUST evaluate `pattern`, when present, against the combined standa
 A guard check MUST pass only when the command exits successfully. If `pattern` is provided, the combined output MUST also match that pattern.
 
 **Rationale:** Verification Guards make completion rules explicit, reusable, and machine-executable so agents cannot satisfy them with checklist text alone."""
-since = "1.1.0"

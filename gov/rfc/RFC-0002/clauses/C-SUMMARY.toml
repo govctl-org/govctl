@@ -1,7 +1,14 @@
-clause_id = "C-SUMMARY"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-SUMMARY"
 title = "Summary"
 kind = "informative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 This RFC defines the resource-first command architecture for the govctl CLI. It establishes normative requirements for command structure, resource types, verb semantics, and project-level verification commands to ensure consistency and discoverability.
 
@@ -14,4 +21,3 @@ The design follows established patterns from Docker, kubectl, and other modern C
 2. Agent/script automation via consistent patterns
 3. Scoped help and command discovery
 4. Future extensibility without namespace pollution"""
-since = "0.1.0"

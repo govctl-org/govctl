@@ -1,7 +1,14 @@
-clause_id = "C-PHASE-LIFECYCLE"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-PHASE-LIFECYCLE"
 title = "RFC Phase Lifecycle"
 kind = "normative"
 status = "active"
+since = "1.0.0"
+
+[content]
 text = """
 RFC phase follows this lifecycle:
 
@@ -20,4 +27,3 @@ Phase rules:
 - Each phase transition requires the previous phase gate to pass
 - draft + stable is FORBIDDEN (cannot stabilize unratified work)
 - deprecated + impl/test is FORBIDDEN (no new work on deprecated specs)"""
-since = "1.0.0"

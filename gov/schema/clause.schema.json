@@ -1,50 +1,60 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Clause Specification",
-  "description": "JSON Schema for clause definition files",
+  "description": "JSON Schema for clause TOML artifacts with [govctl] metadata + [content] sections",
   "type": "object",
-  "required": ["clause_id", "title", "kind", "text"],
+  "required": ["govctl", "content"],
   "properties": {
-    "clause_id": {
-      "type": "string",
-      "pattern": "^C-[A-Z0-9-]+$",
-      "description": "Unique clause identifier (e.g., C-PHASE-ORDER)"
+    "govctl": {
+      "type": "object",
+      "required": ["schema", "id", "title", "kind"],
+      "properties": {
+        "schema": {
+          "type": "integer",
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^C-[A-Z0-9-]+$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["normative", "informative"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["active", "superseded", "deprecated"],
+          "default": "active"
+        },
+        "since": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "superseded_by": {
+          "type": "string",
+          "pattern": "^(RFC-\\d{4}:)?C-[A-Z0-9-]+$"
+        },
+        "anchors": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": false
     },
-    "title": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Human-readable clause title"
-    },
-    "kind": {
-      "type": "string",
-      "enum": ["normative", "informative"],
-      "description": "Clause type: normative (requirement) or informative (context)"
-    },
-    "status": {
-      "type": "string",
-      "enum": ["active", "superseded", "deprecated"],
-      "default": "active",
-      "description": "Clause lifecycle status"
-    },
-    "text": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Clause content (Markdown)"
-    },
-    "since": {
-      "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "RFC version when this clause was introduced"
-    },
-    "superseded_by": {
-      "type": "string",
-      "pattern": "^(RFC-\\d{4}:)?C-[A-Z0-9-]+$",
-      "description": "Clause ID that supersedes this one"
-    },
-    "anchors": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "Cross-reference anchors for linking"
+    "content": {
+      "type": "object",
+      "required": ["text"],
+      "properties": {
+        "text": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

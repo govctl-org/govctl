@@ -1,7 +1,14 @@
-clause_id = "C-RESOURCES"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-RESOURCES"
 title = "Resource Types"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 The following resource types MUST be supported as top-level command namespaces:
 
@@ -64,4 +71,3 @@ All date-valued resource metadata fields (such as `created`, `updated`, `started
 **Future Extensions:**
 
 Additional resource types MAY be added via RFC amendment. New resource types MUST follow the same structural patterns defined in [[RFC-0002:C-CRUD-VERBS]]."""
-since = "0.1.0"

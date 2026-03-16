@@ -1,64 +1,77 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RFC Specification",
-  "description": "JSON Schema for RFC source files",
+  "description": "JSON Schema for RFC TOML artifacts with [govctl] metadata section",
   "type": "object",
-  "required": [
-    "rfc_id",
-    "title",
-    "version",
-    "status",
-    "phase",
-    "owners",
-    "created",
-    "sections"
-  ],
+  "required": ["govctl", "sections"],
   "properties": {
-    "rfc_id": {
-      "type": "string",
-      "pattern": "^RFC-\\d{4}$",
-      "description": "Unique RFC identifier"
-    },
-    "title": {
-      "type": "string",
-      "minLength": 1,
-      "description": "Human-readable title"
-    },
-    "version": {
-      "type": "string",
-      "pattern": "^\\d+\\.\\d+\\.\\d+$",
-      "description": "Semantic version (e.g., 1.0.0)"
-    },
-    "status": {
-      "type": "string",
-      "enum": ["draft", "normative", "deprecated"],
-      "description": "RFC lifecycle status"
-    },
-    "phase": {
-      "type": "string",
-      "enum": ["spec", "impl", "test", "stable"],
-      "description": "RFC work phase"
-    },
-    "owners": {
-      "type": "array",
-      "items": { "type": "string" },
-      "minItems": 1,
-      "description": "List of responsible parties"
-    },
-    "created": {
-      "type": "string",
-      "format": "date",
-      "description": "Creation date (YYYY-MM-DD)"
-    },
-    "updated": {
-      "type": "string",
-      "format": "date",
-      "description": "Last update date (YYYY-MM-DD)"
-    },
-    "supersedes": {
-      "type": "string",
-      "pattern": "^RFC-\\d{4}$",
-      "description": "RFC ID this replaces"
+    "govctl": {
+      "type": "object",
+      "required": [
+        "schema",
+        "id",
+        "title",
+        "version",
+        "status",
+        "phase",
+        "owners",
+        "created"
+      ],
+      "properties": {
+        "schema": {
+          "type": "integer",
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^RFC-\\d{4}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "normative", "deprecated"]
+        },
+        "phase": {
+          "type": "string",
+          "enum": ["spec", "impl", "test", "stable"]
+        },
+        "owners": {
+          "type": "array",
+          "items": { "type": "string" },
+          "minItems": 1
+        },
+        "created": {
+          "type": "string",
+          "format": "date"
+        },
+        "updated": {
+          "type": "string",
+          "format": "date"
+        },
+        "supersedes": {
+          "type": "string",
+          "pattern": "^RFC-\\d{4}$"
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(RFC-\\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\\d{4}|WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3}))$"
+          }
+        },
+        "signature": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      },
+      "additionalProperties": false
     },
     "sections": {
       "type": "array",
@@ -73,14 +86,6 @@
           }
         },
         "additionalProperties": false
-      },
-      "description": "RFC sections with clause references"
-    },
-    "refs": {
-      "type": "array",
-      "items": {
-        "type": "string",
-        "pattern": "^(RFC-\\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\\d{4}|WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3}))$"
       }
     },
     "changelog": {
@@ -103,12 +108,7 @@
           "security": { "type": "array", "items": { "type": "string" } }
         },
         "additionalProperties": false
-      },
-      "description": "Version history"
-    },
-    "signature": {
-      "type": "string",
-      "pattern": "^[0-9a-f]{64}$"
+      }
     }
   },
   "additionalProperties": false

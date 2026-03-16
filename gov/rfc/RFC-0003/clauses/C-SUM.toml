@@ -1,9 +1,15 @@
-clause_id = "C-SUM"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-SUM"
 title = "Summary"
 kind = "informative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 - Define a consistent TUI navigation frame with shared header and footer.
 - Add list filtering and quick-jump for faster browsing.
 - Improve detail view readability with consistent layout and scroll position."""
-since = "0.1.0"

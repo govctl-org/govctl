@@ -193,11 +193,10 @@ pub fn validate_work_item_verification(
 
 pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, Diagnostic> {
     let project_root = config
-        .paths
         .gov_root
         .parent()
         .map(std::path::Path::to_path_buf)
-        .unwrap_or_else(|| config.paths.gov_root.clone());
+        .unwrap_or_else(|| config.gov_root.clone());
     let timeout = if guard.spec.check.timeout_secs == 0 {
         DEFAULT_GUARD_TIMEOUT_SECS
     } else {

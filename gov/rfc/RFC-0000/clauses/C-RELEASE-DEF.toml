@@ -1,7 +1,14 @@
-clause_id = "C-RELEASE-DEF"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-RELEASE-DEF"
 title = "Release Definition"
 kind = "normative"
 status = "active"
+since = "1.0.2"
+
+[content]
 text = """
 A Release tracks a published version and the set of work items included in that version.
 
@@ -23,4 +30,3 @@ Implementations MUST define a machine-readable JSON Schema for the release file 
 
 **Rationale:**
 Releases are first-class governance artifacts because changelog generation and release membership depend on them. Giving releases a defined TOML structure and required JSON Schema removes the remaining schema-less storage special case."""
-since = "1.0.2"

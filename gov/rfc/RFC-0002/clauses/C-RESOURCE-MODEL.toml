@@ -1,7 +1,14 @@
-clause_id = "C-RESOURCE-MODEL"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-RESOURCE-MODEL"
 title = "Resource-First Command Structure"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 The govctl CLI MUST use a resource-first command structure of the form:
 
@@ -32,4 +39,3 @@ Commands that operate across all resource types (init, check, status, render) re
 **Implementation Note:**
 
 For backwards compatibility during migration, verb-first aliases MAY be supported but MUST emit deprecation warnings. Full verb-first syntax MUST be removed in a major version release."""
-since = "0.1.0"

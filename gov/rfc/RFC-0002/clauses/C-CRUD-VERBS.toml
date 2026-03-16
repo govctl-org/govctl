@@ -1,7 +1,14 @@
-clause_id = "C-CRUD-VERBS"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-CRUD-VERBS"
 title = "Universal CRUD Verbs"
 kind = "normative"
 status = "active"
+since = "0.1.0"
+
+[content]
 text = """
 All resource types MUST support the following CRUD (Create, Read, Update, Delete) verbs where applicable:
 
@@ -102,4 +109,3 @@ Permanent deletion breaks referential integrity. These constraints ensure deleti
 - MUST NOT use different verb names for the same operation (e.g., "show" vs "get")
 - MUST NOT reorder arguments between resource types (ID always comes before field)
 - MUST NOT have resource-specific flags for universal operations"""
-since = "0.1.0"

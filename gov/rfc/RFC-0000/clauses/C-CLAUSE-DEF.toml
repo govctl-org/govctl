@@ -1,7 +1,14 @@
-clause_id = "C-CLAUSE-DEF"
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-CLAUSE-DEF"
 title = "Clause Definition"
 kind = "normative"
 status = "active"
+since = "1.0.0"
+
+[content]
 text = """
 A clause is an individual requirement or statement within an RFC.
 
@@ -24,4 +31,3 @@ Deprecation is a lifecycle state (in `status`), not a document kind.
 
 **Rationale:**
 This aligns clause storage with RFC, ADR, Work Item, and Release storage while preserving an explicit migration boundary for existing repositories."""
-since = "1.0.0"

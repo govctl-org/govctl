@@ -28,7 +28,7 @@ pub struct GovLockGuard {
 ///
 /// Fails with an actionable error if the lock cannot be acquired within the timeout.
 pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
-    let gov_root = config.paths.gov_root.as_path();
+    let gov_root = config.gov_root.as_path();
     let lock_path = gov_root.join(LOCK_FILE_NAME);
     let timeout_secs = config.concurrency.lock_timeout_secs;
 

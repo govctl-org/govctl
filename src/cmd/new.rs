@@ -5,10 +5,11 @@ use crate::config::{Config, IdStrategy};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
     AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus,
-    RfcPhase, RfcSpec, RfcStatus, SectionSpec, WorkItemContent, WorkItemMeta, WorkItemSpec,
-    WorkItemStatus, WorkItemVerification,
+    ClauseWire, RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec, WorkItemContent, WorkItemMeta,
+    WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
+use crate::schema::{ArtifactSchema, with_schema_header};
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
@@ -80,7 +81,7 @@ fn all_templates() -> impl Iterator<Item = &'static (&'static str, &'static str)
 
 /// Initialize govctl project
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-    let config_path = config.paths.gov_root.join("config.toml");
+    let config_path = config.gov_root.join("config.toml");
 
     if config_path.exists() && !force && !op.is_preview() {
         return Err(Diagnostic::new(
@@ -94,9 +95,8 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         .into());
     }
 
-    // Create directories first (config lives inside gov_root)
     let dirs: Vec<_> = vec![
-        config.paths.gov_root.clone(),
+        config.gov_root.clone(),
         config.rfc_dir(),
         config.schema_dir(),
         config.rfc_output(),
@@ -339,7 +339,9 @@ fn create_rfc(
     };
 
     let rfc_toml = rfc_dir.join("rfc.toml");
-    let content = toml::to_string_pretty(&rfc)?;
+    let wire: RfcWire = rfc.into();
+    let body = toml::to_string_pretty(&wire)?;
+    let content = with_schema_header(ArtifactSchema::Rfc, &body);
     let display_rfc_toml = config.display_path(&rfc_toml);
     write_file(&rfc_toml, &content, op, Some(&display_rfc_toml))?;
 
@@ -393,11 +395,7 @@ fn create_clause(
         .into());
     }
 
-    // Load RFC to get current version
-    let mut rfc: RfcSpec = match rfc_path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => toml::from_str(&std::fs::read_to_string(&rfc_path)?)?,
-        _ => serde_json::from_str(&std::fs::read_to_string(&rfc_path)?)?,
-    };
+    let mut rfc = crate::write::read_rfc(config, &rfc_path)?;
 
     // Create clause
     let clause = ClauseSpec {
@@ -417,7 +415,9 @@ fn create_clause(
         .join("clauses")
         .join(format!("{clause_name}.toml"));
 
-    let content = toml::to_string_pretty(&clause)?;
+    let wire: ClauseWire = clause.into();
+    let body = toml::to_string_pretty(&wire)?;
+    let content = with_schema_header(ArtifactSchema::Clause, &body);
     let display_clause_path = config.display_path(&clause_path);
     write_file(&clause_path, &content, op, Some(&display_clause_path))?;
 
@@ -436,9 +436,12 @@ fn create_clause(
         });
     }
 
-    // Write updated RFC
     let rfc_content = match rfc_path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => toml::to_string_pretty(&rfc)?,
+        Some("toml") => {
+            let wire: RfcWire = rfc.into();
+            let body = toml::to_string_pretty(&wire)?;
+            with_schema_header(ArtifactSchema::Rfc, &body)
+        }
         _ => serde_json::to_string_pretty(&rfc)?,
     };
     let display_rfc_path = config.display_path(&rfc_path);
@@ -503,7 +506,8 @@ fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<D
         },
     };
 
-    let content = toml::to_string_pretty(&spec)?;
+    let body = toml::to_string_pretty(&spec)?;
+    let content = with_schema_header(ArtifactSchema::Adr, &body);
     let display_adr_path = config.display_path(&adr_path);
     write_file(&adr_path, &content, op, Some(&display_adr_path))?;
 
@@ -593,7 +597,8 @@ fn create_work_item(
         verification: WorkItemVerification::default(),
     };
 
-    let content = toml::to_string_pretty(&spec)?;
+    let body = toml::to_string_pretty(&spec)?;
+    let content = with_schema_header(ArtifactSchema::WorkItem, &body);
     let display_work_path = config.display_path(&work_path);
     write_file(&work_path, &content, op, Some(&display_work_path))?;
 
