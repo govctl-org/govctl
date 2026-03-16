@@ -273,3 +273,27 @@ unexpected = "should fail schema validation"
     assert!(output.contains("error[E0704]"), "output: {}", output);
     assert!(output.contains("release.schema.json"), "output: {}", output);
 }
+
+/// Test: Verification guard files fail check when they contain unknown fields rejected by schema
+#[test]
+fn test_invalid_guard_schema_check() {
+    let temp_dir = init_project();
+
+    fs::write(
+        temp_dir.path().join("gov/guard/check.toml"),
+        r#"[govctl]
+schema = 1
+id = "GUARD-CHECK"
+title = "Invalid Guard"
+
+[check]
+command = "true"
+unexpected = "should fail schema validation"
+"#,
+    )
+    .unwrap();
+
+    let output = run_commands(temp_dir.path(), &[&["check"]]);
+    assert!(output.contains("error[E1001]"), "output: {}", output);
+    assert!(output.contains("guard.schema.json"), "output: {}", output);
+}

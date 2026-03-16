@@ -14,7 +14,7 @@ Syntax: `govctl init [--force]`
 Behavior:
 - Creates `gov/` directory structure
 - Generates `gov/config.toml`
-- Creates subdirectories for rfcs, adrs, work items
+- Creates subdirectories for rfcs, adrs, work items, and verification guards
 - Optionally creates `.claude/commands/` with workflow templates
 - MUST error if already initialized (unless `--force`)
 
@@ -25,13 +25,14 @@ Validates all governance artifacts across the project.
 Syntax: `govctl check [--deny-warnings]`
 
 Behavior:
-- Validates RFCs, ADRs, clauses, work items, and releases
-- Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, and release
+- Validates RFCs, ADRs, clauses, work items, releases, and verification guards
+- Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, release, and verification guard
 - These schemas MUST be JSON files stored under `gov/schema/`
 - For TOML artifacts, MUST validate structure against the corresponding JSON Schema after parsing and normalization
 - The `govctl.schema` field in TOML artifacts MUST select the corresponding schema version for that artifact type
 - Checks state machine invariants
 - Verifies cross-references
+- Validates the semantic correctness of the optional `[verification]` section in `gov/config.toml`, including that configured default guard IDs resolve
 - Scans source code for references (if enabled in config)
 - In repositories that have completed RFC/clause migration, if legacy JSON RFC or clause files are detected, MUST fail with a migration-required diagnostic that points to `govctl migrate`
 - Returns exit code 0 if valid, non-zero if errors
@@ -110,6 +111,25 @@ Behavior:
 - MUST be safe to run on an already-migrated repository and report a no-op result in that case
 - MUST NOT perform heuristic project discovery or broad adoption tasks
 
+**8. `govctl verify`**
+
+Executes reusable verification guards.
+
+Syntax:
+- `govctl verify [GUARD-ID ...]`
+- `govctl verify --work WI-ID`
+
+Behavior:
+- Loads Verification Guard artifacts from `gov/guard/`
+- Explicit `GUARD-ID` arguments and `--work WI-ID` MUST NOT be combined in the same invocation
+- With explicit `GUARD-ID` arguments: runs those guards
+- With `--work WI-ID`: runs the effective required guards for that work item after applying project defaults and work-item waivers
+- With no explicit guards and no `--work`: runs the project-level default guards from `gov/config.toml`
+- Reads project-level verification policy from [[RFC-0002:C-VERIFY-CONFIG]]
+- Executes each guard command non-interactively from the project root
+- Reports pass/fail per selected guard
+- Returns non-zero if any selected guard fails, if no guards are selected, or if a requested guard ID is unknown
+
 **Rationale:**
 
 These commands are global because they:
@@ -119,6 +139,8 @@ These commands are global because they:
 4. Match user mental model of "project commands" vs "resource commands"
 
 `govctl migrate` qualifies because it operates across the governance repository as a whole and changes multiple resource types in one coordinated step.
+
+`govctl verify` qualifies because it executes project-level completion checks that may be required by multiple work items and by the project configuration.
 
 **Future Additions:**
 

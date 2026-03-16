@@ -803,6 +803,7 @@ mod tests {
                     acceptance_criteria: vec![],
                     notes: vec![],
                 },
+                verification: crate::model::WorkItemVerification::default(),
             },
             path: std::path::PathBuf::new(),
         };
@@ -844,6 +845,7 @@ mod tests {
                     acceptance_criteria: vec![],
                     notes: vec![],
                 },
+                verification: crate::model::WorkItemVerification::default(),
             },
             path: std::path::PathBuf::new(),
         };

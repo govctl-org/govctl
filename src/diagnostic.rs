@@ -70,6 +70,13 @@ pub enum DiagnosticCode {
     E0704ReleaseSchemaInvalid,
     E0705ReleaseRefNotFound,
 
+    // Verification Guard errors (E10xx)
+    E1001GuardSchemaInvalid,
+    E1002GuardNotFound,
+    E1003GuardDuplicate,
+    E1004GuardCheckFailed,
+    E1005GuardTimeout,
+
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
     E0802ConflictingArgs,
@@ -175,6 +182,12 @@ impl DiagnosticCode {
             Self::E0703ReleaseNoUnreleasedItems => "E0703",
             Self::E0704ReleaseSchemaInvalid => "E0704",
             Self::E0705ReleaseRefNotFound => "E0705",
+            // E10xx - Verification Guard
+            Self::E1001GuardSchemaInvalid => "E1001",
+            Self::E1002GuardNotFound => "E1002",
+            Self::E1003GuardDuplicate => "E1003",
+            Self::E1004GuardCheckFailed => "E1004",
+            Self::E1005GuardTimeout => "E1005",
             // E08xx - CLI/Command
             Self::E0801MissingRequiredArg => "E0801",
             Self::E0802ConflictingArgs => "E0802",

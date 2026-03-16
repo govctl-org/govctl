@@ -1,0 +1,21 @@
+clause_id = "C-VERIFY-CONFIG"
+title = "Verification Configuration"
+kind = "normative"
+status = "active"
+text = """
+The project config file `gov/config.toml` MAY include an optional `[verification]` section.
+
+When present, the section MUST support the following fields:
+- `enabled` — boolean, default `false`
+- `default_guards` — array of Verification Guard IDs, default `[]`
+
+If the section is absent, the implementation MUST behave as if `enabled = false` and `default_guards = []`.
+
+Every guard ID listed in `default_guards` MUST resolve to an existing Verification Guard defined by [[RFC-0000:C-GUARD-DEF]]. Unknown IDs MUST cause validation failure.
+
+When `enabled = false`, project-level default guards MUST NOT be applied automatically by `govctl verify` or by Work Item completion checks.
+
+Work Item `verification.required_guards` remain effective regardless of the project-level `enabled` value.
+
+**Rationale:** The project config controls whether shared default guard policy is active. Explicit Work Item requirements remain local and auditable instead of becoming inert metadata."""
+since = "0.3.0"

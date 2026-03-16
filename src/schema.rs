@@ -19,6 +19,7 @@ pub enum ArtifactSchema {
     Adr,
     WorkItem,
     Release,
+    Guard,
 }
 
 impl ArtifactSchema {
@@ -29,6 +30,7 @@ impl ArtifactSchema {
             Self::Adr => "adr.schema.json",
             Self::WorkItem => "work.schema.json",
             Self::Release => "release.schema.json",
+            Self::Guard => "guard.schema.json",
         }
     }
 
@@ -39,6 +41,7 @@ impl ArtifactSchema {
             Self::Adr => include_str!("../gov/schema/adr.schema.json"),
             Self::WorkItem => include_str!("../gov/schema/work.schema.json"),
             Self::Release => include_str!("../gov/schema/release.schema.json"),
+            Self::Guard => include_str!("../gov/schema/guard.schema.json"),
         }
     }
 
@@ -49,6 +52,7 @@ impl ArtifactSchema {
             Self::Adr => DiagnosticCode::E0301AdrSchemaInvalid,
             Self::WorkItem => DiagnosticCode::E0401WorkSchemaInvalid,
             Self::Release => DiagnosticCode::E0704ReleaseSchemaInvalid,
+            Self::Guard => DiagnosticCode::E1001GuardSchemaInvalid,
         }
     }
 
@@ -59,6 +63,7 @@ impl ArtifactSchema {
             Self::Adr => "ADR",
             Self::WorkItem => "work item",
             Self::Release => "release",
+            Self::Guard => "verification guard",
         }
     }
 }
@@ -83,6 +88,10 @@ pub const ARTIFACT_SCHEMA_TEMPLATES: &[SchemaTemplate] = &[
     SchemaTemplate {
         filename: "release.schema.json",
         content: include_str!("../gov/schema/release.schema.json"),
+    },
+    SchemaTemplate {
+        filename: "guard.schema.json",
+        content: include_str!("../gov/schema/guard.schema.json"),
     },
 ];
 

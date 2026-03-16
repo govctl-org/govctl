@@ -1,12 +1,12 @@
 rfc_id = "RFC-0001"
 title = "Lifecycle State Machines"
-version = "0.2.1"
+version = "0.3.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-01-26"
-signature = "498d533563be84685abee578b2c169b1b21656bc8e9d814c5aa31e86232e4ba2"
+updated = "2026-03-17"
+signature = "a914b5def2a5a95e84ae3fd0d26f81b166e1fc218b204a9aabf3a948ae662bbc"
 
 [[sections]]
 title = "Summary"
@@ -22,6 +22,12 @@ clauses = [
     "clauses/C-CLAUSE-STATUS.toml",
     "clauses/C-GATE-CONDITIONS.toml",
 ]
+
+[[changelog]]
+version = "0.3.0"
+date = "2026-03-17"
+notes = "Add executable verification gates to work completion"
+added = ["Added required verification guard gate conditions for work completion"]
 
 [[changelog]]
 version = "0.2.1"

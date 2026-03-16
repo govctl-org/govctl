@@ -4,10 +4,11 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::load_project_with_warnings;
 use crate::model::WorkItemStatus;
-use crate::parse::{load_releases, load_work_items};
+use crate::parse::{load_guards_with_warnings, load_releases, load_work_items};
 use crate::scan::scan_source_refs;
 use crate::ui;
 use crate::validate::{validate_project, validate_releases};
+use crate::verification;
 
 /// Validate all governed documents
 pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
@@ -23,6 +24,22 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     // Validate governance artifacts
     let result = validate_project(&index, config);
     all_diagnostics.extend(result.diagnostics);
+
+    let mut guard_count = 0usize;
+    match load_guards_with_warnings(config) {
+        Ok(result) => {
+            guard_count = result.items.len();
+            all_diagnostics.extend(result.warnings);
+            let (guards_by_id, guard_diags) = verification::build_guard_index(result.items);
+            all_diagnostics.extend(guard_diags);
+            all_diagnostics.extend(verification::validate_guard_configuration(
+                config,
+                &guards_by_id,
+                &index.work_items,
+            ));
+        }
+        Err(diag) => all_diagnostics.push(diag),
+    }
 
     // Validate releases separately until they are part of the full project index.
     match load_releases(config) {
@@ -42,6 +59,7 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     ui::check_count(result.clause_count, "clauses");
     ui::check_count(result.adr_count, "ADRs");
     ui::check_count(result.work_count, "work items");
+    ui::check_count(guard_count, "verification guards");
 
     // Show source scan summary if enabled
     if config.source_scan.enabled {

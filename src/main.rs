@@ -18,6 +18,7 @@ mod schema;
 mod signature;
 mod ui;
 mod validate;
+mod verification;
 mod write;
 
 #[cfg(feature = "tui")]

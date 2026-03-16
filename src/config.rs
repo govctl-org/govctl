@@ -20,7 +20,18 @@ pub struct Config {
     #[serde(default)]
     pub work_item: WorkItemConfig,
     #[serde(default)]
+    pub verification: VerificationConfig,
+    #[serde(default)]
     pub concurrency: ConcurrencyConfig,
+}
+
+/// Project-level verification guard policy.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct VerificationConfig {
+    #[serde(default)]
+    pub enabled: bool,
+    #[serde(default)]
+    pub default_guards: Vec<String>,
 }
 
 /// Concurrency and write-safety configuration.
@@ -135,6 +146,11 @@ impl PathsConfig {
     /// Templates directory (gov/templates/)
     pub fn templates_dir(&self) -> PathBuf {
         self.gov_root.join("templates")
+    }
+
+    /// Verification guard directory (gov/guard/)
+    pub fn guard_dir(&self) -> PathBuf {
+        self.gov_root.join("guard")
     }
 
     /// RFC rendered output (docs/rfc/)
@@ -355,6 +371,10 @@ impl Config {
         self.paths.schema_dir()
     }
 
+    pub fn guard_dir(&self) -> PathBuf {
+        self.paths.guard_dir()
+    }
+
     pub fn templates_dir(&self) -> PathBuf {
         self.paths.templates_dir()
     }
@@ -411,6 +431,11 @@ version = 1
 # - author-hash: WI-YYYY-MM-DD-{hash}-NNN (multi-person teams, uses git email)
 # - random: WI-YYYY-MM-DD-{rand} (simple uniqueness)
 # id_strategy = "author-hash"
+
+# [verification]
+# Enable project-level default verification guards.
+# enabled = true
+# default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
 
 # [concurrency]
 # Maximum seconds to wait for exclusive lock before failing (default: 30)

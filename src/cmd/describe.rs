@@ -96,6 +96,13 @@ fn command_catalog() -> Vec<CommandInfo> {
             prerequisites: vec!["govctl init".to_string()],
         },
         CommandInfo {
+            name: "verify".to_string(),
+            purpose: "Run reusable verification guards".to_string(),
+            when_to_use: "To execute project-level or work-item-specific completion gates before marking work done.".to_string(),
+            example: "govctl verify --work WI-2026-01-18-001".to_string(),
+            prerequisites: vec!["govctl init".to_string()],
+        },
+        CommandInfo {
             name: "list rfc".to_string(),
             purpose: "List all RFCs with their status and phase".to_string(),
             when_to_use: "To see all specifications. Filter by status: 'govctl rfc list draft'.".to_string(),

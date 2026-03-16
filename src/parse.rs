@@ -3,7 +3,9 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::ReleasesMeta;
-use crate::model::{AdrEntry, AdrSpec, ReleasesFile, WorkItemEntry, WorkItemSpec};
+use crate::model::{
+    AdrEntry, AdrSpec, GuardEntry, GuardSpec, ReleasesFile, WorkItemEntry, WorkItemSpec,
+};
 use crate::schema::{ArtifactSchema, validate_toml_value};
 use crate::ui;
 use crate::write::WriteOp;
@@ -166,6 +168,79 @@ pub fn load_work_items_with_warnings(
     items.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id));
 
     Ok(LoadResult { items, warnings })
+}
+
+/// Load all verification guards from the guard directory.
+#[allow(dead_code)]
+pub fn load_guards(config: &Config) -> Result<Vec<GuardEntry>, Diagnostic> {
+    load_guards_with_warnings(config).map(|r| r.items)
+}
+
+/// Load all verification guards, returning both items and parse warnings.
+pub fn load_guards_with_warnings(config: &Config) -> Result<LoadResult<GuardEntry>, Diagnostic> {
+    let guard_dir = config.guard_dir();
+    if !guard_dir.exists() {
+        return Ok(LoadResult {
+            items: vec![],
+            warnings: vec![],
+        });
+    }
+
+    let mut items = Vec::new();
+    let mut warnings = Vec::new();
+    let entries = std::fs::read_dir(&guard_dir).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            e.to_string(),
+            guard_dir.display().to_string(),
+        )
+    })?;
+
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if path.extension().is_some_and(|ext| ext == "toml") {
+            match load_guard(config, &path) {
+                Ok(item) => items.push(item),
+                Err(e) => warnings.push(e),
+            }
+        }
+    }
+
+    items.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id));
+
+    Ok(LoadResult { items, warnings })
+}
+
+/// Load a single verification guard from TOML file.
+pub fn load_guard(config: &Config, path: &Path) -> Result<GuardEntry, Diagnostic> {
+    let content = std::fs::read_to_string(path).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            e.to_string(),
+            path.display().to_string(),
+        )
+    })?;
+
+    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E1001GuardSchemaInvalid,
+            format!("Invalid TOML: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+    validate_toml_value(ArtifactSchema::Guard, config, path, &raw)?;
+    let spec: GuardSpec = raw.try_into().map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E1001GuardSchemaInvalid,
+            format!("Invalid verification guard structure: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+
+    Ok(GuardEntry {
+        spec,
+        path: path.to_path_buf(),
+    })
 }
 
 /// Load a single work item from TOML file

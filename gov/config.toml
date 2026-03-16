@@ -13,3 +13,7 @@ version = 1
 enabled = true
 include = ["src/**/*.rs"]
 exclude = []
+
+[verification]
+enabled = true
+default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]

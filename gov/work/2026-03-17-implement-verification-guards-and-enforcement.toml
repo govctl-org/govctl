@@ -1,0 +1,78 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-17-004"
+title = "Implement verification guards and enforcement"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+refs = [
+    "RFC-0000",
+    "RFC-0001",
+    "RFC-0002",
+]
+
+[content]
+description = "Add first-class verification guard artifacts, project-level guard policy in gov/config.toml, and work-item guard requirements/waivers so completion depends on executable proofs instead of manual checklist ticking alone."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "spec"
+content = """
+Drafted the guard feature as RFC amendments instead of a new parallel spec.
+
+RFC-0000 now defines Verification Guard artifacts and extends Work Item structure with optional verification requirements and waivers. RFC-0001 now makes work completion depend on required guards when project verification is enabled. RFC-0002 now specifies a global `verify` command and extends `init`/`check` to include guard artifacts."""
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "spec"
+content = """
+Tightened the RFC wording after review.
+
+Added an explicit verification-config clause in RFC-0002, defined default semantics for `enabled` and `default_guards`, made work-item-required guards effective regardless of project defaults, specified waiver structure, and clarified `verify` invocation forms and config validation expectations."""
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "implementation"
+content = """
+Implemented first-class verification guards across the Rust codebase.
+
+Added guard/work/config data models, guard and work-item schema updates, guard loading and validation, `govctl verify`, guard-aware `govctl check`, init scaffolding for `gov/guard/` and `guard.schema.json`, and `work move ... done` enforcement that rejects failing required guards and respects structured waivers."""
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "verification"
+content = """
+Validation completed with `cargo test`, `cargo run --quiet -- render`, and `cargo run --quiet -- check`.
+
+`cargo test` passed after refreshing affected snapshots. `govctl check` passed with one unrelated warning in `gov/work/2026-03-17-add-toml-schema-headers-to-generated-artifacts.toml`; per user instruction, that file was left untouched."""
+
+[[content.acceptance_criteria]]
+text = "Guard artifacts define reusable executable verification checks"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "gov/config.toml can enable guard enforcement and define default guard requirements"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Work items can require extra guards and record structured waivers instead of raw disable flags"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "work move done rejects unresolved required guards"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"

@@ -1,0 +1,31 @@
+clause_id = "C-GUARD-DEF"
+title = "Verification Guard Definition"
+kind = "normative"
+status = "active"
+text = """
+A Verification Guard defines a reusable executable completion check for a govctl project.
+
+Every Verification Guard MUST be stored as a TOML file under `gov/guard/` containing:
+- `[govctl]` section with: `schema`, `id`, `title`
+- optional `[govctl]` field: `refs`
+- `[check]` section with: `command`
+- optional `[check]` fields: `timeout_secs`, `pattern`
+
+For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
+
+Implementations MUST define a machine-readable JSON Schema for the Verification Guard file structure and MUST validate guard files during project validation.
+
+Verification Guard IDs MUST be unique within a repository.
+
+A guard check MUST execute its command non-interactively from the project root.
+
+If `timeout_secs` is absent, implementations MUST use a default timeout of 300 seconds.
+
+A guard check that exceeds its timeout MUST fail.
+
+A guard check MUST evaluate `pattern`, when present, against the combined standard output and standard error streams using case-insensitive regular-expression matching.
+
+A guard check MUST pass only when the command exits successfully. If `pattern` is provided, the combined output MUST also match that pattern.
+
+**Rationale:** Verification Guards make completion rules explicit, reusable, and machine-executable so agents cannot satisfy them with checklist text alone."""
+since = "1.1.0"

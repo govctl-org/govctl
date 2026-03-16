@@ -67,6 +67,10 @@ pub enum CanonicalCommand {
         force: bool,
     },
     Migrate,
+    Verify {
+        guard_ids: Vec<String>,
+        work: Option<String>,
+    },
     Describe {
         context: bool,
         #[allow(dead_code)]
@@ -386,6 +390,10 @@ impl CanonicalCommand {
                 force: *force,
             },
             Commands::Migrate => Self::Migrate,
+            Commands::Verify { guard_ids, work } => Self::Verify {
+                guard_ids: guard_ids.clone(),
+                work: work.clone(),
+            },
             Commands::Describe { context, output } => Self::Describe {
                 context: *context,
                 output: output.clone(),
@@ -454,6 +462,9 @@ impl CanonicalCommand {
                 Ok(all_diags)
             }
             Self::Migrate => cmd::migrate::migrate(config, op),
+            Self::Verify { guard_ids, work } => {
+                cmd::verify::verify(config, guard_ids, work.as_deref())
+            }
             Self::Describe { context, output: _ } => cmd::describe::describe(config, *context),
             Self::Completions { shell } => {
                 use crate::Cli;

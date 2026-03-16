@@ -8,6 +8,7 @@ Checked:
   1 clauses
   0 ADRs
   0 work items
+  0 verification guards
 
 error[E0104]: Cannot have status=draft with phase=stable (gov/rfc/RFC-0001/rfc.json)
 exit: 1

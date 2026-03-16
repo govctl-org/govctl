@@ -40,6 +40,7 @@ fn test_init_creates_artifact_schema_files() {
         "adr.schema.json",
         "work.schema.json",
         "release.schema.json",
+        "guard.schema.json",
     ] {
         assert!(
             temp_dir.path().join("gov/schema").join(filename).exists(),
@@ -47,6 +48,11 @@ fn test_init_creates_artifact_schema_files() {
             filename
         );
     }
+
+    assert!(
+        temp_dir.path().join("gov/guard").exists(),
+        "guard directory should exist after init"
+    );
 }
 
 /// Test: init appends .govctl.lock to existing .gitignore

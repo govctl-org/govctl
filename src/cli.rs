@@ -74,6 +74,16 @@ pub(crate) enum Commands {
     /// Migrate legacy governance storage to current canonical formats
     Migrate,
 
+    /// Execute reusable verification guards
+    Verify {
+        /// Verification guard IDs to run
+        #[arg(value_name = "GUARD-ID")]
+        guard_ids: Vec<String>,
+        /// Run the effective guard set for a specific work item
+        #[arg(long, conflicts_with = "guard_ids")]
+        work: Option<String>,
+    },
+
     // ========================================
     // Resource-First Commands (RFC-0002)
     // ========================================

@@ -1,5 +1,6 @@
 //! Move command implementation for work items.
 
+use crate::cmd::verify;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChecklistStatus, WorkItemStatus};
@@ -89,6 +90,8 @@ pub fn move_item(
             )
             .into());
         }
+
+        verify::enforce_work_item_guards(config, &entry)?;
     }
 
     entry.spec.govctl.status = status;

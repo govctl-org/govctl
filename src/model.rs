@@ -248,6 +248,28 @@ pub struct WorkItemMeta {
     pub refs: Vec<String>,
 }
 
+/// Work item-specific verification policy.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct WorkItemVerification {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub required_guards: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub waivers: Vec<GuardWaiver>,
+}
+
+impl WorkItemVerification {
+    pub fn is_empty(&self) -> bool {
+        self.required_guards.is_empty() && self.waivers.is_empty()
+    }
+}
+
+/// Explicit waiver for one required verification guard.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GuardWaiver {
+    pub guard: String,
+    pub reason: String,
+}
+
 /// Status for checklist items (acceptance criteria, decisions)
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, AsRefStr)]
 #[serde(rename_all = "lowercase")]
@@ -323,6 +345,8 @@ pub struct WorkItemContent {
 pub struct WorkItemSpec {
     pub govctl: WorkItemMeta,
     pub content: WorkItemContent,
+    #[serde(default, skip_serializing_if = "WorkItemVerification::is_empty")]
+    pub verification: WorkItemVerification,
 }
 
 /// Work Item status lifecycle
@@ -354,6 +378,41 @@ pub enum ChangelogCategory {
     Security,
     /// Internal/housekeeping items - excluded from rendered changelog
     Chore,
+}
+
+// =============================================================================
+// Verification Guard Models (TOML SSOT)
+// =============================================================================
+
+/// Verification Guard metadata section `[govctl]`
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GuardMeta {
+    pub schema: u32,
+    pub id: String,
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub refs: Vec<String>,
+}
+
+/// Executable check for a verification guard.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GuardCheck {
+    pub command: String,
+    #[serde(default = "default_guard_timeout_secs")]
+    pub timeout_secs: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pattern: Option<String>,
+}
+
+fn default_guard_timeout_secs() -> u64 {
+    300
+}
+
+/// Complete Verification Guard file structure.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct GuardSpec {
+    pub govctl: GuardMeta,
+    pub check: GuardCheck,
 }
 
 impl ChangelogCategory {
@@ -482,6 +541,19 @@ pub struct WorkItemEntry {
 impl WorkItemEntry {
     /// Convenience accessor for metadata
     pub fn meta(&self) -> &WorkItemMeta {
+        &self.spec.govctl
+    }
+}
+
+/// Loaded Verification Guard with full spec.
+#[derive(Debug, Clone)]
+pub struct GuardEntry {
+    pub spec: GuardSpec,
+    pub path: std::path::PathBuf,
+}
+
+impl GuardEntry {
+    pub fn meta(&self) -> &GuardMeta {
         &self.spec.govctl
     }
 }
@@ -650,6 +722,7 @@ mod tests {
                     refs: vec![],
                 },
                 content: WorkItemContent::default(),
+                verification: WorkItemVerification::default(),
             },
             path: std::path::PathBuf::from("test.toml"),
         };

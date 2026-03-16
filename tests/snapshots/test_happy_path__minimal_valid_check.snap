@@ -8,6 +8,7 @@ Checked:
   1 clauses
   1 ADRs
   1 work items
+  0 verification guards
 
 warning[W0108]: Work item has placeholder description (hint: `govctl work set WI-<DATE>-001 description "..."`) (gov/work/<DATE>-test-work-item.toml)
 exit: 0

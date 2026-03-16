@@ -7,7 +7,7 @@ A Work Item MUST have exactly one of the following status values:
 
 1. **queue** — Initial state. The work item is defined but not yet started.
 2. **active** — The work item is currently being worked on.
-3. **done** — The work item is complete. All acceptance criteria are satisfied.
+3. **done** — The work item is complete. All acceptance criteria are satisfied, and any required verification guards have passed or been explicitly waived.
 4. **cancelled** — The work item was abandoned. No further work will be done.
 
 Valid transitions (via `move` command):

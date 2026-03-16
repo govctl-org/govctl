@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Verification Guard Specification",
+  "description": "JSON Schema for Verification Guard TOML artifacts after parsing and normalization",
+  "type": "object",
+  "required": ["govctl", "check"],
+  "properties": {
+    "govctl": {
+      "type": "object",
+      "required": ["schema", "id", "title"],
+      "properties": {
+        "schema": {
+          "type": "integer",
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^GUARD-[A-Z][A-Z0-9-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(RFC-\\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\\d{4}|WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3}))$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "check": {
+      "type": "object",
+      "required": ["command"],
+      "properties": {
+        "command": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timeout_secs": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "pattern": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

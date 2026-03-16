@@ -9,10 +9,23 @@ Every Work Item MUST be stored as a TOML file containing:
 - `[govctl]` section with: `schema`, `id`, `title`, `status`, `created`, `refs`
 - optional `[govctl]` fields: `started`, `completed`
 - `[content]` section with: `description`, `acceptance_criteria`, `journal`, `notes`
+- optional `[verification]` section with: `required_guards`, `waivers`
 
 For the schema defined by this RFC revision, `govctl.schema` MUST be `1`. Future breaking schema changes MUST increment this value via RFC amendment.
 
 Implementations MUST define a machine-readable JSON Schema for the Work Item file structure and MUST validate Work Item files against that schema during project validation.
+
+When present, `verification.required_guards` MUST be an array of Verification Guard IDs defined by [[RFC-0000:C-GUARD-DEF]]. These guard IDs augment project-level default guard requirements when project verification is enabled.
+
+When present, each `verification.waivers` entry MUST be an object with exactly two fields: `guard` and `reason`.
+
+The `guard` field MUST name exactly one Verification Guard ID.
+
+The `reason` field MUST be a non-empty string.
+
+Waiver entries MUST reference only guards that appear in the work item's effective required guard set. Duplicate waivers for the same guard MUST be rejected during validation.
+
+A waiver MUST suppress only the named guard. A Work Item MUST NOT disable the verification system globally.
 
 Work Item status lifecycle:
 
@@ -23,7 +36,7 @@ Work Item status lifecycle:
 
 **active**: Currently in progress. Only one active item recommended per focus area.
 
-**done**: Completed. All acceptance criteria met.
+**done**: Completed. All acceptance criteria met, and any required verification guards have passed or been explicitly waived.
 
 **cancelled**: Abandoned from queue or active. Reason documented in notes.
 

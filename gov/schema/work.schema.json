@@ -113,6 +113,38 @@
         }
       },
       "additionalProperties": false
+    },
+    "verification": {
+      "type": "object",
+      "properties": {
+        "required_guards": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^GUARD-[A-Z][A-Z0-9-]*$"
+          },
+          "uniqueItems": true
+        },
+        "waivers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["guard", "reason"],
+            "properties": {
+              "guard": {
+                "type": "string",
+                "pattern": "^GUARD-[A-Z][A-Z0-9-]*$"
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

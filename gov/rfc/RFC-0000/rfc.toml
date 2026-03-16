@@ -1,12 +1,12 @@
 rfc_id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.0.2"
+version = "1.1.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
 updated = "2026-03-17"
-signature = "4eb53e5a902866c628bce230d70b55764365691c03fb0d382b65fcfc854af390"
+signature = "4feece0bf26e7062c2e8e3fc32df6153c39e58150897f1a6df90dee9d75067d0"
 
 [[sections]]
 title = "Summary"
@@ -36,6 +36,16 @@ clauses = ["clauses/C-WORK-DEF.toml"]
 [[sections]]
 title = "Release Specification"
 clauses = ["clauses/C-RELEASE-DEF.toml"]
+
+[[sections]]
+title = "Verification Guard Specification"
+clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.1.0"
+date = "2026-03-17"
+notes = "Add verification guards and work-item verification metadata"
+added = ["Added Verification Guard artifact definition and work-item verification fields"]
 
 [[changelog]]
 version = "1.0.2"

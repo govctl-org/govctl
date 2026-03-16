@@ -6,7 +6,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
     AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus,
     RfcPhase, RfcSpec, RfcStatus, SectionSpec, WorkItemContent, WorkItemMeta, WorkItemSpec,
-    WorkItemStatus,
+    WorkItemStatus, WorkItemVerification,
 };
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
@@ -102,6 +102,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         config.rfc_output(),
         config.adr_dir(),
         config.work_dir(),
+        config.guard_dir(),
         config.templates_dir(),
     ];
 
@@ -589,6 +590,7 @@ fn create_work_item(
             acceptance_criteria: vec![],
             notes: vec![],
         },
+        verification: WorkItemVerification::default(),
     };
 
     let content = toml::to_string_pretty(&spec)?;

@@ -37,6 +37,15 @@ $ govctl describe --context
       ]
     },
     {
+      "name": "verify",
+      "purpose": "Run reusable verification guards",
+      "when_to_use": "To execute project-level or work-item-specific completion gates before marking work done.",
+      "example": "govctl verify --work WI-<DATE>-001",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
       "name": "list rfc",
       "purpose": "List all RFCs with their status and phase",
       "when_to_use": "To see all specifications. Filter by status: 'govctl rfc list draft'.",
