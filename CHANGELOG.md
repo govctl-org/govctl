@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generic stage/backup/commit/rollback engine operates on Vec<FileOp> (WI-2026-03-17-006)
 - config.toml [schema] version bumped to 2 after successful migration (WI-2026-03-17-006)
 - Migration step v2->v3 strips govctl.schema from existing files (WI-2026-03-17-007)
+- src/theme.rs with SemanticColor enum and backend adapters (WI-2026-03-17-008)
+- Deprecated/superseded uses Muted (DarkGrey) consistently across CLI and TUI (WI-2026-03-17-008)
+- show commands render styled markdown via markdown-to-ansi (WI-2026-03-17-008)
+- show output strips HTML comments, anchors, and converts relative links (WI-2026-03-17-008)
+- Ctrl+d/u half-page and PgUp/PgDn full-page scroll in TUI (WI-2026-03-17-008)
+- TUI feature default-enabled in Cargo.toml (WI-2026-03-17-008)
 
 ### Changed
 
@@ -47,6 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - generic set rejects clause lifecycle-owned or edit-owned fields like text, status, superseded_by, and since (WI-2026-03-17-003)
 - generic set rejects ADR/work status fields and tick-owned nested status fields (WI-2026-03-17-003)
 - work move done rejects unresolved required guards (WI-2026-03-17-004)
+- TUI scroll position accounts for word-wrap (WI-2026-03-17-008)
+- list_indices() cached per frame, invalidated on filter change (WI-2026-03-17-008)
 
 ## [0.5.4] - 2026-03-14
 

@@ -17,32 +17,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Linux x86_64 (TUI default)
           - target: x86_64-unknown-linux-gnu
             os: ubuntu-latest
             archive: tar.gz
-            features: tui
-          # Linux aarch64 (TUI default)
           - target: aarch64-unknown-linux-gnu
             os: ubuntu-latest
             archive: tar.gz
             cross: true
-            features: tui
-          # macOS x86_64 (Intel, TUI default)
           - target: x86_64-apple-darwin
             os: macos-latest
             archive: tar.gz
-            features: tui
-          # macOS aarch64 (Apple Silicon, TUI default)
           - target: aarch64-apple-darwin
             os: macos-latest
             archive: tar.gz
-            features: tui
-          # Windows x86_64 (TUI default)
           - target: x86_64-pc-windows-msvc
             os: windows-latest
             archive: zip
-            features: tui
 
     steps:
       - name: Checkout
@@ -60,13 +50,10 @@ jobs:
       - name: Build binary
         shell: bash
         run: |
-          FEATURES="${{ matrix.features }}"
-          FEATURE_FLAG="--features $FEATURES"
-
           if [ "${{ matrix.cross }}" = "true" ]; then
-            cross build --release --target ${{ matrix.target }} $FEATURE_FLAG
+            cross build --release --target ${{ matrix.target }}
           else
-            cargo build --release --target ${{ matrix.target }} $FEATURE_FLAG
+            cargo build --release --target ${{ matrix.target }}
           fi
 
       - name: Prepare artifacts (Unix)

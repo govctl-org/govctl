@@ -485,7 +485,8 @@ fn render_changelog_section(output: &mut String, items: &[&crate::model::WorkIte
 // =============================================================================
 
 use crate::OutputFormat;
-use crate::render::{expand_inline_refs, render_adr, render_rfc, render_work_item};
+use crate::render::{expand_inline_refs, render_adr, render_clause, render_rfc, render_work_item};
+use crate::terminal_md::render_terminal_md;
 
 /// Show RFC content to stdout (no file written).
 ///
@@ -518,11 +519,9 @@ pub fn show_rfc(
             println!("{json}");
         }
         OutputFormat::Table | OutputFormat::Plain => {
-            // Render to markdown and print to stdout
             let raw = render_rfc(&rfc)?;
             let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-            print!("{}", expanded.trim_end());
-            println!();
+            print!("{}", render_terminal_md(&expanded));
         }
     }
 
@@ -558,8 +557,7 @@ pub fn show_adr(
         OutputFormat::Table | OutputFormat::Plain => {
             let raw = render_adr(&adr)?;
             let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-            print!("{}", expanded.trim_end());
-            println!();
+            print!("{}", render_terminal_md(&expanded));
         }
     }
 
@@ -595,8 +593,7 @@ pub fn show_work(
         OutputFormat::Table | OutputFormat::Plain => {
             let raw = render_work_item(&item)?;
             let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-            print!("{}", expanded.trim_end());
-            println!();
+            print!("{}", render_terminal_md(&expanded));
         }
     }
 
@@ -658,20 +655,10 @@ pub fn show_clause(
             println!("{json}");
         }
         OutputFormat::Table | OutputFormat::Plain => {
-            // Output clause text with minimal formatting
-            let kind_label = match clause.spec.kind {
-                crate::model::ClauseKind::Normative => "(Normative)",
-                crate::model::ClauseKind::Informative => "(Informative)",
-            };
-            println!("# [{id}] {} {kind_label}", clause.spec.title);
-            println!();
-            let expanded = expand_inline_refs(&clause.spec.text, &config.source_scan.pattern);
-            print!("{}", expanded.trim_end());
-            println!();
-            if let Some(ref since) = clause.spec.since {
-                println!();
-                println!("*Since: v{since}*");
-            }
+            let mut raw = String::new();
+            render_clause(&mut raw, rfc_id, &clause);
+            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+            print!("{}", render_terminal_md(&expanded));
         }
     }
 

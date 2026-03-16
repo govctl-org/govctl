@@ -6,47 +6,37 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::WorkItemStatus;
+use crate::theme::{SemanticColor, status_semantic};
 use crate::ui::stdout_supports_color;
-use comfy_table::{Attribute, Cell, Color, ContentArrangement, Table, presets::UTF8_FULL};
+use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use serde::Serialize;
 
-/// Check if stdout supports colors (delegates to centralized ui module)
 fn use_colors() -> bool {
     stdout_supports_color()
 }
 
-/// Create a cell with optional color
 fn cell(text: &str) -> Cell {
     Cell::new(text)
 }
 
-/// Create an ID cell (cyan, bold when colors enabled)
 fn id_cell(text: &str) -> Cell {
     if use_colors() {
         Cell::new(text)
-            .fg(Color::Cyan)
+            .fg(SemanticColor::Info.to_comfy())
             .add_attribute(Attribute::Bold)
     } else {
         Cell::new(text)
     }
 }
 
-/// Create a status cell with semantic color
 fn status_cell(status: &str) -> Cell {
     if use_colors() {
-        let color = match status {
-            "draft" | "proposed" | "queue" => Color::Yellow,
-            "normative" | "accepted" | "active" | "done" => Color::Green,
-            "deprecated" | "superseded" | "cancelled" => Color::DarkGrey,
-            _ => Color::White,
-        };
-        Cell::new(status).fg(color)
+        Cell::new(status).fg(status_semantic(status).to_comfy())
     } else {
         Cell::new(status)
     }
 }
 
-/// Create a header cell (bold when colors enabled)
 fn header_cell(text: &str) -> Cell {
     if use_colors() {
         Cell::new(text).add_attribute(Attribute::Bold)

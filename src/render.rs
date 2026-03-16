@@ -229,7 +229,7 @@ fn clause_anchor(rfc_id: &str, clause_id: &str) -> String {
 }
 
 /// Render a single clause
-fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEntry) {
+pub fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::ClauseEntry) {
     let spec = &clause.spec;
 
     // Clause header with ID anchor

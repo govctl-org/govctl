@@ -32,8 +32,13 @@ pub struct App {
     pub clause_list_state: ListState,
     /// Scroll offset for detail views
     pub scroll: u16,
+    /// Visible content height (set during draw, used for page-scroll)
+    pub content_height: u16,
     /// Active filter query for list views
     pub filter_query: String,
+    /// Cached filtered indices (invalidated on filter/view change)
+    cached_indices: Vec<usize>,
+    indices_dirty: bool,
     /// Whether filter input mode is active
     pub filter_mode: bool,
     /// Show help overlay
@@ -59,7 +64,10 @@ impl App {
             table_state: TableState::default().with_selected(Some(0)),
             clause_list_state: ListState::default().with_selected(Some(0)),
             scroll: 0,
+            content_height: 0,
             filter_query: String::new(),
+            cached_indices: Vec::new(),
+            indices_dirty: true,
             filter_mode: false,
             show_help: false,
             should_quit: false,
@@ -76,11 +84,17 @@ impl App {
         }
     }
 
-    /// Get indices for items in current list view (filtered)
-    pub fn list_indices(&self) -> Vec<usize> {
+    fn invalidate_indices(&mut self) {
+        self.indices_dirty = true;
+    }
+
+    fn recompute_indices(&mut self) {
+        if !self.indices_dirty {
+            return;
+        }
         let query = self.filter_query.trim().to_ascii_lowercase();
         let has_query = !query.is_empty();
-        match self.view {
+        self.cached_indices = match self.view {
             View::RfcList => self
                 .index
                 .rfcs
@@ -146,12 +160,20 @@ impl App {
                 })
                 .collect(),
             _ => Vec::new(),
-        }
+        };
+        self.indices_dirty = false;
     }
 
-    /// Get the count of items in current list view (filtered)
-    pub fn list_len(&self) -> usize {
-        self.list_indices().len()
+    /// Get indices for items in current list view (filtered, cached).
+    pub fn list_indices(&mut self) -> Vec<usize> {
+        self.recompute_indices();
+        self.cached_indices.clone()
+    }
+
+    /// Get the count of items in current list view (filtered).
+    pub fn list_len(&mut self) -> usize {
+        self.recompute_indices();
+        self.cached_indices.len()
     }
 
     /// Whether a list filter is active
@@ -172,18 +194,21 @@ impl App {
     /// Clear filter query
     pub fn clear_filter(&mut self) {
         self.filter_query.clear();
+        self.invalidate_indices();
         self.ensure_selection_in_bounds();
     }
 
     /// Append a character to the filter query
     pub fn push_filter_char(&mut self, ch: char) {
         self.filter_query.push(ch);
+        self.invalidate_indices();
         self.ensure_selection_in_bounds();
     }
 
     /// Remove last character from filter query
     pub fn pop_filter_char(&mut self) {
         self.filter_query.pop();
+        self.invalidate_indices();
         self.ensure_selection_in_bounds();
     }
 
@@ -288,6 +313,7 @@ impl App {
         self.selected = 0;
         self.table_state = TableState::default().with_selected(Some(0));
         self.scroll = 0;
+        self.invalidate_indices();
         if matches!(self.view, View::RfcList | View::AdrList | View::WorkList) {
             self.filter_mode = false;
             self.clear_filter();
@@ -304,6 +330,47 @@ impl App {
     /// Scroll up in detail view
     pub fn scroll_up(&mut self) {
         self.scroll = self.scroll.saturating_sub(1);
+    }
+
+    /// Scroll down by half a page
+    pub fn scroll_half_page_down(&mut self) {
+        let half = (self.content_height / 2).max(1);
+        self.scroll = self.scroll.saturating_add(half);
+    }
+
+    /// Scroll up by half a page
+    pub fn scroll_half_page_up(&mut self) {
+        let half = (self.content_height / 2).max(1);
+        self.scroll = self.scroll.saturating_sub(half);
+    }
+
+    /// Scroll down by a full page
+    pub fn scroll_page_down(&mut self) {
+        let page = self.content_height.max(1);
+        self.scroll = self.scroll.saturating_add(page);
+    }
+
+    /// Scroll up by a full page
+    pub fn scroll_page_up(&mut self) {
+        let page = self.content_height.max(1);
+        self.scroll = self.scroll.saturating_sub(page);
+    }
+
+    /// Jump list selection by half a page
+    pub fn select_half_page_down(&mut self) {
+        let half = (self.content_height / 2).max(1) as usize;
+        let len = self.list_len();
+        if len > 0 {
+            self.selected = (self.selected + half).min(len - 1);
+            self.table_state.select(Some(self.selected));
+        }
+    }
+
+    /// Jump list selection up by half a page
+    pub fn select_half_page_up(&mut self) {
+        let half = (self.content_height / 2).max(1) as usize;
+        self.selected = self.selected.saturating_sub(half);
+        self.table_state.select(Some(self.selected));
     }
 
     /// Get clause count for current RFC detail view

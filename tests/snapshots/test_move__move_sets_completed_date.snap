@@ -7,9 +7,6 @@ Marked 'Done' as done
 exit: 0
 
 $ govctl work show WI-<DATE>-001
-<!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
-<!-- SIGNATURE: sha256:<HASH> -->
-
 # Task to complete
 
 > **ID:** WI-<DATE>-001 | **Status:** active | **Started:** <DATE>
@@ -21,7 +18,7 @@ What is the goal? What are the acceptance criteria?
 
 ## Acceptance Criteria
 
-- [x] Done
+- ✓ Done
 exit: 0
 
 $ govctl work move WI-<DATE>-001 done
@@ -29,9 +26,6 @@ Moved <DATE>-task-to-complete.toml to done
 exit: 0
 
 $ govctl work show WI-<DATE>-001
-<!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
-<!-- SIGNATURE: sha256:<HASH> -->
-
 # Task to complete
 
 > **ID:** WI-<DATE>-001 | **Status:** done | **Started:** <DATE> | **Completed:** <DATE>
@@ -43,5 +37,5 @@ What is the goal? What are the acceptance criteria?
 
 ## Acceptance Criteria
 
-- [x] Done
+- ✓ Done
 exit: 0

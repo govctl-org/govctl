@@ -20,9 +20,6 @@ Removed 'To remove' from WI-<DATE>-001.acceptance_criteria
 exit: 0
 
 $ govctl work show WI-<DATE>-001
-<!-- GENERATED: do not edit. Source: WI-<DATE>-001 -->
-<!-- SIGNATURE: sha256:<HASH> -->
-
 # Test Task
 
 > **ID:** WI-<DATE>-001 | **Status:** queue
@@ -34,5 +31,5 @@ What is the goal? What are the acceptance criteria?
 
 ## Acceptance Criteria
 
-- [ ] To keep
+- ○ To keep
 exit: 0

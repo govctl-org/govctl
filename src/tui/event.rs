@@ -3,7 +3,7 @@
 use super::app::{App, View};
 use super::ui;
 use anyhow::Result;
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::backend::CrosstermBackend;
 use ratatui::prelude::*;
 use std::io::Stdout;
@@ -15,14 +15,11 @@ pub fn run_event_loop(
     app: &mut App,
 ) -> Result<()> {
     loop {
-        // Draw UI
         terminal.draw(|frame| ui::draw(frame, app))?;
 
-        // Handle events with timeout for responsive UI
         if event::poll(Duration::from_millis(100))?
             && let Event::Key(key) = event::read()?
         {
-            // Only handle key press events (not release)
             if key.kind != KeyEventKind::Press {
                 continue;
             }
@@ -40,17 +37,17 @@ pub fn run_event_loop(
             }
 
             match app.view {
-                View::Dashboard => handle_dashboard_keys(app, key.code),
+                View::Dashboard => handle_dashboard_keys(app, key),
                 View::RfcList | View::AdrList | View::WorkList => {
                     if app.filter_mode {
-                        handle_filter_input(app, key.code);
+                        handle_filter_input(app, key);
                     } else {
-                        handle_list_keys(app, key.code);
+                        handle_list_keys(app, key);
                     }
                 }
-                View::RfcDetail(_) => handle_rfc_detail_keys(app, key.code),
+                View::RfcDetail(_) => handle_rfc_detail_keys(app, key),
                 View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
-                    handle_detail_keys(app, key.code)
+                    handle_detail_keys(app, key)
                 }
             }
         }
@@ -62,8 +59,12 @@ pub fn run_event_loop(
     Ok(())
 }
 
-fn handle_dashboard_keys(app: &mut App, code: KeyCode) {
-    match code {
+fn is_ctrl(key: &KeyEvent) -> bool {
+    key.modifiers.contains(KeyModifiers::CONTROL)
+}
+
+fn handle_dashboard_keys(app: &mut App, key: KeyEvent) {
+    match key.code {
         KeyCode::Char('q') => app.should_quit = true,
         KeyCode::Char('1') | KeyCode::Char('r') => app.go_to(View::RfcList),
         KeyCode::Char('2') | KeyCode::Char('a') => app.go_to(View::AdrList),
@@ -73,13 +74,17 @@ fn handle_dashboard_keys(app: &mut App, code: KeyCode) {
     }
 }
 
-fn handle_list_keys(app: &mut App, code: KeyCode) {
-    match code {
+fn handle_list_keys(app: &mut App, key: KeyEvent) {
+    match key.code {
         KeyCode::Char('q') => app.should_quit = true,
         KeyCode::Char('j') | KeyCode::Down => app.select_next(),
         KeyCode::Char('k') | KeyCode::Up => app.select_prev(),
         KeyCode::Char('g') => app.select_top(),
         KeyCode::Char('G') => app.select_bottom(),
+        KeyCode::Char('d') if is_ctrl(&key) => app.select_half_page_down(),
+        KeyCode::Char('u') if is_ctrl(&key) => app.select_half_page_up(),
+        KeyCode::PageDown => app.select_half_page_down(),
+        KeyCode::PageUp => app.select_half_page_up(),
         KeyCode::Char('n') => {
             if app.filter_active() {
                 app.select_next();
@@ -101,8 +106,8 @@ fn handle_list_keys(app: &mut App, code: KeyCode) {
     }
 }
 
-fn handle_rfc_detail_keys(app: &mut App, code: KeyCode) {
-    match code {
+fn handle_rfc_detail_keys(app: &mut App, key: KeyEvent) {
+    match key.code {
         KeyCode::Char('q') => app.should_quit = true,
         KeyCode::Char('j') | KeyCode::Down => app.clause_next(),
         KeyCode::Char('k') | KeyCode::Up => app.clause_prev(),
@@ -112,18 +117,22 @@ fn handle_rfc_detail_keys(app: &mut App, code: KeyCode) {
     }
 }
 
-fn handle_detail_keys(app: &mut App, code: KeyCode) {
-    match code {
+fn handle_detail_keys(app: &mut App, key: KeyEvent) {
+    match key.code {
         KeyCode::Char('q') => app.should_quit = true,
         KeyCode::Char('j') | KeyCode::Down => app.scroll_down(),
         KeyCode::Char('k') | KeyCode::Up => app.scroll_up(),
+        KeyCode::Char('d') if is_ctrl(&key) => app.scroll_half_page_down(),
+        KeyCode::Char('u') if is_ctrl(&key) => app.scroll_half_page_up(),
+        KeyCode::PageDown => app.scroll_page_down(),
+        KeyCode::PageUp => app.scroll_page_up(),
         KeyCode::Esc => app.go_back(),
         _ => {}
     }
 }
 
-fn handle_filter_input(app: &mut App, code: KeyCode) {
-    match code {
+fn handle_filter_input(app: &mut App, key: KeyEvent) {
+    match key.code {
         // Implements [[RFC-0003:C-FILTER]]
         KeyCode::Esc => {
             app.clear_filter();

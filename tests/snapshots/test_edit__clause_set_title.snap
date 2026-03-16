@@ -17,7 +17,7 @@ Set RFC-0001:C-TEST.title = New Title
 exit: 0
 
 $ govctl clause show RFC-0001:C-TEST
-# [RFC-0001:C-TEST] New Title (Normative)
+### [RFC-0001:C-TEST] New Title (Normative)
 
 TODO: Add clause text here.
 exit: 0

@@ -1,40 +1,19 @@
 //! UI rendering for TUI.
 
 use super::app::{App, View};
+use crate::theme::{phase_semantic, status_icon, status_semantic};
 use ratatui::{
     prelude::*,
     symbols::border,
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Row, Table, Wrap},
 };
 
-// Status color helpers
 fn status_style(status: &str) -> Style {
-    match status {
-        "normative" | "accepted" | "done" | "active" => Style::default().fg(Color::Green),
-        "draft" | "proposed" | "queue" => Style::default().fg(Color::Yellow),
-        "deprecated" | "superseded" | "cancelled" => Style::default().fg(Color::Red),
-        _ => Style::default(),
-    }
-}
-
-fn status_icon(status: &str) -> &'static str {
-    match status {
-        "normative" | "accepted" | "done" => "●",
-        "active" => "◉",
-        "draft" | "proposed" | "queue" => "○",
-        "deprecated" | "superseded" | "cancelled" => "✗",
-        _ => "•",
-    }
+    Style::default().fg(status_semantic(status).to_ratatui())
 }
 
 fn phase_style(phase: &str) -> Style {
-    match phase {
-        "stable" => Style::default().fg(Color::Green),
-        "test" => Style::default().fg(Color::Cyan),
-        "impl" => Style::default().fg(Color::Blue),
-        "spec" => Style::default().fg(Color::Yellow),
-        _ => Style::default(),
-    }
+    Style::default().fg(phase_semantic(phase).to_ratatui())
 }
 
 fn breadcrumb(app: &App) -> String {
@@ -76,7 +55,7 @@ fn breadcrumb(app: &App) -> String {
     }
 }
 
-fn header_status(app: &App) -> String {
+fn header_status(app: &mut App) -> String {
     match app.view {
         View::Dashboard => format!(
             "RFC {} | ADR {} | Work {}",
@@ -103,7 +82,7 @@ fn header_status(app: &App) -> String {
 }
 
 // Implements [[RFC-0003:C-NAV]]
-fn draw_header(frame: &mut Frame, app: &App, area: Rect) {
+fn draw_header(frame: &mut Frame, app: &mut App, area: Rect) {
     let block = Block::default()
         .borders(Borders::ALL)
         .border_set(border::ROUNDED)
@@ -182,6 +161,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         .split(area);
 
     draw_header(frame, app, chunks[0]);
+    app.content_height = chunks[1].height;
 
     let mut footer_status = None;
     let bindings: &[&str] = match app.view {
@@ -204,9 +184,9 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
             "q",
             "Quit",
         ],
-        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
-            &["j/k", "Scroll", "Esc", "Back", "?", "Help", "q", "Quit"]
-        }
+        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => &[
+            "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
+        ],
     };
 
     match app.view {
@@ -249,6 +229,27 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     if app.show_help {
         draw_help_overlay(frame, app);
     }
+}
+
+/// Estimate the number of rendered lines after word-wrap.
+///
+/// Implements [[RFC-0003:C-DETAIL]] scroll position accuracy.
+fn wrapped_line_count(lines: &[Line], render_width: u16) -> usize {
+    if render_width == 0 {
+        return lines.len();
+    }
+    let w = render_width as usize;
+    lines
+        .iter()
+        .map(|line| {
+            let content_len: usize = line.spans.iter().map(|s| s.content.len()).sum();
+            if content_len == 0 {
+                1
+            } else {
+                content_len.div_ceil(w)
+            }
+        })
+        .sum()
 }
 
 fn rounded_block(title: &str) -> Block<'_> {
@@ -557,20 +558,10 @@ fn draw_rfc_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
         return;
     };
 
-    // Split into: header, clause list, footer
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(8), // Header (metadata)
-            Constraint::Min(5),    // Clause list
-        ])
-        .split(area);
-
     let status = rfc.rfc.status.as_ref();
     let phase = rfc.rfc.phase.as_ref();
 
-    // Header with RFC metadata
-    let header_lines = vec![
+    let mut header_lines = vec![
         Line::from(vec![
             Span::styled("ID:      ", Style::default().fg(Color::DarkGray)),
             Span::styled(rfc.rfc.rfc_id.clone(), Style::default().bold()),
@@ -597,6 +588,21 @@ fn draw_rfc_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
             Span::raw(rfc.rfc.owners.join(", ")),
         ]),
     ];
+
+    if !rfc.rfc.refs.is_empty() {
+        header_lines.push(Line::from(vec![
+            Span::styled("Refs:    ", Style::default().fg(Color::DarkGray)),
+            Span::raw(rfc.rfc.refs.join(", ")),
+        ]));
+    }
+
+    // +2 for block borders
+    let header_height = (header_lines.len() as u16) + 2;
+
+    let chunks = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(header_height), Constraint::Min(5)])
+        .split(area);
 
     let title = format!("📋 {}", rfc.rfc.rfc_id);
     let header = Paragraph::new(header_lines)
@@ -685,11 +691,13 @@ fn draw_adr_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> 
     ];
 
     let title = format!("📝 {}", meta.id);
-    let total_lines = lines.len();
+    let block = rounded_block(&title).border_style(Style::default().fg(Color::Green));
+    let inner_width = block.inner(chunks[0]).width;
+    let total_lines = wrapped_line_count(&lines, inner_width);
     let content = Paragraph::new(lines)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
-        .block(rounded_block(&title).border_style(Style::default().fg(Color::Green)));
+        .block(block);
 
     frame.render_widget(content, chunks[0]);
     total_lines
@@ -752,11 +760,13 @@ fn draw_work_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) ->
     }
 
     let title = format!("📌 {}", meta.id);
-    let total_lines = lines.len();
+    let block = rounded_block(&title).border_style(Style::default().fg(Color::Yellow));
+    let inner_width = block.inner(chunks[0]).width;
+    let total_lines = wrapped_line_count(&lines, inner_width);
     let content = Paragraph::new(lines)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
-        .block(rounded_block(&title).border_style(Style::default().fg(Color::Yellow)));
+        .block(block);
 
     frame.render_widget(content, chunks[0]);
     total_lines
@@ -828,11 +838,13 @@ fn draw_clause_detail(
     }
 
     let title = format!("📜 {}", clause.spec.clause_id);
-    let total_lines = lines.len();
+    let block = rounded_block(&title).border_style(Style::default().fg(Color::Magenta));
+    let inner_width = block.inner(chunks[0]).width;
+    let total_lines = wrapped_line_count(&lines, inner_width);
     let content = Paragraph::new(lines)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
-        .block(rounded_block(&title).border_style(Style::default().fg(Color::Magenta)));
+        .block(block);
 
     frame.render_widget(content, chunks[0]);
     total_lines
@@ -877,8 +889,10 @@ fn draw_help_overlay(frame: &mut Frame, app: &App) {
         }
         View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => {
             lines.push(Line::from("Detail"));
-            lines.push(Line::from("  j/k    Scroll"));
-            lines.push(Line::from("  Esc    Back"));
+            lines.push(Line::from("  j/k      Scroll line"));
+            lines.push(Line::from("  Ctrl+d/u Half-page"));
+            lines.push(Line::from("  PgDn/Up  Full page"));
+            lines.push(Line::from("  Esc      Back"));
         }
     }
 

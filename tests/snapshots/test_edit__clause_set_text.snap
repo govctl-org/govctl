@@ -17,7 +17,7 @@ Updated clause: RFC-0001:C-TEST
 exit: 0
 
 $ govctl clause show RFC-0001:C-TEST
-# [RFC-0001:C-TEST] Test Clause (Normative)
+### [RFC-0001:C-TEST] Test Clause (Normative)
 
 Updated clause text
 exit: 0

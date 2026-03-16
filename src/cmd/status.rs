@@ -4,16 +4,15 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus, WorkItemStatus};
+use crate::theme::status_semantic;
 use crate::ui::stdout_supports_color;
 use owo_colors::OwoColorize;
 use std::collections::HashMap;
 
-/// Check if stdout supports colors (delegates to centralized ui module)
 fn use_colors() -> bool {
     stdout_supports_color()
 }
 
-/// Print a section header
 fn section_header(title: &str) {
     if use_colors() {
         println!("\n{}", title.bold().underline());
@@ -22,25 +21,24 @@ fn section_header(title: &str) {
     }
 }
 
-/// Print a status count line with semantic coloring
-fn status_line(label: &str, count: usize, highlight: bool) {
+fn status_line(label: &str, count: usize, status: &str) {
     if count == 0 {
         return;
     }
 
     if use_colors() {
+        let color = status_semantic(status).to_owo();
         let count_str = count.to_string();
-        if highlight {
-            println!("  {:12} {}", label.yellow(), count_str.yellow().bold());
-        } else {
-            println!("  {:12} {}", label, count_str.cyan().bold());
-        }
+        println!(
+            "  {:12} {}",
+            label.color(color),
+            count_str.color(color).bold()
+        );
     } else {
         println!("  {:12} {}", label, count);
     }
 }
 
-/// Print a summary total line
 fn total_line(count: usize) {
     if use_colors() {
         println!("  {:12} {}", "Total".dimmed(), count.to_string().bold());
@@ -79,9 +77,9 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     let normative = by_status.get(&RfcStatus::Normative).copied().unwrap_or(0);
     let deprecated = by_status.get(&RfcStatus::Deprecated).copied().unwrap_or(0);
 
-    status_line("draft", draft, true); // highlight in-progress
-    status_line("normative", normative, false);
-    status_line("deprecated", deprecated, false);
+    status_line("draft", draft, "draft");
+    status_line("normative", normative, "normative");
+    status_line("deprecated", deprecated, "deprecated");
 
     // Show phase breakdown for non-stable RFCs
     let spec = by_phase.get(&RfcPhase::Spec).copied().unwrap_or(0);
@@ -147,9 +145,9 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
         .copied()
         .unwrap_or(0);
 
-    status_line("active", active, false);
-    status_line("deprecated", clause_deprecated, false);
-    status_line("superseded", superseded, false);
+    status_line("active", active, "active");
+    status_line("deprecated", clause_deprecated, "deprecated");
+    status_line("superseded", superseded, "superseded");
     total_line(total_clauses);
 
     // ADR summary
@@ -174,9 +172,9 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
         .copied()
         .unwrap_or(0);
 
-    status_line("proposed", proposed, true); // highlight pending decisions
-    status_line("accepted", accepted, false);
-    status_line("superseded", adr_superseded, false);
+    status_line("proposed", proposed, "proposed");
+    status_line("accepted", accepted, "accepted");
+    status_line("superseded", adr_superseded, "superseded");
     total_line(index.adrs.len());
 
     // Work Item summary
@@ -205,10 +203,10 @@ pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
         .copied()
         .unwrap_or(0);
 
-    status_line("queue", queue, true); // highlight backlog
-    status_line("active", work_active, true); // highlight in-progress
-    status_line("done", done, false);
-    status_line("cancelled", cancelled, false);
+    status_line("queue", queue, "queue");
+    status_line("active", work_active, "active");
+    status_line("done", done, "done");
+    status_line("cancelled", cancelled, "cancelled");
     total_line(index.work_items.len());
 
     // Show active work items if any

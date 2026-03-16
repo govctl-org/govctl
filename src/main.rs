@@ -16,6 +16,8 @@ mod render;
 mod scan;
 mod schema;
 mod signature;
+mod terminal_md;
+mod theme;
 mod ui;
 mod validate;
 mod verification;

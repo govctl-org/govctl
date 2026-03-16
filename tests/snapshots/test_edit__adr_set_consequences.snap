@@ -11,9 +11,6 @@ Set ADR-0001.consequences = Good: faster. Bad: more memory.
 exit: 0
 
 $ govctl adr show ADR-0001
-<!-- GENERATED: do not edit. Source: ADR-0001 -->
-<!-- SIGNATURE: sha256:<HASH> -->
-
 # ADR-0001: Test Decision
 
 > **Status:** proposed | **Date:** <DATE>

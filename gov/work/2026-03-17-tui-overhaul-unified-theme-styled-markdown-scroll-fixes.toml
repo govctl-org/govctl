@@ -1,0 +1,76 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-17-008"
+title = "TUI overhaul: unified theme, styled markdown, scroll fixes"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+refs = [
+    "RFC-0003",
+    "ADR-0005",
+]
+
+[content]
+description = "Comprehensive TUI and CLI output overhaul addressing accumulated inconsistencies after many feature iterations. Three main areas: (1) unify three parallel color systems into a single semantic theme in src/theme.rs, (2) add styled terminal markdown rendering via markdown-to-ansi for show commands, (3) fix TUI scroll accuracy, cache filtered indices, add page-scroll keybindings, and default-enable the TUI feature."
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "tui"
+content = "Phase 1-2 done: created src/theme.rs with SemanticColor and backend adapters; migrated list.rs, status.rs, tui/ui.rs to unified theme; added markdown-to-ansi dependency and src/terminal_md.rs; show commands now render styled markdown with HTML stripping and checkbox transformation; unified show_clause with render_clause; all 329 tests pass and govctl check passes"
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "tui"
+content = "All phases complete: (1) src/theme.rs with SemanticColor enum + 3 backend adapters, all consumers migrated; (2) src/terminal_md.rs with strip_for_terminal + render_terminal_md, all show_* commands updated, show_clause unified with render_clause; (3a) scroll position uses wrapped_line_count; (3b) list_indices cached with dirty flag; (3c) Ctrl+d/u half-page + PgUp/PgDn full-page scroll; (3d) tui feature default-enabled; (4) dynamic RFC detail height, status_icon in theme. All 329 tests pass, govctl check passes."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "src/theme.rs with SemanticColor enum and backend adapters"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Deprecated/superseded uses Muted (DarkGrey) consistently across CLI and TUI"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "show commands render styled markdown via markdown-to-ansi"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "show output strips HTML comments, anchors, and converts relative links"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "TUI scroll position accounts for word-wrap"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "list_indices() cached per frame, invalidated on filter change"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Ctrl+d/u half-page and PgUp/PgDn full-page scroll in TUI"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "TUI feature default-enabled in Cargo.toml"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
