@@ -66,6 +66,7 @@ pub enum CanonicalCommand {
         dry_run: bool,
         force: bool,
     },
+    Migrate,
     Describe {
         context: bool,
         #[allow(dead_code)]
@@ -321,6 +322,7 @@ impl CanonicalCommand {
             Init { .. }
                 | Sync { .. }
                 | Render { .. }
+                | Migrate
                 | RfcNew { .. }
                 | RfcSet { .. }
                 | RfcBump { .. }
@@ -383,6 +385,7 @@ impl CanonicalCommand {
                 dry_run: *dry_run,
                 force: *force,
             },
+            Commands::Migrate => Self::Migrate,
             Commands::Describe { context, output } => Self::Describe {
                 context: *context,
                 output: output.clone(),
@@ -450,6 +453,7 @@ impl CanonicalCommand {
                 }
                 Ok(all_diags)
             }
+            Self::Migrate => cmd::migrate::migrate(config, op),
             Self::Describe { context, output: _ } => cmd::describe::describe(config, *context),
             Self::Completions { shell } => {
                 use crate::Cli;

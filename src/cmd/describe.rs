@@ -222,6 +222,13 @@ fn command_catalog() -> Vec<CommandInfo> {
             prerequisites: vec!["govctl init".to_string()],
         },
         CommandInfo {
+            name: "migrate".to_string(),
+            purpose: "Convert legacy JSON governance storage to current TOML formats".to_string(),
+            when_to_use: "When a repository still stores RFCs or clauses as JSON, or when releases.toml needs schema metadata normalization.".to_string(),
+            example: "govctl migrate".to_string(),
+            prerequisites: vec!["govctl init".to_string()],
+        },
+        CommandInfo {
             name: "bump".to_string(),
             purpose: "Bump RFC version".to_string(),
             when_to_use: "When making changes to a normative RFC. Follows semver.".to_string(),

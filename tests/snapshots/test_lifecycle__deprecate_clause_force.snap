@@ -3,13 +3,13 @@ source: tests/test_lifecycle.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl rfc new Deprecate Clause RFC
-Created RFC: gov/rfc/RFC-0001/rfc.json
+Created RFC: gov/rfc/RFC-0001/rfc.toml
   Clauses dir: gov/rfc/RFC-0001/clauses
 exit: 0
 
 $ govctl clause new RFC-0001:C-ONE Clause One -s Specification -k normative
-Created clause: gov/rfc/RFC-0001/clauses/C-ONE.json
-  Added to section 'Specification', path: clauses/C-ONE.json
+Created clause: gov/rfc/RFC-0001/clauses/C-ONE.toml
+  Added to section 'Specification', path: clauses/C-ONE.toml
 exit: 0
 
 $ govctl clause deprecate RFC-0001:C-ONE --force

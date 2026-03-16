@@ -3,7 +3,7 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ClauseEntry, ClauseSpec, ProjectIndex, RfcIndex, RfcSpec};
-use crate::schema::{ArtifactSchema, validate_json_value};
+use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value};
 use std::path::{Path, PathBuf};
 
 /// Load error types
@@ -62,9 +62,8 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
 
         let path = entry.path();
         if path.is_dir() {
-            let rfc_json = path.join("rfc.json");
-            if rfc_json.exists() {
-                let rfc_index = load_rfc(config, &rfc_json)?;
+            if let Some(rfc_path) = find_rfc_in_dir(&path) {
+                let rfc_index = load_rfc(config, &rfc_path)?;
                 rfcs.push(rfc_index);
             }
         }
@@ -77,29 +76,50 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
 }
 
 /// Load a single RFC and its clauses
-pub fn load_rfc(config: &Config, rfc_json: &Path) -> Result<RfcIndex, LoadError> {
-    let content = std::fs::read_to_string(rfc_json).map_err(|e| LoadError::Io {
-        file: rfc_json.display().to_string(),
+pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError> {
+    let content = std::fs::read_to_string(rfc_path).map_err(|e| LoadError::Io {
+        file: rfc_path.display().to_string(),
         message: e.to_string(),
     })?;
 
-    let raw: serde_json::Value = serde_json::from_str(&content).map_err(|e| LoadError::Json {
-        file: rfc_json.display().to_string(),
-        message: e.to_string(),
-    })?;
-    validate_json_value(ArtifactSchema::Rfc, config, rfc_json, &raw).map_err(|e| {
-        LoadError::RfcSchema {
-            file: rfc_json.display().to_string(),
-            message: e.message,
+    let rfc: RfcSpec = match rfc_path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => {
+            let raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
+                file: rfc_path.display().to_string(),
+                message: e.to_string(),
+            })?;
+            validate_toml_value(ArtifactSchema::Rfc, config, rfc_path, &raw).map_err(|e| {
+                LoadError::RfcSchema {
+                    file: rfc_path.display().to_string(),
+                    message: e.message,
+                }
+            })?;
+            raw.try_into().map_err(|e| LoadError::Json {
+                file: rfc_path.display().to_string(),
+                message: e.to_string(),
+            })?
         }
-    })?;
-    let rfc: RfcSpec = serde_json::from_value(raw).map_err(|e| LoadError::Json {
-        file: rfc_json.display().to_string(),
-        message: e.to_string(),
-    })?;
+        _ => {
+            let raw: serde_json::Value =
+                serde_json::from_str(&content).map_err(|e| LoadError::Json {
+                    file: rfc_path.display().to_string(),
+                    message: e.to_string(),
+                })?;
+            validate_json_value(ArtifactSchema::Rfc, config, rfc_path, &raw).map_err(|e| {
+                LoadError::RfcSchema {
+                    file: rfc_path.display().to_string(),
+                    message: e.message,
+                }
+            })?;
+            serde_json::from_value(raw).map_err(|e| LoadError::Json {
+                file: rfc_path.display().to_string(),
+                message: e.to_string(),
+            })?
+        }
+    };
 
-    let rfc_dir = rfc_json.parent().ok_or_else(|| LoadError::Io {
-        file: rfc_json.display().to_string(),
+    let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::Io {
+        file: rfc_path.display().to_string(),
         message: "RFC path has no parent directory".to_string(),
     })?;
     let mut clauses = Vec::new();
@@ -110,7 +130,7 @@ pub fn load_rfc(config: &Config, rfc_json: &Path) -> Result<RfcIndex, LoadError>
             // Validate path doesn't escape
             if clause_path.contains("..") {
                 return Err(LoadError::ClausePathInvalid {
-                    file: rfc_json.display().to_string(),
+                    file: rfc_path.display().to_string(),
                     clause: clause_path.clone(),
                 });
             }
@@ -126,7 +146,7 @@ pub fn load_rfc(config: &Config, rfc_json: &Path) -> Result<RfcIndex, LoadError>
     Ok(RfcIndex {
         rfc,
         clauses,
-        path: rfc_json.to_path_buf(),
+        path: rfc_path.to_path_buf(),
     })
 }
 
@@ -137,25 +157,55 @@ pub fn load_clause(config: &Config, path: &Path) -> Result<ClauseEntry, LoadErro
         message: e.to_string(),
     })?;
 
-    let raw: serde_json::Value = serde_json::from_str(&content).map_err(|e| LoadError::Json {
-        file: path.display().to_string(),
-        message: e.to_string(),
-    })?;
-    validate_json_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
-        LoadError::ClauseSchema {
-            file: path.display().to_string(),
-            message: e.message,
+    let spec: ClauseSpec = match path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => {
+            let raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
+                file: path.display().to_string(),
+                message: e.to_string(),
+            })?;
+            validate_toml_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
+                LoadError::ClauseSchema {
+                    file: path.display().to_string(),
+                    message: e.message,
+                }
+            })?;
+            raw.try_into().map_err(|e| LoadError::Json {
+                file: path.display().to_string(),
+                message: e.to_string(),
+            })?
         }
-    })?;
-    let spec: ClauseSpec = serde_json::from_value(raw).map_err(|e| LoadError::Json {
-        file: path.display().to_string(),
-        message: e.to_string(),
-    })?;
+        _ => {
+            let raw: serde_json::Value =
+                serde_json::from_str(&content).map_err(|e| LoadError::Json {
+                    file: path.display().to_string(),
+                    message: e.to_string(),
+                })?;
+            validate_json_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
+                LoadError::ClauseSchema {
+                    file: path.display().to_string(),
+                    message: e.message,
+                }
+            })?;
+            serde_json::from_value(raw).map_err(|e| LoadError::Json {
+                file: path.display().to_string(),
+                message: e.to_string(),
+            })?
+        }
+    };
 
     Ok(ClauseEntry {
         spec,
         path: path.to_path_buf(),
     })
+}
+
+fn find_rfc_in_dir(dir: &Path) -> Option<PathBuf> {
+    let toml = dir.join("rfc.toml");
+    if toml.exists() {
+        return Some(toml);
+    }
+    let json = dir.join("rfc.json");
+    json.exists().then_some(json)
 }
 
 /// Result of loading a project: index plus any warnings encountered
@@ -209,12 +259,7 @@ pub fn load_project_with_warnings(config: &Config) -> Result<ProjectLoadResult, 
 /// Find RFC JSON by ID
 pub fn find_rfc_json(config: &Config, rfc_id: &str) -> Option<PathBuf> {
     let rfc_dir = config.rfc_dir().join(rfc_id);
-    let rfc_json = rfc_dir.join("rfc.json");
-    if rfc_json.exists() {
-        Some(rfc_json)
-    } else {
-        None
-    }
+    find_rfc_in_dir(&rfc_dir)
 }
 
 /// Find clause JSON by full ID (e.g., RFC-0001:C-PHASE-ORDER)
@@ -231,11 +276,16 @@ pub fn find_clause_json(config: &Config, clause_id: &str) -> Option<PathBuf> {
         .rfc_dir()
         .join(rfc_id)
         .join("clauses")
-        .join(format!("{clause_name}.json"));
+        .join(format!("{clause_name}.toml"));
 
     if clause_path.exists() {
         Some(clause_path)
     } else {
-        None
+        let legacy_clause_path = config
+            .rfc_dir()
+            .join(rfc_id)
+            .join("clauses")
+            .join(format!("{clause_name}.json"));
+        legacy_clause_path.exists().then_some(legacy_clause_path)
     }
 }

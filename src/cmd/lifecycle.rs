@@ -38,7 +38,7 @@ fn fill_pending_clause_versions(
     let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)?
         .filter_map(Result::ok)
         .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|e| e == "json"))
+        .filter(|p| p.extension().is_some_and(|e| e == "json" || e == "toml"))
         .filter_map(|p| read_clause(config, &p).ok().map(|c| (p, c)))
         .filter(|(_, c)| c.since.is_none())
         .collect();

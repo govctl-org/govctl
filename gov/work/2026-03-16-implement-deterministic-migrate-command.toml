@@ -1,0 +1,67 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-16-002"
+title = "Implement deterministic migrate command"
+status = "done"
+created = "2026-03-16"
+started = "2026-03-16"
+completed = "2026-03-16"
+refs = [
+    "RFC-0000",
+    "RFC-0002",
+    "ADR-0014",
+    "ADR-0032",
+    "ADR-0034",
+]
+
+[content]
+description = "Implement a deterministic govctl migrate command that converts legacy JSON RFC/clause artifacts to TOML, upgrades releases.toml metadata, validates the full converted tree before writing, and leaves repositories unchanged on failure."
+notes = ["Changing new RFC/clause creation to TOML causes broad snapshot churn but keeps the suite meaningful; update snapshots immediately so migrate regressions stay visible instead of hiding behind stale JSON expectations."]
+
+[[content.journal]]
+date = "2026-03-16"
+scope = "migrate"
+content = """
+Started migrate implementation by making RFC/clause storage format-aware enough for TOML-first creation and dual-format reads.
+
+This slice updates core readers/writers to parse JSON or TOML based on file extension, changes new RFC/clause creation to emit TOML, and removes several hard-coded `.json` assumptions from lifecycle and edit paths. Verified with `cargo check`, `cargo test --test test_init`, `cargo test --test test_happy_path`, and `cargo run --quiet -- check`."""
+
+[[content.journal]]
+date = "2026-03-16"
+scope = "verification"
+content = """
+Implemented `govctl migrate` as a deterministic storage migration command.
+
+This slice adds the global CLI command, command-router wiring, describe metadata, a transactional migration engine for legacy JSON RFC/clause storage, deterministic `releases.toml` schema-metadata upgrades, and dual-format RFC/clause reader-writer support so post-migration commands operate on TOML without breaking legacy repos.
+
+Verified with `cargo test --test test_migrate`, updated affected snapshot suites for TOML-first RFC/clause creation, reran full `cargo test`, and reran `cargo run --quiet -- check`."""
+
+[[content.acceptance_criteria]]
+text = "govctl migrate converts legacy JSON RFC and clause files to TOML and rewrites govctl-managed clause paths"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl migrate upgrades legacy releases.toml files to include schema metadata"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "migrated repositories fail if any converted artifact would be invalid instead of leaving mixed-format partial writes"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "post-migration lifecycle and lookup paths no longer assume .json RFC/clause files"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

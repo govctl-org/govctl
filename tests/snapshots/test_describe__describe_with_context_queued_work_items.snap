@@ -14,7 +14,7 @@ exit: 0
 
 $ govctl describe --context
 {
-  "version": "0.5.4",
+  "version": "0.6.0",
   "purpose": "Enforces RFC-driven phase discipline for AI-assisted software development",
   "philosophy": [
     "RFC is the source of truth — No implementation without specification",
@@ -206,6 +206,15 @@ $ govctl describe --context
       "purpose": "Render artifacts to markdown",
       "when_to_use": "To generate human-readable documentation from SSOT. Run after RFC changes.",
       "example": "govctl render rfc",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "migrate",
+      "purpose": "Convert legacy JSON governance storage to current TOML formats",
+      "when_to_use": "When a repository still stores RFCs or clauses as JSON, or when releases.toml needs schema metadata normalization.",
+      "example": "govctl migrate",
       "prerequisites": [
         "govctl init"
       ]

@@ -301,7 +301,7 @@ fn create_rfc(
     let display_clauses_dir = config.display_path(&clauses_dir);
     create_dir_all(&clauses_dir, op, Some(&display_clauses_dir))?;
 
-    // Create rfc.json
+    // Create rfc.toml
     let rfc = RfcSpec {
         rfc_id: rfc_id.to_string(),
         title: title.to_string(),
@@ -337,13 +337,13 @@ fn create_rfc(
         signature: None, // Will be set on first bump per [[ADR-0016]]
     };
 
-    let rfc_json = rfc_dir.join("rfc.json");
-    let content = serde_json::to_string_pretty(&rfc)?;
-    let display_rfc_json = config.display_path(&rfc_json);
-    write_file(&rfc_json, &content, op, Some(&display_rfc_json))?;
+    let rfc_toml = rfc_dir.join("rfc.toml");
+    let content = toml::to_string_pretty(&rfc)?;
+    let display_rfc_toml = config.display_path(&rfc_toml);
+    write_file(&rfc_toml, &content, op, Some(&display_rfc_toml))?;
 
     if !op.is_preview() {
-        ui::created("RFC", &config.display_path(&rfc_json));
+        ui::created("RFC", &config.display_path(&rfc_toml));
         ui::sub_info(format!(
             "Clauses dir: {}",
             config.display_path(&clauses_dir).display()
@@ -376,8 +376,14 @@ fn create_clause(
     let rfc_id = parts[0];
     let clause_name = parts[1];
 
+    let rfc_toml = config.rfc_dir().join(rfc_id).join("rfc.toml");
     let rfc_json = config.rfc_dir().join(rfc_id).join("rfc.json");
-    if !rfc_json.exists() {
+    let rfc_path = if rfc_toml.exists() {
+        rfc_toml
+    } else {
+        rfc_json
+    };
+    if !rfc_path.exists() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {rfc_id}"),
@@ -387,7 +393,10 @@ fn create_clause(
     }
 
     // Load RFC to get current version
-    let mut rfc: RfcSpec = serde_json::from_str(&std::fs::read_to_string(&rfc_json)?)?;
+    let mut rfc: RfcSpec = match rfc_path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => toml::from_str(&std::fs::read_to_string(&rfc_path)?)?,
+        _ => serde_json::from_str(&std::fs::read_to_string(&rfc_path)?)?,
+    };
 
     // Create clause
     let clause = ClauseSpec {
@@ -405,14 +414,14 @@ fn create_clause(
         .rfc_dir()
         .join(rfc_id)
         .join("clauses")
-        .join(format!("{clause_name}.json"));
+        .join(format!("{clause_name}.toml"));
 
-    let content = serde_json::to_string_pretty(&clause)?;
+    let content = toml::to_string_pretty(&clause)?;
     let display_clause_path = config.display_path(&clause_path);
     write_file(&clause_path, &content, op, Some(&display_clause_path))?;
 
     // Update RFC to include clause in section
-    let clause_rel_path = format!("clauses/{clause_name}.json");
+    let clause_rel_path = format!("clauses/{clause_name}.toml");
 
     // Find or create section
     if let Some(sec) = rfc.sections.iter_mut().find(|s| s.title == section) {
@@ -427,9 +436,12 @@ fn create_clause(
     }
 
     // Write updated RFC
-    let rfc_content = serde_json::to_string_pretty(&rfc)?;
-    let display_rfc_json = config.display_path(&rfc_json);
-    write_file(&rfc_json, &rfc_content, op, Some(&display_rfc_json))?;
+    let rfc_content = match rfc_path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => toml::to_string_pretty(&rfc)?,
+        _ => serde_json::to_string_pretty(&rfc)?,
+    };
+    let display_rfc_path = config.display_path(&rfc_path);
+    write_file(&rfc_path, &rfc_content, op, Some(&display_rfc_path))?;
 
     if !op.is_preview() {
         ui::created("clause", &config.display_path(&clause_path));

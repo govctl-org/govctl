@@ -71,6 +71,9 @@ pub(crate) enum Commands {
         force: bool,
     },
 
+    /// Migrate legacy governance storage to current canonical formats
+    Migrate,
+
     // ========================================
     // Resource-First Commands (RFC-0002)
     // ========================================
@@ -289,7 +292,7 @@ VALID FIELDS:
     - status: RFC status (draft|normative|deprecated)
     - phase: RFC phase (spec|impl|test|stable)
 
-  Array fields (modify via rfc.json directly):
+  Array fields (modify via the RFC source file directly):
     - owners, refs, sections
 
 EXAMPLES:
@@ -465,7 +468,7 @@ VALID FIELDS:
     - status: Clause status (active|deprecated|superseded)
     - text: Clause text content (use 'edit' for multi-line)
 
-  Array fields (modify via clause.json directly):
+  Array fields (modify via the clause source file directly):
     - anchors
 
 EXAMPLES:

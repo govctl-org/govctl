@@ -3,18 +3,18 @@ source: tests/test_lifecycle.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl rfc new Supersede Then Deprecate RFC
-Created RFC: gov/rfc/RFC-0001/rfc.json
+Created RFC: gov/rfc/RFC-0001/rfc.toml
   Clauses dir: gov/rfc/RFC-0001/clauses
 exit: 0
 
 $ govctl clause new RFC-0001:C-OLD Old Clause -s Specification -k normative
-Created clause: gov/rfc/RFC-0001/clauses/C-OLD.json
-  Added to section 'Specification', path: clauses/C-OLD.json
+Created clause: gov/rfc/RFC-0001/clauses/C-OLD.toml
+  Added to section 'Specification', path: clauses/C-OLD.toml
 exit: 0
 
 $ govctl clause new RFC-0001:C-NEW New Clause -s Specification -k normative
-Created clause: gov/rfc/RFC-0001/clauses/C-NEW.json
-  Added to section 'Specification', path: clauses/C-NEW.json
+Created clause: gov/rfc/RFC-0001/clauses/C-NEW.toml
+  Added to section 'Specification', path: clauses/C-NEW.toml
 exit: 0
 
 $ govctl clause supersede RFC-0001:C-OLD --by RFC-0001:C-NEW --force

@@ -1095,20 +1095,18 @@ pub fn delete_clause(
         .into());
     }
 
-    let clause_path = config
-        .rfc_dir()
-        .join(rfc_id)
-        .join("clauses")
-        .join(format!("{}.json", clause_name));
-
-    if !clause_path.exists() {
-        return Err(Diagnostic::new(
+    let clause_path = crate::load::find_clause_json(config, clause_id).ok_or_else(|| {
+        Diagnostic::new(
             DiagnosticCode::E0202ClauseNotFound,
             format!("Clause not found: {}", clause_id),
             clause_id,
         )
-        .into());
-    }
+    })?;
+
+    let clause_file_name = clause_path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .ok_or_else(|| anyhow::anyhow!("Invalid clause file path: {}", clause_path.display()))?;
 
     if !confirm_delete_prompt(
         force,
@@ -1119,7 +1117,7 @@ pub fn delete_clause(
     }
 
     let mut rfc = rfc_loaded.data.clone();
-    let clause_rel_path = format!("clauses/{}.json", clause_name);
+    let clause_rel_path = format!("clauses/{}", clause_file_name);
 
     let mut removed = false;
     for section in &mut rfc.sections {

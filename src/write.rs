@@ -6,7 +6,7 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogCategory, ChangelogEntry, ClauseSpec, RfcSpec};
-use crate::schema::{ArtifactSchema, validate_json_value};
+use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value};
 use crate::ui;
 use anyhow::{Context, Result};
 use chrono::Local;
@@ -172,22 +172,36 @@ pub enum BumpLevel {
 pub fn read_rfc(config: &Config, path: &Path) -> Result<RfcSpec> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read RFC: {}", path.display()))?;
-    let raw: serde_json::Value = serde_json::from_str(&content)
-        .with_context(|| format!("Failed to parse RFC JSON: {}", path.display()))?;
-    validate_json_value(ArtifactSchema::Rfc, config, path, &raw)?;
-    let rfc: RfcSpec = serde_json::from_value(raw)
-        .with_context(|| format!("Failed to deserialize RFC JSON: {}", path.display()))?;
+    let rfc = match path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => {
+            let raw: toml::Value = toml::from_str(&content)
+                .with_context(|| format!("Failed to parse RFC TOML: {}", path.display()))?;
+            validate_toml_value(ArtifactSchema::Rfc, config, path, &raw)?;
+            raw.try_into()
+                .with_context(|| format!("Failed to deserialize RFC TOML: {}", path.display()))?
+        }
+        _ => {
+            let raw: serde_json::Value = serde_json::from_str(&content)
+                .with_context(|| format!("Failed to parse RFC JSON: {}", path.display()))?;
+            validate_json_value(ArtifactSchema::Rfc, config, path, &raw)?;
+            serde_json::from_value(raw)
+                .with_context(|| format!("Failed to deserialize RFC JSON: {}", path.display()))?
+        }
+    };
     Ok(rfc)
 }
 
-/// Write RFC JSON to file
+/// Write RFC to file, selecting JSON or TOML by extension.
 pub fn write_rfc(
     path: &Path,
     rfc: &RfcSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<()> {
-    let content = serde_json::to_string_pretty(rfc)?;
+    let content = match path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => toml::to_string_pretty(rfc)?,
+        _ => serde_json::to_string_pretty(rfc)?,
+    };
     write_file(path, &content, op, display_path)
 }
 
@@ -195,22 +209,36 @@ pub fn write_rfc(
 pub fn read_clause(config: &Config, path: &Path) -> Result<ClauseSpec> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read clause: {}", path.display()))?;
-    let raw: serde_json::Value = serde_json::from_str(&content)
-        .with_context(|| format!("Failed to parse clause JSON: {}", path.display()))?;
-    validate_json_value(ArtifactSchema::Clause, config, path, &raw)?;
-    let clause: ClauseSpec = serde_json::from_value(raw)
-        .with_context(|| format!("Failed to deserialize clause JSON: {}", path.display()))?;
+    let clause = match path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => {
+            let raw: toml::Value = toml::from_str(&content)
+                .with_context(|| format!("Failed to parse clause TOML: {}", path.display()))?;
+            validate_toml_value(ArtifactSchema::Clause, config, path, &raw)?;
+            raw.try_into()
+                .with_context(|| format!("Failed to deserialize clause TOML: {}", path.display()))?
+        }
+        _ => {
+            let raw: serde_json::Value = serde_json::from_str(&content)
+                .with_context(|| format!("Failed to parse clause JSON: {}", path.display()))?;
+            validate_json_value(ArtifactSchema::Clause, config, path, &raw)?;
+            serde_json::from_value(raw)
+                .with_context(|| format!("Failed to deserialize clause JSON: {}", path.display()))?
+        }
+    };
     Ok(clause)
 }
 
-/// Write clause JSON to file
+/// Write clause to file, selecting JSON or TOML by extension.
 pub fn write_clause(
     path: &Path,
     clause: &ClauseSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<()> {
-    let content = serde_json::to_string_pretty(clause)?;
+    let content = match path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => toml::to_string_pretty(clause)?,
+        _ => serde_json::to_string_pretty(clause)?,
+    };
     write_file(path, &content, op, display_path)
 }
 

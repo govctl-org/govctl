@@ -3,13 +3,13 @@ source: tests/test_rfc_lifecycle.rs
 expression: "normalize_output(&combined, temp_dir.path(), &date)"
 ---
 $ govctl rfc new Amendment Test RFC
-Created RFC: gov/rfc/RFC-0001/rfc.json
+Created RFC: gov/rfc/RFC-0001/rfc.toml
   Clauses dir: gov/rfc/RFC-0001/clauses
 exit: 0
 
 $ govctl clause new RFC-0001:C-AMEND-TEST Amendment Test Clause -s Specification -k normative
-Created clause: gov/rfc/RFC-0001/clauses/C-AMEND-TEST.json
-  Added to section 'Specification', path: clauses/C-AMEND-TEST.json
+Created clause: gov/rfc/RFC-0001/clauses/C-AMEND-TEST.toml
+  Added to section 'Specification', path: clauses/C-AMEND-TEST.toml
 exit: 0
 
 $ govctl clause edit RFC-0001:C-AMEND-TEST --text Original text for amendment test.

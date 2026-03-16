@@ -4,26 +4,23 @@ expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl rfc new New RFC --dry-run
 Would create dir: gov/rfc/RFC-0001/clauses
-Would write: gov/rfc/RFC-0001/rfc.json
-  {
-    "rfc_id": "RFC-0001",
-    "title": "New RFC",
-    "version": "0.1.0",
-    "status": "draft",
-    "phase": "spec",
-    "owners": [
-      "@test-user"
-    ],
-    "created": "<DATE>",
-    "sections": [
-      {
-        "title": "Summary"
-      },
-      {
-        "title": "Specification"
-      }
-    ],
-    "changelog": [
-      {
-  ...
+Would write: gov/rfc/RFC-0001/rfc.toml
+  rfc_id = "RFC-0001"
+  title = "New RFC"
+  version = "0.1.0"
+  status = "draft"
+  phase = "spec"
+  owners = ["@test-user"]
+  created = "<DATE>"
+  
+  [[sections]]
+  title = "Summary"
+  
+  [[sections]]
+  title = "Specification"
+  
+  [[changelog]]
+  version = "0.1.0"
+  date = "<DATE>"
+  notes = "Initial draft"
 exit: 0
