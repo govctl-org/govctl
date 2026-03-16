@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Release Specification",
+  "description": "JSON Schema for releases.toml after parsing and normalization",
+  "type": "object",
+  "required": ["govctl", "releases"],
+  "properties": {
+    "govctl": {
+      "type": "object",
+      "required": ["schema"],
+      "properties": {
+        "schema": {
+          "type": "integer",
+          "const": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "releases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["version", "date"],
+        "properties": {
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+(?:[-+][0-9A-Za-z.-]+)?$"
+          },
+          "date": {
+            "type": "string",
+            "format": "date"
+          },
+          "refs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3})$"
+            }
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

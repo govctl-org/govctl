@@ -33,7 +33,8 @@ fn test_default_agent_dir() {
 fn test_custom_agent_dir() {
     let temp_dir = init_project();
 
-    // Update config to use .cursor instead of .claude
+    // Update config to use a custom directory instead of .claude.
+    // Avoid IDE-reserved paths in temp tests.
     let config_path = temp_dir.path().join("gov/config.toml");
     let config_content = r#"[project]
 name = "test-project"
@@ -41,11 +42,11 @@ name = "test-project"
 [paths]
 gov_root = "gov"
 docs_output = "docs"
-agent_dir = ".cursor"
+agent_dir = ".custom-agent"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
-    // sync should create files under .cursor/skills
+    // sync should create files under the custom agent directory
     let output = run_commands(temp_dir.path(), &[&["sync-commands", "-f"]]);
     eprintln!("sync-commands output:\n{}", output);
 
@@ -56,11 +57,11 @@ agent_dir = ".cursor"
         }
     }
 
-    // Check that .cursor/skills/gov/SKILL.md exists
-    let cursor_skill = temp_dir.path().join(".cursor/skills/gov/SKILL.md");
+    // Check that the custom agent_dir is respected
+    let cursor_skill = temp_dir.path().join(".custom-agent/skills/gov/SKILL.md");
     assert!(
         cursor_skill.exists(),
-        "skills/gov/SKILL.md should exist under .cursor, found: {:?}",
+        "skills/gov/SKILL.md should exist under custom agent_dir, found: {:?}",
         cursor_skill
     );
 }

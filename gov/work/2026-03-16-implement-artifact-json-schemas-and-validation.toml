@@ -1,0 +1,65 @@
+[govctl]
+schema = 1
+id = "WI-2026-03-16-001"
+title = "Implement artifact JSON schemas and validation"
+status = "done"
+created = "2026-03-16"
+started = "2026-03-16"
+completed = "2026-03-16"
+refs = [
+    "RFC-0000",
+    "RFC-0001",
+    "RFC-0002",
+    "ADR-0014",
+    "ADR-0034",
+]
+
+[content]
+description = "Add machine-readable JSON Schema assets and runtime structural validation for RFC, clause, ADR, work item, and release artifacts so all governance files are checked consistently during load and govctl check."
+notes = [
+    "Validate raw parsed documents before struct deserialization; validating normalized structs alone drops unknown fields and makes additionalProperties checks toothless.",
+    "Bundle artifact schema JSON files into init and packaged builds, but keep a runtime fallback to embedded schemas so custom gov_root paths and older repos do not fail immediately on missing files.",
+]
+
+[[content.journal]]
+date = "2026-03-16"
+scope = "schema"
+content = """
+Added runtime JSON Schema validation for RFC, clause, ADR, work item, and release artifacts.
+
+Validation now runs at artifact read/load boundaries so check, render, edit, lifecycle, and release flows share the same structural guardrails. Release validation includes a compatibility normalization step that injects `govctl.schema = 1` in memory when older `releases.toml` files omit metadata.
+
+Verified with `cargo check`, targeted schema regression tests, full `cargo test`, and `cargo run --quiet -- check`."""
+
+[[content.journal]]
+date = "2026-03-16"
+scope = "verification"
+content = """
+Re-ran `cargo test` after updating schema-related snapshots and the custom agent-dir test fixture; the full suite passed.
+
+Re-ran `cargo run --quiet -- check`; it passed with only the pre-existing governance warnings about `C-RELEASE-DEF` lacking `since` and the older placeholder description in `WI-2026-03-01-001`."""
+
+[[content.acceptance_criteria]]
+text = "Runtime validation uses JSON Schemas for RFC, clause, ADR, work item, and release artifacts"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check validates releases as first-class artifacts"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Fresh projects and packaged builds include required artifact schema files"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

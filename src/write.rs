@@ -3,8 +3,10 @@
 //! Implements [[ADR-0006]] global dry-run support for content-modifying commands.
 //! Implements [[ADR-0012]] prefix-based changelog category parsing.
 
+use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogCategory, ChangelogEntry, ClauseSpec, RfcSpec};
+use crate::schema::{ArtifactSchema, validate_json_value};
 use crate::ui;
 use anyhow::{Context, Result};
 use chrono::Local;
@@ -166,12 +168,15 @@ pub enum BumpLevel {
     Major,
 }
 
-/// Read RFC JSON from file
-pub fn read_rfc(path: &Path) -> Result<RfcSpec> {
+/// Read RFC JSON from file and validate its normalized structure.
+pub fn read_rfc(config: &Config, path: &Path) -> Result<RfcSpec> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read RFC: {}", path.display()))?;
-    let rfc: RfcSpec = serde_json::from_str(&content)
+    let raw: serde_json::Value = serde_json::from_str(&content)
         .with_context(|| format!("Failed to parse RFC JSON: {}", path.display()))?;
+    validate_json_value(ArtifactSchema::Rfc, config, path, &raw)?;
+    let rfc: RfcSpec = serde_json::from_value(raw)
+        .with_context(|| format!("Failed to deserialize RFC JSON: {}", path.display()))?;
     Ok(rfc)
 }
 
@@ -186,12 +191,15 @@ pub fn write_rfc(
     write_file(path, &content, op, display_path)
 }
 
-/// Read clause JSON from file
-pub fn read_clause(path: &Path) -> Result<ClauseSpec> {
+/// Read clause JSON from file and validate its normalized structure.
+pub fn read_clause(config: &Config, path: &Path) -> Result<ClauseSpec> {
     let content = std::fs::read_to_string(path)
         .with_context(|| format!("Failed to read clause: {}", path.display()))?;
-    let clause: ClauseSpec = serde_json::from_str(&content)
+    let raw: serde_json::Value = serde_json::from_str(&content)
         .with_context(|| format!("Failed to parse clause JSON: {}", path.display()))?;
+    validate_json_value(ArtifactSchema::Clause, config, path, &raw)?;
+    let clause: ClauseSpec = serde_json::from_value(raw)
+        .with_context(|| format!("Failed to deserialize clause JSON: {}", path.display()))?;
     Ok(clause)
 }
 

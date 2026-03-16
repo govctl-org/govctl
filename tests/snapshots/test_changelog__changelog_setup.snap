@@ -11,6 +11,11 @@ Created: gov/adr
 Created: gov/work
 Created: gov/templates
 Created: gov/config.toml
+Created: gov/schema/rfc.schema.json
+Created: gov/schema/clause.schema.json
+Created: gov/schema/adr.schema.json
+Created: gov/schema/work.schema.json
+Created: gov/schema/release.schema.json
 Created: .gitignore
 Created: .claude/skills/discuss/SKILL.md
 Created: .claude/skills/gov/SKILL.md

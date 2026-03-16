@@ -26,6 +26,29 @@ fn test_init_creates_gitignore() {
     );
 }
 
+/// Test: init installs bundled artifact JSON Schemas
+#[test]
+fn test_init_creates_artifact_schema_files() {
+    let temp_dir = TempDir::new().expect("failed to create temp dir");
+
+    let output = run_commands(temp_dir.path(), &[&["init"]]);
+    assert!(output.contains("Project initialized"));
+
+    for filename in [
+        "rfc.schema.json",
+        "clause.schema.json",
+        "adr.schema.json",
+        "work.schema.json",
+        "release.schema.json",
+    ] {
+        assert!(
+            temp_dir.path().join("gov/schema").join(filename).exists(),
+            "schema file should exist: {}",
+            filename
+        );
+    }
+}
+
 /// Test: init appends .govctl.lock to existing .gitignore
 #[test]
 fn test_init_appends_to_existing_gitignore() {

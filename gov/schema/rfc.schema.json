@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "RFC Specification",
-  "description": "JSON schema for RFC source files",
+  "description": "JSON Schema for RFC source files",
   "type": "object",
   "required": [
     "rfc_id",
@@ -17,7 +17,7 @@
     "rfc_id": {
       "type": "string",
       "pattern": "^RFC-\\d{4}$",
-      "description": "Unique RFC identifier (e.g., RFC-0001)"
+      "description": "Unique RFC identifier"
     },
     "title": {
       "type": "string",
@@ -71,26 +71,44 @@
             "type": "array",
             "items": { "type": "string" }
           }
-        }
+        },
+        "additionalProperties": false
       },
       "description": "RFC sections with clause references"
+    },
+    "refs": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^(RFC-\\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\\d{4}|WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3}))$"
+      }
     },
     "changelog": {
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["version", "date", "summary"],
+        "required": ["version", "date"],
         "properties": {
-          "version": { "type": "string" },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
           "date": { "type": "string", "format": "date" },
-          "summary": { "type": "string" },
-          "changes": {
-            "type": "array",
-            "items": { "type": "string" }
-          }
-        }
+          "notes": { "type": "string" },
+          "added": { "type": "array", "items": { "type": "string" } },
+          "changed": { "type": "array", "items": { "type": "string" } },
+          "deprecated": { "type": "array", "items": { "type": "string" } },
+          "removed": { "type": "array", "items": { "type": "string" } },
+          "fixed": { "type": "array", "items": { "type": "string" } },
+          "security": { "type": "array", "items": { "type": "string" } }
+        },
+        "additionalProperties": false
       },
       "description": "Version history"
+    },
+    "signature": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
     }
   },
   "additionalProperties": false

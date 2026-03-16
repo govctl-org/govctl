@@ -44,7 +44,7 @@ impl JsonAdapter for RfcJsonAdapter {
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
         let path =
             find_rfc_json(config, id).ok_or_else(|| anyhow::anyhow!("RFC not found: {id}"))?;
-        let data = read_rfc(&path)?;
+        let data = read_rfc(config, &path)?;
         Ok(JsonDoc { path, data })
     }
 
@@ -67,7 +67,7 @@ impl JsonAdapter for ClauseJsonAdapter {
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
         let path = find_clause_json(config, id)
             .ok_or_else(|| anyhow::anyhow!("Clause not found: {id}"))?;
-        let data = read_clause(&path)?;
+        let data = read_clause(config, &path)?;
         Ok(JsonDoc { path, data })
     }
 

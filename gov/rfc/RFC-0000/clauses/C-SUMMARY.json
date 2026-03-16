@@ -3,6 +3,6 @@
   "title": "Framework Summary",
   "kind": "informative",
   "status": "active",
-  "text": "govctl is a governance CLI that manages four artifact types:\n\n- **RFCs**: Normative specifications that define intent and constraints\n- **Clauses**: Individual requirements within RFCs\n- **ADRs**: Architectural Decision Records documenting design choices\n- **Work Items**: Units of work tracking implementation progress\n\nAll artifacts follow explicit lifecycle states and phase gates to ensure disciplined development.",
+  "text": "govctl is a governance CLI that manages five artifact types:\n\n- **RFCs**: Normative specifications that define intent and constraints\n- **Clauses**: Individual requirements within RFCs\n- **ADRs**: Architectural Decision Records documenting design choices\n- **Work Items**: Units of work tracking implementation progress\n- **Releases**: Published versions and the work items included in each version\n\nAll artifacts follow explicit lifecycle states, phase gates, or immutability rules to ensure disciplined development.",
   "since": "1.0.0"
 }

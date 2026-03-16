@@ -1,0 +1,108 @@
+[govctl]
+schema = 1
+id = "ADR-0034"
+title = "Use TOML as the canonical storage format for all governance artifacts"
+status = "proposed"
+date = "2026-03-16"
+refs = ["ADR-0001", "ADR-0014", "ADR-0031", "ADR-0032", "RFC-0000", "RFC-0002"]
+
+[content]
+context = """
+govctl currently stores ADRs, work items, and releases as TOML, while RFCs and RFC clauses remain JSON. In this ADR, "governance artifacts" means RFCs, clauses, ADRs, work items, and releases. Project config is out of scope. That split is no longer buying us anything useful.
+
+### Problem Statement
+
+The format split leaks into loaders, writers, adapters, schema docs, help text, and migration behavior. [[ADR-0031]] already had to introduce explicit JSON and TOML adapters just to keep one semantic edit engine honest. Keeping RFCs and clauses on JSON forever would preserve that special case in the exact place we are trying to simplify.
+
+We also lack real schema validation for generated TOML artifacts. Today TOML artifacts are parsed structurally and then checked semantically, but they are not validated against machine-readable artifact schemas. That means malformed or drifted TOML can survive longer than it should. Before this change, release data was the worst special case: it lived in `gov/releases.toml` without a first-class artifact definition in [[RFC-0000]] or an explicitly required JSON Schema contract.
+
+Finally, existing repositories already contain JSON RFC and clause files. If we switch formats without an explicit migration boundary, we either keep dual-format support indefinitely or break existing repositories silently. Both are bad designs.
+
+### Constraints
+
+- Preserve the normative meaning of existing governance artifacts and references under [[RFC-0000]] and [[RFC-0002]].
+- Keep normal operation simple: after migration, the main load/edit/render paths should be TOML-only.
+- Respect [[ADR-0032]] by keeping this migration command narrow and deterministic. This is not a heuristic project-adoption workflow.
+- Preserve auditability and deterministic failures for automation and agent workflows.
+
+### Options Considered
+
+- Keep the mixed JSON/TOML storage model and improve adapters further.
+- Standardize all governance artifacts on JSON instead.
+- Standardize all governance artifacts on TOML with an explicit repository migration step."""
+decision = """
+We will **use TOML as the canonical on-disk source-of-truth format for governance artifacts** because it removes a persistent storage-format special case, matches the existing direction of ADR/work/release storage, and gives humans a format they can read and edit without carrying JSON-only baggage forward.
+
+1. **One storage format:** RFCs, clauses, ADRs, work items, and releases will all be stored as TOML at rest.
+2. **One normal code path:** After explicit repository migration, steady-state govctl operations will treat TOML as the only supported artifact storage format.
+3. **One compatibility boundary:** Legacy JSON support and deterministic TOML shape upgrades will exist only inside a migration command that converts existing JSON RFC and clause files to TOML and applies govctl-managed structural upgrades such as release-file metadata normalization.
+4. **One validation model:** RFC, clause, ADR, work item, and release artifacts will each have a corresponding machine-readable JSON Schema, and generated or edited TOML will be validated against that schema after parsing and normalization.
+
+### Implementation Notes
+
+- RFC and clause definitions should converge on the same `[govctl]` metadata pattern already used by ADRs and work items, including a required `schema` field.
+- `gov/releases.toml` should stop being a schema-less special case. It should carry explicit file-level metadata, including a required `schema` field, alongside the `[[releases]]` collection.
+- The schema contract should be explicit rather than implied: one JSON Schema file per artifact type, stored under `gov/schema/`, with the TOML `govctl.schema` field selecting the corresponding version.
+- The migration command should be narrow by design: convert legacy JSON governance files already recognized by govctl. It must not become a general project-discovery tool or overlap with the broader migration skill from [[ADR-0032]].
+- Post-migration normal operation should not keep a permanent dual-read compatibility layer. Legacy JSON handling belongs in the migration path, not in every loader and writer.
+- Before migration, normal commands should fail with an explicit migration-required diagnostic rather than guessing or partially operating on mixed-format repositories.
+- The migration command should rewrite only govctl-managed storage references. Arbitrary repo docs, tests, and scripts remain user-owned follow-up changes.
+- If accepted, this decision supersedes the storage split recorded in [[ADR-0001]]."""
+consequences = """
+### Positive
+
+- Removes the last major on-disk format split in governance artifacts.
+- Makes storage expectations easier to explain: governance artifacts are TOML, rendered docs are projections.
+- Creates a clean place to contain legacy JSON support instead of spreading it across the whole codebase.
+- Enables real schema validation for all TOML governance artifacts, including releases, using one existing validation technology (`jsonschema`) after TOML parsing.
+
+### Negative
+
+- Existing repositories with JSON RFCs and clauses will require an explicit migration step before normal TOML-only operation. (mitigation: normal commands should emit a dedicated `govctl migrate` diagnostic instead of attempting mixed-format behavior.)
+- RFC and clause path conventions will change from `.json` to `.toml`, so docs, tests, and direct file-path tooling must be updated carefully. (mitigation: `govctl migrate` rewrites govctl-managed clause-path references, but user-maintained references remain explicit follow-up work.)
+- `gov/releases.toml` will need a small structural migration to add explicit metadata for schema validation. (mitigation: keep the release-entry payload shape stable and migrate the file automatically with deterministic rewrite rules.)
+- External scripts, CI glue, and older govctl versions that assume `.json` RFC paths will break after migration. (mitigation: this is an intentional compatibility drop that must be documented plainly in release notes and migration docs.)
+- A broad format migration touches foundational governance definitions, so review and rollout discipline matter. (mitigation: require draft review plus full `govctl check` validation before rollout.)
+
+### Neutral
+
+- This does not replace the broader project-adoption migration workflow in [[ADR-0032]]; it only adds a deterministic repository-format migration boundary.
+- The semantic meaning of RFCs, clauses, ADRs, and work items does not change. Only their canonical storage format and validation contract change."""
+
+[[content.alternatives]]
+text = "Keep mixed JSON/TOML storage with format adapters"
+status = "rejected"
+pros = [
+    "Lowest immediate disruption to existing RFC storage",
+    "Avoids a repo-wide format migration in the short term",
+]
+cons = [
+    "Preserves storage-format branching in loaders, writers, docs, and tests",
+    "Keeps JSON/TOML drift as a permanent maintenance cost",
+]
+rejection_reason = "This keeps the special case alive instead of deleting it."
+
+[[content.alternatives]]
+text = "Standardize all governance artifacts on JSON"
+status = "rejected"
+pros = [
+    "Would reuse the existing RFC and clause storage model",
+    "Could lean on mature JSON tooling and schemas",
+]
+cons = [
+    "Moves ADRs, work items, and releases away from the format already chosen for human editing",
+    "Fights the existing TOML direction established across most governance artifacts",
+]
+rejection_reason = "It optimizes around legacy RFC storage instead of the current human-facing workflow."
+
+[[content.alternatives]]
+text = "Standardize all governance artifacts on TOML with explicit migration"
+status = "accepted"
+pros = [
+    "Eliminates the on-disk format split in normal operation",
+    "Keeps compatibility code confined to a single migration boundary",
+]
+cons = [
+    "Requires a carefully specified migration command",
+    "Creates one-time churn in paths, docs, and tests",
+]

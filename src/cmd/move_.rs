@@ -30,7 +30,7 @@ pub fn move_item(
         }
     };
 
-    let mut entry = load_work_item(&work_path)?;
+    let mut entry = load_work_item(config, &work_path)?;
 
     let work_id = &entry.spec.govctl.id;
     if !is_valid_work_transition(entry.spec.govctl.status, status) {

@@ -39,7 +39,7 @@ fn fill_pending_clause_versions(
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| p.extension().is_some_and(|e| e == "json"))
-        .filter_map(|p| read_clause(&p).ok().map(|c| (p, c)))
+        .filter_map(|p| read_clause(config, &p).ok().map(|c| (p, c)))
         .filter(|(_, c)| c.since.is_none())
         .collect();
 
@@ -74,7 +74,7 @@ pub fn bump(
         )
     })?;
 
-    let mut rfc = read_rfc(&rfc_path)?;
+    let mut rfc = read_rfc(config, &rfc_path)?;
 
     match (level, summary, changes.is_empty()) {
         (Some(lvl), Some(sum), _) => {
@@ -98,7 +98,7 @@ pub fn bump(
 
             // Then recompute and store signature after version bump per [[ADR-0016]]
             // Load full RFC with clauses to compute accurate signature
-            if let Ok(rfc_index) = crate::load::load_rfc(&rfc_path)
+            if let Ok(rfc_index) = crate::load::load_rfc(config, &rfc_path)
                 && let Ok(sig) = crate::signature::compute_rfc_signature(&rfc_index)
             {
                 rfc.signature = Some(sig);
@@ -161,7 +161,7 @@ pub fn finalize(
         )
     })?;
 
-    let rfc = read_rfc(&rfc_path)?;
+    let rfc = read_rfc(config, &rfc_path)?;
 
     let target_status = match status {
         FinalizeStatus::Normative => RfcStatus::Normative,
@@ -208,7 +208,7 @@ pub fn advance(
         )
     })?;
 
-    let rfc = read_rfc(&rfc_path)?;
+    let rfc = read_rfc(config, &rfc_path)?;
 
     // Check status constraint: cannot advance to impl+ without normative status
     if rfc.status == RfcStatus::Draft && phase != RfcPhase::Spec {
@@ -344,7 +344,7 @@ pub fn deprecate(
             )
         })?;
 
-        let clause = read_clause(&clause_path)?;
+        let clause = read_clause(config, &clause_path)?;
 
         if clause.status == ClauseStatus::Deprecated {
             return Err(Diagnostic::new(
@@ -437,7 +437,7 @@ pub fn supersede(
             )
         })?;
 
-        let mut clause = read_clause(&clause_path)?;
+        let mut clause = read_clause(config, &clause_path)?;
 
         if clause.status == ClauseStatus::Superseded {
             return Err(Diagnostic::new(

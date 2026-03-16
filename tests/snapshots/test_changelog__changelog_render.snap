@@ -47,6 +47,9 @@ exit: 0
 
 $ govctl release 0.2.0 --dry-run
 Would write: gov/releases.toml
+  [govctl]
+  schema = 1
+  
   [[releases]]
   version = "0.2.0"
   date = "<DATE>"

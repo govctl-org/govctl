@@ -2,7 +2,9 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::model::ReleasesMeta;
 use crate::model::{AdrEntry, AdrSpec, ReleasesFile, WorkItemEntry, WorkItemSpec};
+use crate::schema::{ArtifactSchema, validate_toml_value};
 use crate::ui;
 use crate::write::WriteOp;
 use std::path::Path;
@@ -41,16 +43,9 @@ pub fn load_adrs_with_warnings(config: &Config) -> Result<LoadResult<AdrEntry>, 
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().is_some_and(|ext| ext == "toml") {
-            match load_adr(&path) {
+            match load_adr(config, &path) {
                 Ok(adr) => adrs.push(adr),
-                Err(e) => {
-                    // Record warning instead of silently skipping
-                    warnings.push(Diagnostic::new(
-                        DiagnosticCode::W0104AdrParseSkipped,
-                        format!("Skipped ADR: {} (hint: fix TOML syntax)", e.message),
-                        path.display().to_string(),
-                    ));
-                }
+                Err(e) => warnings.push(e),
             }
         }
     }
@@ -65,7 +60,7 @@ pub fn load_adrs_with_warnings(config: &Config) -> Result<LoadResult<AdrEntry>, 
 }
 
 /// Load a single ADR from TOML file
-pub fn load_adr(path: &Path) -> Result<AdrEntry, Diagnostic> {
+pub fn load_adr(config: &Config, path: &Path) -> Result<AdrEntry, Diagnostic> {
     let content = std::fs::read_to_string(path).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -74,10 +69,18 @@ pub fn load_adr(path: &Path) -> Result<AdrEntry, Diagnostic> {
         )
     })?;
 
-    let spec: AdrSpec = toml::from_str(&content).map_err(|e| {
+    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0301AdrSchemaInvalid,
             format!("Invalid TOML: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+    validate_toml_value(ArtifactSchema::Adr, config, path, &raw)?;
+    let spec: AdrSpec = raw.try_into().map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0301AdrSchemaInvalid,
+            format!("Invalid ADR structure: {e}"),
             path.display().to_string(),
         )
     })?;
@@ -152,16 +155,9 @@ pub fn load_work_items_with_warnings(
     for entry in entries.flatten() {
         let path = entry.path();
         if path.extension().is_some_and(|ext| ext == "toml") {
-            match load_work_item(&path) {
+            match load_work_item(config, &path) {
                 Ok(item) => items.push(item),
-                Err(e) => {
-                    // Record warning instead of silently skipping
-                    warnings.push(Diagnostic::new(
-                        DiagnosticCode::W0105WorkParseSkipped,
-                        format!("Skipped work item: {} (hint: fix TOML syntax)", e.message),
-                        path.display().to_string(),
-                    ));
-                }
+                Err(e) => warnings.push(e),
             }
         }
     }
@@ -173,7 +169,7 @@ pub fn load_work_items_with_warnings(
 }
 
 /// Load a single work item from TOML file
-pub fn load_work_item(path: &Path) -> Result<WorkItemEntry, Diagnostic> {
+pub fn load_work_item(config: &Config, path: &Path) -> Result<WorkItemEntry, Diagnostic> {
     let content = std::fs::read_to_string(path).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,
@@ -182,10 +178,18 @@ pub fn load_work_item(path: &Path) -> Result<WorkItemEntry, Diagnostic> {
         )
     })?;
 
-    let spec: WorkItemSpec = toml::from_str(&content).map_err(|e| {
+    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0401WorkSchemaInvalid,
             format!("Invalid TOML: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+    validate_toml_value(ArtifactSchema::WorkItem, config, path, &raw)?;
+    let spec: WorkItemSpec = raw.try_into().map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0401WorkSchemaInvalid,
+            format!("Invalid work item structure: {e}"),
             path.display().to_string(),
         )
     })?;
@@ -247,10 +251,19 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
         )
     })?;
 
-    let releases: ReleasesFile = toml::from_str(&content).map_err(|e| {
+    let mut raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
-            DiagnosticCode::E0901IoError,
+            DiagnosticCode::E0704ReleaseSchemaInvalid,
             format!("Invalid releases.toml: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+    normalize_release_value(&mut raw);
+    validate_toml_value(ArtifactSchema::Release, config, &path, &raw)?;
+    let releases: ReleasesFile = raw.try_into().map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0704ReleaseSchemaInvalid,
+            format!("Invalid release structure: {e}"),
             path.display().to_string(),
         )
     })?;
@@ -259,7 +272,7 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
     for release in &releases.releases {
         semver::Version::parse(&release.version).map_err(|_| {
             Diagnostic::new(
-                DiagnosticCode::E0901IoError,
+                DiagnosticCode::E0701ReleaseInvalidSemver,
                 format!("Invalid semver version: {}", release.version),
                 path.display().to_string(),
             )
@@ -272,6 +285,26 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
 /// Validate a version string as semver
 pub fn validate_version(version: &str) -> Result<semver::Version, String> {
     semver::Version::parse(version).map_err(|_| format!("Invalid semver: {version}"))
+}
+
+fn normalize_release_value(raw: &mut toml::Value) {
+    let Some(root) = raw.as_table_mut() else {
+        return;
+    };
+
+    if !root.contains_key("govctl") {
+        let mut govctl = toml::map::Map::new();
+        govctl.insert("schema".to_string(), toml::Value::Integer(1));
+        root.insert("govctl".to_string(), toml::Value::Table(govctl));
+        return;
+    }
+
+    let Some(govctl) = root.get_mut("govctl").and_then(toml::Value::as_table_mut) else {
+        return;
+    };
+    govctl
+        .entry("schema".to_string())
+        .or_insert(toml::Value::Integer(ReleasesMeta::default().schema.into()));
 }
 
 /// Write releases to gov/releases.toml

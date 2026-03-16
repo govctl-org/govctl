@@ -67,6 +67,8 @@ pub enum DiagnosticCode {
     E0701ReleaseInvalidSemver,
     E0702ReleaseDuplicate,
     E0703ReleaseNoUnreleasedItems,
+    E0704ReleaseSchemaInvalid,
+    E0705ReleaseRefNotFound,
 
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
@@ -171,6 +173,8 @@ impl DiagnosticCode {
             Self::E0701ReleaseInvalidSemver => "E0701",
             Self::E0702ReleaseDuplicate => "E0702",
             Self::E0703ReleaseNoUnreleasedItems => "E0703",
+            Self::E0704ReleaseSchemaInvalid => "E0704",
+            Self::E0705ReleaseRefNotFound => "E0705",
             // E08xx - CLI/Command
             Self::E0801MissingRequiredArg => "E0801",
             Self::E0802ConflictingArgs => "E0802",

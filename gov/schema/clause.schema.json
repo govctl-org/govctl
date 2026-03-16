@@ -1,7 +1,7 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Clause Specification",
-  "description": "JSON schema for clause definition files",
+  "description": "JSON Schema for clause definition files",
   "type": "object",
   "required": ["clause_id", "title", "kind", "text"],
   "properties": {
@@ -38,7 +38,7 @@
     },
     "superseded_by": {
       "type": "string",
-      "pattern": "^C-[A-Z0-9-]+$",
+      "pattern": "^(RFC-\\d{4}:)?C-[A-Z0-9-]+$",
       "description": "Clause ID that supersedes this one"
     },
     "anchors": {

@@ -1,0 +1,111 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Work Item Specification",
+  "description": "JSON Schema for Work Item TOML artifacts after parsing and normalization",
+  "type": "object",
+  "required": ["govctl", "content"],
+  "properties": {
+    "govctl": {
+      "type": "object",
+      "required": ["schema", "id", "title", "status"],
+      "properties": {
+        "schema": {
+          "type": "integer",
+          "const": 1
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3})$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": ["queue", "active", "done", "cancelled"]
+        },
+        "created": {
+          "type": "string",
+          "format": "date"
+        },
+        "started": {
+          "type": "string",
+          "format": "date"
+        },
+        "completed": {
+          "type": "string",
+          "format": "date"
+        },
+        "refs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^(RFC-\\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\\d{4}|WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3}))$"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "content": {
+      "type": "object",
+      "required": ["description"],
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "journal": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["date", "content"],
+            "properties": {
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "scope": {
+                "type": "string"
+              },
+              "content": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "acceptance_criteria": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["text"],
+            "properties": {
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "status": {
+                "type": "string",
+                "enum": ["pending", "done", "cancelled"]
+              },
+              "category": {
+                "type": "string",
+                "enum": ["added", "changed", "deprecated", "removed", "fixed", "security", "chore"]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

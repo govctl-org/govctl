@@ -9,10 +9,12 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::find_clause_json;
 use crate::model::{
-    AdrStatus, ClauseStatus, ProjectIndex, RfcIndex, RfcPhase, RfcStatus, WorkItemStatus,
+    AdrStatus, ClauseStatus, ProjectIndex, ReleasesFile, RfcIndex, RfcPhase, RfcStatus,
+    WorkItemStatus,
 };
 use crate::signature::{compute_rfc_signature, extract_signature};
 use crate::write::read_clause;
+use std::collections::HashSet;
 
 // =============================================================================
 // Field Validation System
@@ -139,7 +141,7 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
     })?;
 
     // Check target clause is active (not superseded or deprecated)
-    let target_clause = read_clause(&target_path)?;
+    let target_clause = read_clause(ctx.config, &target_path)?;
     match target_clause.status {
         ClauseStatus::Active => Ok(()),
         ClauseStatus::Superseded => Err(Diagnostic::new(
@@ -478,7 +480,7 @@ fn validate_clause_references(
     result: &mut ValidationResult,
 ) {
     // Collect all active clause IDs
-    let active_clauses: std::collections::HashSet<String> = index
+    let active_clauses: HashSet<String> = index
         .iter_clauses()
         .filter(|(_, c)| c.spec.status == ClauseStatus::Active)
         .map(|(rfc, c)| format!("{}:{}", rfc.rfc.rfc_id, c.spec.clause_id))
@@ -525,7 +527,7 @@ fn validate_clause_references(
 /// Validate refs fields in RFCs, ADRs and Work Items
 fn validate_artifact_refs(index: &ProjectIndex, config: &Config, result: &mut ValidationResult) {
     // Build a set of all known artifact IDs (including clause references)
-    let mut known_ids: std::collections::HashSet<String> = std::collections::HashSet::new();
+    let mut known_ids: HashSet<String> = HashSet::new();
 
     // Add RFC IDs and clause references
     for rfc in &index.rfcs {
@@ -613,6 +615,50 @@ fn validate_artifact_refs(index: &ProjectIndex, config: &Config, result: &mut Va
             }
         }
     }
+}
+
+/// Validate release metadata and work item references.
+pub fn validate_releases(
+    releases: &ReleasesFile,
+    index: &ProjectIndex,
+    config: &Config,
+) -> Vec<Diagnostic> {
+    let mut diagnostics = Vec::new();
+    let mut seen_versions = HashSet::new();
+    let known_work_ids: HashSet<&str> = index
+        .work_items
+        .iter()
+        .map(|work| work.meta().id.as_str())
+        .collect();
+    let releases_display = config
+        .display_path(&config.releases_path())
+        .display()
+        .to_string();
+
+    for release in &releases.releases {
+        if !seen_versions.insert(release.version.as_str()) {
+            diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0702ReleaseDuplicate,
+                format!("Duplicate release version: {}", release.version),
+                releases_display.clone(),
+            ));
+        }
+
+        for work_id in &release.refs {
+            if !known_work_ids.contains(work_id.as_str()) {
+                diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0705ReleaseRefNotFound,
+                    format!(
+                        "Release '{}' references unknown work item: {}",
+                        release.version, work_id
+                    ),
+                    releases_display.clone(),
+                ));
+            }
+        }
+    }
+
+    diagnostics
 }
 
 /// Check if a work item description is a placeholder or empty

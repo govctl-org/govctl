@@ -8,6 +8,7 @@ use crate::model::{
     RfcPhase, RfcSpec, RfcStatus, SectionSpec, WorkItemContent, WorkItemMeta, WorkItemSpec,
     WorkItemStatus,
 };
+use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
@@ -120,6 +121,17 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     )?;
     if !op.is_preview() {
         ui::created_path(&config.display_path(&config_path));
+    }
+
+    // Install bundled artifact JSON Schemas under gov/schema/.
+    let schema_dir = config.schema_dir();
+    for template in ARTIFACT_SCHEMA_TEMPLATES {
+        let path = schema_dir.join(template.filename);
+        let display_path = config.display_path(&path);
+        write_file(&path, template.content, op, Some(&display_path))?;
+        if !op.is_preview() {
+            ui::created_path(&display_path);
+        }
     }
 
     // Ensure .gitignore contains .govctl.lock

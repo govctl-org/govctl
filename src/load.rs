@@ -3,6 +3,7 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ClauseEntry, ClauseSpec, ProjectIndex, RfcIndex, RfcSpec};
+use crate::schema::{ArtifactSchema, validate_json_value};
 use std::path::{Path, PathBuf};
 
 /// Load error types
@@ -63,7 +64,7 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
         if path.is_dir() {
             let rfc_json = path.join("rfc.json");
             if rfc_json.exists() {
-                let rfc_index = load_rfc(&rfc_json)?;
+                let rfc_index = load_rfc(config, &rfc_json)?;
                 rfcs.push(rfc_index);
             }
         }
@@ -76,13 +77,23 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
 }
 
 /// Load a single RFC and its clauses
-pub fn load_rfc(rfc_json: &Path) -> Result<RfcIndex, LoadError> {
+pub fn load_rfc(config: &Config, rfc_json: &Path) -> Result<RfcIndex, LoadError> {
     let content = std::fs::read_to_string(rfc_json).map_err(|e| LoadError::Io {
         file: rfc_json.display().to_string(),
         message: e.to_string(),
     })?;
 
-    let rfc: RfcSpec = serde_json::from_str(&content).map_err(|e| LoadError::Json {
+    let raw: serde_json::Value = serde_json::from_str(&content).map_err(|e| LoadError::Json {
+        file: rfc_json.display().to_string(),
+        message: e.to_string(),
+    })?;
+    validate_json_value(ArtifactSchema::Rfc, config, rfc_json, &raw).map_err(|e| {
+        LoadError::RfcSchema {
+            file: rfc_json.display().to_string(),
+            message: e.message,
+        }
+    })?;
+    let rfc: RfcSpec = serde_json::from_value(raw).map_err(|e| LoadError::Json {
         file: rfc_json.display().to_string(),
         message: e.to_string(),
     })?;
@@ -106,7 +117,7 @@ pub fn load_rfc(rfc_json: &Path) -> Result<RfcIndex, LoadError> {
 
             let full_path = rfc_dir.join(clause_path);
             if full_path.exists() {
-                let clause = load_clause(&full_path)?;
+                let clause = load_clause(config, &full_path)?;
                 clauses.push(clause);
             }
         }
@@ -120,13 +131,23 @@ pub fn load_rfc(rfc_json: &Path) -> Result<RfcIndex, LoadError> {
 }
 
 /// Load a single clause
-pub fn load_clause(path: &Path) -> Result<ClauseEntry, LoadError> {
+pub fn load_clause(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
     let content = std::fs::read_to_string(path).map_err(|e| LoadError::Io {
         file: path.display().to_string(),
         message: e.to_string(),
     })?;
 
-    let spec: ClauseSpec = serde_json::from_str(&content).map_err(|e| LoadError::Json {
+    let raw: serde_json::Value = serde_json::from_str(&content).map_err(|e| LoadError::Json {
+        file: path.display().to_string(),
+        message: e.to_string(),
+    })?;
+    validate_json_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
+        LoadError::ClauseSchema {
+            file: path.display().to_string(),
+            message: e.message,
+        }
+    })?;
+    let spec: ClauseSpec = serde_json::from_value(raw).map_err(|e| LoadError::Json {
         file: path.display().to_string(),
         message: e.to_string(),
     })?;

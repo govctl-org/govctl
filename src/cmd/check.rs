@@ -4,10 +4,10 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::load_project_with_warnings;
 use crate::model::WorkItemStatus;
-use crate::parse::load_work_items;
+use crate::parse::{load_releases, load_work_items};
 use crate::scan::scan_source_refs;
 use crate::ui;
-use crate::validate::validate_project;
+use crate::validate::{validate_project, validate_releases};
 
 /// Validate all governed documents
 pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
@@ -23,6 +23,14 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     // Validate governance artifacts
     let result = validate_project(&index, config);
     all_diagnostics.extend(result.diagnostics);
+
+    // Validate releases separately until they are part of the full project index.
+    match load_releases(config) {
+        Ok(releases) => {
+            all_diagnostics.extend(validate_releases(&releases, &index, config));
+        }
+        Err(diag) => all_diagnostics.push(diag),
+    }
 
     // Scan source code for references (if enabled)
     let scan_result = scan_source_refs(config, &index);

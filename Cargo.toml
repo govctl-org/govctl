@@ -1,6 +1,6 @@
 [package]
 name = "govctl"
-version = "0.5.4"
+version = "0.6.0"
 edition = "2024"
 rust-version = "1.88"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
@@ -14,8 +14,7 @@ categories = ["command-line-utilities", "development-tools"]
 include = [
     ".claude/agents/*",
     ".claude/skills/**/*",
-    "gov/schema/edit-ops.json",
-    "gov/schema/edit-ops.schema.json",
+    "gov/schema/*.json",
     "gov/templates/*",
     "src/**/*",
     "tests/**/*",
@@ -45,6 +44,7 @@ serde_json = "1"
 toml = "1"
 
 # Validation and versioning
+jsonschema = "0.45"
 semver = { version = "1", features = ["serde"] }
 
 # Error handling
