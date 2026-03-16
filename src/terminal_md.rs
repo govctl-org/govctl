@@ -21,7 +21,7 @@ static MD_LINK: LazyLock<Regex> =
 
 /// Strip HTML artifacts that are meaningful in rendered .md files
 /// but visual noise in a terminal.
-fn strip_for_terminal(md: &str) -> String {
+pub fn strip_for_terminal(md: &str) -> String {
     let s = HTML_COMMENT.replace_all(md, "");
     let s = HTML_ANCHOR.replace_all(&s, "");
     let s = HTML_DEL.replace_all(&s, "");
@@ -75,6 +75,33 @@ pub fn render_terminal_md(md: &str) -> String {
     };
 
     markdown_to_ansi::render(clean, &opts)
+}
+
+/// Render markdown to a ratatui `Text` widget via the shared pipeline.
+///
+/// markdown → strip_for_terminal → markdown-to-ansi → ansi-to-tui → Text
+#[cfg(feature = "tui")]
+pub fn render_to_tui_text(md: &str) -> ratatui::text::Text<'static> {
+    use ansi_to_tui::IntoText;
+
+    let stripped = strip_for_terminal(md);
+    let clean = stripped.trim();
+    if clean.is_empty() {
+        return ratatui::text::Text::default();
+    }
+
+    let width = terminal_size::terminal_size()
+        .map(|(w, _)| w.0 as usize)
+        .unwrap_or(80);
+
+    let opts = markdown_to_ansi::Options {
+        syntax_highlight: true,
+        width: Some(width),
+        code_bg: false,
+    };
+
+    let ansi = markdown_to_ansi::render(clean, &opts);
+    ansi.into_text().unwrap_or_default()
 }
 
 #[cfg(test)]

@@ -12,7 +12,6 @@ refs = [
 
 [content]
 context = """
-## Context
 
 The global `govctl render` command currently has an `--rfc-id` flag for rendering a single RFC, but no equivalent flags for ADRs or work items. This creates an asymmetry in the CLI.
 
@@ -38,7 +37,6 @@ When users want to render a single artifact, the current options are:
 - [[ADR-0018]] established the "one way to do it" principle
 - Resource-scoped commands follow the noun-first pattern per [[RFC-0002:C-RESOURCE-MODEL]]"""
 decision = """
-## Decision
 
 We will **add resource-scoped render commands** and **remove the `--rfc-id` flag** from the global render command.
 
@@ -71,7 +69,6 @@ govctl render [rfc|adr|work|changelog|all]  # No --rfc-id flag
 - Error handling: if ID not found, return clear error message
 - Output: same format as bulk render, just for one item"""
 consequences = """
-## Consequences
 
 ### Positive
 

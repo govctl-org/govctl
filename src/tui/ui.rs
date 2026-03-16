@@ -242,11 +242,11 @@ fn wrapped_line_count(lines: &[Line], render_width: u16) -> usize {
     lines
         .iter()
         .map(|line| {
-            let content_len: usize = line.spans.iter().map(|s| s.content.len()).sum();
-            if content_len == 0 {
+            let display_width = line.width();
+            if display_width == 0 {
                 1
             } else {
-                content_len.div_ceil(w)
+                display_width.div_ceil(w)
             }
         })
         .sum()
@@ -643,63 +643,20 @@ fn draw_adr_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> 
         return 0;
     };
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5)])
-        .split(area);
+    let text = crate::render::render_adr(adr)
+        .map(|md| crate::terminal_md::render_to_tui_text(&md))
+        .unwrap_or_default();
 
-    let meta = adr.meta();
-    let content_data = &adr.spec.content;
-    let status = meta.status.as_ref();
-
-    let lines = vec![
-        Line::from(vec![
-            Span::styled("ID:     ", Style::default().fg(Color::DarkGray)),
-            Span::styled(meta.id.clone(), Style::default().bold()),
-        ]),
-        Line::from(vec![
-            Span::styled("Title:  ", Style::default().fg(Color::DarkGray)),
-            Span::raw(meta.title.clone()),
-        ]),
-        Line::from(vec![
-            Span::styled("Status: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-            Span::styled(status.to_string(), status_style(status)),
-        ]),
-        Line::from(vec![
-            Span::styled("Date:   ", Style::default().fg(Color::DarkGray)),
-            Span::raw(meta.date.clone()),
-        ]),
-        Line::from(""),
-        Line::from(Span::styled(
-            "━━━ Context ━━━",
-            Style::default().fg(Color::Cyan).bold(),
-        )),
-        Line::from(format!("  {}", content_data.context)),
-        Line::from(""),
-        Line::from(Span::styled(
-            "━━━ Decision ━━━",
-            Style::default().fg(Color::Green).bold(),
-        )),
-        Line::from(format!("  {}", content_data.decision)),
-        Line::from(""),
-        Line::from(Span::styled(
-            "━━━ Consequences ━━━",
-            Style::default().fg(Color::Yellow).bold(),
-        )),
-        Line::from(format!("  {}", content_data.consequences)),
-    ];
-
-    let title = format!("📝 {}", meta.id);
+    let title = format!("📝 {}", adr.meta().id);
     let block = rounded_block(&title).border_style(Style::default().fg(Color::Green));
-    let inner_width = block.inner(chunks[0]).width;
-    let total_lines = wrapped_line_count(&lines, inner_width);
-    let content = Paragraph::new(lines)
+    let inner_width = block.inner(area).width;
+    let total_lines = wrapped_line_count(&text.lines, inner_width);
+    let content = Paragraph::new(text)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(block);
 
-    frame.render_widget(content, chunks[0]);
+    frame.render_widget(content, area);
     total_lines
 }
 
@@ -708,67 +665,20 @@ fn draw_work_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) ->
         return 0;
     };
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5)])
-        .split(area);
+    let text = crate::render::render_work_item(item)
+        .map(|md| crate::terminal_md::render_to_tui_text(&md))
+        .unwrap_or_default();
 
-    let meta = item.meta();
-    let content_data = &item.spec.content;
-    let status = meta.status.as_ref();
-
-    let mut lines = vec![
-        Line::from(vec![
-            Span::styled("ID:     ", Style::default().fg(Color::DarkGray)),
-            Span::styled(meta.id.clone(), Style::default().bold()),
-        ]),
-        Line::from(vec![
-            Span::styled("Title:  ", Style::default().fg(Color::DarkGray)),
-            Span::raw(meta.title.clone()),
-        ]),
-        Line::from(vec![
-            Span::styled("Status: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-            Span::styled(status.to_string(), status_style(status)),
-        ]),
-        Line::from(""),
-        Line::from(Span::styled(
-            "━━━ Description ━━━",
-            Style::default().fg(Color::Cyan).bold(),
-        )),
-        Line::from(format!("  {}", content_data.description)),
-    ];
-
-    if !content_data.acceptance_criteria.is_empty() {
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled(
-            "━━━ Acceptance Criteria ━━━",
-            Style::default().fg(Color::Magenta).bold(),
-        )));
-        for ac in &content_data.acceptance_criteria {
-            let (icon, style) = match ac.status {
-                crate::model::ChecklistStatus::Done => ("✓", Style::default().fg(Color::Green)),
-                crate::model::ChecklistStatus::Cancelled => ("✗", Style::default().fg(Color::Red)),
-                crate::model::ChecklistStatus::Pending => ("○", Style::default().fg(Color::Yellow)),
-            };
-            lines.push(Line::from(vec![
-                Span::raw("  "),
-                Span::styled(format!("{} ", icon), style),
-                Span::raw(ac.text.clone()),
-            ]));
-        }
-    }
-
-    let title = format!("📌 {}", meta.id);
+    let title = format!("📌 {}", item.meta().id);
     let block = rounded_block(&title).border_style(Style::default().fg(Color::Yellow));
-    let inner_width = block.inner(chunks[0]).width;
-    let total_lines = wrapped_line_count(&lines, inner_width);
-    let content = Paragraph::new(lines)
+    let inner_width = block.inner(area).width;
+    let total_lines = wrapped_line_count(&text.lines, inner_width);
+    let content = Paragraph::new(text)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(block);
 
-    frame.render_widget(content, chunks[0]);
+    frame.render_widget(content, area);
     total_lines
 }
 
@@ -787,66 +697,20 @@ fn draw_clause_detail(
         return 0;
     };
 
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Min(5)])
-        .split(area);
-
-    let status = clause.spec.status.as_ref();
-
-    let mut lines = vec![
-        Line::from(vec![
-            Span::styled("Clause:  ", Style::default().fg(Color::DarkGray)),
-            Span::styled(clause.spec.clause_id.clone(), Style::default().bold()),
-        ]),
-        Line::from(vec![
-            Span::styled("Title:   ", Style::default().fg(Color::DarkGray)),
-            Span::raw(clause.spec.title.clone()),
-        ]),
-        Line::from(vec![
-            Span::styled("Status:  ", Style::default().fg(Color::DarkGray)),
-            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-            Span::styled(status.to_string(), status_style(status)),
-        ]),
-        Line::from(vec![
-            Span::styled("Kind:    ", Style::default().fg(Color::DarkGray)),
-            Span::raw(clause.spec.kind.as_ref().to_string()),
-        ]),
-        Line::from(vec![
-            Span::styled("RFC:     ", Style::default().fg(Color::DarkGray)),
-            Span::styled(rfc.rfc.rfc_id.clone(), Style::default().fg(Color::Blue)),
-        ]),
-    ];
-
-    if let Some(since) = &clause.spec.since {
-        lines.push(Line::from(vec![
-            Span::styled("Since:   ", Style::default().fg(Color::DarkGray)),
-            Span::raw(since.clone()),
-        ]));
-    }
-
-    lines.push(Line::from(""));
-    lines.push(Line::from(Span::styled(
-        "━━━ Specification ━━━",
-        Style::default().fg(Color::Cyan).bold(),
-    )));
-    lines.push(Line::from(""));
-
-    // Wrap the clause text
-    for line in clause.spec.text.lines() {
-        lines.push(Line::from(format!("  {}", line)));
-    }
+    let mut raw = String::new();
+    crate::render::render_clause(&mut raw, &rfc.rfc.rfc_id, clause);
+    let text = crate::terminal_md::render_to_tui_text(&raw);
 
     let title = format!("📜 {}", clause.spec.clause_id);
     let block = rounded_block(&title).border_style(Style::default().fg(Color::Magenta));
-    let inner_width = block.inner(chunks[0]).width;
-    let total_lines = wrapped_line_count(&lines, inner_width);
-    let content = Paragraph::new(lines)
+    let inner_width = block.inner(area).width;
+    let total_lines = wrapped_line_count(&text.lines, inner_width);
+    let content = Paragraph::new(text)
         .wrap(Wrap { trim: false })
         .scroll((app.scroll, 0))
         .block(block);
 
-    frame.render_widget(content, chunks[0]);
+    frame.render_widget(content, area);
     total_lines
 }
 

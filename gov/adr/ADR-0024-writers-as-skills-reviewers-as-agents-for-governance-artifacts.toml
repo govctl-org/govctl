@@ -9,8 +9,6 @@ refs = ["ADR-0023"]
 
 [content]
 context = """
-## Context
-
 govctl manages three governance artifact types — RFCs, ADRs, and work items. We need to add AI-assisted capabilities for both *creating* (writing) and *reviewing* these artifacts.
 
 Per [[ADR-0023]], the `assets/` directory is organized into `commands/`, `skills/`, and `agents/` subdirectories. Skills and agents are synced to `.claude/skills/` and `.claude/agents/` respectively.
@@ -31,8 +29,6 @@ Each artifact type needs writing guidance (structure, conventions, quality patte
 - Each capability should follow "one skill, one capability" principle
 - The existing `/discuss` and `/gov` commands orchestrate workflows that need writing knowledge"""
 decision = """
-## Decision
-
 **Writers are skills. Reviewers and auditors are agents.** Seven items total:
 
 ### Skills (in `assets/skills/`)
@@ -69,8 +65,6 @@ decision = """
 - `compliance-checker` can be invoked during `/gov` Phase 4 (testing) or on demand
 - `sync-assets.sh` already syncs both `skills/` and `agents/` directories"""
 consequences = """
-## Consequences
-
 ### Positive
 - Writers augment the main agent with domain knowledge while preserving conversation context
 - Reviewers provide unbiased quality checks through cognitive isolation

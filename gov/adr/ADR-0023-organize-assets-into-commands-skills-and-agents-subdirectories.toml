@@ -9,8 +9,6 @@ refs = ["ADR-0024"]
 
 [content]
 context = """
-## Context
-
 The `assets/` directory currently contains a flat mix of files: four command workflow definitions (`gov.md`, `quick.md`, `discuss.md`, `status.md`) and four logo SVGs. As we prepare to add **skill definitions** (specialized AI agent capabilities) and **agent definitions** (agent role/behavior configurations), the flat structure becomes ambiguous — it conflates three distinct categories of assets.
 
 ### Problem Statement
@@ -24,8 +22,6 @@ With new asset types incoming, a flat `assets/` directory provides no semantic s
 - `scripts/sync-commands.sh` and `sync-commands.ps1` glob `assets/*.md` — pattern must be updated
 - Logo SVGs are referenced from `README.md` and are a fourth category (static images)"""
 decision = """
-## Decision
-
 Organize `assets/` into three subdirectories by category:
 
 - `assets/commands/` — AI workflow command definitions (gov.md, quick.md, discuss.md, status.md)
@@ -42,8 +38,6 @@ All compile-time paths (`include_str!`), build system paths (`build.rs`), and sc
 2. **Minimal blast radius** — logos stay put, only command `.md` files move one level deeper
 3. **Future-proof** — skills and agents get their own home from day one"""
 consequences = """
-## Consequences
-
 ### Positive
 - Clear separation of concerns for three distinct asset categories
 - New skills/agents have a designated location from the start

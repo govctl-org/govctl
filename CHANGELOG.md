@@ -27,6 +27,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - show output strips HTML comments, anchors, and converts relative links (WI-2026-03-17-008)
 - Ctrl+d/u half-page and PgUp/PgDn full-page scroll in TUI (WI-2026-03-17-008)
 - TUI feature default-enabled in Cargo.toml (WI-2026-03-17-008)
+- ansi-to-tui dependency behind tui feature flag (WI-2026-03-17-009)
+- render_to_tui_text helper in terminal_md.rs (WI-2026-03-17-009)
 
 ### Changed
 
@@ -35,6 +37,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - RFC/clause TOML uses [govctl] metadata + [content] sections (spec alignment) (WI-2026-03-17-005)
 - MigrationStep struct + FileOp enum replace monolithic MigrationPlan (WI-2026-03-17-006)
 - Existing v0.5->v0.6 migration extracted into plan_v1_to_v2 (WI-2026-03-17-006)
+- draw_adr_detail uses markdown pipeline (WI-2026-03-17-009)
+- draw_work_detail uses markdown pipeline (WI-2026-03-17-009)
+- draw_clause_detail uses markdown pipeline (WI-2026-03-17-009)
 
 ### Removed
 

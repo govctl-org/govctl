@@ -12,8 +12,6 @@ refs = [
 
 [content]
 context = """
-## Context
-
 Agents (Claude, Cursor, etc.) intuitively try `govctl rfc show RFC-0001` to read an RFC's rendered content, but this command doesn't exist. The error `unrecognized subcommand 'show'` is a recurring failure mode.
 
 ### Problem Statement
@@ -45,8 +43,6 @@ Both are awkward for agents who just want to "see" an artifact.
 
 Unix convention: commands that *read* data print to stdout; commands that *generate* files write to filesystem. `show` fits the "read and display" pattern like `cat`, `kubectl get -o yaml`, or `docker inspect`."""
 decision = """
-## Decision
-
 We will **add a `show` verb** to all renderable resources that outputs content to stdout.
 
 ### New Commands
@@ -80,8 +76,6 @@ govctl clause show <CLAUSE-ID> # Print clause content to stdout
 4. **Symmetric with render:** `show` is to `render` as `cat` is to `cp`
 5. **Format flexibility:** `--output json` gives structured access when needed"""
 consequences = """
-## Consequences
-
 ### Positive
 
 - **Fixes agent failures:** `govctl rfc show RFC-0001` will work as expected

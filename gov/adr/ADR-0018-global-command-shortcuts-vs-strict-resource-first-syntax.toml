@@ -12,8 +12,6 @@ refs = [
 
 [content]
 context = """
-## Context
-
 During implementation of [[RFC-0002]], we successfully built the resource-first command structure (`govctl <resource> <verb>`). However, a design question emerged about backward compatibility with existing verb-first shortcuts.
 
 ### Current Implementation
@@ -106,8 +104,6 @@ We could keep shortcuts with deprecation warnings (Option 3), but this:
 
 Given pre-1.0 status, clean break is preferable."""
 consequences = """
-## Consequences
-
 ### Positive
 
 - **Single Canonical Syntax**: Only one way to invoke commands reduces confusion
