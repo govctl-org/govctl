@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{init_project, run_commands};
+use common::{init_project, init_project_v1, run_commands};
 use std::fs;
 
 fn write_legacy_rfc_project(dir: &std::path::Path) {
@@ -53,7 +53,7 @@ fn write_legacy_rfc_project(dir: &std::path::Path) {
 
 #[test]
 fn test_migrate_converts_json_rfc_and_upgrades_releases() {
-    let temp_dir = init_project();
+    let temp_dir = init_project_v1();
     write_legacy_rfc_project(temp_dir.path());
     fs::write(
         temp_dir.path().join("gov/releases.toml"),
@@ -96,7 +96,7 @@ date = "2026-01-01"
 
 #[test]
 fn test_migrate_dry_run_preserves_legacy_files() {
-    let temp_dir = init_project();
+    let temp_dir = init_project_v1();
     write_legacy_rfc_project(temp_dir.path());
 
     let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]]);
@@ -149,12 +149,12 @@ fn test_migrate_is_noop_on_current_version() {
 
 #[test]
 fn test_migrate_bumps_version_even_without_file_changes() {
-    let temp_dir = init_project();
+    let temp_dir = init_project_v1();
 
     // Create artifacts using govctl (already in new format with headers)
     run_commands(temp_dir.path(), &[&["rfc", "new", "New Format RFC"]]);
 
-    // Config still says version = 1, but files are already in v2 format
+    // Config says version = 1, but files are already in v2 format
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
     assert!(config.contains("version = 1"));
 
@@ -175,7 +175,7 @@ fn test_migrate_bumps_version_even_without_file_changes() {
 
 #[test]
 fn test_migrate_failure_leaves_legacy_repo_unchanged() {
-    let temp_dir = init_project();
+    let temp_dir = init_project_v1();
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
 

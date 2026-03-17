@@ -124,16 +124,31 @@ pub fn run_dynamic_commands(dir: &Path, commands: &[Vec<String>]) -> String {
     output
 }
 
-/// Initialize a govctl project in a temp directory
-pub fn init_project() -> TempDir {
+/// Initialize a govctl project in a temp directory.
+///
+/// If `schema_version` is provided, overrides the config schema version
+/// (used by migration tests to simulate older repositories).
+pub fn init_project_at(schema_version: Option<u32>) -> TempDir {
     let temp_dir = TempDir::new().expect("failed to create temp dir");
-    let result = Command::new(env!("CARGO_BIN_EXE_govctl"))
-        .args(["init"])
+    let mut cmd = Command::new(env!("CARGO_BIN_EXE_govctl"));
+    cmd.args(["init"])
         .current_dir(temp_dir.path())
         .env("NO_COLOR", "1")
-        .env("GOVCTL_DEFAULT_OWNER", "@test-user")
-        .output()
-        .expect("failed to run govctl init");
+        .env("GOVCTL_DEFAULT_OWNER", "@test-user");
+
+    if let Some(v) = schema_version {
+        cmd.env("GOVCTL_SCHEMA_VERSION", v.to_string());
+    }
+
+    let result = cmd.output().expect("failed to run govctl init");
     assert!(result.status.success(), "govctl init failed");
     temp_dir
+}
+
+pub fn init_project() -> TempDir {
+    init_project_at(None)
+}
+
+pub fn init_project_v1() -> TempDir {
+    init_project_at(Some(1))
 }

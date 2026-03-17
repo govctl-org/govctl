@@ -13,6 +13,13 @@ use crate::schema::{ArtifactSchema, with_schema_header};
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
+
+fn schema_version_for_init() -> u32 {
+    std::env::var("GOVCTL_SCHEMA_VERSION")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(crate::cmd::migrate::CURRENT_SCHEMA_VERSION)
+}
 use std::path::PathBuf;
 
 /// Skill templates: (relative_path, content) pairs.
@@ -116,7 +123,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     // Write config after gov_root exists
     write_file(
         &config_path,
-        Config::default_toml(),
+        &Config::default_toml(schema_version_for_init()),
         op,
         Some(&config.display_path(&config_path)),
     )?;

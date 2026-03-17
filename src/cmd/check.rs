@@ -21,6 +21,20 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
     let index = load_result.index;
     let mut all_diagnostics = load_result.warnings;
 
+    // Check schema version
+    let current_schema = config.schema.version;
+    let latest_schema = crate::cmd::migrate::CURRENT_SCHEMA_VERSION;
+    if current_schema < latest_schema {
+        all_diagnostics.push(Diagnostic::new(
+            DiagnosticCode::W0110SchemaOutdated,
+            format!(
+                "Schema version {} is outdated (latest: {}). Run `govctl migrate` to upgrade.",
+                current_schema, latest_schema
+            ),
+            "gov/config.toml",
+        ));
+    }
+
     // Validate governance artifacts
     let result = validate_project(&index, config);
     all_diagnostics.extend(result.diagnostics);

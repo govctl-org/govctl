@@ -112,6 +112,7 @@ pub enum DiagnosticCode {
     W0107SourceRefOutdated,
     W0108WorkPlaceholderDescription,
     W0109WorkNoActive,
+    W0110SchemaOutdated,
 }
 
 impl DiagnosticCode {
@@ -125,7 +126,8 @@ impl DiagnosticCode {
             | Self::W0106RenderedReadError
             | Self::W0107SourceRefOutdated
             | Self::W0108WorkPlaceholderDescription
-            | Self::W0109WorkNoActive => DiagnosticLevel::Warning,
+            | Self::W0109WorkNoActive
+            | Self::W0110SchemaOutdated => DiagnosticLevel::Warning,
             _ => DiagnosticLevel::Error,
         }
     }
@@ -221,6 +223,7 @@ impl DiagnosticCode {
             Self::W0107SourceRefOutdated => "W0107",
             Self::W0108WorkPlaceholderDescription => "W0108",
             Self::W0109WorkNoActive => "W0109",
+            Self::W0110SchemaOutdated => "W0110",
         }
     }
 }

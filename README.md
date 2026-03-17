@@ -24,9 +24,9 @@
 
 AI-assisted coding is powerful but undisciplined:
 
-- **Phase skipping** — Jumping from idea to implementation without specification
-- **Documentation drift** — Specs and code diverge silently
-- **No enforceable governance** — "Best practices" become optional suggestions
+- **Phase skipping** -- Jumping from idea to implementation without specification
+- **Documentation drift** -- Specs and code diverge silently
+- **No enforceable governance** -- "Best practices" become optional suggestions
 
 The result: faster typing, slower thinking, unmaintainable systems.
 
@@ -52,6 +52,30 @@ Day 14: Tests pass, govctl rfc advance RFC-0015 stable
 
 ---
 
+## How It Works
+
+govctl enforces **phase discipline** on software development:
+
+```
+┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
+│  SPEC   │ ──► │   IMPL   │ ──► │   TEST   │ ──► │  STABLE  │
+└─────────┘     └──────────┘     └──────────┘     └──────────┘
+     │                │                │                │
+     ▼                ▼                ▼                ▼
+  RFC must         Code must       Tests must       Bug fixes
+  be normative     match spec      pass gates       only
+```
+
+Three artifact types, one lifecycle:
+
+- **RFCs** -- Specifications that must exist before implementation
+- **ADRs** -- Architectural decisions with explicit trade-offs
+- **Work Items** -- Tracked tasks with acceptance criteria and verification guards
+
+All artifacts are TOML files in `gov/`, validated by JSON schemas, and rendered to markdown in `docs/`. govctl governs itself by its own rules -- this repository is the first proof.
+
+---
+
 ## Quick Start
 
 ### Claude Code Plugin
@@ -64,7 +88,7 @@ Day 14: Tests pass, govctl rfc advance RFC-0015 stable
 
 The plugin provides workflow skills, reviewer agents, and enforcement hooks out of the box.
 
-### CLI Only
+### CLI
 
 ```bash
 cargo install govctl
@@ -95,48 +119,69 @@ Every govctl operation is a single CLI call. No MCP server needed -- the CLI is 
 
 ---
 
-## What govctl Does
+## Features
 
-govctl enforces **phase discipline** on software development:
+### Verification Guards
 
+Guards are executable completion checks that run when a work item moves to `done`. Define them in `gov/guard/`:
+
+```toml
+[govctl]
+id = "GUARD-CARGO-TEST"
+title = "cargo test passes"
+
+[check]
+command = "cargo test"
+timeout_secs = 300
 ```
-┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
-│  SPEC   │ ──► │   IMPL   │ ──► │   TEST   │ ──► │  STABLE  │
-└─────────┘     └──────────┘     └──────────┘     └──────────┘
-     │                │                │                │
-     ▼                ▼                ▼                ▼
-  RFC must         Code must       Tests must       Bug fixes
-  be normative     match spec      pass gates       only
+
+Configure which guards are required in `gov/config.toml`:
+
+```toml
+[verification]
+default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
 ```
 
-Three artifact types, one lifecycle:
+### Brownfield Adoption
 
-- **RFCs** -- Specifications that must exist before implementation
-- **ADRs** -- Architectural decisions with explicit trade-offs
-- **Work Items** -- Tracked tasks tied to governance artifacts
+govctl is designed for existing projects. The `/migrate` skill systematically backfills governance:
 
-govctl governs itself by its own rules. This repository is the first proof.
+1. **Discover** undocumented architectural decisions in your codebase
+2. **Backfill** ADRs for each decision with context, rationale, and alternatives
+3. **Annotate** source files with `[[ADR-NNNN]]` references for traceability
+
+No existing files are modified without confirmation. The `gov/` directory is additive.
+
+### Schema Migration
+
+When upgrading govctl to a version that changes the artifact file format:
+
+```bash
+govctl migrate
+```
+
+Upgrades all governance files to the current schema version -- adding `#:schema` headers, converting legacy JSON to TOML, normalizing metadata layout. Changes are staged, backed up, and committed atomically with rollback on failure.
+
+### Interactive TUI
+
+```bash
+govctl tui
+```
+
+Browse RFCs, ADRs, and work items with styled markdown rendering. Included by default.
+
+Keymap: `1`/`2`/`3` switch lists, `j`/`k` navigate, `Enter` open, `/` filter, `Ctrl+d`/`Ctrl+u` page, `?` help.
 
 ---
 
 ## Who This Is For
 
 - **Teams frustrated by AI "code now, think later" patterns**
-- **Existing projects** that need to retroactively establish governance (`/migrate`)
+- **Existing projects** that need to retroactively establish governance
 - **Organizations needing audit trails** for AI-generated code
 - **Developers who believe discipline enables velocity**
 
 Not for "move fast and break things" workflows. Not for projects without review processes.
-
----
-
-## TUI Dashboard
-
-```bash
-govctl tui
-```
-
-The TUI is included by default. Keymap: `1`/`2`/`3` to switch lists, `j`/`k` to navigate, `Enter` to open, `/` to filter, `Ctrl+d`/`Ctrl+u` to page, `?` for help.
 
 ---
 

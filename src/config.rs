@@ -139,7 +139,7 @@ pub struct SchemaConfig {
 }
 
 fn default_schema_version() -> u32 {
-    1
+    crate::cmd::migrate::CURRENT_SCHEMA_VERSION
 }
 
 impl Default for SchemaConfig {
@@ -363,9 +363,10 @@ impl Config {
             .unwrap_or_else(|| path.to_path_buf())
     }
 
-    /// Generate default config TOML
-    pub fn default_toml() -> &'static str {
-        r#"[project]
+    /// Generate default config TOML at the given schema version.
+    pub fn default_toml(schema_version: u32) -> String {
+        format!(
+            r#"[project]
 name = "my-project"
 # Default owner for new RFCs (uses git user.name if not set)
 # default_owner = "@your-handle"
@@ -379,13 +380,13 @@ docs_output = "docs"
 # agent_dir = ".claude"
 
 [schema]
-version = 1
+version = {schema_version}
 
 # [work_item]
 # ID strategy for work items (default: sequential)
 # - sequential: WI-YYYY-MM-DD-NNN (solo projects)
-# - author-hash: WI-YYYY-MM-DD-{hash}-NNN (multi-person teams, uses git email)
-# - random: WI-YYYY-MM-DD-{rand} (simple uniqueness)
+# - author-hash: WI-YYYY-MM-DD-{{hash}}-NNN (multi-person teams, uses git email)
+# - random: WI-YYYY-MM-DD-{{rand}} (simple uniqueness)
 # id_strategy = "author-hash"
 
 # [verification]
@@ -398,5 +399,6 @@ version = 1
 # Implements [[RFC-0004]] concurrent write safety
 # lock_timeout_secs = 30
 "#
+        )
     }
 }
