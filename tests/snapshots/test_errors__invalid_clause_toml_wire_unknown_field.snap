@@ -4,5 +4,5 @@ expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl check
 error[E0201]: clause does not match schema 'clause.schema.json':
-  - Additional properties are not allowed ('unexpected' was unexpected) (/private<TEMPDIR>/gov/rfc/RFC-0001/clauses/C-BAD.toml)
+  - Additional properties are not allowed ('unexpected' was unexpected) (<TEMPDIR>/gov/rfc/RFC-0001/clauses/C-BAD.toml)
 exit: 1

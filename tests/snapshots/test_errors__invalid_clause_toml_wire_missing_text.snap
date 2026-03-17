@@ -4,5 +4,5 @@ expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl check
 error[E0201]: clause does not match schema 'clause.schema.json':
-  - "text" is a required property (/private<TEMPDIR>/gov/rfc/RFC-0001/clauses/C-NOTEXT.toml)
+  - "text" is a required property (<TEMPDIR>/gov/rfc/RFC-0001/clauses/C-NOTEXT.toml)
 exit: 1

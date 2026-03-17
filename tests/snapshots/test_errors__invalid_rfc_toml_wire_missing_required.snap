@@ -4,5 +4,5 @@ expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl check
 error[E0101]: RFC does not match schema 'rfc.schema.json':
-  - "owners" is a required property (/private<TEMPDIR>/gov/rfc/RFC-0001/rfc.toml)
+  - "owners" is a required property (<TEMPDIR>/gov/rfc/RFC-0001/rfc.toml)
 exit: 1

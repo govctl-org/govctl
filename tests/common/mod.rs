@@ -17,8 +17,11 @@ pub fn today() -> String {
 /// - Replace work item IDs (WI-YYYY-MM-DD-NNN) with WI-<DATE>-NNN
 /// - Replace ADR IDs with date component normalized
 pub fn normalize_output(output: &str, dir: &Path, date: &str) -> String {
+    let canonical = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
+    let canonical_str = canonical.display().to_string();
     let dir_str = dir.display().to_string();
-    let mut normalized = output.replace(&dir_str, "<TEMPDIR>");
+    let mut normalized = output.replace(&canonical_str, "<TEMPDIR>");
+    normalized = normalized.replace(&dir_str, "<TEMPDIR>");
     normalized = normalized.replace(date, "<DATE>");
 
     // Replace work item IDs
