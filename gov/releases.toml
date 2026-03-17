@@ -1,3 +1,12 @@
+#:schema schema/release.schema.json
+
+[govctl]
+
+[[releases]]
+version = "0.7.0"
+date = "2026-03-17"
+refs = ["WI-2026-03-17-010"]
+
 [[releases]]
 version = "0.6.0"
 date = "2026-03-17"
