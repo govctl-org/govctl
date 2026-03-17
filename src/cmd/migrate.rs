@@ -6,9 +6,11 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ClauseSpec, ClauseWire, ReleasesFile, RfcSpec, RfcWire};
-use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
+use crate::schema::{
+    ARTIFACT_SCHEMA_TEMPLATES, ArtifactSchema, validate_toml_value, with_schema_header,
+};
 use crate::ui;
-use crate::write::{WriteOp, read_clause, read_rfc};
+use crate::write::{WriteOp, read_clause, read_rfc, write_file};
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -48,11 +50,20 @@ const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
 // =============================================================================
 
 pub fn migrate(config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+    // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
+    let schemas_synced = sync_schemas(config, op)?;
+
     let current = config.schema.version;
     if current >= CURRENT_SCHEMA_VERSION {
-        ui::info(format!(
-            "Repository already at schema version {CURRENT_SCHEMA_VERSION}"
-        ));
+        if schemas_synced > 0 {
+            ui::success(format!(
+                "Synced {schemas_synced} schema file(s); already at schema version {CURRENT_SCHEMA_VERSION}"
+            ));
+        } else {
+            ui::info(format!(
+                "Repository already at schema version {CURRENT_SCHEMA_VERSION}"
+            ));
+        }
         return Ok(vec![]);
     }
 
@@ -106,6 +117,29 @@ pub fn migrate(config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> 
     }
 
     Ok(vec![])
+}
+
+/// Overwrite bundled JSON Schema files into `gov/schema/`. [[ADR-0035]]
+/// Returns the number of schema files that were created or updated.
+fn sync_schemas(config: &Config, op: WriteOp) -> anyhow::Result<usize> {
+    let schema_dir = config.schema_dir();
+    if !schema_dir.exists() {
+        crate::write::create_dir_all(&schema_dir, op, Some(&config.display_path(&schema_dir)))?;
+    }
+    let mut count = 0;
+    for template in ARTIFACT_SCHEMA_TEMPLATES {
+        let path = schema_dir.join(template.filename);
+        if path.exists()
+            && let Ok(existing) = fs::read_to_string(&path)
+            && existing == template.content
+        {
+            continue;
+        }
+        let display = config.display_path(&path);
+        write_file(&path, template.content, op, Some(&display))?;
+        count += 1;
+    }
+    Ok(count)
 }
 
 // =============================================================================

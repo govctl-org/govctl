@@ -76,10 +76,17 @@ fn command_catalog() -> Vec<CommandInfo> {
     vec![
         CommandInfo {
             name: "init".to_string(),
-            purpose: "Initialize govctl in the current directory".to_string(),
-            when_to_use: "Once per project, before any other govctl commands. Creates gov/ directory structure and config.".to_string(),
+            purpose: "Initialize govctl governance structure in the current directory".to_string(),
+            when_to_use: "Once per project, before any other govctl commands. Creates gov/ directory structure, config, and schemas.".to_string(),
             example: "govctl init".to_string(),
             prerequisites: vec![],
+        },
+        CommandInfo {
+            name: "init-skills".to_string(),
+            purpose: "Install agent skills and agents into the project".to_string(),
+            when_to_use: "After govctl init, if not using the govctl plugin. Installs skills and agents into the configured agent_dir.".to_string(),
+            example: "govctl init-skills".to_string(),
+            prerequisites: vec!["govctl init".to_string()],
         },
         CommandInfo {
             name: "status".to_string(),

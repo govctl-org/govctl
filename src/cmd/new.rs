@@ -145,28 +145,18 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
     // Ensure .gitignore contains .govctl.lock
     ensure_gitignore_lock_entry(op)?;
 
-    // Write all .claude/ assets (commands, skills, agents)
-    let claude_dir = PathBuf::from(".claude");
-    for (rel_path, template) in all_templates() {
-        let path = claude_dir.join(rel_path);
-        if let Some(parent) = path.parent() {
-            create_dir_all(parent, op, None)?;
-        }
-        write_file(&path, template, op, None)?;
-        if !op.is_preview() {
-            ui::created_path(&path);
-        }
-    }
-
     if !op.is_preview() {
         ui::success("Project initialized");
+        ui::hint(
+            "To install agent skills locally: govctl init-skills\n  \
+             Or install the govctl plugin:    /plugin install govctl@govctl",
+        );
     }
     Ok(vec![])
 }
 
-/// Sync all agent assets (commands, skills, agents) to the project.
-/// Used by downstream users to update after upgrading govctl.
-pub fn sync_commands(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+/// Install agent skills and agents into the project's agent directory. [[ADR-0035]]
+pub fn sync_skills(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     let agent_dir = &config.paths.agent_dir;
 
     let mut synced = 0;

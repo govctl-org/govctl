@@ -24,9 +24,18 @@ $ govctl describe --context
   "commands": [
     {
       "name": "init",
-      "purpose": "Initialize govctl in the current directory",
-      "when_to_use": "Once per project, before any other govctl commands. Creates gov/ directory structure and config.",
+      "purpose": "Initialize govctl governance structure in the current directory",
+      "when_to_use": "Once per project, before any other govctl commands. Creates gov/ directory structure, config, and schemas.",
       "example": "govctl init"
+    },
+    {
+      "name": "init-skills",
+      "purpose": "Install agent skills and agents into the project",
+      "when_to_use": "After govctl init, if not using the govctl plugin. Installs skills and agents into the configured agent_dir.",
+      "example": "govctl init-skills",
+      "prerequisites": [
+        "govctl init"
+      ]
     },
     {
       "name": "status",

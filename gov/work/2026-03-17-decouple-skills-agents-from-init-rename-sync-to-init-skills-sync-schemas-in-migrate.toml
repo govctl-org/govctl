@@ -1,0 +1,62 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-17-010"
+title = "Decouple skills/agents from init, rename sync to init-skills, sync schemas in migrate"
+status = "done"
+created = "2026-03-17"
+started = "2026-03-17"
+completed = "2026-03-17"
+refs = [
+    "ADR-0033",
+    "RFC-0002",
+]
+
+[content]
+description = """
+Refactor init/sync/migrate commands to fix three issues:
+1. `govctl init` unconditionally dumps skills/agents to `.claude/`, redundant for plugin users per [[ADR-0033]]
+2. `govctl sync` name is unclear — it syncs agent assets, not general sync
+3. `govctl migrate` does not ensure schema JSON files exist, leaving projects initialized with older versions without working `#:schema` comments
+
+Changes: (a) remove skill/agent dumping from init, add hint; (b) rename `sync` to `init-skills`; (c) add schema file overwrite to migrate pipeline."""
+
+[[content.journal]]
+date = "2026-03-17"
+scope = "cli"
+content = "Implementation complete: removed skills/agents from init, renamed sync to init-skills, added schema sync to migrate, amended RFC-0002:C-GLOBAL-COMMANDS v0.4.0, drafted ADR-0035. All 159 unit tests + 163 integration tests pass. govctl check passes."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "init no longer dumps skills/agents"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "init prints hint about init-skills and plugin"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "sync renamed to init-skills in CLI"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "migrate overwrites schema JSON files with bundled versions"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR drafted for the design decision"
+status = "done"
+category = "chore"

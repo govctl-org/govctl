@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.3.0"
+version = "0.4.0"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
 updated = "2026-03-17"
-signature = "de9b8f112eaa82575924e072fb49ef6d13475dc061d9cf5cd851280ae52c2aaf"
+signature = "9f60c5231d8804e490f0dfd9e85933e038b779337659cb578a2e8fbb7e607a40"
 
 [[sections]]
 title = "Summary"
@@ -25,6 +25,16 @@ clauses = [
     "clauses/C-OUTPUT-FORMAT.toml",
     "clauses/C-GLOBAL-COMMANDS.toml",
     "clauses/C-VERIFY-CONFIG.toml",
+]
+
+[[changelog]]
+version = "0.4.0"
+date = "2026-03-17"
+notes = "Add init-skills command, update init and migrate per ADR-0035"
+added = ["init-skills global command for explicit agent asset installation"]
+changed = [
+    "init no longer installs skills/agents",
+    "migrate now ensures schema JSON files are up to date",
 ]
 
 [[changelog]]

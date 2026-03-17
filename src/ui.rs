@@ -53,6 +53,15 @@ pub fn info(msg: impl Display) {
     eprintln!("{}", msg);
 }
 
+/// Format a hint message (dimmed, with prefix)
+pub fn hint(msg: impl Display) {
+    if use_colors() {
+        eprintln!("{} {}", "hint:".dimmed(), msg.to_string().dimmed());
+    } else {
+        eprintln!("hint: {}", msg);
+    }
+}
+
 /// Format a created item message
 pub fn created(kind: &str, path: &Path) {
     if use_colors() {

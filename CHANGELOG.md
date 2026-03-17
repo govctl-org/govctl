@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- init no longer dumps skills/agents (WI-2026-03-17-010)
+- init prints hint about init-skills and plugin (WI-2026-03-17-010)
+- sync renamed to init-skills in CLI (WI-2026-03-17-010)
+
+### Fixed
+
+- migrate overwrites schema JSON files with bundled versions (WI-2026-03-17-010)
+
 ## [0.6.0] - 2026-03-17
 
 ### Added

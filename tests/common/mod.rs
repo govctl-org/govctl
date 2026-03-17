@@ -42,9 +42,10 @@ pub fn normalize_output(output: &str, dir: &Path, date: &str) -> String {
         .replace_all(&normalized, "sha256:<HASH>")
         .to_string();
 
-    // Replace govctl version to avoid snapshot churn on version bumps
+    // Replace govctl version in JSON contexts to avoid snapshot churn on version bumps.
+    // Only replace inside double quotes to avoid corrupting semver strings in CHANGELOG fixtures.
     let version = env!("CARGO_PKG_VERSION");
-    normalized = normalized.replace(version, "<VERSION>");
+    normalized = normalized.replace(&format!("\"{version}\""), "\"<VERSION>\"");
 
     normalized
 }

@@ -31,9 +31,9 @@ pub(crate) enum Commands {
         force: bool,
     },
 
-    /// Sync .claude/ assets (commands, skills, agents) after upgrading govctl
-    #[command(visible_alias = "sync-commands")]
-    Sync {
+    /// Install skills and agents into the project's agent directory
+    #[command(name = "init-skills")]
+    InitSkills {
         /// Force overwrite existing assets
         #[arg(short = 'f', long)]
         force: bool,

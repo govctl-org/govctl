@@ -21,8 +21,10 @@ Behavior:
 - Creates `gov/` directory structure
 - Generates `gov/config.toml`
 - Creates subdirectories for rfcs, adrs, work items, and verification guards
-- Optionally creates `.claude/commands/` with workflow templates
+- Installs bundled JSON Schema files under `gov/schema/`
 - MUST error if already initialized (unless `--force`)
+- MUST NOT install agent skills or agents (see `init-skills`)
+- SHOULD print a hint about `govctl init-skills` and plugin installation
 
 **2. `govctl check`**
 
@@ -113,6 +115,7 @@ Behavior:
 - MUST leave the repository unchanged if any step fails
 - MUST be safe to run on an already-migrated repository and report a no-op result
 - MUST NOT perform heuristic project discovery or broad adoption tasks
+- MUST ensure all bundled JSON Schema files exist in `gov/schema/`, overwriting with the latest version regardless of schema version (per ADR-0035)
 
 **8. `govctl verify`**
 
@@ -133,6 +136,18 @@ Behavior:
 - Reports pass/fail per selected guard
 - Returns non-zero if any selected guard fails, if no guards are selected, or if a requested guard ID is unknown
 
+**9. `govctl init-skills`**
+
+Installs agent skills and agents into the project's agent directory (per ADR-0035).
+
+Syntax: `govctl init-skills [--force]`
+
+Behavior:
+- Writes bundled skill and agent templates to the configured `agent_dir` (default `.claude`)
+- Skips files that already exist unless `--force` is used
+- Reports created/updated/skipped counts
+- This command is separate from `init` because plugin users receive skills globally and do not need local copies
+
 **Rationale:**
 
 These commands are global because they:
@@ -144,6 +159,8 @@ These commands are global because they:
 `govctl migrate` qualifies because it operates across the governance repository as a whole and changes multiple resource types in one coordinated step.
 
 `govctl verify` qualifies because it executes project-level completion checks that may be required by multiple work items and by the project configuration.
+
+`govctl init-skills` qualifies because it performs project-level initialization of agent assets (criterion 2).
 
 **Future Additions:**
 

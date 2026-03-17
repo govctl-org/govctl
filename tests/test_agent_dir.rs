@@ -1,4 +1,4 @@
-//! Tests for agent_dir configuration (rename from commands_dir).
+//! Tests for agent_dir configuration and init-skills command. [[ADR-0035]]
 
 mod common;
 
@@ -10,17 +10,14 @@ use std::fs;
 fn test_default_agent_dir() {
     let temp_dir = init_project();
 
-    // sync should create files under .claude/skills by default
-    let _output = run_commands(temp_dir.path(), &[&["sync-commands"]]);
+    let _output = run_commands(temp_dir.path(), &[&["init-skills"]]);
 
-    // Check that .claude/skills/gov/SKILL.md exists (commands migrated to skills)
     let skill_dir = temp_dir.path().join(".claude/skills/gov/SKILL.md");
     assert!(
         skill_dir.exists(),
         "skills/gov/SKILL.md should exist under .claude"
     );
 
-    // Check that other skills exist
     let rfc_writer = temp_dir.path().join(".claude/skills/rfc-writer/SKILL.md");
     assert!(
         rfc_writer.exists(),
@@ -33,8 +30,6 @@ fn test_default_agent_dir() {
 fn test_custom_agent_dir() {
     let temp_dir = init_project();
 
-    // Update config to use a custom directory instead of .claude.
-    // Avoid IDE-reserved paths in temp tests.
     let config_path = temp_dir.path().join("gov/config.toml");
     let config_content = r#"[project]
 name = "test-project"
@@ -45,18 +40,15 @@ agent_dir = ".custom-agent"
 "#;
     fs::write(&config_path, config_content).unwrap();
 
-    // sync should create files under the custom agent directory
-    let output = run_commands(temp_dir.path(), &[&["sync-commands", "-f"]]);
-    eprintln!("sync-commands output:\n{}", output);
+    let output = run_commands(temp_dir.path(), &[&["init-skills", "-f"]]);
+    eprintln!("init-skills output:\n{}", output);
 
-    // List created directories
     if let Ok(entries) = fs::read_dir(temp_dir.path()) {
         for entry in entries.flatten() {
             eprintln!("  {:?}", entry.path());
         }
     }
 
-    // Check that the custom agent_dir is respected
     let cursor_skill = temp_dir.path().join(".custom-agent/skills/gov/SKILL.md");
     assert!(
         cursor_skill.exists(),
@@ -65,18 +57,33 @@ agent_dir = ".custom-agent"
     );
 }
 
-/// Test: agent_dir creates all subdirs (skills, agents) - no more commands
+/// Test: init-skills creates all subdirs (skills, agents)
 #[test]
 fn test_agent_dir_creates_subdirs() {
     let temp_dir = init_project();
 
-    // sync-commands should create all subdirs
-    run_commands(temp_dir.path(), &[&["sync-commands"]]);
+    run_commands(temp_dir.path(), &[&["init-skills"]]);
 
-    // Verify all expected subdirs exist (no commands/ anymore)
     assert!(temp_dir.path().join(".claude/skills").is_dir());
     assert!(temp_dir.path().join(".claude/agents").is_dir());
-
-    // Verify commands/ directory is NOT created (migrated to skills)
     assert!(!temp_dir.path().join(".claude/commands").exists());
+}
+
+/// Test: init does NOT create skills/agents [[ADR-0035]]
+#[test]
+fn test_init_no_skills() {
+    let temp_dir = init_project();
+
+    assert!(
+        !temp_dir.path().join(".claude/skills").exists(),
+        "init should not create .claude/skills"
+    );
+    assert!(
+        !temp_dir.path().join(".claude/agents").exists(),
+        "init should not create .claude/agents"
+    );
+    assert!(
+        temp_dir.path().join("gov/schema/adr.schema.json").exists(),
+        "init should create schema files"
+    );
 }
