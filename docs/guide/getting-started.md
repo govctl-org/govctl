@@ -4,32 +4,29 @@ This guide walks you through installing govctl and creating your first governed 
 
 ## Requirements
 
-- **Rust 1.88+** (uses edition 2024)
+- **Rust 1.94+** (uses edition 2024)
 
 ## Installation
 
 ```bash
-# From crates.io
+# From crates.io (includes TUI by default)
 cargo install govctl
 
-# With TUI dashboard feature
-cargo install govctl --features tui
+# Without TUI
+cargo install govctl --no-default-features
 
 # Or build from source
 git clone https://github.com/govctl-org/govctl
 cd govctl
 cargo build --release
 # Binary at ./target/release/govctl
-
-# Build with TUI
-cargo build --release --features tui
 ```
 
-### Optional Features
+### Features
 
-| Feature | Description                                   | Dependencies       |
-| ------- | --------------------------------------------- | ------------------ |
-| `tui`   | Interactive terminal dashboard (`govctl tui`) | ratatui, crossterm |
+| Feature | Default | Description                                   | Dependencies       |
+| ------- | ------- | --------------------------------------------- | ------------------ |
+| `tui`   | Yes     | Interactive terminal dashboard (`govctl tui`) | ratatui, crossterm |
 
 ## Shell Completion
 
@@ -62,12 +59,25 @@ This creates the governance directory structure:
 
 ```
 gov/
-├── config.toml       # Configuration
-├── rfc/              # RFC sources
-├── adr/              # ADR sources
-├── work/             # Work item sources
-├── schema/           # JSON schemas
-└── templates/        # New artifact templates
+├── config.toml       # Configuration (project name, schema version, guards)
+├── rfc/              # RFC sources (TOML)
+├── adr/              # ADR sources (TOML)
+├── work/             # Work item sources (TOML)
+├── guard/            # Verification guards (TOML)
+├── schema/           # JSON schemas for validation
+└── releases.toml     # Release history
+```
+
+All governance artifacts use TOML with `#:schema` comment headers for IDE discoverability:
+
+```toml
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0001"
+title = "My Decision"
+status = "proposed"
+...
 ```
 
 ## Create Your First RFC
@@ -76,7 +86,7 @@ gov/
 govctl rfc new "Feature Title"
 ```
 
-This creates `gov/rfc/RFC-0000/rfc.json` with the RFC metadata.
+This creates `gov/rfc/RFC-0000/rfc.toml` with the RFC metadata.
 
 ## Add a Clause
 
@@ -95,13 +105,26 @@ The feature SHOULD do Y.
 EOF
 ```
 
+## View Artifacts
+
+```bash
+# Styled markdown to stdout
+govctl rfc show RFC-0000
+govctl adr show ADR-0001
+govctl work show WI-2026-01-17-001
+govctl clause show RFC-0000:C-SCOPE
+
+# Interactive TUI dashboard
+govctl tui
+```
+
 ## Validate Everything
 
 ```bash
 govctl check
 ```
 
-This validates all governance artifacts against the schema and phase rules.
+This validates all governance artifacts against JSON schemas, phase rules, cross-references, and source code annotations.
 
 ## Render to Markdown
 
@@ -109,7 +132,7 @@ This validates all governance artifacts against the schema and phase rules.
 govctl render
 ```
 
-Generates human-readable markdown in `docs/rfc/RFC-0000.md`.
+Generates human-readable markdown in `docs/`.
 
 ## Adopting govctl in an Existing Project
 
@@ -122,4 +145,4 @@ For AI-assisted migration, use the `/migrate` skill to systematically discover u
 - [Working with RFCs](./rfcs.md) — Full RFC lifecycle
 - [Working with ADRs](./adrs.md) — Decision records
 - [Working with Work Items](./work-items.md) — Task tracking
-- [Validation & Rendering](./validation.md) — Quality gates
+- [Validation & Rendering](./validation.md) — Quality gates and guards

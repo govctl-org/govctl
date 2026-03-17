@@ -12,6 +12,30 @@ This creates a TOML file in `gov/adr/` with the decision context.
 
 ## ADR Structure
 
+ADRs are TOML files with `#:schema` headers:
+
+```toml
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0003"
+title = "Use Redis for caching"
+status = "proposed"
+date = "2026-03-17"
+refs = ["RFC-0001"]
+
+[content]
+context = "We need a caching layer for..."
+decision = "We will use Redis because..."
+consequences = "Positive: faster reads. Negative: operational complexity."
+
+[[content.alternatives]]
+text = "Memcached"
+pros = ["Simpler"]
+cons = ["No persistence"]
+rejection_reason = "Persistence is required for our use case"
+```
+
 ADRs contain:
 
 - **Context** — The situation requiring a decision
@@ -22,7 +46,7 @@ ADRs contain:
 
 ## Editing ADRs
 
-ADRs are TOML files — edit them directly in your editor or use govctl to get/set fields:
+Use govctl to get/set fields:
 
 ```bash
 # Get specific field
@@ -30,17 +54,20 @@ govctl adr get ADR-0003 status
 
 # Set field value
 govctl adr set ADR-0003 status accepted
+
+# Set multi-line content from stdin
+govctl adr set ADR-0003 context --stdin <<'EOF'
+We need a caching layer that can handle
+10k requests per second with sub-millisecond latency.
+EOF
 ```
 
 For alternatives (pros/cons/rejection reason), path-based edits are supported:
 
 ```bash
-# Before: remove and re-add whole alternative to change one pro
-govctl adr remove ADR-0001 alternatives "Option 3" --exact
-govctl adr add ADR-0001 alternatives "Option 3: Use Raft" --pro "Updated pro"
-
-# After: direct nested edit
-govctl adr set ADR-0001 alt[2].pro[0] "Updated pro"
+# Direct nested edit
+govctl adr set ADR-0001 "alt[2].pros[0]" "Updated pro"
+govctl adr add ADR-0001 "alt[0].cons" "New disadvantage"
 ```
 
 ## Status Lifecycle
@@ -76,18 +103,10 @@ govctl adr supersede ADR-0001 --by ADR-0005
 
 This marks ADR-0001 as superseded and records ADR-0005 as its replacement.
 
-## Listing ADRs
+## Listing and Viewing
 
 ```bash
 govctl adr list
 govctl adr list accepted    # Filter by status
+govctl adr show ADR-0003    # Styled markdown to stdout
 ```
-
-## Why TOML?
-
-ADRs use TOML (not JSON or YAML) because:
-
-- **Comments allowed** — Humans can annotate inline
-- **Multi-line strings** — Clean `"""` blocks for prose
-- **No YAML ambiguity** — `NO` stays `NO`, not `false`
-- **Round-trip stable** — Deterministic serialization

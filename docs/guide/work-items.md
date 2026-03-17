@@ -16,12 +16,44 @@ Work items are automatically assigned IDs like `WI-2026-01-17-001`.
 
 ## Work Item Structure
 
+Work items are TOML files with `#:schema` headers:
+
+```toml
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-01-17-001"
+title = "Implement caching layer"
+status = "active"
+started = "2026-01-17"
+refs = ["RFC-0010", "ADR-0003"]
+
+[content]
+description = "Add Redis caching for the query endpoint."
+
+[[content.acceptance_criteria]]
+text = "add: Cache invalidation on write"
+status = "pending"
+
+[[content.acceptance_criteria]]
+text = "chore: govctl check passes"
+status = "pending"
+
+[[content.journal]]
+date = "2026-01-17"
+text = "Implemented core logic"
+scope = "backend"
+
+[[content.notes]]
+text = "Do not retry the old validation path"
+```
+
 Work items contain:
 
 - **Title** — Brief description
 - **Description** — Task scope declaration
 - **Journal** — Execution tracking entries with date and scope (per [[ADR-0026]])
-- **Notes** — Ad-hoc key points (array of strings)
+- **Notes** — Durable learnings and constraints
 - **Acceptance Criteria** — Checkable completion criteria with changelog category
 - **Refs** — Links to related RFCs, ADRs, or external resources
 
@@ -42,6 +74,8 @@ govctl work move WI-2026-01-17-001 done
 # By filename (without path)
 govctl work move implement-caching.toml active
 ```
+
+Moving to `done` requires all verification guards to pass (see [Validation](./validation.md#verification-guards)).
 
 ## Acceptance Criteria
 
@@ -90,11 +124,7 @@ govctl work add WI-2026-01-17-001 notes "Do not retry the old validation path; i
 Nested path edits are also available for structured fields:
 
 ```bash
-# Before: append a replacement journal entry to adjust one field
-govctl work add WI-2026-01-17-001 journal --scope parser "Fixed parser edge case"
-
-# After: direct nested update
-govctl work set WI-2026-01-17-001 journal[0].scope "parser"
+govctl work set WI-2026-01-17-001 "journal[0].scope" "parser"
 ```
 
 ## Removing Items
@@ -140,15 +170,12 @@ For work items that have been activated, use status transitions instead:
 govctl work move WI-2026-01-17-001 cancelled
 ```
 
-## Listing Work Items
+## Listing and Viewing
 
 ```bash
 govctl work list
 govctl work list queue      # Pending items
 govctl work list active     # In progress
 govctl work list done       # Completed
+govctl work show WI-2026-01-17-001  # Styled markdown to stdout
 ```
-
-## Why TOML?
-
-Like ADRs, work items use TOML for human-friendly editing with comments and clean multi-line strings.

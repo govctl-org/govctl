@@ -116,6 +116,7 @@ Execution MUST NOT begin on new features until RFC is normative.
 
 ```bash
 # Validation & status
+govctl render all               # Render all artifacts
 govctl check                    # Validate all artifacts
 govctl status                   # Project overview
 
@@ -128,6 +129,15 @@ govctl work new "Title"         # New work item
 govctl rfc list                 # List RFCs
 govctl adr list                 # List ADRs
 govctl work list                # List work items
+
+# Viewing artifacts (styled markdown to stdout)
+govctl rfc show RFC-0001        # Show RFC
+govctl adr show ADR-0001        # Show ADR
+govctl work show WI-ID          # Show work item
+govctl clause show RFC-0001:C-X # Show clause
+
+# Interactive TUI (default-enabled)
+govctl tui                      # Browse all artifacts
 
 # Lifecycle transitions
 govctl rfc finalize RFC-0001 normative

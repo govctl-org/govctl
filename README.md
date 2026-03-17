@@ -133,11 +133,10 @@ Not for "move fast and break things" workflows. Not for projects without review 
 ## TUI Dashboard
 
 ```bash
-cargo install govctl --features tui
 govctl tui
 ```
 
-Keymap: `1`/`2`/`3` to switch lists, `j`/`k` to move, `Enter` to open, `/` to filter, `?` for help.
+The TUI is included by default. Keymap: `1`/`2`/`3` to switch lists, `j`/`k` to navigate, `Enter` to open, `/` to filter, `Ctrl+d`/`Ctrl+u` to page, `?` for help.
 
 ---
 

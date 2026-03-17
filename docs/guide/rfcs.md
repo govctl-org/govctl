@@ -16,8 +16,27 @@ govctl rfc new "Feature Title" --id RFC-0010
 
 An RFC consists of:
 
-- **Metadata** (`rfc.json`) — ID, title, status, phase, version
-- **Clauses** — Atomic units of specification
+- **Metadata** (`rfc.toml`) — ID, title, status, phase, version, owners
+- **Clauses** (`clauses/*.toml`) — Atomic units of specification
+
+The TOML files use `#:schema` headers and a `[govctl]` + `[content]` layout:
+
+```toml
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0010"
+title = "Feature Title"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["@you"]
+created = "2026-03-17"
+refs = []
+
+[content]
+summary = "Brief summary of this RFC."
+```
 
 ## Working with Clauses
 
@@ -31,6 +50,23 @@ Options:
 
 - `-s, --section` — Section name (e.g., "Specification", "Rationale")
 - `-k, --kind` — `normative` (binding) or `informative` (explanatory)
+
+Clause files use the same `[govctl]` + `[content]` layout:
+
+```toml
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SCOPE"
+title = "Scope"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+The system MUST validate all inputs."""
+```
 
 ### Edit Clause Text
 
@@ -68,6 +104,12 @@ For normative RFCs, use `govctl clause deprecate RFC-0010:C-OLD` instead.
 ```bash
 govctl clause list
 govctl clause list RFC-0010
+```
+
+### View a Clause
+
+```bash
+govctl clause show RFC-0010:C-SCOPE
 ```
 
 ## Status Lifecycle
@@ -128,10 +170,11 @@ govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
 govctl rfc bump RFC-0010 --major -m "Breaking change to API contract"
 ```
 
-## Listing RFCs
+## Listing and Viewing
 
 ```bash
 govctl rfc list
 govctl rfc list normative    # Filter by status
 govctl rfc list impl         # Filter by phase
+govctl rfc show RFC-0010     # Styled markdown to stdout
 ```
