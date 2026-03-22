@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-22-001"
+title = "Enforce artifact reference hierarchy in govctl check"
+status = "done"
+created = "2026-03-22"
+started = "2026-03-22"
+completed = "2026-03-22"
+refs = ["RFC-0000:C-REFERENCE-HIERARCHY"]
+
+[content]
+description = "Implement [[RFC-0000:C-REFERENCE-HIERARCHY]] in validate_project: forbid RFC refs and bracket-links to ADR/WI; forbid ADR refs and bracket-links to WI. Amend RFC clause for machine-checkable rules. Update field validation for refs."
+
+[[content.journal]]
+date = "2026-03-22"
+scope = "validate"
+content = "Implemented reference hierarchy validation (refs + bracket links), amended RFC-0000, rendered docs/rfc/RFC-0000.md; cargo test and govctl check green."
+
+[[content.acceptance_criteria]]
+text = "govctl check enforces refs + [[...]] hierarchy"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "cargo test and govctl check pass"
+status = "done"
+category = "chore"

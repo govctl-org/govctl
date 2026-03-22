@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- govctl check enforces refs + [[...]] hierarchy (WI-2026-03-22-001)
+
 ## [0.7.0] - 2026-03-17
 
 ### Changed

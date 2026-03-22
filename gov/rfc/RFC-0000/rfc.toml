@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.1.0"
+version = "1.1.1"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-03-17"
-signature = "4feece0bf26e7062c2e8e3fc32df6153c39e58150897f1a6df90dee9d75067d0"
+updated = "2026-03-22"
+signature = "d05eb40d0eb61a843eb2b0279c290f3c9d5a16b17d97f88790b2f6466510190b"
 
 [[sections]]
 title = "Summary"
@@ -43,6 +43,12 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.1.1"
+date = "2026-03-22"
+notes = "Clarify machine-validated reference hierarchy for refs and [[...]]"
+added = ["Structured rules: RFC must not link ADR/WI; ADR must not link WI"]
 
 [[changelog]]
 version = "1.1.0"

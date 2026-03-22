@@ -3,6 +3,7 @@
 //! Implements validation per [[RFC-0000]] and [[RFC-0001]]:
 //! - [[ADR-0003]] signature verification for rendered projections
 //! - [[ADR-0010]] placeholder description detection
+//! - [[RFC-0000:C-REFERENCE-HIERARCHY]] structured refs and [[...]] link targets
 
 use crate::cmd::edit::rules as edit_rules;
 use crate::config::Config;
@@ -14,6 +15,7 @@ use crate::model::{
 };
 use crate::signature::{compute_rfc_signature, extract_signature};
 use crate::write::read_clause;
+use regex::Regex;
 use std::collections::HashSet;
 
 // =============================================================================
@@ -82,7 +84,7 @@ impl FieldValidation {
             Self::EnumValue => Ok(()), // Validated by serde during parse
             Self::Semver => validate_semver(value),
             Self::ClauseSupersededBy => validate_clause_superseded_by(ctx, value),
-            Self::ArtifactRef => validate_artifact_ref(ctx.config, value),
+            Self::ArtifactRef => validate_artifact_ref(ctx, value),
         }
     }
 }
@@ -159,13 +161,13 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
     }
 }
 
-/// Validate an artifact reference exists
-fn validate_artifact_ref(config: &Config, ref_id: &str) -> anyhow::Result<()> {
+/// Validate an artifact reference exists and respects [[RFC-0000:C-REFERENCE-HIERARCHY]].
+fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> anyhow::Result<()> {
     use crate::load::find_rfc_json;
     use crate::parse::{load_adrs, load_work_items};
 
     if ref_id.starts_with("RFC-") {
-        if find_rfc_json(config, ref_id).is_none() {
+        if find_rfc_json(ctx.config, ref_id).is_none() {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {ref_id}"),
@@ -174,7 +176,7 @@ fn validate_artifact_ref(config: &Config, ref_id: &str) -> anyhow::Result<()> {
             .into());
         }
     } else if ref_id.starts_with("ADR-") {
-        let adrs = load_adrs(config)?;
+        let adrs = load_adrs(ctx.config)?;
         if !adrs.iter().any(|a| a.spec.govctl.id == ref_id) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0302AdrNotFound,
@@ -184,7 +186,7 @@ fn validate_artifact_ref(config: &Config, ref_id: &str) -> anyhow::Result<()> {
             .into());
         }
     } else if ref_id.starts_with("WI-") {
-        let items = load_work_items(config)?;
+        let items = load_work_items(ctx.config)?;
         if !items.iter().any(|w| w.spec.govctl.id == ref_id) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0402WorkNotFound,
@@ -200,6 +202,37 @@ fn validate_artifact_ref(config: &Config, ref_id: &str) -> anyhow::Result<()> {
             ref_id,
         )
         .into());
+    }
+
+    check_ref_hierarchy(ctx.artifact_id, ref_id, ctx.artifact_id).map_err(|e| e.into())
+}
+
+/// Enforce [[RFC-0000:C-REFERENCE-HIERARCHY]] for `refs` targets.
+fn check_ref_hierarchy(
+    artifact_id: &str,
+    ref_id: &str,
+    diagnostic_path: &str,
+) -> Result<(), Diagnostic> {
+    let owner_is_rfc = artifact_id.starts_with("RFC-");
+    let owner_is_adr = artifact_id.starts_with("ADR-");
+    let owner_is_wi = artifact_id.starts_with("WI-");
+
+    if owner_is_wi {
+        return Ok(());
+    }
+    if owner_is_rfc && (ref_id.starts_with("ADR-") || ref_id.starts_with("WI-")) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0112RfcReferenceHierarchy,
+            format!("RFC artifact '{artifact_id}' must not reference ADR or Work Item: {ref_id}"),
+            diagnostic_path,
+        ));
+    }
+    if owner_is_adr && ref_id.starts_with("WI-") {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0306AdrReferenceHierarchy,
+            format!("ADR '{artifact_id}' must not reference Work Item: {ref_id}"),
+            diagnostic_path,
+        ));
     }
     Ok(())
 }
@@ -293,6 +326,9 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
 
     // Validate artifact references (refs fields)
     validate_artifact_refs(index, config, &mut result);
+
+    // [[...]] in RFC/ADR governed text — [[RFC-0000:C-REFERENCE-HIERARCHY]]
+    validate_bracket_reference_hierarchy(index, config, &mut result);
 
     // Validate work item descriptions
     validate_work_item_descriptions(index, config, &mut result);
@@ -524,6 +560,117 @@ fn validate_clause_references(
     }
 }
 
+/// Validate `[[...]]` link targets in RFC and ADR content per [[RFC-0000:C-REFERENCE-HIERARCHY]].
+fn validate_bracket_reference_hierarchy(
+    index: &ProjectIndex,
+    config: &Config,
+    result: &mut ValidationResult,
+) {
+    let re = match Regex::new(&config.source_scan.pattern) {
+        Ok(r) => r,
+        Err(e) => {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0501ConfigInvalid,
+                format!("Invalid source_scan.pattern for bracket reference scan: {e}"),
+                "gov/config.toml".to_string(),
+            ));
+            return;
+        }
+    };
+
+    for rfc in &index.rfcs {
+        let rfc_path = config.display_path(&rfc.path).display().to_string();
+        let rid = rfc.rfc.rfc_id.as_str();
+        for clause in &rfc.clauses {
+            let clause_path = config.display_path(&clause.path).display().to_string();
+            scan_rfc_bracket_refs(&re, &clause.spec.text, rid, &clause_path, result);
+        }
+        for entry in &rfc.rfc.changelog {
+            if let Some(ref notes) = entry.notes {
+                scan_rfc_bracket_refs(&re, notes, rid, &rfc_path, result);
+            }
+            for line in entry
+                .added
+                .iter()
+                .chain(entry.changed.iter())
+                .chain(entry.deprecated.iter())
+                .chain(entry.removed.iter())
+                .chain(entry.fixed.iter())
+                .chain(entry.security.iter())
+            {
+                scan_rfc_bracket_refs(&re, line, rid, &rfc_path, result);
+            }
+        }
+    }
+
+    for adr in &index.adrs {
+        let adr_path = config.display_path(&adr.path).display().to_string();
+        let aid = adr.meta().id.as_str();
+        let c = &adr.spec.content;
+        scan_adr_bracket_refs(&re, &c.context, aid, &adr_path, result);
+        scan_adr_bracket_refs(&re, &c.decision, aid, &adr_path, result);
+        scan_adr_bracket_refs(&re, &c.consequences, aid, &adr_path, result);
+        for alt in &c.alternatives {
+            scan_adr_bracket_refs(&re, &alt.text, aid, &adr_path, result);
+            for p in &alt.pros {
+                scan_adr_bracket_refs(&re, p, aid, &adr_path, result);
+            }
+            for cons in &alt.cons {
+                scan_adr_bracket_refs(&re, cons, aid, &adr_path, result);
+            }
+            if let Some(ref rr) = alt.rejection_reason {
+                scan_adr_bracket_refs(&re, rr, aid, &adr_path, result);
+            }
+        }
+    }
+}
+
+fn scan_rfc_bracket_refs(
+    re: &Regex,
+    text: &str,
+    rfc_id: &str,
+    path: &str,
+    result: &mut ValidationResult,
+) {
+    for caps in re.captures_iter(text) {
+        let Some(m) = caps.get(1) else {
+            continue;
+        };
+        let target = m.as_str();
+        if target.starts_with("ADR-") || target.starts_with("WI-") {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0112RfcReferenceHierarchy,
+                format!(
+                    "RFC '{rfc_id}' must not use [[...]] to link to ADR or Work Item: [[{target}]]"
+                ),
+                path,
+            ));
+        }
+    }
+}
+
+fn scan_adr_bracket_refs(
+    re: &Regex,
+    text: &str,
+    adr_id: &str,
+    path: &str,
+    result: &mut ValidationResult,
+) {
+    for caps in re.captures_iter(text) {
+        let Some(m) = caps.get(1) else {
+            continue;
+        };
+        let target = m.as_str();
+        if target.starts_with("WI-") {
+            result.diagnostics.push(Diagnostic::new(
+                DiagnosticCode::E0306AdrReferenceHierarchy,
+                format!("ADR '{adr_id}' must not use [[...]] to link to Work Item: [[{target}]]"),
+                path,
+            ));
+        }
+    }
+}
+
 /// Validate refs fields in RFCs, ADRs and Work Items
 fn validate_artifact_refs(index: &ProjectIndex, config: &Config, result: &mut ValidationResult) {
     // Build a set of all known artifact IDs (including clause references)
@@ -562,21 +709,27 @@ fn validate_artifact_refs(index: &ProjectIndex, config: &Config, result: &mut Va
                     ),
                     rfc_path_display.clone(),
                 ));
+            } else if let Err(d) = check_ref_hierarchy(&rfc.rfc.rfc_id, ref_id, &rfc_path_display) {
+                result.diagnostics.push(d);
             }
         }
 
         // Validate supersedes field
-        if let Some(ref supersedes) = rfc.rfc.supersedes
-            && !known_ids.contains(supersedes)
-        {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0106RfcSupersedesNotFound,
-                format!(
-                    "RFC '{}' supersedes unknown RFC: {}",
-                    rfc.rfc.rfc_id, supersedes
-                ),
-                rfc_path_display,
-            ));
+        if let Some(ref supersedes) = rfc.rfc.supersedes {
+            if !known_ids.contains(supersedes) {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0106RfcSupersedesNotFound,
+                    format!(
+                        "RFC '{}' supersedes unknown RFC: {}",
+                        rfc.rfc.rfc_id, supersedes
+                    ),
+                    rfc_path_display.clone(),
+                ));
+            } else if let Err(d) =
+                check_ref_hierarchy(&rfc.rfc.rfc_id, supersedes, &rfc_path_display)
+            {
+                result.diagnostics.push(d);
+            }
         }
     }
 
@@ -594,6 +747,8 @@ fn validate_artifact_refs(index: &ProjectIndex, config: &Config, result: &mut Va
                     ),
                     adr_path_display.clone(),
                 ));
+            } else if let Err(d) = check_ref_hierarchy(&adr.meta().id, ref_id, &adr_path_display) {
+                result.diagnostics.push(d);
             }
         }
     }
@@ -1011,5 +1166,38 @@ mod tests {
             FieldValidation::for_field(ArtifactKind::Rfc, "unknown"),
             FieldValidation::None
         ));
+    }
+
+    // =========================================================================
+    // Reference hierarchy ([[RFC-0000:C-REFERENCE-HIERARCHY]])
+    // =========================================================================
+
+    #[test]
+    fn test_ref_hierarchy_rfc_rejects_adr_and_wi() {
+        assert!(check_ref_hierarchy("RFC-0001", "ADR-0001", "f").is_err());
+        assert!(check_ref_hierarchy("RFC-0001", "WI-2026-01-01-001", "f").is_err());
+    }
+
+    #[test]
+    fn test_ref_hierarchy_rfc_allows_rfc_and_clause() {
+        assert!(check_ref_hierarchy("RFC-0001", "RFC-0002", "f").is_ok());
+        assert!(check_ref_hierarchy("RFC-0001", "RFC-0002:C-FOO", "f").is_ok());
+    }
+
+    #[test]
+    fn test_ref_hierarchy_adr_rejects_wi() {
+        assert!(check_ref_hierarchy("ADR-0001", "WI-2026-01-01-001", "f").is_err());
+    }
+
+    #[test]
+    fn test_ref_hierarchy_adr_allows_rfc_adr() {
+        assert!(check_ref_hierarchy("ADR-0001", "RFC-0000:C-RFC-DEF", "f").is_ok());
+        assert!(check_ref_hierarchy("ADR-0001", "ADR-0002", "f").is_ok());
+    }
+
+    #[test]
+    fn test_ref_hierarchy_work_allows_any() {
+        assert!(check_ref_hierarchy("WI-2026-01-01-001", "WI-2026-01-01-002", "f").is_ok());
+        assert!(check_ref_hierarchy("WI-2026-01-01-001", "ADR-0001", "f").is_ok());
     }
 }

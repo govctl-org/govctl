@@ -25,6 +25,8 @@ pub enum DiagnosticCode {
     E0109RfcAlreadyExists,
     E0110RfcInvalidId,
     E0111RfcNoChangelog,
+    /// RFC refs or [[...]] targets ADR/WI — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
+    E0112RfcReferenceHierarchy,
 
     // Clause errors (E02xx)
     E0201ClauseSchemaInvalid,
@@ -44,6 +46,8 @@ pub enum DiagnosticCode {
     E0303AdrInvalidTransition,
     E0304AdrRefNotFound,
     E0305AdrCannotDeprecate,
+    /// ADR refs or [[...]] targets WI-* — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
+    E0306AdrReferenceHierarchy,
 
     // Work Item errors (E04xx)
     E0401WorkSchemaInvalid,
@@ -146,6 +150,7 @@ impl DiagnosticCode {
             Self::E0109RfcAlreadyExists => "E0109",
             Self::E0110RfcInvalidId => "E0110",
             Self::E0111RfcNoChangelog => "E0111",
+            Self::E0112RfcReferenceHierarchy => "E0112",
             // E02xx - Clause
             Self::E0201ClauseSchemaInvalid => "E0201",
             Self::E0202ClauseNotFound => "E0202",
@@ -163,6 +168,7 @@ impl DiagnosticCode {
             Self::E0303AdrInvalidTransition => "E0303",
             Self::E0304AdrRefNotFound => "E0304",
             Self::E0305AdrCannotDeprecate => "E0305",
+            Self::E0306AdrReferenceHierarchy => "E0306",
             // E04xx - Work Item
             Self::E0401WorkSchemaInvalid => "E0401",
             Self::E0402WorkNotFound => "E0402",

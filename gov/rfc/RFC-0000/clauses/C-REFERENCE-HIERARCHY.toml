@@ -8,6 +8,15 @@ status = "active"
 since = "1.0.1"
 
 [content]
+text = '''
+[govctl]
+id = "C-REFERENCE-HIERARCHY"
+title = "Artifact Reference Hierarchy"
+kind = "normative"
+status = "active"
+since = "1.0.1"
+
+[content]
 text = """
 Governance artifacts follow a strict authority hierarchy. References between artifact types MUST respect this hierarchy.
 
@@ -16,16 +25,20 @@ Governance artifacts follow a strict authority hierarchy. References between art
 2. **ADR** — Interpretation. Documents decisions implementing RFCs.
 3. **Work Item** — Execution. Tracks work implementing ADRs and RFCs.
 
-**Reference Rules:**
+**Structured reference rules (refs fields and [[...]] link targets):**
 
-RFCs MUST NOT reference ADRs in normative clause text. RFCs are self-contained specifications. If an RFC needs to describe a decision, the decision MUST be stated directly in the RFC, not delegated to an ADR.
+Implementations MUST validate these rules during project validation (for example `govctl check`).
 
-ADRs MAY reference RFCs to establish authority for decisions. ADRs SHOULD cite the RFC clause that the decision interprets or implements.
+- RFC `refs` entries and `[[...]]` link targets MUST NOT identify an ADR or a Work Item. RFCs MUST link only to RFCs and RFC clause references (`RFC-ID:C-CLAUSE`).
 
-Work Items MAY reference any artifact type. Work Items typically reference the RFC or ADR they implement.
+- ADR `refs` entries and `[[...]]` link targets MUST NOT identify a Work Item. ADRs MAY link to RFCs (including clause references) and to ADRs.
+
+- Work Item `refs` entries and `[[...]]` link targets MAY identify any artifact type.
 
 **Rationale:**
 
-This hierarchy prevents circular dependencies and maintains clear authority chains. An RFC that references an ADR inverts the hierarchy — the ADR becomes the authority, which defeats the purpose of having RFCs as constitutional law.
+This hierarchy prevents circular dependencies and maintains clear authority chains. An RFC that links to an ADR or Work Item in `refs` or `[[...]]` inverts the dependency direction — lower layers become authorities over the specification.
 
-Changelog entries and informative notes MAY mention ADRs for historical context, but normative clause text MUST remain self-contained."""
+**Prose outside refs and [[...]]:**
+
+Normative RFC clause text SHOULD remain self-contained. Plain prose (without `[[...]]`) MAY cite artifact identifiers for explanation; that form is not governed by the structured rules above."""'''
