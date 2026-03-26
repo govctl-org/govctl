@@ -16,12 +16,13 @@
       system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+        cargoToml = builtins.fromTOML (builtins.readFile ./Cargo.toml);
       in
       {
         packages = {
           govctl = pkgs.rustPlatform.buildRustPackage {
             pname = "govctl";
-            version = "0.7.1";
+            inherit (cargoToml.package) version;
 
             src = pkgs.lib.cleanSource ./.;
 

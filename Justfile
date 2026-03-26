@@ -82,14 +82,22 @@ tui:
     cargo run --quiet --features tui -- tui
 
 # =============================================================================
-# Plugin Management
+# Release Helpers
 # =============================================================================
 
-# Stamp plugin version from Cargo.toml into marketplace.json
-stamp-plugin-version:
+# Bump version everywhere: just bump 0.8.0
+bump new_version:
     #!/usr/bin/env bash
     set -euo pipefail
-    version=$(grep '^version' Cargo.toml | head -1 | sed 's/.*"\(.*\)"/\1/')
-    jq --arg v "$version" '.plugins[0].version = $v' .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
+    # 1. Update Cargo.toml
+    sed -i '' "s/^version = \".*\"/version = \"{{new_version}}\"/" Cargo.toml
+    cargo check --quiet 2>/dev/null || true  # refresh Cargo.lock
+    # 2. Stamp plugin
+    jq --arg v "{{new_version}}" '.plugins[0].version = $v' .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
     mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
-    echo "Plugin version stamped: $version"
+    # 3. flake.nix reads from Cargo.toml automatically
+    # 4. Update gov/releases.toml
+    cargo run --quiet -- release
+    # 5. Render CHANGELOG.md
+    cargo run --quiet -- render changelog
+    echo "Bumped to {{new_version}}"
