@@ -1,6 +1,9 @@
 # Rust build artifacts
 target/
 
+# Nix build artifacts
+result
+
 # IDE
 .idea/
 .vscode/
