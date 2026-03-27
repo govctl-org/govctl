@@ -85,6 +85,11 @@ tui:
 # Release Helpers
 # =============================================================================
 
+# Update all dependencies (Cargo + Nix inputs)
+update-deps:
+    cargo update
+    nix flake update
+
 # Bump version everywhere: just bump 0.8.0
 bump new_version:
     #!/usr/bin/env bash
