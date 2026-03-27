@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- govctl guard new scaffolds guard TOML with hint about default_guards (WI-2026-03-27-001)
+- govctl guard list shows all guards in tabular format (WI-2026-03-27-001)
+- govctl guard show displays a guard (WI-2026-03-27-001)
+- govctl guard set edits guard fields (WI-2026-03-27-001)
+- govctl guard delete removes a guard with safety checks (WI-2026-03-27-001)
+
 ## [0.7.1] - 2026-03-26
 
 ### Added

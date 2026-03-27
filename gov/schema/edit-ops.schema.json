@@ -160,7 +160,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work"]
+          "enum": ["rfc", "clause", "adr", "work", "guard"]
         },
         "name": {
           "type": "string",
@@ -187,7 +187,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work"]
+          "enum": ["rfc", "clause", "adr", "work", "guard"]
         },
         "name": {
           "type": "string",
@@ -278,6 +278,14 @@
         },
         {
           "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string", "enum": ["integer"] }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
           "required": ["type", "empty_as_null"],
           "properties": {
             "type": { "type": "string", "enum": ["optional_string"] },
@@ -313,7 +321,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work"]
+          "enum": ["rfc", "clause", "adr", "work", "guard"]
         },
         "field": {
           "type": "string",

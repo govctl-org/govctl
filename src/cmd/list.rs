@@ -6,6 +6,7 @@ use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::load::load_project;
 use crate::model::WorkItemStatus;
+use crate::parse::load_guards_with_warnings;
 use crate::theme::{SemanticColor, status_semantic};
 use crate::ui::stdout_supports_color;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
@@ -45,6 +46,16 @@ fn header_cell(text: &str) -> Cell {
     }
 }
 
+/// Truncate a string to at most `max` characters, appending "…" if truncated.
+fn truncate_chars(s: &str, max: usize) -> String {
+    if s.chars().count() <= max {
+        s.to_string()
+    } else {
+        let truncated: String = s.chars().take(max).collect();
+        format!("{truncated}…")
+    }
+}
+
 /// List artifacts
 pub fn list(
     config: &Config,
@@ -53,6 +64,13 @@ pub fn list(
     limit: Option<usize>,
     output: OutputFormat,
 ) -> anyhow::Result<Vec<Diagnostic>> {
+    if target == ListTarget::Guard {
+        let result =
+            load_guards_with_warnings(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+        list_guards(&result.items, filter, limit, output);
+        return Ok(result.warnings);
+    }
+
     let index = match load_project(config) {
         Ok(idx) => idx,
         Err(diags) => return Ok(diags),
@@ -63,6 +81,7 @@ pub fn list(
         ListTarget::Clause => list_clauses(&index, filter, limit, output),
         ListTarget::Adr => list_adrs(&index, filter, limit, output),
         ListTarget::Work => list_work_items(&index, filter, limit, output),
+        ListTarget::Guard => unreachable!("handled above"),
     }
 
     Ok(vec![])
@@ -320,6 +339,47 @@ struct WorkItemSummary {
     id: String,
     status: String,
     title: String,
+}
+
+/// Serializable guard summary for JSON output
+#[derive(Serialize)]
+struct GuardSummary {
+    id: String,
+    title: String,
+    command: String,
+}
+
+fn list_guards(
+    guards: &[crate::model::GuardEntry],
+    filter: Option<&str>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) {
+    let mut items: Vec<_> = guards.iter().collect();
+
+    if let Some(f) = filter {
+        items.retain(|g| g.meta().id.contains(f) || g.meta().title.contains(f));
+    }
+
+    items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
+
+    if let Some(n) = limit {
+        items.truncate(n);
+    }
+
+    let summaries: Vec<GuardSummary> = items
+        .iter()
+        .map(|g| GuardSummary {
+            id: g.meta().id.clone(),
+            title: g.meta().title.clone(),
+            command: g.spec.check.command.clone(),
+        })
+        .collect();
+
+    output_list(&summaries, &["Guard", "Title", "Command"], output, |s| {
+        let cmd_display = truncate_chars(&s.command, 50);
+        vec![s.id.clone(), s.title.clone(), cmd_display]
+    });
 }
 
 fn list_work_items(

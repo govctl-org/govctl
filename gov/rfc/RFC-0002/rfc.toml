@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.4.0"
+version = "0.5.0"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-03-17"
-signature = "9f60c5231d8804e490f0dfd9e85933e038b779337659cb578a2e8fbb7e607a40"
+updated = "2026-03-27"
+signature = "3e5a5f7aa3994d443b54bddba6bcd9f7bc544b0fc2766c9b3ddf0a984901168a"
 
 [[sections]]
 title = "Summary"
@@ -25,6 +25,16 @@ clauses = [
     "clauses/C-OUTPUT-FORMAT.toml",
     "clauses/C-GLOBAL-COMMANDS.toml",
     "clauses/C-VERIFY-CONFIG.toml",
+]
+
+[[changelog]]
+version = "0.5.0"
+date = "2026-03-27"
+notes = "Add guard as a resource type with CRUD verbs"
+added = [
+    "Added guard to C-RESOURCES as resource type 5 (renumbered release to 6)",
+    "Updated C-CRUD-VERBS with guard-specific verb applicability",
+    "Updated C-RESOURCE-MODEL to include guard in resource list",
 ]
 
 [[changelog]]

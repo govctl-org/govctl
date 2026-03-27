@@ -16,7 +16,7 @@ govctl <resource> <verb> [arguments] [flags]
 ```
 
 Where:
-- `<resource>` is a governance artifact type (rfc, adr, work, clause, release)
+- `<resource>` is a governance artifact type (rfc, adr, work, clause, release, guard)
 - `<verb>` is an operation on that resource (new, list, get, edit, delete, or resource-specific lifecycle operations)
 - `[arguments]` are positional parameters (typically IDs, titles, or values)
 - `[flags]` are optional modifiers (--filter, --output, --stdin, etc.)

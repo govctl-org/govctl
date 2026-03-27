@@ -5,8 +5,10 @@
 
 use crate::config::Config;
 use crate::load::{find_clause_json, find_rfc_json};
-use crate::model::{AdrEntry, ClauseSpec, RfcSpec, WorkItemEntry};
-use crate::parse::{load_adrs, load_work_items, write_adr, write_work_item};
+use crate::model::{AdrEntry, ClauseSpec, GuardEntry, RfcSpec, WorkItemEntry};
+use crate::parse::{
+    load_adrs, load_guards, load_work_items, write_adr, write_guard, write_work_item,
+};
 use crate::write::{WriteOp, read_clause, read_rfc, write_clause, write_rfc};
 use std::path::PathBuf;
 
@@ -120,6 +122,31 @@ impl TomlAdapter for WorkTomlAdapter {
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
         write_work_item(
+            &entry.path,
+            &entry.spec,
+            op,
+            Some(&config.display_path(&entry.path)),
+        )
+        .map_err(Into::into)
+    }
+}
+
+/// Guard TOML adapter.
+pub struct GuardTomlAdapter;
+
+impl TomlAdapter for GuardTomlAdapter {
+    type Entry = GuardEntry;
+
+    fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
+        load_guards(config)
+            .map_err(|d| anyhow::anyhow!("{}", d.message))?
+            .into_iter()
+            .find(|g| g.spec.govctl.id == id)
+            .ok_or_else(|| anyhow::anyhow!("Guard not found: {id}"))
+    }
+
+    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
+        write_guard(
             &entry.path,
             &entry.spec,
             op,

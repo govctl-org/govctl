@@ -17,12 +17,14 @@ Syntax: `govctl <resource> new <arguments>`
 
 Creates a new instance of the resource. Required arguments vary by resource type but typically include a title or primary identifier.
 
-MUST support for: rfc, adr, work, clause, release
+MUST support for: rfc, adr, work, clause, release, guard
 Behavior:
 - Generates unique ID if not provided
 - Initializes resource with default values
 - Creates necessary filesystem structure
 - Validates inputs per resource schema
+
+Guard-specific: `govctl guard new "<title>"` scaffolds a new guard TOML file under `gov/guard/`. The generated ID is derived from the slugified title with a `GUARD-` prefix. The command SHOULD print a hint about adding the guard to `verification.default_guards` in `gov/config.toml`.
 
 **2. `list` - List Resources**
 
@@ -30,7 +32,7 @@ Syntax: `govctl <resource> list [filter]`
 
 Lists all instances of the resource type. Optional filter narrows results.
 
-MUST support for: rfc, adr, work, clause, release
+MUST support for: rfc, adr, work, clause, release, guard
 Behavior:
 - Returns tabular output by default
 - Supports filtering (exact match or substring)
@@ -43,7 +45,7 @@ Syntax: `govctl <resource> get <id> [field]`
 
 Retrieves a resource by ID. If field is specified, returns only that field value.
 
-MUST support for: rfc, adr, work, clause
+MUST support for: rfc, adr, work, clause, guard
 Behavior:
 - Returns full resource if no field specified
 - Returns field value if field specified
@@ -60,7 +62,7 @@ Syntax: `govctl <resource> edit <id> <field> [value]`
 
 Updates a single field on a resource. Value can be provided as argument or via stdin.
 
-MUST support for: rfc, adr, work, clause
+MUST support for: rfc, adr, work, clause, guard
 Behavior:
 - Simple fields: replace value
 - Array fields: special syntax (see ADR-0017 for implementation details)
@@ -74,10 +76,15 @@ Syntax: `govctl <resource> delete <id>`
 
 Removes a resource permanently.
 
-MUST support for: work, clause
+MUST support for: work, clause, guard
 MUST NOT support for: rfc, adr (use lifecycle verbs instead)
 
 **Deletion Safety Constraints:**
+
+For guards:
+- MUST verify no work items reference the guard ID in `verification.required_guards` or `verification.waivers[*].guard` before deletion
+- MUST verify the guard is not listed in `verification.default_guards` in `gov/config.toml` before deletion
+- MUST error with list of referencing artifacts/config if any references exist
 
 For clauses:
 - MUST only allow deletion if containing RFC is in `draft` status

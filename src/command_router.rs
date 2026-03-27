@@ -15,7 +15,8 @@ use crate::diagnostic::Diagnostic;
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
 use crate::{
-    Commands, FinalizeStatus, ListTarget, NewTarget, OutputFormat, RenderTarget, TickStatus,
+    Commands, FinalizeStatus, GuardCommand, ListTarget, NewTarget, OutputFormat, RenderTarget,
+    TickStatus,
 };
 use std::path::PathBuf;
 
@@ -308,6 +309,46 @@ pub enum CanonicalCommand {
     },
 
     // ========================================
+    // Guard Commands
+    // ========================================
+    GuardNew {
+        title: String,
+    },
+    GuardList {
+        filter: Option<String>,
+        limit: Option<usize>,
+        output: OutputFormat,
+    },
+    GuardGet {
+        id: String,
+        field: Option<String>,
+    },
+    GuardSet {
+        id: String,
+        field: String,
+        value: Option<String>,
+        stdin: bool,
+    },
+    GuardAdd {
+        id: String,
+        field: String,
+        value: String,
+    },
+    GuardRemove {
+        id: String,
+        field: String,
+        match_opts: OwnedMatchOptions,
+    },
+    GuardDelete {
+        id: String,
+        force: bool,
+    },
+    GuardShow {
+        id: String,
+        output: OutputFormat,
+    },
+
+    // ========================================
     // Release Commands
     // ========================================
     ReleaseCut {
@@ -359,6 +400,11 @@ impl CanonicalCommand {
                 | WorkTick { .. }
                 | WorkDelete { .. }
                 | WorkRender { .. }
+                | GuardNew { .. }
+                | GuardSet { .. }
+                | GuardAdd { .. }
+                | GuardRemove { .. }
+                | GuardDelete { .. }
                 | ReleaseCut { .. }
         )
     }
@@ -409,6 +455,7 @@ impl CanonicalCommand {
             Commands::Clause { command } => Self::from_clause_command(command)?,
             Commands::Adr { command } => Self::from_adr_command(command)?,
             Commands::Work { command } => Self::from_work_command(command)?,
+            Commands::Guard { command } => Self::from_guard_command(command)?,
 
             Commands::Release { version, date } => Self::ReleaseCut {
                 version: version.clone(),
@@ -706,6 +753,49 @@ impl CanonicalCommand {
                 cmd::render::render_work_items(config, Some(id), *dry_run)
             }
             Self::WorkShow { id, output } => cmd::render::show_work(config, id, *output),
+
+            // Guard commands
+            Self::GuardNew { title } => cmd::guard::new_guard(config, title, op),
+            Self::GuardList {
+                filter,
+                limit,
+                output,
+            } => cmd::list::list(
+                config,
+                ListTarget::Guard,
+                filter.as_deref(),
+                *limit,
+                *output,
+            ),
+            Self::GuardGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
+            Self::GuardSet {
+                id,
+                field,
+                value,
+                stdin,
+            } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
+            Self::GuardAdd { id, field, value } => cmd::edit::add_to_field(
+                config,
+                id,
+                field,
+                Some(value.as_str()),
+                false,
+                None,
+                None,
+                None,
+                None,
+                None,
+                op,
+            ),
+            Self::GuardRemove {
+                id,
+                field,
+                match_opts,
+            } => {
+                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
+            }
+            Self::GuardDelete { id, force } => cmd::guard::delete_guard(config, id, *force, op),
+            Self::GuardShow { id, output } => cmd::guard::show_guard(config, id, *output),
 
             // Release commands
             Self::ReleaseCut { version, date } => {
@@ -1090,6 +1180,74 @@ impl CanonicalCommand {
                 dry_run: *dry_run,
             },
             WorkCommand::Show { id, output } => Self::WorkShow {
+                id: id.clone(),
+                output: *output,
+            },
+        })
+    }
+
+    /// Convert Guard subcommand to canonical form.
+    fn from_guard_command(cmd: &GuardCommand) -> anyhow::Result<Self> {
+        Ok(match cmd {
+            GuardCommand::New { title } => Self::GuardNew {
+                title: title.clone(),
+            },
+            GuardCommand::List {
+                filter,
+                limit,
+                output,
+            } => Self::GuardList {
+                filter: filter.clone(),
+                limit: *limit,
+                output: *output,
+            },
+            GuardCommand::Get { id, field } => Self::GuardGet {
+                id: id.clone(),
+                field: field.clone(),
+            },
+            GuardCommand::Set {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::GuardSet {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            GuardCommand::Add { id, field, value } => Self::GuardAdd {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+            },
+            GuardCommand::Remove {
+                id,
+                field,
+                pattern,
+                at,
+                exact,
+                regex,
+                all,
+            } => {
+                let match_opts = OwnedMatchOptions {
+                    pattern: pattern.clone(),
+                    at: *at,
+                    exact: *exact,
+                    regex: *regex,
+                    all: *all,
+                };
+                Self::GuardRemove {
+                    id: id.clone(),
+                    field: field.clone(),
+                    match_opts,
+                }
+            }
+            GuardCommand::Delete { id, force } => Self::GuardDelete {
+                id: id.clone(),
+                force: *force,
+            },
+            GuardCommand::Show { id, output } => Self::GuardShow {
                 id: id.clone(),
                 output: *output,
             },

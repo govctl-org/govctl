@@ -9,13 +9,14 @@ pub mod rules;
 pub mod runtime;
 
 use self::adapter::{
-    AdrTomlAdapter, ClauseJsonAdapter, JsonAdapter, RfcJsonAdapter, TomlAdapter, WorkTomlAdapter,
+    AdrTomlAdapter, ClauseJsonAdapter, GuardTomlAdapter, JsonAdapter, RfcJsonAdapter, TomlAdapter,
+    WorkTomlAdapter,
 };
 use self::path::FieldPath;
 use self::{engine as edit_engine, rules as edit_rules, runtime as edit_runtime};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{AdrEntry, AdrSpec, WorkItemEntry, WorkItemSpec};
+use crate::model::{AdrEntry, AdrSpec, GuardEntry, GuardSpec, WorkItemEntry, WorkItemSpec};
 use crate::ui;
 use crate::write::{WriteOp, delete_file, today};
 use anyhow::Context;
@@ -29,6 +30,7 @@ pub enum ArtifactType {
     Rfc,
     Adr,
     WorkItem,
+    Guard,
 }
 
 impl ArtifactType {
@@ -39,6 +41,8 @@ impl ArtifactType {
             Some(Self::Rfc)
         } else if id.starts_with("ADR-") {
             Some(Self::Adr)
+        } else if id.starts_with("GUARD-") {
+            Some(Self::Guard)
         } else if id.starts_with("WI-") || id.contains('-') {
             Some(Self::WorkItem)
         } else {
@@ -56,6 +60,7 @@ impl ArtifactType {
             Self::Rfc => "rfc",
             Self::Adr => "adr",
             Self::WorkItem => "work",
+            Self::Guard => "guard",
         }
     }
 }
@@ -277,6 +282,15 @@ impl TomlEditableEntry for WorkItemEntry {
         &mut self.spec
     }
 }
+impl TomlEditableEntry for GuardEntry {
+    type Spec = GuardSpec;
+    fn spec(&self) -> &Self::Spec {
+        &self.spec
+    }
+    fn spec_mut(&mut self) -> &mut Self::Spec {
+        &mut self.spec
+    }
+}
 
 const TICK_NESTED_PATH_ERROR: &str = "tick does not support nested paths";
 const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
@@ -392,6 +406,15 @@ fn apply_set_field(
         ArtifactType::Clause => {
             set_clause_field(config, id, fp, value, op, !enforce_verb_ownership)?
         }
+        ArtifactType::Guard => set_toml_field::<GuardTomlAdapter>(
+            config,
+            id,
+            fp,
+            value,
+            op,
+            ArtifactType::Guard,
+            !enforce_verb_ownership,
+        )?,
     }
     Ok(())
 }
@@ -448,6 +471,7 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> an
                 None
             }
         }
+        ArtifactType::Guard => None,
     };
 
     if let Some(message) = msg {
@@ -494,6 +518,12 @@ pub fn get_field(
             plan.field_path.as_ref(),
             ArtifactType::Clause,
             "Clause fields do not support nested paths",
+        )?,
+        ArtifactType::Guard => get_toml_field::<GuardTomlAdapter>(
+            config,
+            id,
+            plan.field_path.as_ref(),
+            ArtifactType::Guard,
         )?,
     }
 
@@ -853,6 +883,31 @@ pub fn add_to_field(
             ArtifactType::Clause,
             "Clause fields do not support nested paths for add",
         )?,
+        ArtifactType::Guard => {
+            if !fp.is_simple() {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    format!("Guard nested add is not supported for path '{fp}'"),
+                    id,
+                )
+                .into());
+            }
+            let simple = fp.as_simple().unwrap();
+            let mut entry = GuardTomlAdapter::load(config, id)?;
+            let mut doc = serde_json::to_value(entry.spec())?;
+            if edit_runtime::add_simple_list_value(
+                ArtifactType::Guard,
+                &mut doc,
+                simple,
+                value,
+                id,
+            )? {
+                *entry.spec_mut() = serde_json::from_value(doc)?;
+            } else {
+                return Err(cannot_add_to_field_error(id, simple));
+            }
+            GuardTomlAdapter::write(config, &entry, op)?;
+        }
     }
 
     if !op.is_preview() {
@@ -954,6 +1009,15 @@ pub fn remove_from_field(
             ArtifactType::Clause,
             "Clause fields do not support nested paths for remove",
         )?,
+        ArtifactType::Guard => remove_toml_field::<GuardTomlAdapter>(
+            config,
+            id,
+            &fp,
+            field,
+            opts,
+            op,
+            ArtifactType::Guard,
+        )?,
     }
 
     Ok(vec![])
@@ -985,7 +1049,7 @@ pub fn tick_item(
         (ArtifactType::WorkItem, crate::TickStatus::Done) => "done",
         (ArtifactType::WorkItem, crate::TickStatus::Pending) => "pending",
         (ArtifactType::WorkItem, crate::TickStatus::Cancelled) => "cancelled",
-        (ArtifactType::Rfc | ArtifactType::Clause, _) => {
+        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard, _) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0813SupersedeNotSupported,
                 TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
@@ -1013,7 +1077,9 @@ pub fn tick_item(
             ArtifactType::WorkItem,
             status_str,
         )?,
-        ArtifactType::Rfc | ArtifactType::Clause => unreachable!("handled above"),
+        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard => {
+            unreachable!("handled above")
+        }
     };
 
     if !op.is_preview() {

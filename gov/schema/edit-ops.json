@@ -242,6 +242,37 @@
       "name": "notes",
       "kind": "list",
       "verbs": ["get", "add", "remove"]
+    },
+
+    {
+      "artifact": "guard",
+      "name": "title",
+      "kind": "scalar",
+      "verbs": ["get", "set"]
+    },
+    {
+      "artifact": "guard",
+      "name": "refs",
+      "kind": "list",
+      "verbs": ["get", "add", "remove"]
+    },
+    {
+      "artifact": "guard",
+      "name": "command",
+      "kind": "scalar",
+      "verbs": ["get", "set"]
+    },
+    {
+      "artifact": "guard",
+      "name": "timeout_secs",
+      "kind": "scalar",
+      "verbs": ["get", "set"]
+    },
+    {
+      "artifact": "guard",
+      "name": "pattern",
+      "kind": "scalar",
+      "verbs": ["get", "set"]
     }
   ],
   "runtime_fields": [
@@ -502,6 +533,45 @@
       "get": { "path": ["content", "notes"], "render": "line_strings" },
       "set": null,
       "list_path": ["content", "notes"]
+    },
+
+    {
+      "artifact": "guard",
+      "name": "title",
+      "get": { "path": ["govctl", "title"], "render": "scalar" },
+      "set": { "path": ["govctl", "title"], "mode": { "type": "string" } },
+      "list_path": null
+    },
+    {
+      "artifact": "guard",
+      "name": "refs",
+      "get": { "path": ["govctl", "refs"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["govctl", "refs"]
+    },
+    {
+      "artifact": "guard",
+      "name": "command",
+      "get": { "path": ["check", "command"], "render": "scalar" },
+      "set": { "path": ["check", "command"], "mode": { "type": "string" } },
+      "list_path": null
+    },
+    {
+      "artifact": "guard",
+      "name": "timeout_secs",
+      "get": { "path": ["check", "timeout_secs"], "render": "scalar" },
+      "set": {
+        "path": ["check", "timeout_secs"],
+        "mode": { "type": "integer" }
+      },
+      "list_path": null
+    },
+    {
+      "artifact": "guard",
+      "name": "pattern",
+      "get": { "path": ["check", "pattern"], "render": "scalar" },
+      "set": { "path": ["check", "pattern"], "mode": { "type": "string" } },
+      "list_path": null
     }
   ],
   "nested_rules": [

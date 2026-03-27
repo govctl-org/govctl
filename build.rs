@@ -81,6 +81,7 @@ struct RuntimeSetRule {
 #[serde(tag = "type", rename_all = "snake_case")]
 enum RuntimeSetMode {
     String,
+    Integer,
     OptionalString {
         empty_as_null: bool,
     },
@@ -353,6 +354,7 @@ fn runtime_artifact_expr(artifact: &str) -> Result<&'static str, Box<dyn Error>>
         "clause" => Ok("ArtifactType::Clause"),
         "adr" => Ok("ArtifactType::Adr"),
         "work" => Ok("ArtifactType::WorkItem"),
+        "guard" => Ok("ArtifactType::Guard"),
         other => Err(format!("unknown runtime artifact in SSOT: {other}").into()),
     }
 }
@@ -411,6 +413,7 @@ fn runtime_set_expr(set: Option<&RuntimeSetRule>) -> Result<String, Box<dyn Erro
     };
     let mode = match &set.mode {
         RuntimeSetMode::String => "SetMode::String".to_string(),
+        RuntimeSetMode::Integer => "SetMode::Integer".to_string(),
         RuntimeSetMode::OptionalString { empty_as_null } => format!(
             "SetMode::OptionalString {{ empty_as_null: {} }}",
             empty_as_null
