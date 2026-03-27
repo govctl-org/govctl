@@ -102,7 +102,7 @@ bump new_version:
     mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
     # 3. flake.nix reads from Cargo.toml automatically
     # 4. Update gov/releases.toml
-    cargo run --quiet -- release
+    cargo run --quiet -- release {{new_version}}
     # 5. Render CHANGELOG.md
     cargo run --quiet -- render changelog
     echo "Bumped to {{new_version}}"
