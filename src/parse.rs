@@ -310,6 +310,41 @@ pub fn write_work_item(
     Ok(())
 }
 
+/// Write a verification guard to TOML file.
+pub fn write_guard(
+    path: &Path,
+    spec: &GuardSpec,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> Result<(), Diagnostic> {
+    let body = toml::to_string_pretty(spec).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to serialize TOML: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+    let content = with_schema_header(ArtifactSchema::Guard, &body);
+
+    match op {
+        WriteOp::Execute => {
+            std::fs::write(path, &content).map_err(|e| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    e.to_string(),
+                    path.display().to_string(),
+                )
+            })?;
+        }
+        WriteOp::Preview => {
+            let output_path = display_path.unwrap_or(path);
+            ui::dry_run_file_preview(output_path, &content);
+        }
+    }
+
+    Ok(())
+}
+
 /// Load releases from gov/releases.toml
 /// Returns empty ReleasesFile if file doesn't exist.
 /// Validates that all versions are valid semver.

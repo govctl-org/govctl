@@ -28,6 +28,7 @@ enum SetMode {
     OptionalString {
         empty_as_null: bool,
     },
+    Integer,
     Enum {
         allowed: &'static [&'static str],
         invalid_msg: &'static str,
@@ -325,6 +326,7 @@ fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str) -> Diagnos
         ArtifactType::Clause => format!("Unknown clause field: {field}"),
         ArtifactType::Adr => format!("Unknown ADR field: {field}"),
         ArtifactType::WorkItem => format!("Unknown work item field: {field}"),
+        ArtifactType::Guard => format!("Unknown guard field: {field}"),
     };
     Diagnostic::new(DiagnosticCode::E0803UnknownField, msg, id)
 }
@@ -433,6 +435,12 @@ fn apply_set(doc: &mut Value, spec: SimpleSetSpec, value: &str, id: &str) -> any
 
     match spec.mode {
         SetMode::String => *slot = Value::String(value.to_string()),
+        SetMode::Integer => {
+            let n: i64 = value
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid integer value for {}: {value}", id))?;
+            *slot = Value::Number(serde_json::Number::from(n));
+        }
         SetMode::OptionalString { empty_as_null } => {
             if empty_as_null && value.is_empty() {
                 *slot = Value::Null;

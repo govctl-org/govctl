@@ -51,6 +51,10 @@ const SKILL_TEMPLATES: &[(&str, &str)] = &[
         include_str!("../../.claude/skills/wi-writer/SKILL.md"),
     ),
     (
+        "skills/guard-writer/SKILL.md",
+        include_str!("../../.claude/skills/guard-writer/SKILL.md"),
+    ),
+    (
         "skills/commit/SKILL.md",
         include_str!("../../.claude/skills/commit/SKILL.md"),
     ),

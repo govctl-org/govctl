@@ -46,7 +46,15 @@ Clauses remain at the CLI top-level namespace despite being child resources of R
 
 The CLI namespace is independent of filesystem layout. Implementations MAY store clause files nested under RFC directories (e.g., `gov/rfc/RFC-0001/clauses/C-NAME.toml`) while maintaining the flat CLI command structure (`govctl clause get RFC-0001:C-NAME`).
 
-**5. `release` - Release Version**
+**5. `guard` - Verification Guard**
+
+Manages reusable executable completion checks defined by [[RFC-0000:C-GUARD-DEF]].
+
+- ID Format: `GUARD-NAME` (e.g., GUARD-CARGO-TEST)
+- Storage: `gov/guard/` as individual TOML files
+- No lifecycle (guards are either present or removed)
+
+**6. `release` - Release Version**
 
 Manages published versions and their included work item references.
 

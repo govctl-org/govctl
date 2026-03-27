@@ -112,6 +112,12 @@ pub(crate) enum Commands {
         command: WorkCommand,
     },
 
+    /// Verification guard operations
+    Guard {
+        #[command(subcommand)]
+        command: GuardCommand,
+    },
+
     /// Cut a release (collect unreleased work items into a version)
     Release {
         /// Version number (semver, e.g., 0.2.0)
@@ -191,12 +197,13 @@ pub(crate) enum NewTarget {
     },
 }
 
-#[derive(ValueEnum, Clone, Copy, Debug)]
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ListTarget {
     Rfc,
     Clause,
     Adr,
     Work,
+    Guard,
 }
 
 /// Output format for list/get commands per [[ADR-0017]]
@@ -1001,6 +1008,94 @@ EXAMPLES:
         /// Work item ID
         id: String,
         /// Output format (markdown or json)
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
+    },
+}
+
+/// Guard commands (resource-first structure)
+#[derive(Subcommand, Clone, Debug)]
+pub(crate) enum GuardCommand {
+    /// Create a new verification guard
+    New {
+        /// Guard title
+        title: String,
+    },
+    /// List all guards
+    #[command(visible_alias = "ls")]
+    List {
+        /// Filter by ID pattern
+        filter: Option<String>,
+        /// Limit number of results
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
+        /// Output format
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
+    },
+    /// Get guard field value
+    Get {
+        /// Guard ID
+        id: String,
+        /// Field name (omit to show all)
+        field: Option<String>,
+    },
+    /// Set guard field value
+    Set {
+        /// Guard ID
+        id: String,
+        /// Field path (e.g., "check.command", "check.timeout_secs", "check.pattern", "title")
+        field: String,
+        /// New value (omit if using --stdin)
+        #[arg(required_unless_present = "stdin")]
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Add value to guard array field
+    Add {
+        /// Guard ID
+        id: String,
+        /// Array field name (refs)
+        field: String,
+        /// Value to add
+        value: String,
+    },
+    /// Remove value from guard array field
+    Remove {
+        /// Guard ID
+        id: String,
+        /// Array field name (refs)
+        field: String,
+        /// Pattern to match
+        pattern: Option<String>,
+        /// Remove by index
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern
+        #[arg(long)]
+        regex: bool,
+        /// Remove all matches
+        #[arg(long)]
+        all: bool,
+    },
+    /// Delete a verification guard
+    Delete {
+        /// Guard ID
+        id: String,
+        /// Force deletion without safety checks
+        #[arg(short = 'f', long)]
+        force: bool,
+    },
+    /// Show guard content to stdout
+    Show {
+        /// Guard ID
+        id: String,
+        /// Output format
         #[arg(short = 'o', long, value_enum, default_value = "table")]
         output: OutputFormat,
     },

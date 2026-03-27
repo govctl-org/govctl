@@ -1,0 +1,56 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-27-001"
+title = "Add guard resource subcommands (new, list, show, set, delete)"
+status = "done"
+created = "2026-03-27"
+started = "2026-03-27"
+completed = "2026-03-27"
+refs = [
+    "RFC-0002",
+    "RFC-0000",
+]
+
+[content]
+description = "Implement guard as a first-class resource type in the CLI per RFC-0002 v0.5.0 amendment. Add govctl guard new/list/show/set/delete subcommands following the standard resource model pattern. Also create the guard-writer skill."
+
+[[content.journal]]
+date = "2026-03-27"
+scope = "cli"
+content = "Implemented all guard subcommands: new, list, show, get, set, add, remove, delete. Added Guard to ArtifactType, GuardTomlAdapter, GuardCommand CLI enum, canonical command routing, edit-ops.json rules. All tests pass, govctl check passes."
+
+[[content.acceptance_criteria]]
+text = "govctl guard new scaffolds guard TOML with hint about default_guards"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl guard list shows all guards in tabular format"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl guard show displays a guard"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl guard set edits guard fields"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl guard delete removes a guard with safety checks"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "guard subcommand tests pass"
+status = "done"
+category = "chore"

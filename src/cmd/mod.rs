@@ -3,6 +3,7 @@
 pub mod check;
 pub mod describe;
 pub mod edit;
+pub mod guard;
 pub mod lifecycle;
 pub mod list;
 pub mod migrate;
