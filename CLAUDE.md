@@ -22,7 +22,7 @@ Do not invent behavior, skip governance gates, or deviate silently from specific
 └── agents/                Reviewer agents (rfc-reviewer, adr-reviewer, wi-reviewer, compliance-checker)
 
 gov/                    ← Source of truth (governance artifacts)
-├── rfc/                   RFC directories with rfc.json + clauses/*.json
+├── rfc/                   RFC directories with rfc.toml + clauses/*.toml
 ├── adr/                   ADRs (TOML files)
 ├── work/                  Work items (TOML files)
 ├── schema/                JSON/TOML schemas

@@ -112,6 +112,7 @@ govctl is built for AI-native development. Install the [Claude Code plugin](#qui
 | `/discuss <topic>` | Design discussion: explore options, draft RFC or ADR                                    |
 | `/commit`          | Smart commit: VCS detection, govctl checks, work item journal updates                   |
 | `/quick <task>`    | Fast path for trivial changes (skip governance ceremony)                                |
+| `/guard-writer`    | Create and edit verification guards                                                     |
 
 The plugin also includes enforcement hooks: `govctl status` runs at session start for context, `govctl check` runs at session end as a gate.
 
@@ -133,6 +134,14 @@ title = "cargo test passes"
 [check]
 command = "cargo test"
 timeout_secs = 300
+```
+
+Manage guards with the CLI:
+
+```bash
+govctl guard new "cargo test passes"  # Create a guard
+govctl guard list                     # List all guards
+govctl guard show GUARD-CARGO-TEST    # View guard details
 ```
 
 Configure which guards are required in `gov/config.toml`:
