@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-28-002"
+title = "Add missing rfc add/remove subcommands"
+status = "done"
+created = "2026-03-28"
+started = "2026-03-28"
+completed = "2026-03-28"
+refs = ["RFC-0002:C-CRUD-VERBS"]
+
+[content]
+description = "RFC-0002:C-CRUD-VERBS and ADR-0017 specify that all resources support add/remove verbs for array fields. RFC is missing these while ADR, work, and guard all have them."
+
+[[content.journal]]
+date = "2026-03-28"
+scope = "cli"
+content = "Added Add and Remove variants to RfcCommand enum in cli.rs, routed them through command_router.rs. Updated rfc set help text. All 164+integration tests pass, govctl check green, snapshots updated."
+
+[[content.acceptance_criteria]]
+text = "rfc add subcommand for array fields (refs, owners, sections)"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "rfc remove subcommand for array fields"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes (snapshots updated)"
+status = "done"
+category = "chore"

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- rfc add subcommand for array fields (refs, owners, sections) (WI-2026-03-28-002)
+- rfc remove subcommand for array fields (WI-2026-03-28-002)
+
 ## [0.7.3] - 2026-03-28
 
 ### Fixed

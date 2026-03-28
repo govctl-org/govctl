@@ -8,29 +8,17 @@ Created RFC: gov/rfc/RFC-0001/rfc.toml
 exit: 0
 
 $ govctl rfc add RFC-0001 owners @owner1
-error: unrecognized subcommand 'add'
-
-Usage: govctl rfc [OPTIONS] <COMMAND>
-
-For more information, try '--help'.
-exit: 2
+Added '@owner1' to RFC-0001.owners
+exit: 0
 
 $ govctl rfc add RFC-0001 owners @owner2
-error: unrecognized subcommand 'add'
-
-Usage: govctl rfc [OPTIONS] <COMMAND>
-
-For more information, try '--help'.
-exit: 2
+Added '@owner2' to RFC-0001.owners
+exit: 0
 
 $ govctl rfc remove RFC-0001 owners @owner1
-error: unrecognized subcommand 'remove'
-
-Usage: govctl rfc [OPTIONS] <COMMAND>
-
-For more information, try '--help'.
-exit: 2
+Removed '@owner1' from RFC-0001.owners
+exit: 0
 
 $ govctl rfc get RFC-0001 owners
-@test-user
+@test-user, @owner2
 exit: 0

@@ -306,7 +306,7 @@ VALID FIELDS:
   String fields (use 'set'):
     - title: RFC title
 
-  Array fields (modify via the RFC source file directly):
+  Array fields (use 'add' / 'remove'):
     - owners, refs, sections
 
 EXAMPLES:
@@ -328,6 +328,63 @@ Use dedicated lifecycle verbs instead of `set` for:
         /// Read value from stdin
         #[arg(long)]
         stdin: bool,
+    },
+    /// Add value to RFC array field
+    #[command(after_help = "\
+VALID ARRAY FIELDS:
+    - refs: Cross-references to other RFCs (e.g., \"RFC-0002\")
+    - owners: RFC owners (e.g., \"@alice\")
+
+EXAMPLES:
+    govctl rfc add RFC-0001 refs RFC-0002
+    govctl rfc add RFC-0001 owners @alice
+")]
+    Add {
+        /// RFC ID
+        id: String,
+        /// Array field name (refs, owners)
+        field: String,
+        /// Value to add (optional if --stdin)
+        value: Option<String>,
+        /// Read value from stdin
+        #[arg(long)]
+        stdin: bool,
+    },
+    /// Remove value from RFC array field
+    #[command(after_help = "\
+VALID ARRAY FIELDS:
+    - refs, owners
+
+MATCHING OPTIONS:
+    - pattern: Substring match (default)
+    - --at N: Remove by index (0-based, negative = from end)
+    - --exact: Exact string match
+    - --regex: Regex pattern match
+    - --all: Remove all matches
+
+EXAMPLES:
+    govctl rfc remove RFC-0001 refs RFC-0002     # Remove first match
+    govctl rfc remove RFC-0001 refs --at 1       # Remove by index
+")]
+    Remove {
+        /// RFC ID
+        id: String,
+        /// Array field name (refs, owners)
+        field: String,
+        /// Pattern to match
+        pattern: Option<String>,
+        /// Remove by index
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern
+        #[arg(long)]
+        regex: bool,
+        /// Remove all matches
+        #[arg(long)]
+        all: bool,
     },
     /// Bump RFC version
     Bump {

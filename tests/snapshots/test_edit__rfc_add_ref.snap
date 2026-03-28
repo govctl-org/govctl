@@ -8,13 +8,9 @@ Created RFC: gov/rfc/RFC-0001/rfc.toml
 exit: 0
 
 $ govctl rfc add RFC-0001 refs ADR-0001
-error: unrecognized subcommand 'add'
-
-Usage: govctl rfc [OPTIONS] <COMMAND>
-
-For more information, try '--help'.
-exit: 2
+Added 'ADR-0001' to RFC-0001.refs
+exit: 0
 
 $ govctl rfc get RFC-0001 refs
-
+ADR-0001
 exit: 0

@@ -105,6 +105,17 @@ pub enum CanonicalCommand {
         value: Option<String>,
         stdin: bool,
     },
+    RfcAdd {
+        id: String,
+        field: String,
+        value: Option<String>,
+        stdin: bool,
+    },
+    RfcRemove {
+        id: String,
+        field: String,
+        match_opts: OwnedMatchOptions,
+    },
     RfcBump {
         id: String,
         level: Option<BumpLevel>,
@@ -370,6 +381,8 @@ impl CanonicalCommand {
                 | Migrate
                 | RfcNew { .. }
                 | RfcSet { .. }
+                | RfcAdd { .. }
+                | RfcRemove { .. }
                 | RfcBump { .. }
                 | RfcFinalize { .. }
                 | RfcAdvance { .. }
@@ -546,6 +559,31 @@ impl CanonicalCommand {
                 value,
                 stdin,
             } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
+            Self::RfcAdd {
+                id,
+                field,
+                value,
+                stdin,
+            } => cmd::edit::add_to_field(
+                config,
+                id,
+                field,
+                value.as_deref(),
+                *stdin,
+                None,
+                None,
+                None,
+                None,
+                None,
+                op,
+            ),
+            Self::RfcRemove {
+                id,
+                field,
+                match_opts,
+            } => {
+                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
+            }
             Self::RfcBump {
                 id,
                 level,
@@ -840,6 +878,39 @@ impl CanonicalCommand {
                 value: value.clone(),
                 stdin: *stdin,
             },
+            RfcCommand::Add {
+                id,
+                field,
+                value,
+                stdin,
+            } => Self::RfcAdd {
+                id: id.clone(),
+                field: field.clone(),
+                value: value.clone(),
+                stdin: *stdin,
+            },
+            RfcCommand::Remove {
+                id,
+                field,
+                pattern,
+                at,
+                exact,
+                regex,
+                all,
+            } => {
+                let match_opts = OwnedMatchOptions {
+                    pattern: pattern.clone(),
+                    at: *at,
+                    exact: *exact,
+                    regex: *regex,
+                    all: *all,
+                };
+                Self::RfcRemove {
+                    id: id.clone(),
+                    field: field.clone(),
+                    match_opts,
+                }
+            }
             RfcCommand::Bump {
                 id,
                 patch,
