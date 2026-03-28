@@ -223,14 +223,18 @@ fn check_ref_hierarchy(
     if owner_is_rfc && (ref_id.starts_with("ADR-") || ref_id.starts_with("WI-")) {
         return Err(Diagnostic::new(
             DiagnosticCode::E0112RfcReferenceHierarchy,
-            format!("RFC artifact '{artifact_id}' must not reference ADR or Work Item: {ref_id}"),
+            format!(
+                "RFC '{artifact_id}' references {ref_id}, but RFCs are higher authority than ADRs and Work Items — remove this reference (the ADR or Work Item should reference the RFC, not the other way around)"
+            ),
             diagnostic_path,
         ));
     }
     if owner_is_adr && ref_id.starts_with("WI-") {
         return Err(Diagnostic::new(
             DiagnosticCode::E0306AdrReferenceHierarchy,
-            format!("ADR '{artifact_id}' must not reference Work Item: {ref_id}"),
+            format!(
+                "ADR '{artifact_id}' references {ref_id}, but ADRs are higher authority than Work Items — remove this reference (the Work Item should reference the ADR, not the other way around)"
+            ),
             diagnostic_path,
         ));
     }
@@ -641,7 +645,7 @@ fn scan_rfc_bracket_refs(
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::E0112RfcReferenceHierarchy,
                 format!(
-                    "RFC '{rfc_id}' must not use [[...]] to link to ADR or Work Item: [[{target}]]"
+                    "RFC '{rfc_id}' links to [[{target}]], but RFCs are higher authority than ADRs and Work Items — remove this link (the ADR or Work Item should reference the RFC, not the other way around)"
                 ),
                 path,
             ));
@@ -664,7 +668,7 @@ fn scan_adr_bracket_refs(
         if target.starts_with("WI-") {
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::E0306AdrReferenceHierarchy,
-                format!("ADR '{adr_id}' must not use [[...]] to link to Work Item: [[{target}]]"),
+                format!("ADR '{adr_id}' links to [[{target}]], but ADRs are higher authority than Work Items — remove this link (the Work Item should reference the ADR, not the other way around)"),
                 path,
             ));
         }

@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-03-28-001"
+title = "Improve cross-reference hint messages for RFC/ADR dependency order"
+status = "done"
+created = "2026-03-28"
+started = "2026-03-28"
+completed = "2026-03-28"
+refs = ["RFC-0000:C-REFERENCE-HIERARCHY"]
+
+[content]
+description = "Rewrite E0112 and E0306 diagnostic messages to teach the dependency hierarchy (RFC > ADR > WI) instead of just saying 'must not use [[...]]', which misleads agents into stripping brackets rather than removing the invalid reference."
+
+[[content.journal]]
+date = "2026-03-28"
+scope = "validate"
+content = "Rewrote all 4 diagnostic messages (2 in check_ref_hierarchy for refs fields, 2 in scan_rfc/adr_bracket_refs for [[...]] links) to explain dependency direction: 'RFCs are higher authority than ADRs' instead of 'must not use [[...]]'. All 164 tests pass, govctl check green."
+
+[[content.acceptance_criteria]]
+text = "E0112/E0306 messages explain dependency direction, not bracket syntax"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
