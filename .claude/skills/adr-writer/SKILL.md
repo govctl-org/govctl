@@ -129,7 +129,7 @@ govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
   --reject-reason "Overkill for our scale"
 
 # Edit nested fields after creation
-govctl adr set <ADR-ID> alt[0].status "rejected"
+govctl adr tick <ADR-ID> alternatives --at 0 -s rejected
 govctl adr add <ADR-ID> alt[0].pros "New advantage"
 govctl adr remove <ADR-ID> alt[0].cons "Outdated disadvantage"
 ```
@@ -156,7 +156,7 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 - **Context is complete.** Problem statement, constraints, and options are all present.
 - **Decision is decisive.** Starts with "We will..." — not "We might..." or "We could...".
 - **Consequences are honest.** Negative section is non-empty with mitigations.
-- **Alternatives are documented.** At least one rejected option with reason.
+- **Alternatives are documented.** For new decisions, include at least one rejected option with reason. For historical backfills, document rejected options when known; otherwise state that they were not recoverable.
 - **References link to related artifacts.** Use `[[artifact-id]]` in content fields.
 
 ### Content Field Formatting
@@ -189,7 +189,8 @@ Content fields should contain only the body prose and `[[...]]` references.
 | ---------------------------------- | -------------------------------------------------------- |
 | `## Context` in content field      | Don't — the renderer adds section headings automatically |
 | Empty Negative section             | Every decision has trade-offs — document them            |
-| No alternatives                    | Add at least one rejected option                         |
+| No alternatives for a new ADR      | Add at least one rejected option                         |
+| Historical ADR lacks rejected options | State that alternatives were not recoverable          |
 | Vague context: "We need to decide" | Specific: "RFC-0002 requires X but doesn't specify how"  |
 | Decision buried in prose           | Lead with "We will **action**"                           |
 | Missing refs                       | Link to RFCs/ADRs that constrain the decision            |

@@ -27,7 +27,7 @@ Before committing, run govctl checks:
 govctl check
 ```
 
-If check fails, inform user and ask whether to proceed.
+If check fails, stop. Show the diagnostics, fix the issue, and rerun `govctl check` before committing.
 
 ### Step 3: Work Item Status Check
 
@@ -52,8 +52,10 @@ govctl work list pending
 
 **If no active work item:**
 
-- Ask if changes warrant creating a new work item
-- Small fixes may not need one (use judgment)
+- If the changes are spec-only governance maintenance (artifact files, rendered governance docs, or related metadata only), a work item is optional
+- Otherwise, ask whether these changes should be attached to an existing work item or a new one
+- In the standard govctl workflow, create or activate a work item before committing
+- If the user explicitly says this commit is outside tracked work, record that exception in your summary
 
 ### Step 4: Inspect Changes
 
@@ -117,7 +119,8 @@ jj new
 #### Git
 
 ```bash
-git add -A && git commit -m "<type>(<area>): <summary>"
+git add -A
+git commit -m "<type>(<area>): <summary>"
 ```
 
 ### Step 7: Post-Commit Work Item Update
@@ -127,8 +130,16 @@ After successful commit, if work item exists:
 1. **Add journal entry** (if user confirmed in Step 3):
 
    ```bash
-   # Journal is added by editing the work item TOML directly
-   # Or use work set with multi-line content
+   govctl work add <WI-ID> journal "Committed <summary>; govctl check passes"
+   govctl work add <WI-ID> journal --scope <scope> --stdin <<'EOF'
+   <multi-line progress summary>
+   EOF
+   ```
+
+   Add notes only when there is a durable constraint, retry rule, or learning to preserve:
+
+   ```bash
+   govctl work add <WI-ID> notes "Do not retry X; it fails because Y"
    ```
 
 2. **Tick acceptance criteria** (if applicable)
@@ -146,11 +157,14 @@ After successful commit, if work item exists:
 govctl check                    # Validate all artifacts
 govctl work list pending        # List active work items
 govctl work show <WI-ID>        # Show work item details
+govctl work add <WI-ID> journal "Progress update"
 govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 
 # VCS commands
-jj status && jj diff --stat     # Jujutsu
-git status && git diff --stat   # Git
+jj status                       # Jujutsu
+jj diff --stat
+git status                      # Git
+git diff --stat
 ```
 
 ---
@@ -174,10 +188,13 @@ git status && git diff --stat   # Git
 ```
 1. No pending work items
 2. govctl check → passes
-3. Ask: "Changes look small. Create work item?"
-   - If small fix: proceed without WI
-   - If significant: create WI with `govctl work new --active`
-4. Commit changes
+3. Check whether the diff is spec-only governance maintenance
+   - If yes: proceed with a spec-only commit and mention no WI was used
+   - Otherwise: ask "Which work item should this commit belong to?"
+4. If implementation work applies:
+   - If existing work applies: activate or use it
+   - Otherwise: create WI with `govctl work new --active`
+5. Commit changes
 ```
 
 ### Scenario 3: Govctl Check Fails
@@ -185,8 +202,9 @@ git status && git diff --stat   # Git
 ```
 1. govctl check → fails
 2. Show diagnostics
-3. Ask: "Commit anyway?" (user choice)
-4. Proceed based on user decision
+3. Fix the issue
+4. Rerun `govctl check`
+5. Commit only after it passes
 ```
 
 ---

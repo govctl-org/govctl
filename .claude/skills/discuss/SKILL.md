@@ -95,7 +95,9 @@ Parse `$ARGUMENTS` and classify:
 | **New capability** | "How should X work?", "Design Y feature"     | RFC                           |
 | **Design choice**  | "Should we use A or B?", "Decide between..." | ADR                           |
 | **Clarification**  | "What does RFC-NNNN mean by...?"             | Discussion only (no artifact) |
-| **Amendment**      | "RFC-NNNN should change because..."          | RFC version bump              |
+| **RFC clarification** | "Clarify RFC-NNNN", "Tighten clause wording" | RFC update (spec-only)     |
+| **Amendment**      | "RFC-NNNN should change because..."          | RFC amendment                 |
+| **Deprecation**    | "Deprecate X", "Remove Y behavior"           | RFC amendment                 |
 | **Both**           | Complex feature with architectural decisions | RFC + ADR(s)                  |
 
 ### 1.2 Discussion Phase
@@ -122,6 +124,8 @@ For complex topics, explore the design space:
 2. **Analyze trade-offs:** What does each option make easier/harder?
 3. **Check constraints:** What do existing RFCs/ADRs require or prohibit?
 4. **Recommend:** Which option best fits the project's needs?
+
+**If the decision is high-risk** (2+ competing options with non-obvious trade-offs, irreversible change, or cross-cutting impact), follow the **decision-analysis** skill for a structured premortem/backcast analysis. The analysis output maps directly to ADR fields — see the skill's "Output → ADR Mapping" section.
 
 Document this exploration — it becomes the ADR context/alternatives or RFC rationale.
 
@@ -164,11 +168,14 @@ govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 Updated specification text.
 EOF
 
-# The RFC version will need bumping during /gov workflow
-# Do NOT bump version in /discuss — that happens at implementation time
+# The RFC version may need bumping during /spec or /gov handoff
+# Do NOT bump version in /discuss — handoff owns lifecycle operations
 ```
 
 **Note:** Amendments to normative RFCs require careful consideration. Document the rationale for the change.
+
+Clarification-only RFC updates that do not require implementation should hand off to `/spec`.
+Behavior-changing amendments, including feature deprecations or removals, should hand off to `/gov`.
 
 ### 2.4 Validate Drafts
 
@@ -234,9 +241,10 @@ Options:
      - Finalizes RFC (with permission)
      - Implements, tests, completes
 
-  2. /quick "<summary>" — Fast path for trivial implementation
-     - Use if implementation is straightforward
-     - Skips RFC finalization ceremony
+  2. /spec "<summary>" — Maintain governance artifacts without implementation
+     - Accepts ADRs with permission
+     - Clarifies or amends RFCs without code changes
+     - Validates and renders governance output
 
   3. Continue discussing — Refine the drafts further
      - Ask follow-up questions
@@ -244,6 +252,8 @@ Options:
 
   4. Pause — Save drafts, return later
      - Drafts are committed and can be resumed
+
+If the only follow-up is standalone non-behavioral cleanup unrelated to the drafted RFC/ADR (for example, wording-only docs cleanup), `/quick` may be used separately. Do not use `/quick` to implement behavior from these drafts.
 ```
 
 ---

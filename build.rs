@@ -105,11 +105,13 @@ fn main() {
     println!("cargo:rerun-if-changed=.claude/skills/discuss/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/gov/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/quick/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/spec/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/rfc-writer/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/adr-writer/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/wi-writer/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/commit/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/migrate/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/decision-analysis/SKILL.md");
     // Agents
     println!("cargo:rerun-if-changed=.claude/agents/rfc-reviewer.md");
     println!("cargo:rerun-if-changed=.claude/agents/adr-reviewer.md");

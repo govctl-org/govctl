@@ -36,7 +36,8 @@ When invoked:
 
 ### Alternatives
 
-- [ ] At least one rejected alternative is documented
+- [ ] For new decisions, at least one rejected alternative is documented
+- [ ] Historical backfill ADRs may omit rejected alternatives only if the ADR states they were not recoverable
 - [ ] Each alternative has a rejection reason
 - [ ] Alternatives are genuinely different approaches (not strawmen)
 

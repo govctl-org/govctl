@@ -61,6 +61,7 @@ govctl render
    - `journal`: execution log; append actions and outcomes
    - `notes`: durable learnings; record constraints, decisions, retry rules, and failure causes
 8. Avoid loops. If the same approach already failed, do not repeat it unchanged.
+9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
 
 ## Working Memory
 
@@ -95,6 +96,7 @@ govctl status
   - Doc-only: skip governance analysis, but still use a work item
   - Bug fix: usually no new RFC if behavior is already specified
   - Feature: likely requires an RFC or ADR
+  - Deprecation or removal: amend the governing RFC before implementation
   - Refactor: ADR may be needed if it changes architecture
 
 ### 1. Resolve the work item
@@ -137,7 +139,9 @@ Choose the smallest thing that matches reality:
 
 - New behavior not covered by an RFC: draft an RFC
 - Ambiguous interpretation or architectural choice: draft an ADR
+- Deprecation or removal of specified behavior: amend the governing RFC first
 - Existing normative RFC already specifies the change: proceed
+- Spec-only artifact maintenance with no implementation: stop and use `/spec`
 
 If you create artifacts:
 

@@ -38,6 +38,8 @@ govctl rfc new "<spec title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
 govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF' ... EOF
 govctl rfc finalize <RFC-ID> normative
+govctl rfc advance <RFC-ID> impl
+govctl rfc advance <RFC-ID> test
 govctl rfc advance <RFC-ID> stable
 
 # Validate
@@ -203,13 +205,14 @@ EOF
 ```bash
 govctl adr add <ADR-ID> alternatives "Chosen: <what was adopted>" \
   --pro "..." --con "..."
-govctl adr set <ADR-ID> "alt[0].status" accepted
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 
 govctl adr add <ADR-ID> alternatives "Rejected: <what was not chosen>" \
   --pro "..." --con "..." --reject-reason "..."
 ```
 
 If rejected alternatives are unknown, it is acceptable to have only the accepted option.
+When that happens, say so explicitly in the ADR context. Historical backfills may not be able to reconstruct rejected options, and reviewers should evaluate them with that limitation in mind.
 
 ### 2.4 Accept and Cross-Reference
 
@@ -261,7 +264,7 @@ EOF
 
 ### 3.3 Finalize and Advance
 
-Since these specs are already implemented and tested:
+Migration is a historical backfill workflow. Only finalize and advance the RFC after the user confirms the spec is already implemented and tested:
 
 ```bash
 govctl rfc finalize <RFC-ID> normative

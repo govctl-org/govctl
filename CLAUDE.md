@@ -160,17 +160,19 @@ Before requesting review: `just pre-commit`
 
 **Skills** (augment your capabilities — read and follow when relevant):
 
-| Skill        | Path                                   | Purpose                            |
-| ------------ | -------------------------------------- | ---------------------------------- |
-| Gov          | `.claude/skills/gov/SKILL.md`          | Full governed workflow             |
-| Quick        | `.claude/skills/quick/SKILL.md`        | Fast path for trivial changes      |
-| Discuss      | `.claude/skills/discuss/SKILL.md`      | Design discussion, draft RFC/ADR   |
-| Commit       | `.claude/skills/commit/SKILL.md`       | VCS commit with govctl integration |
-| Migrate      | `.claude/skills/migrate/SKILL.md`      | Adopt govctl in existing projects  |
-| RFC Writer   | `.claude/skills/rfc-writer/SKILL.md`   | RFC creation guide                 |
-| ADR Writer   | `.claude/skills/adr-writer/SKILL.md`   | ADR creation guide                 |
-| WI Writer    | `.claude/skills/wi-writer/SKILL.md`    | Work item creation guide           |
-| Guard Writer | `.claude/skills/guard-writer/SKILL.md` | Guard creation guide               |
+| Skill             | Path                                              | Purpose                            |
+| ----------------- | ------------------------------------------------- | ---------------------------------- |
+| Gov               | `.claude/skills/gov/SKILL.md`                     | Full governed workflow             |
+| Quick             | `.claude/skills/quick/SKILL.md`                   | Fast path for trivial changes      |
+| Discuss           | `.claude/skills/discuss/SKILL.md`                 | Design discussion, draft RFC/ADR   |
+| Spec              | `.claude/skills/spec/SKILL.md`                    | Governance artifact maintenance    |
+| Decision Analysis | `.claude/skills/decision-analysis/SKILL.md`       | Premortem/backcast for high-risk decisions |
+| Commit            | `.claude/skills/commit/SKILL.md`                  | VCS commit with govctl integration |
+| Migrate           | `.claude/skills/migrate/SKILL.md`                 | Adopt govctl in existing projects  |
+| RFC Writer        | `.claude/skills/rfc-writer/SKILL.md`              | RFC creation guide                 |
+| ADR Writer        | `.claude/skills/adr-writer/SKILL.md`              | ADR creation guide                 |
+| WI Writer         | `.claude/skills/wi-writer/SKILL.md`               | Work item creation guide           |
+| Guard Writer      | `.claude/skills/guard-writer/SKILL.md`            | Guard creation guide               |
 
 **Agents** (delegate review tasks to these via subagent):
 

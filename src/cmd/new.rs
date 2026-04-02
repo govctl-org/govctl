@@ -39,6 +39,10 @@ const SKILL_TEMPLATES: &[(&str, &str)] = &[
         include_str!("../../.claude/skills/quick/SKILL.md"),
     ),
     (
+        "skills/spec/SKILL.md",
+        include_str!("../../.claude/skills/spec/SKILL.md"),
+    ),
+    (
         "skills/rfc-writer/SKILL.md",
         include_str!("../../.claude/skills/rfc-writer/SKILL.md"),
     ),
@@ -61,6 +65,10 @@ const SKILL_TEMPLATES: &[(&str, &str)] = &[
     (
         "skills/migrate/SKILL.md",
         include_str!("../../.claude/skills/migrate/SKILL.md"),
+    ),
+    (
+        "skills/decision-analysis/SKILL.md",
+        include_str!("../../.claude/skills/decision-analysis/SKILL.md"),
     ),
 ];
 
