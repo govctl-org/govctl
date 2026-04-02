@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-04-02
+
+### Changed
+
+- align skill allowed-tools with Claude Code official tool names (WI-2026-04-02-001)
+- reconcile workflow and reviewer handoffs across skills and agents (WI-2026-04-02-001)
+- add and wire a spec-only governance workflow for artifact maintenance (WI-2026-04-02-001)
+
 ## [0.7.4] - 2026-03-28
 
 ### Added

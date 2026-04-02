@@ -1,0 +1,52 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-02-001"
+title = "Align skills and agents with Claude Code tool names and workflow gates"
+status = "done"
+created = "2026-04-02"
+started = "2026-04-02"
+completed = "2026-04-02"
+refs = [
+    "ADR-0028",
+    "ADR-0033",
+]
+
+[content]
+description = """
+Track the April 2026 governance workflow cleanup across `.claude/skills`, `.claude/agents`, and `CLAUDE.md` so releases can attribute the prompt-contract and tool-metadata changes to a completed work item.
+
+Scope:
+1. Add spec-only governance workflow coverage and tighten skill/agent routing boundaries.
+2. Align skill `allowed-tools` with Claude Code official built-in tool names.
+3. Close workflow review gaps discovered by scenario-based review, including migration review ordering, compliance gates, and work-item handling for spec-only commits."""
+
+[[content.journal]]
+date = "2026-04-02"
+scope = "governance"
+content = """
+Completed the skills and agents governance cleanup in two follow-up commits:
+- `0fca8431` refactored skill prompts/tool metadata, introduced the spec-only workflow, aligned skill/agent taxonomy, and switched `allowed-tools` to Claude Code official names.
+- `201d0e11` closed scenario-review gaps around migration review order, compliance gates, quick-path acceptance criteria, init self-bootstrap behavior, and spec-only commit handling.
+
+Validation: `govctl check` passes after adding this work item."""
+
+[[content.acceptance_criteria]]
+text = "align skill allowed-tools with Claude Code official tool names"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "reconcile workflow and reviewer handoffs across skills and agents"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "add and wire a spec-only governance workflow for artifact maintenance"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

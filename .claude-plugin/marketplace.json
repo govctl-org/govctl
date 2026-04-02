@@ -10,7 +10,7 @@
     {
       "name": "govctl",
       "description": "Governed workflow skills, reviewer agents, and enforcement hooks for govctl",
-      "version": "0.7.4",
+      "version": "0.7.5",
       "source": "./.claude",
       "author": {
         "name": "govctl-org"
