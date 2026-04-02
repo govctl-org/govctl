@@ -92,15 +92,15 @@ Read `gov/config.toml` to understand project-specific settings that may affect t
 
 Parse `$ARGUMENTS` and classify:
 
-| Type               | Indicator                                    | Output                        |
-| ------------------ | -------------------------------------------- | ----------------------------- |
-| **New capability** | "How should X work?", "Design Y feature"     | RFC                           |
-| **Design choice**  | "Should we use A or B?", "Decide between..." | ADR                           |
-| **Clarification**  | "What does RFC-NNNN mean by...?"             | Discussion only (no artifact) |
-| **RFC clarification** | "Clarify RFC-NNNN", "Tighten clause wording" | RFC update (spec-only)     |
-| **Amendment**      | "RFC-NNNN should change because..."          | RFC amendment                 |
-| **Deprecation**    | "Deprecate X", "Remove Y behavior"           | RFC amendment                 |
-| **Both**           | Complex feature with architectural decisions | RFC + ADR(s)                  |
+| Type                  | Indicator                                    | Output                        |
+| --------------------- | -------------------------------------------- | ----------------------------- |
+| **New capability**    | "How should X work?", "Design Y feature"     | RFC                           |
+| **Design choice**     | "Should we use A or B?", "Decide between..." | ADR                           |
+| **Clarification**     | "What does RFC-NNNN mean by...?"             | Discussion only (no artifact) |
+| **RFC clarification** | "Clarify RFC-NNNN", "Tighten clause wording" | RFC update (spec-only)        |
+| **Amendment**         | "RFC-NNNN should change because..."          | RFC amendment                 |
+| **Deprecation**       | "Deprecate X", "Remove Y behavior"           | RFC amendment                 |
+| **Both**              | Complex feature with architectural decisions | RFC + ADR(s)                  |
 
 ### 1.2 Discussion Phase
 

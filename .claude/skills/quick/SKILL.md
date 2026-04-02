@@ -53,8 +53,15 @@ Then:
 ```bash
 govctl work show <WI-ID>
 govctl work set <WI-ID> description "Brief scope: what and why"
-govctl work add <WI-ID> acceptance_criteria "chore: Change completed"
+govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
+govctl work add <WI-ID> acceptance_criteria "<category>: <specific observable outcome for this trivial change>"
 ```
+
+The second criterion must be concrete and diff-specific. Examples:
+
+- `docs: CLI example uses the current subcommand name`
+- `chore: remove unused import from parser module`
+- `fix: typo in error message is corrected`
 
 ### 3. Implement
 
@@ -88,7 +95,8 @@ Record the implementation change with `/commit`, typically using `docs(scope)`, 
 ### 5. Complete
 
 ```bash
-govctl work tick <WI-ID> acceptance_criteria "Change completed" -s done
+govctl work tick <WI-ID> acceptance_criteria "govctl check passes" -s done
+govctl work tick <WI-ID> acceptance_criteria "<specific observable outcome>" -s done
 govctl work move <WI-ID> done
 ```
 

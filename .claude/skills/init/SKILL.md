@@ -15,7 +15,7 @@ Set up govctl in the current project.
 
 1. This is a setup workflow, not an implementation workflow. Do not create work items or change product code here.
 2. Ask permission before installing `govctl` with `cargo install govctl`.
-3. Prefer local `govctl` if it is already available. Only install when the binary is missing.
+3. Prefer local `govctl` if it is already available. When working in the `govctl` repo itself, prefer `cargo run --quiet --` before installing a global binary.
 4. Never edit governed files directly. Use `govctl init`.
 5. If setup succeeds and the user wants it recorded, hand off to `/commit` rather than embedding raw VCS commands here.
 
@@ -27,7 +27,15 @@ Set up govctl in the current project.
 govctl --version
 ```
 
-If missing, ask permission, then install it:
+If you are working in the `govctl` repository itself, prefer:
+
+```bash
+cargo run --quiet -- --version
+```
+
+If that works, use `cargo run --quiet -- <subcommand>` for the rest of this workflow instead of installing a global binary.
+
+If no usable local invocation exists, ask permission, then install it:
 
 ```bash
 cargo install govctl

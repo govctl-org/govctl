@@ -162,29 +162,29 @@ Before requesting review: `just pre-commit`
 
 Workflow skills:
 
-| Skill   | Path                                   | Purpose                         |
-| ------- | -------------------------------------- | ------------------------------- |
-| Init    | `.claude/skills/init/SKILL.md`         | Set up govctl in a project      |
-| Discuss | `.claude/skills/discuss/SKILL.md`      | Design discussion, draft RFC/ADR |
-| Spec    | `.claude/skills/spec/SKILL.md`         | Governance artifact maintenance |
-| Gov     | `.claude/skills/gov/SKILL.md`          | Full governed implementation    |
-| Quick   | `.claude/skills/quick/SKILL.md`        | Fast path for trivial changes   |
-| Commit  | `.claude/skills/commit/SKILL.md`       | VCS commit with govctl integration |
-| Migrate | `.claude/skills/migrate/SKILL.md`      | Adopt govctl in existing projects |
+| Skill   | Path                              | Purpose                            |
+| ------- | --------------------------------- | ---------------------------------- |
+| Init    | `.claude/skills/init/SKILL.md`    | Set up govctl in a project         |
+| Discuss | `.claude/skills/discuss/SKILL.md` | Design discussion, draft RFC/ADR   |
+| Spec    | `.claude/skills/spec/SKILL.md`    | Governance artifact maintenance    |
+| Gov     | `.claude/skills/gov/SKILL.md`     | Full governed implementation       |
+| Quick   | `.claude/skills/quick/SKILL.md`   | Fast path for trivial changes      |
+| Commit  | `.claude/skills/commit/SKILL.md`  | VCS commit with govctl integration |
+| Migrate | `.claude/skills/migrate/SKILL.md` | Adopt govctl in existing projects  |
 
 Writer/helper skills:
 
-| Skill        | Path                                   | Purpose                  |
-| ------------ | -------------------------------------- | ------------------------ |
-| RFC Writer   | `.claude/skills/rfc-writer/SKILL.md`   | RFC content guide        |
-| ADR Writer   | `.claude/skills/adr-writer/SKILL.md`   | ADR content guide        |
-| WI Writer    | `.claude/skills/wi-writer/SKILL.md`    | Work item content guide  |
-| Guard Writer | `.claude/skills/guard-writer/SKILL.md` | Guard definition guide   |
+| Skill        | Path                                   | Purpose                 |
+| ------------ | -------------------------------------- | ----------------------- |
+| RFC Writer   | `.claude/skills/rfc-writer/SKILL.md`   | RFC content guide       |
+| ADR Writer   | `.claude/skills/adr-writer/SKILL.md`   | ADR content guide       |
+| WI Writer    | `.claude/skills/wi-writer/SKILL.md`    | Work item content guide |
+| Guard Writer | `.claude/skills/guard-writer/SKILL.md` | Guard definition guide  |
 
 Reference-only skills:
 
-| Skill             | Path                                        | Purpose                                   |
-| ----------------- | ------------------------------------------- | ----------------------------------------- |
+| Skill             | Path                                        | Purpose                                    |
+| ----------------- | ------------------------------------------- | ------------------------------------------ |
 | Decision Analysis | `.claude/skills/decision-analysis/SKILL.md` | Premortem/backcast for high-risk decisions |
 
 **Agents** (delegate review or audit tasks to these via subagent):

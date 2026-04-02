@@ -84,7 +84,7 @@ Include govctl-relevant success drivers:
 For each cause from Steps 3-4, assign:
 
 | Category | Control | Reason | Probability (%) | Confidence | Impact (1-5) | Early Signal | Countermeasure |
-|----------|---------|--------|-----------------|------------|---------------|--------------|----------------|
+| -------- | ------- | ------ | --------------- | ---------- | ------------ | ------------ | -------------- |
 
 Calibration guide:
 
@@ -123,24 +123,24 @@ For `Conditional Go`, specify exactly what conditions must be met.
 
 Align with govctl phase gates:
 
-| Checkpoint | Phase Gate | What to Measure | Kill Criteria | Scale Criteria |
-|------------|-----------|-----------------|---------------|----------------|
-| Early (before commitment) | Before `finalize normative` | Design evidence, assumptions, interface feasibility | Core assumptions falsified | Option remains viable |
-| Mid (implementation) | Before `advance test` | `govctl check` clean, clause coverage | Spec drift detected | All clauses implemented |
-| Late (release readiness) | Before `advance stable` | Full test suite, no regressions | Compliance failures | Ready for stable |
+| Checkpoint                | Phase Gate                  | What to Measure                                     | Kill Criteria              | Scale Criteria          |
+| ------------------------- | --------------------------- | --------------------------------------------------- | -------------------------- | ----------------------- |
+| Early (before commitment) | Before `finalize normative` | Design evidence, assumptions, interface feasibility | Core assumptions falsified | Option remains viable   |
+| Mid (implementation)      | Before `advance test`       | `govctl check` clean, clause coverage               | Spec drift detected        | All clauses implemented |
+| Late (release readiness)  | Before `advance stable`     | Full test suite, no regressions                     | Compliance failures        | Ready for stable        |
 
 ## Output → ADR Mapping
 
 When the analysis is complete, map outputs to ADR fields using the **adr-writer** skill:
 
-| Analysis Output | ADR Field | How to Map |
-|----------------|-----------|------------|
-| Decision statement + constraints | `context` | Problem statement and constraints section |
-| Premortem + backcast summaries | `consequences` | Positive from backcast, Negative from premortem (with mitigations) |
-| Options ranking | `alternatives` | Each option with pros/cons from the exploration table |
-| Top option + rationale | `decision` | "We will **X** because..." |
-| Must-pass gates | `decision` | Add under `### Implementation Notes` |
-| Related RFCs/ADRs discovered | `refs` | Link as references |
+| Analysis Output                  | ADR Field      | How to Map                                                         |
+| -------------------------------- | -------------- | ------------------------------------------------------------------ |
+| Decision statement + constraints | `context`      | Problem statement and constraints section                          |
+| Premortem + backcast summaries   | `consequences` | Positive from backcast, Negative from premortem (with mitigations) |
+| Options ranking                  | `alternatives` | Each option with pros/cons from the exploration table              |
+| Top option + rationale           | `decision`     | "We will **X** because..."                                         |
+| Must-pass gates                  | `decision`     | Add under `### Implementation Notes`                               |
+| Related RFCs/ADRs discovered     | `refs`         | Link as references                                                 |
 
 ## Compact Mode
 

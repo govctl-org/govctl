@@ -197,6 +197,9 @@ If a check fails:
 
 Do not continue until green.
 
+If the change implements, removes, or materially alters RFC-governed behavior, invoke the **compliance-checker** agent before moving to `stable`.
+Treat Critical compliance findings as a release gate; fix them before continuing.
+
 ### 5. Complete
 
 Run final validation:
@@ -207,6 +210,12 @@ govctl render
 ```
 
 If an RFC exists and all required testing is done, ask permission before `govctl rfc advance <RFC-ID> stable` unless full authority was granted.
+
+Before advancing to `stable` for RFC-governed behavior:
+
+1. Run **compliance-checker**
+2. Fix any Critical findings
+3. Re-run the relevant checks if code changed
 
 Before closing the work item:
 

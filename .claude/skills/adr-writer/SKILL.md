@@ -199,12 +199,12 @@ Content fields should contain only the body prose and `[[...]]` references.
 
 ## Common Mistakes
 
-| Mistake                            | Fix                                                      |
-| ---------------------------------- | -------------------------------------------------------- |
-| `## Context` in content field      | Don't — the renderer adds section headings automatically |
-| Empty Negative section             | Every decision has trade-offs — document them            |
-| No alternatives for a new ADR      | Add at least one rejected option                         |
-| Historical ADR lacks rejected options | State that alternatives were not recoverable          |
-| Vague context: "We need to decide" | Specific: "RFC-0002 requires X but doesn't specify how"  |
-| Decision buried in prose           | Lead with "We will **action**"                           |
-| Missing refs                       | Link to RFCs/ADRs that constrain the decision            |
+| Mistake                               | Fix                                                      |
+| ------------------------------------- | -------------------------------------------------------- |
+| `## Context` in content field         | Don't — the renderer adds section headings automatically |
+| Empty Negative section                | Every decision has trade-offs — document them            |
+| No alternatives for a new ADR         | Add at least one rejected option                         |
+| Historical ADR lacks rejected options | State that alternatives were not recoverable             |
+| Vague context: "We need to decide"    | Specific: "RFC-0002 requires X but doesn't specify how"  |
+| Decision buried in prose              | Lead with "We will **action**"                           |
+| Missing refs                          | Link to RFCs/ADRs that constrain the decision            |

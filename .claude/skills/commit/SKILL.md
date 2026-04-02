@@ -46,16 +46,20 @@ govctl work list pending
 
 **If active work item exists:**
 
-1. **Journal update**: Ask user if they want to add a journal entry documenting what was done and what happened
-2. **Notes update**: Ask if any learnings, constraints, or retry rules should be recorded
-3. **Acceptance criteria**: Check if any criteria can be ticked:
-   ```bash
-   govctl work show <WI-ID>
-   ```
-   If criteria match the completed work, suggest ticking them:
-   ```bash
-   govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
-   ```
+1. Determine whether the active work item actually matches this diff.
+2. If the diff is spec-only governance maintenance unrelated to the active work item, the commit may remain work-item-free even while another work item is active.
+3. If the active work item applies, then:
+   - Ask whether to add a `journal` entry documenting what was done and what happened
+   - Ask whether any durable `notes` should be recorded
+   - Check whether any acceptance criteria can be ticked:
+     ```bash
+     govctl work show <WI-ID>
+     ```
+     If criteria match the completed work, suggest ticking them:
+     ```bash
+     govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+     ```
+4. If the active work item does not apply and the diff is not spec-only, ask whether to switch to a different work item or create a new one before committing
 
 **If no active work item:**
 
@@ -187,11 +191,12 @@ git diff --stat
 ```
 1. Detect active WI-XXXX
 2. govctl check → passes
-3. Ask: "Add journal entry for this progress?"
-4. User confirms → add journal entry
-5. Check criteria → suggest ticking completed ones
-6. Commit changes
-7. Ask: "Mark work item as done?" (if all criteria ticked)
+3. Confirm the active WI actually matches this diff
+4. If yes: ask about journal entry and criterion ticks
+5. If no, but diff is spec-only: proceed without attaching the commit to that WI
+6. If no and diff is implementation-bearing: switch/create the correct WI first
+7. Commit changes
+8. Ask: "Mark work item as done?" (if all criteria ticked)
 ```
 
 ### Scenario 2: No Active Work Item

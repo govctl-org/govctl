@@ -220,7 +220,13 @@ govctl adr add <ADR-ID> alternatives "Rejected: <what was not chosen>" \
 If rejected alternatives are unknown, it is acceptable to have only the accepted option.
 When that happens, say so explicitly in the ADR context. Historical backfills may not be able to reconstruct rejected options, and reviewers should evaluate them with that limitation in mind.
 
-### 2.4 Accept and Cross-Reference
+### 2.4 Review Backfilled ADRs
+
+Invoke the **adr-reviewer** agent on each newly created ADR. For large batches, review the most important 3-5 ADRs and spot-check the rest.
+
+Fix Critical findings before accepting the ADRs.
+
+### 2.5 Accept and Cross-Reference
 
 Since these are historical decisions already in effect:
 
@@ -228,10 +234,6 @@ Since these are historical decisions already in effect:
 govctl adr accept <ADR-ID>
 govctl adr add <ADR-ID> refs <related-ADR-or-RFC>
 ```
-
-### 2.5 Review Backfilled ADRs
-
-Invoke the **adr-reviewer** agent on each newly created ADR. For large batches, review the most important 3-5 ADRs and spot-check the rest.
 
 ### 2.6 Commit Batch
 
@@ -262,7 +264,13 @@ govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 EOF
 ```
 
-### 3.3 Finalize and Advance
+### 3.3 Review Backfilled RFCs
+
+Invoke the **rfc-reviewer** agent on each newly created RFC. For large batches, review the most important RFCs first and spot-check the rest.
+
+Fix Critical findings before making the RFC authoritative.
+
+### 3.4 Finalize and Advance
 
 Migration is a historical backfill workflow. Only finalize and advance the RFC after the user confirms the spec is already implemented and tested:
 
@@ -273,7 +281,7 @@ govctl rfc advance <RFC-ID> test
 govctl rfc advance <RFC-ID> stable
 ```
 
-### 3.4 Commit
+### 3.5 Commit
 
 Use `/commit` with `docs(rfc): backfill RFCs for existing specifications`.
 
