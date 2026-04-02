@@ -1,13 +1,15 @@
 ---
 name: gov
 description: "Execute governed implementation workflow with work items, RFC/ADR checks, phase gates, testing, and closure. Use when: (1) User invokes /gov, (2) A non-trivial change needs work item tracking, (3) Implementation may require RFC/ADR handling"
-allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <what-to-do>
 ---
 
 # /gov - Governed Workflow
 
 Execute a complete, auditable workflow for: `$ARGUMENTS`
+
+**Outputs:** Implemented change, updated governance artifacts where needed, validated tests/checks, and a completed work item.
 
 ## Agent Patterns
 
@@ -91,7 +93,6 @@ govctl status
 ```
 
 - Read `gov/config.toml`.
-- Detect VCS: prefer `jj` if `jj status` succeeds, otherwise use git.
 - Classify the task:
   - Doc-only: skip governance analysis, but still use a work item
   - Bug fix: usually no new RFC if behavior is already specified
@@ -247,11 +248,11 @@ govctl work move <WI-ID> done
 - `docs(rfc)` / `docs(adr)`: draft governance artifacts
 - `feat(scope)` / `fix(scope)` / `refactor(scope)` / `docs(scope)` / `test(scope)`: implementation commits
 
-Use the `commit` skill for multi-line commit messages.
+Use the `commit` skill for all raw VCS operations.
 
 ## Execution Checklist
 
-- [ ] Environment validated; config read; VCS detected
+- [ ] Environment validated; config read
 - [ ] Active work item exists
 - [ ] `govctl work show <WI-ID>` read before implementation
 - [ ] `description`, `journal`, and `notes` used correctly

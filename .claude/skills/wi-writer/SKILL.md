@@ -1,11 +1,18 @@
 ---
 name: wi-writer
 description: "Write well-structured work items with proper acceptance criteria. Use when: (1) Creating work items, (2) Adding acceptance criteria, (3) User mentions work item, task, WI, or ticket"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
+argument-hint: [optional work-item topic]
 ---
 
 # Work Item Writer
 
 Write work items with clear descriptions and actionable acceptance criteria.
+
+## Invocation Mode
+
+This helper skill may be used standalone or by `/gov`, `/quick`, or `/commit`.
+It is responsible for work-item content quality and field semantics, not code changes or VCS operations.
 
 ## Quick Reference
 

@@ -1,7 +1,7 @@
 ---
 name: discuss
 description: Facilitate design discussion — research context, clarify requirements, draft RFC/ADR
-allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <topic-or-question>
 ---
 
@@ -11,7 +11,7 @@ Facilitate a design discussion about: `$ARGUMENTS`
 
 **Purpose:** Understand a design problem, research existing governance context, and produce draft RFC or ADR artifacts. This workflow is for the **spec phase** — no implementation, no work items.
 
-**Outputs:** Draft RFC and/or proposed ADR, then handoff to implementation workflow.
+**Outputs:** Draft RFC and/or proposed ADR, then handoff to `/spec` or `/gov` as appropriate.
 
 ---
 
@@ -53,6 +53,8 @@ govctl check                              # Validate all artifacts
 5. **Ask when unclear** — If requirements are ambiguous, ask clarifying questions
 6. **Quality over speed** — Produce complete, well-structured drafts
 7. **Reference format** — Always use `[[artifact-id]]` syntax when referencing artifacts (e.g., `[[RFC-0001]]`, `[[RFC-0001:C-FOO]]`) — in content fields AND code comments
+8. **No lifecycle verbs** — `accept`, `finalize`, `advance`, and `bump` belong to `/spec` or `/gov`
+9. **No raw VCS here** — If draft artifacts should be recorded, hand off to `/commit`
 
 ---
 
@@ -198,7 +200,7 @@ Address Critical issues before handoff.
 
 ### 2.6 Record (Optional)
 
-Commit: `docs(rfc): draft <RFC-ID> for <summary>` or `docs(adr): draft <ADR-ID> for <summary>`
+If draft artifacts should be recorded, use `/commit` with `docs(rfc): draft <RFC-ID> for <summary>` or `docs(adr): draft <ADR-ID> for <summary>`.
 
 ---
 
@@ -251,7 +253,7 @@ Options:
      - Add more clauses or detail
 
   4. Pause — Save drafts, return later
-     - Drafts are committed and can be resumed
+     - Drafts can be recorded with `/commit` and resumed later
 
 If the only follow-up is standalone non-behavioral cleanup unrelated to the drafted RFC/ADR (for example, wording-only docs cleanup), `/quick` may be used separately. Do not use `/quick` to implement behavior from these drafts.
 ```

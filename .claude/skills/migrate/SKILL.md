@@ -1,6 +1,7 @@
 ---
 name: migrate
 description: "Adopt govctl in an existing project. Discovers undocumented decisions, backfills ADRs/RFCs, annotates source code. Use when: (1) Project has no governance yet, (2) User mentions migrate, adopt, onboard, or brownfield"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: [optional scope hint, e.g. "focus on database decisions"]
 ---
 
@@ -10,11 +11,22 @@ Migrate an existing codebase to govctl governance per [[ADR-0032]].
 
 **Purpose:** Systematically discover undocumented decisions and specifications in an existing project, codify them as govctl artifacts, and annotate source code with cross-references.
 
+**Outputs:** Discovery report, backfilled governance artifacts, annotated source references, and an initial governed baseline.
+
 **Properties:**
 
 - **Interactive** — Confirms discoveries with the user before creating artifacts
 - **Incremental** — Each phase can be run independently; partial migration is valid
 - **Non-destructive** — Never overwrites existing files; only adds governance artifacts
+
+## Critical Rules
+
+1. This is a historical backfill workflow, not an implementation workflow.
+2. Do not create work items during discovery or backfill phases unless you are establishing baseline tracking for already in-progress work.
+3. Ask permission before lifecycle-owned verbs used in migration: `govctl adr accept`, `govctl rfc finalize`, and `govctl rfc advance`.
+4. Never edit governed files directly. Use `govctl` verbs only.
+5. Use `/commit` to record migration milestones. Do not embed raw VCS procedures in this workflow.
+6. If migration uncovers unresolved design questions for future work, hand them off to `/discuss` rather than inventing rationale.
 
 ---
 
@@ -68,17 +80,11 @@ Confirm the governance structure was created. Read `gov/config.toml` and adjust 
 
 ### 0.3 Detect VCS
 
-Try `jj status` first. If it succeeds, use jujutsu. Otherwise use git. Use the detected VCS for all commits throughout this workflow.
+If migration milestones should be recorded, `/commit` will choose the raw VCS workflow.
 
 ### 0.4 Initial Commit
 
-```bash
-# jj
-jj commit -m "chore: initialize govctl governance structure"
-
-# git
-git add . && git commit -m "chore: initialize govctl governance structure"
-```
+If the user wants to record scaffold creation, use `/commit` with `chore(gov): initialize govctl governance structure`.
 
 ---
 
@@ -231,13 +237,7 @@ Invoke the **adr-reviewer** agent on each newly created ADR. For large batches, 
 
 Group related ADRs into logical commits:
 
-```bash
-# jj
-jj commit -m "docs(adr): backfill ADRs for existing architectural decisions"
-
-# git
-git add . && git commit -m "docs(adr): backfill ADRs for existing architectural decisions"
-```
+Use `/commit` with `docs(adr): backfill ADRs for existing architectural decisions`.
 
 ---
 
@@ -275,13 +275,7 @@ govctl rfc advance <RFC-ID> stable
 
 ### 3.4 Commit
 
-```bash
-# jj
-jj commit -m "docs(rfc): backfill RFCs for existing specifications"
-
-# git
-git add . && git commit -m "docs(rfc): backfill RFCs for existing specifications"
-```
+Use `/commit` with `docs(rfc): backfill RFCs for existing specifications`.
 
 ---
 
@@ -322,13 +316,7 @@ Fix any broken references. All `[[...]]` references must resolve to existing art
 
 ### 4.3 Commit
 
-```bash
-# jj
-jj commit -m "chore: annotate source with governance artifact references"
-
-# git
-git add . && git commit -m "chore: annotate source with governance artifact references"
-```
+Use `/commit` with `chore(gov): annotate source with governance artifact references`.
 
 ---
 
@@ -356,13 +344,7 @@ govctl render
 
 ### 5.3 Final Commit
 
-```bash
-# jj
-jj commit -m "chore: establish govctl governance baseline"
-
-# git
-git add . && git commit -m "chore: establish govctl governance baseline"
-```
+Use `/commit` with `chore(gov): establish govctl governance baseline`.
 
 ---
 

@@ -1,11 +1,18 @@
 ---
 name: rfc-writer
 description: "Write well-structured RFCs with normative clauses. Use when: (1) Creating a new RFC, (2) Adding or editing RFC clauses, (3) User mentions RFC, specification, or normative requirements"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
+argument-hint: [optional RFC topic]
 ---
 
 # RFC Writer
 
 Write RFCs that are precise, complete, and follow govctl conventions.
+
+## Invocation Mode
+
+This helper skill may be used standalone or by `/discuss`, `/gov`, `/spec`, or `/migrate`.
+It is responsible for RFC content and clause quality, not RFC lifecycle verbs. Use `/spec` or `/gov` for `govctl rfc finalize`, `bump`, or `advance`.
 
 ## Quick Reference
 
@@ -109,3 +116,10 @@ Clause text should contain only the specification prose, rationale, and `[[...]]
 | Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                            |
 | Including `Since:` in clause text              | Don't — the renderer adds it from the `since` field automatically     |
 | Including clause heading in text               | Don't — the renderer generates `### [RFC:C-NAME] Title` from metadata |
+
+## Validation and Handoff
+
+- Run `govctl check` after substantive RFC edits
+- Use `rfc-reviewer` before lifecycle handoff
+- Use `/spec` for clarification-only or artifact-only RFC maintenance
+- Use `/gov` for implementation-bearing RFC amendments

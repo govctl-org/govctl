@@ -9,6 +9,11 @@ Stress-test a design decision using premortem (simulated failure) and backcastin
 
 This skill is a **reference skill** — called by `/discuss` during design exploration, not invoked standalone.
 
+## Invocation Mode
+
+Reference-only. This skill does analysis and produces structured output for `/discuss` and `adr-writer`.
+It must not create work items, execute lifecycle verbs, perform VCS operations, or write implementation code.
+
 ## When to Use
 
 Use this analysis when the decision meets **any** of:

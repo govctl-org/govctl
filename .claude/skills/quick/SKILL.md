@@ -1,7 +1,7 @@
 ---
 name: quick
 description: "Execute the fast path for trivial changes with minimal governance ceremony. Use when: (1) User invokes /quick, (2) Change is doc-only or non-behavioral, (3) No RFC or ADR work is needed"
-allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <what-to-do>
 ---
 
@@ -10,6 +10,8 @@ argument-hint: <what-to-do>
 Execute the lightweight workflow for: `$ARGUMENTS`
 
 Use this only for trivial, non-behavioral changes such as typos, comments, docs fixes, or small internal cleanup.
+
+**Outputs:** Completed trivial non-behavioral change, updated work item memory, and validation evidence.
 
 Do not use this for new behavior, RFC-governed work, or architecture decisions. If the task stops being trivial, switch to `/gov`.
 
@@ -23,6 +25,7 @@ Do not use this for new behavior, RFC-governed work, or architecture decisions. 
    - `journal`: what you did and what happened
    - `notes`: constraints or lessons future steps must remember
 5. If the change becomes behavioral, ambiguous, or architectural, stop using `/quick` and switch to `/gov`.
+6. Use `/commit` for raw VCS operations. Do not embed `jj` or `git` procedures here.
 
 ## Workflow
 
@@ -32,8 +35,8 @@ Do not use this for new behavior, RFC-governed work, or architecture decisions. 
 govctl status
 ```
 
-- Detect VCS: prefer `jj` if `jj status` succeeds, otherwise use git.
 - Confirm the change is still trivial and non-behavioral.
+- `/commit` will choose the raw VCS workflow if recording is needed.
 
 ### 2. Resolve the work item
 
@@ -80,13 +83,7 @@ For very small changes, `journal` may be enough. Add `notes` only when there is 
 
 ### 4. Record
 
-```bash
-# jj
-jj commit -m "<type>(<scope>): <description>"
-
-# git
-git add . && git commit -m "<type>(<scope>): <description>"
-```
+Record the implementation change with `/commit`, typically using `docs(scope)`, `chore(scope)`, or `fix(scope)` as appropriate.
 
 ### 5. Complete
 
@@ -97,13 +94,7 @@ govctl work move <WI-ID> done
 
 ### 6. Final record
 
-```bash
-# jj
-jj commit -m "chore(work): complete <WI-ID>"
-
-# git
-git add . && git commit -m "chore(work): complete <WI-ID>"
-```
+If work-item closure should be recorded separately, use `/commit` with `chore(work): complete <WI-ID>`.
 
 ## Switch to /gov when
 

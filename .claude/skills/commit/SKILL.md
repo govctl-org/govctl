@@ -1,7 +1,7 @@
 ---
 name: commit
 description: "Commit changes with govctl integration — check work item status, update journal or notes, and run govctl check"
-allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: [optional commit message hint]
 ---
 
@@ -9,11 +9,18 @@ argument-hint: [optional commit message hint]
 
 Commit changes using the project's version control system, with govctl-aware checks.
 
+**Outputs:** Recorded VCS commit, updated work-item memory when applicable, and a clean post-commit working copy.
+
 ---
 
 ## WORKFLOW
 
 **CRITICAL: Steps MUST be executed in exact order. Do NOT skip ahead.**
+
+1. This is the only workflow that should issue raw `jj` or `git` commit commands.
+2. Do not perform RFC/ADR lifecycle verbs here, except work-item journal/notes/tick/move updates that belong to commit bookkeeping.
+3. Implementation-bearing commits should belong to an active work item.
+4. Spec-only governance commits may proceed without a work item only when the diff is limited to governance artifacts, rendered governance docs, embedded skill/agent templates, or related metadata.
 
 ### Step 1: Detect VCS
 
@@ -52,7 +59,11 @@ govctl work list pending
 
 **If no active work item:**
 
-- If the changes are spec-only governance maintenance (artifact files, rendered governance docs, or related metadata only), a work item is optional
+- If the changes are spec-only governance maintenance, a work item is optional. Typical examples:
+  - `gov/**` artifact files
+  - rendered governance docs under `docs/rfc/**` or `docs/adr/**`
+  - embedded skill or agent templates under `.claude/**`
+  - supporting metadata such as `CLAUDE.md`, `build.rs`, or `src/cmd/new.rs` that only wire governance assets
 - Otherwise, ask whether these changes should be attached to an existing work item or a new one
 - In the standard govctl workflow, create or activate a work item before committing
 - If the user explicitly says this commit is outside tracked work, record that exception in your summary

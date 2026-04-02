@@ -1,11 +1,18 @@
 ---
 name: adr-writer
 description: "Write effective Architecture Decision Records. Use when: (1) Creating a new ADR, (2) Recording a design decision, (3) User mentions ADR, decision, trade-off, or alternatives"
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
+argument-hint: [optional ADR topic]
 ---
 
 # ADR Writer
 
 Write ADRs that clearly capture context, decisions, and consequences.
+
+## Invocation Mode
+
+This helper skill may be used standalone or by `/discuss`, `/gov`, `/spec`, or `/migrate`.
+It is responsible for ADR content structure and quality, not ADR lifecycle verbs. Use `/spec` or `/gov` for `govctl adr accept`, `reject`, or `supersede`.
 
 ## Quick Reference
 
@@ -148,6 +155,13 @@ govctl adr add <ADR-ID> refs ADR-0005
 ```
 
 Link to artifacts that constrained or informed the decision. Use plain IDs (not `[[...]]` syntax) in the refs field.
+
+## Validation and Handoff
+
+- Run `govctl check` after substantive ADR edits
+- Use `adr-reviewer` before acceptance or handoff
+- Use `/spec` for ADR acceptance without implementation
+- Use `/gov` when the ADR accompanies implementation-bearing work
 
 ## Writing Rules
 

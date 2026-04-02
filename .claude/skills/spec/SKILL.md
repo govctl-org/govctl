@@ -1,7 +1,7 @@
 ---
 name: spec
 description: "Maintain governance artifacts without implementation work. Use when: (1) Accepting or refining ADRs, (2) Clarifying or amending RFCs without code changes, (3) Governance-only docs/check/render updates"
-allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch, TodoWrite
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <artifact-maintenance-task>
 ---
 
@@ -10,6 +10,8 @@ argument-hint: <artifact-maintenance-task>
 Maintain governance artifacts for: `$ARGUMENTS`
 
 Use this workflow for spec-only governance work: refine or accept ADRs, clarify or amend RFCs, update artifact references, and validate/render governance output without implementing code.
+
+**Outputs:** Updated governance artifacts, completed artifact review, and validated rendered governance state.
 
 ## Critical Rules
 
@@ -20,6 +22,7 @@ Use this workflow for spec-only governance work: refine or accept ADRs, clarify 
 5. Clarification-only RFC updates must not silently change behavior. If behavior changes, stop and route through `/discuss` and `/gov`.
 6. Never edit governed files directly. Use `govctl` verbs only.
 7. Validate with `govctl check`, and run `govctl render` when rendered docs should change.
+8. Use `/commit` for raw VCS operations. This workflow defines what to record, not how to invoke VCS directly.
 
 ## Quick Reference
 
@@ -125,6 +128,8 @@ Use commit types that reflect artifact maintenance:
 - `docs(rfc)`: RFC drafting, clarification, or amendment
 - `docs(adr)`: ADR drafting or acceptance preparation
 - `chore(gov)`: governance metadata, refs, render output, or config cleanup
+
+Use `/commit` to record those changes.
 
 If the task grows into implementation work, stop here and hand off to `/gov`.
 

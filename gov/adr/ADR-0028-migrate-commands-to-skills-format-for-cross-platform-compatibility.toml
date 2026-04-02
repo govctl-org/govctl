@@ -58,7 +58,7 @@ Extend skill frontmatter to include command-specific fields:
     ---
     name: gov
     description: "Execute governed workflow — work item, RFC/ADR, implement, test, done"
-    allowed-tools: Read, Write, StrReplace, Shell, Glob, Grep, LS, SemanticSearch
+    allowed-tools: Read, Write, Edit, Bash, Glob, Grep
     argument-hint: <what-to-do>
     ---
 
