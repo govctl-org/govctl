@@ -8,18 +8,21 @@ mod common;
 use common::{init_project, normalize_output, run_commands, today};
 use std::fs;
 
-/// Helper to enable source scanning in a project
+/// Helper to enable source scanning in a project.
+/// Parses config as typed TOML, inserts an active `[source_scan]` table, and writes back.
 fn enable_source_scan(dir: &std::path::Path) {
     let config_path = dir.join("gov/config.toml");
-    let config = fs::read_to_string(&config_path).unwrap();
-    // Add source_scan section if not present
-    if !config.contains("[source_scan]") {
-        let updated = format!(
-            "{}\n[source_scan]\nenabled = true\ninclude = [\"src/**/*.rs\"]\nexclude = []\n",
-            config
-        );
-        fs::write(&config_path, updated).unwrap();
-    }
+    let content = fs::read_to_string(&config_path).unwrap();
+    let mut doc: toml::Table = toml::from_str(&content).unwrap();
+    let mut scan = toml::Table::new();
+    scan.insert("enabled".into(), toml::Value::Boolean(true));
+    scan.insert(
+        "include".into(),
+        toml::Value::Array(vec![toml::Value::String("src/**/*.rs".into())]),
+    );
+    scan.insert("exclude".into(), toml::Value::Array(vec![]));
+    doc.insert("source_scan".into(), toml::Value::Table(scan));
+    fs::write(&config_path, toml::to_string_pretty(&doc).unwrap()).unwrap();
 }
 
 #[test]

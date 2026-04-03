@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-04-001"
+title = "Clean up stale commands_dir references in config"
+status = "done"
+created = "2026-04-04"
+started = "2026-04-04"
+completed = "2026-04-04"
+
+[content]
+description = "Remove stale commands/ references from agent_dir doc comments and config template in src/config.rs. The commands/ subdirectory no longer exists; only skills/ and agents/ are used."
+
+[[content.journal]]
+date = "2026-04-04"
+scope = "config"
+content = "Fixed two stale comments in src/config.rs: agent_dir doc comment and config template no longer mention commands/ subdirectory. All tests pass."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "agent_dir doc comment no longer mentions commands/"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "config template comment no longer mentions commands/"
+status = "done"
+category = "fixed"

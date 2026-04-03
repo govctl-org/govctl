@@ -110,7 +110,7 @@ pub struct PathsConfig {
     #[serde(default = "default_docs_output")]
     pub docs_output: PathBuf,
     /// AI agent directory (Claude, Cursor, Windsurf, etc.)
-    /// Contains commands/, skills/, agents/ subdirs
+    /// Contains skills/ and agents/ subdirs, written by `init-skills`
     #[serde(default = "default_agent_dir")]
     pub agent_dir: PathBuf,
 }
@@ -373,8 +373,9 @@ name = "my-project"
 
 [paths]
 docs_output = "docs"
-# AI agent directory (contains commands/, skills/, agents/ subdirs)
-# Default: ".claude" (Claude Desktop)
+# AI agent directory — target for `govctl init-skills`
+# Contains skills/ and agents/ subdirs
+# Default: ".claude" (Claude Code / Claude Desktop)
 # For Cursor: ".cursor"
 # For Windsurf: ".windsurf"
 # agent_dir = ".claude"
@@ -393,6 +394,12 @@ version = {schema_version}
 # Enable project-level default verification guards.
 # enabled = true
 # default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
+
+# [source_scan]
+# Scan source files for [[artifact-id]] references during `govctl check`
+# enabled = false
+# include = ["src/**/*.rs", "crates/**/*.rs", "**/*.md"]
+# exclude = []
 
 # [concurrency]
 # Maximum seconds to wait for exclusive lock before failing (default: 30)
