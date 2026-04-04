@@ -3,6 +3,11 @@
 [govctl]
 
 [[releases]]
+version = "0.7.6"
+date = "2026-04-04"
+refs = ["WI-2026-04-04-001"]
+
+[[releases]]
 version = "0.7.5"
 date = "2026-04-02"
 refs = ["WI-2026-04-02-001"]

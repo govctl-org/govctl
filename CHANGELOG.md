@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.7.6] - 2026-04-04
+
 ### Fixed
 
 - agent_dir doc comment no longer mentions commands/ (WI-2026-04-04-001)
