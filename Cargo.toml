@@ -12,6 +12,7 @@ readme = "README.md"
 keywords = ["governance", "rfc", "cli", "adr", "specification"]
 categories = ["command-line-utilities", "development-tools"]
 include = [
+    ".claude/.claude-plugin/*",
     ".claude/agents/*",
     ".claude/skills/**/*",
     "gov/schema/*.json",

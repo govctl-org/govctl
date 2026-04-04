@@ -132,7 +132,7 @@ Clause text should contain only the specification prose, rationale, and `[[...]]
 
 | Mistake                                        | Fix                                                                   |
 | ---------------------------------------------- | --------------------------------------------------------------------- |
-| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return a descriptive validation error to the caller"   |
+| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return a descriptive validation error to the caller"  |
 | No rationale                                   | Add `**Rationale:**` section explaining why                           |
 | Untestable requirement                         | Rewrite so it can be verified programmatically                        |
 | Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                            |

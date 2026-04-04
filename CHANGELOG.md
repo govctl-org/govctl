@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- clarify RFC ADR and work item authority boundaries across skills and guides (WI-2026-04-04-002)
+- update writer and reviewer prompts to detect artifact-role drift (WI-2026-04-04-002)
+- bundle and stamp plugin manifest metadata in release packaging (WI-2026-04-04-002)
+
 ## [0.7.6] - 2026-04-04
 
 ### Fixed

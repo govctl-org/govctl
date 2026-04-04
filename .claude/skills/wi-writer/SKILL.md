@@ -185,13 +185,13 @@ This ensures validation is an explicit gate, not an afterthought.
 
 ## Common Mistakes
 
-| Mistake                          | Fix                                                         |
-| -------------------------------- | ----------------------------------------------------------- |
-| Missing category prefix          | Always use `add:`, `fix:`, `chore:`, etc.                   |
-| Placeholder description left in  | Replace immediately with real description                   |
-| Vague criteria: "Feature works"  | Specific: "add: CLI returns exit code 0 on success"         |
-| No `chore:` criterion            | Add "chore: govctl check passes" or "chore: all tests pass" |
-| No refs to governing artifacts   | Link RFCs/ADRs with `work add <WI-ID> refs`                 |
-| Description used for tracking    | Use journal field for execution progress per ADR-0026       |
-| No journal entries for long task | Add journal entries for significant progress updates        |
-| Work item invents new requirements | Move those requirements into an RFC or ADR first          |
+| Mistake                            | Fix                                                         |
+| ---------------------------------- | ----------------------------------------------------------- |
+| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                   |
+| Placeholder description left in    | Replace immediately with real description                   |
+| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"         |
+| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass" |
+| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                 |
+| Description used for tracking      | Use journal field for execution progress per ADR-0026       |
+| No journal entries for long task   | Add journal entries for significant progress updates        |
+| Work item invents new requirements | Move those requirements into an RFC or ADR first            |

@@ -97,9 +97,11 @@ bump new_version:
     # 1. Update Cargo.toml
     sed -i '' "s/^version = \".*\"/version = \"{{new_version}}\"/" Cargo.toml
     cargo check --quiet 2>/dev/null || true  # refresh Cargo.lock
-    # 2. Stamp plugin
+    # 2. Stamp plugin manifests
     jq --arg v "{{new_version}}" '.plugins[0].version = $v' .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
     mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
+    jq --arg v "{{new_version}}" '.version = $v' .claude/.claude-plugin/plugin.json > .claude/.claude-plugin/plugin.json.tmp
+    mv .claude/.claude-plugin/plugin.json.tmp .claude/.claude-plugin/plugin.json
     # 3. flake.nix reads from Cargo.toml automatically
     # 4. Update gov/releases.toml
     cargo run --quiet -- release {{new_version}}
