@@ -33,6 +33,7 @@ When invoked:
 - [ ] Reasons are numbered and specific — not "because it's better"
 - [ ] Decision is concrete enough to guide implementation without turning into a work-item execution log
 - [ ] Decision is proportional to the problem (not over-engineered)
+- [ ] Decision explains the chosen approach and why, without turning into a normative mini-RFC
 
 ### Consequences Honesty
 
@@ -53,6 +54,7 @@ When invoked:
 - [ ] Links to related RFCs/ADRs that constrained or informed the decision
 - [ ] Content fields use `[[artifact-id]]` syntax for cross-references
 - [ ] `refs` field uses plain IDs (not `[[...]]` syntax)
+- [ ] ADR does not drift into task planning, journal-style implementation updates, or closure checklists
 
 ## Output Contract
 
@@ -73,4 +75,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failure modes are an empty or dishonest Negative section and ADRs that drift into execution tracking. If the review finds either, flag it as Critical.
+The most common failure modes are an empty or dishonest Negative section, ADRs that drift into execution tracking, and ADRs that try to act like mini-RFCs. If the review finds any of those, flag them as Critical.

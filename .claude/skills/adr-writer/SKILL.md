@@ -14,6 +14,11 @@ Write ADRs that clearly capture context, decisions, and consequences.
 This helper skill may be used standalone or by `/discuss`, `/gov`, `/spec`, or `/migrate`.
 It is responsible for ADR content structure and quality, not ADR lifecycle verbs. Use `/spec` or `/gov` for `govctl adr accept`, `reject`, or `supersede`.
 
+## Authority
+
+ADRs explain decisions: why one option was chosen over others, under what constraints, and with what consequences.
+They are justificatory artifacts, not normative mini-RFCs and not work-item execution logs.
+
 ## Quick Reference
 
 ```bash
@@ -73,7 +78,7 @@ We will **[action]** because:
 
 ### Implementation Notes
 
-Specific guidance for implementing this decision.
+Specific guardrails for implementing this decision, not a task checklist.
 ```
 
 **Key principle:** Lead with the decision, then justify. Don't bury the answer.
@@ -172,6 +177,21 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 - **Consequences are honest.** Negative section is non-empty with mitigations.
 - **Alternatives are documented.** For new decisions, include at least one rejected option with reason. For historical backfills, document rejected options when known; otherwise state that they were not recoverable.
 - **References link to related artifacts.** Use `[[artifact-id]]` in content fields.
+- **Stay at the decision layer.** Capture the chosen approach and why, not full normative clause text or task-by-task execution detail.
+
+### What Belongs in an ADR
+
+- The problem that required a decision
+- Constraints and decision drivers
+- Alternatives considered and why they were accepted or rejected
+- The chosen approach
+- Positive, negative, and neutral consequences
+
+### What Does Not Belong in an ADR
+
+- Full RFC-style obligation lists
+- Private code structure or language-specific type definitions unless they are central to the design decision itself
+- Work-item plans, journal entries, or implementation progress tracking
 
 ### Content Field Formatting
 
@@ -179,10 +199,10 @@ Use markdown within content fields. Wrap code/technical terms in backticks:
 
 ```
 # Good
-decision = "Use `HashMap<String, Vec<ClauseSpec>>` for clause storage"
+decision = "We will preserve clause insertion order to keep rendered output stable across runs."
 
-# Bad — angle brackets break mdbook rendering
-decision = "Use HashMap<String, Vec<ClauseSpec>> for clause storage"
+# Bad — drifts into language-specific representation
+decision = "Use `HashMap<String, Vec<ClauseSpec>>` for clause storage"
 ```
 
 ## Rendering Rules
@@ -208,3 +228,5 @@ Content fields should contain only the body prose and `[[...]]` references.
 | Vague context: "We need to decide"    | Specific: "RFC-0002 requires X but doesn't specify how"  |
 | Decision buried in prose              | Lead with "We will **action**"                           |
 | Missing refs                          | Link to RFCs/ADRs that constrain the decision            |
+| ADR turns into a mini-RFC             | Move obligation details into an RFC                      |
+| ADR turns into a task plan            | Move execution detail into a work item                   |

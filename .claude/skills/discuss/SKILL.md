@@ -13,6 +13,8 @@ Facilitate a design discussion about: `$ARGUMENTS`
 
 **Outputs:** Draft RFC and/or proposed ADR, then handoff to `/spec` or `/gov` as appropriate.
 
+**Artifact roles:** RFCs define obligations, ADRs explain decisions, and work items track execution. Keep those authority boundaries intact while drafting.
+
 ---
 
 ## QUICK REFERENCE
@@ -55,6 +57,7 @@ govctl check                              # Validate all artifacts
 7. **Reference format** — Always use `[[artifact-id]]` syntax when referencing artifacts (e.g., `[[RFC-0001]]`, `[[RFC-0001:C-FOO]]`) — in content fields AND code comments
 8. **No lifecycle verbs** — `accept`, `finalize`, `advance`, and `bump` belong to `/spec` or `/gov`
 9. **No raw VCS here** — If draft artifacts should be recorded, hand off to `/commit`
+10. **Keep artifact roles clean** — RFCs describe externally relevant behavior and constraints, ADRs describe trade-offs and rationale, and work items do not belong in this workflow
 
 ---
 
@@ -101,6 +104,12 @@ Parse `$ARGUMENTS` and classify:
 | **Amendment**         | "RFC-NNNN should change because..."          | RFC amendment                 |
 | **Deprecation**       | "Deprecate X", "Remove Y behavior"           | RFC amendment                 |
 | **Both**              | Complex feature with architectural decisions | RFC + ADR(s)                  |
+
+Use the authority test when drafting:
+
+- If the statement answers "what must be true?" -> RFC
+- If it answers "why this option?" -> ADR
+- If it answers "what are we doing right now?" -> not this workflow; that belongs in a work item
 
 ### 1.2 Discussion Phase
 

@@ -64,6 +64,7 @@ govctl render
    - `notes`: durable learnings; record constraints, decisions, retry rules, and failure causes
 8. Avoid loops. If the same approach already failed, do not repeat it unchanged.
 9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
+10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description`, `journal`, or `notes`.
 
 ## Working Memory
 

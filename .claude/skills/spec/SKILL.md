@@ -13,6 +13,8 @@ Use this workflow for spec-only governance work: refine or accept ADRs, clarify 
 
 **Outputs:** Updated governance artifacts, completed artifact review, and validated rendered governance state.
 
+**Artifact roles:** RFCs define obligations, ADRs explain decisions, and work items track execution. `/spec` only maintains the first two.
+
 ## Critical Rules
 
 1. Artifact-only scope. Do not write implementation code in this workflow.
@@ -23,6 +25,7 @@ Use this workflow for spec-only governance work: refine or accept ADRs, clarify 
 6. Never edit governed files directly. Use `govctl` verbs only.
 7. Validate with `govctl check`, and run `govctl render` when rendered docs should change.
 8. Use `/commit` for raw VCS operations. This workflow defines what to record, not how to invoke VCS directly.
+9. Do not let RFCs absorb implementation structure or let ADRs absorb work-item execution details. Preserve artifact roles while editing.
 
 ## Quick Reference
 

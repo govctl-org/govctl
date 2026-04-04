@@ -53,6 +53,8 @@ When invoked:
 - [ ] Backward compatibility impact is documented if modifying existing RFC
 - [ ] Clarification-only updates do not silently change behavior; if semantics change, the RFC versioning and rationale reflect that
 - [ ] Draft stays at the specification level; execution logs or task-progress notes are not mixed into the RFC
+- [ ] Draft does not embed language-specific implementation structure (`struct`, `enum`, field inventories, helper signatures) unless those details are themselves the external contract
+- [ ] Draft defines obligations, not implementation representation choices
 
 ## Output Contract
 
@@ -73,4 +75,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-Focus on substance, not style. Flag real problems — missing requirements, untestable clauses, vague normative language, or workflow chatter mixed into the spec. Don't nitpick formatting.
+Focus on substance, not style. Flag real problems — missing requirements, untestable clauses, vague normative language, implementation-detail leakage, or workflow chatter mixed into the spec. Don't nitpick formatting.

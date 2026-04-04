@@ -14,6 +14,11 @@ Write work items with clear descriptions and actionable acceptance criteria.
 This helper skill may be used standalone or by `/gov`, `/quick`, or `/commit`.
 It is responsible for work-item content quality and field semantics, not code changes or VCS operations.
 
+## Authority
+
+Work items track execution: what this task is doing, what happened, and what remains before closure.
+They are operational memory, not normative authority and not decision records.
+
 ## Quick Reference
 
 ```bash
@@ -47,6 +52,7 @@ Replace the placeholder immediately. One paragraph explaining:
 - Any relevant context
 
 **Important:** Description is for task scope, NOT execution tracking. Use `journal` for progress and outcomes, and `notes` for durable learnings.
+It must not introduce new product behavior requirements that are missing from the governing RFC or ADR.
 
 ### Journal
 
@@ -88,6 +94,8 @@ Notes are concise points recorded anytime, not just at completion. Use for:
 - Why an approach failed
 - What not to retry
 - Constraints or decisions future steps must obey
+
+These notes may explain local execution constraints, but they do not override RFCs or accepted ADRs.
 
 ```bash
 govctl work add <WI-ID> notes "Remember to update migration guide"
@@ -140,6 +148,7 @@ govctl work add <WI-ID> refs ADR-0023
 | `acceptance_criteria` | Completion criteria        | Define then tick                              |
 
 **Per ADR-0026:** Keep description focused on "what", journal on "what happened", and notes on "what to remember next".
+If you discover a missing requirement or unresolved design choice, stop and route that back to RFC/ADR work rather than inventing it inside the work item.
 
 ## Writing Rules
 
@@ -185,3 +194,4 @@ This ensures validation is an explicit gate, not an afterthought.
 | No refs to governing artifacts   | Link RFCs/ADRs with `work add <WI-ID> refs`                 |
 | Description used for tracking    | Use journal field for execution progress per ADR-0026       |
 | No journal entries for long task | Add journal entries for significant progress updates        |
+| Work item invents new requirements | Move those requirements into an RFC or ADR first          |

@@ -14,6 +14,11 @@ Write RFCs that are precise, complete, and follow govctl conventions.
 This helper skill may be used standalone or by `/discuss`, `/gov`, `/spec`, or `/migrate`.
 It is responsible for RFC content and clause quality, not RFC lifecycle verbs. Use `/spec` or `/gov` for `govctl rfc finalize`, `bump`, or `advance`.
 
+## Authority
+
+RFCs define obligations: what behavior, invariants, interfaces, and compatibility rules MUST be true.
+They are normative artifacts, not design diaries, code sketches, or task plans.
+
 ## Quick Reference
 
 ```bash
@@ -80,6 +85,23 @@ Use these keywords in ALL CAPS in normative clauses:
 - **One requirement per sentence.** Don't chain MUST/SHOULD in a single sentence.
 - **Reference existing artifacts.** Use `[[RFC-NNNN]]` or `[[ADR-NNNN]]` syntax.
 - **Testable.** Each MUST/SHOULD should be verifiable — if you can't test it, rewrite it.
+- **Stay implementation-agnostic.** Describe externally relevant behavior or constraints, not language-specific type layouts or private code structure.
+
+### What Belongs in an RFC
+
+- Externally observable behavior
+- Validation and error semantics
+- Lifecycle and compatibility rules
+- External schemas, protocol fields, storage formats, or CLI surface that users/scripts depend on
+
+### What Does Not Belong in an RFC
+
+- Rust/TypeScript/Python type declarations
+- Private struct field lists or enum variant names
+- Function signatures, module layout, helper names
+- Work-item execution plans, step sequencing, or journal-style progress notes
+
+Only include representation details when they are themselves the external contract.
 
 ### Clause Naming
 
@@ -110,10 +132,12 @@ Clause text should contain only the specification prose, rationale, and `[[...]]
 
 | Mistake                                        | Fix                                                                   |
 | ---------------------------------------------- | --------------------------------------------------------------------- |
-| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return `Result<T, E>` with descriptive error message" |
+| Vague MUST: "MUST handle errors appropriately" | Specific: "MUST return a descriptive validation error to the caller"   |
 | No rationale                                   | Add `**Rationale:**` section explaining why                           |
 | Untestable requirement                         | Rewrite so it can be verified programmatically                        |
 | Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                            |
+| Rust/TS type layout in the clause              | Rewrite it as semantic requirements or an external contract           |
+| Work-plan language in the clause               | Move execution details to a work item                                 |
 | Including `Since:` in clause text              | Don't — the renderer adds it from the `since` field automatically     |
 | Including clause heading in text               | Don't — the renderer generates `### [RFC:C-NAME] Title` from metadata |
 

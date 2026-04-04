@@ -110,6 +110,26 @@ Reverse transitions are forbidden.
 
 Execution MUST NOT begin on new features until RFC is normative.
 
+### Artifact Roles
+
+Treat governance artifacts by authority, not by document size:
+
+- **RFC** defines obligations: what behavior, invariants, interfaces, and compatibility rules MUST be true.
+- **ADR** explains decisions: why one option was chosen over others, under what constraints, and with what consequences.
+- **Work Item** tracks execution: what this task is doing, what happened, and what remains before closure.
+
+Use these boundaries consistently:
+
+- RFCs are normative and long-lived. They must stay valid even if the implementation language or internal representation changes.
+- ADRs are justificatory and long-lived. They explain design choice and consequences, not task execution.
+- Work items are operational and task-scoped. They must not introduce new normative behavior or replace missing RFC/ADR content.
+
+Never blur these roles:
+
+- Do not put language-specific type definitions, private field layouts, function signatures, or module organization into RFCs unless they are part of an external wire/storage contract.
+- Do not turn ADRs into mini-RFCs or implementation plans.
+- Do not use work item `description`, `journal`, or `notes` as normative authority.
+
 ---
 
 ## 5. CLI Reference

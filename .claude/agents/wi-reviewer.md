@@ -26,6 +26,7 @@ When invoked:
 - [ ] Describes _what_ will be done and _why_
 - [ ] Is not being used as an execution log
 - [ ] Technical terms are wrapped in backticks
+- [ ] Does not introduce new product requirements or design decisions that belong in an RFC or ADR
 
 ### Working Memory Fields
 
@@ -55,6 +56,7 @@ When invoked:
 - [ ] Links to governing RFCs/ADRs where applicable
 - [ ] If implementing an RFC, the RFC ID is in refs
 - [ ] If following an ADR, the ADR ID is in refs
+- [ ] If the work depends on requirements or decisions not yet captured in refs, the work item flags that gap instead of inventing authority locally
 
 ### Scope
 
@@ -81,4 +83,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", and description fields that were abused as execution logs. Flag those as Critical.
+The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", description fields that were abused as execution logs, and work items that invent requirements locally. Flag those as Critical.
