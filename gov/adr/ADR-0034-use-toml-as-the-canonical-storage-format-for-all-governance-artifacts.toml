@@ -3,9 +3,16 @@
 [govctl]
 id = "ADR-0034"
 title = "Use TOML as the canonical storage format for all governance artifacts"
-status = "proposed"
+status = "accepted"
 date = "2026-03-16"
-refs = ["ADR-0001", "ADR-0014", "ADR-0031", "ADR-0032", "RFC-0000", "RFC-0002"]
+refs = [
+    "ADR-0001",
+    "ADR-0014",
+    "ADR-0031",
+    "ADR-0032",
+    "RFC-0000",
+    "RFC-0002",
+]
 
 [content]
 context = """

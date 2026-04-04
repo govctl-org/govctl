@@ -1,0 +1,52 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-04-002"
+title = "Clarify governance artifact boundaries and bundle plugin manifest metadata"
+status = "done"
+created = "2026-04-04"
+started = "2026-04-04"
+completed = "2026-04-04"
+refs = [
+    "ADR-0028",
+    "ADR-0033",
+]
+
+[content]
+description = """
+Track the April 2026 governance documentation cleanup that clarified the distinct authority of RFCs, ADRs, and work items across skills, agents, and the top-level agent guide, and the follow-up packaging change that bundles Claude Code plugin manifest metadata inside the distributed `.claude` payload.
+
+Scope:
+1. Clarify that RFCs define obligations, ADRs explain decisions, and work items track execution.
+2. Update writer skills and reviewer agents to detect authority-boundary drift and implementation-detail leakage.
+3. Bundle plugin manifest metadata and ensure release tooling stamps both marketplace and bundled plugin manifests."""
+
+[[content.journal]]
+date = "2026-04-04"
+scope = "governance"
+content = """
+Completed the April 2026 governance follow-up in two commits:
+- `5aeda1a2` clarified artifact authority boundaries across `CLAUDE.md`, workflow skills, writer skills, and reviewer agents so RFCs define obligations, ADRs explain decisions, and work items track execution.
+- `fae9af25` added the bundled Claude Code plugin manifest, included it in crate packaging, and updated `just bump` to stamp both plugin manifests.
+
+Validation: `govctl check` passes."""
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "bundle and stamp plugin manifest metadata in release packaging"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "update writer and reviewer prompts to detect artifact-role drift"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "clarify RFC ADR and work item authority boundaries across skills and guides"
+status = "done"
+category = "changed"
