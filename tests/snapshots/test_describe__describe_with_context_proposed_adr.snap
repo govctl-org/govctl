@@ -1,5 +1,6 @@
 ---
 source: tests/test_describe.rs
+assertion_line: 114
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl adr new Test Decision
@@ -206,9 +207,9 @@ $ govctl describe --context
     },
     {
       "name": "edit",
-      "purpose": "Edit clause text",
-      "when_to_use": "To update normative clause content. Use --stdin for multi-line text.",
-      "example": "govctl clause edit RFC-0001:C-SCOPE --stdin",
+      "purpose": "Edit clause fields",
+      "when_to_use": "To update clause text or metadata. Use path-first edit form; --stdin works well for multi-line text.",
+      "example": "govctl clause edit RFC-0001:C-SCOPE text --stdin",
       "prerequisites": [
         "Clause must exist"
       ]

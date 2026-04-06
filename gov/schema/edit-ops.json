@@ -346,7 +346,7 @@
       "artifact": "clause",
       "name": "text",
       "get": { "path": ["text"], "render": "scalar" },
-      "set": null,
+      "set": { "path": ["text"], "mode": { "type": "string" } },
       "list_path": null
     },
     {

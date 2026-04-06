@@ -566,36 +566,74 @@ EXAMPLES:
         /// Field name (omit to show all)
         field: Option<String>,
     },
-    /// Edit clause text
+    /// Canonical path-first clause edit entrypoint
+    #[command(after_help = "\
+EXAMPLES:
+    govctl clause edit RFC-0001:C-SUMMARY text --set \"Updated clause text\"
+    govctl clause edit RFC-0001:C-SUMMARY text --stdin
+    govctl clause edit RFC-0001:C-SUMMARY title --set \"New Title\"
+    govctl clause edit RFC-0001:C-SUMMARY kind --set informative
+
+LEGACY SUGAR:
+    govctl clause edit RFC-0001:C-SUMMARY --text \"Updated clause text\"
+    govctl clause edit RFC-0001:C-SUMMARY --stdin
+")]
     Edit {
         /// Clause ID
         id: String,
-        /// Set text directly
+        /// Canonical field path (`text`, `title`, `kind`, or `anchors`)
+        path: Option<String>,
+        /// Set a scalar value (omit VALUE only when using --stdin)
+        #[arg(long, group = "clause_edit_action", num_args = 0..=1, default_missing_value = "")]
+        set: Option<String>,
+        /// Append a value to a list (omit VALUE only when using --stdin)
+        #[arg(long, group = "clause_edit_action", num_args = 0..=1, default_missing_value = "")]
+        add: Option<String>,
+        /// Remove a matching value, or omit PATTERN when removing an indexed path
+        #[arg(long, group = "clause_edit_action", num_args = 0..=1, default_missing_value = "")]
+        remove: Option<String>,
+        /// Update checklist-style item status
+        #[arg(long, group = "clause_edit_action")]
+        tick: Option<TickStatus>,
+        /// Read set/add value from stdin
+        #[arg(long)]
+        stdin: bool,
+        /// Match by index for remove/tick
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match for remove/tick
+        #[arg(long)]
+        exact: bool,
+        /// Regex match for remove/tick
+        #[arg(long)]
+        regex: bool,
+        /// Remove all matches
+        #[arg(long)]
+        all: bool,
+        /// Legacy sugar: set text directly
         #[arg(long, group = "text_source")]
         text: Option<String>,
-        /// Read text from file
+        /// Legacy sugar: read text from file
         #[arg(long, group = "text_source")]
         text_file: Option<PathBuf>,
-        /// Read text from stdin (recommended for multi-line)
-        #[arg(long, group = "text_source")]
-        stdin: bool,
     },
     /// Set clause field value
     #[command(after_help = "\
 VALID FIELDS:
-  String fields (use 'set'):
+  String fields (use 'set' or `edit ... --set`):
     - title: Clause title
     - kind: Clause kind (normative|informative)
+    - text: Clause text content
 
-  Array fields (modify via the clause source file directly):
-    - anchors
+  Array fields (use 'add' / 'remove' or `edit ... --add/--remove`):
+    - anchors: Cross-reference anchors
 
 EXAMPLES:
     govctl clause set RFC-0001:C-SUMMARY title \"New Title\"
     govctl clause set RFC-0001:C-SUMMARY kind informative
+    govctl clause set RFC-0001:C-SUMMARY text --stdin
 
 Use dedicated verbs instead of `set` for:
-    - text → `govctl clause edit`
     - status / superseded_by → `govctl clause deprecate` / `govctl clause supersede`
     - since → `govctl rfc bump` / `govctl rfc finalize`
 ")]

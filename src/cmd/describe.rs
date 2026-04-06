@@ -223,9 +223,11 @@ fn command_catalog() -> Vec<CommandInfo> {
         },
         CommandInfo {
             name: "edit".to_string(),
-            purpose: "Edit clause text".to_string(),
-            when_to_use: "To update normative clause content. Use --stdin for multi-line text.".to_string(),
-            example: "govctl clause edit RFC-0001:C-SCOPE --stdin".to_string(),
+            purpose: "Edit clause fields".to_string(),
+            when_to_use:
+                "To update clause text or metadata. Use path-first edit form; --stdin works well for multi-line text."
+                    .to_string(),
+            example: "govctl clause edit RFC-0001:C-SCOPE text --stdin".to_string(),
             prerequisites: vec!["Clause must exist".to_string()],
         },
         CommandInfo {

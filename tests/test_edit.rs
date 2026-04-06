@@ -218,6 +218,39 @@ fn test_clause_set_text() {
 }
 
 #[test]
+fn test_clause_edit_text_canonical() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "text",
+                "--set",
+                "Updated clause text",
+            ],
+            &["clause", "show", "RFC-0001:C-TEST"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
 fn test_clause_set_title() {
     let temp_dir = init_project();
     let date = today();
@@ -237,6 +270,39 @@ fn test_clause_set_title() {
                 "normative",
             ],
             &["clause", "set", "RFC-0001:C-TEST", "title", "New Title"],
+            &["clause", "show", "RFC-0001:C-TEST"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_clause_edit_title_canonical() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Original Title",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "title",
+                "--set",
+                "New Title",
+            ],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
     );
@@ -300,8 +366,9 @@ fn test_clause_set_since_rejected() {
 }
 
 #[test]
-fn test_clause_set_text_rejected() {
+fn test_clause_set_text_sugar() {
     let temp_dir = init_project();
+    let date = today();
 
     let output = run_commands(
         temp_dir.path(),
@@ -318,10 +385,10 @@ fn test_clause_set_text_rejected() {
                 "normative",
             ],
             &["clause", "set", "RFC-0001:C-TEST", "text", "new text"],
+            &["clause", "show", "RFC-0001:C-TEST"],
         ],
     );
-    assert!(output.contains("error[E0804]"), "output: {}", output);
-    assert!(output.contains("govctl clause edit"), "output: {}", output);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
 #[test]

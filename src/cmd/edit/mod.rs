@@ -479,7 +479,6 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> an
             _ => None,
         },
         ArtifactType::Clause => match fp.as_simple() {
-            Some("text") => Some("Clause text is edit-owned. Use `govctl clause edit`."),
             Some("status") => Some(
                 "Clause status is lifecycle-owned. Use `govctl clause deprecate` or `govctl clause supersede`.",
             ),

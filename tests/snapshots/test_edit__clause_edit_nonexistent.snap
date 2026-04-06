@@ -1,5 +1,6 @@
 ---
 source: tests/test_edit.rs
+assertion_line: 435
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl rfc new Test RFC
