@@ -23,6 +23,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - diagnostics for the converted paths use explicit DiagnosticCode values and preserve stable formatting for automation (WI-2026-04-06-004)
 - cargo test -q and cargo run --quiet -- check pass after the diagnostic cleanup (WI-2026-04-06-004)
 - direct CLI command paths no longer emit uncoded anyhow temporary errors for expected user-facing failures (WI-2026-04-06-004)
+- add regression coverage for canonical edit/runtime/router branches introduced by ADR-0037 (WI-2026-04-06-005)
+- add regression coverage for ADR v3 migration edge cases and structured consequence parsing (WI-2026-04-06-005)
+- cargo test -q and cargo run --quiet -- check pass after the coverage-focused regression additions (WI-2026-04-06-005)
+- regression tests cover prose-plus-code-block migration and mitigation attachment semantics (WI-2026-04-06-006)
+- currently affected migrated ADRs are normalized and cargo run --quiet -- check passes (WI-2026-04-06-006)
+- legacy ADR markdown consequence blocks migrate into single semantic entries instead of per-line fragments (WI-2026-04-06-006)
 
 ## [0.7.7] - 2026-04-04
 

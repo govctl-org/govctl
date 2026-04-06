@@ -1,0 +1,36 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-06-006"
+title = "Harden ADR migration markdown consequences parsing"
+status = "done"
+created = "2026-04-06"
+started = "2026-04-06"
+completed = "2026-04-06"
+refs = [
+    "ADR-0036",
+    "ADR-0032",
+]
+
+[content]
+description = "Scope: make ADR v2->v3 migration parse legacy markdown consequences as semantic blocks instead of line-by-line fragments, and repair already-migrated ADRs that were split incorrectly. Why: migration prose and fenced code blocks currently get expanded into many separate negative consequences, which distorts the ADR model and rendered output."
+
+[[content.journal]]
+date = "2026-04-06"
+scope = "implementation"
+content = "Replaced the line-oriented legacy consequence splitter with pulldown-cmark-based block parsing, added regression coverage for markdown migration blocks and mitigation attachment, normalized ADR-0018 and ADR-0021, and re-rendered the affected ADR docs; cargo test -q and cargo run --quiet -- check pass."
+
+[[content.acceptance_criteria]]
+text = "regression tests cover prose-plus-code-block migration and mitigation attachment semantics"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "currently affected migrated ADRs are normalized and cargo run --quiet -- check passes"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "legacy ADR markdown consequence blocks migrate into single semantic entries instead of per-line fragments"
+status = "done"
+category = "fixed"

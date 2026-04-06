@@ -40,7 +40,8 @@ fn project_load_error(diags: Vec<Diagnostic>, gov_root: &std::path::Path) -> any
 /// Run the TUI application
 pub fn run(config: &Config) -> Result<()> {
     // Load project data
-    let index = load_project(config).map_err(|diags| project_load_error(diags, &config.gov_root))?;
+    let index =
+        load_project(config).map_err(|diags| project_load_error(diags, &config.gov_root))?;
 
     // Setup terminal
     enable_raw_mode()?;

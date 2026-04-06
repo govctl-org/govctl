@@ -447,6 +447,7 @@ impl CanonicalCommand {
                 | Render { .. }
                 | Migrate
                 | RfcNew { .. }
+                | RfcEdit { .. }
                 | RfcSet { .. }
                 | RfcAdd { .. }
                 | RfcRemove { .. }
@@ -458,11 +459,13 @@ impl CanonicalCommand {
                 | RfcRender { .. }
                 | ClauseNew { .. }
                 | ClauseEdit { .. }
+                | ClauseLegacyEdit { .. }
                 | ClauseSet { .. }
                 | ClauseDelete { .. }
                 | ClauseDeprecate { .. }
                 | ClauseSupersede { .. }
                 | AdrNew { .. }
+                | AdrEdit { .. }
                 | AdrSet { .. }
                 | AdrAdd { .. }
                 | AdrRemove { .. }
@@ -472,6 +475,7 @@ impl CanonicalCommand {
                 | AdrSupersede { .. }
                 | AdrRender { .. }
                 | WorkNew { .. }
+                | WorkEdit { .. }
                 | WorkSet { .. }
                 | WorkAdd { .. }
                 | WorkRemove { .. }
@@ -480,6 +484,7 @@ impl CanonicalCommand {
                 | WorkDelete { .. }
                 | WorkRender { .. }
                 | GuardNew { .. }
+                | GuardEdit { .. }
                 | GuardSet { .. }
                 | GuardAdd { .. }
                 | GuardRemove { .. }
@@ -1623,5 +1628,71 @@ mod tests {
             }
             other => panic!("expected tick action, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_is_write_command_includes_canonical_edit_variants() {
+        assert!(
+            CanonicalCommand::RfcEdit {
+                id: "RFC-0001".to_string(),
+                path: "title".to_string(),
+                action: OwnedEditAction::Set {
+                    value: Some("X".to_string()),
+                    stdin: false,
+                },
+            }
+            .is_write_command()
+        );
+
+        assert!(
+            CanonicalCommand::AdrEdit {
+                id: "ADR-0001".to_string(),
+                path: "decision".to_string(),
+                action: OwnedEditAction::Set {
+                    value: Some("X".to_string()),
+                    stdin: false,
+                },
+                pro: vec![],
+                con: vec![],
+                reject_reason: None,
+            }
+            .is_write_command()
+        );
+
+        assert!(
+            CanonicalCommand::WorkEdit {
+                id: "WI-2026-04-06-001".to_string(),
+                path: "acceptance_criteria[0]".to_string(),
+                action: OwnedEditAction::Tick {
+                    match_opts: OwnedMatchOptions::default(),
+                    status: TickStatus::Done,
+                },
+                category: None,
+                scope: None,
+            }
+            .is_write_command()
+        );
+
+        assert!(
+            CanonicalCommand::GuardEdit {
+                id: "GUARD-0001".to_string(),
+                path: "title".to_string(),
+                action: OwnedEditAction::Set {
+                    value: Some("X".to_string()),
+                    stdin: false,
+                },
+            }
+            .is_write_command()
+        );
+
+        assert!(
+            CanonicalCommand::ClauseLegacyEdit {
+                id: "RFC-0001:C-TEST".to_string(),
+                text: Some("Updated text".to_string()),
+                text_file: None,
+                stdin: false,
+            }
+            .is_write_command()
+        );
     }
 }

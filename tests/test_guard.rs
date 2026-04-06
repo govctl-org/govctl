@@ -83,8 +83,16 @@ fn test_guard_show_json_output() {
         temp_dir.path(),
         &[&["guard", "show", "GUARD-ECHO", "-o", "json"]],
     );
-    assert!(output.contains("\"id\": \"GUARD-ECHO\""), "output: {}", output);
-    assert!(output.contains("\"command\": \"echo hello\""), "output: {}", output);
+    assert!(
+        output.contains("\"id\": \"GUARD-ECHO\""),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("\"command\": \"echo hello\""),
+        "output: {}",
+        output
+    );
 }
 
 #[test]

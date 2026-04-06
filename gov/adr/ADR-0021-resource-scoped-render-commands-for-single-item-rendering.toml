@@ -94,25 +94,15 @@ text = "**Two entry points for render**: Global (bulk) and resource-scoped (sing
 text = "Mitigation: Clear purpose split makes this a feature, not a bug"
 
 [[content.consequences.negative]]
-text = "### Migration"
+text = """**Migration**: Users must update any scripts that still use the removed global `--rfc-id` form.
 
-[[content.consequences.negative]]
-text = "```bash"
+```bash
+# Old syntax (removed)
+govctl render rfc --rfc-id RFC-0001
 
-[[content.consequences.negative]]
-text = "# Old syntax (removed)"
-
-[[content.consequences.negative]]
-text = "govctl render rfc --rfc-id RFC-0001"
-
-[[content.consequences.negative]]
-text = "# New syntax"
-
-[[content.consequences.negative]]
-text = "govctl rfc render RFC-0001"
-
-[[content.consequences.negative]]
-text = "```"
+# New syntax
+govctl rfc render RFC-0001
+```"""
 
 [[content.alternatives]]
 text = "Add --adr-id and --work-id flags to global render: Proliferates flags, violates 'one way' principle"

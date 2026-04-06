@@ -7,6 +7,7 @@ mod common;
 use common::{init_project, run_commands, today};
 use std::fs;
 use std::process::Command;
+use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::{Duration, Instant};
 
@@ -324,5 +325,117 @@ fn test_write_command_without_init_reports_missing_gov_root() {
     let output = run_commands(temp_dir.path(), &[&["work", "new", "Needs init"]]);
     assert!(output.contains("exit: 1"), "output: {}", output);
     assert!(output.contains("error[E0502]"), "output: {}", output);
-    assert!(output.contains("Run 'govctl init' first"), "output: {}", output);
+    assert!(
+        output.contains("Run 'govctl init' first"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
+fn test_concurrent_tick_commands_persist_all_acceptance_criteria_updates() {
+    let temp_dir = init_project();
+    create_config_with_timeout(temp_dir.path(), 30);
+
+    let today = today();
+    let wi_id = format!("WI-{today}-001");
+
+    let create_output = run_commands(
+        temp_dir.path(),
+        &[&["work", "new", "Concurrent tick persistence", "--active"]],
+    );
+    assert!(
+        create_output.contains(&wi_id),
+        "expected work item id in output: {create_output}"
+    );
+
+    let setup_output = run_commands(
+        temp_dir.path(),
+        &[
+            &[
+                "work",
+                "add",
+                wi_id.as_str(),
+                "acceptance_criteria",
+                "test: criterion one",
+            ],
+            &[
+                "work",
+                "add",
+                wi_id.as_str(),
+                "acceptance_criteria",
+                "test: criterion two",
+            ],
+            &[
+                "work",
+                "add",
+                wi_id.as_str(),
+                "acceptance_criteria",
+                "test: criterion three",
+            ],
+        ],
+    );
+    assert!(
+        setup_output.contains("exit: 0"),
+        "setup output: {setup_output}"
+    );
+
+    let barrier = Arc::new(Barrier::new(3));
+    let mut handles = Vec::new();
+    for index in 0..3 {
+        let dir = temp_dir.path().to_path_buf();
+        let wi_id = wi_id.clone();
+        let barrier = Arc::clone(&barrier);
+        handles.push(thread::spawn(move || {
+            barrier.wait();
+            Command::new(env!("CARGO_BIN_EXE_govctl"))
+                .args([
+                    "work",
+                    "edit",
+                    &wi_id,
+                    &format!("acceptance_criteria[{index}]"),
+                    "--tick",
+                    "done",
+                ])
+                .current_dir(dir)
+                .env("NO_COLOR", "1")
+                .env("GOVCTL_DEFAULT_OWNER", "@test-user")
+                .output()
+                .expect("failed to run concurrent tick command")
+        }));
+    }
+
+    for handle in handles {
+        let output = handle.join().expect("tick thread panicked");
+        assert!(
+            output.status.success(),
+            "concurrent tick failed: stdout={} stderr={}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+
+    let get_output = Command::new(env!("CARGO_BIN_EXE_govctl"))
+        .args(["work", "get", &wi_id, "acceptance_criteria"])
+        .current_dir(temp_dir.path())
+        .env("NO_COLOR", "1")
+        .env("GOVCTL_DEFAULT_OWNER", "@test-user")
+        .output()
+        .expect("failed to read acceptance criteria");
+    assert!(
+        get_output.status.success(),
+        "work get failed: stdout={} stderr={}",
+        String::from_utf8_lossy(&get_output.stdout),
+        String::from_utf8_lossy(&get_output.stderr)
+    );
+    let criteria = String::from_utf8_lossy(&get_output.stdout);
+    let done_count = criteria
+        .lines()
+        .filter(|line| line.starts_with("[done]"))
+        .count();
+    assert_eq!(
+        done_count, 3,
+        "expected all criteria to persist as done, got:\n{}",
+        criteria
+    );
 }

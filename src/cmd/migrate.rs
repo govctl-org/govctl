@@ -15,6 +15,7 @@ use crate::schema::{
 };
 use crate::ui;
 use crate::write::{WriteOp, read_clause, read_rfc, write_file};
+use pulldown_cmark::{Event, HeadingLevel, Options, Parser, Tag, TagEnd};
 use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fs;
@@ -619,74 +620,279 @@ fn parse_legacy_consequences(raw: &str) -> AdrConsequences {
         Neutral,
     }
 
-    let mut parsed = AdrConsequences::default();
-    let mut current = None;
-    let mut saw_heading = false;
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum EntryKind {
+        ListItem,
+        BlockGroup,
+    }
 
-    for line in raw.lines() {
-        let trimmed = line.trim();
-        match trimmed {
-            "### Positive" => {
-                current = Some(Section::Positive);
-                saw_heading = true;
-                continue;
-            }
-            "### Negative" => {
-                current = Some(Section::Negative);
-                saw_heading = true;
-                continue;
-            }
-            "### Neutral" => {
-                current = Some(Section::Neutral);
-                saw_heading = true;
-                continue;
-            }
-            _ => {}
-        }
+    #[derive(Clone, Copy)]
+    struct EntryRange {
+        start: usize,
+        end: usize,
+        kind: EntryKind,
+    }
 
-        if trimmed.is_empty() {
-            continue;
-        }
+    fn markdown_options() -> Options {
+        let mut options = Options::empty();
+        options.insert(Options::ENABLE_TABLES);
+        options.insert(Options::ENABLE_STRIKETHROUGH);
+        options.insert(Options::ENABLE_TASKLISTS);
+        options
+    }
 
-        if let Some(rest) = trimmed.strip_prefix("Mitigation: ")
-            && let Some(last) = parsed.negative.last_mut()
-        {
-            last.mitigations.push(rest.to_string());
-            continue;
-        }
-        if let Some(rest) = trimmed.strip_prefix("- Mitigation: ")
-            && let Some(last) = parsed.negative.last_mut()
-        {
-            last.mitigations.push(rest.to_string());
-            continue;
-        }
-
-        if let Some(rest) = trimmed.strip_prefix("- ") {
-            match current {
-                Some(Section::Positive) => parsed.positive.push(rest.to_string()),
-                Some(Section::Neutral) => parsed.neutral.push(rest.to_string()),
-                Some(Section::Negative) => parsed.negative.push(AdrNegativeConsequence {
-                    text: rest.to_string(),
-                    mitigations: vec![],
-                }),
-                None => {}
-            }
-            continue;
-        }
-
-        match current {
-            Some(Section::Positive) => parsed.positive.push(trimmed.to_string()),
-            Some(Section::Neutral) => parsed.neutral.push(trimmed.to_string()),
-            Some(Section::Negative) => parsed.negative.push(AdrNegativeConsequence {
-                text: trimmed.to_string(),
-                mitigations: vec![],
-            }),
-            None => {}
+    fn section_from_heading(text: &str) -> Option<Section> {
+        match text.trim() {
+            "Positive" => Some(Section::Positive),
+            "Negative" => Some(Section::Negative),
+            "Neutral" => Some(Section::Neutral),
+            _ => None,
         }
     }
 
-    if !saw_heading && !raw.trim().is_empty() {
-        parsed.neutral.push(raw.trim().to_string());
+    fn legacy_sections(raw: &str) -> Vec<(Section, &str)> {
+        let mut sections = Vec::new();
+        let mut current: Option<(Section, usize)> = None;
+        let mut heading_level: Option<HeadingLevel> = None;
+        let mut heading_start = 0usize;
+        let mut heading_text = String::new();
+
+        for (event, range) in Parser::new_ext(raw, markdown_options()).into_offset_iter() {
+            match event {
+                Event::Start(Tag::Heading { level, .. }) => {
+                    heading_level = Some(level);
+                    heading_start = range.start;
+                    heading_text.clear();
+                }
+                Event::Text(text) | Event::Code(text)
+                    if heading_level == Some(HeadingLevel::H3) =>
+                {
+                    heading_text.push_str(&text);
+                }
+                Event::End(TagEnd::Heading(level)) if Some(level) == heading_level => {
+                    if level == HeadingLevel::H3
+                        && let Some(section) = section_from_heading(&heading_text)
+                    {
+                        if let Some((previous, start)) = current.take() {
+                            let body = raw[start..heading_start].trim();
+                            if !body.is_empty() {
+                                sections.push((previous, body));
+                            }
+                        }
+                        current = Some((section, range.end));
+                    }
+                    heading_level = None;
+                    heading_text.clear();
+                }
+                _ => {}
+            }
+        }
+
+        if let Some((section, start)) = current {
+            let body = raw[start..].trim();
+            if !body.is_empty() {
+                sections.push((section, body));
+            }
+        }
+
+        sections
+    }
+
+    fn strip_list_marker(item: &str) -> String {
+        let trimmed = item.trim();
+        for prefix in ["- ", "* ", "+ "] {
+            if let Some(rest) = trimmed.strip_prefix(prefix) {
+                return rest.trim().to_string();
+            }
+        }
+        if let Some((number, rest)) = trimmed.split_once(". ")
+            && number.chars().all(|c| c.is_ascii_digit())
+        {
+            return rest.trim().to_string();
+        }
+        trimmed.to_string()
+    }
+
+    fn collect_markdown_entries(section_markdown: &str) -> Vec<(EntryKind, String)> {
+        fn is_root_block_start(tag: &Tag<'_>) -> bool {
+            matches!(
+                tag,
+                Tag::Paragraph
+                    | Tag::Heading { .. }
+                    | Tag::CodeBlock(_)
+                    | Tag::BlockQuote(_)
+                    | Tag::HtmlBlock
+                    | Tag::Table(_)
+                    | Tag::FootnoteDefinition(_)
+            )
+        }
+
+        let mut entries = Vec::new();
+        let mut current_group: Option<EntryRange> = None;
+        let mut root_list_depth = 0usize;
+        let mut top_level_item_start: Option<usize> = None;
+        let mut block_stack: Vec<(Tag<'_>, bool, bool)> = Vec::new();
+
+        for (event, range) in
+            Parser::new_ext(section_markdown, markdown_options()).into_offset_iter()
+        {
+            match event {
+                Event::Start(tag) => {
+                    let stack_depth = block_stack.len();
+                    let is_top_level_list = matches!(&tag, Tag::List(_)) && stack_depth == 0;
+                    if is_top_level_list {
+                        if let Some(group) = current_group.take() {
+                            entries.push(group);
+                        }
+                        root_list_depth += 1;
+                    }
+
+                    let is_top_level_item =
+                        matches!(&tag, Tag::Item) && root_list_depth == 1 && stack_depth == 1;
+                    if is_top_level_item {
+                        if let Some(group) = current_group.take() {
+                            entries.push(group);
+                        }
+                        top_level_item_start = Some(range.start);
+                    }
+
+                    let is_root_block =
+                        root_list_depth == 0 && stack_depth == 0 && is_root_block_start(&tag);
+                    if is_root_block {
+                        match current_group.as_mut() {
+                            Some(group) => group.end = range.end,
+                            None => {
+                                current_group = Some(EntryRange {
+                                    start: range.start,
+                                    end: range.end,
+                                    kind: EntryKind::BlockGroup,
+                                });
+                            }
+                        }
+                    }
+
+                    block_stack.push((tag, is_root_block, is_top_level_item));
+                }
+                Event::End(end_tag) => {
+                    let Some((start_tag, was_root_block, was_top_level_item)) = block_stack.pop()
+                    else {
+                        continue;
+                    };
+
+                    if was_root_block && let Some(group) = current_group.as_mut() {
+                        group.end = range.end;
+                    }
+
+                    if was_top_level_item
+                        && matches!(end_tag, TagEnd::Item)
+                        && let Some(start) = top_level_item_start.take()
+                    {
+                        entries.push(EntryRange {
+                            start,
+                            end: range.end,
+                            kind: EntryKind::ListItem,
+                        });
+                    }
+
+                    if matches!(start_tag, Tag::List(_)) && root_list_depth > 0 {
+                        root_list_depth -= 1;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if let Some(group) = current_group.take() {
+            entries.push(group);
+        }
+
+        entries
+            .into_iter()
+            .filter_map(|entry| {
+                let raw = section_markdown[entry.start..entry.end].trim();
+                if raw.is_empty() {
+                    None
+                } else {
+                    let text = match entry.kind {
+                        EntryKind::ListItem => strip_list_marker(raw),
+                        EntryKind::BlockGroup => raw.to_string(),
+                    };
+                    Some((entry.kind, text))
+                }
+            })
+            .collect()
+    }
+
+    fn parse_negative_entry(text: String) -> AdrNegativeConsequence {
+        let mut lines = Vec::new();
+        let mut mitigations = Vec::new();
+
+        for line in text.lines() {
+            let trimmed = line.trim();
+            if let Some(rest) = trimmed.strip_prefix("Mitigation: ") {
+                mitigations.push(rest.to_string());
+            } else if let Some(rest) = trimmed.strip_prefix("- Mitigation: ") {
+                mitigations.push(rest.to_string());
+            } else {
+                lines.push(line);
+            }
+        }
+
+        AdrNegativeConsequence {
+            text: lines.join("\n").trim().to_string(),
+            mitigations,
+        }
+    }
+
+    if raw.trim().is_empty() {
+        return AdrConsequences::default();
+    }
+
+    let sections = legacy_sections(raw);
+    if sections.is_empty() {
+        return AdrConsequences {
+            positive: vec![],
+            negative: vec![],
+            neutral: vec![raw.trim().to_string()],
+        };
+    }
+
+    let mut parsed = AdrConsequences::default();
+    for (section, body) in sections {
+        let entries = collect_markdown_entries(body);
+        match section {
+            Section::Positive => {
+                parsed
+                    .positive
+                    .extend(entries.into_iter().map(|(_, text)| text));
+            }
+            Section::Neutral => {
+                parsed
+                    .neutral
+                    .extend(entries.into_iter().map(|(_, text)| text));
+            }
+            Section::Negative => {
+                for (_, text) in entries {
+                    let trimmed = text.trim();
+                    if let Some(rest) = trimmed.strip_prefix("Mitigation: ")
+                        && let Some(last) = parsed.negative.last_mut()
+                    {
+                        last.mitigations.push(rest.to_string());
+                        continue;
+                    }
+                    if let Some(rest) = trimmed.strip_prefix("- Mitigation: ")
+                        && let Some(last) = parsed.negative.last_mut()
+                    {
+                        last.mitigations.push(rest.to_string());
+                        continue;
+                    }
+                    let consequence = parse_negative_entry(text);
+                    if !consequence.text.is_empty() || !consequence.mitigations.is_empty() {
+                        parsed.negative.push(consequence);
+                    }
+                }
+            }
+        }
     }
 
     parsed
@@ -920,6 +1126,21 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_legacy_consequences_keeps_markdown_block_as_one_negative_item() {
+        let parsed = parse_legacy_consequences(
+            "### Negative\n\n- Breaking change\nMitigation: Document the change\n\n### Migration\nUsers need to update:\n\n```bash\nold command\nnew command\n```\n",
+        );
+
+        assert_eq!(parsed.negative.len(), 2);
+        assert_eq!(parsed.negative[0].text, "Breaking change");
+        assert_eq!(parsed.negative[0].mitigations, vec!["Document the change"]);
+        assert_eq!(
+            parsed.negative[1].text,
+            "### Migration\nUsers need to update:\n\n```bash\nold command\nnew command\n```"
+        );
+    }
+
+    #[test]
     fn test_migrate_legacy_adr_promotes_single_accepted_option() {
         let migrated = migrate_legacy_adr(legacy_spec(
             AdrStatus::Accepted,
@@ -942,7 +1163,10 @@ mod tests {
             ],
         ));
 
-        assert_eq!(migrated.content.selected_option.as_deref(), Some("Option A"));
+        assert_eq!(
+            migrated.content.selected_option.as_deref(),
+            Some("Option A")
+        );
         assert!(
             migrated
                 .content
@@ -965,8 +1189,20 @@ mod tests {
             AdrStatus::Accepted,
             "",
             vec![
-                legacy_alternative("Option A", LegacyAlternativeStatus::Accepted, &[], &[], None),
-                legacy_alternative("Option B", LegacyAlternativeStatus::Accepted, &[], &[], None),
+                legacy_alternative(
+                    "Option A",
+                    LegacyAlternativeStatus::Accepted,
+                    &[],
+                    &[],
+                    None,
+                ),
+                legacy_alternative(
+                    "Option B",
+                    LegacyAlternativeStatus::Accepted,
+                    &[],
+                    &[],
+                    None,
+                ),
             ],
         ));
 
