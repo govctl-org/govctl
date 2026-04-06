@@ -4,7 +4,7 @@
 id = "ADR-0038"
 title = "Keep ADR schema discussion-oriented and avoid broad migration"
 status = "accepted"
-date = "2026-04-07"
+date = "2026-04-06"
 refs = [
     "ADR-0027",
     "ADR-0036",

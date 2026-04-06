@@ -223,12 +223,12 @@ fn command_catalog() -> Vec<CommandInfo> {
         },
         CommandInfo {
             name: "edit".to_string(),
-            purpose: "Edit clause fields".to_string(),
+            purpose: "Edit artifact fields via the canonical path-first surface".to_string(),
             when_to_use:
-                "To update clause text or metadata. Use path-first edit form; --stdin works well for multi-line text."
+                "To update RFC, ADR, work item, guard, or clause content fields using `edit <ID> <path> --set/--add/--remove/--tick`."
                     .to_string(),
             example: "govctl clause edit RFC-0001:C-SCOPE text --stdin".to_string(),
-            prerequisites: vec!["Clause must exist".to_string()],
+            prerequisites: vec!["Target artifact must exist".to_string()],
         },
         CommandInfo {
             name: "render".to_string(),

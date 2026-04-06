@@ -52,6 +52,11 @@ impl FieldPath {
         self.segments.last().is_some_and(|s| s.index.is_some())
     }
 
+    /// Return the explicit index on the final segment, if present.
+    pub fn terminal_index(&self) -> Option<i32> {
+        self.segments.last().and_then(|s| s.index)
+    }
+
     /// Normalize aliases on each path segment (`alt` -> `alternatives`, etc.).
     pub fn normalize_aliases(mut self) -> Self {
         for seg in &mut self.segments {

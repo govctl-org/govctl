@@ -8,6 +8,11 @@ use crate::parse::{load_adrs, load_releases, load_work_items};
 use crate::render::{expand_inline_refs_from_root, write_adr_md, write_rfc, write_work_item_md};
 use crate::ui;
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
+
+fn display_path_string(config: &Config, path: impl AsRef<Path>) -> String {
+    config.display_path(path.as_ref()).display().to_string()
+}
 
 /// Render RFC markdown from JSON source
 pub fn render(
@@ -34,7 +39,7 @@ pub fn render(
     if rfcs_to_render.is_empty()
         && let Some(id) = rfc_id
     {
-        let scope = config.display_path(&config.rfc_dir()).display().to_string();
+        let scope = display_path_string(config, config.rfc_dir());
         return Err(Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {id}"),
@@ -81,7 +86,7 @@ pub fn render_adrs(
     if adrs_to_render.is_empty()
         && let Some(id) = adr_id
     {
-        let scope = config.display_path(&config.adr_dir()).display().to_string();
+        let scope = display_path_string(config, config.adr_dir());
         return Err(Diagnostic::new(
             DiagnosticCode::E0302AdrNotFound,
             format!("ADR not found: {id}"),
@@ -509,7 +514,7 @@ pub fn show_rfc(
         .into_iter()
         .find(|r| r.rfc.rfc_id == id)
         .ok_or_else(|| {
-            let scope = config.display_path(&config.rfc_dir()).display().to_string();
+            let scope = display_path_string(config, config.rfc_dir());
             Diagnostic::new(
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {id}"),
@@ -547,7 +552,7 @@ pub fn show_adr(
         .into_iter()
         .find(|a| a.spec.govctl.id == id)
         .ok_or_else(|| {
-            let scope = config.display_path(&config.adr_dir()).display().to_string();
+            let scope = display_path_string(config, config.adr_dir());
             Diagnostic::new(
                 DiagnosticCode::E0302AdrNotFound,
                 format!("ADR not found: {id}"),
@@ -639,7 +644,7 @@ pub fn show_clause(
         .into_iter()
         .find(|r| r.rfc.rfc_id == rfc_id)
         .ok_or_else(|| {
-            let scope = config.display_path(&config.rfc_dir()).display().to_string();
+            let scope = display_path_string(config, config.rfc_dir());
             Diagnostic::new(
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {rfc_id}"),

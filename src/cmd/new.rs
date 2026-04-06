@@ -4,9 +4,9 @@ use crate::NewTarget;
 use crate::config::{Config, IdStrategy};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
-    AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec,
-    ClauseStatus, ClauseWire, RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec,
-    WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
+    AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus,
+    ClauseWire, RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec, WorkItemContent, WorkItemMeta,
+    WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::schema::{ArtifactSchema, with_schema_header};

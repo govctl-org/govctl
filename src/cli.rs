@@ -8,14 +8,14 @@ use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 #[derive(Args, Clone, Debug)]
 pub(crate) struct EditActionArgs {
     /// Set a scalar value (omit VALUE only when using --stdin)
-    #[arg(long, group = "edit_action", num_args = 0..=1, default_missing_value = "")]
-    pub(crate) set: Option<String>,
+    #[arg(long, group = "edit_action", num_args = 0..=1)]
+    pub(crate) set: Option<Option<String>>,
     /// Append a value to a list (omit VALUE only when using --stdin)
-    #[arg(long, group = "edit_action", num_args = 0..=1, default_missing_value = "")]
-    pub(crate) add: Option<String>,
+    #[arg(long, group = "edit_action", num_args = 0..=1)]
+    pub(crate) add: Option<Option<String>>,
     /// Remove a matching value, or omit PATTERN when removing an indexed path
-    #[arg(long, group = "edit_action", num_args = 0..=1, default_missing_value = "")]
-    pub(crate) remove: Option<String>,
+    #[arg(long, group = "edit_action", num_args = 0..=1)]
+    pub(crate) remove: Option<Option<String>>,
     /// Update checklist-style item status
     #[arg(long, group = "edit_action")]
     pub(crate) tick: Option<TickStatus>,
@@ -589,14 +589,14 @@ LEGACY SUGAR:
         /// Canonical field path (`text`, `title`, `kind`, or `anchors`)
         path: Option<String>,
         /// Set a scalar value (omit VALUE only when using --stdin)
-        #[arg(long, group = "clause_edit_action", num_args = 0..=1, default_missing_value = "")]
-        set: Option<String>,
+        #[arg(long, group = "clause_edit_action", num_args = 0..=1)]
+        set: Option<Option<String>>,
         /// Append a value to a list (omit VALUE only when using --stdin)
-        #[arg(long, group = "clause_edit_action", num_args = 0..=1, default_missing_value = "")]
-        add: Option<String>,
+        #[arg(long, group = "clause_edit_action", num_args = 0..=1)]
+        add: Option<Option<String>>,
         /// Remove a matching value, or omit PATTERN when removing an indexed path
-        #[arg(long, group = "clause_edit_action", num_args = 0..=1, default_missing_value = "")]
-        remove: Option<String>,
+        #[arg(long, group = "clause_edit_action", num_args = 0..=1)]
+        remove: Option<Option<String>>,
         /// Update checklist-style item status
         #[arg(long, group = "clause_edit_action")]
         tick: Option<TickStatus>,

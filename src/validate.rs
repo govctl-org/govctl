@@ -109,13 +109,21 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
     }
 
     // Extract RFC ID from source clause (e.g., "RFC-0001:C-NAME" -> "RFC-0001")
-    let source_rfc = ctx.artifact_id.split(':').next().ok_or_else(|| {
+    let (source_rfc, source_clause) = ctx.artifact_id.split_once(':').ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
             format!("Invalid clause ID format: {}", ctx.artifact_id),
             ctx.artifact_id,
         )
     })?;
+    if source_rfc.is_empty() || source_clause.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            format!("Invalid clause ID format: {}", ctx.artifact_id),
+            ctx.artifact_id,
+        )
+        .into());
+    }
 
     // Build full target reference
     let full_target = if target.contains(':') {
@@ -125,13 +133,21 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
     };
 
     // Check target is in same RFC
-    let target_rfc = full_target.split(':').next().ok_or_else(|| {
+    let (target_rfc, target_clause) = full_target.split_once(':').ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
             format!("Invalid target clause ID: {target}"),
             target,
         )
     })?;
+    if target_rfc.is_empty() || target_clause.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            format!("Invalid target clause ID: {target}"),
+            target,
+        )
+        .into());
+    }
 
     if target_rfc != source_rfc {
         return Err(Diagnostic::new(
@@ -337,7 +353,6 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
                 adr_path_display,
             ));
         }
-
     }
 
     // Validate artifact references (refs fields)

@@ -84,11 +84,11 @@ pub struct MatchOptions<'a> {
 #[derive(Debug, Clone)]
 pub enum OwnedEditAction {
     Set {
-        value: Option<String>,
+        value: Option<Option<String>>,
         stdin: bool,
     },
     Add {
-        value: Option<String>,
+        value: Option<Option<String>>,
         stdin: bool,
     },
     Remove {
@@ -249,7 +249,7 @@ fn read_stdin() -> anyhow::Result<String> {
     Ok(buffer.trim_end_matches('\n').to_string())
 }
 
-fn resolve_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
+fn resolve_plain_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
     match (value, stdin) {
         (Some(v), false) => Ok(v.to_string()),
         (None, true) => read_stdin(),
@@ -262,6 +262,31 @@ fn resolve_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
         (Some(_), true) => Err(Diagnostic::new(
             DiagnosticCode::E0802ConflictingArgs,
             "Cannot use both value and --stdin",
+            "input",
+        )
+        .into()),
+    }
+}
+
+fn resolve_owned_value(value: Option<&Option<String>>, stdin: bool) -> anyhow::Result<String> {
+    match (value, stdin) {
+        (Some(Some(v)), false) => Ok(v.clone()),
+        (Some(None), true) => read_stdin(),
+        (Some(None), false) => Err(Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            "Provide a value or use --stdin",
+            "input",
+        )
+        .into()),
+        (Some(Some(_)), true) => Err(Diagnostic::new(
+            DiagnosticCode::E0802ConflictingArgs,
+            "Cannot use both value and --stdin",
+            "input",
+        )
+        .into()),
+        (None, _) => Err(Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            "Provide a value or use --stdin",
             "input",
         )
         .into()),
@@ -406,7 +431,7 @@ pub fn set_field(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
-    let value = resolve_value(value, stdin)?;
+    let value = resolve_plain_value(value, stdin)?;
     apply_set_field(config, id, &fp, artifact, value.as_str(), op, true)?;
 
     if !op.is_preview() {
@@ -611,21 +636,33 @@ pub fn edit_field(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     match action {
         OwnedEditAction::Set { value, stdin } => {
-            set_field(config, id, path, value.as_deref(), *stdin, op)
+            let value = resolve_owned_value(value.as_ref(), *stdin)?;
+            let (artifact, fp) =
+                plan_edit_with_field_for_verb(id, path, Some(edit_rules::Verb::Set))?;
+            apply_set_field(config, id, &fp, artifact, value.as_str(), op, true)?;
+            if !op.is_preview() {
+                let display_field = fp.to_string();
+                ui::field_set(id, &display_field, value.as_str());
+            }
+            Ok(vec![])
         }
-        OwnedEditAction::Add { value, stdin } => add_to_field(
-            config,
-            id,
-            path,
-            value.as_deref(),
-            *stdin,
-            category_override,
-            scope_override,
-            pros,
-            cons,
-            reject_reason,
-            op,
-        ),
+        OwnedEditAction::Add { value, stdin } => {
+            let value = resolve_owned_value(value.as_ref(), *stdin)?;
+            let value = Some(Some(value));
+            add_to_field(
+                config,
+                id,
+                path,
+                value.as_ref(),
+                false,
+                category_override,
+                scope_override,
+                pros,
+                cons,
+                reject_reason,
+                op,
+            )
+        }
         OwnedEditAction::Remove { match_opts } => {
             remove_from_field(config, id, path, &match_opts.as_match_options(), op)
         }
@@ -897,7 +934,7 @@ pub fn add_to_field(
     config: &Config,
     id: &str,
     field: &str,
-    value: Option<&str>,
+    value: Option<&Option<String>>,
     stdin: bool,
     category_override: Option<crate::model::ChangelogCategory>,
     scope_override: Option<&str>,
@@ -907,7 +944,7 @@ pub fn add_to_field(
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Add))?;
-    let value = resolve_value(value, stdin)?;
+    let value = resolve_owned_value(value, stdin)?;
     let value = value.as_str();
     match artifact {
         ArtifactType::Adr => {
@@ -1070,6 +1107,8 @@ pub fn remove_from_field(
     let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
 
     let pattern_provided = opts.pattern.is_some_and(|pattern| !pattern.is_empty());
+    let mut normalized_fp = fp.clone();
+    let mut normalized_opts = opts.clone();
 
     if !fp.is_simple() && fp.has_terminal_index() {
         let has_match_opts =
@@ -1084,30 +1123,57 @@ pub fn remove_from_field(
         }
     }
 
+    if fp.segments.len() == 1 && fp.has_terminal_index() {
+        let simple = fp.segments[0].name.as_str();
+        let index = fp
+            .terminal_index()
+            .expect("simple indexed field path should expose terminal index");
+        if pattern_provided || opts.exact || opts.regex || opts.all {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0818PathIndexConflict,
+                "Cannot combine indexed path with pattern, --exact, --regex, or --all",
+                id,
+            )
+            .into());
+        }
+        if let Some(existing_at) = opts.at
+            && existing_at != index
+        {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0818PathIndexConflict,
+                "Cannot combine indexed path with a different --at value",
+                id,
+            )
+            .into());
+        }
+        normalized_fp = self::path::parse_field_path(simple)?;
+        normalized_opts.at = Some(index);
+    }
+
     match artifact {
         ArtifactType::Adr => remove_toml_field::<AdrTomlAdapter>(
             config,
             id,
-            &fp,
+            &normalized_fp,
             field,
-            opts,
+            &normalized_opts,
             op,
             ArtifactType::Adr,
         )?,
         ArtifactType::WorkItem => remove_toml_field::<WorkTomlAdapter>(
             config,
             id,
-            &fp,
+            &normalized_fp,
             field,
-            opts,
+            &normalized_opts,
             op,
             ArtifactType::WorkItem,
         )?,
         ArtifactType::Rfc => remove_json_simple_list_field::<RfcJsonAdapter>(
             config,
             id,
-            &fp,
-            opts,
+            &normalized_fp,
+            &normalized_opts,
             op,
             ArtifactType::Rfc,
             "RFC fields do not support nested paths for remove",
@@ -1115,8 +1181,8 @@ pub fn remove_from_field(
         ArtifactType::Clause => remove_json_simple_list_field::<ClauseJsonAdapter>(
             config,
             id,
-            &fp,
-            opts,
+            &normalized_fp,
+            &normalized_opts,
             op,
             ArtifactType::Clause,
             "Clause fields do not support nested paths for remove",
@@ -1124,9 +1190,9 @@ pub fn remove_from_field(
         ArtifactType::Guard => remove_toml_field::<GuardTomlAdapter>(
             config,
             id,
-            &fp,
+            &normalized_fp,
             field,
-            opts,
+            &normalized_opts,
             op,
             ArtifactType::Guard,
         )?,

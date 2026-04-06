@@ -121,7 +121,7 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
     let _guard = if canonical.is_write_command() {
         if matches!(canonical, command_router::CanonicalCommand::Init { .. }) {
             let gov_root = config.gov_root.as_path();
-            if !gov_root.exists() {
+            if !op.is_preview() && !gov_root.exists() {
                 std::fs::create_dir_all(gov_root).map_err(|e| {
                     Diagnostic::new(
                         DiagnosticCode::E0901IoError,
@@ -131,7 +131,11 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
                 })?;
             }
         }
-        Some(lock::acquire_gov_lock(&config)?)
+        if op.is_preview() && matches!(canonical, command_router::CanonicalCommand::Init { .. }) {
+            None
+        } else {
+            Some(lock::acquire_gov_lock(&config)?)
+        }
     } else {
         None
     };

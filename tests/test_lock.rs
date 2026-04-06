@@ -5,6 +5,7 @@
 mod common;
 
 use common::{init_project, run_commands, today};
+use serde_json::Value;
 use std::fs;
 use std::process::Command;
 use std::sync::{Arc, Barrier};
@@ -416,26 +417,30 @@ fn test_concurrent_tick_commands_persist_all_acceptance_criteria_updates() {
     }
 
     let get_output = Command::new(env!("CARGO_BIN_EXE_govctl"))
-        .args(["work", "get", &wi_id, "acceptance_criteria"])
+        .args(["work", "show", &wi_id, "-o", "json"])
         .current_dir(temp_dir.path())
         .env("NO_COLOR", "1")
         .env("GOVCTL_DEFAULT_OWNER", "@test-user")
         .output()
-        .expect("failed to read acceptance criteria");
+        .expect("failed to read work item json");
     assert!(
         get_output.status.success(),
-        "work get failed: stdout={} stderr={}",
+        "work show failed: stdout={} stderr={}",
         String::from_utf8_lossy(&get_output.stdout),
         String::from_utf8_lossy(&get_output.stderr)
     );
-    let criteria = String::from_utf8_lossy(&get_output.stdout);
+    let work: Value = serde_json::from_slice(&get_output.stdout).expect("valid work item json");
+    let criteria = work["content"]["acceptance_criteria"]
+        .as_array()
+        .expect("acceptance_criteria array");
     let done_count = criteria
-        .lines()
-        .filter(|line| line.starts_with("[done]"))
+        .iter()
+        .filter(|item| item["status"] == "done")
         .count();
     assert_eq!(
-        done_count, 3,
+        done_count,
+        3,
         "expected all criteria to persist as done, got:\n{}",
-        criteria
+        String::from_utf8_lossy(&get_output.stdout)
     );
 }

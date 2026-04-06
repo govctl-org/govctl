@@ -48,7 +48,8 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
 
     let file = OpenOptions::new()
         .create(true)
-        .truncate(true)
+        .truncate(false)
+        .read(true)
         .write(true)
         .open(&lock_path)
         .map_err(|e| {

@@ -93,6 +93,7 @@ fn test_guard_show_json_output() {
         "output: {}",
         output
     );
+    assert!(output.contains("exit: 0"), "output: {}", output);
 }
 
 #[test]

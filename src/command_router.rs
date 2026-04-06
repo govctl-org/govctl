@@ -23,20 +23,53 @@ use std::path::PathBuf;
 type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 type OwnedEditAction = cmd::edit::OwnedEditAction;
 
+fn conflicting_edit_flag_error(action: &str, flag: &str) -> anyhow::Error {
+    Diagnostic::new(
+        DiagnosticCode::E0802ConflictingArgs,
+        format!("Cannot use {flag} with --{action}"),
+        "edit action",
+    )
+    .into()
+}
+
+fn reject_selector_flags_for_value_action(
+    action: &str,
+    args: &EditActionArgs,
+) -> anyhow::Result<()> {
+    if args.at.is_some() {
+        return Err(conflicting_edit_flag_error(action, "--at"));
+    }
+    if args.exact {
+        return Err(conflicting_edit_flag_error(action, "--exact"));
+    }
+    if args.regex {
+        return Err(conflicting_edit_flag_error(action, "--regex"));
+    }
+    if args.all {
+        return Err(conflicting_edit_flag_error(action, "--all"));
+    }
+    Ok(())
+}
+
 fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
     if let Some(value) = &args.set {
+        reject_selector_flags_for_value_action("set", args)?;
         return Ok(OwnedEditAction::Set {
             value: Some(value.clone()),
             stdin: args.stdin,
         });
     }
     if let Some(value) = &args.add {
+        reject_selector_flags_for_value_action("add", args)?;
         return Ok(OwnedEditAction::Add {
             value: Some(value.clone()),
             stdin: args.stdin,
         });
     }
     if let Some(status) = args.tick {
+        if args.stdin {
+            return Err(conflicting_edit_flag_error("tick", "--stdin"));
+        }
         if args.all {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0802ConflictingArgs,
@@ -57,9 +90,12 @@ fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
         });
     }
     if args.remove.is_some() {
+        if args.stdin {
+            return Err(conflicting_edit_flag_error("remove", "--stdin"));
+        }
         return Ok(OwnedEditAction::Remove {
             match_opts: OwnedMatchOptions {
-                pattern: args.remove.clone(),
+                pattern: args.remove.clone().flatten(),
                 at: args.at,
                 exact: args.exact,
                 regex: args.regex,
@@ -635,19 +671,22 @@ impl CanonicalCommand {
                 field,
                 value,
                 stdin,
-            } => cmd::edit::add_to_field(
-                config,
-                id,
-                field,
-                value.as_deref(),
-                *stdin,
-                None,
-                None,
-                None,
-                None,
-                None,
-                op,
-            ),
+            } => {
+                let value = value.as_ref().map(|v| Some(v.clone()));
+                cmd::edit::add_to_field(
+                    config,
+                    id,
+                    field,
+                    value.as_ref(),
+                    *stdin,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    op,
+                )
+            }
             Self::RfcRemove {
                 id,
                 field,
@@ -774,19 +813,22 @@ impl CanonicalCommand {
                 pro,
                 con,
                 reject_reason,
-            } => cmd::edit::add_to_field(
-                config,
-                id,
-                field,
-                value.as_deref(),
-                *stdin,
-                None,
-                None,
-                Some(pro.clone()),
-                Some(con.clone()),
-                reject_reason.clone(),
-                op,
-            ),
+            } => {
+                let value = value.as_ref().map(|v| Some(v.clone()));
+                cmd::edit::add_to_field(
+                    config,
+                    id,
+                    field,
+                    value.as_ref(),
+                    *stdin,
+                    None,
+                    None,
+                    Some(pro.clone()),
+                    Some(con.clone()),
+                    reject_reason.clone(),
+                    op,
+                )
+            }
             Self::AdrRemove {
                 id,
                 field,
@@ -861,19 +903,22 @@ impl CanonicalCommand {
                 stdin,
                 category,
                 scope,
-            } => cmd::edit::add_to_field(
-                config,
-                id,
-                field,
-                value.as_deref(),
-                *stdin,
-                *category,
-                scope.as_deref(),
-                None,
-                None,
-                None,
-                op,
-            ),
+            } => {
+                let value = value.as_ref().map(|v| Some(v.clone()));
+                cmd::edit::add_to_field(
+                    config,
+                    id,
+                    field,
+                    value.as_ref(),
+                    *stdin,
+                    *category,
+                    scope.as_deref(),
+                    None,
+                    None,
+                    None,
+                    op,
+                )
+            }
             Self::WorkRemove {
                 id,
                 field,
@@ -926,19 +971,22 @@ impl CanonicalCommand {
                 value,
                 stdin,
             } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
-            Self::GuardAdd { id, field, value } => cmd::edit::add_to_field(
-                config,
-                id,
-                field,
-                Some(value.as_str()),
-                false,
-                None,
-                None,
-                None,
-                None,
-                None,
-                op,
-            ),
+            Self::GuardAdd { id, field, value } => {
+                let value = Some(value.clone());
+                cmd::edit::add_to_field(
+                    config,
+                    id,
+                    field,
+                    Some(&value),
+                    false,
+                    None,
+                    None,
+                    None,
+                    None,
+                    None,
+                    op,
+                )
+            }
             Self::GuardRemove {
                 id,
                 field,
@@ -1128,6 +1176,23 @@ impl CanonicalCommand {
                     || add.is_some()
                     || remove.is_some()
                     || tick.is_some();
+                let uses_legacy = text.is_some() || text_file.is_some();
+                if uses_canonical && uses_legacy {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0802ConflictingArgs,
+                        "Cannot mix canonical clause edit flags with legacy clause edit flags",
+                        id,
+                    )
+                    .into());
+                }
+                if !uses_canonical && (at.is_some() || *exact || *regex || *all || path.is_some()) {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0802ConflictingArgs,
+                        "Legacy clause edit does not support canonical path or matcher flags",
+                        id,
+                    )
+                    .into());
+                }
                 if uses_canonical {
                     let path = path.clone().ok_or_else(|| {
                         Diagnostic::new(
@@ -1550,7 +1615,7 @@ mod tests {
         let cmd = ClauseCommand::Edit {
             id: "RFC-0001:C-TEST".to_string(),
             path: Some("text".to_string()),
-            set: Some("Updated".to_string()),
+            set: Some(Some("Updated".to_string())),
             add: None,
             remove: None,
             tick: None,
@@ -1570,7 +1635,7 @@ mod tests {
                 assert_eq!(path, "text");
                 match action {
                     OwnedEditAction::Set { value, stdin } => {
-                        assert_eq!(value.as_deref(), Some("Updated"));
+                        assert_eq!(value.as_ref(), Some(&Some("Updated".to_string())));
                         assert!(!stdin);
                     }
                     other => panic!("expected set action, got {other:?}"),
@@ -1585,7 +1650,7 @@ mod tests {
         let cmd = ClauseCommand::Edit {
             id: "RFC-0001:C-TEST".to_string(),
             path: None,
-            set: Some("Updated".to_string()),
+            set: Some(Some("Updated".to_string())),
             add: None,
             remove: None,
             tick: None,
@@ -1685,7 +1750,7 @@ mod tests {
     #[test]
     fn test_owned_edit_action_preserves_explicit_empty_strings() {
         let set = owned_edit_action(&EditActionArgs {
-            set: Some(String::new()),
+            set: Some(Some(String::new())),
             add: None,
             remove: None,
             tick: None,
@@ -1698,7 +1763,7 @@ mod tests {
         .expect("set action");
         match set {
             OwnedEditAction::Set { value, stdin } => {
-                assert_eq!(value.as_deref(), Some(""));
+                assert_eq!(value.as_ref(), Some(&Some(String::new())));
                 assert!(!stdin);
             }
             other => panic!("expected set action, got {other:?}"),
@@ -1706,7 +1771,7 @@ mod tests {
 
         let add = owned_edit_action(&EditActionArgs {
             set: None,
-            add: Some(String::new()),
+            add: Some(Some(String::new())),
             remove: None,
             tick: None,
             stdin: false,
@@ -1718,7 +1783,7 @@ mod tests {
         .expect("add action");
         match add {
             OwnedEditAction::Add { value, stdin } => {
-                assert_eq!(value.as_deref(), Some(""));
+                assert_eq!(value.as_ref(), Some(&Some(String::new())));
                 assert!(!stdin);
             }
             other => panic!("expected add action, got {other:?}"),
@@ -1727,7 +1792,7 @@ mod tests {
         let remove = owned_edit_action(&EditActionArgs {
             set: None,
             add: None,
-            remove: Some(String::new()),
+            remove: Some(Some(String::new())),
             tick: None,
             stdin: false,
             at: None,
@@ -1751,7 +1816,7 @@ mod tests {
                 id: "RFC-0001".to_string(),
                 path: "title".to_string(),
                 action: OwnedEditAction::Set {
-                    value: Some("X".to_string()),
+                    value: Some(Some("X".to_string())),
                     stdin: false,
                 },
             }
@@ -1763,7 +1828,7 @@ mod tests {
                 id: "ADR-0001".to_string(),
                 path: "decision".to_string(),
                 action: OwnedEditAction::Set {
-                    value: Some("X".to_string()),
+                    value: Some(Some("X".to_string())),
                     stdin: false,
                 },
                 pro: vec![],
@@ -1792,7 +1857,7 @@ mod tests {
                 id: "GUARD-0001".to_string(),
                 path: "title".to_string(),
                 action: OwnedEditAction::Set {
-                    value: Some("X".to_string()),
+                    value: Some(Some("X".to_string())),
                     stdin: false,
                 },
             }
@@ -1808,5 +1873,66 @@ mod tests {
             }
             .is_write_command()
         );
+    }
+
+    #[test]
+    fn test_owned_edit_action_rejects_selector_flags_for_set() {
+        let err = owned_edit_action(&EditActionArgs {
+            set: Some(Some("x".to_string())),
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: Some(0),
+            exact: false,
+            regex: false,
+            all: false,
+        })
+        .expect_err("set with --at should fail");
+
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+    }
+
+    #[test]
+    fn test_owned_edit_action_rejects_stdin_for_remove() {
+        let err = owned_edit_action(&EditActionArgs {
+            set: None,
+            add: None,
+            remove: Some(None),
+            tick: None,
+            stdin: true,
+            at: Some(0),
+            exact: false,
+            regex: false,
+            all: false,
+        })
+        .expect_err("remove with --stdin should fail");
+
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+    }
+
+    #[test]
+    fn test_from_clause_command_rejects_mixed_canonical_and_legacy_edit_flags() {
+        let cmd = ClauseCommand::Edit {
+            id: "RFC-0001:C-TEST".to_string(),
+            path: Some("text".to_string()),
+            set: Some(Some("Updated".to_string())),
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+            text: Some("legacy".to_string()),
+            text_file: None,
+        };
+
+        let err = CanonicalCommand::from_clause_command(&cmd).expect_err("mixed modes should fail");
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
     }
 }

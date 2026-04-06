@@ -220,11 +220,11 @@ $ govctl describe --context
     },
     {
       "name": "edit",
-      "purpose": "Edit clause fields",
-      "when_to_use": "To update clause text or metadata. Use path-first edit form; --stdin works well for multi-line text.",
+      "purpose": "Edit artifact fields via the canonical path-first surface",
+      "when_to_use": "To update RFC, ADR, work item, guard, or clause content fields using `edit <ID> <path> --set/--add/--remove/--tick`.",
       "example": "govctl clause edit RFC-0001:C-SCOPE text --stdin",
       "prerequisites": [
-        "Clause must exist"
+        "Target artifact must exist"
       ]
     },
     {

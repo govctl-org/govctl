@@ -76,6 +76,33 @@ fn test_rfc_remove_owner() {
 }
 
 #[test]
+fn test_rfc_remove_owner_by_index_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners[1]", "--remove"],
+            &["rfc", "get", "RFC-0001", "owners"],
+        ],
+    );
+
+    assert!(
+        output.contains("Removed '@owner1' from RFC-0001.owners"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @owner2"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
 fn test_rfc_add_ref() {
     let temp_dir = init_project();
     let date = today();
@@ -307,6 +334,64 @@ fn test_clause_edit_title_canonical() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_clause_remove_anchor_by_index_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Original Title",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "anchors",
+                "--add",
+                "anchor-one",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "anchors",
+                "--add",
+                "anchor-two",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "anchors[0]",
+                "--remove",
+            ],
+            &["clause", "show", "RFC-0001:C-TEST", "-o", "json"],
+        ],
+    );
+
+    assert!(
+        output.contains("Removed 'anchor-one' from RFC-0001:C-TEST.anchors"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("\"anchors\": [\n    \"anchor-two\"\n  ]")
+            || output.contains("\"anchors\": [\n  \"anchor-two\"\n]"),
+        "output: {}",
+        output
+    );
 }
 
 #[test]
@@ -616,7 +701,13 @@ fn test_adr_set_consequences() {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &["adr", "set", "ADR-0001", "consequences", "Faster reads, but more memory use."],
+            &[
+                "adr",
+                "set",
+                "ADR-0001",
+                "consequences",
+                "Faster reads, but more memory use.",
+            ],
             &["adr", "show", "ADR-0001"],
         ],
     );
@@ -1341,11 +1432,24 @@ fn test_adr_edit_tick_updates_alternative_root() {
         &[
             &["adr", "new", "Tick Root Test"],
             &["adr", "add", "ADR-0001", "alternatives", "Option A"],
-            &["adr", "edit", "ADR-0001", "alternatives", "--tick", "accepted", "--at", "0"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives",
+                "--tick",
+                "accepted",
+                "--at",
+                "0",
+            ],
             &["adr", "get", "ADR-0001", "alternatives"],
         ],
     );
-    assert!(output.contains("Marked 'Option A' as accepted"), "output: {}", output);
+    assert!(
+        output.contains("Marked 'Option A' as accepted"),
+        "output: {}",
+        output
+    );
     assert!(output.contains("[accepted] Option A"), "output: {}", output);
 }
 
@@ -1362,7 +1466,11 @@ fn test_adr_edit_tick_updates_indexed_alternative_item() {
             &["adr", "get", "ADR-0001", "alternatives[0].status"],
         ],
     );
-    assert!(output.contains("Marked 'Option A' as accepted"), "output: {}", output);
+    assert!(
+        output.contains("Marked 'Option A' as accepted"),
+        "output: {}",
+        output
+    );
     assert!(
         output.contains("$ govctl adr get ADR-0001 alternatives[0].status\naccepted"),
         "output: {}",
@@ -1379,7 +1487,16 @@ fn test_adr_edit_tick_rejects_work_item_status_names() {
         &[
             &["adr", "new", "Invalid Tick Test"],
             &["adr", "add", "ADR-0001", "alternatives", "Option A"],
-            &["adr", "edit", "ADR-0001", "alternatives", "--tick", "done", "--at", "0"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives",
+                "--tick",
+                "done",
+                "--at",
+                "0",
+            ],
         ],
     );
     assert!(output.contains("error[E0820]"), "output: {}", output);
