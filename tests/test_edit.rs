@@ -1368,7 +1368,7 @@ fn test_adr_edit_tick_rejects_alternative_root() {
         ],
     );
     assert!(
-        output.contains("Unknown field for tick: alternatives"),
+        output.contains("Tick only works for work items: ADR-0001"),
         "output: {}",
         output
     );
@@ -1388,7 +1388,7 @@ fn test_adr_edit_tick_rejects_indexed_alternative_item() {
         ],
     );
     assert!(
-        output.contains("Unknown field for tick: alternatives"),
+        output.contains("Tick only works for work items: ADR-0001"),
         "output: {}",
         output
     );

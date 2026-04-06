@@ -145,5 +145,49 @@
       "additionalProperties": false
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "govctl": {
+            "properties": {
+              "status": {
+                "enum": ["accepted", "superseded"]
+              }
+            },
+            "required": ["status"]
+          }
+        }
+      },
+      "then": {
+        "anyOf": [
+          {
+            "properties": {
+              "content": {
+                "required": ["selected_option"]
+              }
+            }
+          },
+          {
+            "properties": {
+              "govctl": {
+                "properties": {
+                  "migration": {
+                    "properties": {
+                      "state": {
+                        "const": "needs_review"
+                      }
+                    },
+                    "required": ["state"]
+                  }
+                },
+                "required": ["migration"]
+              }
+            }
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -3,7 +3,7 @@
 [govctl]
 id = "ADR-0037"
 title = "Canonical edit surface for nested artifact mutation"
-status = "proposed"
+status = "accepted"
 date = "2026-04-06"
 refs = [
     "ADR-0031",

@@ -341,7 +341,7 @@ impl TomlEditableEntry for GuardEntry {
 
 const TICK_NESTED_PATH_ERROR: &str =
     "tick only supports checklist root paths or indexed checklist items";
-const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
+const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items: {id}";
 
 pub fn edit_clause(
     config: &Config,
@@ -1133,13 +1133,10 @@ pub fn tick_item(
     };
 
     let status_str = match (artifact, status) {
-        (ArtifactType::Adr, crate::TickStatus::Done) => "accepted",
-        (ArtifactType::Adr, crate::TickStatus::Pending) => "considered",
-        (ArtifactType::Adr, crate::TickStatus::Cancelled) => "rejected",
         (ArtifactType::WorkItem, crate::TickStatus::Done) => "done",
         (ArtifactType::WorkItem, crate::TickStatus::Pending) => "pending",
         (ArtifactType::WorkItem, crate::TickStatus::Cancelled) => "cancelled",
-        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard, _) => {
+        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Adr | ArtifactType::Guard, _) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0813SupersedeNotSupported,
                 TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
@@ -1149,15 +1146,6 @@ pub fn tick_item(
         }
     };
     let ticked_text = match artifact {
-        ArtifactType::Adr => tick_toml_field::<AdrTomlAdapter>(
-            config,
-            id,
-            field,
-            &effective_opts,
-            op,
-            ArtifactType::Adr,
-            status_str,
-        )?,
         ArtifactType::WorkItem => tick_toml_field::<WorkTomlAdapter>(
             config,
             id,
@@ -1167,7 +1155,7 @@ pub fn tick_item(
             ArtifactType::WorkItem,
             status_str,
         )?,
-        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard => {
+        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Adr | ArtifactType::Guard => {
             unreachable!("handled above")
         }
     };
