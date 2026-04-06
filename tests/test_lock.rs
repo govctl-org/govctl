@@ -316,3 +316,13 @@ acceptance_criteria = []
     );
     assert!(output.contains("Created work item"));
 }
+
+#[test]
+fn test_write_command_without_init_reports_missing_gov_root() {
+    let temp_dir = tempfile::TempDir::new().expect("temp dir");
+
+    let output = run_commands(temp_dir.path(), &[&["work", "new", "Needs init"]]);
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    assert!(output.contains("error[E0502]"), "output: {}", output);
+    assert!(output.contains("Run 'govctl init' first"), "output: {}", output);
+}

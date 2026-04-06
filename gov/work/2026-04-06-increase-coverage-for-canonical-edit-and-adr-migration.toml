@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-06-005"
+title = "Increase coverage for canonical edit and ADR migration"
+status = "done"
+created = "2026-04-06"
+started = "2026-04-06"
+completed = "2026-04-06"
+
+[content]
+description = "Scope: add regression tests for canonical edit, ADR v3 migration, and structured diagnostics so the adr-refactor patch coverage clears Codecov. Why: the branch landed large changes in edit/runtime/migrate/diagnostic paths and currently leaves significant new logic uncovered."
+
+[[content.journal]]
+date = "2026-04-06"
+scope = "coverage"
+content = "Added regression tests for ADR v3 migration branches, canonical edit/runtime/router paths, guard diagnostics, render missing-item behavior, lock failures before init, and TUI project-load diagnostic selection; cargo test -q, cargo run --quiet -- check, and cargo llvm-cov --summary-only all pass."
+
+[[content.acceptance_criteria]]
+text = "add regression coverage for canonical edit/runtime/router branches introduced by ADR-0037"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "add regression coverage for ADR v3 migration edge cases and structured consequence parsing"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "cargo test -q and cargo run --quiet -- check pass after the coverage-focused regression additions"
+status = "done"
+category = "fixed"

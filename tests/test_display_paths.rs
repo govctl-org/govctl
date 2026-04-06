@@ -141,6 +141,33 @@ notes = []
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
+#[test]
+fn test_render_rfc_missing_returns_scope_context() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-9999"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_render_adr_missing_returns_scope_context() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["adr", "render", "ADR-9999"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_render_work_missing_returns_scope_context() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["work", "render", "WI-9999-01-01-001"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
 /// Test: Delete work item dry-run shows relative path
 #[test]
 fn test_delete_work_dry_run_display_path() {

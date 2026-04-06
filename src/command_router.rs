@@ -1482,3 +1482,146 @@ impl CanonicalCommand {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{ClauseCommand, TickStatus};
+
+    #[test]
+    fn test_owned_edit_action_requires_exactly_one_action() {
+        let err = owned_edit_action(&EditActionArgs {
+            set: None,
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+        })
+        .expect_err("missing action should fail");
+
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0801MissingRequiredArg);
+    }
+
+    #[test]
+    fn test_from_clause_command_uses_canonical_edit_when_path_is_present() {
+        let cmd = ClauseCommand::Edit {
+            id: "RFC-0001:C-TEST".to_string(),
+            path: Some("text".to_string()),
+            set: Some("Updated".to_string()),
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+            text: None,
+            text_file: None,
+        };
+
+        let canonical = CanonicalCommand::from_clause_command(&cmd).expect("canonical edit");
+        match canonical {
+            CanonicalCommand::ClauseEdit { id, path, action } => {
+                assert_eq!(id, "RFC-0001:C-TEST");
+                assert_eq!(path, "text");
+                match action {
+                    OwnedEditAction::Set { value, stdin } => {
+                        assert_eq!(value.as_deref(), Some("Updated"));
+                        assert!(!stdin);
+                    }
+                    other => panic!("expected set action, got {other:?}"),
+                }
+            }
+            other => panic!("expected ClauseEdit, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_from_clause_command_requires_path_for_canonical_flags() {
+        let cmd = ClauseCommand::Edit {
+            id: "RFC-0001:C-TEST".to_string(),
+            path: None,
+            set: Some("Updated".to_string()),
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+            text: None,
+            text_file: None,
+        };
+
+        let err = CanonicalCommand::from_clause_command(&cmd).expect_err("missing path");
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0801MissingRequiredArg);
+    }
+
+    #[test]
+    fn test_from_clause_command_uses_legacy_edit_without_canonical_flags() {
+        let cmd = ClauseCommand::Edit {
+            id: "RFC-0001:C-TEST".to_string(),
+            path: None,
+            set: None,
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: true,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+            text: None,
+            text_file: None,
+        };
+
+        let canonical = CanonicalCommand::from_clause_command(&cmd).expect("legacy edit");
+        match canonical {
+            CanonicalCommand::ClauseLegacyEdit {
+                id,
+                text,
+                text_file,
+                stdin,
+            } => {
+                assert_eq!(id, "RFC-0001:C-TEST");
+                assert!(text.is_none());
+                assert!(text_file.is_none());
+                assert!(stdin);
+            }
+            other => panic!("expected ClauseLegacyEdit, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_owned_edit_action_builds_tick_match_options() {
+        let action = owned_edit_action(&EditActionArgs {
+            set: None,
+            add: None,
+            remove: None,
+            tick: Some(TickStatus::Done),
+            stdin: false,
+            at: Some(2),
+            exact: true,
+            regex: false,
+            all: false,
+        })
+        .expect("tick action");
+
+        match action {
+            OwnedEditAction::Tick { match_opts, status } => {
+                assert!(matches!(status, TickStatus::Done));
+                assert_eq!(match_opts.at, Some(2));
+                assert!(match_opts.exact);
+            }
+            other => panic!("expected tick action, got {other:?}"),
+        }
+    }
+}

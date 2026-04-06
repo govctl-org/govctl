@@ -648,19 +648,6 @@ fn parse_legacy_consequences(raw: &str) -> AdrConsequences {
             continue;
         }
 
-        if let Some(rest) = trimmed.strip_prefix("- ") {
-            match current {
-                Some(Section::Positive) => parsed.positive.push(rest.to_string()),
-                Some(Section::Neutral) => parsed.neutral.push(rest.to_string()),
-                Some(Section::Negative) => parsed.negative.push(AdrNegativeConsequence {
-                    text: rest.to_string(),
-                    mitigations: vec![],
-                }),
-                None => {}
-            }
-            continue;
-        }
-
         if let Some(rest) = trimmed.strip_prefix("Mitigation: ")
             && let Some(last) = parsed.negative.last_mut()
         {
@@ -671,6 +658,19 @@ fn parse_legacy_consequences(raw: &str) -> AdrConsequences {
             && let Some(last) = parsed.negative.last_mut()
         {
             last.mitigations.push(rest.to_string());
+            continue;
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("- ") {
+            match current {
+                Some(Section::Positive) => parsed.positive.push(rest.to_string()),
+                Some(Section::Neutral) => parsed.neutral.push(rest.to_string()),
+                Some(Section::Negative) => parsed.negative.push(AdrNegativeConsequence {
+                    text: rest.to_string(),
+                    mitigations: vec![],
+                }),
+                None => {}
+            }
             continue;
         }
 
@@ -849,6 +849,167 @@ fn plan_rfc_json_to_toml(
     }
 
     Ok(Some((ops, rfc_id)))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn legacy_alternative(
+        text: &str,
+        status: LegacyAlternativeStatus,
+        pros: &[&str],
+        cons: &[&str],
+        rejection_reason: Option<&str>,
+    ) -> LegacyAlternative {
+        LegacyAlternative {
+            text: text.to_string(),
+            status,
+            pros: pros.iter().map(|s| s.to_string()).collect(),
+            cons: cons.iter().map(|s| s.to_string()).collect(),
+            rejection_reason: rejection_reason.map(str::to_string),
+        }
+    }
+
+    fn legacy_spec(
+        status: AdrStatus,
+        consequences: &str,
+        alternatives: Vec<LegacyAlternative>,
+    ) -> LegacyAdrSpec {
+        LegacyAdrSpec {
+            govctl: LegacyAdrMeta {
+                schema: 2,
+                id: "ADR-9999".to_string(),
+                title: "Legacy ADR".to_string(),
+                status,
+                date: "2026-04-06".to_string(),
+                superseded_by: None,
+                refs: vec!["RFC-0001".to_string()],
+            },
+            content: LegacyAdrContent {
+                context: "Legacy context".to_string(),
+                decision: "Legacy decision".to_string(),
+                consequences: consequences.to_string(),
+                alternatives,
+            },
+        }
+    }
+
+    #[test]
+    fn test_parse_legacy_consequences_extracts_sections_and_mitigations() {
+        let parsed = parse_legacy_consequences(
+            "### Positive\n\n- Fast rollout\n\n### Negative\n\n- Higher memory use\nMitigation: Add cache cap\n- Slower warmup\n- Mitigation: Precompute metadata\n\n### Neutral\n\n- Operator training needed\n",
+        );
+
+        assert_eq!(parsed.positive, vec!["Fast rollout"]);
+        assert_eq!(parsed.neutral, vec!["Operator training needed"]);
+        assert_eq!(parsed.negative.len(), 2);
+        assert_eq!(parsed.negative[0].text, "Higher memory use");
+        assert_eq!(parsed.negative[0].mitigations, vec!["Add cache cap"]);
+        assert_eq!(parsed.negative[1].text, "Slower warmup");
+        assert_eq!(parsed.negative[1].mitigations, vec!["Precompute metadata"]);
+    }
+
+    #[test]
+    fn test_parse_legacy_consequences_without_headings_falls_back_to_neutral() {
+        let parsed = parse_legacy_consequences("Single paragraph consequence.");
+
+        assert!(parsed.positive.is_empty());
+        assert!(parsed.negative.is_empty());
+        assert_eq!(parsed.neutral, vec!["Single paragraph consequence."]);
+    }
+
+    #[test]
+    fn test_migrate_legacy_adr_promotes_single_accepted_option() {
+        let migrated = migrate_legacy_adr(legacy_spec(
+            AdrStatus::Accepted,
+            "### Positive\n\n- Easier rollout\n",
+            vec![
+                legacy_alternative(
+                    "Option A",
+                    LegacyAlternativeStatus::Accepted,
+                    &["Matches current rollout plan"],
+                    &["Higher memory use"],
+                    None,
+                ),
+                legacy_alternative(
+                    "Option B",
+                    LegacyAlternativeStatus::Rejected,
+                    &["Cheaper"],
+                    &[],
+                    Some("Does not match rollout constraints"),
+                ),
+            ],
+        ));
+
+        assert_eq!(migrated.content.selected_option.as_deref(), Some("Option A"));
+        assert!(
+            migrated
+                .content
+                .decision
+                .contains("Recovered Selected-Option Advantages")
+        );
+        assert_eq!(migrated.content.consequences.negative.len(), 1);
+        assert_eq!(
+            migrated.content.consequences.negative[0].text,
+            "Higher memory use"
+        );
+        assert_eq!(migrated.content.alternatives.len(), 1);
+        assert_eq!(migrated.content.alternatives[0].text, "Option B");
+        assert!(migrated.govctl.migration.is_none());
+    }
+
+    #[test]
+    fn test_migrate_legacy_adr_marks_multiple_accepted_options_for_review() {
+        let migrated = migrate_legacy_adr(legacy_spec(
+            AdrStatus::Accepted,
+            "",
+            vec![
+                legacy_alternative("Option A", LegacyAlternativeStatus::Accepted, &[], &[], None),
+                legacy_alternative("Option B", LegacyAlternativeStatus::Accepted, &[], &[], None),
+            ],
+        ));
+
+        assert!(migrated.content.selected_option.is_none());
+        assert_eq!(migrated.content.alternatives.len(), 2);
+        let migration = migrated.govctl.migration.expect("migration metadata");
+        assert_eq!(migration.state, AdrMigrationState::NeedsReview);
+        assert!(
+            migration
+                .warnings
+                .iter()
+                .any(|w| w.code == "ADR_MULTIPLE_ACCEPTED_OPTIONS")
+        );
+    }
+
+    #[test]
+    fn test_migrate_legacy_adr_warns_when_accepted_status_has_no_chosen_option() {
+        let migrated = migrate_legacy_adr(legacy_spec(
+            AdrStatus::Accepted,
+            "",
+            vec![legacy_alternative(
+                "Option B",
+                LegacyAlternativeStatus::Rejected,
+                &[],
+                &[],
+                None,
+            )],
+        ));
+
+        let migration = migrated.govctl.migration.expect("migration metadata");
+        assert!(
+            migration
+                .warnings
+                .iter()
+                .any(|w| w.code == "ADR_SELECTED_OPTION_UNRESOLVED")
+        );
+        assert!(
+            migration
+                .warnings
+                .iter()
+                .any(|w| w.code == "ADR_REJECTION_REASON_SYNTHETIC")
+        );
+    }
 }
 
 fn plan_release_upgrade(config: &Config) -> anyhow::Result<Option<Vec<FileOp>>> {

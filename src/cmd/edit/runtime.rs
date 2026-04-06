@@ -1232,3 +1232,126 @@ fn format_segment(seg: &super::path::PathSegment) -> String {
 fn append_segment(prefix: &str, seg: &super::path::PathSegment) -> String {
     format!("{prefix}.{}", format_segment(seg))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    fn path(input: &str) -> FieldPath {
+        path::parse_field_path(input)
+            .expect("valid path")
+            .collapse_legacy_prefixes()
+    }
+
+    #[test]
+    fn test_add_nested_object_list_value_deduplicates_by_text() {
+        let mut doc = json!({
+            "content": {
+                "consequences": {
+                    "negative": [
+                        { "text": "Higher memory use", "mitigations": [] }
+                    ]
+                }
+            }
+        });
+
+        add_nested_list_value(
+            ArtifactType::Adr,
+            &mut doc,
+            &path("consequences.negative"),
+            "Higher memory use",
+            "ADR-0001",
+        )
+        .unwrap();
+        add_nested_list_value(
+            ArtifactType::Adr,
+            &mut doc,
+            &path("consequences.negative"),
+            "Slower warmup",
+            "ADR-0001",
+        )
+        .unwrap();
+
+        let negatives = doc["content"]["consequences"]["negative"]
+            .as_array()
+            .unwrap();
+        assert_eq!(negatives.len(), 2);
+        assert_eq!(negatives[1]["text"], "Slower warmup");
+    }
+
+    #[test]
+    fn test_set_nested_field_rejects_list_path_without_index() {
+        let mut doc = json!({
+            "content": {
+                "consequences": {
+                    "negative": []
+                }
+            }
+        });
+
+        let err = set_nested_field(
+            ArtifactType::Adr,
+            &mut doc,
+            &path("consequences.negative"),
+            "oops",
+            "ADR-0001",
+        )
+        .expect_err("list path should reject set");
+
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0817PathTypeMismatch);
+    }
+
+    #[test]
+    fn test_remove_nested_root_item_returns_removed_text() {
+        let mut doc = json!({
+            "content": {
+                "alternatives": [
+                    { "text": "Option A", "pros": [], "cons": [] },
+                    { "text": "Option B", "pros": [], "cons": [] }
+                ]
+            }
+        });
+
+        let removed = remove_nested_root_item(
+            ArtifactType::Adr,
+            &mut doc,
+            &path("alternatives[0]"),
+            "ADR-0001",
+        )
+        .unwrap();
+
+        assert_eq!(removed, "Option A");
+        let alternatives = doc["content"]["alternatives"].as_array().unwrap();
+        assert_eq!(alternatives.len(), 1);
+        assert_eq!(alternatives[0]["text"], "Option B");
+    }
+
+    #[test]
+    fn test_get_nested_field_renders_object_item_with_scalar_lists() {
+        let doc = json!({
+            "content": {
+                "consequences": {
+                    "negative": [
+                        {
+                            "text": "Higher memory use",
+                            "mitigations": ["Cap cache size", "Reduce retention"]
+                        }
+                    ]
+                }
+            }
+        });
+
+        let rendered = get_nested_field(
+            ArtifactType::Adr,
+            &doc,
+            &path("consequences.negative[0]"),
+            "ADR-0001",
+        )
+        .unwrap();
+
+        assert!(rendered.contains("text: Higher memory use"));
+        assert!(rendered.contains("mitigations: Cap cache size, Reduce retention"));
+    }
+}

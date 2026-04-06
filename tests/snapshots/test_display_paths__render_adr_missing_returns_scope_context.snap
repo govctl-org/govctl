@@ -1,0 +1,8 @@
+---
+source: tests/test_display_paths.rs
+assertion_line: 159
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr render ADR-9999
+No ADRs found
+exit: 0
