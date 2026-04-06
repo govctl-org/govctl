@@ -7,6 +7,9 @@ status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000"]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 govctl renders markdown files from authoritative JSON/TOML sources (RFCs, ADRs, Work Items). These rendered markdown files are **projections** — read-only views intended for human consumption.
@@ -46,7 +49,10 @@ Implement deterministic hash signatures embedded in rendered markdown.
 - `govctl check` extracts signature from rendered markdown
 - Recomputes hash from current source files
 - Reports mismatch as a diagnostic error"""
-consequences = """
+selected_option = "Deterministic hash signatures for rendered projections"
+
+[content.consequences]
+neutral = ["""
 **Positive:**
 - Enforces "edit the source, not the projection" discipline
 - Tampered markdown is detected automatically by `govctl check`
@@ -60,4 +66,4 @@ consequences = """
 
 **Migration:**
 - Run `govctl render` to regenerate all markdown with signatures
-- Commit the updated files"""
+- Commit the updated files"""]

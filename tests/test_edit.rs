@@ -92,6 +92,38 @@ fn test_rfc_add_ref() {
 }
 
 #[test]
+fn test_rfc_edit_set_title_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Original Title"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Canonical Title",
+            ],
+            &["rfc", "get", "RFC-0001", "title"],
+        ],
+    );
+
+    assert!(
+        output.contains("Set RFC-0001.title = Canonical Title"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 title\nCanonical Title"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
 fn test_rfc_set_nonexistent_field() {
     let temp_dir = init_project();
     let date = today();
@@ -388,7 +420,7 @@ fn test_adr_set_status_rejected() {
 }
 
 #[test]
-fn test_adr_set_alternative_status_rejected() {
+fn test_adr_set_alternative_status_field_rejected() {
     let temp_dir = init_project();
 
     let output = run_commands(
@@ -405,8 +437,8 @@ fn test_adr_set_alternative_status_rejected() {
             ],
         ],
     );
-    assert!(output.contains("error[E0804]"), "output: {}", output);
-    assert!(output.contains("govctl adr tick"), "output: {}", output);
+    assert!(output.contains("error[E0815]"), "output: {}", output);
+    assert!(output.contains("status"), "output: {}", output);
 }
 
 #[test]
@@ -423,6 +455,51 @@ fn test_adr_add_ref() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_edit_add_nested_path_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Canonical Edit ADR"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "content.alternatives",
+                "--add",
+                "Option A",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "content.alternatives[0].pros",
+                "--add",
+                "Readable",
+            ],
+            &["adr", "get", "ADR-0001", "alternatives[0].pros"],
+        ],
+    );
+
+    assert!(
+        output.contains("Added 'Option A' to ADR-0001.alternatives"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Added 'Readable' to ADR-0001.alternatives[0].pros"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl adr get ADR-0001 alternatives[0].pros\nReadable"),
+        "output: {}",
+        output
+    );
 }
 
 #[test]
@@ -474,10 +551,27 @@ fn test_adr_set_consequences() {
             &["adr", "new", "Test Decision"],
             &[
                 "adr",
-                "set",
+                "edit",
                 "ADR-0001",
-                "consequences",
-                "Good: faster. Bad: more memory.",
+                "content.consequences.positive",
+                "--add",
+                "Faster reads",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "content.consequences.negative",
+                "--add",
+                "More memory use",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "content.consequences.negative[0].mitigations",
+                "--add",
+                "Cache only hot paths",
             ],
             &["adr", "show", "ADR-0001"],
         ],
@@ -648,6 +742,52 @@ fn test_work_tick_acceptance_criteria() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_work_edit_tick_indexed_path_canonical() {
+    let temp_dir = init_project();
+    let date = today();
+    let wi_id = format!("WI-{}-001", date);
+
+    let commands = vec![
+        vec![
+            "work".to_string(),
+            "new".to_string(),
+            "Canonical Tick".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "edit".to_string(),
+            wi_id.clone(),
+            "content.acceptance_criteria".to_string(),
+            "--add".to_string(),
+            "add: Criterion 1".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "edit".to_string(),
+            wi_id.clone(),
+            "content.acceptance_criteria[0]".to_string(),
+            "--tick".to_string(),
+            "done".to_string(),
+        ],
+        vec!["work".to_string(), "show".to_string(), wi_id],
+    ];
+
+    let output = common::run_dynamic_commands(temp_dir.path(), &commands);
+
+    assert!(
+        output.contains("Added 'add: Criterion 1' to WI-"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Marked 'Criterion 1' as done"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("- ✓ Criterion 1"), "output: {}", output);
 }
 
 #[test]
@@ -1146,6 +1286,46 @@ fn test_adr_remove_nested_path_requires_selector() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_edit_tick_rejects_alternative_root() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Tick Reject Test"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &["adr", "edit", "ADR-0001", "alternatives", "--tick", "done"],
+        ],
+    );
+    assert!(
+        output.contains("Unknown field for tick: alternatives"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("exit: 1"), "output: {}", output);
+}
+
+#[test]
+fn test_adr_edit_tick_rejects_indexed_alternative_item() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Indexed Tick Reject Test"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &["adr", "edit", "ADR-0001", "alt[0]", "--tick", "done"],
+        ],
+    );
+    assert!(
+        output.contains("Unknown field for tick: alternatives"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("exit: 1"), "output: {}", output);
 }
 
 #[test]

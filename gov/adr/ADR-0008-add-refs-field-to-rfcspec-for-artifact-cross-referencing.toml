@@ -7,6 +7,9 @@ status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000"]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 RFCs are the supreme governance documents in govctl, yet they cannot formally reference other artifacts (ADRs, other RFCs, work items). Meanwhile, ADRs and Work Items both have a refs field for cross-referencing.
@@ -28,7 +31,10 @@ Add refs field to RfcSpec following the same pattern as AdrMeta and WorkItemMeta
 5. Validate RFC supersedes field against known RFCs (currently unvalidated)
 
 This creates consistency across all artifact types and enables complete cross-reference tracking."""
-consequences = """
+selected_option = "Add refs field to RfcSpec"
+
+[content.consequences]
+neutral = ["""
 Positive:
 - RFCs can now reference ADRs, other RFCs, and work items
 - Complete artifact graph for impact analysis
@@ -40,4 +46,4 @@ Negative:
 - Slightly more validation overhead on check
 
 Neutral:
-- Existing RFCs do not need migration (empty default)"""
+- Existing RFCs do not need migration (empty default)"""]

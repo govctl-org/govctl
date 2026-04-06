@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Define and accept an ADR for the redesigned ADR model and migration behavior (WI-2026-04-06-001)
+- Add a versioned migration step that rewrites legacy ADRs into the new renderable model (WI-2026-04-06-001)
+- Implement the new ADR schema, render path, and check warnings for migration-review states (WI-2026-04-06-001)
+- Route existing set/add/remove/tick verbs through the same canonical edit planning path (WI-2026-04-06-002)
+- Generalize nested edit resolution so object and array paths work at arbitrary supported depth (WI-2026-04-06-002)
+- Introduce canonical <resource> edit <ID> <path> --set/--add/--remove/--tick CLI entrypoints (WI-2026-04-06-002)
+
 ## [0.7.7] - 2026-04-04
 
 ### Changed

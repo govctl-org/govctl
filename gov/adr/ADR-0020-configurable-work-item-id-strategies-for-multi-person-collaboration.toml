@@ -7,6 +7,9 @@ status = "accepted"
 date = "2026-01-26"
 refs = ["RFC-0000"]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 The current work item ID format (`WI-YYYY-MM-DD-NNN`) uses local sequential numbering. The `govctl work new` command scans `gov/work/` to find the max sequence number for today's date, then increments by 1.
@@ -65,7 +68,10 @@ id_strategy = "author-hash"  # or "sequential" (default), "random"
 - Teams explicitly opt-in to collision-safe strategy
 - `author-hash` is recommended because it preserves sequential numbering within author namespace
 - Uses git identity (already required for commits) — zero additional config"""
-consequences = """
+selected_option = "Add opt-in work item ID strategies"
+
+[content.consequences]
+neutral = ["""
 **Positive:**
 - Multi-person teams can adopt govctl without ID collision risk
 - Existing single-contributor projects unchanged
@@ -86,4 +92,4 @@ consequences = """
 **Migration for teams:**
 1. Set `[work_item] id_strategy = "author-hash"` in `gov/config.toml`
 2. Existing work items retain their IDs (no renaming required)
-3. New work items use the new format"""
+3. New work items use the new format"""]

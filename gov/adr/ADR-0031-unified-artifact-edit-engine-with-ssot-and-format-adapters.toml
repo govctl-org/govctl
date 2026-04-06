@@ -89,33 +89,56 @@ Field-token acceptance is strict:
 V2 is considered complete only when:
 - adding a new editable field requires SSOT changes only (no manual dispatch branching)
 - JSON and TOML share one semantic engine
-- compatibility test suite for legacy paths passes in V2 mode"""
-consequences = """
-### Positive
+- compatibility test suite for legacy paths passes in V2 mode
 
-- Reduces long-term maintenance cost by centralizing edit semantics in one engine.
-- Eliminates JSON/TOML behavioral drift risk by sharing the same plan/validation pipeline.
-- Makes parser and resolver behavior auditable through SSOT and generated tables.
-- Improves extensibility: new fields and verbs are primarily SSOT additions.
+### Recovered Selected-Option Advantages
 
-### Negative
+- Preserves storage-format independence while unifying semantic behavior
+- Enables SSOT-driven extensibility with lower long-term maintenance cost
+"""
+selected_option = "Option C: SSOT-driven semantic engine with explicit JSON/TOML adapters"
 
-- **Migration complexity is significant** because V1 and V2 must coexist temporarily.
-  - Mitigation: enforce a bounded coexistence window (max two releases) with explicit phase exit criteria and deletion checklist.
-- **Generator/SSOT errors can affect many paths at once**.
-  - Mitigation: schema validation at build-time, generated-table snapshot tests, and golden command fixtures per artifact/verb.
-- **Temporary dual operation styles** (legacy vs canonical path forms) can confuse users.
-  - Mitigation: docs prefer canonical syntax immediately; legacy usage prints guidance warnings after V2 parity milestone.
-- **Documentation and contributor onboarding work increases initially**.
-  - Mitigation: track docs updates as required migration work items and block V2 cutover completion until docs/tests are updated.
+[content.consequences]
+positive = [
+    "Reduces long-term maintenance cost by centralizing edit semantics in one engine.",
+    "Eliminates JSON/TOML behavioral drift risk by sharing the same plan/validation pipeline.",
+    "Makes parser and resolver behavior auditable through SSOT and generated tables.",
+    "Improves extensibility: new fields and verbs are primarily SSOT additions.",
+]
+neutral = ["Runtime overhead should remain negligible for CLI-scale paths, but this will be measured with parser and end-to-end micro-benchmarks before finalizing ADR status."]
 
-### Neutral
+[[content.consequences.negative]]
+text = "**Migration complexity is significant** because V1 and V2 must coexist temporarily."
 
-- Runtime overhead should remain negligible for CLI-scale paths, but this will be measured with parser and end-to-end micro-benchmarks before finalizing ADR status."""
+[[content.consequences.negative]]
+text = "Mitigation: enforce a bounded coexistence window (max two releases) with explicit phase exit criteria and deletion checklist."
+
+[[content.consequences.negative]]
+text = "**Generator/SSOT errors can affect many paths at once**."
+
+[[content.consequences.negative]]
+text = "Mitigation: schema validation at build-time, generated-table snapshot tests, and golden command fixtures per artifact/verb."
+
+[[content.consequences.negative]]
+text = "**Temporary dual operation styles** (legacy vs canonical path forms) can confuse users."
+
+[[content.consequences.negative]]
+text = "Mitigation: docs prefer canonical syntax immediately; legacy usage prints guidance warnings after V2 parity milestone."
+
+[[content.consequences.negative]]
+text = "**Documentation and contributor onboarding work increases initially**."
+
+[[content.consequences.negative]]
+text = "Mitigation: track docs updates as required migration work items and block V2 cutover completion until docs/tests are updated."
+
+[[content.consequences.negative]]
+text = "Requires staged migration and temporary dual-path operation"
+
+[[content.consequences.negative]]
+text = "Demands high-quality generator and parity tests to avoid systemic regressions"
 
 [[content.alternatives]]
 text = "Option A: Continue incremental cleanup on current architecture"
-status = "rejected"
 pros = [
     "Lowest immediate implementation risk",
     "No major migration event required",
@@ -128,7 +151,6 @@ rejection_reason = "It optimizes short-term churn but leaves the root architectu
 
 [[content.alternatives]]
 text = "Option B: Standardize internal editing on JSON only"
-status = "rejected"
 pros = [
     "Maximizes reuse of mature JSON tooling and standards",
     "Simplifies internal document mutation mechanics",
@@ -138,15 +160,3 @@ cons = [
     "Weakens direct TOML-at-rest operational clarity established by ADR-0001",
 ]
 rejection_reason = "It shifts complexity to conversion boundaries and does not provide a first-class TOML contract."
-
-[[content.alternatives]]
-text = "Option C: SSOT-driven semantic engine with explicit JSON/TOML adapters"
-status = "accepted"
-pros = [
-    "Preserves storage-format independence while unifying semantic behavior",
-    "Enables SSOT-driven extensibility with lower long-term maintenance cost",
-]
-cons = [
-    "Requires staged migration and temporary dual-path operation",
-    "Demands high-quality generator and parity tests to avoid systemic regressions",
-]

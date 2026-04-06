@@ -86,31 +86,48 @@ Compatibility is preserved as a **normalization layer after parse, before resolu
 2. Keep current diagnostics mapping (`E0814`/`E0815`/`E0816`/`E0817`/`E0818`).
 3. Add golden tests for legacy compatibility inputs.
 4. Add negative tests for over-deep/over-specified paths and verb-shape violations.
-5. Remove old parser implementation after parity tests pass."""
-consequences = """
-### Positive
+5. Remove old parser implementation after parity tests pass.
 
-- Eliminates a class of silent-acceptance bugs via full-input consumption.
-- Makes grammar behavior explicit and easier to reason about during review.
-- Provides a stable foundation for future extensions without reintroducing ad-hoc state logic.
-- Improves confidence in diagnostics by separating parse/normalize/resolve phases.
+### Recovered Selected-Option Advantages
 
-### Negative
+- Strict grammar with full-input consumption
+- Rust-native and testable composition
+- Balanced complexity for small grammar
+"""
+selected_option = "Option 2: Use winnow parser combinators with typed AST"
 
-- Adds a third-party parsing dependency.
-  - Mitigation: keep dependency surface small and isolate parser module behind a narrow API.
-- Introduces a learning curve for maintainers unfamiliar with parser combinators.
-  - Mitigation: document grammar and parser module invariants with examples and tests.
-- Migration requires careful parity testing to avoid compatibility regressions.
-  - Mitigation: snapshot parity suite for legacy field forms and aliases before rollout.
+[content.consequences]
+positive = [
+    "Eliminates a class of silent-acceptance bugs via full-input consumption.",
+    "Makes grammar behavior explicit and easier to reason about during review.",
+    "Provides a stable foundation for future extensions without reintroducing ad-hoc state logic.",
+    "Improves confidence in diagnostics by separating parse/normalize/resolve phases.",
+]
+neutral = ["Runtime cost is expected to be negligible for CLI-scale path strings; this should be verified by micro-benchmarks in CI but is not expected to be user-visible."]
 
-### Neutral
+[[content.consequences.negative]]
+text = "Adds a third-party parsing dependency."
 
-- Runtime cost is expected to be negligible for CLI-scale path strings; this should be verified by micro-benchmarks in CI but is not expected to be user-visible."""
+[[content.consequences.negative]]
+text = "Mitigation: keep dependency surface small and isolate parser module behind a narrow API."
+
+[[content.consequences.negative]]
+text = "Introduces a learning curve for maintainers unfamiliar with parser combinators."
+
+[[content.consequences.negative]]
+text = "Mitigation: document grammar and parser module invariants with examples and tests."
+
+[[content.consequences.negative]]
+text = "Migration requires careful parity testing to avoid compatibility regressions."
+
+[[content.consequences.negative]]
+text = "Mitigation: snapshot parity suite for legacy field forms and aliases before rollout."
+
+[[content.consequences.negative]]
+text = "Adds dependency and parser-combinator learning curve"
 
 [[content.alternatives]]
 text = "Option 1: Keep manual parser and harden it"
-status = "rejected"
 pros = [
     "No new dependencies",
     "Minimal refactor scope",
@@ -122,18 +139,7 @@ cons = [
 rejection_reason = "Recent review findings indicate brittle behavior under malformed or over-specified paths"
 
 [[content.alternatives]]
-text = "Option 2: Use winnow parser combinators with typed AST"
-status = "accepted"
-pros = [
-    "Strict grammar with full-input consumption",
-    "Rust-native and testable composition",
-    "Balanced complexity for small grammar",
-]
-cons = ["Adds dependency and parser-combinator learning curve"]
-
-[[content.alternatives]]
 text = "Option 3: Use PEG/grammar generator approach"
-status = "rejected"
 pros = [
     "Clear formal grammar artifacts",
     "Good for larger language evolution",

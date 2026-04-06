@@ -298,17 +298,8 @@ pub struct AdrMeta {
     pub superseded_by: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
-}
-
-/// Status for ADR alternatives
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize, AsRefStr)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum AlternativeStatus {
-    #[default]
-    Considered,
-    Rejected,
-    Accepted,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub migration: Option<AdrMigrationMeta>,
 }
 
 /// An alternative option considered in an ADR.
@@ -316,8 +307,6 @@ pub enum AlternativeStatus {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Alternative {
     pub text: String,
-    #[serde(default)]
-    pub status: AlternativeStatus,
     /// Advantages of this alternative per [[ADR-0027]]
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub pros: Vec<String>,
@@ -334,12 +323,58 @@ impl Alternative {
     pub fn new(text: impl Into<String>) -> Self {
         Self {
             text: text.into(),
-            status: AlternativeStatus::Considered,
             pros: vec![],
             cons: vec![],
             rejection_reason: None,
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AdrNegativeConsequence {
+    pub text: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub mitigations: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AdrConsequences {
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub positive: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub negative: Vec<AdrNegativeConsequence>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub neutral: Vec<String>,
+}
+
+impl AdrConsequences {
+    pub fn is_empty(&self) -> bool {
+        self.positive.is_empty() && self.negative.is_empty() && self.neutral.is_empty()
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsRefStr)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
+pub enum AdrMigrationState {
+    Migrated,
+    NeedsReview,
+    Verified,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdrMigrationWarning {
+    pub code: String,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AdrMigrationMeta {
+    pub state: AdrMigrationState,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub warnings: Vec<AdrMigrationWarning>,
 }
 
 /// ADR content section `[content]`
@@ -349,8 +384,10 @@ pub struct AdrContent {
     pub context: String,
     #[serde(default)]
     pub decision: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub selected_option: Option<String>,
     #[serde(default)]
-    pub consequences: String,
+    pub consequences: AdrConsequences,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub alternatives: Vec<Alternative>,
 }
@@ -757,14 +794,18 @@ mod tests {
     fn test_alternative_new() {
         let alt = Alternative::new("Use Redis for caching");
         assert_eq!(alt.text, "Use Redis for caching");
-        assert_eq!(alt.status, AlternativeStatus::Considered);
+        assert!(alt.pros.is_empty());
+        assert!(alt.cons.is_empty());
+        assert!(alt.rejection_reason.is_none());
     }
 
     #[test]
     fn test_alternative_new_from_string() {
         let alt = Alternative::new(String::from("Use PostgreSQL"));
         assert_eq!(alt.text, "Use PostgreSQL");
-        assert_eq!(alt.status, AlternativeStatus::Considered);
+        assert!(alt.pros.is_empty());
+        assert!(alt.cons.is_empty());
+        assert!(alt.rejection_reason.is_none());
     }
 
     // =========================================================================
@@ -774,11 +815,6 @@ mod tests {
     #[test]
     fn test_checklist_status_default() {
         assert_eq!(ChecklistStatus::default(), ChecklistStatus::Pending);
-    }
-
-    #[test]
-    fn test_alternative_status_default() {
-        assert_eq!(AlternativeStatus::default(), AlternativeStatus::Considered);
     }
 
     #[test]
@@ -827,13 +863,6 @@ mod tests {
         assert_eq!(ChecklistStatus::Cancelled.as_ref(), "cancelled");
     }
 
-    #[test]
-    fn test_alternative_status_as_ref() {
-        assert_eq!(AlternativeStatus::Considered.as_ref(), "considered");
-        assert_eq!(AlternativeStatus::Rejected.as_ref(), "rejected");
-        assert_eq!(AlternativeStatus::Accepted.as_ref(), "accepted");
-    }
-
     // =========================================================================
     // AdrEntry/WorkItemEntry accessor Tests
     // =========================================================================
@@ -850,6 +879,7 @@ mod tests {
                     date: "2026-01-17".to_string(),
                     superseded_by: None,
                     refs: vec![],
+                    migration: None,
                 },
                 content: AdrContent::default(),
             },

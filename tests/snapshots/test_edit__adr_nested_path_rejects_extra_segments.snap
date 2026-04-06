@@ -12,5 +12,5 @@ Added 'Option X' to ADR-0001.alternatives
 exit: 0
 
 $ govctl adr get ADR-0001 alt[0].pros[0].oops
-error[E0814]: Path 'alternatives[0].pros[0].oops' exceeds max depth 2 for adr.alternatives (ADR-0001)
+error[E0817]: Cannot descend into non-object path 'alternatives[0].pros[0].oops' (ADR-0001)
 exit: 1

@@ -1,5 +1,7 @@
 //! Edit path rules generated from JSON SSOT (ADR-0030).
 
+use crate::diagnostic::DiagnosticCode;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FieldKind {
     Scalar,
@@ -7,10 +9,41 @@ pub enum FieldKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct NestedFieldRule {
+pub enum NestedNodeKind {
+    Scalar,
+    Object,
+    List,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
+pub enum NestedScalarMode {
+    String,
+    OptionalString {
+        empty_as_null: bool,
+    },
+    Integer,
+    Enum {
+        allowed: &'static [&'static str],
+        invalid_msg: &'static str,
+        code: Option<DiagnosticCode>,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NestedChildRule {
     pub name: &'static str,
-    pub kind: FieldKind,
+    pub node: &'static NestedNodeRule,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NestedNodeRule {
+    pub kind: NestedNodeKind,
     pub verbs: &'static [&'static str],
+    pub text_key: Option<&'static str>,
+    pub set_mode: Option<NestedScalarMode>,
+    pub item: Option<&'static NestedNodeRule>,
+    pub fields: &'static [NestedChildRule],
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -18,10 +51,7 @@ pub struct NestedRootRule {
     pub artifact: &'static str,
     pub root: &'static str,
     pub content_path: &'static [&'static str],
-    pub text_key: Option<&'static str>,
-    pub requires_index: bool,
-    pub max_depth: usize,
-    pub fields: &'static [NestedFieldRule],
+    pub node: &'static NestedNodeRule,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -112,13 +142,25 @@ pub fn nested_field_rule(
     artifact: &str,
     root: &str,
     field: &str,
-) -> Option<&'static NestedFieldRule> {
-    nested_root_rule(artifact, root).and_then(|rule| rule.fields.iter().find(|f| f.name == field))
+) -> Option<&'static NestedChildRule> {
+    let rule = nested_root_rule(artifact, root)?;
+    match rule.node.kind {
+        NestedNodeKind::Object => rule.node.fields.iter().find(|f| f.name == field),
+        NestedNodeKind::List => {
+            let item = rule.node.item?;
+            if item.kind != NestedNodeKind::Object {
+                return None;
+            }
+            item.fields.iter().find(|f| f.name == field)
+        }
+        NestedNodeKind::Scalar => None,
+    }
 }
 
 #[cfg(test)]
 pub fn nested_field_supports_verb(artifact: &str, root: &str, field: &str, verb: Verb) -> bool {
-    nested_field_rule(artifact, root, field).is_some_and(|rule| rule.verbs.contains(&verb.as_str()))
+    nested_field_rule(artifact, root, field)
+        .is_some_and(|rule| rule.node.verbs.contains(&verb.as_str()))
 }
 
 pub fn field_validation_rule(artifact: &str, field: &str) -> Option<&'static FieldValidationRule> {
@@ -152,9 +194,8 @@ mod tests {
     #[test]
     fn test_nested_rule_lookup() {
         let rule = nested_root_rule("adr", "alternatives").expect("rule should exist");
-        assert_eq!(rule.max_depth, 2);
-        assert!(rule.requires_index);
-        assert_eq!(EDIT_RULES_VERSION, 1);
+        assert_eq!(rule.node.kind, NestedNodeKind::List);
+        assert_eq!(EDIT_RULES_VERSION, 2);
     }
 
     #[test]
@@ -174,12 +215,16 @@ mod tests {
     }
 
     #[test]
+    fn test_nested_object_root_lookup() {
+        let rule = nested_root_rule("guard", "check").expect("rule should exist");
+        assert_eq!(rule.node.kind, NestedNodeKind::Object);
+        let child = nested_field_rule("guard", "check", "timeout_secs").expect("child exists");
+        assert_eq!(child.node.kind, NestedNodeKind::Scalar);
+    }
+
+    #[test]
     fn test_simple_field_supports_verb() {
-        assert!(simple_field_supports_verb(
-            "adr",
-            "alternatives",
-            Verb::Tick
-        ));
+        assert!(simple_field_supports_verb("adr", "alternatives", Verb::Add));
         assert!(!simple_field_supports_verb(
             "adr",
             "superseded_by",

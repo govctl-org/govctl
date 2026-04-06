@@ -7,6 +7,9 @@ status = "accepted"
 date = "2026-02-11"
 refs = ["ADR-0024"]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 The `assets/` directory currently contains a flat mix of files: four command workflow definitions (`gov.md`, `quick.md`, `discuss.md`, `status.md`) and four logo SVGs. As we prepare to add **skill definitions** (specialized AI agent capabilities) and **agent definitions** (agent role/behavior configurations), the flat structure becomes ambiguous — it conflates three distinct categories of assets.
@@ -37,23 +40,26 @@ All compile-time paths (`include_str!`), build system paths (`build.rs`), and sc
 1. **Semantic clarity** — the directory name tells you what kind of asset it is
 2. **Minimal blast radius** — logos stay put, only command `.md` files move one level deeper
 3. **Future-proof** — skills and agents get their own home from day one"""
-consequences = """
-### Positive
-- Clear separation of concerns for three distinct asset categories
-- New skills/agents have a designated location from the start
-- Scripts and tooling can target specific subdirectories
+selected_option = "Organize assets into commands, skills, and agents subdirectories"
 
-### Negative
-- One-time update to all paths referencing command assets (4 files)
-- Test snapshots that reference output paths may need updating
+[content.consequences]
+positive = [
+    "Clear separation of concerns for three distinct asset categories",
+    "New skills/agents have a designated location from the start",
+    "Scripts and tooling can target specific subdirectories",
+]
+neutral = ["Logo SVGs stay at `assets/` root — no change to README references"]
 
-### Neutral
-- Logo SVGs stay at `assets/` root — no change to README references"""
+[[content.consequences.negative]]
+text = "One-time update to all paths referencing command assets (4 files)"
+
+[[content.consequences.negative]]
+text = "Test snapshots that reference output paths may need updating"
 
 [[content.alternatives]]
 text = "Flat with naming conventions: Keep flat assets/ and use prefixes like cmd-gov.md, skill-foo.md. Rejected: naming conventions are fragile and don't scale."
-status = "considered"
+rejection_reason = "Relying on filename prefixes keeps the directory semantically flat and creates fragile naming conventions that do not scale."
 
 [[content.alternatives]]
 text = "Separate top-level directories: commands/ skills/ agents/ at repo root. Rejected: over-scatters related assets."
-status = "considered"
+rejection_reason = "Moving commands, skills, and agents to separate top-level directories scatters closely related assets more than necessary."

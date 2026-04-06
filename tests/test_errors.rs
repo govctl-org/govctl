@@ -527,8 +527,10 @@ date = "2026-01-01"
 [content]
 context = "Context"
 decision = "Decision"
-consequences = "Consequences"
 unexpected = "should fail schema validation"
+
+[content.consequences]
+positive = ["Consequences"]
 "#,
     )
     .unwrap();

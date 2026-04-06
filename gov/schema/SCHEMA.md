@@ -218,21 +218,26 @@ decision = """
 What was decided and why.
 """
 
-consequences = """
-Impact of the decision.
-"""
+selected_option = "Option B"
+
+[content.consequences]
+positive = ["Improves throughput"]
+neutral = ["Adds one more config knob"]
+
+[[content.consequences.negative]]
+text = "Requires a new dependency"
+mitigations = ["Document installation in onboarding guide"]
 
 [[content.alternatives]]
 text = "Option A"
-status = "rejected"
 rejection_reason = "Does not meet performance requirements"
 cons = ["Slow", "Hard to maintain"]
 
 [[content.alternatives]]
-text = "Option B"
-status = "accepted"
-pros = ["Fast", "Simple"]
-cons = ["Requires new dependency"]
+text = "Option C"
+pros = ["Simple"]
+cons = ["Insufficient scalability"]
+rejection_reason = "Does not support projected load"
 ```
 
 | Field                                     | Required | Type   | Description                                            |
@@ -245,13 +250,18 @@ cons = ["Requires new dependency"]
 | `govctl.refs`                             | no       | array  | Cross-references                                       |
 | `content.context`                         | yes      | string | Problem description                                    |
 | `content.decision`                        | yes      | string | Decision and rationale                                 |
-| `content.consequences`                    | yes      | string | Impact analysis                                        |
-| `content.alternatives`                    | no       | array  | Options considered                                     |
+| `content.selected_option`                 | no       | string | Chosen option once the decision is made                |
+| `content.consequences`                    | yes      | object | Structured impact analysis                             |
+| `content.consequences.positive[]`         | no       | array  | Positive outcomes                                      |
+| `content.consequences.negative[]`         | no       | array  | Negative outcomes with mitigations                     |
+| `content.consequences.negative[].text`    | yes      | string | Negative outcome text                                  |
+| `content.consequences.negative[].mitigations[]` | no | array | Mitigations for a negative outcome                     |
+| `content.consequences.neutral[]`          | no       | array  | Neutral side effects                                   |
+| `content.alternatives`                    | no       | array  | Non-selected options that were considered              |
 | `content.alternatives[].text`             | yes      | string | Option description                                     |
-| `content.alternatives[].status`           | no       | enum   | `considered` \| `rejected` \| `accepted`               |
 | `content.alternatives[].pros`             | no       | array  | Advantages (per [[ADR-0027]])                          |
 | `content.alternatives[].cons`             | no       | array  | Disadvantages (per [[ADR-0027]])                       |
-| `content.alternatives[].rejection_reason` | no       | string | Why rejected (per [[ADR-0027]])                        |
+| `content.alternatives[].rejection_reason` | no       | string | Why this option was not selected                       |
 
 ### Work Item (TOML)
 

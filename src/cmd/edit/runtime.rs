@@ -1,6 +1,8 @@
 use super::ArtifactType;
 use super::path::{self, FieldPath};
-use super::rules::{self as edit_rules, FieldKind, NestedRootRule, Verb};
+use super::rules::{
+    self as edit_rules, NestedNodeKind, NestedNodeRule, NestedRootRule, NestedScalarMode, Verb,
+};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde_json::Value;
 
@@ -9,6 +11,9 @@ enum RenderMode {
     Scalar,
     CsvStrings,
     LineStrings,
+    TextLines {
+        text_key: &'static str,
+    },
     StatusLines {
         status_key: &'static str,
         text_key: &'static str,
@@ -337,6 +342,7 @@ fn render_field(doc: &Value, spec: SimpleFieldSpec, id: &str) -> anyhow::Result<
         RenderMode::Scalar => Ok(render_scalar(v)),
         RenderMode::CsvStrings => render_string_array(v, ", ", id),
         RenderMode::LineStrings => render_string_array(v, "\n", id),
+        RenderMode::TextLines { text_key } => render_text_lines(v, text_key, id),
         RenderMode::StatusLines {
             status_key,
             text_key,
@@ -426,6 +432,38 @@ fn render_status_lines(
             .and_then(Value::as_str)
             .unwrap_or_default();
         out.push(format!("[{status}] {text}"));
+    }
+    Ok(out.join("\n"))
+}
+
+fn render_text_lines(v: Option<&Value>, text_key: &str, id: &str) -> anyhow::Result<String> {
+    let Some(v) = v else {
+        return Ok(String::new());
+    };
+    let Some(items) = v.as_array() else {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            "Expected an array value",
+            id,
+        )
+        .into());
+    };
+
+    let mut out = Vec::with_capacity(items.len());
+    for item in items {
+        let Some(text) = item
+            .as_object()
+            .and_then(|obj| obj.get(text_key))
+            .and_then(Value::as_str)
+        else {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Expected object array items with '{text_key}' field"),
+                id,
+            )
+            .into());
+        };
+        out.push(text.to_string());
     }
     Ok(out.join("\n"))
 }
@@ -528,7 +566,6 @@ fn ensure_array_path_mut<'a>(
 // Generic nested field operations (ADR-0031 V2)
 // ===========================================================================
 
-/// Resolve a nested root rule from the SSOT, returning an error if not found.
 fn resolve_nested_root(
     artifact: ArtifactType,
     root: &str,
@@ -544,114 +581,6 @@ fn resolve_nested_root(
     })
 }
 
-/// Validate a nested field path against SSOT rules for a given verb.
-///
-/// Validates depth, index requirements, and subfield verb support.
-/// Returns the resolved root index.
-fn validate_nested_path(
-    artifact: ArtifactType,
-    rule: &NestedRootRule,
-    fp: &FieldPath,
-    verb: Verb,
-    root_array_len: usize,
-    id: &str,
-) -> anyhow::Result<usize> {
-    let root_name = &fp.segments[0].name;
-
-    // Validate depth
-    if fp.segments.len() > rule.max_depth {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0814InvalidPath,
-            format!(
-                "Path '{}' exceeds max depth {} for {}.{}",
-                fp,
-                rule.max_depth,
-                artifact.rule_key(),
-                root_name
-            ),
-            id,
-        )
-        .into());
-    }
-
-    // Resolve root index
-    let root_idx = path::require_index(&fp.segments[0], root_array_len)?;
-
-    // Validate subfield if present
-    if fp.segments.len() >= 2 {
-        let subfield = &fp.segments[1].name;
-        let field_rule = edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield)
-            .ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0815PathFieldNotFound,
-                    format!(
-                        "Unknown field '{}' under {}.{}",
-                        subfield,
-                        artifact.rule_key(),
-                        root_name
-                    ),
-                    id,
-                )
-            })?;
-        if !field_rule.verbs.contains(&verb.as_str()) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!(
-                    "Field '{}.{}' does not support verb '{}'",
-                    root_name,
-                    subfield,
-                    verb.as_str()
-                ),
-                id,
-            )
-            .into());
-        }
-    }
-
-    Ok(root_idx)
-}
-
-/// Navigate to the root array in a JSON document using the SSOT content_path.
-fn root_array<'a>(
-    doc: &'a Value,
-    rule: &NestedRootRule,
-    id: &str,
-) -> anyhow::Result<&'a Vec<Value>> {
-    value_at_path(doc, rule.content_path)
-        .and_then(Value::as_array)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!("Expected array at path '{}'", rule.content_path.join(".")),
-                id,
-            )
-            .into()
-        })
-}
-
-/// Navigate to the root array (mutable) in a JSON document.
-fn root_array_mut<'a>(
-    doc: &'a mut Value,
-    rule: &NestedRootRule,
-    id: &str,
-) -> anyhow::Result<&'a mut Vec<Value>> {
-    ensure_array_path_mut(doc, rule.content_path, id)?
-        .as_array_mut()
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!("Expected array at path '{}'", rule.content_path.join(".")),
-                id,
-            )
-            .into()
-        })
-}
-
-/// GET a nested field value. Handles:
-/// - `root[i]` → render all fields of the item
-/// - `root[i].scalar` → render scalar value
-/// - `root[i].list` → render all list items
-/// - `root[i].list[j]` → render one list item
 pub fn get_nested_field(
     artifact: ArtifactType,
     doc: &Value,
@@ -660,51 +589,18 @@ pub fn get_nested_field(
 ) -> anyhow::Result<String> {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
-    let arr = root_array(doc, rule, id)?;
-    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Get, arr.len(), id)?;
-    let item = &arr[root_idx];
-
-    if fp.segments.len() == 1 {
-        // Render whole item
-        return render_nested_item(item, rule, id);
-    }
-
-    let subfield = &fp.segments[1].name;
-    let field_rule =
-        edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).unwrap();
-
-    match field_rule.kind {
-        FieldKind::Scalar => {
-            if fp.segments[1].index.is_some() {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    format!("Cannot index into scalar field '{subfield}'"),
-                    id,
-                )
-                .into());
-            }
-            Ok(render_scalar(item.get(subfield)))
-        }
-        FieldKind::List => {
-            let list = item
-                .get(subfield)
-                .and_then(Value::as_array)
-                .cloned()
-                .unwrap_or_default();
-            if let Some(sub_idx) = fp.segments[1].index {
-                let resolved = path::resolve_index(sub_idx, list.len())?;
-                Ok(render_scalar(list.get(resolved)))
-            } else {
-                let strs: Vec<String> = list.iter().map(|v| render_scalar(Some(v))).collect();
-                Ok(strs.join("\n"))
-            }
-        }
-    }
+    let root_value = value_at_path(doc, rule.content_path);
+    let (node, value) = descend_get(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Get,
+        id,
+    )?;
+    render_nested_node(node, value, id)
 }
 
-/// SET a nested field value. Handles:
-/// - `root[i].scalar "value"` → set scalar field
-/// - `root[i].list[j] "value"` → replace list item at index
 pub fn set_nested_field(
     artifact: ArtifactType,
     doc: &mut Value,
@@ -714,59 +610,36 @@ pub fn set_nested_field(
 ) -> anyhow::Result<()> {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
-    let arr = root_array_mut(doc, rule, id)?;
-    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Set, arr.len(), id)?;
-
-    if fp.segments.len() < 2 {
-        return Err(Diagnostic::new(
+    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
+    let (node, slot) = descend_mut(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Set,
+        id,
+    )?;
+    match node.kind {
+        NestedNodeKind::Scalar => apply_nested_scalar_set(slot, node.set_mode, value, id),
+        NestedNodeKind::List => Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
             format!(
-                "Cannot set entire '{}' item directly; specify a subfield",
-                root_name
+                "Field '{}' is a list; use an index to set a specific item, or use 'add'/'remove'",
+                fp
             ),
             id,
         )
-        .into());
-    }
-
-    let subfield = &fp.segments[1].name;
-    let field_rule =
-        edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).unwrap();
-    let item = arr[root_idx]
-        .as_object_mut()
-        .ok_or_else(|| type_mismatch("Expected object item in array", id))?;
-
-    match field_rule.kind {
-        FieldKind::Scalar => {
-            // For optional fields (current value is null), empty → null
-            let json_value = if value.is_empty() && item.get(subfield).is_none_or(|v| v.is_null()) {
-                Value::Null
-            } else {
-                Value::String(value.to_string())
-            };
-            item.insert(subfield.to_string(), json_value);
-        }
-        FieldKind::List => {
-            let sub_idx = fp.segments[1].index.ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    format!("Field '{subfield}' is a list; use an index to set a specific item, or use 'add'/'remove'"),
-                    id,
-                )
-            })?;
-            let list = item
-                .entry(subfield)
-                .or_insert_with(|| Value::Array(Vec::new()))
-                .as_array_mut()
-                .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
-            let resolved = path::resolve_index(sub_idx, list.len())?;
-            list[resolved] = Value::String(value.to_string());
-        }
-    }
+        .into()),
+        NestedNodeKind::Object => Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!("Cannot set object path '{}' directly", fp),
+            id,
+        )
+        .into()),
+    }?;
     Ok(())
 }
 
-/// ADD a value to a nested list field: `root[i].list "value"`.
 pub fn add_nested_list_value(
     artifact: ArtifactType,
     doc: &mut Value,
@@ -776,23 +649,7 @@ pub fn add_nested_list_value(
 ) -> anyhow::Result<()> {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
-    let arr = root_array_mut(doc, rule, id)?;
-    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Add, arr.len(), id)?;
-
-    if fp.segments.len() < 2 {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!(
-                "Cannot add to '{}' without specifying a list subfield",
-                root_name
-            ),
-            id,
-        )
-        .into());
-    }
-
-    // Reject indexed terminal paths: e.g., alt[0].pros[999]
-    if fp.segments[1].index.is_some() {
+    if fp.has_terminal_index() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
             format!(
@@ -803,37 +660,78 @@ pub fn add_nested_list_value(
         )
         .into());
     }
-
-    let subfield = &fp.segments[1].name;
-    let field_rule =
-        edit_rules::nested_field_rule(artifact.rule_key(), root_name, subfield).unwrap();
-    if field_rule.kind != FieldKind::List {
+    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
+    let (node, slot) = descend_mut(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Add,
+        id,
+    )?;
+    if node.kind != NestedNodeKind::List {
         return Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
-            format!("Field '{subfield}' is not a list; cannot add to it"),
+            format!("Field '{}' is not a list; cannot add to it", fp),
             id,
         )
         .into());
     }
-
-    let item = arr[root_idx]
-        .as_object_mut()
-        .ok_or_else(|| type_mismatch("Expected object item in array", id))?;
-    let list = item
-        .entry(subfield)
-        .or_insert_with(|| Value::Array(Vec::new()))
+    let item_rule = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    let list = slot
         .as_array_mut()
         .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
 
-    // Duplicate check
-    if !list.iter().any(|v| v.as_str() == Some(value)) {
-        list.push(Value::String(value.to_string()));
+    match item_rule.kind {
+        NestedNodeKind::Scalar => {
+            if !list.iter().any(|v| v.as_str() == Some(value)) {
+                list.push(Value::String(value.to_string()));
+            }
+        }
+        NestedNodeKind::Object => {
+            let Some(text_key) = node.text_key else {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    format!(
+                        "Field '{}' requires structured list items and cannot be appended with a plain string",
+                        fp
+                    ),
+                    id,
+                )
+                .into());
+            };
+            let duplicate = list.iter().any(|item| {
+                item.as_object()
+                    .and_then(|obj| obj.get(text_key))
+                    .and_then(Value::as_str)
+                    == Some(value)
+            });
+            if !duplicate {
+                let mut item = default_value_for_node(item_rule);
+                let obj = item
+                    .as_object_mut()
+                    .ok_or_else(|| type_mismatch("Expected object list item", id))?;
+                obj.insert(text_key.to_string(), Value::String(value.to_string()));
+                list.push(item);
+            }
+        }
+        NestedNodeKind::List => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!(
+                    "Field '{}' requires structured list items and cannot be appended with a plain string",
+                    fp
+                ),
+                id,
+            )
+            .into());
+        }
     }
     Ok(())
 }
 
-/// REMOVE values from a nested list field: `root[i].list` with matcher.
-/// Returns the removed values.
 pub fn remove_nested_list_values<F>(
     artifact: ArtifactType,
     doc: &mut Value,
@@ -846,42 +744,50 @@ where
 {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
-    let arr = root_array_mut(doc, rule, id)?;
-    let root_idx = validate_nested_path(artifact, rule, fp, Verb::Remove, arr.len(), id)?;
-
-    if fp.segments.len() < 2 {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!(
-                "Cannot remove from '{}' without specifying a list subfield",
-                root_name
-            ),
-            id,
-        )
-        .into());
+    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
+    let (node, slot) = descend_mut(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Remove,
+        id,
+    )?;
+    if node.kind != NestedNodeKind::List {
+        return Err(type_mismatch("Expected array for list field", id).into());
     }
-
-    let subfield = &fp.segments[1].name;
-    let item = arr[root_idx]
-        .as_object_mut()
-        .ok_or_else(|| type_mismatch("Expected object item in array", id))?;
-    let list = item
-        .get_mut(subfield)
-        .and_then(Value::as_array_mut)
+    let item_rule = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    let list = slot
+        .as_array_mut()
         .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
 
-    let texts: Vec<&str> = list
-        .iter()
-        .map(|v| {
-            v.as_str().ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    "Expected string items in list",
-                    id,
-                )
+    let texts: Vec<&str> = match item_rule.kind {
+        NestedNodeKind::Scalar => list
+            .iter()
+            .map(|v| {
+                v.as_str().ok_or_else(|| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0817PathTypeMismatch,
+                        "Expected string items in list",
+                        id,
+                    )
+                })
             })
-        })
-        .collect::<Result<Vec<_>, _>>()?;
+            .collect::<Result<Vec<_>, _>>()?,
+        NestedNodeKind::Object => {
+            let text_key = node
+                .text_key
+                .ok_or_else(|| type_mismatch("Expected text_key for object list", id))?;
+            list.iter()
+                .map(|v| status_list_text(v, text_key, id))
+                .collect::<Result<Vec<_>, _>>()?
+        }
+        NestedNodeKind::List => {
+            return Err(type_mismatch("Expected scalar or object items in list", id).into());
+        }
+    };
 
     let indices = resolve(&texts)?;
     let mut sorted = indices;
@@ -890,14 +796,22 @@ where
     let mut removed = Vec::with_capacity(sorted.len());
     for idx in sorted {
         let val = list.remove(idx);
-        removed.push(val.as_str().unwrap_or_default().to_string());
+        let text = match item_rule.kind {
+            NestedNodeKind::Scalar => val.as_str().unwrap_or_default().to_string(),
+            NestedNodeKind::Object => {
+                let text_key = node
+                    .text_key
+                    .ok_or_else(|| type_mismatch("Expected text_key for object list", id))?;
+                status_list_text(&val, text_key, id)?.to_string()
+            }
+            NestedNodeKind::List => unreachable!("guarded above"),
+        };
+        removed.push(text);
     }
     removed.reverse();
     Ok(removed)
 }
 
-/// REMOVE an entire item from the root array by index: `root[i]`.
-/// Returns a display text for the removed item.
 pub fn remove_nested_root_item(
     artifact: ArtifactType,
     doc: &mut Value,
@@ -906,12 +820,18 @@ pub fn remove_nested_root_item(
 ) -> anyhow::Result<String> {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
-    let arr = root_array_mut(doc, rule, id)?;
+    if rule.node.kind != NestedNodeKind::List {
+        return Err(type_mismatch("Expected list root", id).into());
+    }
+    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
+    let arr = root_value
+        .as_array_mut()
+        .ok_or_else(|| type_mismatch("Expected array at root path", id))?;
     let root_idx = path::require_index(&fp.segments[0], arr.len())?;
     let removed = arr.remove(root_idx);
 
-    // Extract display text using SSOT text_key, falling back to bare string items
     let text = rule
+        .node
         .text_key
         .and_then(|key| removed.get(key).and_then(Value::as_str))
         .or_else(|| removed.as_str())
@@ -920,32 +840,377 @@ pub fn remove_nested_root_item(
     Ok(text)
 }
 
-/// Render all fields of a nested object item for display.
-fn render_nested_item(item: &Value, rule: &NestedRootRule, _id: &str) -> anyhow::Result<String> {
-    let mut lines = Vec::new();
-    if let Some(obj) = item.as_object() {
-        for field in rule.fields {
-            if let Some(val) = obj.get(field.name) {
-                match field.kind {
-                    FieldKind::Scalar => {
-                        lines.push(format!("{}: {}", field.name, render_scalar(Some(val))));
-                    }
-                    FieldKind::List => {
-                        if let Some(arr) = val.as_array() {
-                            let items: Vec<&str> = arr.iter().filter_map(Value::as_str).collect();
-                            lines.push(format!("{}: {}", field.name, items.join(", ")));
-                        }
-                    }
-                }
-            }
+fn descend_get<'a>(
+    node: &'static NestedNodeRule,
+    value: Option<&'a Value>,
+    root_segment: &super::path::PathSegment,
+    rest: &[super::path::PathSegment],
+    verb: Verb,
+    id: &str,
+) -> anyhow::Result<(&'static NestedNodeRule, Option<&'a Value>)> {
+    let root_path = format_segment(root_segment);
+    let (node, value) = apply_optional_index(
+        node,
+        value,
+        root_segment.index,
+        id,
+        &root_path,
+        &root_segment.name,
+    )?;
+    descend_get_rest(node, value, rest, verb, id, &root_path)
+}
+
+fn descend_get_rest<'a>(
+    node: &'static NestedNodeRule,
+    value: Option<&'a Value>,
+    rest: &[super::path::PathSegment],
+    verb: Verb,
+    id: &str,
+    current_path: &str,
+) -> anyhow::Result<(&'static NestedNodeRule, Option<&'a Value>)> {
+    if rest.is_empty() {
+        if !node.verbs.contains(&verb.as_str()) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Path does not support verb '{}'", verb.as_str()),
+                id,
+            )
+            .into());
         }
-    } else if let Some(s) = item.as_str() {
-        // Simple string items (e.g., notes)
-        lines.push(s.to_string());
+        return Ok((node, value));
+    }
+    let seg = &rest[0];
+    if node.kind != NestedNodeKind::Object {
+        return Err(type_mismatch(
+            &format!(
+                "Cannot descend into non-object path '{}'",
+                append_segment(current_path, seg)
+            ),
+            id,
+        )
+        .into());
+    }
+    let child = node
+        .fields
+        .iter()
+        .find(|field| field.name == seg.name)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0815PathFieldNotFound,
+                format!("Unknown nested field '{}'", seg.name),
+                id,
+            )
+        })?;
+    let child_value = value.and_then(|value| value.get(seg.name.as_str()));
+    let next_path = append_segment(current_path, seg);
+    let (child_node, child_value) = apply_optional_index(
+        child.node,
+        child_value,
+        seg.index,
+        id,
+        &next_path,
+        &seg.name,
+    )?;
+    descend_get_rest(child_node, child_value, &rest[1..], verb, id, &next_path)
+}
+
+fn apply_optional_index<'a>(
+    node: &'static NestedNodeRule,
+    value: Option<&'a Value>,
+    index: Option<i32>,
+    id: &str,
+    path: &str,
+    field_name: &str,
+) -> anyhow::Result<(&'static NestedNodeRule, Option<&'a Value>)> {
+    let Some(index) = index else {
+        return Ok((node, value));
+    };
+    if node.kind != NestedNodeKind::List {
+        return Err(type_mismatch(
+            &format!("Cannot index into non-list field '{field_name}' at '{path}'"),
+            id,
+        )
+        .into());
+    }
+    let item = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    let selected = match value.and_then(Value::as_array) {
+        Some(items) => Some(&items[path::resolve_index(index, items.len())?]),
+        None => None,
+    };
+    Ok((item, selected))
+}
+
+fn descend_mut<'a>(
+    node: &'static NestedNodeRule,
+    value: &'a mut Value,
+    root_segment: &super::path::PathSegment,
+    rest: &[super::path::PathSegment],
+    verb: Verb,
+    id: &str,
+) -> anyhow::Result<(&'static NestedNodeRule, &'a mut Value)> {
+    let root_path = format_segment(root_segment);
+    let (node, value) = apply_optional_index_mut(
+        node,
+        value,
+        root_segment.index,
+        id,
+        &root_path,
+        &root_segment.name,
+    )?;
+    descend_mut_rest(node, value, rest, verb, id, &root_path)
+}
+
+fn descend_mut_rest<'a>(
+    node: &'static NestedNodeRule,
+    value: &'a mut Value,
+    rest: &[super::path::PathSegment],
+    verb: Verb,
+    id: &str,
+    current_path: &str,
+) -> anyhow::Result<(&'static NestedNodeRule, &'a mut Value)> {
+    if rest.is_empty() {
+        if !node.verbs.contains(&verb.as_str()) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Path does not support verb '{}'", verb.as_str()),
+                id,
+            )
+            .into());
+        }
+        return Ok((node, value));
+    }
+    let seg = &rest[0];
+    if node.kind != NestedNodeKind::Object {
+        return Err(type_mismatch(
+            &format!(
+                "Cannot descend into non-object path '{}'",
+                append_segment(current_path, seg)
+            ),
+            id,
+        )
+        .into());
+    }
+    let child = node
+        .fields
+        .iter()
+        .find(|field| field.name == seg.name)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0815PathFieldNotFound,
+                format!("Unknown nested field '{}'", seg.name),
+                id,
+            )
+        })?;
+    let obj = value
+        .as_object_mut()
+        .ok_or_else(|| type_mismatch("Expected object value", id))?;
+    let child_value = obj
+        .entry(seg.name.clone())
+        .or_insert_with(|| default_value_for_node(child.node));
+    let next_path = append_segment(current_path, seg);
+    let (child_node, child_value) = apply_optional_index_mut(
+        child.node,
+        child_value,
+        seg.index,
+        id,
+        &next_path,
+        &seg.name,
+    )?;
+    descend_mut_rest(child_node, child_value, &rest[1..], verb, id, &next_path)
+}
+
+fn apply_optional_index_mut<'a>(
+    node: &'static NestedNodeRule,
+    value: &'a mut Value,
+    index: Option<i32>,
+    id: &str,
+    path: &str,
+    field_name: &str,
+) -> anyhow::Result<(&'static NestedNodeRule, &'a mut Value)> {
+    let Some(index) = index else {
+        return Ok((node, value));
+    };
+    if node.kind != NestedNodeKind::List {
+        return Err(type_mismatch(
+            &format!("Cannot index into non-list field '{field_name}' at '{path}'"),
+            id,
+        )
+        .into());
+    }
+    let arr = value
+        .as_array_mut()
+        .ok_or_else(|| type_mismatch("Expected array value", id))?;
+    let resolved = path::resolve_index(index, arr.len())?;
+    let item = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    Ok((item, &mut arr[resolved]))
+}
+
+fn ensure_node_path_mut<'a>(
+    doc: &'a mut Value,
+    path: &[&str],
+    node: &'static NestedNodeRule,
+    id: &str,
+) -> anyhow::Result<&'a mut Value> {
+    let mut cur = doc;
+    for (idx, key) in path.iter().enumerate() {
+        let is_leaf = idx + 1 == path.len();
+        let obj = cur.as_object_mut().ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Cannot resolve field path '{}'", path.join(".")),
+                id,
+            )
+        })?;
+        if !obj.contains_key(*key) {
+            obj.insert(
+                (*key).to_string(),
+                if is_leaf {
+                    default_value_for_node(node)
+                } else {
+                    Value::Object(serde_json::Map::new())
+                },
+            );
+        }
+        cur = obj.get_mut(*key).expect("inserted above");
+    }
+    Ok(cur)
+}
+
+fn default_value_for_node(node: &NestedNodeRule) -> Value {
+    match node.kind {
+        NestedNodeKind::Scalar => Value::Null,
+        NestedNodeKind::Object => Value::Object(serde_json::Map::new()),
+        NestedNodeKind::List => Value::Array(Vec::new()),
+    }
+}
+
+fn render_nested_node(
+    node: &'static NestedNodeRule,
+    value: Option<&Value>,
+    id: &str,
+) -> anyhow::Result<String> {
+    match node.kind {
+        NestedNodeKind::Scalar => Ok(render_scalar(value)),
+        NestedNodeKind::List => render_nested_list(node, value, id),
+        NestedNodeKind::Object => render_nested_object(node, value, id),
+    }
+}
+
+fn render_nested_list(
+    node: &'static NestedNodeRule,
+    value: Option<&Value>,
+    id: &str,
+) -> anyhow::Result<String> {
+    let Some(value) = value else {
+        return Ok(String::new());
+    };
+    let arr = value
+        .as_array()
+        .ok_or_else(|| type_mismatch("Expected array value", id))?;
+    let item = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    if item.kind == NestedNodeKind::Scalar {
+        let rendered: Vec<String> = arr.iter().map(|item| render_scalar(Some(item))).collect();
+        return Ok(rendered.join("\n"));
+    }
+    let mut rendered = Vec::new();
+    for item_value in arr {
+        rendered.push(render_nested_node(item, Some(item_value), id)?);
+    }
+    Ok(rendered.join("\n\n"))
+}
+
+fn render_nested_object(
+    node: &'static NestedNodeRule,
+    value: Option<&Value>,
+    id: &str,
+) -> anyhow::Result<String> {
+    let Some(value) = value else {
+        return Ok(String::new());
+    };
+    let obj = value
+        .as_object()
+        .ok_or_else(|| type_mismatch("Expected object value", id))?;
+    let mut lines = Vec::new();
+    for field in node.fields {
+        if let Some(field_value) = obj.get(field.name) {
+            let rendered = if field.node.kind == NestedNodeKind::List
+                && field
+                    .node
+                    .item
+                    .is_some_and(|item| item.kind == NestedNodeKind::Scalar)
+            {
+                let items = field_value
+                    .as_array()
+                    .ok_or_else(|| type_mismatch("Expected array value", id))?;
+                items
+                    .iter()
+                    .map(|item| render_scalar(Some(item)))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            } else {
+                render_nested_node(field.node, Some(field_value), id)?
+            };
+            lines.push(format!("{}: {}", field.name, rendered));
+        }
     }
     Ok(lines.join("\n"))
 }
 
+fn apply_nested_scalar_set(
+    slot: &mut Value,
+    mode: Option<NestedScalarMode>,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    match mode.unwrap_or(NestedScalarMode::String) {
+        NestedScalarMode::String => *slot = Value::String(value.to_string()),
+        NestedScalarMode::OptionalString { empty_as_null } => {
+            if empty_as_null && value.is_empty() {
+                *slot = Value::Null;
+            } else {
+                *slot = Value::String(value.to_string());
+            }
+        }
+        NestedScalarMode::Integer => {
+            let n: i64 = value
+                .parse()
+                .map_err(|_| anyhow::anyhow!("Invalid integer value for {}: {value}", id))?;
+            *slot = Value::Number(serde_json::Number::from(n));
+        }
+        NestedScalarMode::Enum {
+            allowed,
+            invalid_msg,
+            code,
+        } => {
+            if !allowed.contains(&value) {
+                if let Some(code) = code {
+                    return Err(Diagnostic::new(code, format!("{invalid_msg}: {value}"), id).into());
+                }
+                return Err(anyhow::anyhow!("{invalid_msg}: {value}"));
+            }
+            *slot = Value::String(value.to_string());
+        }
+    }
+    Ok(())
+}
+
 fn type_mismatch(msg: &str, id: &str) -> Diagnostic {
     Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, msg, id)
+}
+
+fn format_segment(seg: &super::path::PathSegment) -> String {
+    match seg.index {
+        Some(idx) => format!("{}[{idx}]", seg.name),
+        None => seg.name.clone(),
+    }
+}
+
+fn append_segment(prefix: &str, seg: &super::path::PathSegment) -> String {
+    format!("{prefix}.{}", format_segment(seg))
 }

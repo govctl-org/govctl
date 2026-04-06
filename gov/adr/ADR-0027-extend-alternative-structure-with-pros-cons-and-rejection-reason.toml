@@ -7,6 +7,9 @@ status = "accepted"
 date = "2026-02-22"
 refs = ["RFC-0000:C-ADR-DEF"]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 The current `Alternative` structure in ADRs only has two fields: `text` and `status`. This is insufficient for capturing structured decision rationale:
@@ -46,7 +49,10 @@ Extend the `Alternative` structure with three new optional fields:
 
 **Backward compatibility:**
 All new fields use `#[serde(default)]` and `skip_serializing_if_empty`, so existing ADRs remain valid without migration."""
-consequences = """
+selected_option = "Extend Alternative structure with pros, cons, and rejection_reason"
+
+[content.consequences]
+neutral = ["""
 **What becomes easier:**
 
 - **Structured comparison**: Each alternative has its own pros/cons attached
@@ -75,4 +81,4 @@ consequences = """
 
     ### Author hash namespace (accepted)
     - Pros: Auto isolation, Zero config
-    - Cons: Slightly less readable"""
+    - Cons: Slightly less readable"""]

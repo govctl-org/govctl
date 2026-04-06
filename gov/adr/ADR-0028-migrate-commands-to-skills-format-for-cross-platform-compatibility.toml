@@ -10,6 +10,9 @@ refs = [
     "ADR-0023",
 ]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 The project currently has two mechanisms for AI agent capabilities:
@@ -71,7 +74,10 @@ Extend skill frontmatter to include command-specific fields:
 - Very low usage frequency observed
 - Equivalent information available via `govctl status` CLI
 - Reduces maintenance burden"""
-consequences = """
+selected_option = "Migrate workflow commands to skills format"
+
+[content.consequences]
+neutral = ["""
 **Positive:**
 - Single unified format for all agent capabilities
 - Portable across Claude, Cursor, and Codex
@@ -103,5 +109,4 @@ consequences = """
     ├── adr-writer/
     │   └── SKILL.md
     └── wi-writer/
-        └── SKILL.md
-"""
+        └── SKILL.md"""]

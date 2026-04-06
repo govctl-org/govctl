@@ -5,18 +5,23 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{ClauseSpec, ClauseWire, ReleasesFile, RfcSpec, RfcWire};
+use crate::model::{
+    AdrConsequences, AdrContent, AdrMeta, AdrMigrationMeta, AdrMigrationState, AdrMigrationWarning,
+    AdrNegativeConsequence, AdrSpec, AdrStatus, Alternative, ClauseSpec, ClauseWire, ReleasesFile,
+    RfcSpec, RfcWire,
+};
 use crate::schema::{
     ARTIFACT_SCHEMA_TEMPLATES, ArtifactSchema, validate_toml_value, with_schema_header,
 };
 use crate::ui;
 use crate::write::{WriteOp, read_clause, read_rfc, write_file};
+use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 /// Latest schema version. Bump when adding a new migration step.
-pub const CURRENT_SCHEMA_VERSION: u32 = 2;
+pub const CURRENT_SCHEMA_VERSION: u32 = 3;
 
 // =============================================================================
 // Core types
@@ -38,12 +43,20 @@ struct MigrationStep {
 }
 
 /// All registered migrations, ordered by version.
-const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
-    from: 1,
-    to: 2,
-    name: "structured wire format and schema headers",
-    plan_fn: plan_v1_to_v2,
-}];
+const MIGRATIONS: &[MigrationStep] = &[
+    MigrationStep {
+        from: 1,
+        to: 2,
+        name: "structured wire format and schema headers",
+        plan_fn: plan_v1_to_v2,
+    },
+    MigrationStep {
+        from: 2,
+        to: 3,
+        name: "adr chosen-option and consequences restructuring",
+        plan_fn: plan_v2_to_v3,
+    },
+];
 
 // =============================================================================
 // Public API
@@ -322,6 +335,356 @@ fn plan_v1_to_v2(config: &Config) -> anyhow::Result<Vec<FileOp>> {
     ops.extend(rewrite_ops);
 
     Ok(ops)
+}
+
+// =============================================================================
+// v2 -> v3: ADR chosen-option + structured consequences
+// =============================================================================
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "lowercase")]
+#[derive(Default)]
+enum LegacyAlternativeStatus {
+    #[default]
+    Considered,
+    Rejected,
+    Accepted,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct LegacyAlternative {
+    text: String,
+    #[serde(default)]
+    status: LegacyAlternativeStatus,
+    #[serde(default)]
+    pros: Vec<String>,
+    #[serde(default)]
+    cons: Vec<String>,
+    #[serde(default)]
+    rejection_reason: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct LegacyAdrContent {
+    context: String,
+    decision: String,
+    consequences: String,
+    #[serde(default)]
+    alternatives: Vec<LegacyAlternative>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct LegacyAdrMeta {
+    #[serde(default)]
+    schema: u32,
+    id: String,
+    title: String,
+    status: AdrStatus,
+    date: String,
+    #[serde(default)]
+    superseded_by: Option<String>,
+    #[serde(default)]
+    refs: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+struct LegacyAdrSpec {
+    govctl: LegacyAdrMeta,
+    content: LegacyAdrContent,
+}
+
+fn plan_v2_to_v3(config: &Config) -> anyhow::Result<Vec<FileOp>> {
+    let adr_dir = config.adr_dir();
+    if !adr_dir.exists() {
+        return Ok(vec![]);
+    }
+
+    let mut ops = Vec::new();
+    let mut entries: Vec<PathBuf> = fs::read_dir(&adr_dir)?
+        .filter_map(Result::ok)
+        .map(|e| e.path())
+        .filter(|p| p.extension().and_then(|ext| ext.to_str()) == Some("toml"))
+        .collect();
+    entries.sort();
+
+    for path in entries {
+        let content = fs::read_to_string(&path)?;
+        let raw: toml::Value = toml::from_str(&content).map_err(|e| {
+            Diagnostic::new(
+                DiagnosticCode::E0301AdrSchemaInvalid,
+                format!("Invalid ADR TOML during migration: {e}"),
+                config.display_path(&path).display().to_string(),
+            )
+        })?;
+
+        // Skip ADRs that already validate as v3.
+        let already_v3 = validate_toml_value(ArtifactSchema::Adr, config, &path, &raw).is_ok()
+            && raw
+                .get("content")
+                .and_then(|v| v.get("consequences"))
+                .and_then(toml::Value::as_table)
+                .is_some();
+        if already_v3 {
+            continue;
+        }
+
+        let legacy: LegacyAdrSpec = raw.clone().try_into().map_err(|e| {
+            Diagnostic::new(
+                DiagnosticCode::E0301AdrSchemaInvalid,
+                format!("Failed to deserialize legacy ADR during migration: {e}"),
+                config.display_path(&path).display().to_string(),
+            )
+        })?;
+
+        let migrated = migrate_legacy_adr(legacy);
+        let body = toml::to_string_pretty(&migrated)?;
+        let migrated_raw: toml::Value = toml::from_str(&body)?;
+        validate_toml_value(ArtifactSchema::Adr, config, &path, &migrated_raw)?;
+
+        ops.push(FileOp::Write {
+            path: path.clone(),
+            content: with_schema_header(ArtifactSchema::Adr, &body),
+        });
+    }
+
+    Ok(ops)
+}
+
+fn migrate_legacy_adr(legacy: LegacyAdrSpec) -> AdrSpec {
+    let mut decision = legacy.content.decision;
+    let mut consequences = parse_legacy_consequences(&legacy.content.consequences);
+    let mut alternatives = Vec::new();
+    let mut migration_warnings = Vec::new();
+    let mut selected_option = None;
+
+    let accepted: Vec<_> = legacy
+        .content
+        .alternatives
+        .iter()
+        .filter(|alt| matches!(alt.status, LegacyAlternativeStatus::Accepted))
+        .cloned()
+        .collect();
+
+    if accepted.len() == 1 {
+        let chosen = &accepted[0];
+        selected_option = Some(chosen.text.clone());
+        if !chosen.pros.is_empty() {
+            append_recovered_selected_pros(&mut decision, &chosen.pros);
+        }
+        for con in &chosen.cons {
+            consequences.negative.push(AdrNegativeConsequence {
+                text: con.clone(),
+                mitigations: vec![],
+            });
+        }
+    } else if accepted.len() > 1 {
+        migration_warnings.push(AdrMigrationWarning {
+            code: "ADR_MULTIPLE_ACCEPTED_OPTIONS".to_string(),
+            message: "Multiple accepted alternatives were found; the chosen option could not be resolved automatically.".to_string(),
+            path: Some("content.alternatives".to_string()),
+        });
+    } else if matches!(
+        legacy.govctl.status,
+        AdrStatus::Accepted | AdrStatus::Superseded
+    ) {
+        migration_warnings.push(AdrMigrationWarning {
+            code: "ADR_SELECTED_OPTION_UNRESOLVED".to_string(),
+            message: "Accepted or superseded ADR had no accepted alternative to migrate into selected_option.".to_string(),
+            path: Some("content.selected_option".to_string()),
+        });
+    }
+
+    for alt in legacy.content.alternatives {
+        match alt.status {
+            LegacyAlternativeStatus::Accepted => {
+                if accepted.len() > 1 {
+                    alternatives.push(Alternative {
+                        text: alt.text,
+                        pros: alt.pros,
+                        cons: alt.cons,
+                        rejection_reason: alt.rejection_reason,
+                    });
+                }
+            }
+            LegacyAlternativeStatus::Rejected => {
+                let rejection_reason = if alt.rejection_reason.is_some() {
+                    alt.rejection_reason
+                } else {
+                    migration_warnings.push(AdrMigrationWarning {
+                        code: "ADR_REJECTION_REASON_SYNTHETIC".to_string(),
+                        message: format!(
+                            "Alternative '{}' had no rejection_reason; a synthetic note was added during migration.",
+                            alt.text
+                        ),
+                        path: Some("content.alternatives".to_string()),
+                    });
+                    Some(
+                        "Not selected; exact rejection rationale was not recoverable during migration."
+                            .to_string(),
+                    )
+                };
+                alternatives.push(Alternative {
+                    text: alt.text,
+                    pros: alt.pros,
+                    cons: alt.cons,
+                    rejection_reason,
+                });
+            }
+            LegacyAlternativeStatus::Considered => {
+                let rejection_reason = if matches!(
+                    legacy.govctl.status,
+                    AdrStatus::Accepted | AdrStatus::Superseded
+                ) {
+                    migration_warnings.push(AdrMigrationWarning {
+                            code: "ADR_CONSIDERED_OPTION_SYNTHETIC_REJECTION".to_string(),
+                            message: format!(
+                                "Considered alternative '{}' was converted into a non-selected option with a synthetic rejection reason.",
+                                alt.text
+                            ),
+                            path: Some("content.alternatives".to_string()),
+                        });
+                    Some(
+                            "Not selected; exact rejection rationale was not recoverable during migration."
+                                .to_string(),
+                        )
+                } else {
+                    alt.rejection_reason
+                };
+                alternatives.push(Alternative {
+                    text: alt.text,
+                    pros: alt.pros,
+                    cons: alt.cons,
+                    rejection_reason,
+                });
+            }
+        }
+    }
+
+    let migration = if migration_warnings.is_empty() {
+        None
+    } else {
+        Some(AdrMigrationMeta {
+            state: AdrMigrationState::NeedsReview,
+            warnings: migration_warnings,
+        })
+    };
+
+    AdrSpec {
+        govctl: AdrMeta {
+            schema: legacy.govctl.schema,
+            id: legacy.govctl.id,
+            title: legacy.govctl.title,
+            status: legacy.govctl.status,
+            date: legacy.govctl.date,
+            superseded_by: legacy.govctl.superseded_by,
+            refs: legacy.govctl.refs,
+            migration,
+        },
+        content: AdrContent {
+            context: legacy.content.context,
+            decision,
+            selected_option,
+            consequences,
+            alternatives,
+        },
+    }
+}
+
+fn append_recovered_selected_pros(decision: &mut String, pros: &[String]) {
+    if pros.is_empty() {
+        return;
+    }
+
+    if !decision.ends_with('\n') {
+        decision.push('\n');
+    }
+    decision.push_str("\n### Recovered Selected-Option Advantages\n\n");
+    for pro in pros {
+        decision.push_str("- ");
+        decision.push_str(pro);
+        decision.push('\n');
+    }
+}
+
+fn parse_legacy_consequences(raw: &str) -> AdrConsequences {
+    #[derive(Clone, Copy, PartialEq, Eq)]
+    enum Section {
+        Positive,
+        Negative,
+        Neutral,
+    }
+
+    let mut parsed = AdrConsequences::default();
+    let mut current = None;
+    let mut saw_heading = false;
+
+    for line in raw.lines() {
+        let trimmed = line.trim();
+        match trimmed {
+            "### Positive" => {
+                current = Some(Section::Positive);
+                saw_heading = true;
+                continue;
+            }
+            "### Negative" => {
+                current = Some(Section::Negative);
+                saw_heading = true;
+                continue;
+            }
+            "### Neutral" => {
+                current = Some(Section::Neutral);
+                saw_heading = true;
+                continue;
+            }
+            _ => {}
+        }
+
+        if trimmed.is_empty() {
+            continue;
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("- ") {
+            match current {
+                Some(Section::Positive) => parsed.positive.push(rest.to_string()),
+                Some(Section::Neutral) => parsed.neutral.push(rest.to_string()),
+                Some(Section::Negative) => parsed.negative.push(AdrNegativeConsequence {
+                    text: rest.to_string(),
+                    mitigations: vec![],
+                }),
+                None => {}
+            }
+            continue;
+        }
+
+        if let Some(rest) = trimmed.strip_prefix("Mitigation: ")
+            && let Some(last) = parsed.negative.last_mut()
+        {
+            last.mitigations.push(rest.to_string());
+            continue;
+        }
+        if let Some(rest) = trimmed.strip_prefix("- Mitigation: ")
+            && let Some(last) = parsed.negative.last_mut()
+        {
+            last.mitigations.push(rest.to_string());
+            continue;
+        }
+
+        match current {
+            Some(Section::Positive) => parsed.positive.push(trimmed.to_string()),
+            Some(Section::Neutral) => parsed.neutral.push(trimmed.to_string()),
+            Some(Section::Negative) => parsed.negative.push(AdrNegativeConsequence {
+                text: trimmed.to_string(),
+                mitigations: vec![],
+            }),
+            None => {}
+        }
+    }
+
+    if !saw_heading && !raw.trim().is_empty() {
+        parsed.neutral.push(raw.trim().to_string());
+    }
+
+    parsed
 }
 
 fn plan_rfc_json_to_toml(

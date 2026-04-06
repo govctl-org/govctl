@@ -87,8 +87,9 @@ refs = []
 [content]
 context = "Test context"
 decision = "Test decision"
-consequences = "Test consequences"
 alternatives = []
+
+[content.consequences]
 "#,
     )
     .unwrap();

@@ -117,6 +117,8 @@ pub enum DiagnosticCode {
     W0108WorkPlaceholderDescription,
     W0109WorkNoActive,
     W0110SchemaOutdated,
+    W0111AdrMigrationNeedsReview,
+    W0112AdrMigrationWarning,
 }
 
 impl DiagnosticCode {
@@ -131,7 +133,9 @@ impl DiagnosticCode {
             | Self::W0107SourceRefOutdated
             | Self::W0108WorkPlaceholderDescription
             | Self::W0109WorkNoActive
-            | Self::W0110SchemaOutdated => DiagnosticLevel::Warning,
+            | Self::W0110SchemaOutdated
+            | Self::W0111AdrMigrationNeedsReview
+            | Self::W0112AdrMigrationWarning => DiagnosticLevel::Warning,
             _ => DiagnosticLevel::Error,
         }
     }
@@ -230,6 +234,8 @@ impl DiagnosticCode {
             Self::W0108WorkPlaceholderDescription => "W0108",
             Self::W0109WorkNoActive => "W0109",
             Self::W0110SchemaOutdated => "W0110",
+            Self::W0111AdrMigrationNeedsReview => "W0111",
+            Self::W0112AdrMigrationWarning => "W0112",
         }
     }
 }

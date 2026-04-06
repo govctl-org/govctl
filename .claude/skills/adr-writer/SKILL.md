@@ -29,9 +29,10 @@ EOF
 govctl adr set <ADR-ID> decision --stdin <<'EOF'
 decision text
 EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF'
-consequences text
-EOF
+govctl adr set <ADR-ID> selected_option "Option A"
+govctl adr edit <ADR-ID> content.consequences.positive --add "Benefit"
+govctl adr edit <ADR-ID> content.consequences.negative --add "Trade-off"
+govctl adr edit <ADR-ID> content.consequences.negative[0].mitigations --add "Mitigation"
 govctl adr add <ADR-ID> alternatives "Option: Description"
 govctl adr add <ADR-ID> refs RFC-NNNN
 ```
@@ -87,22 +88,13 @@ Specific guardrails for implementing this decision, not a task checklist.
 
 Honest accounting of trade-offs. Structure:
 
-> **Do NOT include `## Consequences` heading** — the renderer adds it automatically.
+Use structured fields, not a single prose blob:
 
-```markdown
-### Positive
-
-- Benefit one
-- Benefit two
-
-### Negative
-
-- Trade-off one (mitigation: ...)
-- Trade-off two (mitigation: ...)
-
-### Neutral
-
-- Side effect that is neither positive nor negative
+```bash
+govctl adr edit <ADR-ID> content.consequences.positive --add "Benefit one"
+govctl adr edit <ADR-ID> content.consequences.negative --add "Trade-off one"
+govctl adr edit <ADR-ID> content.consequences.negative[0].mitigations --add "Mitigation step"
+govctl adr edit <ADR-ID> content.consequences.neutral --add "Side effect"
 ```
 
 **Key principle:** Every decision has downsides. If your Negative section is empty, you haven't thought hard enough.
@@ -111,11 +103,15 @@ Honest accounting of trade-offs. Structure:
 
 Document options considered. Future readers need to know what was _not_ chosen and why.
 
-**Extended structure per ADR-0027:**
+**Chosen option vs alternatives:**
+
+- `selected_option`: the path that was chosen
+- `alternatives[]`: options that were **not** chosen
+
+**Current structure:**
 
     [[content.alternatives]]
     text = "Option A: Description"
-    status = "rejected"
     pros = ["Advantage 1", "Advantage 2"]
     cons = ["Disadvantage 1"]
     rejection_reason = "Why this was not chosen"
@@ -123,25 +119,23 @@ Document options considered. Future readers need to know what was _not_ chosen a
 **Field semantics:**
 
 - `text` (required): Description of the alternative
-- `status`: `considered` (default) | `accepted` | `rejected`
 - `pros`: List of advantages
 - `cons`: List of disadvantages
-- `rejection_reason`: If rejected, explains why
+- `rejection_reason`: Why this alternative was not chosen
 
 **CLI commands:**
 
 ```bash
-# Simple alternative
-govctl adr add <ADR-ID> alternatives "Option A: Use PostgreSQL"
+# Chosen option
+govctl adr set <ADR-ID> selected_option "Use PostgreSQL"
 
-# With pros, cons, and rejection reason
-govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
+# Rejected alternative with trade-offs
+govctl adr add <ADR-ID> alternatives "Use Redis" \
   --pro "Fast caching" --pro "Simple API" \
   --con "Additional infrastructure" \
   --reject-reason "Overkill for our scale"
 
 # Edit nested fields after creation
-govctl adr tick <ADR-ID> alternatives --at 0 -s rejected
 govctl adr add <ADR-ID> alt[0].pros "New advantage"
 govctl adr remove <ADR-ID> alt[0].cons "Outdated disadvantage"
 ```
@@ -183,7 +177,8 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 
 - The problem that required a decision
 - Constraints and decision drivers
-- Alternatives considered and why they were accepted or rejected
+- The chosen option and why it was selected
+- Alternatives considered and why they were rejected
 - The chosen approach
 - Positive, negative, and neutral consequences
 
@@ -211,7 +206,7 @@ The renderer auto-generates structural elements from TOML metadata. **Do NOT inc
 
 - `## Context`, `## Decision`, `## Consequences` headings — auto-generated for each section
 - `## Alternatives Considered` heading — auto-generated if alternatives exist
-- `### Option Name (status)` headings — auto-generated from `alternatives[].text` + `status`
+- `### Option Name` headings — auto-generated from `alternatives[].text`
 - `- **Pros:**`, `- **Cons:**`, `- **Rejected because:**` — auto-generated from structured fields
 - ADR title (`# ADR-NNNN: Title`) — auto-generated from metadata
 

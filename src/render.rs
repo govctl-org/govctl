@@ -360,6 +360,22 @@ pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
         let _ = writeln!(out);
     }
 
+    if let Some(ref migration) = meta.migration {
+        let _ = writeln!(out, "> **Migration:** {}", migration.state.as_ref());
+        for warning in &migration.warnings {
+            if let Some(ref path) = warning.path {
+                let _ = writeln!(
+                    out,
+                    "> Warning {} ({}): {}",
+                    warning.code, path, warning.message
+                );
+            } else {
+                let _ = writeln!(out, "> Warning {}: {}", warning.code, warning.message);
+            }
+        }
+        let _ = writeln!(out);
+    }
+
     // Context
     let _ = writeln!(out, "## Context");
     let _ = writeln!(out);
@@ -370,27 +386,24 @@ pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
     let _ = writeln!(out, "## Decision");
     let _ = writeln!(out);
     let _ = writeln!(out, "{}", content.decision);
+    if let Some(ref selected) = content.selected_option {
+        let _ = writeln!(out);
+        let _ = writeln!(out, "**Selected option:** `{selected}`");
+    }
     let _ = writeln!(out);
 
     // Consequences
     let _ = writeln!(out, "## Consequences");
     let _ = writeln!(out);
-    let _ = writeln!(out, "{}", content.consequences);
+    render_adr_consequences(&mut out, &content.consequences);
     let _ = writeln!(out);
 
     // Alternatives Considered (extended per ADR-0027)
     if !content.alternatives.is_empty() {
-        use crate::model::AlternativeStatus;
         let _ = writeln!(out, "## Alternatives Considered");
         let _ = writeln!(out);
         for alt in &content.alternatives {
-            // Render as subheading with status
-            let status_suffix = match alt.status {
-                AlternativeStatus::Considered => "",
-                AlternativeStatus::Accepted => " (accepted)",
-                AlternativeStatus::Rejected => " (rejected)",
-            };
-            let _ = writeln!(out, "### {}{}", alt.text, status_suffix);
+            let _ = writeln!(out, "### {}", alt.text);
             let _ = writeln!(out);
 
             // Pros
@@ -413,6 +426,49 @@ pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
     }
 
     Ok(out)
+}
+
+fn render_adr_consequences(out: &mut String, consequences: &crate::model::AdrConsequences) {
+    if consequences.is_empty() {
+        let _ = writeln!(out, "_None recorded._");
+        return;
+    }
+
+    if !consequences.positive.is_empty() {
+        let _ = writeln!(out, "### Positive");
+        let _ = writeln!(out);
+        render_consequence_lines(out, &consequences.positive);
+        let _ = writeln!(out);
+    }
+
+    if !consequences.negative.is_empty() {
+        let _ = writeln!(out, "### Negative");
+        let _ = writeln!(out);
+        for item in &consequences.negative {
+            let _ = writeln!(out, "- {}", item.text);
+            for mitigation in &item.mitigations {
+                let _ = writeln!(out, "  - Mitigation: {}", mitigation);
+            }
+        }
+        let _ = writeln!(out);
+    }
+
+    if !consequences.neutral.is_empty() {
+        let _ = writeln!(out, "### Neutral");
+        let _ = writeln!(out);
+        render_consequence_lines(out, &consequences.neutral);
+    }
+}
+
+fn render_consequence_lines(out: &mut String, items: &[String]) {
+    for item in items {
+        if item.contains('\n') {
+            let _ = writeln!(out, "{}", item);
+            let _ = writeln!(out);
+        } else {
+            let _ = writeln!(out, "- {}", item);
+        }
+    }
 }
 
 /// Write rendered ADR to file
@@ -547,8 +603,8 @@ pub fn write_work_item_md(
 mod tests {
     use super::*;
     use crate::model::{
-        AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus, JournalEntry,
-        WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus,
+        AdrConsequences, AdrContent, AdrMeta, AdrNegativeConsequence, AdrSpec, AdrStatus,
+        Alternative, JournalEntry, WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus,
     };
 
     const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]";
@@ -720,14 +776,19 @@ mod tests {
                     date: "2026-02-22".to_string(),
                     superseded_by: None,
                     refs: vec![],
+                    migration: None,
                 },
                 content: AdrContent {
                     context: "Test context".to_string(),
                     decision: "Test decision".to_string(),
-                    consequences: "Test consequences".to_string(),
+                    selected_option: Some("Option Selected".to_string()),
+                    consequences: AdrConsequences {
+                        positive: vec!["Test consequence".to_string()],
+                        negative: vec![],
+                        neutral: vec![],
+                    },
                     alternatives: vec![Alternative {
                         text: "Option A".to_string(),
-                        status: AlternativeStatus::Considered,
                         pros: vec!["Fast".to_string(), "Cheap".to_string()],
                         cons: vec!["Less reliable".to_string()],
                         rejection_reason: None,
@@ -738,6 +799,7 @@ mod tests {
         };
 
         let result = render_adr(&adr).unwrap();
+        assert!(result.contains("**Selected option:** `Option Selected`"));
         assert!(result.contains("### Option A"));
         assert!(result.contains("- **Pros:** Fast, Cheap"));
         assert!(result.contains("- **Cons:** Less reliable"));
@@ -755,14 +817,22 @@ mod tests {
                     date: "2026-02-22".to_string(),
                     superseded_by: None,
                     refs: vec![],
+                    migration: None,
                 },
                 content: AdrContent {
                     context: "Test context".to_string(),
                     decision: "Test decision".to_string(),
-                    consequences: "Test consequences".to_string(),
+                    selected_option: None,
+                    consequences: AdrConsequences {
+                        positive: vec![],
+                        negative: vec![AdrNegativeConsequence {
+                            text: "Operational cost increases".to_string(),
+                            mitigations: vec!["Automate cleanup".to_string()],
+                        }],
+                        neutral: vec![],
+                    },
                     alternatives: vec![Alternative {
                         text: "Option B".to_string(),
-                        status: AlternativeStatus::Rejected,
                         pros: vec![],
                         cons: vec!["Too expensive".to_string()],
                         rejection_reason: Some("Budget constraints".to_string()),
@@ -773,7 +843,9 @@ mod tests {
         };
 
         let result = render_adr(&adr).unwrap();
-        assert!(result.contains("### Option B (rejected)"));
+        assert!(result.contains("### Negative"));
+        assert!(result.contains("Mitigation: Automate cleanup"));
+        assert!(result.contains("### Option B"));
         assert!(result.contains("- **Rejected because:** Budget constraints"));
     }
 

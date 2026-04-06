@@ -15,32 +15,70 @@ use crate::diagnostic::Diagnostic;
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
 use crate::{
-    Commands, FinalizeStatus, GuardCommand, ListTarget, NewTarget, OutputFormat, RenderTarget,
-    TickStatus,
+    Commands, EditActionArgs, FinalizeStatus, GuardCommand, ListTarget, NewTarget, OutputFormat,
+    RenderTarget, TickStatus,
 };
 use std::path::PathBuf;
 
-/// Owned version of MatchOptions for storage in CanonicalCommand.
-#[derive(Debug, Clone)]
-pub struct OwnedMatchOptions {
-    pub pattern: Option<String>,
-    pub at: Option<i32>,
-    pub exact: bool,
-    pub regex: bool,
-    pub all: bool,
-}
+type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
+type OwnedEditAction = cmd::edit::OwnedEditAction;
 
-impl OwnedMatchOptions {
-    /// Convert to borrowed MatchOptions with appropriate lifetime.
-    pub fn as_match_options(&self) -> cmd::edit::MatchOptions<'_> {
-        cmd::edit::MatchOptions {
-            pattern: self.pattern.as_deref(),
-            at: self.at,
-            exact: self.exact,
-            regex: self.regex,
-            all: self.all,
-        }
+fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
+    let empty_to_none = |value: Option<&String>| {
+        value.and_then(|value| {
+            if value.is_empty() {
+                None
+            } else {
+                Some(value.clone())
+            }
+        })
+    };
+
+    if let Some(value) = &args.set {
+        return Ok(OwnedEditAction::Set {
+            value: if value.is_empty() {
+                None
+            } else {
+                Some(value.clone())
+            },
+            stdin: args.stdin,
+        });
     }
+    if let Some(value) = &args.add {
+        return Ok(OwnedEditAction::Add {
+            value: if value.is_empty() {
+                None
+            } else {
+                Some(value.clone())
+            },
+            stdin: args.stdin,
+        });
+    }
+    if let Some(status) = args.tick {
+        return Ok(OwnedEditAction::Tick {
+            match_opts: OwnedMatchOptions {
+                pattern: None,
+                at: args.at,
+                exact: args.exact,
+                regex: args.regex,
+                all: false,
+            },
+            status,
+        });
+    }
+    if args.remove.is_some() {
+        return Ok(OwnedEditAction::Remove {
+            match_opts: OwnedMatchOptions {
+                pattern: empty_to_none(args.remove.as_ref()),
+                at: args.at,
+                exact: args.exact,
+                regex: args.regex,
+                all: args.all,
+            },
+        });
+    }
+
+    Err(anyhow::anyhow!("exactly one edit action is required"))
 }
 
 /// Canonical internal representation of all commands.
@@ -98,6 +136,11 @@ pub enum CanonicalCommand {
     RfcGet {
         id: String,
         field: Option<String>,
+    },
+    RfcEdit {
+        id: String,
+        path: String,
+        action: OwnedEditAction,
     },
     RfcSet {
         id: String,
@@ -211,6 +254,14 @@ pub enum CanonicalCommand {
         id: String,
         field: Option<String>,
     },
+    AdrEdit {
+        id: String,
+        path: String,
+        action: OwnedEditAction,
+        pro: Vec<String>,
+        con: Vec<String>,
+        reject_reason: Option<String>,
+    },
     AdrSet {
         id: String,
         field: String,
@@ -246,12 +297,6 @@ pub enum CanonicalCommand {
         by: String,
         force: bool,
     },
-    AdrTick {
-        id: String,
-        field: String,
-        match_opts: OwnedMatchOptions,
-        status: TickStatus,
-    },
     AdrRender {
         id: String,
         dry_run: bool,
@@ -276,6 +321,13 @@ pub enum CanonicalCommand {
     WorkGet {
         id: String,
         field: Option<String>,
+    },
+    WorkEdit {
+        id: String,
+        path: String,
+        action: OwnedEditAction,
+        category: Option<ChangelogCategory>,
+        scope: Option<String>,
     },
     WorkSet {
         id: String,
@@ -333,6 +385,11 @@ pub enum CanonicalCommand {
     GuardGet {
         id: String,
         field: Option<String>,
+    },
+    GuardEdit {
+        id: String,
+        path: String,
+        action: OwnedEditAction,
     },
     GuardSet {
         id: String,
@@ -403,7 +460,6 @@ impl CanonicalCommand {
                 | AdrReject { .. }
                 | AdrDeprecate { .. }
                 | AdrSupersede { .. }
-                | AdrTick { .. }
                 | AdrRender { .. }
                 | WorkNew { .. }
                 | WorkSet { .. }
@@ -553,6 +609,9 @@ impl CanonicalCommand {
                 output,
             } => cmd::list::list(config, ListTarget::Rfc, filter.as_deref(), *limit, *output),
             Self::RfcGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
+            Self::RfcEdit { id, path, action } => {
+                cmd::edit::edit_field(config, id, path, action, None, None, None, None, None, op)
+            }
             Self::RfcSet {
                 id,
                 field,
@@ -667,6 +726,25 @@ impl CanonicalCommand {
                 output,
             } => cmd::list::list(config, ListTarget::Adr, status.as_deref(), *limit, *output),
             Self::AdrGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
+            Self::AdrEdit {
+                id,
+                path,
+                action,
+                pro,
+                con,
+                reject_reason,
+            } => cmd::edit::edit_field(
+                config,
+                id,
+                path,
+                action,
+                None,
+                None,
+                Some(pro.clone()),
+                Some(con.clone()),
+                reject_reason.clone(),
+                op,
+            ),
             Self::AdrSet {
                 id,
                 field,
@@ -707,19 +785,6 @@ impl CanonicalCommand {
             Self::AdrSupersede { id, by, force } => {
                 cmd::lifecycle::supersede(config, id, by, *force, op)
             }
-            Self::AdrTick {
-                id,
-                field,
-                match_opts,
-                status,
-            } => cmd::edit::tick_item(
-                config,
-                id,
-                field,
-                &match_opts.as_match_options(),
-                *status,
-                op,
-            ),
             Self::AdrRender { id, dry_run } => cmd::render::render_adrs(config, Some(id), *dry_run),
             Self::AdrShow { id, output } => cmd::render::show_adr(config, id, *output),
 
@@ -737,6 +802,24 @@ impl CanonicalCommand {
                 output,
             } => cmd::list::list(config, ListTarget::Work, status.as_deref(), *limit, *output),
             Self::WorkGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
+            Self::WorkEdit {
+                id,
+                path,
+                action,
+                category,
+                scope,
+            } => cmd::edit::edit_field(
+                config,
+                id,
+                path,
+                action,
+                *category,
+                scope.as_deref(),
+                None,
+                None,
+                None,
+                op,
+            ),
             Self::WorkSet {
                 id,
                 field,
@@ -806,6 +889,9 @@ impl CanonicalCommand {
                 *output,
             ),
             Self::GuardGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
+            Self::GuardEdit { id, path, action } => {
+                cmd::edit::edit_field(config, id, path, action, None, None, None, None, None, op)
+            }
             Self::GuardSet {
                 id,
                 field,
@@ -866,6 +952,11 @@ impl CanonicalCommand {
             RfcCommand::Get { id, field } => Self::RfcGet {
                 id: id.clone(),
                 field: field.clone(),
+            },
+            RfcCommand::Edit { id, path, action } => Self::RfcEdit {
+                id: id.clone(),
+                path: path.clone(),
+                action: owned_edit_action(action)?,
             },
             RfcCommand::Set {
                 id,
@@ -1051,6 +1142,21 @@ impl CanonicalCommand {
                 id: id.clone(),
                 field: field.clone(),
             },
+            AdrCommand::Edit {
+                id,
+                path,
+                action,
+                pro,
+                con,
+                reject_reason,
+            } => Self::AdrEdit {
+                id: id.clone(),
+                path: path.clone(),
+                action: owned_edit_action(action)?,
+                pro: pro.clone(),
+                con: con.clone(),
+                reject_reason: reject_reason.clone(),
+            },
             AdrCommand::Set {
                 id,
                 field,
@@ -1112,29 +1218,6 @@ impl CanonicalCommand {
                 by: by.clone(),
                 force: *force,
             },
-            AdrCommand::Tick {
-                id,
-                field,
-                pattern,
-                status,
-                at,
-                exact,
-                regex,
-            } => {
-                let match_opts = OwnedMatchOptions {
-                    pattern: pattern.clone(),
-                    at: *at,
-                    exact: *exact,
-                    regex: *regex,
-                    all: false,
-                };
-                Self::AdrTick {
-                    id: id.clone(),
-                    field: field.clone(),
-                    match_opts,
-                    status: *status,
-                }
-            }
             AdrCommand::Render { id, dry_run } => Self::AdrRender {
                 id: id.clone(),
                 dry_run: *dry_run,
@@ -1166,6 +1249,19 @@ impl CanonicalCommand {
             WorkCommand::Get { id, field } => Self::WorkGet {
                 id: id.clone(),
                 field: field.clone(),
+            },
+            WorkCommand::Edit {
+                id,
+                path,
+                action,
+                category,
+                scope,
+            } => Self::WorkEdit {
+                id: id.clone(),
+                path: path.clone(),
+                action: owned_edit_action(action)?,
+                category: *category,
+                scope: scope.clone(),
             },
             WorkCommand::Set {
                 id,
@@ -1275,6 +1371,11 @@ impl CanonicalCommand {
             GuardCommand::Get { id, field } => Self::GuardGet {
                 id: id.clone(),
                 field: field.clone(),
+            },
+            GuardCommand::Edit { id, path, action } => Self::GuardEdit {
+                id: id.clone(),
+                path: path.clone(),
+                action: owned_edit_action(action)?,
             },
             GuardCommand::Set {
                 id,

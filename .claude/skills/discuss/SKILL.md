@@ -164,8 +164,10 @@ For structure, templates, and quality guidelines, follow the **adr-writer** skil
 govctl adr new "<title>"
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr set <ADR-ID> selected_option "Option A"
+govctl adr edit <ADR-ID> content.consequences.positive --add "Benefit"
+govctl adr edit <ADR-ID> content.consequences.negative --add "Trade-off"
+govctl adr add <ADR-ID> alternatives "Rejected: Option B"
 govctl adr add <ADR-ID> refs RFC-NNNN
 ```
 

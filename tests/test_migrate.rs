@@ -51,6 +51,48 @@ fn write_legacy_rfc_project(dir: &std::path::Path) {
     .unwrap();
 }
 
+fn write_legacy_v2_adr(dir: &std::path::Path) {
+    let adr_dir = dir.join("gov/adr");
+    fs::create_dir_all(&adr_dir).unwrap();
+    fs::write(
+        adr_dir.join("ADR-0001-legacy-decision.toml"),
+        r#"#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0001"
+title = "Legacy Decision"
+status = "accepted"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Legacy context"
+decision = "Legacy decision"
+consequences = """
+### Positive
+
+- Easier rollout
+
+### Negative
+
+- More memory use
+"""
+
+[[content.alternatives]]
+text = "Option A"
+status = "accepted"
+pros = ["Matches current rollout plan"]
+cons = ["Requires more memory"]
+
+[[content.alternatives]]
+text = "Option B"
+status = "considered"
+pros = ["Cheaper to operate"]
+"#,
+    )
+    .unwrap();
+}
+
 #[test]
 fn test_migrate_converts_json_rfc_and_upgrades_releases() {
     let temp_dir = init_project_v1();
@@ -88,8 +130,8 @@ date = "2026-01-01"
 
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
     assert!(
-        config.contains("version = 2"),
-        "schema version should be bumped to 2: {}",
+        config.contains("version = 3"),
+        "schema version should be bumped to 3: {}",
         config
     );
 }
@@ -141,7 +183,7 @@ fn test_migrate_is_noop_on_current_version() {
     // Second migrate should be a noop
     let output = run_commands(temp_dir.path(), &[&["migrate"]]);
     assert!(
-        output.contains("already at schema version 2"),
+        output.contains("already at schema version 3"),
         "output: {}",
         output
     );
@@ -160,15 +202,15 @@ fn test_migrate_bumps_version_even_without_file_changes() {
 
     let output = run_commands(temp_dir.path(), &[&["migrate"]]);
     assert!(
-        output.contains("Schema version bumped to 2"),
+        output.contains("Schema version bumped to 3"),
         "should bump version even with no file ops: {}",
         output
     );
 
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml")).unwrap();
     assert!(
-        config.contains("version = 2"),
-        "config should now be version 2: {}",
+        config.contains("version = 3"),
+        "config should now be version 3: {}",
         config
     );
 }
@@ -218,4 +260,46 @@ fn test_migrate_failure_leaves_legacy_repo_unchanged() {
         "version should not be bumped on failure: {}",
         config
     );
+}
+
+#[test]
+fn test_migrate_rewrites_legacy_adr_to_v3_shape() {
+    let temp_dir = init_project();
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let config = fs::read_to_string(&config_path)
+        .unwrap()
+        .replace("version = 3", "version = 2");
+    fs::write(&config_path, config).unwrap();
+
+    write_legacy_v2_adr(temp_dir.path());
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"], &["check"]]);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+
+    let adr = fs::read_to_string(
+        temp_dir
+            .path()
+            .join("gov/adr/ADR-0001-legacy-decision.toml"),
+    )
+    .unwrap();
+    assert!(
+        adr.contains("selected_option = \"Option A\""),
+        "adr: {}",
+        adr
+    );
+    assert!(adr.contains("[content.consequences]"), "adr: {}", adr);
+    assert!(!adr.contains("status = \"considered\""), "adr: {}", adr);
+    assert!(
+        adr.contains("state = \"needs_review\""),
+        "migration warning metadata should be preserved: {}",
+        adr
+    );
+    assert!(
+        adr.contains("rejection_reason = \"Not selected; exact rejection rationale was not recoverable during migration.\""),
+        "considered alternative should gain synthetic rejection_reason: {}",
+        adr
+    );
+
+    let config = fs::read_to_string(config_path).unwrap();
+    assert!(config.contains("version = 3"), "config: {}", config);
 }

@@ -11,6 +11,9 @@ refs = [
     "ADR-0028",
 ]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 `govctl init` currently bundles three concerns into one command: governance directory scaffolding (`gov/`), JSON Schema deployment, and agent asset installation (skills + agents to `.claude/`). [[ADR-0033]] introduced plugin distribution, giving users a second path to receive skills and agents — globally, via the Claude Code plugin system.
@@ -41,27 +44,28 @@ We will **separate the three concerns** as follows:
 - `init-skills` reuses the existing `sync_commands()` implementation unchanged.
 - `migrate` adds a schema-sync step that runs unconditionally (not gated by schema version), writing all `ARTIFACT_SCHEMA_TEMPLATES` entries to `config.schema_dir()`.
 - [[RFC-0002:C-GLOBAL-COMMANDS]] is amended to add `init-skills` and update the `init` and `migrate` descriptions."""
-consequences = """
-### Positive
+selected_option = "Decouple governance init, skill installation, and schema sync into separate commands"
 
-- Plugin users no longer get redundant local skill/agent copies from `init`
-- Old projects get working `#:schema` comments after running `govctl migrate`
-- Command names are self-documenting: `init` = governance, `init-skills` = agent assets
-- The hardcoded `.claude` path in `init` is eliminated; `init-skills` uses the configured `agent_dir`
+[content.consequences]
+positive = [
+    "Plugin users no longer get redundant local skill/agent copies from `init`",
+    "Old projects get working `#:schema` comments after running `govctl migrate`",
+    "Command names are self-documenting: `init` = governance, `init-skills` = agent assets",
+    "The hardcoded `.claude` path in `init` is eliminated; `init-skills` uses the configured `agent_dir`",
+]
+neutral = [
+    "`govctl sync` is removed as a command name; `init-skills` replaces it",
+    "Schema files are now overwritten on every `migrate` run, even if unchanged — this is safe since they are generated artifacts",
+]
 
-### Negative
+[[content.consequences.negative]]
+text = "Users who had `govctl init` in onboarding docs will find `.claude/` empty after upgrading (mitigation: `init` prints a hint, and the changelog documents the change)"
 
-- Users who had `govctl init` in onboarding docs will find `.claude/` empty after upgrading (mitigation: `init` prints a hint, and the changelog documents the change)
-- Two commands instead of one for full setup (mitigation: plugin users need zero commands for agent assets; CLI-only users run `init` then `init-skills`)
-
-### Neutral
-
-- `govctl sync` is removed as a command name; `init-skills` replaces it
-- Schema files are now overwritten on every `migrate` run, even if unchanged — this is safe since they are generated artifacts"""
+[[content.consequences.negative]]
+text = "Two commands instead of one for full setup (mitigation: plugin users need zero commands for agent assets; CLI-only users run `init` then `init-skills`)"
 
 [[content.alternatives]]
 text = "Keep init bundled: init continues to dump skills/agents alongside governance structure"
-status = "rejected"
 cons = [
     "Redundant for plugin users",
     "Hardcoded .claude path ignores agent_dir config",
@@ -70,7 +74,6 @@ rejection_reason = "Plugin distribution per ADR-0033 makes unconditional local d
 
 [[content.alternatives]]
 text = "Add --skills flag to init instead of separate command: govctl init --skills dumps agent assets"
-status = "rejected"
 cons = [
     "Discovery problem: users must know the flag exists",
     "Couples governance init with agent concerns",

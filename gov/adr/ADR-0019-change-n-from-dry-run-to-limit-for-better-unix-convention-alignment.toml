@@ -10,6 +10,9 @@ refs = [
     "ADR-0017",
 ]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 ADR-0006 and ADR-0017 assigned `-n` as the short flag for `--dry-run`, following rsync's convention. However, this conflicts with the more universal Unix convention where `-n` means "number" or "limit":
@@ -55,7 +58,10 @@ decision = """
 - **Safety**: Dry-run benefits from being explicit (`--dry-run`)
 - **Pre-1.0 window**: Breaking changes are acceptable now
 - **Consistency**: Follows head/tail patterns users know"""
-consequences = """
+selected_option = "Reassign -n from dry-run to limit"
+
+[content.consequences]
+neutral = ["""
 **Positive:**
 - Natural `-n` for limit matches Unix expectations
 - More ergonomic interactive use: `govctl work list -n 5`
@@ -75,4 +81,4 @@ consequences = """
 
 **Affected ADRs:**
 - [[ADR-0006]]: Originally defined `-n` for dry-run
-- [[ADR-0017]]: Documents `-n` as global dry-run flag"""
+- [[ADR-0017]]: Documents `-n` as global dry-run flag"""]

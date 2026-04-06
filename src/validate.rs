@@ -326,6 +326,38 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
                 adr_path_display,
             ));
         }
+
+        if let Some(ref migration) = adr.meta().migration {
+            if matches!(
+                migration.state,
+                crate::model::AdrMigrationState::NeedsReview
+            ) {
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::W0111AdrMigrationNeedsReview,
+                    format!(
+                        "ADR {} still needs migration review before it is treated as fully cleaned up",
+                        adr.meta().id
+                    ),
+                    config.display_path(&adr.path).display().to_string(),
+                ));
+            }
+
+            for warning in &migration.warnings {
+                let location = if let Some(ref path) = warning.path {
+                    format!("{} ({path})", adr.meta().id)
+                } else {
+                    adr.meta().id.clone()
+                };
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::W0112AdrMigrationWarning,
+                    format!(
+                        "ADR migration warning [{}]: {}",
+                        warning.code, warning.message
+                    ),
+                    location,
+                ));
+            }
+        }
     }
 
     // Validate artifact references (refs fields)
@@ -613,7 +645,21 @@ fn validate_bracket_reference_hierarchy(
         let c = &adr.spec.content;
         scan_adr_bracket_refs(&re, &c.context, aid, &adr_path, result);
         scan_adr_bracket_refs(&re, &c.decision, aid, &adr_path, result);
-        scan_adr_bracket_refs(&re, &c.consequences, aid, &adr_path, result);
+        if let Some(ref selected) = c.selected_option {
+            scan_adr_bracket_refs(&re, selected, aid, &adr_path, result);
+        }
+        for item in &c.consequences.positive {
+            scan_adr_bracket_refs(&re, item, aid, &adr_path, result);
+        }
+        for item in &c.consequences.neutral {
+            scan_adr_bracket_refs(&re, item, aid, &adr_path, result);
+        }
+        for item in &c.consequences.negative {
+            scan_adr_bracket_refs(&re, &item.text, aid, &adr_path, result);
+            for mitigation in &item.mitigations {
+                scan_adr_bracket_refs(&re, mitigation, aid, &adr_path, result);
+            }
+        }
         for alt in &c.alternatives {
             scan_adr_bracket_refs(&re, &alt.text, aid, &adr_path, result);
             for p in &alt.pros {

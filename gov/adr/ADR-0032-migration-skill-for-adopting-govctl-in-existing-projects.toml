@@ -76,41 +76,50 @@ We will create a **migrate skill** (`.claude/skills/migrate/SKILL.md`) that guid
 - **Interactive:** The skill prompts the user at each phase to confirm discoveries and prioritize what to backfill
 - **Incremental:** Each phase can be run independently; partial migration is valid
 - **Non-destructive:** Never overwrites existing files; only adds governance artifacts alongside existing content
-- **Idempotent:** Running the skill again skips already-created artifacts"""
-consequences = """
-### Positive
+- **Idempotent:** Running the skill again skips already-created artifacts
 
-- **Lowers adoption barrier** — Existing projects can adopt govctl without starting from scratch.
-- **Preserves institutional knowledge** — Undocumented decisions get codified as searchable, cross-referenced ADRs.
-- **Gradual onboarding** — Teams can migrate incrementally, one module or decision at a time.
-- **Agent-native** — The skill leverages Claude Code's ability to read codebases and synthesize decisions, making backfill practical.
+### Recovered Selected-Option Advantages
 
-### Negative
+- Zero new CLI code needed
+- Ships immediately as a bundled skill
+"""
+selected_option = "Agent-assisted skill using existing govctl commands"
 
-- **Quality depends on agent understanding** — Auto-discovered decisions may be incomplete or inaccurately described.
-  - Mitigation: Interactive confirmation at each step; user reviews all generated artifacts.
-- **Source annotation churn** — Adding `[[...]]` references to existing code creates a large diff.
-  - Mitigation: Phase 4 is optional and can be done incrementally per-module.
-- **Historical ADRs may lack alternatives** — Old decisions often don't have documented rejected options.
-  - Mitigation: The skill accepts "considered" as the only alternative when history is unclear.
-
-### Neutral
-
-- No new govctl CLI commands are needed — the skill composes existing commands.
-- The skill is bundled with govctl and installed via `govctl sync`, like other skills."""
-
-[[content.alternatives]]
-text = "Agent-assisted skill using existing govctl commands"
-status = "accepted"
-pros = [
-    "Zero new CLI code needed",
-    "Ships immediately as a bundled skill",
+[content.consequences]
+positive = [
+    "**Lowers adoption barrier** — Existing projects can adopt govctl without starting from scratch.",
+    "**Preserves institutional knowledge** — Undocumented decisions get codified as searchable, cross-referenced ADRs.",
+    "**Gradual onboarding** — Teams can migrate incrementally, one module or decision at a time.",
+    "**Agent-native** — The skill leverages Claude Code's ability to read codebases and synthesize decisions, making backfill practical.",
 ]
-cons = ["Requires an AI agent to execute the workflow"]
+neutral = [
+    "No new govctl CLI commands are needed — the skill composes existing commands.",
+    "The skill is bundled with govctl and installed via `govctl sync`, like other skills.",
+]
+
+[[content.consequences.negative]]
+text = "**Quality depends on agent understanding** — Auto-discovered decisions may be incomplete or inaccurately described."
+
+[[content.consequences.negative]]
+text = "Mitigation: Interactive confirmation at each step; user reviews all generated artifacts."
+
+[[content.consequences.negative]]
+text = "**Source annotation churn** — Adding `[[...]]` references to existing code creates a large diff."
+
+[[content.consequences.negative]]
+text = "Mitigation: Phase 4 is optional and can be done incrementally per-module."
+
+[[content.consequences.negative]]
+text = "**Historical ADRs may lack alternatives** — Old decisions often don't have documented rejected options."
+
+[[content.consequences.negative]]
+text = 'Mitigation: The skill accepts "considered" as the only alternative when history is unclear.'
+
+[[content.consequences.negative]]
+text = "Requires an AI agent to execute the workflow"
 
 [[content.alternatives]]
 text = "New govctl migrate CLI command with auto-detection"
-status = "rejected"
 pros = [
     "Works without AI agent",
     "Deterministic output",

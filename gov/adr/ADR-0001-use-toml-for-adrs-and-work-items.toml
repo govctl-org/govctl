@@ -5,7 +5,13 @@ id = "ADR-0001"
 title = "Use TOML for ADRs and Work Items"
 status = "accepted"
 date = "2026-01-17"
-refs = ["RFC-0000:C-ADR-DEF", "RFC-0000:C-WORK-DEF"]
+refs = [
+    "RFC-0000:C-ADR-DEF",
+    "RFC-0000:C-WORK-DEF",
+]
+
+[govctl.migration]
+state = "verified"
 
 [content]
 context = """
@@ -16,7 +22,10 @@ decision = """
 Use TOML for ADRs and Work Items instead of JSON.
 Structure follows [govctl] metadata section and [content] body section.
 This aligns with Rust ecosystem conventions (Cargo.toml)."""
-consequences = """
+selected_option = "Use TOML for ADRs and Work Items"
+
+[content.consequences]
+neutral = ["""
 Positive: Easier manual editing, cleaner diffs, natural multiline support.
 Negative: Different format from RFC clauses (which remain JSON for richer structure).
-Migration: Existing JSON-based work items would need conversion."""
+Migration: Existing JSON-based work items would need conversion."""]

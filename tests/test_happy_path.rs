@@ -68,7 +68,9 @@ refs = ["RFC-0001"]
 [content]
 context = "We need to test ADR functionality."
 decision = "We will create a test ADR."
-consequences = "Tests will pass."
+
+[content.consequences]
+positive = ["Tests will pass."]
 "#,
     )
     .unwrap();

@@ -1,0 +1,51 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-06-002"
+title = "Implement canonical edit surface for nested artifact mutation"
+status = "done"
+created = "2026-04-06"
+started = "2026-04-06"
+completed = "2026-04-06"
+refs = [
+    "ADR-0031",
+    "ADR-0037",
+]
+
+[content]
+description = "Implement the canonical path-first edit CLI from ADR-0037 so nested object and array mutation uses one regular single-operation surface, with legacy verbs delegating to the same semantic engine."
+
+[[content.journal]]
+date = "2026-04-06"
+scope = "edit-surface"
+content = "Implemented canonical edit entrypoints for RFC/ADR/work/guard, routed them through shared edit planning, and enabled indexed checklist tick paths plus deep legacy-prefix collapse; cargo test passes."
+
+[[content.journal]]
+date = "2026-04-06"
+scope = "runtime"
+content = "Generalized nested edit rules and runtime from array-root-only handling to recursive object/list traversal, including object-root support for guard.check paths. Added canonical edit regression coverage and reran cargo test plus govctl check successfully."
+
+[[content.acceptance_criteria]]
+text = "Route existing set/add/remove/tick verbs through the same canonical edit planning path"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Generalize nested edit resolution so object and array paths work at arbitrary supported depth"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "update CLI help and tests for the canonical edit surface"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes after the edit-surface redesign"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Introduce canonical <resource> edit <ID> <path> --set/--add/--remove/--tick CLI entrypoints"
+status = "done"
+category = "added"

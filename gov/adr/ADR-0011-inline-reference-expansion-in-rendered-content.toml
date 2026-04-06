@@ -7,6 +7,9 @@ status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000"]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 Content fields (description, context, decision, consequences) are rendered as-is with no link expansion. The `refs` field gets expanded to markdown links, but inline references like `[[RFC-0000]]` in text remain as literal strings.
@@ -26,7 +29,10 @@ Add inline reference expansion to content fields during rendering:
 4. Pattern is evaluated at render time, so config changes apply on next render
 
 This creates consistency between source code scanning and content rendering — the same reference format works everywhere."""
-consequences = """
+selected_option = "Add inline reference expansion to content fields during rendering"
+
+[content.consequences]
+neutral = ["""
 Positive:
 - Inline references in content become clickable links
 - Consistent with `source_scan` pattern format
@@ -37,4 +43,4 @@ Negative:
 - Couples rendering to source_scan config (even if source_scan.enabled is false)
 - Literal `[[text]]` in content will be matched if it looks like an artifact ID
 
-Migration: Existing content with literal `[[...]]` that happens to match artifact patterns will now become links. This is likely the desired behavior."""
+Migration: Existing content with literal `[[...]]` that happens to match artifact patterns will now become links. This is likely the desired behavior."""]

@@ -6,7 +6,7 @@ default_owner = "@govctl-org"
 docs_output = "docs"
 
 [schema]
-version = 2
+version = 3
 
 [source_scan]
 enabled = true

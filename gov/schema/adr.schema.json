@@ -29,6 +29,30 @@
           "type": "string",
           "pattern": "^ADR-\\d{4}$"
         },
+        "migration": {
+          "type": "object",
+          "required": ["state"],
+          "properties": {
+            "state": {
+              "type": "string",
+              "enum": ["migrated", "needs_review", "verified"]
+            },
+            "warnings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["code", "message"],
+                "properties": {
+                  "code": { "type": "string", "minLength": 1 },
+                  "message": { "type": "string", "minLength": 1 },
+                  "path": { "type": "string", "minLength": 1 }
+                },
+                "additionalProperties": false
+              }
+            }
+          },
+          "additionalProperties": false
+        },
         "refs": {
           "type": "array",
           "items": {
@@ -52,8 +76,41 @@
         "decision": {
           "type": "string"
         },
+        "selected_option": {
+          "type": "string",
+          "minLength": 1
+        },
         "consequences": {
-          "type": "string"
+          "type": "object",
+          "properties": {
+            "positive": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "negative": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "mitigations": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                },
+                "additionalProperties": false
+              }
+            },
+            "neutral": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          },
+          "additionalProperties": false
         },
         "alternatives": {
           "type": "array",
@@ -64,10 +121,6 @@
               "text": {
                 "type": "string",
                 "minLength": 1
-              },
-              "status": {
-                "type": "string",
-                "enum": ["considered", "rejected", "accepted"]
               },
               "pros": {
                 "type": "array",

@@ -10,6 +10,9 @@ refs = [
     "ADR-0020",
 ]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 When an agent (e.g. Cursor, Claude Code) runs multiple tasks in parallel that each invoke govctl to create or modify RFCs, ADRs, or work items, concurrent writes to the same files or to the same directory can cause:
@@ -37,7 +40,10 @@ decision = """
 3. **Granularity**
    - Coarse-grained (one lock per gov root) is chosen over per-artifact or per-directory locks to avoid deadlock and to keep implementation and behavior simple. Parallel agents serialize at the gov root; throughput is traded for correctness and simplicity.
 """
-consequences = """
+selected_option = "Use a single gov-root filesystem lock for all mutating commands"
+
+[content.consequences]
+neutral = ["""
 **Positive**
 - Prevents file corruption and ID collision under concurrent agent tasks.
 - Single lock file: no deadlock, no lock ordering, easy to reason about.
@@ -49,25 +55,20 @@ consequences = """
 - Slight complexity in CLI entrypoint: acquire lock early for write commands, release on all exit paths.
 
 **Neutral**
-- Render (writing to docs/) is included in the lock scope so that render + new/edit from two processes do not interleave.
-"""
-
-[[content.alternatives]]
-text = "File lock (gov-root): One exclusive lock for entire gov/ tree. Blocks concurrent writers until release. Chosen for simplicity and no deadlock."
-status = "considered"
+- Render (writing to docs/) is included in the lock scope so that render + new/edit from two processes do not interleave."""]
 
 [[content.alternatives]]
 text = "Per-artifact lock: Lock only the file or directory being written. Rejected: deadlock risk (e.g. A holds rfc/ B holds adr/; A needs adr/ B needs rfc/), more complex lock ordering."
-status = "considered"
+rejection_reason = "Per-artifact locks introduce lock-ordering complexity and deadlock risk for marginal concurrency gains."
 
 [[content.alternatives]]
 text = "Write queue / single-writer daemon: One process accepts write requests over a socket or FIFO. Rejected: requires a long-running daemon, contradicts CLI-only design."
-status = "considered"
+rejection_reason = "A write queue or daemon contradicts the CLI-only architecture and adds unnecessary long-running infrastructure."
 
 [[content.alternatives]]
 text = "Documentation-only: Tell users/agents not to run write commands in parallel. Rejected: does not prevent races; agents and scripts often parallelize by default."
-status = "considered"
+rejection_reason = "Documentation alone does not prevent races in scripts or agent-driven parallel execution."
 
 [[content.alternatives]]
 text = "Atomic write + retry: Write to temp then rename; for work item ID, retry on collision. Rejected: avoids partial writes but does not fix read-modify-write races or deterministic ID collision from find_max_sequence."
-status = "considered"
+rejection_reason = "Atomic write plus retry avoids partial writes but still fails to prevent read-modify-write races and deterministic ID collisions."

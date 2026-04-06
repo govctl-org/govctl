@@ -1,9 +1,41 @@
 //! CLI argument definitions for govctl.
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Args, Parser, Subcommand, ValueEnum};
 use std::path::PathBuf;
 
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
+
+#[derive(Args, Clone, Debug)]
+#[group(id = "edit_action", required = true, multiple = false)]
+pub(crate) struct EditActionArgs {
+    /// Set a scalar value (omit VALUE only when using --stdin)
+    #[arg(long, group = "edit_action", num_args = 0..=1, default_missing_value = "")]
+    pub(crate) set: Option<String>,
+    /// Append a value to a list (omit VALUE only when using --stdin)
+    #[arg(long, group = "edit_action", num_args = 0..=1, default_missing_value = "")]
+    pub(crate) add: Option<String>,
+    /// Remove a matching value, or omit PATTERN when removing an indexed path
+    #[arg(long, group = "edit_action", num_args = 0..=1, default_missing_value = "")]
+    pub(crate) remove: Option<String>,
+    /// Update checklist-style item status
+    #[arg(long, group = "edit_action")]
+    pub(crate) tick: Option<TickStatus>,
+    /// Read set/add value from stdin
+    #[arg(long)]
+    pub(crate) stdin: bool,
+    /// Match by index for remove/tick
+    #[arg(long, allow_hyphen_values = true)]
+    pub(crate) at: Option<i32>,
+    /// Exact match for remove/tick
+    #[arg(long)]
+    pub(crate) exact: bool,
+    /// Regex match for remove/tick
+    #[arg(long)]
+    pub(crate) regex: bool,
+    /// Remove all matches
+    #[arg(long)]
+    pub(crate) all: bool,
+}
 
 #[derive(Parser)]
 #[command(name = "govctl")]
@@ -299,6 +331,21 @@ EXAMPLES:
         id: String,
         /// Field name (omit to show all)
         field: Option<String>,
+    },
+    /// Canonical path-first edit entrypoint
+    #[command(after_help = "\
+EXAMPLES:
+    govctl rfc edit RFC-0001 version --set 1.2.0
+    govctl rfc edit RFC-0001 refs --add RFC-0002
+    govctl rfc edit RFC-0001 refs[0] --remove
+")]
+    Edit {
+        /// RFC ID
+        id: String,
+        /// Canonical field path
+        path: String,
+        #[command(flatten)]
+        action: EditActionArgs,
     },
     /// Set RFC field value
     #[command(after_help = "\
@@ -636,17 +683,23 @@ VALID FIELDS:
   String fields:
     - context: Background and problem description
     - decision: The decision made and rationale
-    - consequences: Impact of this decision
+    - selected_option: The chosen option once decided
     - status: ADR status (proposed|accepted|rejected|superseded)
+
+  Structured fields:
+    - consequences.positive: Positive outcomes
+    - consequences.negative: Negative outcomes with mitigations
+    - consequences.neutral: Neutral side effects
 
   Array fields (returns JSON array):
     - refs: Cross-references to RFCs/ADRs
-    - alternatives: Options that were considered
+    - alternatives: Non-selected options that were considered
 
 EXAMPLES:
     govctl adr get ADR-0001                    # Show all fields
     govctl adr get ADR-0001 context            # Get specific field
     govctl adr get ADR-0001 alternatives       # Get array field
+    govctl adr get ADR-0001 consequences.negative
 ")]
     Get {
         /// ADR ID
@@ -654,21 +707,50 @@ EXAMPLES:
         /// Field name (omit to show all)
         field: Option<String>,
     },
+    /// Canonical path-first edit entrypoint
+    #[command(after_help = "\
+EXAMPLES:
+    govctl adr edit ADR-0001 content.decision --set \"We will ...\"
+    govctl adr edit ADR-0001 content.alternatives --add \"Option A\"
+    govctl adr edit ADR-0001 content.alternatives[0].pros --add \"Readable\"
+")]
+    Edit {
+        /// ADR ID
+        id: String,
+        /// Canonical field path
+        path: String,
+        #[command(flatten)]
+        action: EditActionArgs,
+        /// Pro/advantage for alternative creation (compatibility with `adr add`)
+        #[arg(long)]
+        pro: Vec<String>,
+        /// Con/disadvantage for alternative creation (compatibility with `adr add`)
+        #[arg(long)]
+        con: Vec<String>,
+        /// Rejection reason for alternative creation (compatibility with `adr add`)
+        #[arg(long)]
+        reject_reason: Option<String>,
+    },
     /// Set ADR field value
     #[command(after_help = "\
 VALID FIELDS:
   String fields (use 'set'):
     - context: Background and problem description
     - decision: The decision made and rationale
-    - consequences: Impact of this decision
+    - selected_option: The chosen option once decided
     - title: ADR title
     - date: ADR date
+
+  Nested/object fields:
+    - consequences.positive / consequences.negative / consequences.neutral
+    - migration.state / migration.warnings[*]
 
   Array fields (use 'add'/'remove' instead):
     - refs, alternatives
 
 EXAMPLES:
     govctl adr set ADR-0001 context \"New context\"
+    govctl adr set ADR-0001 selected_option \"Option A\"
     govctl adr set ADR-0001 decision --stdin <<'EOF'
     Multi-line decision here
     EOF
@@ -697,7 +779,6 @@ VALID ARRAY FIELDS:
 ALTERNATIVES FORMAT (per ADR-0027):
     Each alternative has:
     - text: Description of the option (required)
-    - status: considered | accepted | rejected
     - pros: Advantages (use --pro to add)
     - cons: Disadvantages (use --con to add)
     - rejection_reason: Why rejected (use --reject-reason)
@@ -793,27 +874,6 @@ EXAMPLES:
         #[arg(short = 'f', long)]
         force: bool,
     },
-    /// Tick checklist item
-    Tick {
-        /// ADR ID
-        id: String,
-        /// Field (decisions or alternatives)
-        field: String,
-        /// Pattern to match
-        pattern: Option<String>,
-        /// New status
-        #[arg(short, long, value_enum, default_value = "done")]
-        status: TickStatus,
-        /// Match by index
-        #[arg(long, allow_hyphen_values = true)]
-        at: Option<i32>,
-        /// Exact match
-        #[arg(long)]
-        exact: bool,
-        /// Regex pattern
-        #[arg(long)]
-        regex: bool,
-    },
     /// Render a single ADR to markdown
     Render {
         /// ADR ID to render
@@ -887,6 +947,27 @@ EXAMPLES:
         id: String,
         /// Field name (omit to show all)
         field: Option<String>,
+    },
+    /// Canonical path-first edit entrypoint
+    #[command(after_help = "\
+EXAMPLES:
+    govctl work edit WI-2026-04-06-001 description --set \"Scope and why\"
+    govctl work edit WI-2026-04-06-001 content.acceptance_criteria --add \"add: Implement feature X\"
+    govctl work edit WI-2026-04-06-001 content.acceptance_criteria[0] --tick done
+")]
+    Edit {
+        /// Work item ID
+        id: String,
+        /// Canonical field path
+        path: String,
+        #[command(flatten)]
+        action: EditActionArgs,
+        /// Changelog category for acceptance-criteria creation
+        #[arg(short = 'c', long, value_enum)]
+        category: Option<ChangelogCategory>,
+        /// Scope/topic for journal creation
+        #[arg(long)]
+        scope: Option<String>,
     },
     /// Set work item field value
     #[command(after_help = "\
@@ -1096,6 +1177,21 @@ pub(crate) enum GuardCommand {
         id: String,
         /// Field name (omit to show all)
         field: Option<String>,
+    },
+    /// Canonical path-first edit entrypoint
+    #[command(after_help = "\
+EXAMPLES:
+    govctl guard edit GUARD-0001 description --set \"What this guard verifies\"
+    govctl guard edit GUARD-0001 refs --add RFC-0001
+    govctl guard edit GUARD-0001 refs[0] --remove
+")]
+    Edit {
+        /// Guard ID
+        id: String,
+        /// Canonical field path
+        path: String,
+        #[command(flatten)]
+        action: EditActionArgs,
     },
     /// Set guard field value
     Set {

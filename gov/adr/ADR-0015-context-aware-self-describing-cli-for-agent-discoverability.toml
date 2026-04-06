@@ -7,6 +7,9 @@ status = "accepted"
 date = "2026-01-18"
 refs = ["RFC-0000"]
 
+[govctl.migration]
+state = "verified"
+
 [content]
 context = """
 AI coding agents (Claude, Cursor, Codex, etc.) can invoke shell commands, making govctl immediately usable. However, agents lack semantic understanding of *when* to use which command and *why*.
@@ -55,7 +58,10 @@ Reads current project state and outputs:
 - Semantic guidance (`when_to_use`) defined as static data
 - Context mode reuses `status` and `list` logic for project state
 - Output format follows JSON Schema for predictable parsing"""
-consequences = """
+selected_option = "Add a context-aware govctl describe command"
+
+[content.consequences]
+neutral = ["""
 **Positive:**
 - Agents gain semantic understanding without MCP complexity
 - Single interface (CLI) — no parallel implementation to maintain
@@ -82,4 +88,4 @@ consequences = """
 | Agent compatibility | Any shell-capable agent  | MCP-compatible agents only   |
 | Maintenance         | Single codebase          | CLI + MCP server             |
 | Context awareness   | Built-in                 | Separate implementation      |
-| Works offline       | Yes                      | Depends                      |"""
+| Works offline       | Yes                      | Depends                      |"""]

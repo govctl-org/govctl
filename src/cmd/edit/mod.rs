@@ -76,6 +76,46 @@ pub struct MatchOptions<'a> {
     pub all: bool,
 }
 
+#[derive(Debug, Clone)]
+pub enum OwnedEditAction {
+    Set {
+        value: Option<String>,
+        stdin: bool,
+    },
+    Add {
+        value: Option<String>,
+        stdin: bool,
+    },
+    Remove {
+        match_opts: MatchOptionsOwned,
+    },
+    Tick {
+        match_opts: MatchOptionsOwned,
+        status: crate::TickStatus,
+    },
+}
+
+#[derive(Debug, Clone, Default)]
+pub struct MatchOptionsOwned {
+    pub pattern: Option<String>,
+    pub at: Option<i32>,
+    pub exact: bool,
+    pub regex: bool,
+    pub all: bool,
+}
+
+impl MatchOptionsOwned {
+    pub fn as_match_options(&self) -> MatchOptions<'_> {
+        MatchOptions {
+            pattern: self.pattern.as_deref(),
+            at: self.at,
+            exact: self.exact,
+            regex: self.regex,
+            all: self.all,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum MatchUse {
     Remove,
@@ -240,8 +280,15 @@ fn require_simple_field<'a>(fp: &'a FieldPath, id: &str, message: &str) -> anyho
         .ok_or_else(|| Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id).into())
 }
 
-fn plan_edit_with_field(id: &str, field: &str) -> anyhow::Result<(ArtifactType, FieldPath)> {
-    let plan = edit_engine::plan_request(id, Some(field))?;
+fn plan_edit_with_field_for_verb(
+    id: &str,
+    field: &str,
+    verb: Option<edit_rules::Verb>,
+) -> anyhow::Result<(ArtifactType, FieldPath)> {
+    let plan = match verb {
+        Some(verb) => edit_engine::plan_mutation_request(id, field, verb)?,
+        None => edit_engine::plan_request(id, Some(field))?,
+    };
     let fp = plan
         .field_path
         .ok_or_else(|| anyhow::anyhow!("Field path required"))?;
@@ -292,7 +339,8 @@ impl TomlEditableEntry for GuardEntry {
     }
 }
 
-const TICK_NESTED_PATH_ERROR: &str = "tick does not support nested paths";
+const TICK_NESTED_PATH_ERROR: &str =
+    "tick only supports checklist root paths or indexed checklist items";
 const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
 
 pub fn edit_clause(
@@ -338,7 +386,7 @@ pub fn set_field(
     stdin: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field(id, field)?;
+    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
     let value = resolve_value(value, stdin)?;
     apply_set_field(config, id, &fp, artifact, value.as_str(), op, true)?;
 
@@ -357,7 +405,7 @@ pub(crate) fn set_field_direct(
     value: &str,
     op: WriteOp,
 ) -> anyhow::Result<()> {
-    let (artifact, fp) = plan_edit_with_field(id, field)?;
+    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
     apply_set_field(config, id, &fp, artifact, value, op, false)
 }
 
@@ -448,13 +496,6 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> an
                 Some(
                     "ADR lifecycle fields are verb-owned. Use `govctl adr accept`, `govctl adr reject`, or `govctl adr supersede`.",
                 )
-            } else if fp.segments.len() == 2
-                && fp.segments[0].name == "alternatives"
-                && fp.segments[1].name == "status"
-            {
-                Some(
-                    "ADR alternative status is tick-owned. Use `govctl adr tick ... alternatives ...`.",
-                )
             } else {
                 None
             }
@@ -528,6 +569,50 @@ pub fn get_field(
     }
 
     Ok(vec![])
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn edit_field(
+    config: &Config,
+    id: &str,
+    path: &str,
+    action: &OwnedEditAction,
+    category_override: Option<crate::model::ChangelogCategory>,
+    scope_override: Option<&str>,
+    pros: Option<Vec<String>>,
+    cons: Option<Vec<String>>,
+    reject_reason: Option<String>,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    match action {
+        OwnedEditAction::Set { value, stdin } => {
+            set_field(config, id, path, value.as_deref(), *stdin, op)
+        }
+        OwnedEditAction::Add { value, stdin } => add_to_field(
+            config,
+            id,
+            path,
+            value.as_deref(),
+            *stdin,
+            category_override,
+            scope_override,
+            pros,
+            cons,
+            reject_reason,
+            op,
+        ),
+        OwnedEditAction::Remove { match_opts } => {
+            remove_from_field(config, id, path, &match_opts.as_match_options(), op)
+        }
+        OwnedEditAction::Tick { match_opts, status } => tick_item(
+            config,
+            id,
+            path,
+            &match_opts.as_match_options(),
+            *status,
+            op,
+        ),
+    }
 }
 
 fn get_toml_field<A>(
@@ -696,7 +781,7 @@ fn adr_add_alternatives(
     value: &str,
     ctx: &AdrAddContext,
 ) -> anyhow::Result<()> {
-    use crate::model::{Alternative, AlternativeStatus};
+    use crate::model::Alternative;
     if entry
         .spec
         .content
@@ -707,15 +792,8 @@ fn adr_add_alternatives(
         return Ok(());
     }
 
-    let status = if ctx.reject_reason.is_some() {
-        AlternativeStatus::Rejected
-    } else {
-        AlternativeStatus::Considered
-    };
-
     entry.spec.content.alternatives.push(Alternative {
         text: value.to_string(),
-        status,
         pros: ctx.pros.clone().unwrap_or_default(),
         cons: ctx.cons.clone().unwrap_or_default(),
         rejection_reason: ctx.reject_reason.clone(),
@@ -796,7 +874,7 @@ pub fn add_to_field(
     reject_reason: Option<String>,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field(id, field)?;
+    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Add))?;
     let value = resolve_value(value, stdin)?;
     let value = value.as_str();
     match artifact {
@@ -957,7 +1035,7 @@ pub fn remove_from_field(
     opts: &MatchOptions,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field(id, field)?;
+    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
 
     if !fp.is_simple() && fp.has_terminal_index() {
         let has_match_opts =
@@ -1031,16 +1109,29 @@ pub fn tick_item(
     status: crate::TickStatus,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field(id, field)?;
-    if !fp.is_simple() {
+    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Tick))?;
+    let mut indexed_match = MatchOptions::default();
+    let (field, effective_opts) = if fp.is_simple() {
+        (fp.as_simple().unwrap(), opts.clone())
+    } else if fp.segments.len() == 1 && fp.segments[0].index.is_some() {
+        if opts.pattern.is_some() || opts.at.is_some() || opts.exact || opts.regex || opts.all {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0818PathIndexConflict,
+                "Cannot combine an indexed tick path with match flags",
+                id,
+            )
+            .into());
+        }
+        indexed_match.at = fp.segments[0].index;
+        (fp.segments[0].name.as_str(), indexed_match)
+    } else {
         return Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
             TICK_NESTED_PATH_ERROR,
             id,
         )
         .into());
-    }
-    let field = fp.as_simple().unwrap();
+    };
 
     let status_str = match (artifact, status) {
         (ArtifactType::Adr, crate::TickStatus::Done) => "accepted",
@@ -1063,7 +1154,7 @@ pub fn tick_item(
             config,
             id,
             field,
-            opts,
+            &effective_opts,
             op,
             ArtifactType::Adr,
             status_str,
@@ -1072,7 +1163,7 @@ pub fn tick_item(
             config,
             id,
             field,
-            opts,
+            &effective_opts,
             op,
             ArtifactType::WorkItem,
             status_str,
@@ -1131,11 +1222,21 @@ where
     } else if fp.segments.len() >= 2 {
         // Nested subfield remove: e.g., alt[0].pros or alt[0].cons[1]
         let removed = if fp.has_terminal_index() {
-            let sub_idx = fp.segments[1].index.unwrap();
-            edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
-                let resolved = self::path::resolve_index(sub_idx, items.len())?;
-                Ok(vec![resolved])
-            })?
+            let sub_idx = fp.segments.last().and_then(|seg| seg.index).unwrap();
+            let mut container_fp = fp.clone();
+            if let Some(last) = container_fp.segments.last_mut() {
+                last.index = None;
+            }
+            edit_runtime::remove_nested_list_values(
+                artifact,
+                &mut doc,
+                &container_fp,
+                id,
+                |items| {
+                    let resolved = self::path::resolve_index(sub_idx, items.len())?;
+                    Ok(vec![resolved])
+                },
+            )?
         } else {
             edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
                 resolve_match_indices(id, field, items, opts, MatchUse::Remove)

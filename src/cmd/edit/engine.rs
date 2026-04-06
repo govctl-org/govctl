@@ -6,12 +6,13 @@
 
 use super::ArtifactType;
 use super::path::{self, FieldPath};
-use super::rules as edit_rules;
+use super::rules::{self as edit_rules, Verb};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EditPlan {
     pub artifact: ArtifactType,
     pub field_path: Option<FieldPath>,
+    pub verb: Option<Verb>,
 }
 
 /// Parse and canonicalize a user field expression using current path rules.
@@ -27,6 +28,18 @@ pub fn parse_and_canonicalize_field(
 /// During migration this function intentionally does not enforce verb/field
 /// capability checks; those remain in the existing execution path.
 pub fn plan_request(id: &str, field: Option<&str>) -> anyhow::Result<EditPlan> {
+    plan_request_with_verb(id, field, None)
+}
+
+pub fn plan_mutation_request(id: &str, field: &str, verb: Verb) -> anyhow::Result<EditPlan> {
+    plan_request_with_verb(id, Some(field), Some(verb))
+}
+
+fn plan_request_with_verb(
+    id: &str,
+    field: Option<&str>,
+    verb: Option<Verb>,
+) -> anyhow::Result<EditPlan> {
     let artifact = resolve_artifact(id)?;
     let field_path = field
         .map(|path| parse_and_canonicalize_field(artifact, path))
@@ -34,6 +47,7 @@ pub fn plan_request(id: &str, field: Option<&str>) -> anyhow::Result<EditPlan> {
     Ok(EditPlan {
         artifact,
         field_path,
+        verb,
     })
 }
 
@@ -98,6 +112,7 @@ mod tests {
             plan.field_path.as_ref().and_then(FieldPath::as_simple),
             Some("title")
         );
+        assert_eq!(plan.verb, None);
     }
 
     #[test]
@@ -106,6 +121,7 @@ mod tests {
         let fp = plan.field_path.as_ref().expect("nested field should exist");
         assert_eq!(fp.segments[0].name, "alternatives");
         assert_eq!(fp.segments[1].name, "pros");
+        assert_eq!(plan.verb, None);
     }
 
     #[test]
@@ -113,6 +129,7 @@ mod tests {
         let plan = plan_request("ADR-0001", None).unwrap();
         assert_eq!(plan.artifact, ArtifactType::Adr);
         assert!(plan.field_path.is_none());
+        assert_eq!(plan.verb, None);
     }
 
     #[test]
@@ -148,5 +165,16 @@ mod tests {
         let fp = plan.field_path.expect("field path should exist");
         assert_eq!(fp.segments[0].name, "alt");
         assert_eq!(fp.segments[1].name, "pro");
+    }
+
+    #[test]
+    fn test_plan_mutation_request_records_verb() {
+        let plan = plan_mutation_request("ADR-0001", "content.decision", Verb::Set).unwrap();
+        assert_eq!(plan.verb, Some(Verb::Set));
+        assert_eq!(
+            plan.field_path
+                .and_then(|fp| fp.as_simple().map(str::to_owned)),
+            Some("decision".to_string())
+        );
     }
 }

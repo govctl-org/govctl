@@ -12,5 +12,5 @@ Added 'add: Criterion 1' to WI-<DATE>-001.acceptance_criteria
 exit: 0
 
 $ govctl work tick WI-<DATE>-001 ac[0].text Criterion 1 -s done
-error[E0817]: tick does not support nested paths (WI-<DATE>-001)
+error[E0817]: tick only supports checklist root paths or indexed checklist items (WI-<DATE>-001)
 exit: 1
