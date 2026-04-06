@@ -24,44 +24,34 @@ type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 type OwnedEditAction = cmd::edit::OwnedEditAction;
 
 fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
-    let empty_to_none = |value: Option<&String>| {
-        value.and_then(|value| {
-            if value.is_empty() {
-                None
-            } else {
-                Some(value.clone())
-            }
-        })
-    };
-
     if let Some(value) = &args.set {
         return Ok(OwnedEditAction::Set {
-            value: if value.is_empty() {
-                None
-            } else {
-                Some(value.clone())
-            },
+            value: Some(value.clone()),
             stdin: args.stdin,
         });
     }
     if let Some(value) = &args.add {
         return Ok(OwnedEditAction::Add {
-            value: if value.is_empty() {
-                None
-            } else {
-                Some(value.clone())
-            },
+            value: Some(value.clone()),
             stdin: args.stdin,
         });
     }
     if let Some(status) = args.tick {
+        if args.all {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0802ConflictingArgs,
+                "Cannot use --all with --tick; tick requires a single target",
+                "edit action",
+            )
+            .into());
+        }
         return Ok(OwnedEditAction::Tick {
             match_opts: OwnedMatchOptions {
                 pattern: None,
                 at: args.at,
                 exact: args.exact,
                 regex: args.regex,
-                all: false,
+                all: args.all,
             },
             status,
         });
@@ -69,7 +59,7 @@ fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
     if args.remove.is_some() {
         return Ok(OwnedEditAction::Remove {
             match_opts: OwnedMatchOptions {
-                pattern: empty_to_none(args.remove.as_ref()),
+                pattern: args.remove.clone(),
                 at: args.at,
                 exact: args.exact,
                 regex: args.regex,
@@ -1627,6 +1617,87 @@ mod tests {
                 assert!(match_opts.exact);
             }
             other => panic!("expected tick action, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_owned_edit_action_rejects_tick_all_combination() {
+        let err = owned_edit_action(&EditActionArgs {
+            set: None,
+            add: None,
+            remove: None,
+            tick: Some(TickStatus::Done),
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: true,
+        })
+        .expect_err("tick with --all should fail");
+
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+    }
+
+    #[test]
+    fn test_owned_edit_action_preserves_explicit_empty_strings() {
+        let set = owned_edit_action(&EditActionArgs {
+            set: Some(String::new()),
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+        })
+        .expect("set action");
+        match set {
+            OwnedEditAction::Set { value, stdin } => {
+                assert_eq!(value.as_deref(), Some(""));
+                assert!(!stdin);
+            }
+            other => panic!("expected set action, got {other:?}"),
+        }
+
+        let add = owned_edit_action(&EditActionArgs {
+            set: None,
+            add: Some(String::new()),
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+        })
+        .expect("add action");
+        match add {
+            OwnedEditAction::Add { value, stdin } => {
+                assert_eq!(value.as_deref(), Some(""));
+                assert!(!stdin);
+            }
+            other => panic!("expected add action, got {other:?}"),
+        }
+
+        let remove = owned_edit_action(&EditActionArgs {
+            set: None,
+            add: None,
+            remove: Some(String::new()),
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+        })
+        .expect("remove action");
+        match remove {
+            OwnedEditAction::Remove { match_opts } => {
+                assert_eq!(match_opts.pattern.as_deref(), Some(""));
+            }
+            other => panic!("expected remove action, got {other:?}"),
         }
     }
 

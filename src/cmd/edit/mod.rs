@@ -1051,9 +1051,11 @@ pub fn remove_from_field(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
 
+    let pattern_provided = opts.pattern.is_some_and(|pattern| !pattern.is_empty());
+
     if !fp.is_simple() && fp.has_terminal_index() {
         let has_match_opts =
-            opts.pattern.is_some() || opts.at.is_some() || opts.exact || opts.regex || opts.all;
+            pattern_provided || opts.at.is_some() || opts.exact || opts.regex || opts.all;
         if has_match_opts {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0818PathIndexConflict,

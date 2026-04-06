@@ -541,18 +541,23 @@ fn migrate_legacy_adr(legacy: LegacyAdrSpec) -> AdrSpec {
                     legacy.govctl.status,
                     AdrStatus::Accepted | AdrStatus::Superseded
                 ) {
-                    migration_warnings.push(AdrMigrationWarning {
-                            code: "ADR_CONSIDERED_OPTION_SYNTHETIC_REJECTION".to_string(),
-                            message: format!(
-                                "Considered alternative '{}' was converted into a non-selected option with a synthetic rejection reason.",
-                                alt.text
-                            ),
-                            path: Some("content.alternatives".to_string()),
-                        });
-                    Some(
-                            "Not selected; exact rejection rationale was not recoverable during migration."
-                                .to_string(),
-                        )
+                    match alt.rejection_reason {
+                        Some(reason) if !reason.trim().is_empty() => Some(reason),
+                        _ => {
+                            migration_warnings.push(AdrMigrationWarning {
+                                code: "ADR_CONSIDERED_OPTION_SYNTHETIC_REJECTION".to_string(),
+                                message: format!(
+                                    "Considered alternative '{}' was converted into a non-selected option with a synthetic rejection reason.",
+                                    alt.text
+                                ),
+                                path: Some("content.alternatives".to_string()),
+                            });
+                            Some(
+                                "Not selected; exact rejection rationale was not recoverable during migration."
+                                    .to_string(),
+                            )
+                        }
+                    }
                 } else {
                     alt.rejection_reason
                 };
@@ -1244,6 +1249,34 @@ mod tests {
                 .warnings
                 .iter()
                 .any(|w| w.code == "ADR_REJECTION_REASON_SYNTHETIC")
+        );
+    }
+
+    #[test]
+    fn test_migrate_considered_option_preserves_existing_rejection_reason() {
+        let migrated = migrate_legacy_adr(legacy_spec(
+            AdrStatus::Accepted,
+            "",
+            vec![legacy_alternative(
+                "Option A",
+                LegacyAlternativeStatus::Considered,
+                &[],
+                &[],
+                Some("Recovered from release notes"),
+            )],
+        ));
+
+        assert_eq!(migrated.content.alternatives.len(), 1);
+        assert_eq!(
+            migrated.content.alternatives[0].rejection_reason.as_deref(),
+            Some("Recovered from release notes")
+        );
+        let migration = migrated.govctl.migration.expect("migration metadata");
+        assert!(
+            !migration
+                .warnings
+                .iter()
+                .any(|w| w.code == "ADR_CONSIDERED_OPTION_SYNTHETIC_REJECTION")
         );
     }
 }
