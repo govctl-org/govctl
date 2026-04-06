@@ -81,74 +81,6 @@ fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
     Err(anyhow::anyhow!("exactly one edit action is required"))
 }
 
-fn owned_clause_edit_action(
-    set: &Option<String>,
-    add: &Option<String>,
-    remove: &Option<String>,
-    tick: Option<TickStatus>,
-    stdin: bool,
-    at: Option<i32>,
-    exact: bool,
-    regex: bool,
-    all: bool,
-) -> anyhow::Result<OwnedEditAction> {
-    let empty_to_none = |value: Option<&String>| {
-        value.and_then(|value| {
-            if value.is_empty() {
-                None
-            } else {
-                Some(value.clone())
-            }
-        })
-    };
-
-    if let Some(value) = set {
-        return Ok(OwnedEditAction::Set {
-            value: if value.is_empty() {
-                None
-            } else {
-                Some(value.clone())
-            },
-            stdin,
-        });
-    }
-    if let Some(value) = add {
-        return Ok(OwnedEditAction::Add {
-            value: if value.is_empty() {
-                None
-            } else {
-                Some(value.clone())
-            },
-            stdin,
-        });
-    }
-    if let Some(status) = tick {
-        return Ok(OwnedEditAction::Tick {
-            match_opts: OwnedMatchOptions {
-                pattern: None,
-                at,
-                exact,
-                regex,
-                all: false,
-            },
-            status,
-        });
-    }
-    if remove.is_some() {
-        return Ok(OwnedEditAction::Remove {
-            match_opts: OwnedMatchOptions {
-                pattern: empty_to_none(remove.as_ref()),
-                at,
-                exact,
-                regex,
-                all,
-            },
-        });
-    }
-
-    Err(anyhow::anyhow!("exactly one edit action is required"))
-}
-
 /// Canonical internal representation of all commands.
 /// This is the single source of truth for command execution.
 #[derive(Debug, Clone)]
@@ -758,9 +690,9 @@ impl CanonicalCommand {
                 *output,
             ),
             Self::ClauseGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
-            Self::ClauseEdit { id, path, action } => cmd::edit::edit_field(
-                config, id, path, action, None, None, None, None, None, op,
-            ),
+            Self::ClauseEdit { id, path, action } => {
+                cmd::edit::edit_field(config, id, path, action, None, None, None, None, None, op)
+            }
             Self::ClauseLegacyEdit {
                 id,
                 text,
@@ -1182,8 +1114,17 @@ impl CanonicalCommand {
                             "canonical clause edit requires a field path before --set/--add/--remove/--tick"
                         )
                     })?;
-                    let action =
-                        owned_clause_edit_action(set, add, remove, *tick, *stdin, *at, *exact, *regex, *all)?;
+                    let action = owned_edit_action(&EditActionArgs {
+                        set: set.clone(),
+                        add: add.clone(),
+                        remove: remove.clone(),
+                        tick: *tick,
+                        stdin: *stdin,
+                        at: *at,
+                        exact: *exact,
+                        regex: *regex,
+                        all: *all,
+                    })?;
                     Self::ClauseEdit {
                         id: id.clone(),
                         path,

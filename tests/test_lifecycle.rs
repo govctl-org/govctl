@@ -389,7 +389,10 @@ fn test_accept_proposed_adr_requires_selected_option() {
 
     let output = run_commands(
         temp_dir.path(),
-        &[&["adr", "new", "Test Decision"], &["adr", "accept", "ADR-0001"]],
+        &[
+            &["adr", "new", "Test Decision"],
+            &["adr", "accept", "ADR-0001"],
+        ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
