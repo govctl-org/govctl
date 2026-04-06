@@ -1,7 +1,8 @@
 ---
 source: tests/test_edit.rs
+assertion_line: 987
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl work get WI-9999-99-999 title
-Error: Work item not found: WI-9999-99-999
+error[E0402]: Work item not found: WI-9999-99-999 (gov/work)
 exit: 1

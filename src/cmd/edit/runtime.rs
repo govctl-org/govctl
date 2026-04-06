@@ -474,9 +474,13 @@ fn apply_set(doc: &mut Value, spec: SimpleSetSpec, value: &str, id: &str) -> any
     match spec.mode {
         SetMode::String => *slot = Value::String(value.to_string()),
         SetMode::Integer => {
-            let n: i64 = value
-                .parse()
-                .map_err(|_| anyhow::anyhow!("Invalid integer value for {}: {value}", id))?;
+            let n: i64 = value.parse().map_err(|_| {
+                Diagnostic::new(
+                    DiagnosticCode::E0820InvalidFieldValue,
+                    format!("Invalid integer value for {}: {value}", id),
+                    id,
+                )
+            })?;
             *slot = Value::Number(serde_json::Number::from(n));
         }
         SetMode::OptionalString { empty_as_null } => {
@@ -495,7 +499,12 @@ fn apply_set(doc: &mut Value, spec: SimpleSetSpec, value: &str, id: &str) -> any
                 if let Some(code) = code {
                     return Err(Diagnostic::new(code, format!("{invalid_msg}: {value}"), id).into());
                 }
-                return Err(anyhow::anyhow!("{invalid_msg}: {value}"));
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0820InvalidFieldValue,
+                    format!("{invalid_msg}: {value}"),
+                    id,
+                )
+                .into());
             }
             *slot = Value::String(value.to_string());
         }
@@ -1178,9 +1187,13 @@ fn apply_nested_scalar_set(
             }
         }
         NestedScalarMode::Integer => {
-            let n: i64 = value
-                .parse()
-                .map_err(|_| anyhow::anyhow!("Invalid integer value for {}: {value}", id))?;
+            let n: i64 = value.parse().map_err(|_| {
+                Diagnostic::new(
+                    DiagnosticCode::E0820InvalidFieldValue,
+                    format!("Invalid integer value for {}: {value}", id),
+                    id,
+                )
+            })?;
             *slot = Value::Number(serde_json::Number::from(n));
         }
         NestedScalarMode::Enum {
@@ -1192,7 +1205,12 @@ fn apply_nested_scalar_set(
                 if let Some(code) = code {
                     return Err(Diagnostic::new(code, format!("{invalid_msg}: {value}"), id).into());
                 }
-                return Err(anyhow::anyhow!("{invalid_msg}: {value}"));
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0820InvalidFieldValue,
+                    format!("{invalid_msg}: {value}"),
+                    id,
+                )
+                .into());
             }
             *slot = Value::String(value.to_string());
         }

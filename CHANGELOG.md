@@ -16,6 +16,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Generalize nested edit resolution so object and array paths work at arbitrary supported depth (WI-2026-04-06-002)
 - Introduce canonical <resource> edit <ID> <path> --set/--add/--remove/--tick CLI entrypoints (WI-2026-04-06-002)
 
+### Fixed
+
+- clause canonical edit routing preserves existing behavior while removing the duplicate argument parser (WI-2026-04-06-003)
+- cargo clippy --all-targets --all-features -- -D warnings passes (WI-2026-04-06-003)
+- diagnostics for the converted paths use explicit DiagnosticCode values and preserve stable formatting for automation (WI-2026-04-06-004)
+- cargo test -q and cargo run --quiet -- check pass after the diagnostic cleanup (WI-2026-04-06-004)
+- direct CLI command paths no longer emit uncoded anyhow temporary errors for expected user-facing failures (WI-2026-04-06-004)
+
 ## [0.7.7] - 2026-04-04
 
 ### Changed

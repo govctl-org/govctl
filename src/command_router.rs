@@ -11,7 +11,7 @@
 
 use crate::cmd;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
 use crate::{
@@ -78,7 +78,12 @@ fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
         });
     }
 
-    Err(anyhow::anyhow!("exactly one edit action is required"))
+    Err(Diagnostic::new(
+        DiagnosticCode::E0801MissingRequiredArg,
+        "exactly one edit action is required",
+        "edit action",
+    )
+    .into())
 }
 
 /// Canonical internal representation of all commands.
@@ -1110,8 +1115,11 @@ impl CanonicalCommand {
                     || tick.is_some();
                 if uses_canonical {
                     let path = path.clone().ok_or_else(|| {
-                        anyhow::anyhow!(
+                        Diagnostic::new(
+                            DiagnosticCode::E0801MissingRequiredArg,
                             "canonical clause edit requires a field path before --set/--add/--remove/--tick"
+                            ,
+                            id,
                         )
                     })?;
                     let action = owned_edit_action(&EditActionArgs {

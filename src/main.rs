@@ -30,7 +30,7 @@ mod tui;
 pub(crate) use cli::*;
 
 use config::Config;
-use diagnostic::{Diagnostic, DiagnosticLevel};
+use diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -122,8 +122,13 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         if matches!(canonical, command_router::CanonicalCommand::Init { .. }) {
             let gov_root = config.gov_root.as_path();
             if !gov_root.exists() {
-                std::fs::create_dir_all(gov_root)
-                    .map_err(|e| anyhow::anyhow!("Failed to create gov root: {}", e))?;
+                std::fs::create_dir_all(gov_root).map_err(|e| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0901IoError,
+                        format!("Failed to create gov root: {}", e),
+                        gov_root.display().to_string(),
+                    )
+                })?;
             }
         }
         Some(lock::acquire_gov_lock(&config)?)

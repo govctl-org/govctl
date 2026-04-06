@@ -554,11 +554,11 @@ pub fn cut_release(
             format!("Invalid semver version: {version}"),
             &releases_path_str,
         );
-        anyhow::anyhow!("{}", diag)
+        anyhow::Error::from(diag)
     })?;
 
     // Load existing releases
-    let mut releases_file = load_releases(config).map_err(|d| anyhow::anyhow!("{}", d))?;
+    let mut releases_file = load_releases(config).map_err(anyhow::Error::from)?;
 
     // Check for duplicate version
     if releases_file.releases.iter().any(|r| r.version == version) {
@@ -567,7 +567,7 @@ pub fn cut_release(
             format!("Release {version} already exists"),
             &releases_path_str,
         );
-        anyhow::bail!("{}", diag);
+        return Err(diag.into());
     }
 
     // Get all work item IDs already in releases
@@ -578,7 +578,7 @@ pub fn cut_release(
         .collect();
 
     // Load all done work items
-    let work_items = load_work_items(config).map_err(|d| anyhow::anyhow!("{}", d))?;
+    let work_items = load_work_items(config).map_err(anyhow::Error::from)?;
     let unreleased: Vec<_> = work_items
         .iter()
         .filter(|w| w.spec.govctl.status == WorkItemStatus::Done)
@@ -591,7 +591,7 @@ pub fn cut_release(
             "No unreleased work items to include in release",
             &releases_path_str,
         );
-        anyhow::bail!("{}", diag);
+        return Err(diag.into());
     }
 
     // Create new release
@@ -612,7 +612,7 @@ pub fn cut_release(
     releases_file.releases.insert(0, release);
 
     // Write releases file
-    write_releases(config, &releases_file, op).map_err(|d| anyhow::anyhow!("{}", d))?;
+    write_releases(config, &releases_file, op).map_err(anyhow::Error::from)?;
 
     if !op.is_preview() {
         ui::release_created(version, &release_date, refs.len());

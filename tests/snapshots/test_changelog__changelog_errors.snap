@@ -1,11 +1,12 @@
 ---
 source: tests/test_changelog.rs
+assertion_line: 264
 expression: "normalize_output(&error_output, dir, &date)"
 ---
 $ govctl release invalid-version
-Error: error[E0701]: Invalid semver version: invalid-version (gov/releases.toml)
+error[E0701]: Invalid semver version: invalid-version (gov/releases.toml)
 exit: 1
 
 $ govctl release 0.1.0
-Error: error[E0702]: Release 0.1.0 already exists (gov/releases.toml)
+error[E0702]: Release 0.1.0 already exists (gov/releases.toml)
 exit: 1

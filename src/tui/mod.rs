@@ -8,6 +8,7 @@ mod event;
 mod ui;
 
 use crate::config::Config;
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel};
 use crate::load::load_project;
 use anyhow::Result;
 use crossterm::{
@@ -23,14 +24,19 @@ pub use app::App;
 pub fn run(config: &Config) -> Result<()> {
     // Load project data
     let index = load_project(config).map_err(|diags| {
-        anyhow::anyhow!(
-            "Failed to load project: {}",
-            diags
-                .iter()
-                .map(|d| d.message.clone())
-                .collect::<Vec<_>>()
-                .join(", ")
-        )
+        let mut diags = diags.into_iter();
+        diags
+            .find(|d| d.level == DiagnosticLevel::Error)
+            .or_else(|| diags.next())
+            .map(anyhow::Error::from)
+            .unwrap_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0501ConfigInvalid,
+                    "Failed to load project",
+                    config.gov_root.display().to_string(),
+                )
+                .into()
+            })
     })?;
 
     // Setup terminal

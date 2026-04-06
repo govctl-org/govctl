@@ -51,7 +51,12 @@ impl ArtifactType {
     }
 
     pub fn unknown_error(id: &str) -> anyhow::Error {
-        anyhow::anyhow!("Unknown artifact type: {id}")
+        Diagnostic::new(
+            DiagnosticCode::E0819UnknownArtifactType,
+            format!("Unknown artifact type: {id}"),
+            id,
+        )
+        .into()
     }
 
     pub fn rule_key(self) -> &'static str {
@@ -169,7 +174,13 @@ fn resolve_match_indices(
     } else {
         let pattern = opts.pattern.unwrap_or("<index>");
         let matches = if opts.regex {
-            let re = Regex::new(pattern).map_err(|e| anyhow::anyhow!("Invalid regex: {}", e))?;
+            let re = Regex::new(pattern).map_err(|e| {
+                Diagnostic::new(
+                    DiagnosticCode::E0806InvalidPattern,
+                    format!("Invalid regex: {}", e),
+                    id,
+                )
+            })?;
             items
                 .iter()
                 .enumerate()
@@ -289,9 +300,13 @@ fn plan_edit_with_field_for_verb(
         Some(verb) => edit_engine::plan_mutation_request(id, field, verb)?,
         None => edit_engine::plan_request(id, Some(field))?,
     };
-    let fp = plan
-        .field_path
-        .ok_or_else(|| anyhow::anyhow!("Field path required"))?;
+    let fp = plan.field_path.ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            "Field path required",
+            id,
+        )
+    })?;
     Ok((plan.artifact, fp))
 }
 
@@ -1365,7 +1380,13 @@ pub fn delete_clause(
     let clause_file_name = clause_path
         .file_name()
         .and_then(|name| name.to_str())
-        .ok_or_else(|| anyhow::anyhow!("Invalid clause file path: {}", clause_path.display()))?;
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0204ClausePathInvalid,
+                format!("Invalid clause file path: {}", clause_path.display()),
+                clause_id,
+            )
+        })?;
 
     if !confirm_delete_prompt(
         force,
