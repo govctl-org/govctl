@@ -11,9 +11,6 @@ enum RenderMode {
     Scalar,
     CsvStrings,
     LineStrings,
-    TextLines {
-        text_key: &'static str,
-    },
     StatusLines {
         status_key: &'static str,
         text_key: &'static str,
@@ -342,7 +339,6 @@ fn render_field(doc: &Value, spec: SimpleFieldSpec, id: &str) -> anyhow::Result<
         RenderMode::Scalar => Ok(render_scalar(v)),
         RenderMode::CsvStrings => render_string_array(v, ", ", id),
         RenderMode::LineStrings => render_string_array(v, "\n", id),
-        RenderMode::TextLines { text_key } => render_text_lines(v, text_key, id),
         RenderMode::StatusLines {
             status_key,
             text_key,
@@ -432,38 +428,6 @@ fn render_status_lines(
             .and_then(Value::as_str)
             .unwrap_or_default();
         out.push(format!("[{status}] {text}"));
-    }
-    Ok(out.join("\n"))
-}
-
-fn render_text_lines(v: Option<&Value>, text_key: &str, id: &str) -> anyhow::Result<String> {
-    let Some(v) = v else {
-        return Ok(String::new());
-    };
-    let Some(items) = v.as_array() else {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            "Expected an array value",
-            id,
-        )
-        .into());
-    };
-
-    let mut out = Vec::with_capacity(items.len());
-    for item in items {
-        let Some(text) = item
-            .as_object()
-            .and_then(|obj| obj.get(text_key))
-            .and_then(Value::as_str)
-        else {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!("Expected object array items with '{text_key}' field"),
-                id,
-            )
-            .into());
-        };
-        out.push(text.to_string());
     }
     Ok(out.join("\n"))
 }
@@ -1248,52 +1212,48 @@ mod tests {
     fn test_add_nested_object_list_value_deduplicates_by_text() {
         let mut doc = json!({
             "content": {
-                "consequences": {
-                    "negative": [
-                        { "text": "Higher memory use", "mitigations": [] }
-                    ]
-                }
+                "alternatives": [
+                    { "text": "Option A", "status": "considered", "pros": [], "cons": [] }
+                ]
             }
         });
 
         add_nested_list_value(
             ArtifactType::Adr,
             &mut doc,
-            &path("consequences.negative"),
-            "Higher memory use",
+            &path("alternatives"),
+            "Option A",
             "ADR-0001",
         )
         .unwrap();
         add_nested_list_value(
             ArtifactType::Adr,
             &mut doc,
-            &path("consequences.negative"),
-            "Slower warmup",
+            &path("alternatives"),
+            "Option B",
             "ADR-0001",
         )
         .unwrap();
 
-        let negatives = doc["content"]["consequences"]["negative"]
-            .as_array()
-            .unwrap();
-        assert_eq!(negatives.len(), 2);
-        assert_eq!(negatives[1]["text"], "Slower warmup");
+        let alternatives = doc["content"]["alternatives"].as_array().unwrap();
+        assert_eq!(alternatives.len(), 2);
+        assert_eq!(alternatives[1]["text"], "Option B");
     }
 
     #[test]
     fn test_set_nested_field_rejects_list_path_without_index() {
         let mut doc = json!({
             "content": {
-                "consequences": {
-                    "negative": []
-                }
+                "alternatives": [
+                    { "text": "Option A", "status": "considered", "pros": [], "cons": [] }
+                ]
             }
         });
 
         let err = set_nested_field(
             ArtifactType::Adr,
             &mut doc,
-            &path("consequences.negative"),
+            &path("alternatives[0].pros"),
             "oops",
             "ADR-0001",
         )
@@ -1332,26 +1292,29 @@ mod tests {
     fn test_get_nested_field_renders_object_item_with_scalar_lists() {
         let doc = json!({
             "content": {
-                "consequences": {
-                    "negative": [
-                        {
-                            "text": "Higher memory use",
-                            "mitigations": ["Cap cache size", "Reduce retention"]
-                        }
-                    ]
-                }
+                "alternatives": [
+                    {
+                        "text": "Option A",
+                        "status": "accepted",
+                        "pros": ["Readable", "Simple"],
+                        "cons": ["More maintenance"],
+                        "rejection_reason": null
+                    }
+                ]
             }
         });
 
         let rendered = get_nested_field(
             ArtifactType::Adr,
             &doc,
-            &path("consequences.negative[0]"),
+            &path("alternatives[0]"),
             "ADR-0001",
         )
         .unwrap();
 
-        assert!(rendered.contains("text: Higher memory use"));
-        assert!(rendered.contains("mitigations: Cap cache size, Reduce retention"));
+        assert!(rendered.contains("text: Option A"));
+        assert!(rendered.contains("status: accepted"));
+        assert!(rendered.contains("pros: Readable, Simple"));
+        assert!(rendered.contains("cons: More maintenance"));
     }
 }

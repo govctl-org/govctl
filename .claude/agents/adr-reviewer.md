@@ -30,7 +30,6 @@ When invoked:
 ### Decision Clarity
 
 - [ ] Leads with a clear action: "We will **X**"
-- [ ] `selected_option` is explicit for accepted-ready ADRs and matches the chosen path described in the Decision section
 - [ ] Reasons are numbered and specific — not "because it's better"
 - [ ] Decision is concrete enough to guide implementation without turning into a work-item execution log
 - [ ] Decision is proportional to the problem (not over-engineered)

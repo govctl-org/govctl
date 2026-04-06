@@ -38,13 +38,11 @@ govctl adr show <ADR-ID>
 
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> selected_option "Option A"
-govctl adr edit <ADR-ID> content.consequences.positive --add "Benefit"
-govctl adr edit <ADR-ID> content.consequences.negative --add "Trade-off"
-govctl adr add <ADR-ID> alternatives "Rejected option"
+govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
+govctl adr add <ADR-ID> alternatives "Option: ..."
 govctl adr accept <ADR-ID>
 
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF' ... EOF
 govctl rfc bump <RFC-ID> --patch -m "Clarify clause wording"
 govctl rfc finalize <RFC-ID> normative
 
@@ -96,7 +94,7 @@ For ADR work:
 
 For RFC work:
 
-- Edit clauses with `govctl clause edit <RFC-ID>:C-<NAME> text --stdin`
+- Edit clauses with `govctl clause edit`
 - If the RFC is draft and ready to become normative, ask permission before `govctl rfc finalize <RFC-ID> normative`
 - If amending an existing normative RFC, ask permission before `govctl rfc bump`
 
@@ -156,7 +154,7 @@ If the task grows into implementation work, stop here and hand off to `/gov`.
 
 ### Clarify an RFC without changing behavior
 
-1. Edit the clause text with `govctl clause edit <RFC-ID>:C-<NAME> text --stdin`
+1. Edit the clause text with `govctl clause edit`
 2. Run **rfc-reviewer**
 3. Ask permission, then run `govctl rfc bump <RFC-ID> --patch -m "Clarify wording"`
 4. Run `govctl check` and `govctl render`

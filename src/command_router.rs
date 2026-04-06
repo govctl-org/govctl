@@ -297,6 +297,12 @@ pub enum CanonicalCommand {
         by: String,
         force: bool,
     },
+    AdrTick {
+        id: String,
+        field: String,
+        match_opts: OwnedMatchOptions,
+        status: TickStatus,
+    },
     AdrRender {
         id: String,
         dry_run: bool,
@@ -463,6 +469,7 @@ impl CanonicalCommand {
                 | AdrReject { .. }
                 | AdrDeprecate { .. }
                 | AdrSupersede { .. }
+                | AdrTick { .. }
                 | AdrRender { .. }
                 | WorkNew { .. }
                 | WorkEdit { .. }
@@ -793,6 +800,19 @@ impl CanonicalCommand {
             Self::AdrSupersede { id, by, force } => {
                 cmd::lifecycle::supersede(config, id, by, *force, op)
             }
+            Self::AdrTick {
+                id,
+                field,
+                match_opts,
+                status,
+            } => cmd::edit::tick_item(
+                config,
+                id,
+                field,
+                &match_opts.as_match_options(),
+                *status,
+                op,
+            ),
             Self::AdrRender { id, dry_run } => cmd::render::render_adrs(config, Some(id), *dry_run),
             Self::AdrShow { id, output } => cmd::render::show_adr(config, id, *output),
 
@@ -1269,6 +1289,29 @@ impl CanonicalCommand {
                 by: by.clone(),
                 force: *force,
             },
+            AdrCommand::Tick {
+                id,
+                field,
+                pattern,
+                status,
+                at,
+                exact,
+                regex,
+            } => {
+                let match_opts = OwnedMatchOptions {
+                    pattern: pattern.clone(),
+                    at: *at,
+                    exact: *exact,
+                    regex: *regex,
+                    all: false,
+                };
+                Self::AdrTick {
+                    id: id.clone(),
+                    field: field.clone(),
+                    match_opts,
+                    status: *status,
+                }
+            }
             AdrCommand::Render { id, dry_run } => Self::AdrRender {
                 id: id.clone(),
                 dry_run: *dry_run,

@@ -7,9 +7,6 @@ status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000"]
 
-[govctl.migration]
-state = "verified"
-
 [content]
 context = """
 Analysis of the artifact lifecycle state machines revealed several design flaws:
@@ -41,10 +38,7 @@ We will fix all four lifecycle design flaws:
    Work can be abandoned at any stage.
 
 4. **Document RFC constraint rules**: Add explicit invariant rules to SCHEMA.md stating when status×phase combinations are forbidden."""
-selected_option = "Fix artifact lifecycle design flaws"
-
-[content.consequences]
-neutral = ["""
+consequences = """
 **Positive:**
 - Cleaner separation of concerns (kind = category, status = lifecycle)
 - Complete lifecycle coverage for all artifact types
@@ -56,4 +50,4 @@ neutral = ["""
 
 **Migration:**
 - Any clause with `kind: deprecated` should change to `kind: normative, status: deprecated`
-- Currently no such clauses exist in the codebase"""]
+- Currently no such clauses exist in the codebase"""

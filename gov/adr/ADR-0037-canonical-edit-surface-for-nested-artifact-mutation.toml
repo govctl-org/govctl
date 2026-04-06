@@ -88,42 +88,33 @@ This keeps resource-first organization intact while giving both humans and agent
 - Lets existing verbs converge onto the same EditPlan without immediate breakage
 - Keeps the target path visually primary when reading or typing commands
 """
-selected_option = "Add a canonical edit command with path-first operation flags, while preserving current verbs as sugar"
+consequences = """
+### Positive
 
-[content.consequences]
-positive = [
-    "Agents can synthesize mutation commands from one regular shape instead of guessing between multiple top-level verbs.",
-    "The CLI surface aligns with the SSOT edit engine in [[ADR-0031]], reducing semantic drift.",
-    "Nested object/array edits can be documented once and reused across ADRs, RFCs, work items, and future artifact types.",
-    "Existing human-friendly verbs can remain as convenience entrypoints without blocking engine regularization.",
-    "The design does not add a separate patch document format, so the CLI remains focused on a single mutation grammar.",
-]
-neutral = [
-    "Resource-first organization is unchanged; only the mutation entrypoint is normalized.",
-    "This ADR does not itself redesign artifact schemas such as ADR consequences or alternatives. It defines the edit surface that future schema work can rely on.",
-    "If transactional batch mutation becomes necessary later, it can be addressed in a separate ADR with clearer evidence of need.",
-]
+- Agents can synthesize mutation commands from one regular shape instead of guessing between multiple top-level verbs.
+- The CLI surface aligns with the SSOT edit engine in [[ADR-0031]], reducing semantic drift.
+- Nested object/array edits can be documented once and reused across ADRs, RFCs, work items, and future artifact types.
+- Existing human-friendly verbs can remain as convenience entrypoints without blocking engine regularization.
+- The design does not add a separate patch document format, so the CLI remains focused on a single mutation grammar.
 
-[[content.consequences.negative]]
-text = "The CLI surface grows: users must understand that `edit` is canonical even if shorthand verbs still exist."
+### Negative
 
-[[content.consequences.negative]]
-text = "Help text, docs, examples, and tests require a coordinated rewrite."
+- The CLI surface grows: users must understand that `edit` is canonical even if shorthand verbs still exist.
+- Help text, docs, examples, and tests require a coordinated rewrite.
+- Compatibility layering adds temporary maintenance cost until sugar commands fully delegate to the canonical path.
+- Multi-step batch edits are not made atomic by this ADR; callers still need orchestration logic when applying a series of mutations.
+- Requires dual-surface docs during migration.
 
-[[content.consequences.negative]]
-text = "Compatibility layering adds temporary maintenance cost until sugar commands fully delegate to the canonical path."
+### Neutral
 
-[[content.consequences.negative]]
-text = "Multi-step batch edits are not made atomic by this ADR; callers still need orchestration logic when applying a series of mutations."
-
-[[content.consequences.negative]]
-text = "Requires dual-surface docs during migration"
-
-[[content.consequences.negative]]
-text = "Adds temporary compatibility maintenance cost"
+- Resource-first organization is unchanged; only the mutation entrypoint is normalized.
+- This ADR does not itself redesign artifact schemas such as ADR consequences or alternatives. It defines the edit surface that future schema work can rely on.
+- If transactional batch mutation becomes necessary later, it can be addressed in a separate ADR with clearer evidence of need.
+"""
 
 [[content.alternatives]]
 text = "Keep set/add/remove/tick as the only mutation interface and continue expanding path support"
+status = "rejected"
 pros = [
     "Lowest immediate CLI churn",
     "Keeps current verb-first UX intact",
@@ -136,9 +127,22 @@ rejection_reason = "It fixes capability gaps incrementally but leaves the core e
 
 [[content.alternatives]]
 text = "Replace current verbs with a JSONPatch-like or DSL-heavy universal mutation language"
+status = "rejected"
 pros = ["Maximum expressiveness in one command family"]
 cons = [
     "Higher cognitive load for humans",
     "Too large a break from current resource-first mutation ergonomics",
 ]
 rejection_reason = "Over-corrects toward a mini language and sacrifices discoverability for power we do not currently need."
+
+[[content.alternatives]]
+text = "Add a canonical edit command with path-first operation flags, while preserving current verbs as sugar"
+status = "accepted"
+pros = [
+    "Establishes one canonical mutation grammar without breaking existing workflows.",
+    "Keeps nested mutation semantics centered on field paths instead of ad hoc verb choice.",
+]
+cons = [
+    "Expands the CLI surface during the transition period.",
+    "Requires documentation and help text to teach the canonical form clearly.",
+]

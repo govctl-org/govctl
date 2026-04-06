@@ -10,9 +10,6 @@ refs = [
     "ADR-0004",
 ]
 
-[govctl.migration]
-state = "verified"
-
 [content]
 context = """
 Real-world governance experience from the neotex-v2 project shows that RFCs often need amendments during implementation. This conflicts with the current govctl mental model that treats `normative` status as "frozen" — the documentation (CLAUDE.md:79) states "normative: Frozen. Implementation MUST conform."
@@ -40,10 +37,7 @@ decision = """
    - Rationale and audit trail live in git/jj history
 
 **Precedent:** Linux kernel APIs are both binding (drivers must conform) and evolving (with deprecation, versioning, compatibility) simultaneously."""
-selected_option = "Allow normative RFC amendments via version bumping during implementation"
-
-[content.consequences]
-neutral = ["""
+consequences = """
 **Easier:**
 - Amending RFCs during implementation (matches real workflow)
 - Iterative spec refinement (discover-fix-document cycle)
@@ -56,4 +50,4 @@ neutral = ["""
 **No breaking changes:**
 - Existing RFCs remain valid
 - No data model changes required
-- Validation rules simplified (remove frozen assumption)"""]
+- Validation rules simplified (remove frozen assumption)"""

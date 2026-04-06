@@ -7,9 +7,6 @@ status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000"]
 
-[govctl.migration]
-state = "verified"
-
 [content]
 context = """
 Source code often contains references to governance artifacts (RFCs, clauses, ADRs) in comments. These references can become stale when artifacts are deprecated, superseded, or renamed.
@@ -33,10 +30,7 @@ Add configurable source code scanning with:
 4. New diagnostics: E0107SourceRefUnknown (error), W0107SourceRefOutdated (warning for deprecated/superseded)
 
 5. Scanner runs during 'govctl check' when source_scan.enabled = true"""
-selected_option = "Add configurable source code scanning"
-
-[content.consequences]
-neutral = ["""
+consequences = """
 Positive:
 - Dead link detection in source code comments
 - Configurable pattern supports different project conventions
@@ -49,4 +43,4 @@ Negative:
 
 Neutral:
 - Pattern configuration requires regex knowledge
-- Projects must explicitly enable and configure"""]
+- Projects must explicitly enable and configure"""

@@ -7,9 +7,6 @@ status = "accepted"
 date = "2026-02-22"
 refs = ["RFC-0000"]
 
-[govctl.migration]
-state = "verified"
-
 [content]
 context = """
 During agent-driven governance workflows, agents naturally use work items as "working memory" to track execution progress. Currently, this working memory is stored in the `description` field, mixing multiple semantic purposes:
@@ -77,10 +74,7 @@ Each journal entry has three fields:
 2. Update `gov/schema/work.schema.toml`
 3. Update render logic in `src/render.rs` to include journal section
 4. Update wi-writer skill documentation"""
-selected_option = "Add journal field to WorkItemContent"
-
-[content.consequences]
-neutral = ["""
+consequences = """
 **What becomes easier:**
 
 - **Clear separation of concerns:** `description` stays focused on task scope; execution details go to `journal`
@@ -102,4 +96,4 @@ neutral = ["""
 
 - `wi-writer` skill updated with field usage guidelines
 - `work.schema.toml` updated with journal field definition
-- Rendered markdown includes "## Journal" section after description"""]
+- Rendered markdown includes "## Journal" section after description"""

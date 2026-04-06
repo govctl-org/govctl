@@ -269,18 +269,6 @@ pub fn accept_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
         .into());
     }
 
-    if entry.spec.content.selected_option.is_none() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0301AdrSchemaInvalid,
-            format!(
-                "Accepted ADRs require content.selected_option before acceptance (hint: `govctl adr set {} selected_option \"...\"`)",
-                adr_id
-            ),
-            adr_id,
-        )
-        .into());
-    }
-
     edit::set_field_direct(config, adr_id, "status", "accepted", op)?;
 
     if !op.is_preview() {

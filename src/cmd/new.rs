@@ -4,8 +4,8 @@ use crate::NewTarget;
 use crate::config::{Config, IdStrategy};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
-    AdrConsequences, AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind,
-    ClauseSpec, ClauseStatus, ClauseWire, RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec,
+    AdrContent, AdrMeta, AdrSpec, AdrStatus, ChangelogEntry, ClauseKind, ClauseSpec,
+    ClauseStatus, ClauseWire, RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec,
     WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
@@ -506,13 +506,11 @@ fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<D
             date: today(),
             superseded_by: None,
             refs: vec![],
-            migration: None,
         },
         content: AdrContent {
             context: "Describe the context and problem statement.\nWhat is the issue that we're seeing that is motivating this decision?".to_string(),
             decision: "Describe the decision that was made.\nWhat is the change that we're proposing and/or doing?".to_string(),
-            selected_option: None,
-            consequences: AdrConsequences::default(),
+            consequences: "Describe the resulting context after applying the decision.\nWhat becomes easier or more difficult to do because of this change?".to_string(),
             alternatives: vec![],
         },
     };

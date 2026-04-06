@@ -373,25 +373,9 @@ fn test_accept_proposed_adr() {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &["adr", "set", "ADR-0001", "selected_option", "Option A"],
             &["adr", "list"],
             &["adr", "accept", "ADR-0001"],
             &["adr", "list"],
-        ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
-}
-
-#[test]
-fn test_accept_proposed_adr_requires_selected_option() {
-    let temp_dir = init_project();
-    let date = today();
-
-    let output = run_commands(
-        temp_dir.path(),
-        &[
-            &["adr", "new", "Test Decision"],
-            &["adr", "accept", "ADR-0001"],
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
@@ -422,7 +406,6 @@ fn test_accept_already_accepted_fails() {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &["adr", "set", "ADR-0001", "selected_option", "Option A"],
             &["adr", "accept", "ADR-0001"],
             &["adr", "accept", "ADR-0001"],
         ],

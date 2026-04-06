@@ -6,7 +6,6 @@ use std::path::PathBuf;
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 
 #[derive(Args, Clone, Debug)]
-#[group(id = "edit_action", required = true, multiple = false)]
 pub(crate) struct EditActionArgs {
     /// Set a scalar value (omit VALUE only when using --stdin)
     #[arg(long, group = "edit_action", num_args = 0..=1, default_missing_value = "")]
@@ -183,12 +182,18 @@ pub(crate) enum Commands {
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
 pub enum TickStatus {
-    /// Mark as done/accepted
+    /// Mark work items as done
     Done,
-    /// Mark as pending/considered
+    /// Mark work items as pending
     Pending,
-    /// Mark as cancelled/rejected
+    /// Mark work items as cancelled
     Cancelled,
+    /// Mark ADR alternatives as accepted
+    Accepted,
+    /// Mark ADR alternatives as considered
+    Considered,
+    /// Mark ADR alternatives as rejected
+    Rejected,
 }
 
 #[derive(Subcommand, Clone, Debug)]
@@ -721,23 +726,17 @@ VALID FIELDS:
   String fields:
     - context: Background and problem description
     - decision: The decision made and rationale
-    - selected_option: The chosen option once decided
+    - consequences: Impact of this decision
     - status: ADR status (proposed|accepted|rejected|superseded)
-
-  Structured fields:
-    - consequences.positive: Positive outcomes
-    - consequences.negative: Negative outcomes with mitigations
-    - consequences.neutral: Neutral side effects
 
   Array fields (returns JSON array):
     - refs: Cross-references to RFCs/ADRs
-    - alternatives: Non-selected options that were considered
+    - alternatives: Options that were considered
 
 EXAMPLES:
     govctl adr get ADR-0001                    # Show all fields
     govctl adr get ADR-0001 context            # Get specific field
     govctl adr get ADR-0001 alternatives       # Get array field
-    govctl adr get ADR-0001 consequences.negative
 ")]
     Get {
         /// ADR ID
@@ -749,8 +748,10 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl adr edit ADR-0001 content.decision --set \"We will ...\"
+    govctl adr edit ADR-0001 content.consequences --set \"Trade-off summary\"
     govctl adr edit ADR-0001 content.alternatives --add \"Option A\"
     govctl adr edit ADR-0001 content.alternatives[0].pros --add \"Readable\"
+    govctl adr edit ADR-0001 alternatives --tick accepted --at 0
 ")]
     Edit {
         /// ADR ID
@@ -775,20 +776,15 @@ VALID FIELDS:
   String fields (use 'set'):
     - context: Background and problem description
     - decision: The decision made and rationale
-    - selected_option: The chosen option once decided
+    - consequences: Impact of this decision
     - title: ADR title
     - date: ADR date
-
-  Nested/object fields:
-    - consequences.positive / consequences.negative / consequences.neutral
-    - migration.state / migration.warnings[*]
 
   Array fields (use 'add'/'remove' instead):
     - refs, alternatives
 
 EXAMPLES:
     govctl adr set ADR-0001 context \"New context\"
-    govctl adr set ADR-0001 selected_option \"Option A\"
     govctl adr set ADR-0001 decision --stdin <<'EOF'
     Multi-line decision here
     EOF
@@ -817,6 +813,7 @@ VALID ARRAY FIELDS:
 ALTERNATIVES FORMAT (per ADR-0027):
     Each alternative has:
     - text: Description of the option (required)
+    - status: considered | accepted | rejected
     - pros: Advantages (use --pro to add)
     - cons: Disadvantages (use --con to add)
     - rejection_reason: Why rejected (use --reject-reason)
@@ -911,6 +908,27 @@ EXAMPLES:
         /// Force without confirmation
         #[arg(short = 'f', long)]
         force: bool,
+    },
+    /// Tick checklist item
+    Tick {
+        /// ADR ID
+        id: String,
+        /// Field (decisions or alternatives)
+        field: String,
+        /// Pattern to match
+        pattern: Option<String>,
+        /// New status (`accepted|considered|rejected` for ADR alternatives)
+        #[arg(short, long, value_enum)]
+        status: TickStatus,
+        /// Match by index
+        #[arg(long, allow_hyphen_values = true)]
+        at: Option<i32>,
+        /// Exact match
+        #[arg(long)]
+        exact: bool,
+        /// Regex pattern
+        #[arg(long)]
+        regex: bool,
     },
     /// Render a single ADR to markdown
     Render {

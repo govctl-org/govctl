@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0036"
 title = "Restructure ADR chosen-option and migration semantics"
-status = "accepted"
+status = "superseded"
 date = "2026-04-06"
+superseded_by = "ADR-0038"
 refs = [
     "ADR-0034",
     "ADR-0031",
@@ -49,34 +50,30 @@ We will redesign ADR storage around four principles:
 - Eliminates accepted-alternative duplication
 - Keeps unresolved migrations renderable
 """
-selected_option = "Explicit selected_option field, structured consequences, and migration metadata"
+consequences = """
+### Positive
 
-[content.consequences]
-positive = [
-    "The chosen option becomes explicit and no longer needs to be duplicated as an accepted alternative.",
-    "ADR CLI and skills can use domain language directly instead of checklist-style status remapping.",
-    "Migration gains a principled place to record unresolved historical gaps without breaking rendering.",
-    "Negative outcomes and mitigations become attachable data rather than prose hidden inside a markdown block.",
-]
-neutral = [
-    "`decision` remains a prose field; the redesign adds structure around it rather than replacing it with a fully object-shaped decision document.",
-    "The migration pipeline becomes responsible for one more schema step.",
-]
+- The chosen option becomes explicit and no longer needs to be duplicated as an accepted alternative.
+- ADR CLI and skills can use domain language directly instead of checklist-style status remapping.
+- Migration gains a principled place to record unresolved historical gaps without breaking rendering.
+- Negative outcomes and mitigations become attachable data rather than prose hidden inside a markdown block.
 
-[[content.consequences.negative]]
-text = "This is a breaking schema change for ADR files, renderer output, and edit semantics."
+### Negative
 
-[[content.consequences.negative]]
-text = "Existing ADRs require a versioned migration and some will still need manual follow-up."
+- This is a breaking schema change for ADR files, renderer output, and edit semantics.
+- Existing ADRs require a versioned migration and some will still need manual follow-up.
+- Bundled skills, reviewer guidance, and examples all need coordinated updates.
+- Requires a schema migration.
 
-[[content.consequences.negative]]
-text = "Bundled skills, reviewer guidance, and examples all need coordinated updates."
+### Neutral
 
-[[content.consequences.negative]]
-text = "Requires a schema migration"
+- `decision` remains a prose field; the redesign adds structure around it rather than replacing it with a fully object-shaped decision document.
+- The migration pipeline becomes responsible for one more schema step.
+"""
 
 [[content.alternatives]]
 text = "Keep alternative status as considered/accepted/rejected"
+status = "rejected"
 pros = ["Minimal data-model churn"]
 cons = [
     "Preserves confusing tick-to-status mapping",
@@ -86,9 +83,22 @@ rejection_reason = "Keeps the same semantic collision between checklist state an
 
 [[content.alternatives]]
 text = "Use a fully object-shaped decision document instead of keeping decision prose"
+status = "rejected"
 pros = ["Captures rationale in more machine-readable form"]
 cons = [
     "Much larger writer, renderer, and documentation rewrite",
     "Makes the redesign harder to adopt in one migration step",
 ]
 rejection_reason = "The immediate problem is chosen-option and migration semantics, not replacing ADR narrative writing with a new decision DSL."
+
+[[content.alternatives]]
+text = "Explicit selected_option field, structured consequences, and migration metadata"
+status = "accepted"
+pros = [
+    "Makes the chosen option explicit rather than implicit in prose and option status.",
+    "Provides a dedicated place for migration-only review state.",
+]
+cons = [
+    "Introduces a breaking schema change for ADRs.",
+    "Requires coordinated migration and ecosystem updates.",
+]

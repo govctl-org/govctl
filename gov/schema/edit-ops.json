@@ -14,7 +14,6 @@
       "allowed_fields": [
         "context",
         "decision",
-        "selected_option",
         "consequences",
         "description",
         "alternatives",
@@ -32,7 +31,6 @@
         "date",
         "refs",
         "superseded_by",
-        "migration",
         "started",
         "completed",
         "created",
@@ -185,7 +183,7 @@
     },
     {
       "artifact": "adr",
-      "name": "selected_option",
+      "name": "consequences",
       "kind": "scalar",
       "verbs": ["get", "set"]
     },
@@ -193,7 +191,7 @@
       "artifact": "adr",
       "name": "alternatives",
       "kind": "list",
-      "verbs": ["get", "add", "remove"]
+      "verbs": ["get", "add", "remove", "tick"]
     },
 
     {
@@ -451,10 +449,10 @@
     },
     {
       "artifact": "adr",
-      "name": "selected_option",
-      "get": { "path": ["content", "selected_option"], "render": "scalar" },
+      "name": "consequences",
+      "get": { "path": ["content", "consequences"], "render": "scalar" },
       "set": {
-        "path": ["content", "selected_option"],
+        "path": ["content", "consequences"],
         "mode": { "type": "string" }
       },
       "list_path": null
@@ -464,7 +462,8 @@
       "name": "alternatives",
       "get": {
         "path": ["content", "alternatives"],
-        "render": "text_lines",
+        "render": "status_lines",
+        "status_key": "status",
         "text_key": "text"
       },
       "set": null,
@@ -582,7 +581,7 @@
       "content_path": ["content", "alternatives"],
       "node": {
         "kind": "list",
-        "verbs": ["get", "add", "remove"],
+        "verbs": ["get", "add", "remove", "tick"],
         "text_key": "text",
         "item": {
           "kind": "object",
@@ -594,6 +593,19 @@
                 "kind": "scalar",
                 "verbs": ["get", "set"],
                 "set_mode": { "type": "string" }
+              }
+            },
+            {
+              "name": "status",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get"],
+                "set_mode": {
+                  "type": "enum",
+                  "allowed": ["considered", "accepted", "rejected"],
+                  "invalid_msg": "invalid status",
+                  "code": "E0820InvalidFieldValue"
+                }
               }
             },
             {
@@ -632,135 +644,6 @@
             }
           ]
         }
-      }
-    },
-    {
-      "artifact": "adr",
-      "root": "consequences",
-      "content_path": ["content", "consequences"],
-      "node": {
-        "kind": "object",
-        "verbs": ["get"],
-        "fields": [
-          {
-            "name": "positive",
-            "node": {
-              "kind": "list",
-              "verbs": ["get", "add", "remove"],
-              "text_key": null,
-              "item": {
-                "kind": "scalar",
-                "verbs": ["get", "set"],
-                "set_mode": { "type": "string" }
-              }
-            }
-          },
-          {
-            "name": "negative",
-            "node": {
-              "kind": "list",
-              "verbs": ["get", "add", "remove"],
-              "text_key": "text",
-              "item": {
-                "kind": "object",
-                "verbs": ["get"],
-                "fields": [
-                  {
-                    "name": "text",
-                    "node": {
-                      "kind": "scalar",
-                      "verbs": ["get", "set"],
-                      "set_mode": { "type": "string" }
-                    }
-                  },
-                  {
-                    "name": "mitigations",
-                    "node": {
-                      "kind": "list",
-                      "verbs": ["get", "add", "remove"],
-                      "text_key": null,
-                      "item": {
-                        "kind": "scalar",
-                        "verbs": ["get", "set"],
-                        "set_mode": { "type": "string" }
-                      }
-                    }
-                  }
-                ]
-              }
-            }
-          },
-          {
-            "name": "neutral",
-            "node": {
-              "kind": "list",
-              "verbs": ["get", "add", "remove"],
-              "text_key": null,
-              "item": {
-                "kind": "scalar",
-                "verbs": ["get", "set"],
-                "set_mode": { "type": "string" }
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "artifact": "adr",
-      "root": "migration",
-      "content_path": ["govctl", "migration"],
-      "node": {
-        "kind": "object",
-        "verbs": ["get"],
-        "fields": [
-          {
-            "name": "state",
-            "node": {
-              "kind": "scalar",
-              "verbs": ["get", "set"],
-              "set_mode": { "type": "string" }
-            }
-          },
-          {
-            "name": "warnings",
-            "node": {
-              "kind": "list",
-              "verbs": ["get", "remove"],
-              "text_key": "message",
-              "item": {
-                "kind": "object",
-                "verbs": ["get"],
-                "fields": [
-                  {
-                    "name": "code",
-                    "node": {
-                      "kind": "scalar",
-                      "verbs": ["get", "set"],
-                      "set_mode": { "type": "string" }
-                    }
-                  },
-                  {
-                    "name": "message",
-                    "node": {
-                      "kind": "scalar",
-                      "verbs": ["get", "set"],
-                      "set_mode": { "type": "string" }
-                    }
-                  },
-                  {
-                    "name": "path",
-                    "node": {
-                      "kind": "scalar",
-                      "verbs": ["get", "set"],
-                      "set_mode": { "type": "string" }
-                    }
-                  }
-                ]
-              }
-            }
-          }
-        ]
       }
     },
     {

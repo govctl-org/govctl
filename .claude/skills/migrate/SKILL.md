@@ -41,16 +41,14 @@ govctl status                             # Verify setup
 govctl adr new "<decision title>"
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> selected_option "<what was adopted>"
-govctl adr edit <ADR-ID> content.consequences.positive --add "<observed benefit>"
-govctl adr edit <ADR-ID> content.consequences.negative --add "<observed downside>"
+govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
 govctl adr add <ADR-ID> alternatives "Option: ..." --pro "..." --con "..." --reject-reason "..."
 govctl adr accept <ADR-ID>
 
 # Backfill RFCs (optional)
 govctl rfc new "<spec title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF' ... EOF
 govctl rfc finalize <RFC-ID> normative
 govctl rfc advance <RFC-ID> impl
 govctl rfc advance <RFC-ID> test
@@ -196,20 +194,30 @@ We will [what was decided].
 [Rationale — why this was chosen]
 EOF
 
-govctl adr set <ADR-ID> selected_option "[what was adopted]"
-govctl adr edit <ADR-ID> content.consequences.positive --add "[Observed benefit]"
-govctl adr edit <ADR-ID> content.consequences.negative --add "[Observed downside or trade-off]"
-govctl adr edit <ADR-ID> content.consequences.neutral --add "[Side effect]"
+govctl adr set <ADR-ID> consequences --stdin <<'EOF'
+### Positive
+- [Observed benefits]
+
+### Negative
+- [Observed downsides or trade-offs]
+
+### Neutral
+- [Side effects]
+EOF
 ```
 
 ### 2.3 Add Alternatives (if known)
 
 ```bash
-govctl adr add <ADR-ID> alternatives "<what was not chosen>" \
+govctl adr add <ADR-ID> alternatives "Chosen: <what was adopted>" \
+  --pro "..." --con "..."
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
+
+govctl adr add <ADR-ID> alternatives "Rejected: <what was not chosen>" \
   --pro "..." --con "..." --reject-reason "..."
 ```
 
-If rejected alternatives are unknown, it is acceptable to omit `alternatives` entirely and rely on `selected_option` plus the decision rationale.
+If rejected alternatives are unknown, it is acceptable to have only the accepted option.
 When that happens, say so explicitly in the ADR context. Historical backfills may not be able to reconstruct rejected options, and reviewers should evaluate them with that limitation in mind.
 
 ### 2.4 Review Backfilled ADRs
@@ -251,7 +259,7 @@ For each requirement in the existing specification:
 
 ```bash
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
 [Clause text extracted from existing spec, rewritten with RFC 2119 keywords]
 EOF
 ```
@@ -392,7 +400,7 @@ Skip trivial decisions (indentation style, variable naming) — those belong in 
 When discovering decisions:
 
 - If you can identify the decision but not the rationale → say so in the context. "The rationale is not documented; this ADR records the current state."
-- If alternatives are unknown → set `selected_option` and omit rejected alternatives.
+- If alternatives are unknown → create only the accepted alternative.
 - If consequences are unclear → document what you can observe. "The negative consequences of this decision have not been formally evaluated."
 
 ### Incremental Migration

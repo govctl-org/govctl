@@ -7,9 +7,6 @@ status = "accepted"
 date = "2026-01-19"
 refs = ["RFC-0002"]
 
-[govctl.migration]
-state = "verified"
-
 [content]
 context = """
 [[RFC-0002]] defines the structural contract for govctl CLI commands: resource-first organization, universal CRUD verbs, lifecycle operations, and output format control. However, RFC-0002 intentionally defers implementation details to preserve flexibility while maintaining a stable interface contract.
@@ -240,10 +237,7 @@ Global commands remain at top level.
 
 **Backward compatibility aliases:**
 Emit deprecation warning when old verb-first commands are used."""
-selected_option = "Adopt the documented CLI command implementation conventions"
-
-[content.consequences]
-neutral = ["""
+consequences = """
 **Positive:**
 
 1. **Consistent UX:** All commands follow the same patterns. Users learn once, apply everywhere.
@@ -270,4 +264,4 @@ neutral = ["""
 
 - **Discoverability over uniformity:** Four clear verbs are better than one verb with special syntax that requires documentation.
 
-- **Safety over speed:** Confirmation prompts slow down destructive operations. This is intentional to prevent accidents."""]
+- **Safety over speed:** Confirmation prompts slow down destructive operations. This is intentional to prevent accidents."""

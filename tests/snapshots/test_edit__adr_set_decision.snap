@@ -1,6 +1,5 @@
 ---
 source: tests/test_edit.rs
-assertion_line: 540
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl adr new Test Decision
@@ -27,5 +26,6 @@ We decided to do X
 
 ## Consequences
 
-_None recorded._
+Describe the resulting context after applying the decision.
+What becomes easier or more difficult to do because of this change?
 exit: 0

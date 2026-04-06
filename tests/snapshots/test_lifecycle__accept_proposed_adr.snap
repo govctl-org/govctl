@@ -1,14 +1,9 @@
 ---
 source: tests/test_lifecycle.rs
-assertion_line: 382
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl adr new Test Decision
 Created ADR: gov/adr/ADR-XXXX-test-decision.toml
-exit: 0
-
-$ govctl adr set ADR-0001 selected_option Option A
-Set ADR-0001.selected_option = Option A
 exit: 0
 
 $ govctl adr list

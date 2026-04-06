@@ -10,9 +10,6 @@ refs = [
     "ADR-0017",
 ]
 
-[govctl.migration]
-state = "verified"
-
 [content]
 context = """
 During implementation of [[RFC-0002]], we successfully built the resource-first command structure (`govctl <resource> <verb>`). However, a design question emerged about backward compatibility with existing verb-first shortcuts.
@@ -106,40 +103,28 @@ We could keep shortcuts with deprecation warnings (Option 3), but this:
 - Delays the inevitable
 
 Given pre-1.0 status, clean break is preferable."""
-selected_option = "Remove verb-first global shortcuts and enforce strict resource-first syntax"
+consequences = """
+### Positive
 
-[content.consequences]
-positive = [
-    "**Single Canonical Syntax**: Only one way to invoke commands reduces confusion",
-    "**RFC Compliance**: Aligns perfectly with [[RFC-0002:C-GLOBAL-COMMANDS]]",
-    "**Simpler Codebase**: ~40 fewer lines of delegation logic to maintain",
-    "**Clearer Documentation**: Examples show only one pattern, easier to teach",
-    "**Predictable**: `govctl <resource> <verb>` works for all operations without exceptions",
-    "**Tab Completion**: Clearer completion tree (type `govctl ` → see resources, not mix of resources + verbs)",
-]
+- **Single Canonical Syntax**: Only one way to invoke commands reduces confusion
+- **RFC Compliance**: Aligns perfectly with [[RFC-0002:C-GLOBAL-COMMANDS]]
+- **Simpler Codebase**: ~40 fewer lines of delegation logic to maintain
+- **Clearer Documentation**: Examples show only one pattern, easier to teach
+- **Predictable**: `govctl <resource> <verb>` works for all operations without exceptions
+- **Tab Completion**: Clearer completion tree (type `govctl ` → see resources, not mix of resources + verbs)
 
-[[content.consequences.negative]]
-text = "**Breaking Change**: Existing scripts using `govctl list` or `govctl new` will break"
+### Negative
 
-[[content.consequences.negative]]
-text = "Mitigation: We're pre-1.0, document in CHANGELOG"
+- **Breaking Change**: Existing scripts using `govctl list` or `govctl new` will break
+  - Mitigation: We're pre-1.0, document in CHANGELOG
+- **More Keystrokes**: `govctl rfc list` is longer than `govctl list rfc`
+  - Mitigation: Shell aliases for personal shortcuts
+- **Learning Curve**: Users familiar with old syntax need to adjust
+  - Mitigation: Clear error messages suggesting correct syntax
 
-[[content.consequences.negative]]
-text = "**More Keystrokes**: `govctl rfc list` is longer than `govctl list rfc`"
+### Migration Required
 
-[[content.consequences.negative]]
-text = "Mitigation: Shell aliases for personal shortcuts"
-
-[[content.consequences.negative]]
-text = "**Learning Curve**: Users familiar with old syntax need to adjust"
-
-[[content.consequences.negative]]
-text = "Mitigation: Clear error messages suggesting correct syntax"
-
-[[content.consequences.negative]]
-text = """### Migration Required
 Users need to update:
-
 ```bash
 # Old → New
 govctl list rfc        → govctl rfc list
@@ -150,16 +135,15 @@ govctl new rfc "..."   → govctl rfc new "..."
 govctl new adr "..."   → govctl adr new "..."
 govctl new work "..."  → govctl work new "..."
 govctl new clause ...  → govctl clause new ...
-```"""
+```
 
-[[content.consequences.negative]]
-text = """### Future Extension
-This decision does NOT prevent adding convenience aliases later if user demand warrants it. However, any such addition would require an RFC amendment to [[RFC-0002:C-GLOBAL-COMMANDS]]."""
+### Future Extension
 
-[[content.consequences.negative]]
-text = """### Recommendation for Users
+This decision does NOT prevent adding convenience aliases later if user demand warrants it. However, any such addition would require an RFC amendment to [[RFC-0002:C-GLOBAL-COMMANDS]].
+
+### Recommendation for Users
+
 Add personal shell aliases for frequently used commands:
-
 ```bash
 # In ~/.bashrc or ~/.zshrc
 alias gr='govctl rfc'
@@ -176,12 +160,16 @@ This provides the convenience without coupling it to the tool."""
 
 [[content.alternatives]]
 text = "Keep both syntaxes permanently"
-rejection_reason = "Keeping both syntaxes permanently preserves dual-path complexity and weakens the resource-first model."
+status = "considered"
+
+[[content.alternatives]]
+text = "Remove shortcuts immediately (strict RFC-0002)"
+status = "considered"
 
 [[content.alternatives]]
 text = "Phased deprecation (warnings now, remove in 1.0)"
-rejection_reason = "A phased deprecation prolongs the transition period and keeps unnecessary shortcut machinery in the codebase."
+status = "considered"
 
 [[content.alternatives]]
 text = "Expand shortcuts to all common operations"
-rejection_reason = "Expanding shortcuts would make the exception surface larger and further undermine the one-obvious-way command model."
+status = "considered"

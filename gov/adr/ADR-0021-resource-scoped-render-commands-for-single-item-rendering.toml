@@ -10,9 +10,6 @@ refs = [
     "ADR-0018",
 ]
 
-[govctl.migration]
-state = "verified"
-
 [content]
 context = """
 
@@ -71,30 +68,23 @@ govctl render [rfc|adr|work|changelog|all]  # No --rfc-id flag
 - Resource-scoped `render` shares implementation with global render (just filters to single ID)
 - Error handling: if ID not found, return clear error message
 - Output: same format as bulk render, just for one item"""
-selected_option = "Add resource-scoped render verbs and remove the global --rfc-id flag"
+consequences = """
 
-[content.consequences]
-positive = [
-    "**Symmetric API**: All resource types support single-item render equally",
-    "**Cleaner global command**: No proliferation of `--*-id` flags",
-    '**Intuitive mental model**: "Work with RFC" → `govctl rfc render RFC-0001`',
-    "**Better discoverability**: `govctl rfc --help` shows all RFC operations including render",
-]
+### Positive
 
-[[content.consequences.negative]]
-text = "**Breaking change**: Scripts using `govctl render --rfc-id` must update"
+- **Symmetric API**: All resource types support single-item render equally
+- **Cleaner global command**: No proliferation of `--*-id` flags
+- **Intuitive mental model**: "Work with RFC" → `govctl rfc render RFC-0001`
+- **Better discoverability**: `govctl rfc --help` shows all RFC operations including render
 
-[[content.consequences.negative]]
-text = "Mitigation: Pre-1.0, document in CHANGELOG"
+### Negative
 
-[[content.consequences.negative]]
-text = "**Two entry points for render**: Global (bulk) and resource-scoped (single)"
+- **Breaking change**: Scripts using `govctl render --rfc-id` must update
+  - Mitigation: Pre-1.0, document in CHANGELOG
+- **Two entry points for render**: Global (bulk) and resource-scoped (single)
+  - Mitigation: Clear purpose split makes this a feature, not a bug
 
-[[content.consequences.negative]]
-text = "Mitigation: Clear purpose split makes this a feature, not a bug"
-
-[[content.consequences.negative]]
-text = """**Migration**: Users must update any scripts that still use the removed global `--rfc-id` form.
+### Migration
 
 ```bash
 # Old syntax (removed)
@@ -106,8 +96,8 @@ govctl rfc render RFC-0001
 
 [[content.alternatives]]
 text = "Add --adr-id and --work-id flags to global render: Proliferates flags, violates 'one way' principle"
-rejection_reason = "Adding more --*-id flags to the global render command proliferates special cases and violates the one-way command model."
+status = "considered"
 
 [[content.alternatives]]
 text = "Leave as-is with only --rfc-id: Asymmetric, inconsistent UX"
-rejection_reason = "Leaving single-item render support only for RFCs preserves an asymmetric and inconsistent UX across artifact types."
+status = "considered"

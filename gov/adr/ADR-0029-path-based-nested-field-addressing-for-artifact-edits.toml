@@ -98,60 +98,34 @@ govctl adr set ADR-0001 alt[2].pro[0] "Updated pro"
 
 - Existing top-level field syntax remains valid.
 - Existing `adr add ... alternatives --pro/--con/--reject-reason` remains supported during migration.
-- Convergence plan: docs and examples immediately prefer path syntax; legacy alternative-specific flags receive deprecation warnings after rollout stabilizes (target: two minor releases), then are removed only in a major release.
+- Convergence plan: docs and examples immediately prefer path syntax; legacy alternative-specific flags receive deprecation warnings after rollout stabilizes (target: two minor releases), then are removed only in a major release."""
+consequences = """
+### Positive
 
-### Recovered Selected-Option Advantages
+- Enables concise, direct nested edits such as `alt[2].pro[2]` without editing raw TOML.
+- Preserves current mental model (`set/add/remove/tick`) and command discoverability.
+- Reuses existing match semantics from [[ADR-0007]], reducing conceptual fragmentation.
+- Creates a reusable abstraction for nested fields across ADRs and work items.
 
-- Compatible with existing command model
-- Directly solves nested edit ergonomics
-- Supports incremental rollout with low script breakage
-"""
-selected_option = "Option 3: Keep verbs and add path-based field addressing"
+### Negative
 
-[content.consequences]
-positive = [
-    "Enables concise, direct nested edits such as `alt[2].pro[2]` without editing raw TOML.",
-    "Preserves current mental model (`set/add/remove/tick`) and command discoverability.",
-    "Reuses existing match semantics from [[ADR-0007]], reducing conceptual fragmentation.",
-    "Creates a reusable abstraction for nested fields across ADRs and work items.",
-]
-neutral = [
-    "No data migration is required for existing ADR files; the change is CLI-surface and parser behavior.",
-    "Alias set is intentionally small and closed (`alt`, `pro`, `con`, `reason`); future alias additions require explicit schema/governance update to avoid accidental drift.",
-]
+- Adds parser and resolver complexity in the edit pipeline.
+  - Mitigation: strict grammar, bounded depth, and dedicated parser tests (including fuzz/property tests).
+- Requires broader validation and diagnostics coverage.
+  - Mitigation: explicit diagnostic matrix for parse/resolution/type errors and snapshot tests for representative failures.
+- Dual syntax during migration (`--pro/--con` and path syntax) can confuse users.
+  - Mitigation: docs prefer path syntax immediately, deprecation warnings for legacy flags after rollout, and a published convergence timeline.
+- Documentation and examples require coordinated updates across guides and help text.
+  - Mitigation: track doc updates in implementation work items and gate release on docs parity checks.
 
-[[content.consequences.negative]]
-text = "Adds parser and resolver complexity in the edit pipeline."
+### Neutral
 
-[[content.consequences.negative]]
-text = "Mitigation: strict grammar, bounded depth, and dedicated parser tests (including fuzz/property tests)."
-
-[[content.consequences.negative]]
-text = "Requires broader validation and diagnostics coverage."
-
-[[content.consequences.negative]]
-text = "Mitigation: explicit diagnostic matrix for parse/resolution/type errors and snapshot tests for representative failures."
-
-[[content.consequences.negative]]
-text = "Dual syntax during migration (`--pro/--con` and path syntax) can confuse users."
-
-[[content.consequences.negative]]
-text = "Mitigation: docs prefer path syntax immediately, deprecation warnings for legacy flags after rollout, and a published convergence timeline."
-
-[[content.consequences.negative]]
-text = "Documentation and examples require coordinated updates across guides and help text."
-
-[[content.consequences.negative]]
-text = "Mitigation: track doc updates in implementation work items and gate release on docs parity checks."
-
-[[content.consequences.negative]]
-text = "Introduces parser and resolver complexity"
-
-[[content.consequences.negative]]
-text = "Creates temporary dual-syntax cognitive load during migration"
+- No data migration is required for existing ADR files; the change is CLI-surface and parser behavior.
+- Alias set is intentionally small and closed (`alt`, `pro`, `con`, `reason`); future alias additions require explicit schema/governance update to avoid accidental drift."""
 
 [[content.alternatives]]
 text = "Option 1: Keep current field-only operations and use manual TOML edits for nested changes"
+status = "rejected"
 pros = [
     "No new parser or resolver",
     "Lowest immediate implementation risk",
@@ -164,6 +138,7 @@ rejection_reason = "Does not address the primary usability gap"
 
 [[content.alternatives]]
 text = "Option 2: Add a universal edit verb with JSONPath-like expressions"
+status = "rejected"
 pros = [
     "Single conceptual mutation entry point",
     "Potentially expressive for advanced operations",
@@ -173,3 +148,16 @@ cons = [
     "Higher migration and discoverability cost",
 ]
 rejection_reason = "Overlaps existing verbs and weakens current command architecture"
+
+[[content.alternatives]]
+text = "Option 3: Keep verbs and add path-based field addressing"
+status = "accepted"
+pros = [
+    "Compatible with existing command model",
+    "Directly solves nested edit ergonomics",
+    "Supports incremental rollout with low script breakage",
+]
+cons = [
+    "Introduces parser and resolver complexity",
+    "Creates temporary dual-syntax cognitive load during migration",
+]

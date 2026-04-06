@@ -504,8 +504,8 @@ fn test_adr_set_alternative_status_field_rejected() {
             ],
         ],
     );
-    assert!(output.contains("error[E0815]"), "output: {}", output);
-    assert!(output.contains("status"), "output: {}", output);
+    assert!(output.contains("error[E0804]"), "output: {}", output);
+    assert!(output.contains("tick-owned"), "output: {}", output);
 }
 
 #[test]
@@ -616,30 +616,7 @@ fn test_adr_set_consequences() {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &[
-                "adr",
-                "edit",
-                "ADR-0001",
-                "content.consequences.positive",
-                "--add",
-                "Faster reads",
-            ],
-            &[
-                "adr",
-                "edit",
-                "ADR-0001",
-                "content.consequences.negative",
-                "--add",
-                "More memory use",
-            ],
-            &[
-                "adr",
-                "edit",
-                "ADR-0001",
-                "content.consequences.negative[0].mitigations",
-                "--add",
-                "Cache only hot paths",
-            ],
+            &["adr", "set", "ADR-0001", "consequences", "Faster reads, but more memory use."],
             &["adr", "show", "ADR-0001"],
         ],
     );
@@ -1356,43 +1333,61 @@ fn test_adr_remove_nested_path_requires_selector() {
 }
 
 #[test]
-fn test_adr_edit_tick_rejects_alternative_root() {
+fn test_adr_edit_tick_updates_alternative_root() {
     let temp_dir = init_project();
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["adr", "new", "Tick Reject Test"],
+            &["adr", "new", "Tick Root Test"],
             &["adr", "add", "ADR-0001", "alternatives", "Option A"],
-            &["adr", "edit", "ADR-0001", "alternatives", "--tick", "done"],
+            &["adr", "edit", "ADR-0001", "alternatives", "--tick", "accepted", "--at", "0"],
+            &["adr", "get", "ADR-0001", "alternatives"],
         ],
     );
-    assert!(
-        output.contains("Tick only works for work items: ADR-0001"),
-        "output: {}",
-        output
-    );
-    assert!(output.contains("exit: 1"), "output: {}", output);
+    assert!(output.contains("Marked 'Option A' as accepted"), "output: {}", output);
+    assert!(output.contains("[accepted] Option A"), "output: {}", output);
 }
 
 #[test]
-fn test_adr_edit_tick_rejects_indexed_alternative_item() {
+fn test_adr_edit_tick_updates_indexed_alternative_item() {
     let temp_dir = init_project();
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["adr", "new", "Indexed Tick Reject Test"],
+            &["adr", "new", "Indexed Tick Test"],
             &["adr", "add", "ADR-0001", "alternatives", "Option A"],
-            &["adr", "edit", "ADR-0001", "alt[0]", "--tick", "done"],
+            &["adr", "edit", "ADR-0001", "alt[0]", "--tick", "accepted"],
+            &["adr", "get", "ADR-0001", "alternatives[0].status"],
         ],
     );
+    assert!(output.contains("Marked 'Option A' as accepted"), "output: {}", output);
     assert!(
-        output.contains("Tick only works for work items: ADR-0001"),
+        output.contains("$ govctl adr get ADR-0001 alternatives[0].status\naccepted"),
         "output: {}",
         output
     );
-    assert!(output.contains("exit: 1"), "output: {}", output);
+}
+
+#[test]
+fn test_adr_edit_tick_rejects_work_item_status_names() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Invalid Tick Test"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &["adr", "edit", "ADR-0001", "alternatives", "--tick", "done", "--at", "0"],
+        ],
+    );
+    assert!(output.contains("error[E0820]"), "output: {}", output);
+    assert!(
+        output.contains("ADR tick status must be one of: accepted, considered, rejected"),
+        "output: {}",
+        output
+    );
 }
 
 #[test]

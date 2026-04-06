@@ -1,22 +1,13 @@
 ---
 source: tests/test_edit.rs
-assertion_line: 579
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl adr new Test Decision
 Created ADR: gov/adr/ADR-XXXX-test-decision.toml
 exit: 0
 
-$ govctl adr edit ADR-0001 content.consequences.positive --add Faster reads
-Added 'Faster reads' to ADR-0001.consequences.positive
-exit: 0
-
-$ govctl adr edit ADR-0001 content.consequences.negative --add More memory use
-Added 'More memory use' to ADR-0001.consequences.negative
-exit: 0
-
-$ govctl adr edit ADR-0001 content.consequences.negative[0].mitigations --add Cache only hot paths
-Added 'Cache only hot paths' to ADR-0001.consequences.negative[0].mitigations
+$ govctl adr set ADR-0001 consequences Faster reads, but more memory use.
+Set ADR-0001.consequences = Faster reads, but more memory use.
 exit: 0
 
 $ govctl adr show ADR-0001
@@ -36,12 +27,5 @@ What is the change that we're proposing and/or doing?
 
 ## Consequences
 
-### Positive
-
-- Faster reads
-
-### Negative
-
-- More memory use
-  - Mitigation: Cache only hot paths
+Faster reads, but more memory use.
 exit: 0

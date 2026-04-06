@@ -5,13 +5,7 @@ id = "ADR-0014"
 title = "Release management with releases.toml"
 status = "accepted"
 date = "2026-01-17"
-refs = [
-    "ADR-0013",
-    "RFC-0000:C-WORK-DEF",
-]
-
-[govctl.migration]
-state = "verified"
+refs = ["ADR-0013", "RFC-0000:C-WORK-DEF"]
 
 [content]
 context = "To generate a CHANGELOG.md from work items, we need version information. Work items have `completed` dates but no version. Version is a release-time concept, not a work-time concept. We need a way to track which work items belong to which release without mutating completed work items."
@@ -26,11 +20,12 @@ refs = ["WI-2026-01-17-029", "WI-2026-01-17-008"]
 ```
 
 The `govctl release <version>` command collects all done work items not yet in any release and adds them to a new release entry. The `govctl render changelog` command generates CHANGELOG.md grouped by release version and category."""
-selected_option = "Store releases in single `gov/releases.toml` with explicit refs"
-
-[content.consequences]
-neutral = ["Completed work items remain immutable. Explicit refs list eliminates ambiguity about release membership. Single file is simpler than per-release artifacts. Unreleased work items appear under `[Unreleased]` section in changelog."]
+consequences = "Completed work items remain immutable. Explicit refs list eliminates ambiguity about release membership. Single file is simpler than per-release artifacts. Unreleased work items appear under `[Unreleased]` section in changelog."
 
 [[content.alternatives]]
 text = "Add version field to work items after release"
-rejection_reason = "Release version is determined at release time; mutating completed work items afterward would blur work execution history and break immutability."
+status = "rejected"
+
+[[content.alternatives]]
+text = "Store releases in single `gov/releases.toml` with explicit refs"
+status = "accepted"

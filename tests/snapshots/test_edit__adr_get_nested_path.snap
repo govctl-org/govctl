@@ -1,6 +1,5 @@
 ---
 source: tests/test_edit.rs
-assertion_line: 1075
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl adr new Path Test
@@ -30,6 +29,7 @@ exit: 0
 
 $ govctl adr get ADR-0001 alternatives[0]
 text: Use traits
+status: considered
 pros: Flexible, Reusable
 cons: Complex
 exit: 0

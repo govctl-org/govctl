@@ -356,7 +356,11 @@ impl TomlEditableEntry for GuardEntry {
 
 const TICK_NESTED_PATH_ERROR: &str =
     "tick only supports checklist root paths or indexed checklist items";
-const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items: {id}";
+const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
+const ADR_TICK_STATUS_ERROR: &str =
+    "ADR tick status must be one of: accepted, considered, rejected";
+const WORK_TICK_STATUS_ERROR: &str =
+    "Work item tick status must be one of: done, pending, cancelled";
 
 pub fn edit_clause(
     config: &Config,
@@ -509,6 +513,13 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> an
             if fp.as_simple() == Some("status") || fp.as_simple() == Some("superseded_by") {
                 Some(
                     "ADR lifecycle fields are verb-owned. Use `govctl adr accept`, `govctl adr reject`, or `govctl adr supersede`.",
+                )
+            } else if fp.segments.len() == 2
+                && fp.segments[0].name == "alternatives"
+                && fp.segments[1].name == "status"
+            {
+                Some(
+                    "ADR alternative status is tick-owned. Use `govctl adr tick ... alternatives ...`.",
                 )
             } else {
                 None
@@ -795,7 +806,7 @@ fn adr_add_alternatives(
     value: &str,
     ctx: &AdrAddContext,
 ) -> anyhow::Result<()> {
-    use crate::model::Alternative;
+    use crate::model::{Alternative, AlternativeStatus};
     if entry
         .spec
         .content
@@ -806,8 +817,15 @@ fn adr_add_alternatives(
         return Ok(());
     }
 
+    let status = if ctx.reject_reason.is_some() {
+        AlternativeStatus::Rejected
+    } else {
+        AlternativeStatus::Considered
+    };
+
     entry.spec.content.alternatives.push(Alternative {
         text: value.to_string(),
+        status,
         pros: ctx.pros.clone().unwrap_or_default(),
         cons: ctx.cons.clone().unwrap_or_default(),
         rejection_reason: ctx.reject_reason.clone(),
@@ -1150,10 +1168,29 @@ pub fn tick_item(
     };
 
     let status_str = match (artifact, status) {
+        (ArtifactType::Adr, crate::TickStatus::Accepted) => "accepted",
+        (ArtifactType::Adr, crate::TickStatus::Considered) => "considered",
+        (ArtifactType::Adr, crate::TickStatus::Rejected) => "rejected",
+        (ArtifactType::Adr, _) => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0820InvalidFieldValue,
+                ADR_TICK_STATUS_ERROR,
+                id,
+            )
+            .into());
+        }
         (ArtifactType::WorkItem, crate::TickStatus::Done) => "done",
         (ArtifactType::WorkItem, crate::TickStatus::Pending) => "pending",
         (ArtifactType::WorkItem, crate::TickStatus::Cancelled) => "cancelled",
-        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Adr | ArtifactType::Guard, _) => {
+        (ArtifactType::WorkItem, _) => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0820InvalidFieldValue,
+                WORK_TICK_STATUS_ERROR,
+                id,
+            )
+            .into());
+        }
+        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard, _) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0813SupersedeNotSupported,
                 TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
@@ -1163,6 +1200,15 @@ pub fn tick_item(
         }
     };
     let ticked_text = match artifact {
+        ArtifactType::Adr => tick_toml_field::<AdrTomlAdapter>(
+            config,
+            id,
+            field,
+            &effective_opts,
+            op,
+            ArtifactType::Adr,
+            status_str,
+        )?,
         ArtifactType::WorkItem => tick_toml_field::<WorkTomlAdapter>(
             config,
             id,
@@ -1172,7 +1218,7 @@ pub fn tick_item(
             ArtifactType::WorkItem,
             status_str,
         )?,
-        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Adr | ArtifactType::Guard => {
+        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard => {
             unreachable!("handled above")
         }
     };
