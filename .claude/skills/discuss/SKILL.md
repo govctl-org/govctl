@@ -28,7 +28,7 @@ govctl adr list                           # List all ADRs
 # RFC drafting
 govctl rfc new "<title>"                  # Create RFC (auto-assigns ID)
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 clause text here
 EOF
 
@@ -36,8 +36,10 @@ EOF
 govctl adr new "<title>"                  # Create ADR
 govctl adr set <ADR-ID> context "..." --stdin
 govctl adr set <ADR-ID> decision "..." --stdin
-govctl adr set <ADR-ID> consequences "..." --stdin
-govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr set <ADR-ID> selected_option "Option A"
+govctl adr edit <ADR-ID> content.consequences.positive --add "Benefit"
+govctl adr edit <ADR-ID> content.consequences.negative --add "Trade-off"
+govctl adr add <ADR-ID> alternatives "Rejected option"
 govctl adr add <ADR-ID> refs RFC-0001
 
 # Validation
@@ -151,7 +153,7 @@ For structure, templates, and quality guidelines, follow the **rfc-writer** skil
 ```bash
 govctl rfc new "<title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 clause text
 EOF
 ```
@@ -177,7 +179,7 @@ govctl adr add <ADR-ID> refs RFC-NNNN
 
 ```bash
 # Edit the clause content
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 Updated specification text.
 EOF
 

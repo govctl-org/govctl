@@ -50,7 +50,7 @@ govctl adr accept <ADR-ID>
 # Backfill RFCs (optional)
 govctl rfc new "<spec title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF' ... EOF
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
 govctl rfc finalize <RFC-ID> normative
 govctl rfc advance <RFC-ID> impl
 govctl rfc advance <RFC-ID> test
@@ -251,7 +251,7 @@ For each requirement in the existing specification:
 
 ```bash
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 [Clause text extracted from existing spec, rewritten with RFC 2119 keywords]
 EOF
 ```

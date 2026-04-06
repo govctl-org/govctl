@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.1.1"
+version = "1.1.2"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-03-22"
-signature = "d05eb40d0eb61a843eb2b0279c290f3c9d5a16b17d97f88790b2f6466510190b"
+updated = "2026-04-06"
+signature = "972811229593a7f435a1ecf9cb0d1427adbbd0aef423771f71d0696dfc2b53ae"
 
 [[sections]]
 title = "Summary"
@@ -43,6 +43,11 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.1.2"
+date = "2026-04-06"
+notes = "Clarify ADR v3 structure and selected option requirements"
 
 [[changelog]]
 version = "1.1.1"

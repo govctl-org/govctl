@@ -72,16 +72,16 @@ The system MUST validate all inputs."""
 
 ```bash
 # From stdin (recommended for multi-line)
-govctl clause edit RFC-0010:C-SCOPE --stdin <<'EOF'
+govctl clause edit RFC-0010:C-SCOPE text --stdin <<'EOF'
 The system MUST validate all inputs.
 The system SHOULD log validation failures.
 EOF
 
 # Inline text
-govctl clause edit RFC-0010:C-SCOPE --text "The system MUST validate all inputs."
+govctl clause edit RFC-0010:C-SCOPE text --set "The system MUST validate all inputs."
 
 # From file
-govctl clause edit RFC-0010:C-SCOPE --text-file clause-text.md
+govctl clause edit RFC-0010:C-SCOPE text --stdin < clause-text.md
 ```
 
 ### Delete a Clause

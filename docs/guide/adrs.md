@@ -27,7 +27,15 @@ refs = ["RFC-0001"]
 [content]
 context = "We need a caching layer for..."
 decision = "We will use Redis because..."
-consequences = "Positive: faster reads. Negative: operational complexity."
+selected_option = "Redis"
+
+[content.consequences]
+positive = ["Faster reads"]
+neutral = ["Adds a dedicated cache tier"]
+
+[[content.consequences.negative]]
+text = "Operational complexity increases"
+mitigations = ["Use managed Redis with automated backups"]
 
 [[content.alternatives]]
 text = "Memcached"
@@ -39,35 +47,39 @@ rejection_reason = "Persistence is required for our use case"
 ADRs contain:
 
 - **Context** — The situation requiring a decision
-- **Decision** — What was decided
-- **Consequences** — Expected outcomes (positive and negative)
-- **Alternatives** — Options considered with pros, cons, and rejection reasons (per [[ADR-0027]])
+- **Decision** — What was decided and why
+- **Selected option** — The chosen path recorded explicitly
+- **Consequences** — Expected outcomes grouped as positive, negative, and neutral
+- **Alternatives** — Non-selected options with pros, cons, and rejection reasons
 - **Status** — `proposed`, `accepted`, `rejected`, or `superseded`
 
 ## Editing ADRs
 
-Use govctl to get/set fields:
+Use canonical path-first edits for ADR content:
 
 ```bash
 # Get specific field
 govctl adr get ADR-0003 status
 
-# Set field value
-govctl adr set ADR-0003 status accepted
-
-# Set multi-line content from stdin
-govctl adr set ADR-0003 context --stdin <<'EOF'
+# Set multi-line context from stdin
+govctl adr edit ADR-0003 context --set --stdin <<'EOF'
 We need a caching layer that can handle
 10k requests per second with sub-millisecond latency.
 EOF
-```
 
-For alternatives (pros/cons/rejection reason), path-based edits are supported:
+# Record the chosen option explicitly
+govctl adr edit ADR-0003 selected_option --set "Redis"
 
-```bash
-# Direct nested edit
-govctl adr set ADR-0001 "alt[2].pros[0]" "Updated pro"
-govctl adr add ADR-0001 "alt[0].cons" "New disadvantage"
+# Add structured consequences
+govctl adr edit ADR-0003 consequences.positive --add "Faster reads"
+govctl adr edit ADR-0003 consequences.negative --add "Operational complexity increases"
+govctl adr edit ADR-0003 consequences.negative[0].mitigations --add "Use managed Redis"
+
+# Add rejected alternatives and rationale
+govctl adr edit ADR-0003 alternatives --add "Memcached"
+govctl adr edit ADR-0003 alternatives[0].pros --add "Simpler"
+govctl adr edit ADR-0003 alternatives[0].cons --add "No persistence"
+govctl adr edit ADR-0003 alternatives[0].rejection_reason --set "Persistence is required"
 ```
 
 ## Status Lifecycle
@@ -85,13 +97,7 @@ When consensus is reached:
 govctl adr accept ADR-0003
 ```
 
-### Deprecate
-
-When a decision is no longer relevant:
-
-```bash
-govctl adr deprecate ADR-0003
-```
+Accepted ADRs must record `selected_option` before they can be accepted.
 
 ### Supersede
 
@@ -102,6 +108,8 @@ govctl adr supersede ADR-0001 --by ADR-0005
 ```
 
 This marks ADR-0001 as superseded and records ADR-0005 as its replacement.
+
+ADRs are superseded rather than deprecated. If a decision is obsolete, create a replacement ADR and supersede the old one.
 
 ## Listing and Viewing
 

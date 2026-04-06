@@ -13,8 +13,13 @@ An ADR (Architectural Decision Record) documents a significant design decision.
 
 Every ADR MUST be stored as a TOML file containing:
 - `[govctl]` section with: `id`, `title`, `status`, `date`, `refs`
-- optional `[govctl]` field: `superseded_by`
-- `[content]` section with: `context`, `decision`, `consequences`
+- optional `[govctl]` fields: `superseded_by`, `migration`
+- `[content]` section with: `context`, `decision`, `consequences`, `alternatives`
+- `content.selected_option` when the ADR status is `accepted` or `superseded`, unless the artifact is explicitly marked as a migration record still requiring review
+
+`content.consequences` MUST be structured as positive, negative, and neutral outcomes. Negative consequences MAY include mitigations.
+
+`content.alternatives` records non-selected options. Each alternative MUST include `text` and MAY include pros, cons, and a rejection reason.
 
 Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 

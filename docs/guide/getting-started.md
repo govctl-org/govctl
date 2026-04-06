@@ -99,7 +99,7 @@ govctl clause new RFC-0000:C-SCOPE "Scope" -s "Specification" -k normative
 ## Edit Clause Content
 
 ```bash
-govctl clause edit RFC-0000:C-SCOPE --stdin <<'EOF'
+govctl clause edit RFC-0000:C-SCOPE text --stdin <<'EOF'
 The feature MUST do X.
 The feature SHOULD do Y.
 EOF
