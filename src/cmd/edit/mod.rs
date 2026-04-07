@@ -249,25 +249,6 @@ fn read_stdin() -> anyhow::Result<String> {
     Ok(buffer.trim_end_matches('\n').to_string())
 }
 
-fn resolve_plain_value(value: Option<&str>, stdin: bool) -> anyhow::Result<String> {
-    match (value, stdin) {
-        (Some(v), false) => Ok(v.to_string()),
-        (None, true) => read_stdin(),
-        (None, false) => Err(Diagnostic::new(
-            DiagnosticCode::E0801MissingRequiredArg,
-            "Provide a value or use --stdin",
-            "input",
-        )
-        .into()),
-        (Some(_), true) => Err(Diagnostic::new(
-            DiagnosticCode::E0802ConflictingArgs,
-            "Cannot use both value and --stdin",
-            "input",
-        )
-        .into()),
-    }
-}
-
 fn resolve_owned_value(value: Option<&Option<String>>, stdin: bool) -> anyhow::Result<String> {
     match (value, stdin) {
         (Some(Some(v)), false) => Ok(v.clone()),
@@ -419,30 +400,6 @@ pub fn edit_clause(
     if !op.is_preview() {
         ui::updated("clause", clause_id);
     }
-    Ok(vec![])
-}
-
-pub fn set_field(
-    config: &Config,
-    id: &str,
-    field: &str,
-    value: Option<&str>,
-    stdin: bool,
-    op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
-    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
-    let artifact = plan.artifact;
-    let target = plan
-        .target
-        .as_ref()
-        .expect("mutation planning should produce target");
-    let value = resolve_plain_value(value, stdin)?;
-    apply_set_field(config, id, target, artifact, value.as_str(), op, true)?;
-
-    if !op.is_preview() {
-        ui::field_set(id, &target.display_path(), value.as_str());
-    }
-
     Ok(vec![])
 }
 

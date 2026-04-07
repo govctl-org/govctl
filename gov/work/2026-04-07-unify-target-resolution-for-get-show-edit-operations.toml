@@ -24,12 +24,12 @@ content = "Removed deprecated JSON write paths for RFC and Clause mutation flows
 [[content.acceptance_criteria]]
 text = "get and edit share one target-resolution model"
 status = "done"
-category = "changed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "write-lock classification follows mutating operations instead of command-name allowlists"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "deprecated JSON artifact edit paths are removed while migrate still supports legacy upgrades"

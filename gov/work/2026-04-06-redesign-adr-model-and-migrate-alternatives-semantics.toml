@@ -29,7 +29,7 @@ content = "Implemented ADR v3 with selected_option, structured consequences, and
 [[content.acceptance_criteria]]
 text = "Define and accept an ADR for the redesigned ADR model and migration behavior"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes after the redesign and migration"
@@ -39,9 +39,9 @@ category = "chore"
 [[content.acceptance_criteria]]
 text = "Add a versioned migration step that rewrites legacy ADRs into the new renderable model"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Implement the new ADR schema, render path, and check warnings for migration-review states"
 status = "done"
-category = "added"
+category = "chore"

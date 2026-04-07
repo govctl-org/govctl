@@ -1,0 +1,28 @@
+---
+source: tests/test_help.rs
+assertion_line: 22
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr get --help
+Get ADR metadata or specific field
+
+Usage: govctl adr get [OPTIONS] <ID> [FIELD]
+
+Arguments:
+  <ID>     Artifact ID
+  [FIELD]  Field name or path (omit to show all)
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+VALID FIELDS:
+    - title, date, status, superseded_by
+    - context, decision, consequences, refs, alternatives
+
+EXAMPLES:
+    govctl adr get ADR-0001
+    govctl adr get ADR-0001 decision
+    govctl adr get ADR-0001 alternatives[0].status
+exit: 0

@@ -13,6 +13,7 @@ mod lock;
 mod model;
 mod parse;
 mod render;
+mod resource_plan;
 mod scan;
 mod schema;
 mod signature;
@@ -83,46 +84,19 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
     let op = write::WriteOp::from_dry_run(cli.dry_run);
 
     // Convert parsed CLI command to canonical form
-    let canonical = command_router::CanonicalCommand::from_parsed(&cli.command)?;
+    let plan = command_router::CommandPlan::from_parsed(&cli.command, cli.dry_run)?;
 
-    // Handle render command dry-run flag combination (special case)
-    let canonical = match canonical {
-        command_router::CanonicalCommand::Render {
-            target,
-            dry_run,
-            force,
-        } => command_router::CanonicalCommand::Render {
-            target,
-            dry_run: cli.dry_run || dry_run,
-            force,
-        },
-        command_router::CanonicalCommand::RfcRender { id, dry_run } => {
-            command_router::CanonicalCommand::RfcRender {
-                id,
-                dry_run: cli.dry_run || dry_run,
-            }
-        }
-        command_router::CanonicalCommand::AdrRender { id, dry_run } => {
-            command_router::CanonicalCommand::AdrRender {
-                id,
-                dry_run: cli.dry_run || dry_run,
-            }
-        }
-        command_router::CanonicalCommand::WorkRender { id, dry_run } => {
-            command_router::CanonicalCommand::WorkRender {
-                id,
-                dry_run: cli.dry_run || dry_run,
-            }
-        }
-        other => other,
-    };
-
-    let operation = canonical.operation();
-    let _target = canonical.target()?;
+    let lock_disposition = plan.lock_disposition();
 
     // Acquire gov-root exclusive lock for mutating operations (RFC-0004)
-    let _guard = if operation.is_mutating() {
-        if matches!(canonical, command_router::CanonicalCommand::Init { .. }) {
+    let _guard = if matches!(
+        lock_disposition,
+        command_router::LockDisposition::GovRootExclusive
+    ) {
+        if matches!(
+            plan.op,
+            command_router::Op::Builtin(command_router::BuiltinOp::Init { .. })
+        ) {
             let gov_root = config.gov_root.as_path();
             if !op.is_preview() && !gov_root.exists() {
                 std::fs::create_dir_all(gov_root).map_err(|e| {
@@ -134,7 +108,12 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
                 })?;
             }
         }
-        if op.is_preview() && matches!(canonical, command_router::CanonicalCommand::Init { .. }) {
+        if op.is_preview()
+            && matches!(
+                plan.op,
+                command_router::Op::Builtin(command_router::BuiltinOp::Init { .. })
+            )
+        {
             None
         } else {
             Some(lock::acquire_gov_lock(&config)?)
@@ -144,5 +123,5 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
     };
 
     // Execute via canonical command pattern (single execution path)
-    canonical.execute(&config, op)
+    plan.execute(&config, op)
 }

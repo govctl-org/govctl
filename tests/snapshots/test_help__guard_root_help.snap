@@ -1,0 +1,37 @@
+---
+source: tests/test_help.rs
+assertion_line: 76
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl guard --help
+Verification guard operations
+
+Usage: govctl guard [OPTIONS] <COMMAND>
+
+Commands:
+  list    List guards [aliases: ls]
+  get     Get guard metadata or specific field
+  show    Show rendered guard content
+  new     Create a new verification guard
+  edit    Canonical path-first edit entrypoint
+  set     Set guard field value
+  add     Add value to guard array field
+  remove  Remove value from guard array field
+  delete  Delete a verification guard
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+COMMON WORKFLOW:
+    1. `govctl guard list` to discover guards
+    2. `govctl guard get <ID> ...` for metadata/fields
+    3. `govctl guard edit/set` to define checks
+    4. `govctl verify <GUARD-ID>` or `govctl verify --work <WI-ID>` to run guards
+
+START HERE:
+    - New guard: `govctl guard new "clippy lint"`
+    - Inspect one guard: `govctl guard get GUARD-CLIPPY`
+exit: 0

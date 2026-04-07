@@ -19,9 +19,9 @@ content = "Refactored clause canonical edit routing to reuse EditActionArgs pars
 [[content.acceptance_criteria]]
 text = "clause canonical edit routing preserves existing behavior while removing the duplicate argument parser"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "cargo clippy --all-targets --all-features -- -D warnings passes"
 status = "done"
-category = "fixed"
+category = "chore"

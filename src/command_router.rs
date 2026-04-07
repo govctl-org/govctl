@@ -1,13 +1,8 @@
-//! Canonical command pattern for unified command routing.
+//! Command planning for unified routing semantics.
 //!
-//! This module defines a single internal representation (`CanonicalCommand`)
-//! that both old (deprecated verb-first) and new (resource-first) CLI syntaxes
-//! map to. This ensures zero code duplication in business logic.
-//!
-//! Architecture:
-//! 1. Parse CLI arguments (old or new syntax) → Commands enum
-//! 2. Convert to CanonicalCommand (single source of truth)
-//! 3. Execute via business logic in cmd::* modules
+//! This module compiles parsed CLI syntax into semantic execution plans built
+//! from `Scope + Op`. The planner is the single normalization point for both
+//! canonical and compatibility command forms.
 
 use crate::cmd;
 use crate::config::Config;
@@ -15,28 +10,16 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
 use crate::{
-    Commands, EditActionArgs, FinalizeStatus, GuardCommand, ListTarget, NewTarget, OutputFormat,
-    RenderTarget, TickStatus,
+    Commands, EditActionArgs, FinalizeStatus, ListTarget, NewTarget, OutputFormat, RenderTarget,
+    TickStatus,
 };
 use std::path::PathBuf;
 
-type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
-type OwnedEditAction = cmd::edit::OwnedEditAction;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CommandOperation {
-    Inspect,
-    Mutate,
-}
-
-impl CommandOperation {
-    pub fn is_mutating(self) -> bool {
-        matches!(self, Self::Mutate)
-    }
-}
+pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
+pub(crate) type OwnedEditAction = cmd::edit::OwnedEditAction;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum CommandTarget {
+pub enum Scope {
     Global,
     Collection {
         target: ListTarget,
@@ -45,11 +28,186 @@ pub enum CommandTarget {
         artifact: cmd::edit::ArtifactType,
         id: String,
     },
-    Field {
+    Target {
         artifact: cmd::edit::ArtifactType,
         id: String,
         target: cmd::edit::engine::ResolvedTarget,
     },
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct EditExtras {
+    pub category: Option<ChangelogCategory>,
+    pub scope: Option<String>,
+    pub pros: Vec<String>,
+    pub cons: Vec<String>,
+    pub reject_reason: Option<String>,
+}
+
+#[derive(Debug, Clone)]
+pub enum BuiltinOp {
+    Init {
+        force: bool,
+    },
+    InitSkills {
+        force: bool,
+    },
+    Check {
+        #[allow(dead_code)]
+        deny_warnings: bool,
+        has_active: bool,
+    },
+    Status,
+    RenderGlobal {
+        target: RenderTarget,
+        dry_run: bool,
+        force: bool,
+    },
+    Migrate,
+    Verify {
+        guard_ids: Vec<String>,
+        work: Option<String>,
+    },
+    Describe {
+        context: bool,
+        #[allow(dead_code)]
+        output: String,
+    },
+    Completions {
+        shell: clap_complete::Shell,
+    },
+    #[cfg(feature = "tui")]
+    Tui,
+    ReleaseCut {
+        version: String,
+        date: Option<String>,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum CreateOp {
+    Rfc {
+        title: String,
+        id: Option<String>,
+    },
+    Clause {
+        clause_id: String,
+        title: String,
+        section: String,
+        kind: ClauseKind,
+    },
+    Adr {
+        title: String,
+    },
+    Work {
+        title: String,
+        active: bool,
+    },
+    Guard {
+        title: String,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum EditOp {
+    Field {
+        action: OwnedEditAction,
+        extras: EditExtras,
+    },
+    ClauseLegacy {
+        text: Option<String>,
+        text_file: Option<PathBuf>,
+        stdin: bool,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum LifecycleOp {
+    Bump {
+        level: Option<BumpLevel>,
+        summary: Option<String>,
+        changes: Vec<String>,
+    },
+    Finalize {
+        status: FinalizeStatus,
+    },
+    Advance {
+        phase: RfcPhase,
+    },
+    Deprecate {
+        force: bool,
+    },
+    Supersede {
+        by: String,
+        force: bool,
+    },
+    AcceptAdr,
+    RejectAdr,
+    MoveWork {
+        file_or_id: PathBuf,
+        status: WorkItemStatus,
+    },
+}
+
+#[derive(Debug, Clone)]
+pub enum Op {
+    Builtin(BuiltinOp),
+    Create(CreateOp),
+    List {
+        filter: Option<String>,
+        limit: Option<usize>,
+        output: OutputFormat,
+    },
+    Get,
+    Show {
+        output: OutputFormat,
+    },
+    Edit(EditOp),
+    Lifecycle(LifecycleOp),
+    Delete {
+        force: bool,
+    },
+    RenderArtifact {
+        dry_run: bool,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LockDisposition {
+    None,
+    GovRootExclusive,
+}
+
+#[derive(Debug, Clone)]
+pub struct CommandPlan {
+    pub scope: Scope,
+    pub op: Op,
+}
+
+impl CommandPlan {
+    fn new(scope: Scope, op: Op) -> Self {
+        Self { scope, op }
+    }
+
+    pub fn lock_disposition(&self) -> LockDisposition {
+        match &self.op {
+            Op::Builtin(BuiltinOp::Check { .. })
+            | Op::Builtin(BuiltinOp::Status)
+            | Op::Builtin(BuiltinOp::Verify { .. })
+            | Op::Builtin(BuiltinOp::Describe { .. })
+            | Op::Builtin(BuiltinOp::Completions { .. })
+            | Op::Get
+            | Op::List { .. }
+            | Op::Show { .. } => LockDisposition::None,
+            #[cfg(feature = "tui")]
+            Op::Builtin(BuiltinOp::Tui) => LockDisposition::None,
+            _ => LockDisposition::GovRootExclusive,
+        }
+    }
+
+    pub fn execute(&self, config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+        execute_plan(self, config, op)
+    }
 }
 
 fn conflicting_edit_flag_error(action: &str, flag: &str) -> anyhow::Error {
@@ -80,7 +238,7 @@ fn reject_selector_flags_for_value_action(
     Ok(())
 }
 
-fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
+pub(crate) fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
     let action_count = usize::from(args.set.is_some())
         + usize::from(args.add.is_some())
         + usize::from(args.tick.is_some())
@@ -158,1591 +316,540 @@ fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
     unreachable!("action_count guarantees exactly one action branch")
 }
 
-fn artifact_target(artifact: cmd::edit::ArtifactType, id: &str) -> CommandTarget {
-    CommandTarget::Artifact {
+fn artifact_scope(artifact: cmd::edit::ArtifactType, id: &str) -> Scope {
+    Scope::Artifact {
         artifact,
         id: id.to_string(),
     }
 }
 
-fn resolve_command_target(id: &str, field: Option<&str>) -> anyhow::Result<CommandTarget> {
+fn resolve_scope(id: &str, field: Option<&str>) -> anyhow::Result<Scope> {
     let plan = cmd::edit::engine::plan_request(id, field)?;
     Ok(match plan.target {
-        Some(target) => CommandTarget::Field {
+        Some(target) => Scope::Target {
             artifact: plan.artifact,
             id: id.to_string(),
             target,
         },
-        None => artifact_target(plan.artifact, id),
+        None => artifact_scope(plan.artifact, id),
     })
 }
 
-/// Canonical internal representation of all commands.
-/// This is the single source of truth for command execution.
-#[derive(Debug, Clone)]
-pub enum CanonicalCommand {
-    // ========================================
-    // Global Commands (no resource prefix)
-    // ========================================
-    Init {
-        force: bool,
-    },
-    InitSkills {
-        force: bool,
-    },
-    Check {
-        #[allow(dead_code)]
-        deny_warnings: bool,
-        has_active: bool,
-    },
-    Status,
-    Render {
-        target: RenderTarget,
-        dry_run: bool,
-        force: bool,
-    },
-    Migrate,
-    Verify {
-        guard_ids: Vec<String>,
-        work: Option<String>,
-    },
-    Describe {
-        context: bool,
-        #[allow(dead_code)]
-        output: String,
-    },
-    Completions {
-        shell: clap_complete::Shell,
-    },
-    #[cfg(feature = "tui")]
-    Tui,
-
-    // ========================================
-    // RFC Commands
-    // ========================================
-    RfcNew {
-        title: String,
-        id: Option<String>,
-    },
-    RfcList {
-        filter: Option<String>,
-        limit: Option<usize>,
-        output: OutputFormat,
-    },
-    RfcGet {
-        id: String,
-        field: Option<String>,
-    },
-    RfcEdit {
-        id: String,
-        path: String,
-        action: OwnedEditAction,
-    },
-    RfcSet {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-    },
-    RfcAdd {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-    },
-    RfcRemove {
-        id: String,
-        field: String,
-        match_opts: OwnedMatchOptions,
-    },
-    RfcBump {
-        id: String,
-        level: Option<BumpLevel>,
-        summary: Option<String>,
-        changes: Vec<String>,
-    },
-    RfcFinalize {
-        id: String,
-        status: FinalizeStatus,
-    },
-    RfcAdvance {
-        id: String,
-        phase: RfcPhase,
-    },
-    RfcDeprecate {
-        id: String,
-        force: bool,
-    },
-    RfcSupersede {
-        id: String,
-        by: String,
-        force: bool,
-    },
-    RfcRender {
-        id: String,
-        dry_run: bool,
-    },
-    RfcShow {
-        id: String,
-        output: OutputFormat,
-    },
-
-    // ========================================
-    // Clause Commands
-    // ========================================
-    ClauseNew {
-        clause_id: String,
-        title: String,
-        section: String,
-        kind: ClauseKind,
-    },
-    ClauseList {
-        rfc_id: Option<String>,
-        limit: Option<usize>,
-        output: OutputFormat,
-    },
-    ClauseGet {
-        id: String,
-        field: Option<String>,
-    },
-    ClauseEdit {
-        id: String,
-        path: String,
-        action: OwnedEditAction,
-    },
-    ClauseLegacyEdit {
-        id: String,
-        text: Option<String>,
-        text_file: Option<PathBuf>,
-        stdin: bool,
-    },
-    ClauseSet {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-    },
-    ClauseDelete {
-        id: String,
-        force: bool,
-    },
-    ClauseDeprecate {
-        id: String,
-        force: bool,
-    },
-    ClauseSupersede {
-        id: String,
-        by: String,
-        force: bool,
-    },
-    ClauseShow {
-        id: String,
-        output: OutputFormat,
-    },
-
-    // ========================================
-    // ADR Commands
-    // ========================================
-    AdrNew {
-        title: String,
-    },
-    AdrList {
-        status: Option<String>,
-        limit: Option<usize>,
-        output: OutputFormat,
-    },
-    AdrGet {
-        id: String,
-        field: Option<String>,
-    },
-    AdrEdit {
-        id: String,
-        path: String,
-        action: OwnedEditAction,
-        pro: Vec<String>,
-        con: Vec<String>,
-        reject_reason: Option<String>,
-    },
-    AdrSet {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-    },
-    AdrAdd {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-        pro: Vec<String>,
-        con: Vec<String>,
-        reject_reason: Option<String>,
-    },
-    AdrRemove {
-        id: String,
-        field: String,
-        match_opts: OwnedMatchOptions,
-    },
-    AdrAccept {
-        id: String,
-    },
-    AdrReject {
-        id: String,
-    },
-    AdrDeprecate {
-        id: String,
-        force: bool,
-    },
-    AdrSupersede {
-        id: String,
-        by: String,
-        force: bool,
-    },
-    AdrTick {
-        id: String,
-        field: String,
-        match_opts: OwnedMatchOptions,
-        status: TickStatus,
-    },
-    AdrRender {
-        id: String,
-        dry_run: bool,
-    },
-    AdrShow {
-        id: String,
-        output: OutputFormat,
-    },
-
-    // ========================================
-    // Work Item Commands
-    // ========================================
-    WorkNew {
-        title: String,
-        active: bool,
-    },
-    WorkList {
-        status: Option<String>,
-        limit: Option<usize>,
-        output: OutputFormat,
-    },
-    WorkGet {
-        id: String,
-        field: Option<String>,
-    },
-    WorkEdit {
-        id: String,
-        path: String,
-        action: OwnedEditAction,
-        category: Option<ChangelogCategory>,
-        scope: Option<String>,
-    },
-    WorkSet {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-    },
-    WorkAdd {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-        category: Option<ChangelogCategory>,
-        scope: Option<String>,
-    },
-    WorkRemove {
-        id: String,
-        field: String,
-        match_opts: OwnedMatchOptions,
-    },
-    WorkMove {
-        file_or_id: PathBuf,
-        status: WorkItemStatus,
-    },
-    WorkTick {
-        id: String,
-        field: String,
-        match_opts: OwnedMatchOptions,
-        status: TickStatus,
-    },
-    WorkDelete {
-        id: String,
-        force: bool,
-    },
-    WorkRender {
-        id: String,
-        dry_run: bool,
-    },
-    WorkShow {
-        id: String,
-        output: OutputFormat,
-    },
-
-    // ========================================
-    // Guard Commands
-    // ========================================
-    GuardNew {
-        title: String,
-    },
-    GuardList {
-        filter: Option<String>,
-        limit: Option<usize>,
-        output: OutputFormat,
-    },
-    GuardGet {
-        id: String,
-        field: Option<String>,
-    },
-    GuardEdit {
-        id: String,
-        path: String,
-        action: OwnedEditAction,
-    },
-    GuardSet {
-        id: String,
-        field: String,
-        value: Option<String>,
-        stdin: bool,
-    },
-    GuardAdd {
-        id: String,
-        field: String,
-        value: String,
-    },
-    GuardRemove {
-        id: String,
-        field: String,
-        match_opts: OwnedMatchOptions,
-    },
-    GuardDelete {
-        id: String,
-        force: bool,
-    },
-    GuardShow {
-        id: String,
-        output: OutputFormat,
-    },
-
-    // ========================================
-    // Release Commands
-    // ========================================
-    ReleaseCut {
-        version: String,
-        date: Option<String>,
-    },
+fn global(op: Op) -> CommandPlan {
+    CommandPlan::new(Scope::Global, op)
 }
 
-impl CanonicalCommand {
-    pub fn operation(&self) -> CommandOperation {
-        use CanonicalCommand::*;
-        match self {
-            Status
-            | Check { .. }
-            | Verify { .. }
-            | Describe { .. }
-            | Completions { .. }
-            | RfcList { .. }
-            | RfcGet { .. }
-            | RfcShow { .. }
-            | ClauseList { .. }
-            | ClauseGet { .. }
-            | ClauseShow { .. }
-            | AdrList { .. }
-            | AdrGet { .. }
-            | AdrShow { .. }
-            | WorkList { .. }
-            | WorkGet { .. }
-            | WorkShow { .. }
-            | GuardList { .. }
-            | GuardGet { .. }
-            | GuardShow { .. } => CommandOperation::Inspect,
-            #[cfg(feature = "tui")]
-            Tui => CommandOperation::Inspect,
-            _ => CommandOperation::Mutate,
+fn collection(target: ListTarget, op: Op) -> CommandPlan {
+    CommandPlan::new(Scope::Collection { target }, op)
+}
+
+pub(crate) fn artifact(artifact: cmd::edit::ArtifactType, id: &str, op: Op) -> CommandPlan {
+    CommandPlan::new(artifact_scope(artifact, id), op)
+}
+
+fn target(id: &str, field: Option<&str>, op: Op) -> anyhow::Result<CommandPlan> {
+    Ok(CommandPlan::new(resolve_scope(id, field)?, op))
+}
+
+fn edit_op_with_extras(action: OwnedEditAction, extras: EditExtras) -> Op {
+    Op::Edit(EditOp::Field { action, extras })
+}
+
+pub(crate) fn set_action(value: Option<String>, stdin: bool) -> OwnedEditAction {
+    OwnedEditAction::Set {
+        value: Some(value),
+        stdin,
+    }
+}
+
+pub(crate) fn add_action(value: Option<String>, stdin: bool) -> OwnedEditAction {
+    OwnedEditAction::Add {
+        value: Some(value),
+        stdin,
+    }
+}
+
+pub(crate) fn remove_action(match_opts: OwnedMatchOptions) -> OwnedEditAction {
+    OwnedEditAction::Remove { match_opts }
+}
+
+pub(crate) fn tick_action(match_opts: OwnedMatchOptions, status: TickStatus) -> OwnedEditAction {
+    OwnedEditAction::Tick { match_opts, status }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ShowKind {
+    Rfc,
+    Clause,
+    Adr,
+    Work,
+    Guard,
+}
+
+impl ShowKind {
+    fn from_artifact(artifact: cmd::edit::ArtifactType) -> Self {
+        match artifact {
+            cmd::edit::ArtifactType::Rfc => Self::Rfc,
+            cmd::edit::ArtifactType::Clause => Self::Clause,
+            cmd::edit::ArtifactType::Adr => Self::Adr,
+            cmd::edit::ArtifactType::WorkItem => Self::Work,
+            cmd::edit::ArtifactType::Guard => Self::Guard,
         }
     }
+}
 
-    pub fn target(&self) -> anyhow::Result<CommandTarget> {
-        use CanonicalCommand::*;
-        Ok(match self {
-            Status
-            | Check { .. }
-            | Init { .. }
-            | InitSkills { .. }
-            | Render { .. }
-            | Migrate
-            | Verify { .. }
-            | Describe { .. }
-            | Completions { .. } => CommandTarget::Global,
-            #[cfg(feature = "tui")]
-            Tui => CommandTarget::Global,
+fn extract_artifact_scope(scope: &Scope) -> anyhow::Result<(cmd::edit::ArtifactType, &str)> {
+    match scope {
+        Scope::Artifact { artifact, id } => Ok((*artifact, id.as_str())),
+        Scope::Target { artifact, id, .. } => Ok((*artifact, id.as_str())),
+        Scope::Global | Scope::Collection { .. } => Err(anyhow::anyhow!("expected artifact scope")),
+    }
+}
 
-            RfcList { .. } => CommandTarget::Collection {
-                target: ListTarget::Rfc,
-            },
-            ClauseList { .. } => CommandTarget::Collection {
-                target: ListTarget::Clause,
-            },
-            AdrList { .. } => CommandTarget::Collection {
-                target: ListTarget::Adr,
-            },
-            WorkList { .. } => CommandTarget::Collection {
-                target: ListTarget::Work,
-            },
-            GuardList { .. } => CommandTarget::Collection {
-                target: ListTarget::Guard,
-            },
+fn extract_target_scope(
+    scope: &Scope,
+) -> anyhow::Result<(
+    cmd::edit::ArtifactType,
+    &str,
+    &cmd::edit::engine::ResolvedTarget,
+)> {
+    match scope {
+        Scope::Target {
+            artifact,
+            id,
+            target,
+        } => Ok((*artifact, id.as_str(), target)),
+        Scope::Global | Scope::Collection { .. } | Scope::Artifact { .. } => {
+            Err(anyhow::anyhow!("expected target scope"))
+        }
+    }
+}
 
-            RfcGet { id, field } => resolve_command_target(id, field.as_deref())?,
-            ClauseGet { id, field } => resolve_command_target(id, field.as_deref())?,
-            AdrGet { id, field } => resolve_command_target(id, field.as_deref())?,
-            WorkGet { id, field } => resolve_command_target(id, field.as_deref())?,
-            GuardGet { id, field } => resolve_command_target(id, field.as_deref())?,
+fn extract_collection_scope(scope: &Scope) -> anyhow::Result<ListTarget> {
+    match scope {
+        Scope::Collection { target } => Ok(*target),
+        Scope::Global | Scope::Artifact { .. } | Scope::Target { .. } => {
+            Err(anyhow::anyhow!("expected collection scope"))
+        }
+    }
+}
 
-            RfcEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
-            RfcSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            RfcAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            RfcRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+fn execute_builtin(
+    config: &Config,
+    builtin: &BuiltinOp,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    match builtin {
+        BuiltinOp::Init { force } => cmd::new::init_project(config, *force, op),
+        BuiltinOp::InitSkills { force } => cmd::new::sync_skills(config, *force, op),
+        BuiltinOp::Check {
+            deny_warnings: _,
+            has_active: true,
+        } => cmd::check::check_has_active(config),
+        BuiltinOp::Check {
+            deny_warnings: _,
+            has_active: false,
+        } => cmd::check::check_all(config),
+        BuiltinOp::Status => cmd::status::show_status(config),
+        BuiltinOp::RenderGlobal {
+            target,
+            dry_run,
+            force,
+        } => {
+            let mut all_diags = vec![];
+            match target {
+                RenderTarget::Rfc => all_diags.extend(cmd::render::render(config, None, *dry_run)?),
+                RenderTarget::Adr => {
+                    all_diags.extend(cmd::render::render_adrs(config, None, *dry_run)?)
+                }
+                RenderTarget::Work => {
+                    all_diags.extend(cmd::render::render_work_items(config, None, *dry_run)?)
+                }
+                RenderTarget::Changelog => {
+                    all_diags.extend(cmd::render::render_changelog(config, *dry_run, *force)?)
+                }
+                RenderTarget::All => {
+                    all_diags.extend(cmd::render::render(config, None, *dry_run)?);
+                    all_diags.extend(cmd::render::render_adrs(config, None, *dry_run)?);
+                    all_diags.extend(cmd::render::render_work_items(config, None, *dry_run)?);
+                }
+            }
+            Ok(all_diags)
+        }
+        BuiltinOp::Migrate => cmd::migrate::migrate(config, op),
+        BuiltinOp::Verify { guard_ids, work } => {
+            cmd::verify::verify(config, guard_ids, work.as_deref())
+        }
+        BuiltinOp::Describe { context, output: _ } => cmd::describe::describe(config, *context),
+        BuiltinOp::Completions { shell } => {
+            use crate::Cli;
+            use clap::CommandFactory;
+            let mut cmd = Cli::command();
+            clap_complete::generate(*shell, &mut cmd, "govctl", &mut std::io::stdout());
+            Ok(vec![])
+        }
+        #[cfg(feature = "tui")]
+        BuiltinOp::Tui => {
+            crate::tui::run(config)?;
+            Ok(vec![])
+        }
+        BuiltinOp::ReleaseCut { version, date } => {
+            cmd::lifecycle::cut_release(config, version, date.as_deref(), op)
+        }
+    }
+}
 
-            ClauseEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
-            ClauseSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            ClauseLegacyEdit { id, .. } => CommandTarget::Artifact {
-                artifact: cmd::edit::ArtifactType::Clause,
+fn execute_create(
+    config: &Config,
+    create: &CreateOp,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    match create {
+        CreateOp::Rfc { title, id } => cmd::new::create(
+            config,
+            &NewTarget::Rfc {
+                title: title.clone(),
                 id: id.clone(),
             },
-
-            AdrEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
-            AdrSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            AdrAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            AdrRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            AdrTick { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-
-            WorkEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
-            WorkSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            WorkAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            WorkRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            WorkTick { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-
-            GuardEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
-            GuardSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            GuardAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-            GuardRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
-
-            RfcNew { .. } => CommandTarget::Collection {
-                target: ListTarget::Rfc,
+            op,
+        ),
+        CreateOp::Clause {
+            clause_id,
+            title,
+            section,
+            kind,
+        } => cmd::new::create(
+            config,
+            &NewTarget::Clause {
+                clause_id: clause_id.clone(),
+                title: title.clone(),
+                section: section.clone(),
+                kind: *kind,
             },
-            ClauseNew { .. } => CommandTarget::Collection {
-                target: ListTarget::Clause,
+            op,
+        ),
+        CreateOp::Adr { title } => cmd::new::create(
+            config,
+            &NewTarget::Adr {
+                title: title.clone(),
             },
-            AdrNew { .. } => CommandTarget::Collection {
-                target: ListTarget::Adr,
+            op,
+        ),
+        CreateOp::Work { title, active } => cmd::new::create(
+            config,
+            &NewTarget::Work {
+                title: title.clone(),
+                active: *active,
             },
-            WorkNew { .. } => CommandTarget::Collection {
-                target: ListTarget::Work,
-            },
-            GuardNew { .. } => CommandTarget::Collection {
-                target: ListTarget::Guard,
-            },
-
-            RfcBump { id, .. }
-            | RfcFinalize { id, .. }
-            | RfcAdvance { id, .. }
-            | RfcDeprecate { id, .. }
-            | RfcSupersede { id, .. }
-            | RfcRender { id, .. }
-            | RfcShow { id, .. } => artifact_target(cmd::edit::ArtifactType::Rfc, id),
-
-            ClauseDelete { id, .. }
-            | ClauseDeprecate { id, .. }
-            | ClauseSupersede { id, .. }
-            | ClauseShow { id, .. } => artifact_target(cmd::edit::ArtifactType::Clause, id),
-
-            AdrAccept { id }
-            | AdrReject { id }
-            | AdrDeprecate { id, .. }
-            | AdrSupersede { id, .. }
-            | AdrRender { id, .. }
-            | AdrShow { id, .. } => artifact_target(cmd::edit::ArtifactType::Adr, id),
-
-            WorkMove { file_or_id, .. } => CommandTarget::Artifact {
-                artifact: cmd::edit::ArtifactType::WorkItem,
-                id: file_or_id.display().to_string(),
-            },
-            WorkDelete { id, .. } | WorkRender { id, .. } | WorkShow { id, .. } => {
-                artifact_target(cmd::edit::ArtifactType::WorkItem, id)
-            }
-
-            GuardDelete { id, .. } | GuardShow { id, .. } => {
-                artifact_target(cmd::edit::ArtifactType::Guard, id)
-            }
-
-            ReleaseCut { .. } => CommandTarget::Global,
-        })
+            op,
+        ),
+        CreateOp::Guard { title } => cmd::guard::new_guard(config, title, op),
     }
-    /// Convert parsed CLI commands to canonical form.
-    ///
-    /// This is where both old (deprecated) and new (resource-first) syntaxes
-    /// are unified into a single representation.
-    pub fn from_parsed(cmd: &Commands) -> anyhow::Result<Self> {
-        Ok(match cmd {
-            // Global commands
-            Commands::Init { force } => Self::Init { force: *force },
-            Commands::InitSkills { force } => Self::InitSkills { force: *force },
-            Commands::Check {
-                deny_warnings,
-                has_active,
-            } => Self::Check {
-                deny_warnings: *deny_warnings,
-                has_active: *has_active,
-            },
-            Commands::Status => Self::Status,
-            Commands::Render {
-                target,
-                dry_run,
-                force,
-            } => Self::Render {
-                target: *target,
-                dry_run: *dry_run,
-                force: *force,
-            },
-            Commands::Migrate => Self::Migrate,
-            Commands::Verify { guard_ids, work } => Self::Verify {
-                guard_ids: guard_ids.clone(),
-                work: work.clone(),
-            },
-            Commands::Describe { context, output } => Self::Describe {
-                context: *context,
-                output: output.clone(),
-            },
-            Commands::Completions { shell } => Self::Completions { shell: *shell },
-            #[cfg(feature = "tui")]
-            Commands::Tui => Self::Tui,
+}
 
-            // ========================================
-            // Resource-First Commands (RFC-0002)
-            // ========================================
-            Commands::Rfc { command } => Self::from_rfc_command(command)?,
-            Commands::Clause { command } => Self::from_clause_command(command)?,
-            Commands::Adr { command } => Self::from_adr_command(command)?,
-            Commands::Work { command } => Self::from_work_command(command)?,
-            Commands::Guard { command } => Self::from_guard_command(command)?,
+fn execute_list(
+    plan: &CommandPlan,
+    config: &Config,
+    filter: Option<&str>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    cmd::list::list(
+        config,
+        extract_collection_scope(&plan.scope)?,
+        filter,
+        limit,
+        output,
+    )
+}
 
-            Commands::Release { version, date } => Self::ReleaseCut {
-                version: version.clone(),
-                date: date.clone(),
-            },
-        })
+fn execute_get(plan: &CommandPlan, config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
+    match &plan.scope {
+        Scope::Artifact { id, .. } => cmd::edit::get_field(config, id, None),
+        Scope::Target { id, target, .. } => {
+            let path = target.display_path();
+            cmd::edit::get_field(config, id, Some(path.as_str()))
+        }
+        Scope::Global | Scope::Collection { .. } => {
+            Err(anyhow::anyhow!("get requires artifact scope"))
+        }
     }
+}
 
-    /// Execute the canonical command using business logic from cmd::* modules.
-    ///
-    /// This is the single execution path - no duplication.
-    pub fn execute(&self, config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
-        match self {
-            // Global commands
-            Self::Init { force } => cmd::new::init_project(config, *force, op),
-            Self::InitSkills { force } => cmd::new::sync_skills(config, *force, op),
-            Self::Check {
-                deny_warnings: _,
-                has_active: true,
-            } => cmd::check::check_has_active(config),
-            Self::Check {
-                deny_warnings: _,
-                has_active: false,
-            } => cmd::check::check_all(config),
-            Self::Status => cmd::status::show_status(config),
-            Self::Render {
-                target,
-                dry_run,
-                force,
-            } => {
-                let mut all_diags = vec![];
-                match target {
-                    RenderTarget::Rfc => {
-                        all_diags.extend(cmd::render::render(config, None, *dry_run)?);
-                    }
-                    RenderTarget::Adr => {
-                        all_diags.extend(cmd::render::render_adrs(config, None, *dry_run)?);
-                    }
-                    RenderTarget::Work => {
-                        all_diags.extend(cmd::render::render_work_items(config, None, *dry_run)?);
-                    }
-                    RenderTarget::Changelog => {
-                        all_diags.extend(cmd::render::render_changelog(config, *dry_run, *force)?);
-                    }
-                    RenderTarget::All => {
-                        all_diags.extend(cmd::render::render(config, None, *dry_run)?);
-                        all_diags.extend(cmd::render::render_adrs(config, None, *dry_run)?);
-                        all_diags.extend(cmd::render::render_work_items(config, None, *dry_run)?);
-                    }
-                }
-                Ok(all_diags)
-            }
-            Self::Migrate => cmd::migrate::migrate(config, op),
-            Self::Verify { guard_ids, work } => {
-                cmd::verify::verify(config, guard_ids, work.as_deref())
-            }
-            Self::Describe { context, output: _ } => cmd::describe::describe(config, *context),
-            Self::Completions { shell } => {
-                use crate::Cli;
-                use clap::CommandFactory;
-                let mut cmd = Cli::command();
-                clap_complete::generate(*shell, &mut cmd, "govctl", &mut std::io::stdout());
-                Ok(vec![])
-            }
-            #[cfg(feature = "tui")]
-            Self::Tui => {
-                crate::tui::run(config)?;
-                Ok(vec![])
-            }
+fn execute_show(
+    plan: &CommandPlan,
+    config: &Config,
+    output: OutputFormat,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let (artifact, id) = extract_artifact_scope(&plan.scope)?;
+    match ShowKind::from_artifact(artifact) {
+        ShowKind::Rfc => cmd::render::show_rfc(config, id, output),
+        ShowKind::Clause => cmd::render::show_clause(config, id, output),
+        ShowKind::Adr => cmd::render::show_adr(config, id, output),
+        ShowKind::Work => cmd::render::show_work(config, id, output),
+        ShowKind::Guard => cmd::guard::show_guard(config, id, output),
+    }
+}
 
-            // RFC commands
-            Self::RfcNew { title, id } => {
-                let target = NewTarget::Rfc {
-                    title: title.clone(),
-                    id: id.clone(),
-                };
-                cmd::new::create(config, &target, op)
-            }
-            Self::RfcList {
-                filter,
-                limit,
-                output,
-            } => cmd::list::list(config, ListTarget::Rfc, filter.as_deref(), *limit, *output),
-            Self::RfcGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
-            Self::RfcEdit { id, path, action } => {
-                cmd::edit::edit_field(config, id, path, action, None, None, None, None, None, op)
-            }
-            Self::RfcSet {
-                id,
-                field,
-                value,
-                stdin,
-            } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
-            Self::RfcAdd {
-                id,
-                field,
-                value,
-                stdin,
-            } => {
-                let value = Some(value.clone());
-                cmd::edit::add_to_field(
-                    config,
-                    id,
-                    field,
-                    value.as_ref(),
-                    *stdin,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    op,
-                )
-            }
-            Self::RfcRemove {
-                id,
-                field,
-                match_opts,
-            } => {
-                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
-            }
-            Self::RfcBump {
-                id,
-                level,
-                summary,
-                changes,
-            } => cmd::lifecycle::bump(config, id, *level, summary.as_deref(), changes, op),
-            Self::RfcFinalize { id, status } => cmd::lifecycle::finalize(config, id, *status, op),
-            Self::RfcAdvance { id, phase } => cmd::lifecycle::advance(config, id, *phase, op),
-            Self::RfcDeprecate { id, force } => cmd::lifecycle::deprecate(config, id, *force, op),
-            Self::RfcSupersede { id, by, force } => {
-                cmd::lifecycle::supersede(config, id, by, *force, op)
-            }
-            Self::RfcRender { id, dry_run } => cmd::render::render(config, Some(id), *dry_run),
-            Self::RfcShow { id, output } => cmd::render::show_rfc(config, id, *output),
-
-            // Clause commands
-            Self::ClauseNew {
-                clause_id,
-                title,
-                section,
-                kind,
-            } => {
-                let target = NewTarget::Clause {
-                    clause_id: clause_id.clone(),
-                    title: title.clone(),
-                    section: section.clone(),
-                    kind: *kind,
-                };
-                cmd::new::create(config, &target, op)
-            }
-            Self::ClauseList {
-                rfc_id,
-                limit,
-                output,
-            } => cmd::list::list(
+fn execute_edit(
+    plan: &CommandPlan,
+    config: &Config,
+    edit: &EditOp,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    match edit {
+        EditOp::Field { action, extras } => {
+            let (_, id, target) = extract_target_scope(&plan.scope)?;
+            let path = target.display_path();
+            let pros = (!extras.pros.is_empty()).then(|| extras.pros.clone());
+            let cons = (!extras.cons.is_empty()).then(|| extras.cons.clone());
+            cmd::edit::edit_field(
                 config,
-                ListTarget::Clause,
-                rfc_id.as_deref(),
-                *limit,
-                *output,
-            ),
-            Self::ClauseGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
-            Self::ClauseEdit { id, path, action } => {
-                cmd::edit::edit_field(config, id, path, action, None, None, None, None, None, op)
-            }
-            Self::ClauseLegacyEdit {
                 id,
-                text,
-                text_file,
-                stdin,
-            } => cmd::edit::edit_clause(
+                &path,
+                action,
+                extras.category,
+                extras.scope.as_deref(),
+                pros,
+                cons,
+                extras.reject_reason.clone(),
+                op,
+            )
+        }
+        EditOp::ClauseLegacy {
+            text,
+            text_file,
+            stdin,
+        } => {
+            let (_, id) = extract_artifact_scope(&plan.scope)?;
+            cmd::edit::edit_clause(
                 config,
                 id,
                 text.as_deref(),
                 text_file.as_deref(),
                 *stdin,
                 op,
-            ),
-            Self::ClauseSet {
-                id,
-                field,
-                value,
-                stdin,
-            } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
-            Self::ClauseDelete { id, force } => cmd::edit::delete_clause(config, id, *force, op),
-            Self::ClauseDeprecate { id, force } => {
-                cmd::lifecycle::deprecate(config, id, *force, op)
-            }
-            Self::ClauseSupersede { id, by, force } => {
-                cmd::lifecycle::supersede(config, id, by, *force, op)
-            }
-            Self::ClauseShow { id, output } => cmd::render::show_clause(config, id, *output),
-
-            // ADR commands
-            Self::AdrNew { title } => {
-                let target = NewTarget::Adr {
-                    title: title.clone(),
-                };
-                cmd::new::create(config, &target, op)
-            }
-            Self::AdrList {
-                status,
-                limit,
-                output,
-            } => cmd::list::list(config, ListTarget::Adr, status.as_deref(), *limit, *output),
-            Self::AdrGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
-            Self::AdrEdit {
-                id,
-                path,
-                action,
-                pro,
-                con,
-                reject_reason,
-            } => cmd::edit::edit_field(
-                config,
-                id,
-                path,
-                action,
-                None,
-                None,
-                Some(pro.clone()),
-                Some(con.clone()),
-                reject_reason.clone(),
-                op,
-            ),
-            Self::AdrSet {
-                id,
-                field,
-                value,
-                stdin,
-            } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
-            Self::AdrAdd {
-                id,
-                field,
-                value,
-                stdin,
-                pro,
-                con,
-                reject_reason,
-            } => {
-                let value = Some(value.clone());
-                cmd::edit::add_to_field(
-                    config,
-                    id,
-                    field,
-                    value.as_ref(),
-                    *stdin,
-                    None,
-                    None,
-                    Some(pro.clone()),
-                    Some(con.clone()),
-                    reject_reason.clone(),
-                    op,
-                )
-            }
-            Self::AdrRemove {
-                id,
-                field,
-                match_opts,
-            } => {
-                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
-            }
-            Self::AdrAccept { id } => cmd::lifecycle::accept_adr(config, id, op),
-            Self::AdrReject { id } => cmd::lifecycle::reject_adr(config, id, op),
-            Self::AdrDeprecate { id, force } => cmd::lifecycle::deprecate(config, id, *force, op),
-            Self::AdrSupersede { id, by, force } => {
-                cmd::lifecycle::supersede(config, id, by, *force, op)
-            }
-            Self::AdrTick {
-                id,
-                field,
-                match_opts,
-                status,
-            } => cmd::edit::tick_item(
-                config,
-                id,
-                field,
-                &match_opts.as_match_options(),
-                *status,
-                op,
-            ),
-            Self::AdrRender { id, dry_run } => cmd::render::render_adrs(config, Some(id), *dry_run),
-            Self::AdrShow { id, output } => cmd::render::show_adr(config, id, *output),
-
-            // Work item commands
-            Self::WorkNew { title, active } => {
-                let target = NewTarget::Work {
-                    title: title.clone(),
-                    active: *active,
-                };
-                cmd::new::create(config, &target, op)
-            }
-            Self::WorkList {
-                status,
-                limit,
-                output,
-            } => cmd::list::list(config, ListTarget::Work, status.as_deref(), *limit, *output),
-            Self::WorkGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
-            Self::WorkEdit {
-                id,
-                path,
-                action,
-                category,
-                scope,
-            } => cmd::edit::edit_field(
-                config,
-                id,
-                path,
-                action,
-                *category,
-                scope.as_deref(),
-                None,
-                None,
-                None,
-                op,
-            ),
-            Self::WorkSet {
-                id,
-                field,
-                value,
-                stdin,
-            } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
-            Self::WorkAdd {
-                id,
-                field,
-                value,
-                stdin,
-                category,
-                scope,
-            } => {
-                let value = Some(value.clone());
-                cmd::edit::add_to_field(
-                    config,
-                    id,
-                    field,
-                    value.as_ref(),
-                    *stdin,
-                    *category,
-                    scope.as_deref(),
-                    None,
-                    None,
-                    None,
-                    op,
-                )
-            }
-            Self::WorkRemove {
-                id,
-                field,
-                match_opts,
-            } => {
-                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
-            }
-            Self::WorkMove { file_or_id, status } => {
-                cmd::move_::move_item(config, file_or_id, *status, op)
-            }
-            Self::WorkTick {
-                id,
-                field,
-                match_opts,
-                status,
-            } => cmd::edit::tick_item(
-                config,
-                id,
-                field,
-                &match_opts.as_match_options(),
-                *status,
-                op,
-            ),
-            Self::WorkDelete { id, force } => cmd::edit::delete_work_item(config, id, *force, op),
-            Self::WorkRender { id, dry_run } => {
-                cmd::render::render_work_items(config, Some(id), *dry_run)
-            }
-            Self::WorkShow { id, output } => cmd::render::show_work(config, id, *output),
-
-            // Guard commands
-            Self::GuardNew { title } => cmd::guard::new_guard(config, title, op),
-            Self::GuardList {
-                filter,
-                limit,
-                output,
-            } => cmd::list::list(
-                config,
-                ListTarget::Guard,
-                filter.as_deref(),
-                *limit,
-                *output,
-            ),
-            Self::GuardGet { id, field } => cmd::edit::get_field(config, id, field.as_deref()),
-            Self::GuardEdit { id, path, action } => {
-                cmd::edit::edit_field(config, id, path, action, None, None, None, None, None, op)
-            }
-            Self::GuardSet {
-                id,
-                field,
-                value,
-                stdin,
-            } => cmd::edit::set_field(config, id, field, value.as_deref(), *stdin, op),
-            Self::GuardAdd { id, field, value } => {
-                let value = Some(value.clone());
-                cmd::edit::add_to_field(
-                    config,
-                    id,
-                    field,
-                    Some(&value),
-                    false,
-                    None,
-                    None,
-                    None,
-                    None,
-                    None,
-                    op,
-                )
-            }
-            Self::GuardRemove {
-                id,
-                field,
-                match_opts,
-            } => {
-                cmd::edit::remove_from_field(config, id, field, &match_opts.as_match_options(), op)
-            }
-            Self::GuardDelete { id, force } => cmd::guard::delete_guard(config, id, *force, op),
-            Self::GuardShow { id, output } => cmd::guard::show_guard(config, id, *output),
-
-            // Release commands
-            Self::ReleaseCut { version, date } => {
-                cmd::lifecycle::cut_release(config, version, date.as_deref(), op)
-            }
+            )
         }
     }
+}
 
-    // ========================================
-    // Resource-First Command Converters (RFC-0002)
-    // ========================================
-
-    /// Convert RFC subcommand to canonical form.
-    fn from_rfc_command(cmd: &crate::RfcCommand) -> anyhow::Result<Self> {
-        use crate::RfcCommand;
-        Ok(match cmd {
-            RfcCommand::New { title, id } => Self::RfcNew {
-                title: title.clone(),
-                id: id.clone(),
-            },
-            RfcCommand::List {
-                filter,
-                limit,
-                output,
-            } => Self::RfcList {
-                filter: filter.clone(),
-                limit: *limit,
-                output: *output,
-            },
-            RfcCommand::Get { id, field } => Self::RfcGet {
-                id: id.clone(),
-                field: field.clone(),
-            },
-            RfcCommand::Edit { id, path, action } => Self::RfcEdit {
-                id: id.clone(),
-                path: path.clone(),
-                action: owned_edit_action(action)?,
-            },
-            RfcCommand::Set {
-                id,
-                field,
-                value,
-                stdin,
-            } => Self::RfcSet {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-            },
-            RfcCommand::Add {
-                id,
-                field,
-                value,
-                stdin,
-            } => Self::RfcAdd {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-            },
-            RfcCommand::Remove {
-                id,
-                field,
-                pattern,
-                at,
-                exact,
-                regex,
-                all,
-            } => {
-                let match_opts = OwnedMatchOptions {
-                    pattern: pattern.clone(),
-                    at: *at,
-                    exact: *exact,
-                    regex: *regex,
-                    all: *all,
-                };
-                Self::RfcRemove {
-                    id: id.clone(),
-                    field: field.clone(),
-                    match_opts,
-                }
-            }
-            RfcCommand::Bump {
-                id,
-                patch,
-                minor,
-                major,
-                summary,
-                changes,
-            } => {
-                let level = match (patch, minor, major) {
-                    (true, false, false) => Some(BumpLevel::Patch),
-                    (false, true, false) => Some(BumpLevel::Minor),
-                    (false, false, true) => Some(BumpLevel::Major),
-                    (false, false, false) => None,
-                    _ => unreachable!("clap arg group ensures mutual exclusivity"),
-                };
-                Self::RfcBump {
-                    id: id.clone(),
-                    level,
-                    summary: summary.clone(),
-                    changes: changes.clone(),
-                }
-            }
-            RfcCommand::Finalize { id, status } => Self::RfcFinalize {
-                id: id.clone(),
-                status: *status,
-            },
-            RfcCommand::Advance { id, phase } => Self::RfcAdvance {
-                id: id.clone(),
-                phase: *phase,
-            },
-            RfcCommand::Deprecate { id, force } => Self::RfcDeprecate {
-                id: id.clone(),
-                force: *force,
-            },
-            RfcCommand::Supersede { id, by, force } => Self::RfcSupersede {
-                id: id.clone(),
-                by: by.clone(),
-                force: *force,
-            },
-            RfcCommand::Render { id, dry_run } => Self::RfcRender {
-                id: id.clone(),
-                dry_run: *dry_run,
-            },
-            RfcCommand::Show { id, output } => Self::RfcShow {
-                id: id.clone(),
-                output: *output,
-            },
-        })
+fn execute_lifecycle(
+    plan: &CommandPlan,
+    config: &Config,
+    lifecycle: &LifecycleOp,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let (artifact, id) = extract_artifact_scope(&plan.scope)?;
+    match lifecycle {
+        LifecycleOp::Bump {
+            level,
+            summary,
+            changes,
+        } => cmd::lifecycle::bump(config, id, *level, summary.as_deref(), changes, op),
+        LifecycleOp::Finalize { status } => cmd::lifecycle::finalize(config, id, *status, op),
+        LifecycleOp::Advance { phase } => cmd::lifecycle::advance(config, id, *phase, op),
+        LifecycleOp::Deprecate { force } => cmd::lifecycle::deprecate(config, id, *force, op),
+        LifecycleOp::Supersede { by, force } => {
+            cmd::lifecycle::supersede(config, id, by, *force, op)
+        }
+        LifecycleOp::AcceptAdr => {
+            debug_assert!(matches!(artifact, cmd::edit::ArtifactType::Adr));
+            cmd::lifecycle::accept_adr(config, id, op)
+        }
+        LifecycleOp::RejectAdr => {
+            debug_assert!(matches!(artifact, cmd::edit::ArtifactType::Adr));
+            cmd::lifecycle::reject_adr(config, id, op)
+        }
+        LifecycleOp::MoveWork { file_or_id, status } => {
+            cmd::move_::move_item(config, file_or_id, *status, op)
+        }
     }
+}
 
-    /// Convert Clause subcommand to canonical form.
-    fn from_clause_command(cmd: &crate::ClauseCommand) -> anyhow::Result<Self> {
-        use crate::ClauseCommand;
-        Ok(match cmd {
-            ClauseCommand::New {
-                clause_id,
-                title,
-                section,
-                kind,
-            } => Self::ClauseNew {
-                clause_id: clause_id.clone(),
-                title: title.clone(),
-                section: section.clone(),
-                kind: *kind,
-            },
-            ClauseCommand::List {
-                filter,
-                limit,
-                output,
-            } => Self::ClauseList {
-                rfc_id: filter.clone(),
-                limit: *limit,
-                output: *output,
-            },
-            ClauseCommand::Get { id, field } => Self::ClauseGet {
-                id: id.clone(),
-                field: field.clone(),
-            },
-            ClauseCommand::Edit {
-                id,
-                path,
-                set,
-                add,
-                remove,
-                tick,
-                stdin,
-                at,
-                exact,
-                regex,
-                all,
-                text,
-                text_file,
-            } => {
-                let uses_canonical = path.is_some()
-                    || set.is_some()
-                    || add.is_some()
-                    || remove.is_some()
-                    || tick.is_some();
-                let uses_legacy = text.is_some() || text_file.is_some();
-                if uses_canonical && uses_legacy {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0802ConflictingArgs,
-                        "Cannot mix canonical clause edit flags with legacy clause edit flags",
-                        id,
-                    )
-                    .into());
-                }
-                if !uses_canonical && (at.is_some() || *exact || *regex || *all || path.is_some()) {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0802ConflictingArgs,
-                        "Legacy clause edit does not support canonical path or matcher flags",
-                        id,
-                    )
-                    .into());
-                }
-                if uses_canonical {
-                    let path = path.clone().ok_or_else(|| {
-                        Diagnostic::new(
-                            DiagnosticCode::E0801MissingRequiredArg,
-                            "canonical clause edit requires a field path before --set/--add/--remove/--tick"
-                            ,
-                            id,
-                        )
-                    })?;
-                    let action = owned_edit_action(&EditActionArgs {
-                        set: set.clone(),
-                        add: add.clone(),
-                        remove: remove.clone(),
-                        tick: *tick,
-                        stdin: *stdin,
-                        at: *at,
-                        exact: *exact,
-                        regex: *regex,
-                        all: *all,
-                    })?;
-                    Self::ClauseEdit {
-                        id: id.clone(),
-                        path,
-                        action,
-                    }
-                } else {
-                    Self::ClauseLegacyEdit {
-                        id: id.clone(),
-                        text: text.clone(),
-                        text_file: text_file.clone(),
-                        stdin: *stdin,
-                    }
-                }
-            }
-            ClauseCommand::Set {
-                id,
-                field,
-                value,
-                stdin,
-            } => Self::ClauseSet {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-            },
-            ClauseCommand::Delete { id, force } => Self::ClauseDelete {
-                id: id.clone(),
-                force: *force,
-            },
-            ClauseCommand::Deprecate { id, force } => Self::ClauseDeprecate {
-                id: id.clone(),
-                force: *force,
-            },
-            ClauseCommand::Supersede { id, by, force } => Self::ClauseSupersede {
-                id: id.clone(),
-                by: by.clone(),
-                force: *force,
-            },
-            ClauseCommand::Show { id, output } => Self::ClauseShow {
-                id: id.clone(),
-                output: *output,
-            },
-        })
+fn execute_delete(
+    plan: &CommandPlan,
+    config: &Config,
+    force: bool,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let (artifact, id) = extract_artifact_scope(&plan.scope)?;
+    match artifact {
+        cmd::edit::ArtifactType::Clause => cmd::edit::delete_clause(config, id, force, op),
+        cmd::edit::ArtifactType::WorkItem => cmd::edit::delete_work_item(config, id, force, op),
+        cmd::edit::ArtifactType::Guard => cmd::guard::delete_guard(config, id, force, op),
+        cmd::edit::ArtifactType::Rfc | cmd::edit::ArtifactType::Adr => {
+            Err(anyhow::anyhow!("delete is not supported for this artifact"))
+        }
     }
+}
 
-    /// Convert ADR subcommand to canonical form.
-    fn from_adr_command(cmd: &crate::AdrCommand) -> anyhow::Result<Self> {
-        use crate::AdrCommand;
-        Ok(match cmd {
-            AdrCommand::New { title } => Self::AdrNew {
-                title: title.clone(),
-            },
-            AdrCommand::List {
-                filter,
-                limit,
-                output,
-            } => Self::AdrList {
-                status: filter.clone(),
-                limit: *limit,
-                output: *output,
-            },
-            AdrCommand::Get { id, field } => Self::AdrGet {
-                id: id.clone(),
-                field: field.clone(),
-            },
-            AdrCommand::Edit {
-                id,
-                path,
-                action,
-                pro,
-                con,
-                reject_reason,
-            } => Self::AdrEdit {
-                id: id.clone(),
-                path: path.clone(),
-                action: owned_edit_action(action)?,
-                pro: pro.clone(),
-                con: con.clone(),
-                reject_reason: reject_reason.clone(),
-            },
-            AdrCommand::Set {
-                id,
-                field,
-                value,
-                stdin,
-            } => Self::AdrSet {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-            },
-            AdrCommand::Add {
-                id,
-                field,
-                value,
-                stdin,
-                pro: adr_pro,
-                con: adr_con,
-                reject_reason,
-            } => Self::AdrAdd {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-                pro: adr_pro.to_vec(),
-                con: adr_con.to_vec(),
-                reject_reason: reject_reason.clone(),
-            },
-            AdrCommand::Remove {
-                id,
-                field,
-                pattern,
-                at,
-                exact,
-                regex,
-                all,
-            } => {
-                let match_opts = OwnedMatchOptions {
-                    pattern: pattern.clone(),
-                    at: *at,
-                    exact: *exact,
-                    regex: *regex,
-                    all: *all,
-                };
-                Self::AdrRemove {
-                    id: id.clone(),
-                    field: field.clone(),
-                    match_opts,
-                }
-            }
-            AdrCommand::Accept { id } => Self::AdrAccept { id: id.clone() },
-            AdrCommand::Reject { id } => Self::AdrReject { id: id.clone() },
-            AdrCommand::Deprecate { id, force } => Self::AdrDeprecate {
-                id: id.clone(),
-                force: *force,
-            },
-            AdrCommand::Supersede { id, by, force } => Self::AdrSupersede {
-                id: id.clone(),
-                by: by.clone(),
-                force: *force,
-            },
-            AdrCommand::Tick {
-                id,
-                field,
-                pattern,
-                status,
-                at,
-                exact,
-                regex,
-            } => {
-                let match_opts = OwnedMatchOptions {
-                    pattern: pattern.clone(),
-                    at: *at,
-                    exact: *exact,
-                    regex: *regex,
-                    all: false,
-                };
-                Self::AdrTick {
-                    id: id.clone(),
-                    field: field.clone(),
-                    match_opts,
-                    status: *status,
-                }
-            }
-            AdrCommand::Render { id, dry_run } => Self::AdrRender {
-                id: id.clone(),
-                dry_run: *dry_run,
-            },
-            AdrCommand::Show { id, output } => Self::AdrShow {
-                id: id.clone(),
-                output: *output,
-            },
-        })
+fn execute_artifact_render(
+    plan: &CommandPlan,
+    config: &Config,
+    dry_run: bool,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let (artifact, id) = extract_artifact_scope(&plan.scope)?;
+    match artifact {
+        cmd::edit::ArtifactType::Rfc => cmd::render::render(config, Some(id), dry_run),
+        cmd::edit::ArtifactType::Adr => cmd::render::render_adrs(config, Some(id), dry_run),
+        cmd::edit::ArtifactType::WorkItem => {
+            cmd::render::render_work_items(config, Some(id), dry_run)
+        }
+        cmd::edit::ArtifactType::Clause | cmd::edit::ArtifactType::Guard => {
+            Err(anyhow::anyhow!("render is not supported for this artifact"))
+        }
     }
+}
 
-    /// Convert Work subcommand to canonical form.
-    fn from_work_command(cmd: &crate::WorkCommand) -> anyhow::Result<Self> {
-        use crate::WorkCommand;
-        Ok(match cmd {
-            WorkCommand::New { title, active } => Self::WorkNew {
-                title: title.clone(),
-                active: *active,
-            },
-            WorkCommand::List {
-                filter,
-                limit,
-                output,
-            } => Self::WorkList {
-                status: filter.clone(),
-                limit: *limit,
-                output: *output,
-            },
-            WorkCommand::Get { id, field } => Self::WorkGet {
-                id: id.clone(),
-                field: field.clone(),
-            },
-            WorkCommand::Edit {
-                id,
-                path,
-                action,
-                category,
-                scope,
-            } => Self::WorkEdit {
-                id: id.clone(),
-                path: path.clone(),
-                action: owned_edit_action(action)?,
-                category: *category,
-                scope: scope.clone(),
-            },
-            WorkCommand::Set {
-                id,
-                field,
-                value,
-                stdin,
-            } => Self::WorkSet {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-            },
-            WorkCommand::Add {
-                id,
-                field,
-                value,
-                stdin,
-                category,
-                scope,
-            } => Self::WorkAdd {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-                category: *category,
-                scope: scope.clone(),
-            },
-            WorkCommand::Remove {
-                id,
-                field,
-                pattern,
-                at,
-                exact,
-                regex,
-                all,
-            } => {
-                let match_opts = OwnedMatchOptions {
-                    pattern: pattern.clone(),
-                    at: *at,
-                    exact: *exact,
-                    regex: *regex,
-                    all: *all,
-                };
-                Self::WorkRemove {
-                    id: id.clone(),
-                    field: field.clone(),
-                    match_opts,
-                }
-            }
-            WorkCommand::Move { file, status } => Self::WorkMove {
-                file_or_id: file.clone(),
-                status: *status,
-            },
-            WorkCommand::Tick {
-                id,
-                field,
-                pattern,
-                status,
-                at,
-                exact,
-                regex,
-            } => {
-                let match_opts = OwnedMatchOptions {
-                    pattern: pattern.clone(),
-                    at: *at,
-                    exact: *exact,
-                    regex: *regex,
-                    all: false,
-                };
-                Self::WorkTick {
-                    id: id.clone(),
-                    field: field.clone(),
-                    match_opts,
-                    status: *status,
-                }
-            }
-            WorkCommand::Delete { id, force } => Self::WorkDelete {
-                id: id.clone(),
-                force: *force,
-            },
-            WorkCommand::Render { id, dry_run } => Self::WorkRender {
-                id: id.clone(),
-                dry_run: *dry_run,
-            },
-            WorkCommand::Show { id, output } => Self::WorkShow {
-                id: id.clone(),
-                output: *output,
-            },
-        })
+fn execute_plan(
+    plan: &CommandPlan,
+    config: &Config,
+    op: WriteOp,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    match &plan.op {
+        Op::Builtin(builtin) => execute_builtin(config, builtin, op),
+        Op::Create(create) => execute_create(config, create, op),
+        Op::List {
+            filter,
+            limit,
+            output,
+        } => execute_list(plan, config, filter.as_deref(), *limit, *output),
+        Op::Get => execute_get(plan, config),
+        Op::Show { output } => execute_show(plan, config, *output),
+        Op::Edit(edit) => execute_edit(plan, config, edit, op),
+        Op::Lifecycle(lifecycle) => execute_lifecycle(plan, config, lifecycle, op),
+        Op::Delete { force } => execute_delete(plan, config, *force, op),
+        Op::RenderArtifact { dry_run } => execute_artifact_render(plan, config, *dry_run),
     }
+}
 
-    /// Convert Guard subcommand to canonical form.
-    fn from_guard_command(cmd: &GuardCommand) -> anyhow::Result<Self> {
-        Ok(match cmd {
-            GuardCommand::New { title } => Self::GuardNew {
-                title: title.clone(),
-            },
-            GuardCommand::List {
-                filter,
-                limit,
-                output,
-            } => Self::GuardList {
-                filter: filter.clone(),
-                limit: *limit,
-                output: *output,
-            },
-            GuardCommand::Get { id, field } => Self::GuardGet {
-                id: id.clone(),
-                field: field.clone(),
-            },
-            GuardCommand::Edit { id, path, action } => Self::GuardEdit {
-                id: id.clone(),
-                path: path.clone(),
-                action: owned_edit_action(action)?,
-            },
-            GuardCommand::Set {
-                id,
-                field,
-                value,
-                stdin,
-            } => Self::GuardSet {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-                stdin: *stdin,
-            },
-            GuardCommand::Add { id, field, value } => Self::GuardAdd {
-                id: id.clone(),
-                field: field.clone(),
-                value: value.clone(),
-            },
-            GuardCommand::Remove {
-                id,
-                field,
-                pattern,
-                at,
-                exact,
-                regex,
-                all,
-            } => {
-                let match_opts = OwnedMatchOptions {
-                    pattern: pattern.clone(),
-                    at: *at,
-                    exact: *exact,
-                    regex: *regex,
-                    all: *all,
-                };
-                Self::GuardRemove {
-                    id: id.clone(),
-                    field: field.clone(),
-                    match_opts,
-                }
+pub(crate) fn plan_create(collection_target: ListTarget, create: CreateOp) -> CommandPlan {
+    collection(collection_target, Op::Create(create))
+}
+
+pub(crate) fn plan_list(
+    target_kind: ListTarget,
+    filter: Option<String>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) -> CommandPlan {
+    collection(
+        target_kind,
+        Op::List {
+            filter,
+            limit,
+            output,
+        },
+    )
+}
+
+pub(crate) fn plan_get(id: &str, field: Option<&str>) -> anyhow::Result<CommandPlan> {
+    target(id, field, Op::Get)
+}
+
+pub(crate) fn plan_show(
+    artifact_type: cmd::edit::ArtifactType,
+    id: &str,
+    output: OutputFormat,
+) -> CommandPlan {
+    artifact(artifact_type, id, Op::Show { output })
+}
+
+pub(crate) fn plan_edit(
+    id: &str,
+    field: &str,
+    action: OwnedEditAction,
+    extras: EditExtras,
+) -> anyhow::Result<CommandPlan> {
+    target(id, Some(field), edit_op_with_extras(action, extras))
+}
+
+pub(crate) fn plan_lifecycle(
+    artifact_type: cmd::edit::ArtifactType,
+    id: &str,
+    lifecycle: LifecycleOp,
+) -> CommandPlan {
+    artifact(artifact_type, id, Op::Lifecycle(lifecycle))
+}
+
+pub(crate) fn plan_artifact_render(
+    artifact_type: cmd::edit::ArtifactType,
+    id: &str,
+    dry_run: bool,
+) -> CommandPlan {
+    artifact(artifact_type, id, Op::RenderArtifact { dry_run })
+}
+
+pub(crate) fn plan_delete(
+    artifact_type: cmd::edit::ArtifactType,
+    id: &str,
+    force: bool,
+) -> CommandPlan {
+    artifact(artifact_type, id, Op::Delete { force })
+}
+
+impl CommandPlan {
+    pub fn from_parsed(cmd: &Commands, global_dry_run: bool) -> anyhow::Result<Self> {
+        use crate::resource_plan::ToPlan;
+
+        match cmd {
+            Commands::Init { force } => Ok(global(Op::Builtin(BuiltinOp::Init { force: *force }))),
+            Commands::InitSkills { force } => {
+                Ok(global(Op::Builtin(BuiltinOp::InitSkills { force: *force })))
             }
-            GuardCommand::Delete { id, force } => Self::GuardDelete {
-                id: id.clone(),
+            Commands::Check {
+                deny_warnings,
+                has_active,
+            } => Ok(global(Op::Builtin(BuiltinOp::Check {
+                deny_warnings: *deny_warnings,
+                has_active: *has_active,
+            }))),
+            Commands::Status => Ok(global(Op::Builtin(BuiltinOp::Status))),
+            Commands::Render {
+                target,
+                dry_run,
+                force,
+            } => Ok(global(Op::Builtin(BuiltinOp::RenderGlobal {
+                target: *target,
+                dry_run: global_dry_run || *dry_run,
                 force: *force,
-            },
-            GuardCommand::Show { id, output } => Self::GuardShow {
-                id: id.clone(),
-                output: *output,
-            },
-        })
+            }))),
+            Commands::Migrate => Ok(global(Op::Builtin(BuiltinOp::Migrate))),
+            Commands::Verify { guard_ids, work } => Ok(global(Op::Builtin(BuiltinOp::Verify {
+                guard_ids: guard_ids.clone(),
+                work: work.clone(),
+            }))),
+            Commands::Describe { context, output } => {
+                Ok(global(Op::Builtin(BuiltinOp::Describe {
+                    context: *context,
+                    output: output.clone(),
+                })))
+            }
+            Commands::Completions { shell } => Ok(global(Op::Builtin(BuiltinOp::Completions {
+                shell: *shell,
+            }))),
+            #[cfg(feature = "tui")]
+            Commands::Tui => Ok(global(Op::Builtin(BuiltinOp::Tui))),
+            Commands::Rfc { command } => command.to_plan(),
+            Commands::Clause { command } => command.to_plan(),
+            Commands::Adr { command } => command.to_plan(),
+            Commands::Work { command } => command.to_plan(),
+            Commands::Guard { command } => command.to_plan(),
+            Commands::Release { version, date } => Ok(global(Op::Builtin(BuiltinOp::ReleaseCut {
+                version: version.clone(),
+                date: date.clone(),
+            }))),
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{ClauseCommand, TickStatus};
+    use crate::resource_plan::ToPlan;
+    use crate::{ClauseCommand, TickStatus, WorkTickStatus};
+    use clap::{Parser, error::ErrorKind};
 
     #[test]
     fn test_owned_edit_action_requires_exactly_one_action() {
@@ -1781,20 +888,23 @@ mod tests {
             text_file: None,
         };
 
-        let canonical = CanonicalCommand::from_clause_command(&cmd).expect("canonical edit");
-        match canonical {
-            CanonicalCommand::ClauseEdit { id, path, action } => {
-                assert_eq!(id, "RFC-0001:C-TEST");
-                assert_eq!(path, "text");
-                match action {
-                    OwnedEditAction::Set { value, stdin } => {
-                        assert_eq!(value.as_ref(), Some(&Some("Updated".to_string())));
-                        assert!(!stdin);
-                    }
-                    other => panic!("expected set action, got {other:?}"),
-                }
+        let plan = cmd.to_plan().expect("canonical edit");
+        assert!(matches!(
+            plan.scope,
+            Scope::Target {
+                artifact: cmd::edit::ArtifactType::Clause,
+                ..
             }
-            other => panic!("expected ClauseEdit, got {other:?}"),
+        ));
+        match plan.op {
+            Op::Edit(EditOp::Field { action, .. }) => match action {
+                OwnedEditAction::Set { value, stdin } => {
+                    assert_eq!(value.as_ref(), Some(&Some("Updated".to_string())));
+                    assert!(!stdin);
+                }
+                other => panic!("expected set action, got {other:?}"),
+            },
+            other => panic!("expected field edit, got {other:?}"),
         }
     }
 
@@ -1816,7 +926,7 @@ mod tests {
             text_file: None,
         };
 
-        let err = CanonicalCommand::from_clause_command(&cmd).expect_err("missing path");
+        let err = cmd.to_plan().expect_err("missing path");
         let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
         assert_eq!(diag.code, DiagnosticCode::E0801MissingRequiredArg);
     }
@@ -1839,20 +949,25 @@ mod tests {
             text_file: None,
         };
 
-        let canonical = CanonicalCommand::from_clause_command(&cmd).expect("legacy edit");
-        match canonical {
-            CanonicalCommand::ClauseLegacyEdit {
-                id,
+        let plan = cmd.to_plan().expect("legacy edit");
+        assert!(matches!(
+            plan.scope,
+            Scope::Artifact {
+                artifact: cmd::edit::ArtifactType::Clause,
+                ..
+            }
+        ));
+        match plan.op {
+            Op::Edit(EditOp::ClauseLegacy {
                 text,
                 text_file,
                 stdin,
-            } => {
-                assert_eq!(id, "RFC-0001:C-TEST");
+            }) => {
                 assert!(text.is_none());
                 assert!(text_file.is_none());
                 assert!(stdin);
             }
-            other => panic!("expected ClauseLegacyEdit, got {other:?}"),
+            other => panic!("expected legacy clause edit, got {other:?}"),
         }
     }
 
@@ -1982,109 +1097,163 @@ mod tests {
     }
 
     #[test]
-    fn test_operation_marks_canonical_edit_variants_as_mutating() {
-        assert!(
-            CanonicalCommand::RfcEdit {
-                id: "RFC-0001".to_string(),
-                path: "title".to_string(),
-                action: OwnedEditAction::Set {
-                    value: Some(Some("X".to_string())),
-                    stdin: false,
-                },
-            }
-            .operation()
-            .is_mutating()
-        );
-
-        assert!(
-            CanonicalCommand::AdrEdit {
-                id: "ADR-0001".to_string(),
-                path: "decision".to_string(),
-                action: OwnedEditAction::Set {
-                    value: Some(Some("X".to_string())),
-                    stdin: false,
-                },
-                pro: vec![],
-                con: vec![],
-                reject_reason: None,
-            }
-            .operation()
-            .is_mutating()
-        );
-
-        assert!(
-            CanonicalCommand::WorkEdit {
-                id: "WI-2026-04-06-001".to_string(),
-                path: "acceptance_criteria[0]".to_string(),
-                action: OwnedEditAction::Tick {
-                    match_opts: OwnedMatchOptions::default(),
-                    status: TickStatus::Done,
-                },
-                category: None,
-                scope: None,
-            }
-            .operation()
-            .is_mutating()
-        );
-
-        assert!(
-            CanonicalCommand::GuardEdit {
-                id: "GUARD-0001".to_string(),
-                path: "title".to_string(),
-                action: OwnedEditAction::Set {
-                    value: Some(Some("X".to_string())),
-                    stdin: false,
-                },
-            }
-            .operation()
-            .is_mutating()
-        );
-
-        assert!(
-            CanonicalCommand::ClauseLegacyEdit {
-                id: "RFC-0001:C-TEST".to_string(),
-                text: Some("Updated text".to_string()),
-                text_file: None,
+    fn test_edit_plans_are_mutating() {
+        let plan = crate::RfcCommand::Edit(crate::CommonEditArgs {
+            id: "RFC-0001".to_string(),
+            path: "title".to_string(),
+            action: EditActionArgs {
+                set: Some(Some("X".to_string())),
+                add: None,
+                remove: None,
+                tick: None,
                 stdin: false,
-            }
-            .operation()
-            .is_mutating()
+                at: None,
+                exact: false,
+                regex: false,
+                all: false,
+            },
+        })
+        .to_plan()
+        .expect("rfc edit");
+        assert!(matches!(plan.scope, Scope::Target { .. }));
+        assert!(matches!(plan.op, Op::Edit(EditOp::Field { .. })));
+        assert_eq!(plan.lock_disposition(), LockDisposition::GovRootExclusive);
+
+        let plan = ClauseCommand::Edit {
+            id: "RFC-0001:C-TEST".to_string(),
+            path: None,
+            set: None,
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: true,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+            text: None,
+            text_file: None,
+        }
+        .to_plan()
+        .expect("legacy edit");
+        assert!(matches!(plan.op, Op::Edit(EditOp::ClauseLegacy { .. })));
+        assert_eq!(plan.lock_disposition(), LockDisposition::GovRootExclusive);
+    }
+
+    #[test]
+    fn test_read_plans_are_lock_free() {
+        let status = global(Op::Builtin(BuiltinOp::Status));
+        assert_eq!(status.lock_disposition(), LockDisposition::None);
+
+        let plan = plan_get("RFC-0001", Some("title")).expect("get");
+        assert!(matches!(plan.scope, Scope::Target { .. }));
+        assert!(matches!(plan.op, Op::Get));
+        assert_eq!(plan.lock_disposition(), LockDisposition::None);
+    }
+
+    #[test]
+    fn test_lock_disposition_is_lock_free_for_inspect_commands() {
+        assert_eq!(
+            global(Op::Builtin(BuiltinOp::Status)).lock_disposition(),
+            LockDisposition::None
+        );
+        assert_eq!(
+            plan_get("RFC-0001", Some("title"))
+                .expect("get")
+                .lock_disposition(),
+            LockDisposition::None
+        );
+        assert_eq!(
+            plan_show(
+                cmd::edit::ArtifactType::Adr,
+                "ADR-0038",
+                OutputFormat::Table
+            )
+            .lock_disposition(),
+            LockDisposition::None
+        );
+    }
+
+    #[test]
+    fn test_lock_disposition_requires_lock_for_mutating_commands() {
+        assert_eq!(
+            global(Op::Builtin(BuiltinOp::Init { force: false })).lock_disposition(),
+            LockDisposition::GovRootExclusive
+        );
+        assert_eq!(
+            plan_edit(
+                "WI-2026-04-07-004",
+                "acceptance_criteria[0]",
+                tick_action(OwnedMatchOptions::default(), TickStatus::Done),
+                EditExtras::default(),
+            )
+            .expect("work edit")
+            .lock_disposition(),
+            LockDisposition::GovRootExclusive
+        );
+        assert_eq!(
+            plan_lifecycle(
+                cmd::edit::ArtifactType::WorkItem,
+                "WI-2026-04-07-004",
+                LifecycleOp::MoveWork {
+                    file_or_id: std::path::PathBuf::from("WI-2026-04-07-004"),
+                    status: WorkItemStatus::Done,
+                },
+            )
+            .lock_disposition(),
+            LockDisposition::GovRootExclusive
         );
     }
 
     #[test]
     fn test_target_resolves_get_and_edit_to_same_field_target() {
-        let get = CanonicalCommand::AdrGet {
+        let get = crate::AdrCommand::Get(crate::CommonGetArgs {
             id: "ADR-0038".to_string(),
             field: Some("alternatives[1].status".to_string()),
-        };
-        let edit = CanonicalCommand::AdrEdit {
-            id: "ADR-0038".to_string(),
-            path: "alternatives[1].status".to_string(),
-            action: OwnedEditAction::Tick {
-                match_opts: OwnedMatchOptions::default(),
-                status: TickStatus::Accepted,
+        })
+        .to_plan()
+        .expect("get routed");
+        let edit = crate::AdrCommand::Edit(crate::AdrEditArgs {
+            common: crate::CommonEditArgs {
+                id: "ADR-0038".to_string(),
+                path: "alternatives[1].status".to_string(),
+                action: EditActionArgs {
+                    set: None,
+                    add: None,
+                    remove: None,
+                    tick: Some(TickStatus::Accepted),
+                    stdin: false,
+                    at: None,
+                    exact: false,
+                    regex: false,
+                    all: false,
+                },
             },
             pro: vec![],
             con: vec![],
             reject_reason: None,
-        };
+        })
+        .to_plan()
+        .expect("edit routed");
 
-        match (
-            get.target().expect("get target"),
-            edit.target().expect("edit target"),
-        ) {
+        match ((&get.op, &get.scope), (&edit.op, &edit.scope)) {
             (
-                CommandTarget::Field {
-                    artifact: get_artifact,
-                    id: get_id,
-                    target: get_target,
-                },
-                CommandTarget::Field {
-                    artifact: edit_artifact,
-                    id: edit_id,
-                    target: edit_target,
-                },
+                (
+                    Op::Get,
+                    Scope::Target {
+                        artifact: get_artifact,
+                        id: get_id,
+                        target: get_target,
+                    },
+                ),
+                (
+                    Op::Edit(EditOp::Field { .. }),
+                    Scope::Target {
+                        artifact: edit_artifact,
+                        id: edit_id,
+                        target: edit_target,
+                    },
+                ),
             ) => {
                 assert_eq!(get_artifact, edit_artifact);
                 assert_eq!(get_id, edit_id);
@@ -2150,8 +1319,57 @@ mod tests {
             text_file: None,
         };
 
-        let err = CanonicalCommand::from_clause_command(&cmd).expect_err("mixed modes should fail");
+        let err = cmd.to_plan().expect_err("mixed modes should fail");
         let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
         assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+    }
+
+    #[test]
+    fn test_work_tick_defaults_status_to_done() {
+        let cli = crate::Cli::parse_from([
+            "govctl",
+            "work",
+            "tick",
+            "WI-2026-04-07-001",
+            "acceptance_criteria",
+            "Criterion 1",
+        ]);
+
+        match cli.command {
+            crate::Commands::Work {
+                command: crate::WorkCommand::Tick(crate::WorkTickArgs { status, .. }),
+            } => assert!(matches!(status, WorkTickStatus::Done)),
+            _ => panic!("expected work tick command"),
+        }
+    }
+
+    #[test]
+    fn test_rfc_get_help_restores_resource_specific_examples() {
+        let err = match crate::Cli::try_parse_from(["govctl", "rfc", "get", "--help"]) {
+            Ok(_) => panic!("help should exit"),
+            Err(err) => err,
+        };
+        assert_eq!(err.kind(), ErrorKind::DisplayHelp);
+        let help = err.to_string();
+        assert!(help.contains("VALID FIELDS:"), "help: {help}");
+        assert!(
+            help.contains("govctl rfc get RFC-0001 title"),
+            "help: {help}"
+        );
+    }
+
+    #[test]
+    fn test_work_get_help_restores_resource_specific_examples() {
+        let err = match crate::Cli::try_parse_from(["govctl", "work", "get", "--help"]) {
+            Ok(_) => panic!("help should exit"),
+            Err(err) => err,
+        };
+        assert_eq!(err.kind(), ErrorKind::DisplayHelp);
+        let help = err.to_string();
+        assert!(help.contains("VALID FIELDS:"), "help: {help}");
+        assert!(
+            help.contains("acceptance_criteria[0].status"),
+            "help: {help}"
+        );
     }
 }

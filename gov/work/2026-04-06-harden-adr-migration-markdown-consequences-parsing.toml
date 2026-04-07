@@ -23,14 +23,14 @@ content = "Replaced the line-oriented legacy consequence splitter with pulldown-
 [[content.acceptance_criteria]]
 text = "regression tests cover prose-plus-code-block migration and mitigation attachment semantics"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "currently affected migrated ADRs are normalized and cargo run --quiet -- check passes"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "legacy ADR markdown consequence blocks migrate into single semantic entries instead of per-line fragments"
 status = "done"
-category = "fixed"
+category = "chore"

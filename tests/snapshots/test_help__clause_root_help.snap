@@ -1,0 +1,38 @@
+---
+source: tests/test_help.rs
+assertion_line: 67
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl clause --help
+Clause operations
+
+Usage: govctl clause [OPTIONS] <COMMAND>
+
+Commands:
+  list       List clauses [aliases: ls]
+  get        Get clause metadata or specific field
+  show       Show rendered clause content
+  new        Create a new clause
+  edit       Canonical path-first clause edit entrypoint
+  set        Set clause field value
+  delete     Delete clause
+  deprecate  Deprecate clause
+  supersede  Supersede clause
+  help       Print this message or the help of the given subcommand(s)
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+COMMON WORKFLOW:
+    1. `govctl clause list` to discover clauses
+    2. `govctl clause get <ID> ...` for metadata/fields
+    3. `govctl clause show <ID>` for rendered clause text
+    4. `govctl clause edit <ID> ...` to update content
+    5. `govctl clause deprecate/supersede` for lifecycle
+
+START HERE:
+    - New clause: `govctl clause new RFC-0001:C-SCOPE "Scope"`
+    - Inspect one clause: `govctl clause get RFC-0001:C-SCOPE`
+exit: 0

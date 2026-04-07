@@ -24,7 +24,7 @@ category = "fixed"
 [[content.acceptance_criteria]]
 text = "cargo test -q and cargo run --quiet -- check pass after the diagnostic cleanup"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "direct CLI command paths no longer emit uncoded anyhow temporary errors for expected user-facing failures"

@@ -19,12 +19,12 @@ content = "Refactored edit planning around terminal targets: planner now classif
 [[content.acceptance_criteria]]
 text = "set/add/remove/tick share a unified terminal-target planning model"
 status = "done"
-category = "changed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "RFC/Clause simple lists and ADR/Work/Guard nested/root-item edits still work under the shared planner"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "cargo test -q, cargo run --quiet -- check, and cargo clippy --all-targets --all-features -- -D warnings pass"

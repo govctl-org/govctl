@@ -1,0 +1,57 @@
+---
+source: tests/test_help.rs
+assertion_line: 49
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work tick --help
+Tick acceptance criteria item
+
+Usage: govctl work tick [OPTIONS] <ID> <FIELD> [PATTERN]
+
+Arguments:
+  <ID>
+          Artifact ID
+
+  <FIELD>
+          Field path
+
+  [PATTERN]
+          Pattern to match
+
+Options:
+      --at <AT>
+          Match by index
+
+  -C, --config <CONFIG>
+          Path to govctl config (TOML)
+
+      --dry-run
+          Dry run: preview changes without writing files
+
+      --exact
+          Exact match
+
+      --regex
+          Regex pattern
+
+  -s, --status <STATUS>
+          New status
+
+          Possible values:
+          - done:      Mark work items as done
+          - pending:   Mark work items as pending
+          - cancelled: Mark work items as cancelled
+          
+          [default: done]
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+EXAMPLES:
+    govctl work tick WI-<DATE>-001 acceptance_criteria "Criterion 1"
+    govctl work tick WI-<DATE>-001 acceptance_criteria --at 0 -s cancelled
+
+NOTES:
+    - Valid work-item statuses are `done`, `pending`, and `cancelled`.
+    - Omitting `-s/--status` defaults to `done`.
+exit: 0

@@ -1,0 +1,56 @@
+---
+source: tests/test_help.rs
+assertion_line: 40
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr tick --help
+Update ADR alternative status
+
+Usage: govctl adr tick [OPTIONS] --status <STATUS> <ID> <FIELD> [PATTERN]
+
+Arguments:
+  <ID>
+          Artifact ID
+
+  <FIELD>
+          Field path
+
+  [PATTERN]
+          Pattern to match
+
+Options:
+      --at <AT>
+          Match by index
+
+  -C, --config <CONFIG>
+          Path to govctl config (TOML)
+
+      --dry-run
+          Dry run: preview changes without writing files
+
+      --exact
+          Exact match
+
+      --regex
+          Regex pattern
+
+  -s, --status <STATUS>
+          New status
+
+          Possible values:
+          - accepted:   Mark ADR alternatives as accepted
+          - considered: Mark ADR alternatives as considered
+          - rejected:   Mark ADR alternatives as rejected
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+EXAMPLES:
+    govctl adr tick ADR-0001 alternatives "Option A" -s accepted
+    govctl adr tick ADR-0001 alternatives --at 1 -s rejected
+    govctl adr tick ADR-0001 alternatives --at 0 -s considered
+
+NOTES:
+    - ADR tick applies to alternative status, not checklist state.
+    - Valid ADR statuses are `accepted`, `considered`, and `rejected`.
+exit: 0

@@ -9,33 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Define and accept an ADR for the redesigned ADR model and migration behavior (WI-2026-04-06-001)
-- Add a versioned migration step that rewrites legacy ADRs into the new renderable model (WI-2026-04-06-001)
-- Implement the new ADR schema, render path, and check warnings for migration-review states (WI-2026-04-06-001)
 - Route existing set/add/remove/tick verbs through the same canonical edit planning path (WI-2026-04-06-002)
 - Generalize nested edit resolution so object and array paths work at arbitrary supported depth (WI-2026-04-06-002)
 - Introduce canonical <resource> edit <ID> <path> --set/--add/--remove/--tick CLI entrypoints (WI-2026-04-06-002)
 
-### Changed
-
-- set/add/remove/tick share a unified terminal-target planning model (WI-2026-04-07-001)
-- get and edit share one target-resolution model (WI-2026-04-07-002)
-
 ### Fixed
 
-- clause canonical edit routing preserves existing behavior while removing the duplicate argument parser (WI-2026-04-06-003)
-- cargo clippy --all-targets --all-features -- -D warnings passes (WI-2026-04-06-003)
 - diagnostics for the converted paths use explicit DiagnosticCode values and preserve stable formatting for automation (WI-2026-04-06-004)
-- cargo test -q and cargo run --quiet -- check pass after the diagnostic cleanup (WI-2026-04-06-004)
 - direct CLI command paths no longer emit uncoded anyhow temporary errors for expected user-facing failures (WI-2026-04-06-004)
-- add regression coverage for canonical edit/runtime/router branches introduced by ADR-0037 (WI-2026-04-06-005)
-- add regression coverage for targeted ADR restoration behavior without broad schema migration (WI-2026-04-06-005)
-- cargo test -q and cargo run --quiet -- check pass after the coverage-focused regression additions (WI-2026-04-06-005)
-- regression tests cover prose-plus-code-block migration and mitigation attachment semantics (WI-2026-04-06-006)
-- currently affected migrated ADRs are normalized and cargo run --quiet -- check passes (WI-2026-04-06-006)
-- legacy ADR markdown consequence blocks migrate into single semantic entries instead of per-line fragments (WI-2026-04-06-006)
-- RFC/Clause simple lists and ADR/Work/Guard nested/root-item edits still work under the shared planner (WI-2026-04-07-001)
-- write-lock classification follows mutating operations instead of command-name allowlists (WI-2026-04-07-002)
 
 ## [0.7.7] - 2026-04-04
 
