@@ -40,15 +40,16 @@ govctl status                             # Verify setup
 # Backfill ADRs
 govctl adr new "<decision title>"
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
+govctl adr add <ADR-ID> alternatives "Option: ..." --pro "..." --con "..." --reject-reason "..."
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: ..." --pro "..." --con "..." --reject-reason "..."
 govctl adr accept <ADR-ID>
 
 # Backfill RFCs (optional)
 govctl rfc new "<spec title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF' ... EOF
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
 govctl rfc finalize <RFC-ID> normative
 govctl rfc advance <RFC-ID> impl
 govctl rfc advance <RFC-ID> test
@@ -181,17 +182,11 @@ Follow the **adr-writer** skill for quality guidelines.
 govctl adr new "<decision title>"
 ```
 
-### 2.2 Populate Content
+### 2.2 Populate Context and Consequences
 
 ```bash
 govctl adr set <ADR-ID> context --stdin <<'EOF'
 [Problem statement and what prompted the decision]
-EOF
-
-govctl adr set <ADR-ID> decision --stdin <<'EOF'
-We will [what was decided].
-
-[Rationale — why this was chosen]
 EOF
 
 govctl adr set <ADR-ID> consequences --stdin <<'EOF'
@@ -211,22 +206,39 @@ EOF
 ```bash
 govctl adr add <ADR-ID> alternatives "Chosen: <what was adopted>" \
   --pro "..." --con "..."
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-
 govctl adr add <ADR-ID> alternatives "Rejected: <what was not chosen>" \
   --pro "..." --con "..." --reject-reason "..."
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 ```
 
-If rejected alternatives are unknown, it is acceptable to have only the accepted option.
-When that happens, say so explicitly in the ADR context. Historical backfills may not be able to reconstruct rejected options, and reviewers should evaluate them with that limitation in mind.
+Preserve the normal ADR discussion order during backfill when possible:
 
-### 2.4 Review Backfilled ADRs
+1. Record the alternatives that are still recoverable
+2. Mark the chosen option `accepted`
+3. Mark non-chosen options `rejected` with reasons when known
+4. Only then write or finalize the `decision` prose
+
+If non-selected alternatives are not recoverable, it is acceptable to omit `alternatives` entirely and say so explicitly in the ADR context. Historical backfills may not be able to reconstruct rejected options, and reviewers should evaluate them with that limitation in mind.
+
+### 2.4 Write the Decision Last
+
+```bash
+govctl adr set <ADR-ID> decision --stdin <<'EOF'
+We will [what was decided].
+
+[Rationale — why this was chosen]
+EOF
+```
+
+Treat `decision` as the conclusion of the reconstructed alternatives discussion, not as the starting point.
+
+### 2.5 Review Backfilled ADRs
 
 Invoke the **adr-reviewer** agent on each newly created ADR. For large batches, review the most important 3-5 ADRs and spot-check the rest.
 
 Fix Critical findings before accepting the ADRs.
 
-### 2.5 Accept and Cross-Reference
+### 2.6 Accept and Cross-Reference
 
 Since these are historical decisions already in effect:
 
@@ -259,7 +271,7 @@ For each requirement in the existing specification:
 
 ```bash
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 [Clause text extracted from existing spec, rewritten with RFC 2119 keywords]
 EOF
 ```
@@ -400,7 +412,8 @@ Skip trivial decisions (indentation style, variable naming) — those belong in 
 When discovering decisions:
 
 - If you can identify the decision but not the rationale → say so in the context. "The rationale is not documented; this ADR records the current state."
-- If alternatives are unknown → create only the accepted alternative.
+- If alternatives are unknown → omit `alternatives` and say in the ADR context that non-selected options were not recoverable.
+- If alternatives are known → capture them first and let the decision prose summarize the conclusion, rather than skipping straight to the final answer.
 - If consequences are unclear → document what you can observe. "The negative consequences of this decision have not been formally evaluated."
 
 ### Incremental Migration

@@ -122,7 +122,7 @@ Only include representation details when they are themselves the external contra
 The renderer auto-generates structural elements. **Do NOT include these in clause `text`:**
 
 - Clause heading (`### [RFC-XXXX:C-NAME] Title`) — auto-generated from metadata
-- `*Since: vX.Y.Z*` — auto-generated from the `since` JSON field
+- `*Since: vX.Y.Z*` — auto-generated from the `since` field
 - `> **Superseded by:** ...` — auto-generated from the `superseded_by` field
 - `Amended: ...` — **does not exist**; do not hallucinate this
 

@@ -7,7 +7,7 @@ argument-hint: [optional ADR topic]
 
 # ADR Writer
 
-Write ADRs that clearly capture context, decisions, and consequences.
+Write ADRs that clearly capture context, alternatives, decisions, and consequences.
 
 ## Invocation Mode
 
@@ -26,15 +26,32 @@ govctl adr new "<title>"
 govctl adr set <ADR-ID> context --stdin <<'EOF'
 context text
 EOF
+govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF'
 decision text
 EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF'
 consequences text
 EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
 govctl adr add <ADR-ID> refs RFC-NNNN
 ```
+
+## ADR Writing Order
+
+Use this order unless you are doing a historical backfill:
+
+1. Write `context`
+2. Add `alternatives`
+3. Expand `pros` / `cons`
+4. Mark rejected options and record `rejection_reason`
+5. Mark the chosen option `accepted`
+6. Write `decision` as the conclusion of that discussion
+7. Write `consequences`
+
+The key rule is: **alternatives-first, decision-last**. Do not jump straight to a polished conclusion before the ADR shows what was actually considered.
+
+Historical backfills are the exception: if alternatives are not recoverable, say so explicitly in `context` and write the best available `decision` from the surviving evidence.
 
 ## ADR Structure
 
@@ -64,9 +81,57 @@ Brief overview (details go in the alternatives field).
 
 **Key principle:** A reader 6 months from now must understand _why_ this decision was needed without asking anyone.
 
-### 2. Decision (required)
+### 2. Alternatives (recommended before writing `decision`)
 
-State what was decided and why. Structure:
+Document options considered before you write the final decision. Future readers need to know what was _not_ chosen and why.
+
+**Extended structure per ADR-0027:**
+
+    [[content.alternatives]]
+    text = "Option A: Description"
+    status = "rejected"
+    pros = ["Advantage 1", "Advantage 2"]
+    cons = ["Disadvantage 1"]
+    rejection_reason = "Why this was not chosen"
+
+**Field semantics:**
+
+- `text` (required): Description of the alternative
+- `status`: `considered` (default) | `accepted` | `rejected`
+- `pros`: List of advantages
+- `cons`: List of disadvantages
+- `rejection_reason`: Required when rejected
+
+**CLI commands:**
+
+```bash
+# Simple alternative
+govctl adr add <ADR-ID> alternatives "Option A: Use PostgreSQL"
+
+# With pros, cons, and rejection reason
+govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
+  --pro "Fast caching" --pro "Simple API" \
+  --con "Additional infrastructure" \
+  --reject-reason "Overkill for our scale"
+
+# Update alternative state after discussion
+govctl adr tick <ADR-ID> alternatives --at 0 -s rejected
+govctl adr tick <ADR-ID> alternatives --at 1 -s accepted
+govctl adr add <ADR-ID> alt[0].pros "New advantage"
+govctl adr remove <ADR-ID> alt[0].cons "Outdated disadvantage"
+```
+
+**When to add pros/cons:**
+
+- For significant decisions with multiple options
+- When trade-offs are non-obvious
+- To help future readers understand the evaluation process
+
+**Key principle:** Let the alternatives show the discussion. The chosen option should emerge there before you write the final decision prose.
+
+### 3. Decision (required)
+
+State the conclusion of the alternatives discussion and why it won. Structure:
 
 > **Do NOT include `## Decision` heading** — the renderer adds it automatically.
 
@@ -81,9 +146,9 @@ We will **[action]** because:
 Specific guardrails for implementing this decision, not a task checklist.
 ```
 
-**Key principle:** Lead with the decision, then justify. Don't bury the answer.
+**Key principle:** Write `decision` as the conclusion of the evaluated alternatives. Lead with the answer, but only after the ADR already shows what was considered.
 
-### 3. Consequences (required)
+### 4. Consequences (required)
 
 Honest accounting of trade-offs. Structure:
 
@@ -107,51 +172,6 @@ Honest accounting of trade-offs. Structure:
 
 **Key principle:** Every decision has downsides. If your Negative section is empty, you haven't thought hard enough.
 
-### 4. Alternatives (recommended)
-
-Document options considered. Future readers need to know what was _not_ chosen and why.
-
-**Extended structure per ADR-0027:**
-
-    [[content.alternatives]]
-    text = "Option A: Description"
-    status = "rejected"
-    pros = ["Advantage 1", "Advantage 2"]
-    cons = ["Disadvantage 1"]
-    rejection_reason = "Why this was not chosen"
-
-**Field semantics:**
-
-- `text` (required): Description of the alternative
-- `status`: `considered` (default) | `accepted` | `rejected`
-- `pros`: List of advantages
-- `cons`: List of disadvantages
-- `rejection_reason`: If rejected, explains why
-
-**CLI commands:**
-
-```bash
-# Simple alternative
-govctl adr add <ADR-ID> alternatives "Option A: Use PostgreSQL"
-
-# With pros, cons, and rejection reason
-govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
-  --pro "Fast caching" --pro "Simple API" \
-  --con "Additional infrastructure" \
-  --reject-reason "Overkill for our scale"
-
-# Edit nested fields after creation
-govctl adr tick <ADR-ID> alternatives --at 0 -s rejected
-govctl adr add <ADR-ID> alt[0].pros "New advantage"
-govctl adr remove <ADR-ID> alt[0].cons "Outdated disadvantage"
-```
-
-**When to add pros/cons:**
-
-- For significant decisions with multiple options
-- When trade-offs are non-obvious
-- To help future readers understand the evaluation process
-
 ### 5. References (recommended)
 
 ```bash
@@ -173,9 +193,10 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 ### Quality Checklist
 
 - **Context is complete.** Problem statement, constraints, and options are all present.
+- **Alternatives come first.** The discussion is visible in `alternatives` before the final decision prose settles the issue.
 - **Decision is decisive.** Starts with "We will..." — not "We might..." or "We could...".
 - **Consequences are honest.** Negative section is non-empty with mitigations.
-- **Alternatives are documented.** For new decisions, include at least one rejected option with reason. For historical backfills, document rejected options when known; otherwise state that they were not recoverable.
+- **Alternatives are documented.** For new decisions, show the discussion in `alternatives` first and include at least one rejected option with reason. For historical backfills, document rejected options when known; otherwise state that they were not recoverable.
 - **References link to related artifacts.** Use `[[artifact-id]]` in content fields.
 - **Stay at the decision layer.** Capture the chosen approach and why, not full normative clause text or task-by-task execution detail.
 
@@ -184,7 +205,7 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 - The problem that required a decision
 - Constraints and decision drivers
 - Alternatives considered and why they were accepted or rejected
-- The chosen approach
+- The chosen approach, after the alternatives have been evaluated
 - Positive, negative, and neutral consequences
 
 ### What Does Not Belong in an ADR
@@ -223,6 +244,7 @@ Content fields should contain only the body prose and `[[...]]` references.
 | ------------------------------------- | -------------------------------------------------------- |
 | `## Context` in content field         | Don't — the renderer adds section headings automatically |
 | Empty Negative section                | Every decision has trade-offs — document them            |
+| Decision written before alternatives  | Add and evaluate alternatives first; then write decision |
 | No alternatives for a new ADR         | Add at least one rejected option                         |
 | Historical ADR lacks rejected options | State that alternatives were not recoverable             |
 | Vague context: "We need to decide"    | Specific: "RFC-0002 requires X but doesn't specify how"  |

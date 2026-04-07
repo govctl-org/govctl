@@ -37,12 +37,13 @@ govctl adr list
 govctl adr show <ADR-ID>
 
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
+govctl adr add <ADR-ID> alternatives "Option: ..."
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: ..."
 govctl adr accept <ADR-ID>
 
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF' ... EOF
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
 govctl rfc bump <RFC-ID> --patch -m "Clarify clause wording"
 govctl rfc finalize <RFC-ID> normative
 

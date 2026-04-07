@@ -68,12 +68,12 @@ For each accepted ADR:
 
 ## Violation Categories
 
-| Category         | Meaning                                          | Default Severity | Example                                          |
-| ---------------- | ------------------------------------------------ | ---------------- | ------------------------------------------------ |
-| **VIOLATION**    | Code contradicts a MUST/MUST NOT clause          | Critical         | Clause says MUST validate; code skips validation |
-| **DEVIATION**    | Code doesn't follow a SHOULD/SHOULD NOT          | Warning          | Clause says SHOULD log; code doesn't log         |
-| **DRIFT**        | Code has diverged from an ADR decision           | Warning          | ADR says use HashMap; code uses BTreeMap         |
-| **UNDOCUMENTED** | Code implements behavior not covered by any spec | Warning          | Feature exists with no governing clause          |
+| Category         | Meaning                                          | Default Severity | Example                                                            |
+| ---------------- | ------------------------------------------------ | ---------------- | ------------------------------------------------------------------ |
+| **VIOLATION**    | Code contradicts a MUST/MUST NOT clause          | Critical         | Clause says MUST validate; code skips validation                   |
+| **DEVIATION**    | Code doesn't follow a SHOULD/SHOULD NOT          | Warning          | Clause says SHOULD log; code doesn't log                           |
+| **DRIFT**        | Code has diverged from an ADR decision           | Warning          | ADR says keep append-only journals; code rewrites history in place |
+| **UNDOCUMENTED** | Code implements behavior not covered by any spec | Warning          | Feature exists with no governing clause                            |
 
 ## Output Contract
 
