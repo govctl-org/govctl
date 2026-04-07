@@ -20,9 +20,45 @@ pub struct JsonDoc<T> {
     pub data: T,
 }
 
-/// Adapter contract for JSON-backed artifacts.
+fn display_scope_for_dir(config: &Config, path: PathBuf) -> String {
+    config.display_path(&path).display().to_string()
+}
+
+fn load_rfc_with<F>(config: &Config, id: &str, finder: F) -> anyhow::Result<JsonDoc<RfcSpec>>
+where
+    F: Fn(&Config, &str) -> Option<PathBuf>,
+{
+    let scope = display_scope_for_dir(config, config.rfc_dir());
+    let path = finder(config, id).ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0102RfcNotFound,
+            format!("RFC not found: {id}"),
+            &scope,
+        )
+    })?;
+    let data = read_rfc(config, &path)?;
+    Ok(JsonDoc { path, data })
+}
+
+fn write_rfc_doc(config: &Config, doc: &JsonDoc<RfcSpec>, op: WriteOp) -> anyhow::Result<()> {
+    write_rfc(
+        &doc.path,
+        &doc.data,
+        op,
+        Some(&config.display_path(&doc.path)),
+    )
+}
+
+fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
+    id.split(':')
+        .next()
+        .map(|rfc_id| config.rfc_dir().join(rfc_id).join("clauses"))
+        .unwrap_or_else(|| config.rfc_dir())
+}
+
+/// Adapter contract for RFC/clause document-backed artifacts.
 #[allow(dead_code)]
-pub trait JsonAdapter {
+pub trait DocAdapter {
     type Data;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>>;
@@ -41,73 +77,40 @@ pub trait TomlAdapter {
 /// RFC JSON adapter.
 pub struct RfcJsonAdapter;
 
-impl JsonAdapter for RfcJsonAdapter {
+impl DocAdapter for RfcJsonAdapter {
     type Data = RfcSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let scope = config.display_path(&config.rfc_dir()).display().to_string();
-        let path = find_rfc_json(config, id).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0102RfcNotFound,
-                format!("RFC not found: {id}"),
-                &scope,
-            )
-        })?;
-        let data = read_rfc(config, &path)?;
-        Ok(JsonDoc { path, data })
+        load_rfc_with(config, id, find_rfc_json)
     }
 
     fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
-        write_rfc(
-            &doc.path,
-            &doc.data,
-            op,
-            Some(&config.display_path(&doc.path)),
-        )
+        write_rfc_doc(config, doc, op)
     }
 }
 
 pub struct RfcTomlAdapter;
 
-impl JsonAdapter for RfcTomlAdapter {
+impl DocAdapter for RfcTomlAdapter {
     type Data = RfcSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let scope = config.display_path(&config.rfc_dir()).display().to_string();
-        let path = find_rfc_toml(config, id).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0102RfcNotFound,
-                format!("RFC not found: {id}"),
-                &scope,
-            )
-        })?;
-        let data = read_rfc(config, &path)?;
-        Ok(JsonDoc { path, data })
+        load_rfc_with(config, id, find_rfc_toml)
     }
 
     fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
-        write_rfc(
-            &doc.path,
-            &doc.data,
-            op,
-            Some(&config.display_path(&doc.path)),
-        )
+        write_rfc_doc(config, doc, op)
     }
 }
 
 /// Clause JSON adapter.
 pub struct ClauseJsonAdapter;
 
-impl JsonAdapter for ClauseJsonAdapter {
+impl DocAdapter for ClauseJsonAdapter {
     type Data = ClauseSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let scope_path = id
-            .split(':')
-            .next()
-            .map(|rfc_id| config.rfc_dir().join(rfc_id).join("clauses"))
-            .unwrap_or_else(|| config.rfc_dir());
-        let scope = config.display_path(&scope_path).display().to_string();
+        let scope = display_scope_for_dir(config, clause_scope_path(config, id));
         let path = find_clause_json(config, id).ok_or_else(|| {
             Diagnostic::new(
                 DiagnosticCode::E0202ClauseNotFound,
@@ -131,16 +134,11 @@ impl JsonAdapter for ClauseJsonAdapter {
 
 pub struct ClauseTomlAdapter;
 
-impl JsonAdapter for ClauseTomlAdapter {
+impl DocAdapter for ClauseTomlAdapter {
     type Data = ClauseSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let scope_path = id
-            .split(':')
-            .next()
-            .map(|rfc_id| config.rfc_dir().join(rfc_id).join("clauses"))
-            .unwrap_or_else(|| config.rfc_dir());
-        let scope = config.display_path(&scope_path).display().to_string();
+        let scope = display_scope_for_dir(config, clause_scope_path(config, id));
         let path = find_clause_toml(config, id).ok_or_else(|| {
             Diagnostic::new(
                 DiagnosticCode::E0202ClauseNotFound,

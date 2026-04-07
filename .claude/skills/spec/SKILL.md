@@ -38,6 +38,8 @@ govctl adr show <ADR-ID>
 
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
 govctl adr add <ADR-ID> alternatives "Option: ..."
+govctl adr add <ADR-ID> alternatives "Other option: ..." --reject-reason "Why it was not chosen"
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
 govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
@@ -90,7 +92,7 @@ Use `govctl` verbs only.
 
 For ADR work:
 
-- Refine `context`, `decision`, `consequences`, `alternatives`, and `refs`
+- Refine `context`, `alternatives`, `decision`, `consequences`, and `refs`
 - If the ADR is ready to become authoritative, ask permission before `govctl adr accept <ADR-ID>`
 
 For RFC work:

@@ -1,4 +1,4 @@
-//! JSON loading for RFC and clause files.
+//! JSON and TOML loading for RFC and clause files.
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};

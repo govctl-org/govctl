@@ -36,6 +36,8 @@ EOF
 govctl adr new "<title>"                  # Create ADR
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
 govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr add <ADR-ID> alternatives "Other option: Description" --reject-reason "Why it was not chosen"
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
 govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
@@ -165,11 +167,14 @@ For structure, templates, and quality guidelines, follow the **adr-writer** skil
 govctl adr new "<title>"
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
 govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
 govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
 govctl adr add <ADR-ID> refs RFC-NNNN
 ```
+
+In this sequence, alternative `0` is the chosen option and alternative `1` is explicitly rejected.
 
 ADR drafting order:
 

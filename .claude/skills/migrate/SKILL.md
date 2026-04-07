@@ -40,8 +40,10 @@ govctl status                             # Verify setup
 # Backfill ADRs
 govctl adr new "<decision title>"
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: ..." --pro "..." --con "..." --reject-reason "..."
+govctl adr add <ADR-ID> alternatives "Chosen option: ..." --pro "..." --con "..."
 govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
+govctl adr add <ADR-ID> alternatives "Rejected option: ..." --pro "..." --con "..." --reject-reason "Why this was not chosen"
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
 govctl adr accept <ADR-ID>
@@ -209,6 +211,7 @@ govctl adr add <ADR-ID> alternatives "Chosen: <what was adopted>" \
 govctl adr add <ADR-ID> alternatives "Rejected: <what was not chosen>" \
   --pro "..." --con "..." --reject-reason "..."
 govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
 ```
 
 Preserve the normal ADR discussion order during backfill when possible:
@@ -247,7 +250,7 @@ govctl adr accept <ADR-ID>
 govctl adr add <ADR-ID> refs <related-ADR-or-RFC>
 ```
 
-### 2.6 Commit Batch
+### 2.7 Commit Batch
 
 Group related ADRs into logical commits:
 

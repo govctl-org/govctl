@@ -197,8 +197,8 @@ pub fn read_rfc(config: &Config, path: &Path) -> Result<RfcSpec> {
     Ok(rfc)
 }
 
-/// Write RFC to file, selecting JSON or TOML by extension.
-/// TOML output uses the `[govctl]` wire format.
+/// Write RFC to file in TOML only.
+/// TOML output uses the `[govctl]` wire format plus schema header.
 pub fn write_rfc(
     path: &Path,
     rfc: &RfcSpec,
@@ -241,8 +241,8 @@ pub fn read_clause(config: &Config, path: &Path) -> Result<ClauseSpec> {
     Ok(clause)
 }
 
-/// Write clause to file, selecting JSON or TOML by extension.
-/// TOML output uses the `[govctl]` + `[content]` wire format.
+/// Write clause to file in TOML only.
+/// TOML output uses the `[govctl]` + `[content]` wire format plus schema header.
 pub fn write_clause(
     path: &Path,
     clause: &ClauseSpec,

@@ -9,7 +9,7 @@ pub mod rules;
 pub mod runtime;
 
 use self::adapter::{
-    AdrTomlAdapter, ClauseJsonAdapter, ClauseTomlAdapter, GuardTomlAdapter, JsonAdapter,
+    AdrTomlAdapter, ClauseJsonAdapter, ClauseTomlAdapter, DocAdapter, GuardTomlAdapter,
     RfcJsonAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter,
 };
 use self::path::FieldPath;
@@ -745,7 +745,7 @@ fn get_json_field<A>(
     nested_error: &str,
 ) -> anyhow::Result<()>
 where
-    A: JsonAdapter,
+    A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
 {
     let loaded = A::load(config, id)?;
@@ -1187,7 +1187,7 @@ fn add_json_simple_list_field<A>(
     nested_error: &str,
 ) -> anyhow::Result<()>
 where
-    A: JsonAdapter,
+    A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
 {
     let edit_engine::ResolvedTarget::Node {
@@ -1685,7 +1685,7 @@ fn remove_json_simple_list_field<A>(
     nested_error: &str,
 ) -> anyhow::Result<()>
 where
-    A: JsonAdapter,
+    A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
 {
     let mut loaded = A::load(config, id)?;

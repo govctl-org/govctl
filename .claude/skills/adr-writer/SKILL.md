@@ -27,6 +27,8 @@ govctl adr set <ADR-ID> context --stdin <<'EOF'
 context text
 EOF
 govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr add <ADR-ID> alternatives "Other option: Description" --reject-reason "Why it was not chosen"
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
 govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF'
 decision text

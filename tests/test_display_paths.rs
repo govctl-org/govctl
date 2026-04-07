@@ -19,41 +19,39 @@ fn test_render_rfc_display_path() {
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Test RFC",
-  "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": ["clauses/C-TEST.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "0.1.0",
-      "date": "2026-01-01",
-      "notes": "Initial draft"
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"[govctl]
+id = "RFC-0001"
+title = "Test RFC"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial draft"
+"#,
     )
     .unwrap();
 
     fs::write(
-        rfc_dir.join("clauses/C-TEST.json"),
-        r#"{
-  "clause_id": "C-TEST",
-  "title": "Test Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "Test clause content."
-}"#,
+        rfc_dir.join("clauses/C-TEST.toml"),
+        r#"[govctl]
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+
+[content]
+text = "Test clause content."
+"#,
     )
     .unwrap();
 

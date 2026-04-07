@@ -1,0 +1,8 @@
+---
+source: tests/test_lifecycle.rs
+assertion_line: 119
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc finalize RFC-0001 normative
+error[E0505]: Legacy JSON RFC exists for RFC-0001; run `govctl migrate` before RFC lifecycle commands. (RFC-0001)
+exit: 1

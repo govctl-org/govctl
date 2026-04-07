@@ -68,6 +68,15 @@ fn test_clause_root_help() {
 }
 
 #[test]
+fn test_clause_edit_help() {
+    let temp_dir = tempfile::TempDir::new().expect("failed to create temp dir");
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["clause", "edit", "--help"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
 fn test_guard_root_help() {
     let temp_dir = tempfile::TempDir::new().expect("failed to create temp dir");
     let date = today();

@@ -109,6 +109,11 @@ fn resolve_artifact(id: &str) -> anyhow::Result<ArtifactType> {
 
 fn canonicalize_field_path(artifact: ArtifactType, mut fp: FieldPath) -> FieldPath {
     let artifact_key = artifact.rule_key();
+    // canonicalize_field_path intentionally canonicalizes root/second segments
+    // both before and after collapse_legacy_prefixes() so paths like
+    // content.alt[0].pro[0] still end up fully canonical after
+    // collapse_legacy_prefixes, canonicalize_root_segment, and
+    // canonicalize_subfield_segment interact.
     if let Some(seg0) = fp.segments.first_mut() {
         seg0.name = canonicalize_root_segment(artifact_key, &seg0.name);
     }

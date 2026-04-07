@@ -64,6 +64,7 @@ pub enum DiagnosticCode {
     E0502PathNotFound,
     E0503LockTimeout,
     E0504PathConflict,
+    E0505MigrationRequired,
 
     // Signature errors (E06xx)
     E0601SignatureMismatch,
@@ -193,6 +194,7 @@ impl DiagnosticCode {
             Self::E0502PathNotFound => "E0502",
             Self::E0503LockTimeout => "E0503",
             Self::E0504PathConflict => "E0504",
+            Self::E0505MigrationRequired => "E0505",
             // E06xx - Signature
             Self::E0601SignatureMismatch => "E0601",
             Self::E0602SignatureMissing => "E0602",
