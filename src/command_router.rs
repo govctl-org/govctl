@@ -23,6 +23,35 @@ use std::path::PathBuf;
 type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 type OwnedEditAction = cmd::edit::OwnedEditAction;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommandOperation {
+    Inspect,
+    Mutate,
+}
+
+impl CommandOperation {
+    pub fn is_mutating(self) -> bool {
+        matches!(self, Self::Mutate)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum CommandTarget {
+    Global,
+    Collection {
+        target: ListTarget,
+    },
+    Artifact {
+        artifact: cmd::edit::ArtifactType,
+        id: String,
+    },
+    Field {
+        artifact: cmd::edit::ArtifactType,
+        id: String,
+        target: cmd::edit::engine::ResolvedTarget,
+    },
+}
+
 fn conflicting_edit_flag_error(action: &str, flag: &str) -> anyhow::Error {
     Diagnostic::new(
         DiagnosticCode::E0802ConflictingArgs,
@@ -127,6 +156,25 @@ fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
         });
     }
     unreachable!("action_count guarantees exactly one action branch")
+}
+
+fn artifact_target(artifact: cmd::edit::ArtifactType, id: &str) -> CommandTarget {
+    CommandTarget::Artifact {
+        artifact,
+        id: id.to_string(),
+    }
+}
+
+fn resolve_command_target(id: &str, field: Option<&str>) -> anyhow::Result<CommandTarget> {
+    let plan = cmd::edit::engine::plan_request(id, field)?;
+    Ok(match plan.target {
+        Some(target) => CommandTarget::Field {
+            artifact: plan.artifact,
+            id: id.to_string(),
+            target,
+        },
+        None => artifact_target(plan.artifact, id),
+    })
 }
 
 /// Canonical internal representation of all commands.
@@ -485,64 +533,152 @@ pub enum CanonicalCommand {
 }
 
 impl CanonicalCommand {
-    /// Returns true if this command modifies gov/ or writes to docs/ (per RFC-0004 C-SCOPE).
-    /// Such commands must acquire the gov-root exclusive lock before running.
-    pub fn is_write_command(&self) -> bool {
+    pub fn operation(&self) -> CommandOperation {
         use CanonicalCommand::*;
-        matches!(
-            self,
-            Init { .. }
-                | InitSkills { .. }
-                | Render { .. }
-                | Migrate
-                | RfcNew { .. }
-                | RfcEdit { .. }
-                | RfcSet { .. }
-                | RfcAdd { .. }
-                | RfcRemove { .. }
-                | RfcBump { .. }
-                | RfcFinalize { .. }
-                | RfcAdvance { .. }
-                | RfcDeprecate { .. }
-                | RfcSupersede { .. }
-                | RfcRender { .. }
-                | ClauseNew { .. }
-                | ClauseEdit { .. }
-                | ClauseLegacyEdit { .. }
-                | ClauseSet { .. }
-                | ClauseDelete { .. }
-                | ClauseDeprecate { .. }
-                | ClauseSupersede { .. }
-                | AdrNew { .. }
-                | AdrEdit { .. }
-                | AdrSet { .. }
-                | AdrAdd { .. }
-                | AdrRemove { .. }
-                | AdrAccept { .. }
-                | AdrReject { .. }
-                | AdrDeprecate { .. }
-                | AdrSupersede { .. }
-                | AdrTick { .. }
-                | AdrRender { .. }
-                | WorkNew { .. }
-                | WorkEdit { .. }
-                | WorkSet { .. }
-                | WorkAdd { .. }
-                | WorkRemove { .. }
-                | WorkMove { .. }
-                | WorkTick { .. }
-                | WorkDelete { .. }
-                | WorkRender { .. }
-                | GuardNew { .. }
-                | GuardEdit { .. }
-                | GuardSet { .. }
-                | GuardAdd { .. }
-                | GuardRemove { .. }
-                | GuardDelete { .. }
-                | ReleaseCut { .. }
-        )
+        match self {
+            Status
+            | Check { .. }
+            | Verify { .. }
+            | Describe { .. }
+            | Completions { .. }
+            | RfcList { .. }
+            | RfcGet { .. }
+            | RfcShow { .. }
+            | ClauseList { .. }
+            | ClauseGet { .. }
+            | ClauseShow { .. }
+            | AdrList { .. }
+            | AdrGet { .. }
+            | AdrShow { .. }
+            | WorkList { .. }
+            | WorkGet { .. }
+            | WorkShow { .. }
+            | GuardList { .. }
+            | GuardGet { .. }
+            | GuardShow { .. } => CommandOperation::Inspect,
+            #[cfg(feature = "tui")]
+            Tui => CommandOperation::Inspect,
+            _ => CommandOperation::Mutate,
+        }
     }
 
+    pub fn target(&self) -> anyhow::Result<CommandTarget> {
+        use CanonicalCommand::*;
+        Ok(match self {
+            Status
+            | Check { .. }
+            | Init { .. }
+            | InitSkills { .. }
+            | Render { .. }
+            | Migrate
+            | Verify { .. }
+            | Describe { .. }
+            | Completions { .. } => CommandTarget::Global,
+            #[cfg(feature = "tui")]
+            Tui => CommandTarget::Global,
+
+            RfcList { .. } => CommandTarget::Collection {
+                target: ListTarget::Rfc,
+            },
+            ClauseList { .. } => CommandTarget::Collection {
+                target: ListTarget::Clause,
+            },
+            AdrList { .. } => CommandTarget::Collection {
+                target: ListTarget::Adr,
+            },
+            WorkList { .. } => CommandTarget::Collection {
+                target: ListTarget::Work,
+            },
+            GuardList { .. } => CommandTarget::Collection {
+                target: ListTarget::Guard,
+            },
+
+            RfcGet { id, field } => resolve_command_target(id, field.as_deref())?,
+            ClauseGet { id, field } => resolve_command_target(id, field.as_deref())?,
+            AdrGet { id, field } => resolve_command_target(id, field.as_deref())?,
+            WorkGet { id, field } => resolve_command_target(id, field.as_deref())?,
+            GuardGet { id, field } => resolve_command_target(id, field.as_deref())?,
+
+            RfcEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
+            RfcSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            RfcAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            RfcRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+
+            ClauseEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
+            ClauseSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            ClauseLegacyEdit { id, .. } => CommandTarget::Artifact {
+                artifact: cmd::edit::ArtifactType::Clause,
+                id: id.clone(),
+            },
+
+            AdrEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
+            AdrSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            AdrAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            AdrRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            AdrTick { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+
+            WorkEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
+            WorkSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            WorkAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            WorkRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            WorkTick { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+
+            GuardEdit { id, path, .. } => resolve_command_target(id, Some(path.as_str()))?,
+            GuardSet { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            GuardAdd { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+            GuardRemove { id, field, .. } => resolve_command_target(id, Some(field.as_str()))?,
+
+            RfcNew { .. } => CommandTarget::Collection {
+                target: ListTarget::Rfc,
+            },
+            ClauseNew { .. } => CommandTarget::Collection {
+                target: ListTarget::Clause,
+            },
+            AdrNew { .. } => CommandTarget::Collection {
+                target: ListTarget::Adr,
+            },
+            WorkNew { .. } => CommandTarget::Collection {
+                target: ListTarget::Work,
+            },
+            GuardNew { .. } => CommandTarget::Collection {
+                target: ListTarget::Guard,
+            },
+
+            RfcBump { id, .. }
+            | RfcFinalize { id, .. }
+            | RfcAdvance { id, .. }
+            | RfcDeprecate { id, .. }
+            | RfcSupersede { id, .. }
+            | RfcRender { id, .. }
+            | RfcShow { id, .. } => artifact_target(cmd::edit::ArtifactType::Rfc, id),
+
+            ClauseDelete { id, .. }
+            | ClauseDeprecate { id, .. }
+            | ClauseSupersede { id, .. }
+            | ClauseShow { id, .. } => artifact_target(cmd::edit::ArtifactType::Clause, id),
+
+            AdrAccept { id }
+            | AdrReject { id }
+            | AdrDeprecate { id, .. }
+            | AdrSupersede { id, .. }
+            | AdrRender { id, .. }
+            | AdrShow { id, .. } => artifact_target(cmd::edit::ArtifactType::Adr, id),
+
+            WorkMove { file_or_id, .. } => CommandTarget::Artifact {
+                artifact: cmd::edit::ArtifactType::WorkItem,
+                id: file_or_id.display().to_string(),
+            },
+            WorkDelete { id, .. } | WorkRender { id, .. } | WorkShow { id, .. } => {
+                artifact_target(cmd::edit::ArtifactType::WorkItem, id)
+            }
+
+            GuardDelete { id, .. } | GuardShow { id, .. } => {
+                artifact_target(cmd::edit::ArtifactType::Guard, id)
+            }
+
+            ReleaseCut { .. } => CommandTarget::Global,
+        })
+    }
     /// Convert parsed CLI commands to canonical form.
     ///
     /// This is where both old (deprecated) and new (resource-first) syntaxes
@@ -1846,7 +1982,7 @@ mod tests {
     }
 
     #[test]
-    fn test_is_write_command_includes_canonical_edit_variants() {
+    fn test_operation_marks_canonical_edit_variants_as_mutating() {
         assert!(
             CanonicalCommand::RfcEdit {
                 id: "RFC-0001".to_string(),
@@ -1856,7 +1992,8 @@ mod tests {
                     stdin: false,
                 },
             }
-            .is_write_command()
+            .operation()
+            .is_mutating()
         );
 
         assert!(
@@ -1871,7 +2008,8 @@ mod tests {
                 con: vec![],
                 reject_reason: None,
             }
-            .is_write_command()
+            .operation()
+            .is_mutating()
         );
 
         assert!(
@@ -1885,7 +2023,8 @@ mod tests {
                 category: None,
                 scope: None,
             }
-            .is_write_command()
+            .operation()
+            .is_mutating()
         );
 
         assert!(
@@ -1897,7 +2036,8 @@ mod tests {
                     stdin: false,
                 },
             }
-            .is_write_command()
+            .operation()
+            .is_mutating()
         );
 
         assert!(
@@ -1907,8 +2047,48 @@ mod tests {
                 text_file: None,
                 stdin: false,
             }
-            .is_write_command()
+            .operation()
+            .is_mutating()
         );
+    }
+
+    #[test]
+    fn test_target_resolves_get_and_edit_to_same_field_target() {
+        let get = CanonicalCommand::AdrGet {
+            id: "ADR-0038".to_string(),
+            field: Some("alternatives[1].status".to_string()),
+        };
+        let edit = CanonicalCommand::AdrEdit {
+            id: "ADR-0038".to_string(),
+            path: "alternatives[1].status".to_string(),
+            action: OwnedEditAction::Tick {
+                match_opts: OwnedMatchOptions::default(),
+                status: TickStatus::Accepted,
+            },
+            pro: vec![],
+            con: vec![],
+            reject_reason: None,
+        };
+
+        match (get.target().expect("get target"), edit.target().expect("edit target")) {
+            (
+                CommandTarget::Field {
+                    artifact: get_artifact,
+                    id: get_id,
+                    target: get_target,
+                },
+                CommandTarget::Field {
+                    artifact: edit_artifact,
+                    id: edit_id,
+                    target: edit_target,
+                },
+            ) => {
+                assert_eq!(get_artifact, edit_artifact);
+                assert_eq!(get_id, edit_id);
+                assert_eq!(get_target, edit_target);
+            }
+            other => panic!("expected field targets, got {other:?}"),
+        }
     }
 
     #[test]

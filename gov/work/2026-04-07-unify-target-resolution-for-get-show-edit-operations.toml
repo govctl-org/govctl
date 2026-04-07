@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-07-002"
+title = "Unify target resolution for get/show/edit operations"
+status = "done"
+created = "2026-04-07"
+started = "2026-04-07"
+completed = "2026-04-07"
+
+[content]
+description = "Refactor CLI dispatch around a shared target/operation model: unify get with edit target resolution, simplify write-lock classification onto mutating operations, and delete deprecated JSON artifact edit paths while preserving migration support."
+
+[[content.journal]]
+date = "2026-04-07"
+scope = "router"
+content = "Unified command routing around shared operation/target classification; get now resolves through the same field-target planner as edit, main acquires locks from operation mutability, and cargo test -q / cargo run --quiet -- check / cargo clippy --all-targets --all-features -- -D warnings pass. JSON edit-path removal is still pending because current RFC/Clause edit support is storage-agnostic despite legacy JsonAdapter naming."
+
+[[content.journal]]
+date = "2026-04-07"
+scope = "storage"
+content = "Removed deprecated JSON write paths for RFC and Clause mutation flows while preserving legacy JSON reads for validation/display compatibility and v1->v2 migration. Mutating call sites now resolve RFC/Clause writes through TOML-only locators and serializers, and the affected dry-run/delete/display tests were updated to use TOML fixtures."
+
+[[content.acceptance_criteria]]
+text = "get and edit share one target-resolution model"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "write-lock classification follows mutating operations instead of command-name allowlists"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "deprecated JSON artifact edit paths are removed while migrate still supports legacy upgrades"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test -q, cargo run --quiet -- check, and cargo clippy --all-targets --all-features -- -D warnings pass"
+status = "done"
+category = "chore"

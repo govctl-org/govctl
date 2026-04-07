@@ -81,6 +81,64 @@ pub fn get_simple_field(
     render_field(doc, spec, id)
 }
 
+pub fn get_simple_list_item(
+    artifact: ArtifactType,
+    doc: &Value,
+    field: &str,
+    index: i32,
+    id: &str,
+) -> anyhow::Result<String> {
+    if let Some(path) = simple_runtime_list_path(artifact, field) {
+        let Some(items) = value_at_path(doc, path).and_then(Value::as_array) else {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                "Expected an array value",
+                id,
+            )
+            .into());
+        };
+        let resolved = path::resolve_index(index, items.len())?;
+        let item = &items[resolved];
+        return Ok(match item {
+            Value::String(s) => s.clone(),
+            Value::Null => String::new(),
+            _ => item.to_string(),
+        });
+    }
+
+    if let Some(spec) = simple_status_list_spec(artifact, field) {
+        let Some(items) = value_at_path(doc, spec.path).and_then(Value::as_array) else {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                "Expected an array value",
+                id,
+            )
+            .into());
+        };
+        let resolved = path::resolve_index(index, items.len())?;
+        let item = &items[resolved];
+        let Some(obj) = item.as_object() else {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                "Expected object entries in array",
+                id,
+            )
+            .into());
+        };
+        let status = obj
+            .get(spec.status_key)
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        let text = obj
+            .get(spec.text_key)
+            .and_then(Value::as_str)
+            .unwrap_or_default();
+        return Ok(format!("[{status}] {text}"));
+    }
+
+    Err(unknown_field_error(artifact, field, id).into())
+}
+
 /// Set a simple field on a serialized artifact document.
 pub fn set_simple_field(
     artifact: ArtifactType,
@@ -1183,6 +1241,12 @@ fn render_nested_list(
     let item = node
         .item
         .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    if item.kind == NestedNodeKind::Object
+        && node.text_key.is_some()
+        && item.fields.iter().any(|field| field.name == "status")
+    {
+        return render_status_lines(Some(value), "status", node.text_key.unwrap_or("text"), id);
+    }
     if item.kind == NestedNodeKind::Scalar {
         let rendered: Vec<String> = arr.iter().map(|item| render_scalar(Some(item))).collect();
         return Ok(rendered.join("\n"));

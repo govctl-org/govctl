@@ -5,7 +5,7 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::load::{find_clause_json, find_rfc_json};
+use crate::load::{find_clause_json, find_clause_toml, find_rfc_json, find_rfc_toml};
 use crate::model::{AdrEntry, ClauseSpec, GuardEntry, RfcSpec, WorkItemEntry};
 use crate::parse::{
     load_adrs, load_guards, load_work_items, write_adr, write_guard, write_work_item,
@@ -67,6 +67,34 @@ impl JsonAdapter for RfcJsonAdapter {
     }
 }
 
+pub struct RfcTomlAdapter;
+
+impl JsonAdapter for RfcTomlAdapter {
+    type Data = RfcSpec;
+
+    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+        let scope = config.display_path(&config.rfc_dir()).display().to_string();
+        let path = find_rfc_toml(config, id).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("RFC not found: {id}"),
+                &scope,
+            )
+        })?;
+        let data = read_rfc(config, &path)?;
+        Ok(JsonDoc { path, data })
+    }
+
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+        write_rfc(
+            &doc.path,
+            &doc.data,
+            op,
+            Some(&config.display_path(&doc.path)),
+        )
+    }
+}
+
 /// Clause JSON adapter.
 pub struct ClauseJsonAdapter;
 
@@ -81,6 +109,39 @@ impl JsonAdapter for ClauseJsonAdapter {
             .unwrap_or_else(|| config.rfc_dir());
         let scope = config.display_path(&scope_path).display().to_string();
         let path = find_clause_json(config, id).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Clause not found: {id}"),
+                &scope,
+            )
+        })?;
+        let data = read_clause(config, &path)?;
+        Ok(JsonDoc { path, data })
+    }
+
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+        write_clause(
+            &doc.path,
+            &doc.data,
+            op,
+            Some(&config.display_path(&doc.path)),
+        )
+    }
+}
+
+pub struct ClauseTomlAdapter;
+
+impl JsonAdapter for ClauseTomlAdapter {
+    type Data = ClauseSpec;
+
+    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+        let scope_path = id
+            .split(':')
+            .next()
+            .map(|rfc_id| config.rfc_dir().join(rfc_id).join("clauses"))
+            .unwrap_or_else(|| config.rfc_dir());
+        let scope = config.display_path(&scope_path).display().to_string();
+        let path = find_clause_toml(config, id).ok_or_else(|| {
             Diagnostic::new(
                 DiagnosticCode::E0202ClauseNotFound,
                 format!("Clause not found: {id}"),

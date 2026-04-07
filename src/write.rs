@@ -205,14 +205,9 @@ pub fn write_rfc(
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<()> {
-    let content = match path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let wire: RfcWire = rfc.clone().into();
-            let body = toml::to_string_pretty(&wire)?;
-            with_schema_header(ArtifactSchema::Rfc, &body)
-        }
-        _ => serde_json::to_string_pretty(rfc)?,
-    };
+    let wire: RfcWire = rfc.clone().into();
+    let body = toml::to_string_pretty(&wire)?;
+    let content = with_schema_header(ArtifactSchema::Rfc, &body);
     write_file(path, &content, op, display_path)
 }
 
@@ -254,14 +249,9 @@ pub fn write_clause(
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<()> {
-    let content = match path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let wire: ClauseWire = clause.clone().into();
-            let body = toml::to_string_pretty(&wire)?;
-            with_schema_header(ArtifactSchema::Clause, &body)
-        }
-        _ => serde_json::to_string_pretty(clause)?,
-    };
+    let wire: ClauseWire = clause.clone().into();
+    let body = toml::to_string_pretty(&wire)?;
+    let content = with_schema_header(ArtifactSchema::Clause, &body);
     write_file(path, &content, op, display_path)
 }
 

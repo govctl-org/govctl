@@ -271,6 +271,11 @@ pub fn find_rfc_json(config: &Config, rfc_id: &str) -> Option<PathBuf> {
     find_rfc_in_dir(&rfc_dir)
 }
 
+pub fn find_rfc_toml(config: &Config, rfc_id: &str) -> Option<PathBuf> {
+    let path = config.rfc_dir().join(rfc_id).join("rfc.toml");
+    path.exists().then_some(path)
+}
+
 /// Find clause JSON by full ID (e.g., RFC-0001:C-PHASE-ORDER)
 pub fn find_clause_json(config: &Config, clause_id: &str) -> Option<PathBuf> {
     let parts: Vec<&str> = clause_id.split(':').collect();
@@ -297,4 +302,20 @@ pub fn find_clause_json(config: &Config, clause_id: &str) -> Option<PathBuf> {
             .join(format!("{clause_name}.json"));
         legacy_clause_path.exists().then_some(legacy_clause_path)
     }
+}
+
+pub fn find_clause_toml(config: &Config, clause_id: &str) -> Option<PathBuf> {
+    let parts: Vec<&str> = clause_id.split(':').collect();
+    if parts.len() != 2 {
+        return None;
+    }
+
+    let rfc_id = parts[0];
+    let clause_name = parts[1];
+    let clause_path = config
+        .rfc_dir()
+        .join(rfc_id)
+        .join("clauses")
+        .join(format!("{clause_name}.toml"));
+    clause_path.exists().then_some(clause_path)
 }

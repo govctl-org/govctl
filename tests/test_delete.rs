@@ -16,42 +16,46 @@ fn test_delete_clause_safeguard_normative() {
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Normative RFC",
-  "version": "1.0.0",
-  "status": "normative",
-  "phase": "stable",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": ["clauses/C-LOCKED.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "1.0.0",
-      "date": "2026-01-01",
-      "added": ["Initial release"]
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Normative RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-LOCKED.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
     )
     .unwrap();
 
     fs::write(
-        rfc_dir.join("clauses/C-LOCKED.json"),
-        r#"{
-  "clause_id": "C-LOCKED",
-  "title": "Locked Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "This clause cannot be deleted - RFC is normative.",
-  "since": "1.0.0"
-}"#,
+        rfc_dir.join("clauses/C-LOCKED.toml"),
+        r#"#:schema ../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-LOCKED"
+title = "Locked Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "This clause cannot be deleted - RFC is normative."
+"#,
     )
     .unwrap();
 
@@ -74,55 +78,64 @@ fn test_delete_clause_success_draft() {
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Draft RFC",
-  "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": ["clauses/C-KEEP.json", "clauses/C-DELETE.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "0.1.0",
-      "date": "2026-01-01",
-      "notes": "Initial draft"
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Draft RFC"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-KEEP.toml", "clauses/C-DELETE.toml"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial draft"
+"#,
     )
     .unwrap();
 
     fs::write(
-        rfc_dir.join("clauses/C-KEEP.json"),
-        r#"{
-  "clause_id": "C-KEEP",
-  "title": "Keep This Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "This clause will remain.",
-  "since": "0.1.0"
-}"#,
+        rfc_dir.join("clauses/C-KEEP.toml"),
+        r#"#:schema ../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-KEEP"
+title = "Keep This Clause"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = "This clause will remain."
+"#,
     )
     .unwrap();
 
     fs::write(
-        rfc_dir.join("clauses/C-DELETE.json"),
-        r#"{
-  "clause_id": "C-DELETE",
-  "title": "Delete This Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "This clause will be deleted.",
-  "since": "0.1.0"
-}"#,
+        rfc_dir.join("clauses/C-DELETE.toml"),
+        r#"#:schema ../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-DELETE"
+title = "Delete This Clause"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = "This clause will be deleted."
+"#,
     )
     .unwrap();
 

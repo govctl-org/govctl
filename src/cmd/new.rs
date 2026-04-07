@@ -388,13 +388,7 @@ fn create_clause(
     let rfc_id = parts[0];
     let clause_name = parts[1];
 
-    let rfc_toml = config.rfc_dir().join(rfc_id).join("rfc.toml");
-    let rfc_json = config.rfc_dir().join(rfc_id).join("rfc.json");
-    let rfc_path = if rfc_toml.exists() {
-        rfc_toml
-    } else {
-        rfc_json
-    };
+    let rfc_path = config.rfc_dir().join(rfc_id).join("rfc.toml");
     if !rfc_path.exists() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
@@ -445,14 +439,9 @@ fn create_clause(
         });
     }
 
-    let rfc_content = match rfc_path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let wire: RfcWire = rfc.into();
-            let body = toml::to_string_pretty(&wire)?;
-            with_schema_header(ArtifactSchema::Rfc, &body)
-        }
-        _ => serde_json::to_string_pretty(&rfc)?,
-    };
+    let wire: RfcWire = rfc.into();
+    let body = toml::to_string_pretty(&wire)?;
+    let rfc_content = with_schema_header(ArtifactSchema::Rfc, &body);
     let display_rfc_path = config.display_path(&rfc_path);
     write_file(&rfc_path, &rfc_content, op, Some(&display_rfc_path))?;
 

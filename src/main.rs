@@ -117,8 +117,11 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
         other => other,
     };
 
-    // Acquire gov-root exclusive lock for write commands (RFC-0004)
-    let _guard = if canonical.is_write_command() {
+    let operation = canonical.operation();
+    let _target = canonical.target()?;
+
+    // Acquire gov-root exclusive lock for mutating operations (RFC-0004)
+    let _guard = if operation.is_mutating() {
         if matches!(canonical, command_router::CanonicalCommand::Init { .. }) {
             let gov_root = config.gov_root.as_path();
             if !op.is_preview() && !gov_root.exists() {

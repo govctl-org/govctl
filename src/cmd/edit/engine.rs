@@ -23,7 +23,7 @@ pub enum TargetOrigin {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum MutationTarget {
+pub enum ResolvedTarget {
     Node {
         origin: TargetOrigin,
         path: FieldPath,
@@ -40,7 +40,7 @@ pub enum MutationTarget {
     },
 }
 
-impl MutationTarget {
+impl ResolvedTarget {
     pub fn display_path(&self) -> String {
         match self {
             Self::Node { path, .. } | Self::IndexedItem { path, .. } => path.to_string(),
@@ -55,11 +55,11 @@ impl MutationTarget {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct EditPlan {
+pub struct TargetPlan {
     pub artifact: ArtifactType,
     pub field_path: Option<FieldPath>,
     pub verb: Option<Verb>,
-    pub target: Option<MutationTarget>,
+    pub target: Option<ResolvedTarget>,
 }
 
 /// Parse and canonicalize a user field expression using current path rules.
@@ -74,11 +74,11 @@ pub fn parse_and_canonicalize_field(
 ///
 /// During migration this function intentionally does not enforce verb/field
 /// capability checks; those remain in the existing execution path.
-pub fn plan_request(id: &str, field: Option<&str>) -> anyhow::Result<EditPlan> {
+pub fn plan_request(id: &str, field: Option<&str>) -> anyhow::Result<TargetPlan> {
     plan_request_with_verb(id, field, None)
 }
 
-pub fn plan_mutation_request(id: &str, field: &str, verb: Verb) -> anyhow::Result<EditPlan> {
+pub fn plan_mutation_request(id: &str, field: &str, verb: Verb) -> anyhow::Result<TargetPlan> {
     plan_request_with_verb(id, Some(field), Some(verb))
 }
 
@@ -86,16 +86,16 @@ fn plan_request_with_verb(
     id: &str,
     field: Option<&str>,
     verb: Option<Verb>,
-) -> anyhow::Result<EditPlan> {
+) -> anyhow::Result<TargetPlan> {
     let artifact = resolve_artifact(id)?;
     let field_path = field
         .map(|path| parse_and_canonicalize_field(artifact, path))
         .transpose()?;
-    let target = match (&field_path, verb) {
-        (Some(field_path), Some(_)) => Some(resolve_mutation_target(artifact, field_path, id)?),
-        _ => None,
-    };
-    Ok(EditPlan {
+    let target = field_path
+        .as_ref()
+        .map(|field_path| resolve_target(artifact, field_path, id))
+        .transpose()?;
+    Ok(TargetPlan {
         artifact,
         field_path,
         verb,
@@ -161,11 +161,11 @@ fn is_known_subfield(artifact: &str, root: &str, field: &str) -> bool {
         || edit_rules::can_collapse_legacy_prefix(root, field)
 }
 
-fn resolve_mutation_target(
+fn resolve_target(
     artifact: ArtifactType,
     fp: &FieldPath,
     id: &str,
-) -> anyhow::Result<MutationTarget> {
+) -> anyhow::Result<ResolvedTarget> {
     let root = &fp.segments[0].name;
     if let Some(rule) = edit_rules::nested_root_rule(artifact.rule_key(), root) {
         return resolve_nested_target(rule.node, fp, id);
@@ -181,7 +181,7 @@ fn resolve_mutation_target(
     };
 
     match (rule.kind, seg.index) {
-        (FieldKind::Scalar, None) => Ok(MutationTarget::Node {
+        (FieldKind::Scalar, None) => Ok(ResolvedTarget::Node {
             origin: TargetOrigin::Simple,
             path: fp.clone(),
             kind: TargetKind::Scalar,
@@ -194,7 +194,7 @@ fn resolve_mutation_target(
                 seg.name, fp
             ),
         )),
-        (FieldKind::List, None) => Ok(MutationTarget::Node {
+        (FieldKind::List, None) => Ok(ResolvedTarget::Node {
             origin: TargetOrigin::Simple,
             path: fp.clone(),
             kind: TargetKind::List,
@@ -204,7 +204,7 @@ fn resolve_mutation_target(
                 Verb::Tick,
             ),
         }),
-        (FieldKind::List, Some(index)) => Ok(MutationTarget::IndexedItem {
+        (FieldKind::List, Some(index)) => Ok(ResolvedTarget::IndexedItem {
             origin: TargetOrigin::Simple,
             path: fp.clone(),
             container_path: FieldPath {
@@ -228,7 +228,7 @@ fn resolve_nested_target(
     mut current_node: &'static NestedNodeRule,
     fp: &FieldPath,
     id: &str,
-) -> anyhow::Result<MutationTarget> {
+) -> anyhow::Result<ResolvedTarget> {
     let mut container_segments = Vec::with_capacity(fp.segments.len());
 
     for (idx, seg) in fp.segments.iter().enumerate() {
@@ -267,7 +267,7 @@ fn resolve_nested_target(
                 let item_node = current_node
                     .item
                     .ok_or_else(|| path_type_error(id, "List node missing item rule".into()))?;
-                return Ok(MutationTarget::IndexedItem {
+                return Ok(ResolvedTarget::IndexedItem {
                     origin: TargetOrigin::Nested,
                     path: fp.clone(),
                     container_path: FieldPath {
@@ -285,7 +285,7 @@ fn resolve_nested_target(
                 last.index = Some(index);
             }
         } else if is_last {
-            return Ok(MutationTarget::Node {
+            return Ok(ResolvedTarget::Node {
                 origin: TargetOrigin::Nested,
                 path: fp.clone(),
                 kind: map_nested_kind(current_node.kind),
@@ -381,7 +381,20 @@ mod tests {
             Some("title")
         );
         assert_eq!(plan.verb, None);
-        assert_eq!(plan.target, None);
+        assert_eq!(
+            plan.target,
+            Some(ResolvedTarget::Node {
+                origin: TargetOrigin::Simple,
+                path: FieldPath {
+                    segments: vec![PathSegment {
+                        name: "title".to_string(),
+                        index: None,
+                    }],
+                },
+                kind: TargetKind::Scalar,
+                status_list: false,
+            })
+        );
     }
 
     #[test]
@@ -410,9 +423,8 @@ mod tests {
 
     #[test]
     fn test_scope_aware_alias_only_applies_when_valid_for_artifact() {
-        let plan = plan_request("ADR-0001", Some("desc")).unwrap();
-        let fp = plan.field_path.expect("field path should exist");
-        assert_eq!(fp.as_simple(), Some("desc"));
+        let err = plan_request("ADR-0001", Some("desc")).unwrap_err();
+        assert!(err.to_string().contains("Unknown ADR field"));
     }
 
     #[test]
@@ -431,10 +443,8 @@ mod tests {
 
     #[test]
     fn test_unknown_alias_in_scope_is_not_rewritten() {
-        let plan = plan_request("WI-2026-01-01-001", Some("alt[0].pro[0]")).unwrap();
-        let fp = plan.field_path.expect("field path should exist");
-        assert_eq!(fp.segments[0].name, "alt");
-        assert_eq!(fp.segments[1].name, "pro");
+        let err = plan_request("WI-2026-01-01-001", Some("alt[0].pro[0]")).unwrap_err();
+        assert!(err.to_string().contains("Unknown work item field"));
     }
 
     #[test]
@@ -448,7 +458,7 @@ mod tests {
         );
         assert_eq!(
             plan.target,
-            Some(MutationTarget::Node {
+            Some(ResolvedTarget::Node {
                 origin: TargetOrigin::Simple,
                 path: FieldPath {
                     segments: vec![PathSegment {
@@ -467,7 +477,7 @@ mod tests {
         let plan = plan_mutation_request("ADR-0001", "alternatives[0]", Verb::Remove).unwrap();
         assert_eq!(
             plan.target,
-            Some(MutationTarget::IndexedItem {
+            Some(ResolvedTarget::IndexedItem {
                 origin: TargetOrigin::Nested,
                 path: FieldPath {
                     segments: vec![PathSegment {
@@ -494,7 +504,7 @@ mod tests {
             plan_mutation_request("ADR-0001", "alternatives[0].pros[1]", Verb::Remove).unwrap();
         assert_eq!(
             plan.target,
-            Some(MutationTarget::IndexedItem {
+            Some(ResolvedTarget::IndexedItem {
                 origin: TargetOrigin::Nested,
                 path: FieldPath {
                     segments: vec![

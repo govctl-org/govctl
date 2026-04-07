@@ -4,7 +4,7 @@ use crate::FinalizeStatus;
 use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::load::{find_clause_json, find_rfc_json};
+use crate::load::{find_clause_toml, find_rfc_toml};
 use crate::model::{AdrStatus, ClauseStatus, Release, RfcPhase, RfcStatus, WorkItemStatus};
 use crate::parse::{
     load_adrs, load_releases, load_work_items, validate_version, write_adr, write_releases,
@@ -38,7 +38,7 @@ fn fill_pending_clause_versions(
     let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)?
         .filter_map(Result::ok)
         .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|e| e == "json" || e == "toml"))
+        .filter(|p| p.extension().is_some_and(|e| e == "toml"))
         .filter_map(|p| read_clause(config, &p).ok().map(|c| (p, c)))
         .filter(|(_, c)| c.since.is_none())
         .collect();
@@ -66,7 +66,7 @@ pub fn bump(
     changes: &[String],
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
+    let rfc_path = find_rfc_toml(config, rfc_id).ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {rfc_id}"),
@@ -153,7 +153,7 @@ pub fn finalize(
     status: FinalizeStatus,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
+    let rfc_path = find_rfc_toml(config, rfc_id).ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {rfc_id}"),
@@ -200,7 +200,7 @@ pub fn advance(
     phase: RfcPhase,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
+    let rfc_path = find_rfc_toml(config, rfc_id).ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {rfc_id}"),
@@ -336,7 +336,7 @@ pub fn deprecate(
 
     if id.contains(':') {
         // It's a clause
-        let clause_path = find_clause_json(config, id).ok_or_else(|| {
+        let clause_path = find_clause_toml(config, id).ok_or_else(|| {
             Diagnostic::new(
                 DiagnosticCode::E0202ClauseNotFound,
                 format!("Clause not found: {id}"),
@@ -421,7 +421,7 @@ pub fn supersede(
     if id.contains(':') {
         // It's a clause
         // Validate replacement exists
-        let _ = find_clause_json(config, by).ok_or_else(|| {
+        let _ = find_clause_toml(config, by).ok_or_else(|| {
             Diagnostic::new(
                 DiagnosticCode::E0202ClauseNotFound,
                 format!("Replacement clause not found: {by}"),
@@ -429,7 +429,7 @@ pub fn supersede(
             )
         })?;
 
-        let clause_path = find_clause_json(config, id).ok_or_else(|| {
+        let clause_path = find_clause_toml(config, id).ok_or_else(|| {
             Diagnostic::new(
                 DiagnosticCode::E0202ClauseNotFound,
                 format!("Clause not found: {id}"),
