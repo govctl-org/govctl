@@ -595,12 +595,9 @@ pub fn get_field(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let plan = edit_engine::plan_request(id, field)?;
     match plan.artifact {
-        ArtifactType::Adr => get_toml_field::<AdrTomlAdapter>(
-            config,
-            id,
-            plan.target.as_ref(),
-            ArtifactType::Adr,
-        )?,
+        ArtifactType::Adr => {
+            get_toml_field::<AdrTomlAdapter>(config, id, plan.target.as_ref(), ArtifactType::Adr)?
+        }
         ArtifactType::WorkItem => get_toml_field::<WorkTomlAdapter>(
             config,
             id,
@@ -822,10 +819,12 @@ where
                 );
             }
             _ => {
-                return Err(
-                    Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, nested_error, id)
-                        .into(),
-                );
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    nested_error,
+                    id,
+                )
+                .into());
             }
         }
     } else {

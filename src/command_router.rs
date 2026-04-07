@@ -2070,7 +2070,10 @@ mod tests {
             reject_reason: None,
         };
 
-        match (get.target().expect("get target"), edit.target().expect("edit target")) {
+        match (
+            get.target().expect("get target"),
+            edit.target().expect("edit target"),
+        ) {
             (
                 CommandTarget::Field {
                     artifact: get_artifact,

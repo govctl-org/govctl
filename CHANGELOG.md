@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - set/add/remove/tick share a unified terminal-target planning model (WI-2026-04-07-001)
+- get and edit share one target-resolution model (WI-2026-04-07-002)
 
 ### Fixed
 
@@ -34,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - currently affected migrated ADRs are normalized and cargo run --quiet -- check passes (WI-2026-04-06-006)
 - legacy ADR markdown consequence blocks migrate into single semantic entries instead of per-line fragments (WI-2026-04-06-006)
 - RFC/Clause simple lists and ADR/Work/Guard nested/root-item edits still work under the shared planner (WI-2026-04-07-001)
+- write-lock classification follows mutating operations instead of command-name allowlists (WI-2026-04-07-002)
 
 ## [0.7.7] - 2026-04-04
 
