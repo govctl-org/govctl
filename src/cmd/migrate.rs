@@ -168,11 +168,18 @@ fn execute_ops(config: &Config, ops: &[FileOp]) -> anyhow::Result<()> {
     let backup_root = gov_root.join(".migrate-backup");
 
     if stage_root.exists() || backup_root.exists() {
+        let mut conflicts = Vec::new();
+        if stage_root.exists() {
+            conflicts.push(config.display_path(&stage_root).display().to_string());
+        }
+        if backup_root.exists() {
+            conflicts.push(config.display_path(&backup_root).display().to_string());
+        }
         return Err(Diagnostic::new(
             DiagnosticCode::E0504PathConflict,
             format!(
-                "Migration staging directories already exist under {}",
-                config.display_path(gov_root).display()
+                "Migration staging directories already exist: {}",
+                conflicts.join(", ")
             ),
             config.display_path(gov_root).display().to_string(),
         )

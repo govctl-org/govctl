@@ -52,6 +52,29 @@ fn reject_selector_flags_for_value_action(
 }
 
 fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
+    let action_count = usize::from(args.set.is_some())
+        + usize::from(args.add.is_some())
+        + usize::from(args.tick.is_some())
+        + usize::from(args.remove.is_some());
+
+    if action_count == 0 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            "exactly one edit action is required",
+            "edit action",
+        )
+        .into());
+    }
+
+    if action_count > 1 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0802ConflictingArgs,
+            "Cannot use multiple edit actions at once",
+            "edit action",
+        )
+        .into());
+    }
+
     if let Some(value) = &args.set {
         reject_selector_flags_for_value_action("set", args)?;
         return Ok(OwnedEditAction::Set {
@@ -103,13 +126,7 @@ fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
             },
         });
     }
-
-    Err(Diagnostic::new(
-        DiagnosticCode::E0801MissingRequiredArg,
-        "exactly one edit action is required",
-        "edit action",
-    )
-    .into())
+    unreachable!("action_count guarantees exactly one action branch")
 }
 
 /// Canonical internal representation of all commands.
@@ -672,7 +689,7 @@ impl CanonicalCommand {
                 value,
                 stdin,
             } => {
-                let value = value.as_ref().map(|v| Some(v.clone()));
+                let value = Some(value.clone());
                 cmd::edit::add_to_field(
                     config,
                     id,
@@ -814,7 +831,7 @@ impl CanonicalCommand {
                 con,
                 reject_reason,
             } => {
-                let value = value.as_ref().map(|v| Some(v.clone()));
+                let value = Some(value.clone());
                 cmd::edit::add_to_field(
                     config,
                     id,
@@ -904,7 +921,7 @@ impl CanonicalCommand {
                 category,
                 scope,
             } => {
-                let value = value.as_ref().map(|v| Some(v.clone()));
+                let value = Some(value.clone());
                 cmd::edit::add_to_field(
                     config,
                     id,
@@ -1742,6 +1759,25 @@ mod tests {
             all: true,
         })
         .expect_err("tick with --all should fail");
+
+        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+    }
+
+    #[test]
+    fn test_owned_edit_action_rejects_multiple_actions() {
+        let err = owned_edit_action(&EditActionArgs {
+            set: Some(Some("x".to_string())),
+            add: Some(Some("y".to_string())),
+            remove: None,
+            tick: None,
+            stdin: false,
+            at: None,
+            exact: false,
+            regex: false,
+            all: false,
+        })
+        .expect_err("multiple actions should fail");
 
         let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
         assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);

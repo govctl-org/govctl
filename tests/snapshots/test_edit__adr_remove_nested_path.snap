@@ -1,6 +1,6 @@
 ---
 source: tests/test_edit.rs
-assertion_line: 1382
+assertion_line: 1409
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl adr new Remove Test
@@ -12,7 +12,7 @@ Added 'Opt1' to ADR-0001.alternatives
 exit: 0
 
 $ govctl adr remove ADR-0001 alt[0].pros[0]
-Removed 'Good' from ADR-0001.alt[0].pros[0]
+Removed 'Good' from ADR-0001.alternatives[0].pros
 exit: 0
 
 $ govctl adr get ADR-0001 alt[0].pros
@@ -20,7 +20,7 @@ Great
 exit: 0
 
 $ govctl adr remove ADR-0001 alt[0].cons Bad
-Removed 'Bad' from ADR-0001.alt[0].cons
+Removed 'Bad' from ADR-0001.alternatives[0].cons
 exit: 0
 
 $ govctl adr get ADR-0001 alt[0].cons

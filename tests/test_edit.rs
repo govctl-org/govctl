@@ -151,6 +151,40 @@ fn test_rfc_edit_set_title_canonical() {
 }
 
 #[test]
+fn test_rfc_edit_set_owner_by_index_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "owners[1]",
+                "--set",
+                "@replacement",
+            ],
+            &["rfc", "get", "RFC-0001", "owners"],
+        ],
+    );
+
+    assert!(
+        output.contains("Set RFC-0001.owners[1] = @replacement"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @replacement"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
 fn test_rfc_set_nonexistent_field() {
     let temp_dir = init_project();
     let date = today();

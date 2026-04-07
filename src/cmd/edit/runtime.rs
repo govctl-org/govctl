@@ -146,6 +146,27 @@ pub fn add_simple_list_value(
     Ok(true)
 }
 
+pub fn set_simple_list_item(
+    artifact: ArtifactType,
+    doc: &mut Value,
+    field: &str,
+    index: i32,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    let Some(path) = simple_runtime_list_path(artifact, field) else {
+        return Err(unknown_field_error(artifact, field, id).into());
+    };
+    let items = array_items_mut(doc, path, id)?;
+    let resolved = path::resolve_index(index, items.len())?;
+    let slot = &mut items[resolved];
+    if !slot.is_string() && !slot.is_null() {
+        return Err(type_mismatch("Expected string item in list", id).into());
+    }
+    *slot = Value::String(value.to_string());
+    Ok(())
+}
+
 pub fn remove_simple_list_values_with_matcher<F>(
     artifact: ArtifactType,
     doc: &mut Value,
@@ -258,6 +279,50 @@ where
         Value::String(new_status.to_string()),
     );
     Ok(Some(text))
+}
+
+pub fn set_nested_list_item(
+    artifact: ArtifactType,
+    doc: &mut Value,
+    fp: &FieldPath,
+    index: i32,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
+    let (node, slot) = descend_mut(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Set,
+        id,
+    )?;
+    if node.kind != NestedNodeKind::List {
+        return Err(type_mismatch("Expected array for list field", id).into());
+    }
+    let item_rule = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    let list = slot
+        .as_array_mut()
+        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+    let resolved = path::resolve_index(index, list.len())?;
+    match item_rule.kind {
+        NestedNodeKind::Scalar => {
+            list[resolved] = Value::String(value.to_string());
+            Ok(())
+        }
+        NestedNodeKind::Object => Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            format!("Cannot set object path '{}[{}]' directly", fp, index),
+            id,
+        )
+        .into()),
+        NestedNodeKind::List => Err(type_mismatch("Expected scalar list item", id).into()),
+    }
 }
 
 fn simple_field_spec(artifact: ArtifactType, field: &str) -> Option<SimpleFieldSpec> {
@@ -785,31 +850,62 @@ where
     Ok(removed)
 }
 
-pub fn remove_nested_root_item(
+pub fn tick_nested_list_item_with_matcher<F>(
     artifact: ArtifactType,
     doc: &mut Value,
     fp: &FieldPath,
     id: &str,
-) -> anyhow::Result<String> {
+    new_status: &str,
+    resolve: F,
+) -> anyhow::Result<String>
+where
+    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
+{
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
-    if rule.node.kind != NestedNodeKind::List {
-        return Err(type_mismatch("Expected list root", id).into());
-    }
     let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
-    let arr = root_value
+    let (node, slot) = descend_mut(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Tick,
+        id,
+    )?;
+    if node.kind != NestedNodeKind::List {
+        return Err(type_mismatch("Expected array for list field", id).into());
+    }
+    let item_rule = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    if item_rule.kind != NestedNodeKind::Object {
+        return Err(type_mismatch("Expected object entries in tickable list", id).into());
+    }
+    let list = slot
         .as_array_mut()
-        .ok_or_else(|| type_mismatch("Expected array at root path", id))?;
-    let root_idx = path::require_index(&fp.segments[0], arr.len())?;
-    let removed = arr.remove(root_idx);
-
-    let text = rule
-        .node
+        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+    let text_key = node
         .text_key
-        .and_then(|key| removed.get(key).and_then(Value::as_str))
-        .or_else(|| removed.as_str())
-        .unwrap_or("<item>")
-        .to_string();
+        .ok_or_else(|| type_mismatch("Expected text_key for tickable list", id))?;
+    let texts: Vec<&str> = list
+        .iter()
+        .map(|item| status_list_text(item, text_key, id))
+        .collect::<Result<Vec<_>, _>>()?;
+    let idx = resolve(&texts)?[0];
+    let text = texts[idx].to_string();
+    let status_key = item_rule
+        .fields
+        .iter()
+        .find(|field| field.name == "status")
+        .map(|field| field.name)
+        .ok_or_else(|| type_mismatch("Expected status field for tickable list", id))?;
+    let obj = list[idx]
+        .as_object_mut()
+        .ok_or_else(|| type_mismatch("Expected object entries in tickable list", id))?;
+    obj.insert(
+        status_key.to_string(),
+        Value::String(new_status.to_string()),
+    );
     Ok(text)
 }
 
@@ -1261,31 +1357,6 @@ mod tests {
 
         let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
         assert_eq!(diag.code, DiagnosticCode::E0817PathTypeMismatch);
-    }
-
-    #[test]
-    fn test_remove_nested_root_item_returns_removed_text() {
-        let mut doc = json!({
-            "content": {
-                "alternatives": [
-                    { "text": "Option A", "pros": [], "cons": [] },
-                    { "text": "Option B", "pros": [], "cons": [] }
-                ]
-            }
-        });
-
-        let removed = remove_nested_root_item(
-            ArtifactType::Adr,
-            &mut doc,
-            &path("alternatives[0]"),
-            "ADR-0001",
-        )
-        .unwrap();
-
-        assert_eq!(removed, "Option A");
-        let alternatives = doc["content"]["alternatives"].as_array().unwrap();
-        assert_eq!(alternatives.len(), 1);
-        assert_eq!(alternatives[0]["text"], "Option B");
     }
 
     #[test]

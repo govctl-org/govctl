@@ -320,19 +320,19 @@ fn plan_edit_with_field_for_verb(
     id: &str,
     field: &str,
     verb: Option<edit_rules::Verb>,
-) -> anyhow::Result<(ArtifactType, FieldPath)> {
+) -> anyhow::Result<edit_engine::EditPlan> {
     let plan = match verb {
         Some(verb) => edit_engine::plan_mutation_request(id, field, verb)?,
         None => edit_engine::plan_request(id, Some(field))?,
     };
-    let fp = plan.field_path.ok_or_else(|| {
+    plan.field_path.as_ref().ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             "Field path required",
             id,
         )
     })?;
-    Ok((plan.artifact, fp))
+    Ok(plan)
 }
 
 struct AdrAddContext {
@@ -430,13 +430,17 @@ pub fn set_field(
     stdin: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
+    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
+    let artifact = plan.artifact;
+    let target = plan
+        .target
+        .as_ref()
+        .expect("mutation planning should produce target");
     let value = resolve_plain_value(value, stdin)?;
-    apply_set_field(config, id, &fp, artifact, value.as_str(), op, true)?;
+    apply_set_field(config, id, target, artifact, value.as_str(), op, true)?;
 
     if !op.is_preview() {
-        let display_field = fp.to_string();
-        ui::field_set(id, &display_field, value.as_str());
+        ui::field_set(id, &target.display_path(), value.as_str());
     }
 
     Ok(vec![])
@@ -449,19 +453,24 @@ pub(crate) fn set_field_direct(
     value: &str,
     op: WriteOp,
 ) -> anyhow::Result<()> {
-    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
-    apply_set_field(config, id, &fp, artifact, value, op, false)
+    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
+    let target = plan
+        .target
+        .as_ref()
+        .expect("mutation planning should produce target");
+    apply_set_field(config, id, target, plan.artifact, value, op, false)
 }
 
 fn apply_set_field(
     config: &Config,
     id: &str,
-    fp: &FieldPath,
+    target: &edit_engine::MutationTarget,
     artifact: ArtifactType,
     value: &str,
     op: WriteOp,
     enforce_verb_ownership: bool,
 ) -> anyhow::Result<()> {
+    let fp = target.path();
     if enforce_verb_ownership {
         reject_verb_owned_set(artifact, fp, id)?;
     }
@@ -469,7 +478,7 @@ fn apply_set_field(
         ArtifactType::Adr => set_toml_field::<AdrTomlAdapter>(
             config,
             id,
-            fp,
+            target,
             value,
             op,
             ArtifactType::Adr,
@@ -487,21 +496,23 @@ fn apply_set_field(
             set_toml_field::<WorkTomlAdapter>(
                 config,
                 id,
-                fp,
+                target,
                 value,
                 op,
                 ArtifactType::WorkItem,
                 !enforce_verb_ownership,
             )?
         }
-        ArtifactType::Rfc => set_rfc_field(config, id, fp, value, op, !enforce_verb_ownership)?,
+        ArtifactType::Rfc => {
+            set_rfc_field(config, id, fp, target, value, op, !enforce_verb_ownership)?
+        }
         ArtifactType::Clause => {
-            set_clause_field(config, id, fp, value, op, !enforce_verb_ownership)?
+            set_clause_field(config, id, fp, target, value, op, !enforce_verb_ownership)?
         }
         ArtifactType::Guard => set_toml_field::<GuardTomlAdapter>(
             config,
             id,
-            fp,
+            target,
             value,
             op,
             ArtifactType::Guard,
@@ -637,12 +648,15 @@ pub fn edit_field(
     match action {
         OwnedEditAction::Set { value, stdin } => {
             let value = resolve_owned_value(value.as_ref(), *stdin)?;
-            let (artifact, fp) =
-                plan_edit_with_field_for_verb(id, path, Some(edit_rules::Verb::Set))?;
-            apply_set_field(config, id, &fp, artifact, value.as_str(), op, true)?;
+            let plan = plan_edit_with_field_for_verb(id, path, Some(edit_rules::Verb::Set))?;
+            let artifact = plan.artifact;
+            let target = plan
+                .target
+                .as_ref()
+                .expect("mutation planning should produce target");
+            apply_set_field(config, id, target, artifact, value.as_str(), op, true)?;
             if !op.is_preview() {
-                let display_field = fp.to_string();
-                ui::field_set(id, &display_field, value.as_str());
+                ui::field_set(id, &target.display_path(), value.as_str());
             }
             Ok(vec![])
         }
@@ -710,7 +724,7 @@ where
 fn set_toml_field<A>(
     config: &Config,
     id: &str,
-    fp: &FieldPath,
+    target: &edit_engine::MutationTarget,
     value: &str,
     op: WriteOp,
     artifact: ArtifactType,
@@ -722,14 +736,57 @@ where
 {
     let mut entry = A::load(config, id)?;
     let mut doc = serde_json::to_value(entry.spec())?;
-    if let Some(simple) = fp.as_simple() {
-        if allow_forced_simple_set {
-            edit_runtime::set_simple_field_forced(artifact, &mut doc, simple, value, id)?;
-        } else {
-            edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
+    match target {
+        edit_engine::MutationTarget::Node {
+            path,
+            kind: edit_engine::TargetKind::Scalar,
+            origin,
+            ..
+        } => match origin {
+            edit_engine::TargetOrigin::Simple => {
+                let simple = path.as_simple().expect("simple target path expected");
+                if allow_forced_simple_set {
+                    edit_runtime::set_simple_field_forced(artifact, &mut doc, simple, value, id)?;
+                } else {
+                    edit_runtime::set_simple_field(artifact, &mut doc, simple, value, id)?;
+                }
+            }
+            edit_engine::TargetOrigin::Nested => {
+                edit_runtime::set_nested_field(artifact, &mut doc, path, value, id)?;
+            }
+        },
+        edit_engine::MutationTarget::IndexedItem {
+            origin,
+            container_path,
+            index,
+            item_kind: edit_engine::TargetKind::Scalar,
+            ..
+        } => match origin {
+            edit_engine::TargetOrigin::Simple => {
+                let simple = container_path
+                    .as_simple()
+                    .expect("simple indexed container expected");
+                edit_runtime::set_simple_list_item(artifact, &mut doc, simple, *index, value, id)?;
+            }
+            edit_engine::TargetOrigin::Nested => {
+                edit_runtime::set_nested_list_item(
+                    artifact,
+                    &mut doc,
+                    container_path,
+                    *index,
+                    value,
+                    id,
+                )?;
+            }
+        },
+        _ => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                "set requires a scalar field or indexed scalar list item",
+                id,
+            )
+            .into());
         }
-    } else {
-        edit_runtime::set_nested_field(artifact, &mut doc, fp, value, id)?;
     }
     *entry.spec_mut() = serde_json::from_value(doc)?;
     A::write(config, &entry, op)?;
@@ -764,35 +821,77 @@ where
 fn set_rfc_field(
     config: &Config,
     id: &str,
-    fp: &FieldPath,
+    _fp: &FieldPath,
+    target: &edit_engine::MutationTarget,
     value: &str,
     op: WriteOp,
     allow_forced_simple_set: bool,
 ) -> anyhow::Result<()> {
-    let simple = require_simple_field(fp, id, "RFC fields do not support nested paths")?;
-    if !allow_forced_simple_set
-        && !edit_runtime::supports_simple_set_field(ArtifactType::Rfc, simple)
-    {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0101RfcSchemaInvalid,
-            format!("Unknown field: {simple}"),
-            "",
-        )
-        .into());
-    }
-    crate::validate::validate_field(
-        config,
-        id,
-        crate::validate::ArtifactKind::Rfc,
-        simple,
-        value,
-    )?;
     let mut loaded = RfcJsonAdapter::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
-    if allow_forced_simple_set {
-        edit_runtime::set_simple_field_forced(ArtifactType::Rfc, &mut doc, simple, value, id)?;
-    } else {
-        edit_runtime::set_simple_field(ArtifactType::Rfc, &mut doc, simple, value, id)?;
+    match target {
+        edit_engine::MutationTarget::Node {
+            path,
+            kind: edit_engine::TargetKind::Scalar,
+            ..
+        } => {
+            let simple = require_simple_field(path, id, "RFC fields do not support nested paths")?;
+            if !allow_forced_simple_set
+                && !edit_runtime::supports_simple_set_field(ArtifactType::Rfc, simple)
+            {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0101RfcSchemaInvalid,
+                    format!("Unknown field: {simple}"),
+                    "",
+                )
+                .into());
+            }
+            crate::validate::validate_field(
+                config,
+                id,
+                crate::validate::ArtifactKind::Rfc,
+                simple,
+                value,
+            )?;
+            if allow_forced_simple_set {
+                edit_runtime::set_simple_field_forced(
+                    ArtifactType::Rfc,
+                    &mut doc,
+                    simple,
+                    value,
+                    id,
+                )?;
+            } else {
+                edit_runtime::set_simple_field(ArtifactType::Rfc, &mut doc, simple, value, id)?;
+            }
+        }
+        edit_engine::MutationTarget::IndexedItem {
+            origin: edit_engine::TargetOrigin::Simple,
+            container_path,
+            index,
+            item_kind: edit_engine::TargetKind::Scalar,
+            ..
+        } => {
+            let simple = container_path
+                .as_simple()
+                .expect("simple indexed container expected");
+            edit_runtime::set_simple_list_item(
+                ArtifactType::Rfc,
+                &mut doc,
+                simple,
+                *index,
+                value,
+                id,
+            )?;
+        }
+        _ => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                "RFC fields do not support this set path",
+                id,
+            )
+            .into());
+        }
     }
     loaded.data = serde_json::from_value(doc)?;
     loaded.data.updated = Some(today());
@@ -803,35 +902,78 @@ fn set_rfc_field(
 fn set_clause_field(
     config: &Config,
     id: &str,
-    fp: &FieldPath,
+    _fp: &FieldPath,
+    target: &edit_engine::MutationTarget,
     value: &str,
     op: WriteOp,
     allow_forced_simple_set: bool,
 ) -> anyhow::Result<()> {
-    let simple = require_simple_field(fp, id, "Clause fields do not support nested paths")?;
-    if !allow_forced_simple_set
-        && !edit_runtime::supports_simple_set_field(ArtifactType::Clause, simple)
-    {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0201ClauseSchemaInvalid,
-            format!("Unknown field: {simple}"),
-            "",
-        )
-        .into());
-    }
-    crate::validate::validate_field(
-        config,
-        id,
-        crate::validate::ArtifactKind::Clause,
-        simple,
-        value,
-    )?;
     let mut loaded = ClauseJsonAdapter::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
-    if allow_forced_simple_set {
-        edit_runtime::set_simple_field_forced(ArtifactType::Clause, &mut doc, simple, value, id)?;
-    } else {
-        edit_runtime::set_simple_field(ArtifactType::Clause, &mut doc, simple, value, id)?;
+    match target {
+        edit_engine::MutationTarget::Node {
+            path,
+            kind: edit_engine::TargetKind::Scalar,
+            ..
+        } => {
+            let simple =
+                require_simple_field(path, id, "Clause fields do not support nested paths")?;
+            if !allow_forced_simple_set
+                && !edit_runtime::supports_simple_set_field(ArtifactType::Clause, simple)
+            {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0201ClauseSchemaInvalid,
+                    format!("Unknown field: {simple}"),
+                    "",
+                )
+                .into());
+            }
+            crate::validate::validate_field(
+                config,
+                id,
+                crate::validate::ArtifactKind::Clause,
+                simple,
+                value,
+            )?;
+            if allow_forced_simple_set {
+                edit_runtime::set_simple_field_forced(
+                    ArtifactType::Clause,
+                    &mut doc,
+                    simple,
+                    value,
+                    id,
+                )?;
+            } else {
+                edit_runtime::set_simple_field(ArtifactType::Clause, &mut doc, simple, value, id)?;
+            }
+        }
+        edit_engine::MutationTarget::IndexedItem {
+            origin: edit_engine::TargetOrigin::Simple,
+            container_path,
+            index,
+            item_kind: edit_engine::TargetKind::Scalar,
+            ..
+        } => {
+            let simple = container_path
+                .as_simple()
+                .expect("simple indexed container expected");
+            edit_runtime::set_simple_list_item(
+                ArtifactType::Clause,
+                &mut doc,
+                simple,
+                *index,
+                value,
+                id,
+            )?;
+        }
+        _ => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                "Clause fields do not support this set path",
+                id,
+            )
+            .into());
+        }
     }
     loaded.data = serde_json::from_value(doc)?;
     ClauseJsonAdapter::write(config, &loaded, op)?;
@@ -943,79 +1085,55 @@ pub fn add_to_field(
     reject_reason: Option<String>,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Add))?;
+    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Add))?;
+    let artifact = plan.artifact;
+    let fp = plan.field_path.as_ref().expect("validated above");
+    let target = plan
+        .target
+        .as_ref()
+        .expect("mutation planning should produce target");
     let value = resolve_owned_value(value, stdin)?;
     let value = value.as_str();
     match artifact {
         ArtifactType::Adr => {
             let mut entry = AdrTomlAdapter::load(config, id)?;
-            if fp.is_simple() {
-                let simple = fp.as_simple().unwrap();
-                let mut doc = serde_json::to_value(entry.spec())?;
-                if edit_runtime::add_simple_list_value(
-                    ArtifactType::Adr,
-                    &mut doc,
-                    simple,
-                    value,
-                    id,
-                )? {
-                    *entry.spec_mut() = serde_json::from_value(doc)?;
-                } else if simple == "alternatives" {
-                    let ctx = AdrAddContext {
-                        pros,
-                        cons,
-                        reject_reason,
-                    };
-                    adr_add_alternatives(&mut entry, value, &ctx)?;
-                } else {
-                    return Err(cannot_add_to_field_error(id, simple));
-                }
+            if fp.as_simple() == Some("alternatives") {
+                let ctx = AdrAddContext {
+                    pros,
+                    cons,
+                    reject_reason,
+                };
+                adr_add_alternatives(&mut entry, value, &ctx)?;
             } else {
                 let mut doc = serde_json::to_value(entry.spec())?;
-                edit_runtime::add_nested_list_value(ArtifactType::Adr, &mut doc, &fp, value, id)?;
+                add_to_target_doc(ArtifactType::Adr, &mut doc, target, value, id)?;
                 *entry.spec_mut() = serde_json::from_value(doc)?;
             }
             AdrTomlAdapter::write(config, &entry, op)?;
         }
         ArtifactType::WorkItem => {
-            if !fp.is_simple() {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    format!("Work item nested add is not supported for path '{fp}'"),
-                    id,
-                )
-                .into());
-            }
-            let simple = fp.as_simple().unwrap();
             let mut entry = WorkTomlAdapter::load(config, id)?;
-            let mut doc = serde_json::to_value(entry.spec())?;
-            if edit_runtime::add_simple_list_value(
-                ArtifactType::WorkItem,
-                &mut doc,
-                simple,
-                value,
-                id,
-            )? {
-                *entry.spec_mut() = serde_json::from_value(doc)?;
-            } else {
+            if fp.as_simple() == Some("acceptance_criteria") || fp.as_simple() == Some("journal") {
                 let ctx = WorkAddContext {
                     category_override,
                     scope_override,
                 };
-                if simple == "acceptance_criteria" {
+                if fp.as_simple() == Some("acceptance_criteria") {
                     work_add_acceptance_criteria(&mut entry, value, &ctx)?;
-                } else if simple == "journal" {
-                    work_add_journal(&mut entry, value, &ctx)?;
                 } else {
-                    return Err(cannot_add_to_field_error(id, simple));
+                    work_add_journal(&mut entry, value, &ctx)?;
                 }
+            } else {
+                let mut doc = serde_json::to_value(entry.spec())?;
+                add_to_target_doc(ArtifactType::WorkItem, &mut doc, target, value, id)?;
+                *entry.spec_mut() = serde_json::from_value(doc)?;
             }
             WorkTomlAdapter::write(config, &entry, op)?;
         }
         ArtifactType::Rfc => add_json_simple_list_field::<RfcJsonAdapter>(
             config,
             id,
-            &fp,
+            target,
             value,
             op,
             ArtifactType::Rfc,
@@ -1024,42 +1142,23 @@ pub fn add_to_field(
         ArtifactType::Clause => add_json_simple_list_field::<ClauseJsonAdapter>(
             config,
             id,
-            &fp,
+            target,
             value,
             op,
             ArtifactType::Clause,
             "Clause fields do not support nested paths for add",
         )?,
         ArtifactType::Guard => {
-            if !fp.is_simple() {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    format!("Guard nested add is not supported for path '{fp}'"),
-                    id,
-                )
-                .into());
-            }
-            let simple = fp.as_simple().unwrap();
             let mut entry = GuardTomlAdapter::load(config, id)?;
             let mut doc = serde_json::to_value(entry.spec())?;
-            if edit_runtime::add_simple_list_value(
-                ArtifactType::Guard,
-                &mut doc,
-                simple,
-                value,
-                id,
-            )? {
-                *entry.spec_mut() = serde_json::from_value(doc)?;
-            } else {
-                return Err(cannot_add_to_field_error(id, simple));
-            }
+            add_to_target_doc(ArtifactType::Guard, &mut doc, target, value, id)?;
+            *entry.spec_mut() = serde_json::from_value(doc)?;
             GuardTomlAdapter::write(config, &entry, op)?;
         }
     }
 
     if !op.is_preview() {
-        let display_field = fp.to_string();
-        ui::field_added(id, &display_field, value);
+        ui::field_added(id, &target.display_path(), value);
     }
 
     Ok(vec![])
@@ -1068,7 +1167,7 @@ pub fn add_to_field(
 fn add_json_simple_list_field<A>(
     config: &Config,
     id: &str,
-    fp: &FieldPath,
+    target: &edit_engine::MutationTarget,
     value: &str,
     op: WriteOp,
     artifact: ArtifactType,
@@ -1078,7 +1177,18 @@ where
     A: JsonAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
 {
-    let simple = require_simple_field(fp, id, nested_error)?;
+    let edit_engine::MutationTarget::Node {
+        path,
+        kind: edit_engine::TargetKind::List,
+        origin: edit_engine::TargetOrigin::Simple,
+        ..
+    } = target
+    else {
+        return Err(
+            Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, nested_error, id).into(),
+        );
+    };
+    let simple = require_simple_field(path, id, nested_error)?;
     let mut loaded = A::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
     if !edit_runtime::add_simple_list_value(artifact, &mut doc, simple, value, id)? {
@@ -1086,6 +1196,79 @@ where
     }
     loaded.data = serde_json::from_value(doc)?;
     A::write(config, &loaded, op)?;
+    Ok(())
+}
+
+fn reject_match_flags_for_indexed_target(
+    id: &str,
+    target: &edit_engine::MutationTarget,
+    opts: &MatchOptions,
+) -> anyhow::Result<()> {
+    let pattern_provided = opts.pattern.is_some_and(|pattern| !pattern.is_empty());
+    let edit_engine::MutationTarget::IndexedItem { index, .. } = target else {
+        return Ok(());
+    };
+    if pattern_provided || opts.exact || opts.regex || opts.all {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0818PathIndexConflict,
+            "Cannot combine indexed path (e.g., alt[0].cons[1]) with match flags (--at, --exact, --regex, --all, or pattern)",
+            id,
+        )
+        .into());
+    }
+    if let Some(existing_at) = opts.at
+        && existing_at != *index
+    {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0818PathIndexConflict,
+            "Cannot combine indexed path with a different --at value",
+            id,
+        )
+        .into());
+    }
+    Ok(())
+}
+
+fn add_to_target_doc(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    target: &edit_engine::MutationTarget,
+    value: &str,
+    id: &str,
+) -> anyhow::Result<()> {
+    let edit_engine::MutationTarget::Node {
+        path,
+        kind: edit_engine::TargetKind::List,
+        origin,
+        ..
+    } = target
+    else {
+        return match target {
+            edit_engine::MutationTarget::IndexedItem { .. } => Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!(
+                    "Cannot add to indexed path '{}' (use set/remove for a specific element)",
+                    target.display_path()
+                ),
+                id,
+            )
+            .into()),
+            _ => Err(cannot_add_to_field_error(id, &target.display_path())),
+        };
+    };
+
+    match origin {
+        edit_engine::TargetOrigin::Simple => {
+            let simple = path.as_simple().expect("simple list target expected");
+            if !edit_runtime::add_simple_list_value(artifact, doc, simple, value, id)? {
+                return Err(cannot_add_to_field_error(id, simple));
+            }
+        }
+        edit_engine::TargetOrigin::Nested => {
+            edit_runtime::add_nested_list_value(artifact, doc, path, value, id)?;
+        }
+    }
+
     Ok(())
 }
 
@@ -1097,6 +1280,210 @@ fn notify_removed(id: &str, field: &str, removed: &[String], op: WriteOp) {
     }
 }
 
+fn remove_target_from_doc(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    id: &str,
+    target: &edit_engine::MutationTarget,
+    opts: &MatchOptions,
+) -> anyhow::Result<(String, Vec<String>)> {
+    match target {
+        edit_engine::MutationTarget::Node {
+            path,
+            kind: edit_engine::TargetKind::List,
+            origin,
+            ..
+        } => match origin {
+            edit_engine::TargetOrigin::Simple => {
+                let simple = path.as_simple().expect("simple list target expected");
+                let removed = remove_simple_values_from_doc(artifact, doc, simple, id, opts)?
+                    .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
+                Ok((simple.to_string(), removed))
+            }
+            edit_engine::TargetOrigin::Nested => {
+                let display = path.to_string();
+                let removed =
+                    edit_runtime::remove_nested_list_values(artifact, doc, path, id, |items| {
+                        resolve_match_indices(id, &display, items, opts, MatchUse::Remove)
+                    })?;
+                Ok((display, removed))
+            }
+        },
+        edit_engine::MutationTarget::IndexedItem {
+            container_path,
+            index,
+            origin,
+            ..
+        } => match origin {
+            edit_engine::TargetOrigin::Simple => {
+                let simple = container_path
+                    .as_simple()
+                    .expect("simple indexed container expected");
+                let exact = MatchOptions {
+                    pattern: None,
+                    at: Some(*index),
+                    exact: false,
+                    regex: false,
+                    all: false,
+                };
+                let removed = remove_simple_values_from_doc(artifact, doc, simple, id, &exact)?
+                    .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
+                Ok((simple.to_string(), removed))
+            }
+            edit_engine::TargetOrigin::Nested => {
+                let display = container_path.to_string();
+                let removed = edit_runtime::remove_nested_list_values(
+                    artifact,
+                    doc,
+                    container_path,
+                    id,
+                    |items| {
+                        let resolved = self::path::resolve_index(*index, items.len())?;
+                        Ok(vec![resolved])
+                    },
+                )?;
+                Ok((display, removed))
+            }
+        },
+        _ => Err(cannot_remove_from_field_error(id, &target.display_path())),
+    }
+}
+
+fn tick_target_in_doc(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    id: &str,
+    target: &edit_engine::MutationTarget,
+    opts: &MatchOptions,
+    status_str: &str,
+) -> anyhow::Result<String> {
+    match target {
+        edit_engine::MutationTarget::Node {
+            path,
+            kind: edit_engine::TargetKind::List,
+            origin,
+            status_list,
+        } => {
+            if !status_list {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    TICK_NESTED_PATH_ERROR,
+                    id,
+                )
+                .into());
+            }
+            match origin {
+                edit_engine::TargetOrigin::Simple => {
+                    let simple = path.as_simple().expect("simple list target expected");
+                    edit_runtime::tick_simple_status_list_item_with_matcher(
+                        artifact,
+                        doc,
+                        simple,
+                        id,
+                        status_str,
+                        |items| {
+                            resolve_match_indices(id, simple, items, opts, MatchUse::TickSingle)
+                        },
+                    )?
+                    .ok_or_else(|| {
+                        Diagnostic::new(
+                            DiagnosticCode::E0803UnknownField,
+                            format!("Unknown field for tick: {simple}"),
+                            id,
+                        )
+                        .into()
+                    })
+                }
+                edit_engine::TargetOrigin::Nested => {
+                    let display = path.to_string();
+                    edit_runtime::tick_nested_list_item_with_matcher(
+                        artifact,
+                        doc,
+                        path,
+                        id,
+                        status_str,
+                        |items| {
+                            resolve_match_indices(id, &display, items, opts, MatchUse::TickSingle)
+                        },
+                    )
+                }
+            }
+        }
+        edit_engine::MutationTarget::IndexedItem {
+            container_path,
+            index,
+            origin,
+            status_list,
+            ..
+        } => {
+            if !status_list {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    TICK_NESTED_PATH_ERROR,
+                    id,
+                )
+                .into());
+            }
+            let exact = MatchOptions {
+                pattern: None,
+                at: Some(*index),
+                exact: false,
+                regex: false,
+                all: false,
+            };
+            match origin {
+                edit_engine::TargetOrigin::Simple => {
+                    let simple = container_path
+                        .as_simple()
+                        .expect("simple indexed container expected");
+                    edit_runtime::tick_simple_status_list_item_with_matcher(
+                        artifact,
+                        doc,
+                        simple,
+                        id,
+                        status_str,
+                        |items| {
+                            resolve_match_indices(id, simple, items, &exact, MatchUse::TickSingle)
+                        },
+                    )?
+                    .ok_or_else(|| {
+                        Diagnostic::new(
+                            DiagnosticCode::E0803UnknownField,
+                            format!("Unknown field for tick: {simple}"),
+                            id,
+                        )
+                        .into()
+                    })
+                }
+                edit_engine::TargetOrigin::Nested => {
+                    edit_runtime::tick_nested_list_item_with_matcher(
+                        artifact,
+                        doc,
+                        container_path,
+                        id,
+                        status_str,
+                        |items| {
+                            resolve_match_indices(
+                                id,
+                                &container_path.to_string(),
+                                items,
+                                &exact,
+                                MatchUse::TickSingle,
+                            )
+                        },
+                    )
+                }
+            }
+        }
+        _ => Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            TICK_NESTED_PATH_ERROR,
+            id,
+        )
+        .into()),
+    }
+}
+
 pub fn remove_from_field(
     config: &Config,
     id: &str,
@@ -1104,76 +1491,31 @@ pub fn remove_from_field(
     opts: &MatchOptions,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
-
-    let pattern_provided = opts.pattern.is_some_and(|pattern| !pattern.is_empty());
-    let mut normalized_fp = fp.clone();
-    let mut normalized_opts = opts.clone();
-
-    if !fp.is_simple() && fp.has_terminal_index() {
-        let has_match_opts =
-            pattern_provided || opts.at.is_some() || opts.exact || opts.regex || opts.all;
-        if has_match_opts {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0818PathIndexConflict,
-                "Cannot combine indexed path (e.g., alt[0].cons[1]) with match flags (--at, --exact, --regex, --all, or pattern)",
-                id,
-            )
-            .into());
-        }
-    }
-
-    if fp.segments.len() == 1 && fp.has_terminal_index() {
-        let simple = fp.segments[0].name.as_str();
-        let index = fp
-            .terminal_index()
-            .expect("simple indexed field path should expose terminal index");
-        if pattern_provided || opts.exact || opts.regex || opts.all {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0818PathIndexConflict,
-                "Cannot combine indexed path with pattern, --exact, --regex, or --all",
-                id,
-            )
-            .into());
-        }
-        if let Some(existing_at) = opts.at
-            && existing_at != index
-        {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0818PathIndexConflict,
-                "Cannot combine indexed path with a different --at value",
-                id,
-            )
-            .into());
-        }
-        normalized_fp = self::path::parse_field_path(simple)?;
-        normalized_opts.at = Some(index);
-    }
+    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
+    let artifact = plan.artifact;
+    let target = plan
+        .target
+        .as_ref()
+        .expect("mutation planning should produce target");
+    reject_match_flags_for_indexed_target(id, target, opts)?;
 
     match artifact {
-        ArtifactType::Adr => remove_toml_field::<AdrTomlAdapter>(
-            config,
-            id,
-            &normalized_fp,
-            field,
-            &normalized_opts,
-            op,
-            ArtifactType::Adr,
-        )?,
+        ArtifactType::Adr => {
+            remove_toml_field::<AdrTomlAdapter>(config, id, target, opts, op, ArtifactType::Adr)?
+        }
         ArtifactType::WorkItem => remove_toml_field::<WorkTomlAdapter>(
             config,
             id,
-            &normalized_fp,
-            field,
-            &normalized_opts,
+            target,
+            opts,
             op,
             ArtifactType::WorkItem,
         )?,
         ArtifactType::Rfc => remove_json_simple_list_field::<RfcJsonAdapter>(
             config,
             id,
-            &normalized_fp,
-            &normalized_opts,
+            target,
+            opts,
             op,
             ArtifactType::Rfc,
             "RFC fields do not support nested paths for remove",
@@ -1181,8 +1523,8 @@ pub fn remove_from_field(
         ArtifactType::Clause => remove_json_simple_list_field::<ClauseJsonAdapter>(
             config,
             id,
-            &normalized_fp,
-            &normalized_opts,
+            target,
+            opts,
             op,
             ArtifactType::Clause,
             "Clause fields do not support nested paths for remove",
@@ -1190,9 +1532,8 @@ pub fn remove_from_field(
         ArtifactType::Guard => remove_toml_field::<GuardTomlAdapter>(
             config,
             id,
-            &normalized_fp,
-            field,
-            &normalized_opts,
+            target,
+            opts,
             op,
             ArtifactType::Guard,
         )?,
@@ -1209,29 +1550,13 @@ pub fn tick_item(
     status: crate::TickStatus,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let (artifact, fp) = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Tick))?;
-    let mut indexed_match = MatchOptions::default();
-    let (field, effective_opts) = if fp.is_simple() {
-        (fp.as_simple().unwrap(), opts.clone())
-    } else if fp.segments.len() == 1 && fp.segments[0].index.is_some() {
-        if opts.pattern.is_some() || opts.at.is_some() || opts.exact || opts.regex || opts.all {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0818PathIndexConflict,
-                "Cannot combine an indexed tick path with match flags",
-                id,
-            )
-            .into());
-        }
-        indexed_match.at = fp.segments[0].index;
-        (fp.segments[0].name.as_str(), indexed_match)
-    } else {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            TICK_NESTED_PATH_ERROR,
-            id,
-        )
-        .into());
-    };
+    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Tick))?;
+    let artifact = plan.artifact;
+    let target = plan
+        .target
+        .as_ref()
+        .expect("mutation planning should produce target");
+    reject_match_flags_for_indexed_target(id, target, opts)?;
 
     let status_str = match (artifact, status) {
         (ArtifactType::Adr, crate::TickStatus::Accepted) => "accepted",
@@ -1269,8 +1594,8 @@ pub fn tick_item(
         ArtifactType::Adr => tick_toml_field::<AdrTomlAdapter>(
             config,
             id,
-            field,
-            &effective_opts,
+            target,
+            opts,
             op,
             ArtifactType::Adr,
             status_str,
@@ -1278,8 +1603,8 @@ pub fn tick_item(
         ArtifactType::WorkItem => tick_toml_field::<WorkTomlAdapter>(
             config,
             id,
-            field,
-            &effective_opts,
+            target,
+            opts,
             op,
             ArtifactType::WorkItem,
             status_str,
@@ -1318,8 +1643,7 @@ fn remove_simple_values_from_doc(
 fn remove_toml_field<A>(
     config: &Config,
     id: &str,
-    fp: &FieldPath,
-    field: &str,
+    target: &edit_engine::MutationTarget,
     opts: &MatchOptions,
     op: WriteOp,
     artifact: ArtifactType,
@@ -1330,40 +1654,7 @@ where
 {
     let mut entry = A::load(config, id)?;
     let mut doc = serde_json::to_value(entry.spec())?;
-
-    let (display_field, removed) = if let Some(simple) = fp.as_simple() {
-        let removed = remove_simple_values_from_doc(artifact, &mut doc, simple, id, opts)?
-            .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
-        (simple.to_string(), removed)
-    } else if fp.segments.len() >= 2 {
-        // Nested subfield remove: e.g., alt[0].pros or alt[0].cons[1]
-        let removed = if fp.has_terminal_index() {
-            let sub_idx = fp.segments.last().and_then(|seg| seg.index).unwrap();
-            let mut container_fp = fp.clone();
-            if let Some(last) = container_fp.segments.last_mut() {
-                last.index = None;
-            }
-            edit_runtime::remove_nested_list_values(
-                artifact,
-                &mut doc,
-                &container_fp,
-                id,
-                |items| {
-                    let resolved = self::path::resolve_index(sub_idx, items.len())?;
-                    Ok(vec![resolved])
-                },
-            )?
-        } else {
-            edit_runtime::remove_nested_list_values(artifact, &mut doc, fp, id, |items| {
-                resolve_match_indices(id, field, items, opts, MatchUse::Remove)
-            })?
-        };
-        (field.to_string(), removed)
-    } else {
-        // Root item remove: e.g., alt[0], journal[0], notes[0]
-        let removed = edit_runtime::remove_nested_root_item(artifact, &mut doc, fp, id)?;
-        (field.to_string(), vec![removed])
-    };
+    let (display_field, removed) = remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
 
     *entry.spec_mut() = serde_json::from_value(doc)?;
     A::write(config, &entry, op)?;
@@ -1374,7 +1665,7 @@ where
 fn remove_json_simple_list_field<A>(
     config: &Config,
     id: &str,
-    fp: &FieldPath,
+    target: &edit_engine::MutationTarget,
     opts: &MatchOptions,
     op: WriteOp,
     artifact: ArtifactType,
@@ -1384,21 +1675,33 @@ where
     A: JsonAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
 {
-    let simple = require_simple_field(fp, id, nested_error)?;
     let mut loaded = A::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
-    let removed = remove_simple_values_from_doc(artifact, &mut doc, simple, id, opts)?
-        .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
+    let (display_field, removed) = remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
+    if !matches!(
+        target,
+        edit_engine::MutationTarget::Node {
+            origin: edit_engine::TargetOrigin::Simple,
+            ..
+        } | edit_engine::MutationTarget::IndexedItem {
+            origin: edit_engine::TargetOrigin::Simple,
+            ..
+        }
+    ) {
+        return Err(
+            Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, nested_error, id).into(),
+        );
+    }
     loaded.data = serde_json::from_value(doc)?;
     A::write(config, &loaded, op)?;
-    notify_removed(id, simple, &removed, op);
+    notify_removed(id, &display_field, &removed, op);
     Ok(())
 }
 
 fn tick_toml_field<A>(
     config: &Config,
     id: &str,
-    field: &str,
+    target: &edit_engine::MutationTarget,
     opts: &MatchOptions,
     op: WriteOp,
     artifact: ArtifactType,
@@ -1408,25 +1711,9 @@ where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,
 {
-    if !edit_rules::simple_field_supports_verb(artifact.rule_key(), field, edit_rules::Verb::Tick) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0803UnknownField,
-            format!("Unknown field for tick: {field}"),
-            id,
-        )
-        .into());
-    }
     let mut entry = A::load(config, id)?;
     let mut doc = serde_json::to_value(entry.spec())?;
-    let ticked_text = edit_runtime::tick_simple_status_list_item_with_matcher(
-        artifact,
-        &mut doc,
-        field,
-        id,
-        status_str,
-        |items| resolve_match_indices(id, field, items, opts, MatchUse::TickSingle),
-    )?
-    .unwrap_or_else(|| unreachable!("validated fields with tick verb must be status lists"));
+    let ticked_text = tick_target_in_doc(artifact, &mut doc, id, target, opts, status_str)?;
     *entry.spec_mut() = serde_json::from_value(doc)?;
     A::write(config, &entry, op)?;
     Ok(ticked_text)

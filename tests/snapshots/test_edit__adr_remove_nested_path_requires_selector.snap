@@ -1,6 +1,6 @@
 ---
 source: tests/test_edit.rs
-assertion_line: 837
+assertion_line: 1450
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl adr new Selector Test
@@ -12,5 +12,5 @@ Added 'Opt1' to ADR-0001.alternatives
 exit: 0
 
 $ govctl adr remove ADR-0001 alt[0].cons
-error[E0801]: Remove from ADR-0001.alt[0].cons requires a pattern or --at <index> (ADR-0001)
+error[E0801]: Remove from ADR-0001.alternatives[0].cons requires a pattern or --at <index> (ADR-0001)
 exit: 1

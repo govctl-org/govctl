@@ -52,11 +52,6 @@ impl FieldPath {
         self.segments.last().is_some_and(|s| s.index.is_some())
     }
 
-    /// Return the explicit index on the final segment, if present.
-    pub fn terminal_index(&self) -> Option<i32> {
-        self.segments.last().and_then(|s| s.index)
-    }
-
     /// Normalize aliases on each path segment (`alt` -> `alternatives`, etc.).
     pub fn normalize_aliases(mut self) -> Self {
         for seg in &mut self.segments {
@@ -200,21 +195,6 @@ pub fn resolve_index(idx: i32, len: usize) -> anyhow::Result<usize> {
         .into());
     }
     Ok(actual as usize)
-}
-
-/// Require that a segment has an index, resolve it against a length.
-pub fn require_index(seg: &PathSegment, len: usize) -> anyhow::Result<usize> {
-    let idx = seg.index.ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0816PathIndexOutOfBounds,
-            format!(
-                "Field '{}' requires an index (e.g., {}[0])",
-                seg.name, seg.name
-            ),
-            "path",
-        )
-    })?;
-    resolve_index(idx, len)
 }
 
 #[cfg(test)]
@@ -445,27 +425,5 @@ mod tests {
     #[test]
     fn test_resolve_index_empty_array() {
         assert!(resolve_index(0, 0).is_err());
-    }
-
-    // =========================================================================
-    // require_index
-    // =========================================================================
-
-    #[test]
-    fn test_require_index_present() {
-        let seg = PathSegment {
-            name: "alt".to_string(),
-            index: Some(1),
-        };
-        assert_eq!(require_index(&seg, 3).unwrap(), 1);
-    }
-
-    #[test]
-    fn test_require_index_missing() {
-        let seg = PathSegment {
-            name: "alt".to_string(),
-            index: None,
-        };
-        assert!(require_index(&seg, 3).is_err());
     }
 }
