@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-04-08
+
 ### Added
 
 - Route existing set/add/remove/tick verbs through the same canonical edit planning path (WI-2026-04-06-002)
