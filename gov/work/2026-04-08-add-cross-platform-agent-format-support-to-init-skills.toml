@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-08-002"
+title = "Add cross-platform agent format support to init-skills"
+status = "done"
+created = "2026-04-08"
+started = "2026-04-08"
+completed = "2026-04-08"
+refs = ["RFC-0002"]
+
+[content]
+description = "Add --format and --dir flags to init-skills for Codex CLI compatibility. build.rs generates Codex TOML agent templates at compile time from .claude/agents/*.md source of truth. RFC-0002 amended to v0.6.1."
+
+[[content.journal]]
+date = "2026-04-08"
+scope = "init-skills"
+content = "Implemented --format and --dir flags. build.rs codegen converts .claude/agents/*.md to Codex TOML at compile time using serde_yaml + toml crates. RFC-0002 amended to v0.6.1. All tests pass (192 unit + 20 integration suites)."
+
+[[content.acceptance_criteria]]
+text = "--format codex writes .toml agents with developer_instructions"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "--dir overrides output directory without config editing"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0002 amended with new syntax"
+status = "done"
+category = "chore"
