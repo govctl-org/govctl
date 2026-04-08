@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-08-001"
+title = "Refactor release CI metadata checks and release note generation"
+status = "done"
+created = "2026-04-08"
+started = "2026-04-08"
+completed = "2026-04-08"
+
+[content]
+description = "Refactor the tag-driven release workflow so it validates version metadata, requires tags to point at main, publishes checksums, and uses deterministic release notes from repository state instead of a stale hardcoded body."
+
+[[content.journal]]
+date = "2026-04-08"
+scope = "release"
+content = "Refactored release.yml: added tag metadata verification, origin/main ancestry guard, deterministic release-notes generation from CHANGELOG, and SHA256SUMS publishing; govctl check and YAML parse validation pass."
+
+[[content.acceptance_criteria]]
+text = "release workflow fails when tag version does not match Cargo.toml, CHANGELOG.md, or gov/releases.toml"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "release workflow refuses to publish tags that are not reachable from origin/main"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "release workflow publishes SHA256SUMS alongside binary archives"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "release notes body is generated from the tagged version section instead of a stale hardcoded workflow string"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo run --quiet -- check passes after workflow refactor"
+status = "done"
+category = "chore"

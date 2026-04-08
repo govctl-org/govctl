@@ -9,9 +9,89 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
+  verify:
+    name: Verify Release Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      commit: ${{ steps.meta.outputs.commit }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Extract tag metadata
+        id: meta
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          COMMIT="$(git rev-parse "${GITHUB_REF_NAME}^{commit}")"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "commit=${COMMIT}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify tag is reachable from origin/main
+        shell: bash
+        run: |
+          git fetch origin main
+          COMMIT="${{ steps.meta.outputs.commit }}"
+          if ! git merge-base --is-ancestor "${COMMIT}" "origin/main"; then
+            echo "Tagged commit ${COMMIT} is not reachable from origin/main" >&2
+            exit 1
+          fi
+
+      - name: Verify release metadata versions match tag
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          CARGO_VERSION="$(sed -n 's/^version = \"\\([^\"]*\\)\"$/\\1/p' Cargo.toml | head -n1)"
+          if [ "${CARGO_VERSION}" != "${VERSION}" ]; then
+            echo "Cargo.toml version ${CARGO_VERSION} does not match tag v${VERSION}" >&2
+            exit 1
+          fi
+
+          if ! grep -Fq "## [${VERSION}] -" CHANGELOG.md; then
+            echo "CHANGELOG.md is missing section for ${VERSION}" >&2
+            exit 1
+          fi
+
+          if ! grep -Fq "version = \"${VERSION}\"" gov/releases.toml; then
+            echo "gov/releases.toml is missing release entry for ${VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Generate release notes from CHANGELOG
+        shell: bash
+        run: |
+          VERSION="${{ steps.meta.outputs.version }}"
+          PREVIOUS_TAG="$(git tag --sort=-version:refname | sed -n '2p')"
+          {
+            printf '## %s\n\n' "govctl v${VERSION}"
+            awk -v version="${VERSION}" '
+              $0 ~ "^## \\[" version "\\] - " { capture=1; next }
+              capture && $0 ~ "^## \\[" { exit }
+              capture { print }
+            ' CHANGELOG.md
+            if [ -n "${PREVIOUS_TAG}" ]; then
+              printf '\n**Full Changelog**: https://github.com/%s/compare/%s...v%s\n' \
+                "${GITHUB_REPOSITORY}" \
+                "${PREVIOUS_TAG}" \
+                "${VERSION}"
+            fi
+          } > release-notes.md
+
+      - name: Upload release notes
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: release-notes.md
+          retention-days: 1
+
   # Build binaries for all platforms
   build:
     name: Build ${{ matrix.target }}${{ matrix.suffix }}
+    needs: verify
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -96,7 +176,7 @@ jobs:
   # Create GitHub release with all artifacts
   release:
     name: Create Release
-    needs: build
+    needs: [verify, build]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -114,8 +194,16 @@ jobs:
       - name: List artifacts
         run: ls -la artifacts/
 
+      - name: Generate SHA256SUMS
+        shell: bash
+        run: |
+          cd artifacts
+          find . -maxdepth 1 -type f ! -name 'release-notes.md' -print0 \
+            | sort -z \
+            | xargs -0 sha256sum > SHA256SUMS
+
       - name: Extract version
-        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+        run: echo "VERSION=v${{ needs.verify.outputs.version }}" >> $GITHUB_ENV
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -123,9 +211,8 @@ jobs:
           name: ${{ env.VERSION }}
           draft: false
           prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
-          generate_release_notes: true
-          body: |
-            TUI is now enabled by default in release binaries.
+          generate_release_notes: false
+          body_path: artifacts/release-notes.md
           files: artifacts/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
