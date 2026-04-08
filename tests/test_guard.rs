@@ -43,6 +43,15 @@ fn test_guard_new_duplicate_rejected() {
 }
 
 #[test]
+fn test_guard_new_invalid_title_rejected_with_code() {
+    let temp_dir = init_project();
+
+    let output = run_commands(temp_dir.path(), &[&["guard", "new", "123 !!!"]]);
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    assert!(output.contains("error[E1006]"), "output: {}", output);
+}
+
+#[test]
 fn test_guard_list() {
     let temp_dir = init_project();
     write_guard(temp_dir.path(), "GUARD-ALPHA", "true");
@@ -63,6 +72,37 @@ fn test_guard_show() {
     assert!(output.contains("exit: 0"), "output: {}", output);
     assert!(output.contains("GUARD-ECHO"), "output: {}", output);
     assert!(output.contains("echo hello"), "output: {}", output);
+}
+
+#[test]
+fn test_guard_show_json_output() {
+    let temp_dir = init_project();
+    write_guard(temp_dir.path(), "GUARD-ECHO", "echo hello");
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["guard", "show", "GUARD-ECHO", "-o", "json"]],
+    );
+    assert!(
+        output.contains("\"id\": \"GUARD-ECHO\""),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("\"command\": \"echo hello\""),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("exit: 0"), "output: {}", output);
+}
+
+#[test]
+fn test_guard_show_missing_returns_coded_error() {
+    let temp_dir = init_project();
+
+    let output = run_commands(temp_dir.path(), &[&["guard", "show", "GUARD-MISSING"]]);
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    assert!(output.contains("error[E1002]"), "output: {}", output);
 }
 
 #[test]
@@ -163,6 +203,15 @@ fn test_guard_delete_force_does_not_bypass_reference_checks() {
 }
 
 #[test]
+fn test_guard_delete_missing_returns_coded_error() {
+    let temp_dir = init_project();
+
+    let output = run_commands(temp_dir.path(), &[&["guard", "delete", "GUARD-MISSING"]]);
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    assert!(output.contains("error[E1002]"), "output: {}", output);
+}
+
+#[test]
 fn test_guard_set_timeout_secs() {
     let temp_dir = init_project();
     write_guard(temp_dir.path(), "GUARD-ECHO", "true");
@@ -175,6 +224,56 @@ fn test_guard_set_timeout_secs() {
         ],
     );
     assert!(output.contains("30"), "output: {}", output);
+}
+
+#[test]
+fn test_guard_nested_object_root_edit_paths() {
+    let temp_dir = init_project();
+    write_guard(temp_dir.path(), "GUARD-ECHO", "echo old");
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &[
+                "guard",
+                "set",
+                "GUARD-ECHO",
+                "check.command",
+                "echo nested legacy",
+            ],
+            &[
+                "guard",
+                "edit",
+                "GUARD-ECHO",
+                "check.timeout_secs",
+                "--set",
+                "45",
+            ],
+            &["guard", "get", "GUARD-ECHO", "command"],
+            &["guard", "get", "GUARD-ECHO", "timeout_secs"],
+        ],
+    );
+
+    assert!(
+        output.contains("Set GUARD-ECHO.check.command = echo nested legacy"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Set GUARD-ECHO.check.timeout_secs = 45"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl guard get GUARD-ECHO command\necho nested legacy"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl guard get GUARD-ECHO timeout_secs\n45"),
+        "output: {}",
+        output
+    );
 }
 
 // --- Helpers ---

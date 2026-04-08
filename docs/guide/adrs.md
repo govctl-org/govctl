@@ -52,8 +52,8 @@ Use govctl to get/set fields:
 # Get specific field
 govctl adr get ADR-0003 status
 
-# Set field value
-govctl adr set ADR-0003 status accepted
+# Set content field value
+govctl adr set ADR-0003 decision "We will use Redis because..."
 
 # Set multi-line content from stdin
 govctl adr set ADR-0003 context --stdin <<'EOF'

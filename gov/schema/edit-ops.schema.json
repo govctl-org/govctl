@@ -85,19 +85,11 @@
     },
     "nestedRootRule": {
       "type": "object",
-      "required": [
-        "artifact",
-        "root",
-        "content_path",
-        "text_key",
-        "requires_index",
-        "max_depth",
-        "fields"
-      ],
+      "required": ["artifact", "root", "content_path", "node"],
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["adr", "work"]
+          "enum": ["adr", "work", "guard"]
         },
         "root": {
           "type": "string",
@@ -111,48 +103,90 @@
           },
           "minItems": 1
         },
-        "text_key": {
-          "oneOf": [
-            { "type": "string", "pattern": "^[a-z_][a-z0-9_]*$" },
-            { "type": "null" }
-          ]
-        },
-        "requires_index": {
-          "type": "boolean"
-        },
-        "max_depth": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "fields": {
-          "type": "array",
-          "items": { "$ref": "#/definitions/nestedFieldRule" }
-        }
+        "node": { "$ref": "#/definitions/nestedNodeRule" }
       },
       "additionalProperties": false
     },
     "nestedFieldRule": {
       "type": "object",
-      "required": ["name", "kind", "verbs"],
+      "required": ["name", "node"],
       "properties": {
         "name": {
           "type": "string",
           "pattern": "^[a-z_][a-z0-9_]*$"
         },
-        "kind": {
-          "type": "string",
-          "enum": ["scalar", "list"]
-        },
-        "verbs": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "enum": ["get", "set", "add", "remove", "tick"]
-          },
-          "minItems": 1
-        }
+        "node": { "$ref": "#/definitions/nestedNodeRule" }
       },
       "additionalProperties": false
+    },
+    "nestedNodeRule": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "verbs"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["scalar"] },
+            "verbs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["get", "set", "add", "remove", "tick"]
+              },
+              "minItems": 1
+            },
+            "set_mode": {
+              "oneOf": [
+                { "$ref": "#/definitions/runtimeSetMode" },
+                { "type": "null" }
+              ]
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "verbs", "fields"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["object"] },
+            "verbs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["get", "set", "add", "remove", "tick"]
+              },
+              "minItems": 1
+            },
+            "fields": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/nestedFieldRule" }
+            }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["kind", "verbs", "item"],
+          "properties": {
+            "kind": { "type": "string", "enum": ["list"] },
+            "verbs": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": ["get", "set", "add", "remove", "tick"]
+              },
+              "minItems": 1
+            },
+            "text_key": {
+              "oneOf": [
+                { "type": "string", "pattern": "^[a-z_][a-z0-9_]*$" },
+                { "type": "null" }
+              ]
+            },
+            "item": { "$ref": "#/definitions/nestedNodeRule" }
+          },
+          "additionalProperties": false
+        }
+      ]
     },
     "simpleFieldRule": {
       "type": "object",
@@ -235,7 +269,13 @@
         },
         "render": {
           "type": "string",
-          "enum": ["scalar", "csv_strings", "line_strings", "status_lines"]
+          "enum": [
+            "scalar",
+            "csv_strings",
+            "line_strings",
+            "text_lines",
+            "status_lines"
+          ]
         },
         "status_key": {
           "type": "string",

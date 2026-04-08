@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-07-021"
+title = "Simplify command planning and harden CLI help contracts"
+status = "done"
+created = "2026-04-07"
+started = "2026-04-07"
+completed = "2026-04-07"
+
+[content]
+description = "Final scope: replace stale command-router intermediate plans with the final command-planning shape, keep shared CLI command families where they reduce real duplication, and raise command help to a spec-grade contract for agent use."
+
+[[content.journal]]
+date = "2026-04-07"
+scope = "governance"
+content = "Created replacement WI to represent the final command-planning/help outcome before removing stale intermediate work items"
+
+[[content.journal]]
+date = "2026-04-07"
+scope = "governance"
+content = "Removed stale uncommitted intermediate WI files directly after confirming govctl cannot delete or cancel done work items; retained WI-2026-04-07-001/002 as meaningful final units and consolidated the rest into WI-2026-04-07-021."
+
+[[content.acceptance_criteria]]
+text = "command planning uses the final direct-to-plan structure without retaining stale intermediate router abstractions"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "key command help acts as an agent-usable contract, including resource root navigation and resource-specific get/tick help"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "stale intermediate work items from abandoned router and ADR-v3 exploration are removed"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test -q, cargo run --quiet -- check, and cargo clippy --all-targets --all-features -- -D warnings pass"
+status = "done"
+category = "chore"

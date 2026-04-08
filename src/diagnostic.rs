@@ -62,6 +62,9 @@ pub enum DiagnosticCode {
     // Config errors (E05xx)
     E0501ConfigInvalid,
     E0502PathNotFound,
+    E0503LockTimeout,
+    E0504PathConflict,
+    E0505MigrationRequired,
 
     // Signature errors (E06xx)
     E0601SignatureMismatch,
@@ -80,6 +83,8 @@ pub enum DiagnosticCode {
     E1003GuardDuplicate,
     E1004GuardCheckFailed,
     E1005GuardTimeout,
+    E1006GuardInvalidTitle,
+    E1007GuardStillReferenced,
 
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
@@ -100,6 +105,8 @@ pub enum DiagnosticCode {
     E0816PathIndexOutOfBounds,
     E0817PathTypeMismatch,
     E0818PathIndexConflict,
+    E0819UnknownArtifactType,
+    E0820InvalidFieldValue,
 
     // General errors (E09xx)
     E0901IoError,
@@ -117,6 +124,8 @@ pub enum DiagnosticCode {
     W0108WorkPlaceholderDescription,
     W0109WorkNoActive,
     W0110SchemaOutdated,
+    W0111AdrMigrationNeedsReview,
+    W0112AdrMigrationWarning,
 }
 
 impl DiagnosticCode {
@@ -131,7 +140,9 @@ impl DiagnosticCode {
             | Self::W0107SourceRefOutdated
             | Self::W0108WorkPlaceholderDescription
             | Self::W0109WorkNoActive
-            | Self::W0110SchemaOutdated => DiagnosticLevel::Warning,
+            | Self::W0110SchemaOutdated
+            | Self::W0111AdrMigrationNeedsReview
+            | Self::W0112AdrMigrationWarning => DiagnosticLevel::Warning,
             _ => DiagnosticLevel::Error,
         }
     }
@@ -181,6 +192,9 @@ impl DiagnosticCode {
             // E05xx - Config
             Self::E0501ConfigInvalid => "E0501",
             Self::E0502PathNotFound => "E0502",
+            Self::E0503LockTimeout => "E0503",
+            Self::E0504PathConflict => "E0504",
+            Self::E0505MigrationRequired => "E0505",
             // E06xx - Signature
             Self::E0601SignatureMismatch => "E0601",
             Self::E0602SignatureMissing => "E0602",
@@ -196,6 +210,8 @@ impl DiagnosticCode {
             Self::E1003GuardDuplicate => "E1003",
             Self::E1004GuardCheckFailed => "E1004",
             Self::E1005GuardTimeout => "E1005",
+            Self::E1006GuardInvalidTitle => "E1006",
+            Self::E1007GuardStillReferenced => "E1007",
             // E08xx - CLI/Command
             Self::E0801MissingRequiredArg => "E0801",
             Self::E0802ConflictingArgs => "E0802",
@@ -215,6 +231,8 @@ impl DiagnosticCode {
             Self::E0816PathIndexOutOfBounds => "E0816",
             Self::E0817PathTypeMismatch => "E0817",
             Self::E0818PathIndexConflict => "E0818",
+            Self::E0819UnknownArtifactType => "E0819",
+            Self::E0820InvalidFieldValue => "E0820",
             // E09xx - General
             Self::E0901IoError => "E0901",
             Self::E0902JsonParseError => "E0902",
@@ -230,6 +248,8 @@ impl DiagnosticCode {
             Self::W0108WorkPlaceholderDescription => "W0108",
             Self::W0109WorkNoActive => "W0109",
             Self::W0110SchemaOutdated => "W0110",
+            Self::W0111AdrMigrationNeedsReview => "W0111",
+            Self::W0112AdrMigrationWarning => "W0112",
         }
     }
 }

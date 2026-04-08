@@ -1,0 +1,28 @@
+---
+source: tests/test_help.rs
+assertion_line: 31
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work get --help
+Get work item metadata or specific field
+
+Usage: govctl work get [OPTIONS] <ID> [FIELD]
+
+Arguments:
+  <ID>     Artifact ID
+  [FIELD]  Field name or path (omit to show all)
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+VALID FIELDS:
+    - title, description, status, completed_at, refs
+    - journal, notes, acceptance_criteria
+
+EXAMPLES:
+    govctl work get WI-<DATE>-001
+    govctl work get WI-<DATE>-001 description
+    govctl work get WI-<DATE>-001 acceptance_criteria[0].status
+exit: 0

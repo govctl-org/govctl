@@ -5,6 +5,7 @@
 mod common;
 
 use common::{init_project, normalize_output, run_commands, today};
+use std::fs;
 
 // ============================================================================
 // RFC Finalize Tests
@@ -84,6 +85,36 @@ fn test_finalize_nonexistent_rfc() {
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "finalize", "RFC-9999", "normative"]],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_finalize_legacy_json_rfc_requires_migrate() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    fs::create_dir_all(&rfc_dir).unwrap();
+    fs::write(
+        rfc_dir.join("rfc.json"),
+        r#"{
+  "rfc_id": "RFC-0001",
+  "title": "Legacy RFC",
+  "version": "0.1.0",
+  "status": "draft",
+  "phase": "spec",
+  "owners": ["test@example.com"],
+  "created": "2026-01-01",
+  "sections": [],
+  "changelog": [{ "version": "0.1.0", "date": "2026-01-01", "notes": "Initial draft" }]
+}"#,
+    )
+    .unwrap();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "finalize", "RFC-0001", "normative"]],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
@@ -235,6 +266,32 @@ fn test_advance_sets_updated_field() {
             &["rfc", "advance", "RFC-0001", "impl"],
             &["rfc", "get", "RFC-0001", "updated"],
         ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_deprecate_legacy_json_clause_requires_migrate() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let clauses_dir = temp_dir.path().join("gov/rfc/RFC-0001/clauses");
+    fs::create_dir_all(&clauses_dir).unwrap();
+    fs::write(
+        clauses_dir.join("C-TEST.json"),
+        r#"{
+  "clause_id": "C-TEST",
+  "title": "Legacy Clause",
+  "kind": "normative",
+  "status": "active",
+  "text": "Legacy clause content."
+}"#,
+    )
+    .unwrap();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["clause", "deprecate", "RFC-0001:C-TEST", "--force"]],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }

@@ -33,17 +33,31 @@ struct NestedRootRule {
     artifact: String,
     root: String,
     content_path: Vec<String>,
-    text_key: Option<String>,
-    requires_index: bool,
-    max_depth: usize,
-    fields: Vec<NestedFieldRule>,
+    node: NestedNodeRule,
 }
 
 #[derive(Debug, Deserialize)]
 struct NestedFieldRule {
     name: String,
-    kind: String,
-    verbs: Vec<String>,
+    node: NestedNodeRule,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+enum NestedNodeRule {
+    Scalar {
+        verbs: Vec<String>,
+        set_mode: Option<RuntimeSetMode>,
+    },
+    Object {
+        verbs: Vec<String>,
+        fields: Vec<NestedFieldRule>,
+    },
+    List {
+        verbs: Vec<String>,
+        text_key: Option<String>,
+        item: Box<NestedNodeRule>,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -255,48 +269,29 @@ fn render_edit_rules(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
     }
     out.push_str("];\n\n");
 
-    out.push_str("pub const NESTED_RULES: &[NestedRootRule] = &[\n");
+    let mut nested_defs = String::new();
+    let mut nested_roots = String::new();
     for root in &spec.nested_rules {
-        out.push_str("    NestedRootRule {\n");
-        out.push_str(&format!("        artifact: {:?},\n", root.artifact));
-        out.push_str(&format!("        root: {:?},\n", root.root));
-        out.push_str(&format!(
+        let const_name = format!(
+            "NESTED_NODE_{}_{}_ROOT",
+            root.artifact.to_uppercase(),
+            sanitize_const_fragment(&root.root)
+        );
+        render_nested_node_defs(&mut nested_defs, &const_name, &root.node)?;
+        nested_roots.push_str("    NestedRootRule {\n");
+        nested_roots.push_str(&format!("        artifact: {:?},\n", root.artifact));
+        nested_roots.push_str(&format!("        root: {:?},\n", root.root));
+        nested_roots.push_str(&format!(
             "        content_path: {},\n",
             runtime_path_expr(&root.content_path)
         ));
-        out.push_str(&format!(
-            "        text_key: {},\n",
-            match &root.text_key {
-                Some(k) => format!("Some({k:?})"),
-                None => "None".to_string(),
-            }
-        ));
-        out.push_str(&format!(
-            "        requires_index: {},\n",
-            root.requires_index
-        ));
-        out.push_str(&format!("        max_depth: {},\n", root.max_depth));
-        out.push_str("        fields: &[\n");
-        for field in &root.fields {
-            let kind = match field.kind.as_str() {
-                "scalar" => "Scalar",
-                "list" => "List",
-                other => return Err(format!("unknown field kind in SSOT: {other}").into()),
-            };
-
-            out.push_str("            NestedFieldRule {\n");
-            out.push_str(&format!("                name: {:?},\n", field.name));
-            out.push_str(&format!("                kind: FieldKind::{kind},\n"));
-            out.push_str("                verbs: &[\n");
-            for verb in &field.verbs {
-                out.push_str(&format!("                    {verb:?},\n"));
-            }
-            out.push_str("                ],\n");
-            out.push_str("            },\n");
-        }
-        out.push_str("        ],\n");
-        out.push_str("    },\n");
+        nested_roots.push_str(&format!("        node: &{},\n", const_name));
+        nested_roots.push_str("    },\n");
     }
+
+    out.push_str(&nested_defs);
+    out.push_str("pub const NESTED_RULES: &[NestedRootRule] = &[\n");
+    out.push_str(&nested_roots);
     out.push_str("];\n");
 
     out.push('\n');
@@ -318,6 +313,148 @@ fn render_edit_rules(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
     out.push_str("];\n");
 
     Ok(out)
+}
+
+fn sanitize_const_fragment(name: &str) -> String {
+    name.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() {
+                ch.to_ascii_uppercase()
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn render_nested_node_defs(
+    out: &mut String,
+    const_name: &str,
+    node: &NestedNodeRule,
+) -> Result<(), Box<dyn Error>> {
+    match node {
+        NestedNodeRule::Scalar { verbs, set_mode } => {
+            out.push_str(&format!(
+                "const {const_name}: NestedNodeRule = NestedNodeRule {{\n"
+            ));
+            out.push_str("    kind: NestedNodeKind::Scalar,\n");
+            out.push_str(&format!("    verbs: {},\n", render_verbs_expr(verbs)));
+            out.push_str("    text_key: None,\n");
+            out.push_str(&format!(
+                "    set_mode: {},\n",
+                render_nested_scalar_mode_expr(set_mode.as_ref())?
+            ));
+            out.push_str("    item: None,\n");
+            out.push_str("    fields: &[],\n");
+            out.push_str("};\n\n");
+        }
+        NestedNodeRule::Object { verbs, fields } => {
+            for field in fields {
+                let child_const = format!("{const_name}_{}", sanitize_const_fragment(&field.name));
+                render_nested_node_defs(out, &child_const, &field.node)?;
+            }
+            let fields_const = format!("{const_name}_FIELDS");
+            out.push_str(&format!("const {fields_const}: &[NestedChildRule] = &[\n"));
+            for field in fields {
+                let child_const = format!("{const_name}_{}", sanitize_const_fragment(&field.name));
+                out.push_str("    NestedChildRule {\n");
+                out.push_str(&format!("        name: {:?},\n", field.name));
+                out.push_str(&format!("        node: &{},\n", child_const));
+                out.push_str("    },\n");
+            }
+            out.push_str("];\n");
+            out.push_str(&format!(
+                "const {const_name}: NestedNodeRule = NestedNodeRule {{\n"
+            ));
+            out.push_str("    kind: NestedNodeKind::Object,\n");
+            out.push_str(&format!("    verbs: {},\n", render_verbs_expr(verbs)));
+            out.push_str("    text_key: None,\n");
+            out.push_str("    set_mode: None,\n");
+            out.push_str("    item: None,\n");
+            out.push_str(&format!("    fields: {},\n", fields_const));
+            out.push_str("};\n\n");
+        }
+        NestedNodeRule::List {
+            verbs,
+            text_key,
+            item,
+        } => {
+            let item_const = format!("{const_name}_ITEM");
+            render_nested_node_defs(out, &item_const, item)?;
+            out.push_str(&format!(
+                "const {const_name}: NestedNodeRule = NestedNodeRule {{\n"
+            ));
+            out.push_str("    kind: NestedNodeKind::List,\n");
+            out.push_str(&format!("    verbs: {},\n", render_verbs_expr(verbs)));
+            out.push_str(&format!(
+                "    text_key: {},\n",
+                match text_key {
+                    Some(key) => format!("Some({key:?})"),
+                    None => "None".to_string(),
+                }
+            ));
+            out.push_str("    set_mode: None,\n");
+            out.push_str(&format!("    item: Some(&{}),\n", item_const));
+            out.push_str("    fields: &[],\n");
+            out.push_str("};\n\n");
+        }
+    }
+    Ok(())
+}
+
+fn render_verbs_expr(verbs: &[String]) -> String {
+    let mut out = String::from("&[");
+    for (idx, verb) in verbs.iter().enumerate() {
+        if idx > 0 {
+            out.push_str(", ");
+        }
+        out.push_str(&format!("{verb:?}"));
+    }
+    out.push(']');
+    out
+}
+
+fn render_nested_scalar_mode_expr(mode: Option<&RuntimeSetMode>) -> Result<String, Box<dyn Error>> {
+    match mode {
+        None => Ok("None".to_string()),
+        Some(RuntimeSetMode::String) => Ok("Some(NestedScalarMode::String)".to_string()),
+        Some(RuntimeSetMode::Integer) => Ok("Some(NestedScalarMode::Integer)".to_string()),
+        Some(RuntimeSetMode::OptionalString { empty_as_null }) => Ok(format!(
+            "Some(NestedScalarMode::OptionalString {{ empty_as_null: {} }})",
+            empty_as_null
+        )),
+        Some(RuntimeSetMode::Enum {
+            allowed,
+            invalid_msg,
+            code,
+        }) => {
+            let allowed_expr = {
+                let mut expr = String::from("&[");
+                for (idx, value) in allowed.iter().enumerate() {
+                    if idx > 0 {
+                        expr.push_str(", ");
+                    }
+                    expr.push_str(&format!("{value:?}"));
+                }
+                expr.push(']');
+                expr
+            };
+            let code_expr = match code {
+                Some(code) => format!("Some(DiagnosticCode::{})", diagnostic_code_variant(code)?),
+                None => "None".to_string(),
+            };
+            Ok(format!(
+                "Some(NestedScalarMode::Enum {{ allowed: {}, invalid_msg: {:?}, code: {} }})",
+                allowed_expr, invalid_msg, code_expr
+            ))
+        }
+    }
+}
+
+fn diagnostic_code_variant(code: &str) -> Result<&str, Box<dyn Error>> {
+    code.strip_prefix('E')
+        .map(|_| code)
+        .ok_or_else(|| format!("invalid diagnostic code in SSOT: {code}").into())
 }
 
 fn render_edit_runtime(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
@@ -388,6 +525,12 @@ fn runtime_get_expr(get: Option<&RuntimeGetRule>) -> Result<String, Box<dyn Erro
         "scalar" => "RenderMode::Scalar".to_string(),
         "csv_strings" => "RenderMode::CsvStrings".to_string(),
         "line_strings" => "RenderMode::LineStrings".to_string(),
+        "text_lines" => {
+            let text_key = get.text_key.as_ref().ok_or_else(|| {
+                "runtime get render=text_lines requires text_key in SSOT".to_string()
+            })?;
+            format!("RenderMode::TextLines {{ text_key: {:?} }}", text_key)
+        }
         "status_lines" => {
             let status_key = get.status_key.as_ref().ok_or_else(|| {
                 "runtime get render=status_lines requires status_key in SSOT".to_string()

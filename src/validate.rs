@@ -91,7 +91,13 @@ impl FieldValidation {
 
 /// Validate a semver string
 fn validate_semver(value: &str) -> anyhow::Result<()> {
-    semver::Version::parse(value).map_err(|_| anyhow::anyhow!("Invalid semver: {value}"))?;
+    semver::Version::parse(value).map_err(|_| {
+        Diagnostic::new(
+            DiagnosticCode::E0820InvalidFieldValue,
+            format!("Invalid semver: {value}"),
+            value,
+        )
+    })?;
     Ok(())
 }
 
@@ -103,11 +109,21 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
     }
 
     // Extract RFC ID from source clause (e.g., "RFC-0001:C-NAME" -> "RFC-0001")
-    let source_rfc = ctx
-        .artifact_id
-        .split(':')
-        .next()
-        .ok_or_else(|| anyhow::anyhow!("Invalid clause ID format: {}", ctx.artifact_id))?;
+    let (source_rfc, source_clause) = ctx.artifact_id.split_once(':').ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            format!("Invalid clause ID format: {}", ctx.artifact_id),
+            ctx.artifact_id,
+        )
+    })?;
+    if source_rfc.is_empty() || source_clause.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            format!("Invalid clause ID format: {}", ctx.artifact_id),
+            ctx.artifact_id,
+        )
+        .into());
+    }
 
     // Build full target reference
     let full_target = if target.contains(':') {
@@ -117,10 +133,21 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
     };
 
     // Check target is in same RFC
-    let target_rfc = full_target
-        .split(':')
-        .next()
-        .ok_or_else(|| anyhow::anyhow!("Invalid target clause ID: {target}"))?;
+    let (target_rfc, target_clause) = full_target.split_once(':').ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            format!("Invalid target clause ID: {target}"),
+            target,
+        )
+    })?;
+    if target_rfc.is_empty() || target_clause.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0210ClauseInvalidIdFormat,
+            format!("Invalid target clause ID: {target}"),
+            target,
+        )
+        .into());
+    }
 
     if target_rfc != source_rfc {
         return Err(Diagnostic::new(

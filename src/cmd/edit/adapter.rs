@@ -4,7 +4,8 @@
 //! artifacts while execution is migrated from legacy dispatch to V2 engine.
 
 use crate::config::Config;
-use crate::load::{find_clause_json, find_rfc_json};
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::load::{find_clause_json, find_clause_toml, find_rfc_json, find_rfc_toml};
 use crate::model::{AdrEntry, ClauseSpec, GuardEntry, RfcSpec, WorkItemEntry};
 use crate::parse::{
     load_adrs, load_guards, load_work_items, write_adr, write_guard, write_work_item,
@@ -19,9 +20,45 @@ pub struct JsonDoc<T> {
     pub data: T,
 }
 
-/// Adapter contract for JSON-backed artifacts.
+fn display_scope_for_dir(config: &Config, path: PathBuf) -> String {
+    config.display_path(&path).display().to_string()
+}
+
+fn load_rfc_with<F>(config: &Config, id: &str, finder: F) -> anyhow::Result<JsonDoc<RfcSpec>>
+where
+    F: Fn(&Config, &str) -> Option<PathBuf>,
+{
+    let scope = display_scope_for_dir(config, config.rfc_dir());
+    let path = finder(config, id).ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0102RfcNotFound,
+            format!("RFC not found: {id}"),
+            &scope,
+        )
+    })?;
+    let data = read_rfc(config, &path)?;
+    Ok(JsonDoc { path, data })
+}
+
+fn write_rfc_doc(config: &Config, doc: &JsonDoc<RfcSpec>, op: WriteOp) -> anyhow::Result<()> {
+    write_rfc(
+        &doc.path,
+        &doc.data,
+        op,
+        Some(&config.display_path(&doc.path)),
+    )
+}
+
+fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
+    id.split(':')
+        .next()
+        .map(|rfc_id| config.rfc_dir().join(rfc_id).join("clauses"))
+        .unwrap_or_else(|| config.rfc_dir())
+}
+
+/// Adapter contract for RFC/clause document-backed artifacts.
 #[allow(dead_code)]
-pub trait JsonAdapter {
+pub trait DocAdapter {
     type Data;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>>;
@@ -40,18 +77,53 @@ pub trait TomlAdapter {
 /// RFC JSON adapter.
 pub struct RfcJsonAdapter;
 
-impl JsonAdapter for RfcJsonAdapter {
+impl DocAdapter for RfcJsonAdapter {
     type Data = RfcSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let path =
-            find_rfc_json(config, id).ok_or_else(|| anyhow::anyhow!("RFC not found: {id}"))?;
-        let data = read_rfc(config, &path)?;
+        load_rfc_with(config, id, find_rfc_json)
+    }
+
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+        write_rfc_doc(config, doc, op)
+    }
+}
+
+pub struct RfcTomlAdapter;
+
+impl DocAdapter for RfcTomlAdapter {
+    type Data = RfcSpec;
+
+    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+        load_rfc_with(config, id, find_rfc_toml)
+    }
+
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+        write_rfc_doc(config, doc, op)
+    }
+}
+
+/// Clause JSON adapter.
+pub struct ClauseJsonAdapter;
+
+impl DocAdapter for ClauseJsonAdapter {
+    type Data = ClauseSpec;
+
+    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+        let scope = display_scope_for_dir(config, clause_scope_path(config, id));
+        let path = find_clause_json(config, id).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Clause not found: {id}"),
+                &scope,
+            )
+        })?;
+        let data = read_clause(config, &path)?;
         Ok(JsonDoc { path, data })
     }
 
     fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
-        write_rfc(
+        write_clause(
             &doc.path,
             &doc.data,
             op,
@@ -60,15 +132,20 @@ impl JsonAdapter for RfcJsonAdapter {
     }
 }
 
-/// Clause JSON adapter.
-pub struct ClauseJsonAdapter;
+pub struct ClauseTomlAdapter;
 
-impl JsonAdapter for ClauseJsonAdapter {
+impl DocAdapter for ClauseTomlAdapter {
     type Data = ClauseSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let path = find_clause_json(config, id)
-            .ok_or_else(|| anyhow::anyhow!("Clause not found: {id}"))?;
+        let scope = display_scope_for_dir(config, clause_scope_path(config, id));
+        let path = find_clause_toml(config, id).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Clause not found: {id}"),
+                &scope,
+            )
+        })?;
         let data = read_clause(config, &path)?;
         Ok(JsonDoc { path, data })
     }
@@ -90,10 +167,17 @@ impl TomlAdapter for AdrTomlAdapter {
     type Entry = AdrEntry;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        load_adrs(config)?
+        let scope = config.display_path(&config.adr_dir()).display().to_string();
+        Ok(load_adrs(config)?
             .into_iter()
             .find(|a| a.spec.govctl.id == id)
-            .ok_or_else(|| anyhow::anyhow!("ADR not found: {id}"))
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0302AdrNotFound,
+                    format!("ADR not found: {id}"),
+                    &scope,
+                )
+            })?)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
@@ -114,10 +198,20 @@ impl TomlAdapter for WorkTomlAdapter {
     type Entry = WorkItemEntry;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        load_work_items(config)?
+        let scope = config
+            .display_path(&config.work_dir())
+            .display()
+            .to_string();
+        Ok(load_work_items(config)?
             .into_iter()
             .find(|w| w.spec.govctl.id == id || w.path.to_string_lossy().contains(id))
-            .ok_or_else(|| anyhow::anyhow!("Work item not found: {id}"))
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0402WorkNotFound,
+                    format!("Work item not found: {id}"),
+                    &scope,
+                )
+            })?)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
@@ -138,11 +232,21 @@ impl TomlAdapter for GuardTomlAdapter {
     type Entry = GuardEntry;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        load_guards(config)
-            .map_err(|d| anyhow::anyhow!("{}", d.message))?
+        let scope = config
+            .display_path(&config.guard_dir())
+            .display()
+            .to_string();
+        Ok(load_guards(config)
+            .map_err(anyhow::Error::from)?
             .into_iter()
             .find(|g| g.spec.govctl.id == id)
-            .ok_or_else(|| anyhow::anyhow!("Guard not found: {id}"))
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E1002GuardNotFound,
+                    format!("Guard not found: {id}"),
+                    &scope,
+                )
+            })?)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {

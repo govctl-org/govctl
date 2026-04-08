@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-07-001"
+title = "Unify canonical edit semantics around terminal path targets"
+status = "done"
+created = "2026-04-07"
+started = "2026-04-07"
+completed = "2026-04-07"
+
+[content]
+description = "Refactor canonical edit planning so set/add/remove/tick all target the terminal path node instead of artifact-specific special cases."
+
+[[content.journal]]
+date = "2026-04-07"
+scope = "edit"
+content = "Refactored edit planning around terminal targets: planner now classifies simple/nested node vs indexed-item targets, set/add/remove/tick dispatch through shared target semantics, and coverage now includes indexed set plus canonicalized remove feedback."
+
+[[content.acceptance_criteria]]
+text = "set/add/remove/tick share a unified terminal-target planning model"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC/Clause simple lists and ADR/Work/Guard nested/root-item edits still work under the shared planner"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test -q, cargo run --quiet -- check, and cargo clippy --all-targets --all-features -- -D warnings pass"
+status = "done"
+category = "chore"

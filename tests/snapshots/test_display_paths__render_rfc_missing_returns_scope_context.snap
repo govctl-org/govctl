@@ -1,0 +1,8 @@
+---
+source: tests/test_display_paths.rs
+assertion_line: 150
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc render RFC-9999
+No RFCs found in <TEMPDIR>/gov/rfc
+exit: 0

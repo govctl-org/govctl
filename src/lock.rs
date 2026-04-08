@@ -5,7 +5,8 @@
 //! (e.g. on process exit or when the command finishes).
 
 use crate::config::Config;
-use anyhow::{Context, Result};
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use anyhow::Result;
 use fs2::FileExt;
 use std::fs::OpenOptions;
 use std::io;
@@ -34,18 +35,30 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
 
     // Ensure gov root exists so we can create the lock file
     if !gov_root.exists() {
-        anyhow::bail!(
-            "Gov root does not exist: {}. Run 'govctl init' first.",
-            gov_root.display()
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0502PathNotFound,
+            format!(
+                "Gov root does not exist: {}. Run 'govctl init' first.",
+                gov_root.display()
+            ),
+            gov_root.display().to_string(),
+        )
+        .into());
     }
 
     let file = OpenOptions::new()
         .create(true)
-        .truncate(true)
+        .truncate(false)
+        .read(true)
         .write(true)
         .open(&lock_path)
-        .with_context(|| format!("Failed to open lock file: {}", lock_path.display()))?;
+        .map_err(|e| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Failed to open lock file: {}", e),
+                lock_path.display().to_string(),
+            )
+        })?;
 
     let deadline = Instant::now() + Duration::from_secs(timeout_secs);
     let poll = Duration::from_millis(POLL_INTERVAL_MS);
@@ -57,18 +70,25 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
             }
             Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                 if Instant::now() >= deadline {
-                    anyhow::bail!(
-                        "Another govctl write command is in progress. \
-                         Wait for it to finish or retry later. \
-                         (Timed out after {} seconds waiting for exclusive access.)",
-                        timeout_secs
-                    );
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0503LockTimeout,
+                        format!(
+                            "Another govctl write command is in progress. Wait for it to finish or retry later. (Timed out after {} seconds waiting for exclusive access.)",
+                            timeout_secs
+                        ),
+                        lock_path.display().to_string(),
+                    )
+                    .into());
                 }
                 thread::sleep(poll);
             }
             Err(e) => {
-                return Err(e)
-                    .with_context(|| format!("Failed to acquire lock: {}", lock_path.display()));
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    format!("Failed to acquire lock: {}", e),
+                    lock_path.display().to_string(),
+                )
+                .into());
             }
         }
     }

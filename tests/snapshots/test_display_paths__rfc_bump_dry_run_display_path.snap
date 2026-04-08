@@ -3,26 +3,24 @@ source: tests/test_display_paths.rs
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl rfc bump RFC-0001 --change fix: test change --dry-run
-Would write: gov/rfc/RFC-0001/rfc.json
-  {
-    "rfc_id": "RFC-0001",
-    "title": "Draft RFC",
-    "version": "0.1.0",
-    "status": "draft",
-    "phase": "spec",
-    "owners": [
-      "test@example.com"
-    ],
-    "created": "2026-01-01",
-    "sections": [
-      {
-        "title": "Specification"
-      }
-    ],
-    "changelog": [
-      {
-        "version": "0.1.0",
-        "date": "2026-01-01",
-        "notes": "Initial draft",
-  ...
+Would write: gov/rfc/RFC-0001/rfc.toml
+  #:schema ../../schema/rfc.schema.json
+  
+  [govctl]
+  id = "RFC-0001"
+  title = "Draft RFC"
+  version = "0.1.0"
+  status = "draft"
+  phase = "spec"
+  owners = ["test@example.com"]
+  created = "2026-01-01"
+  
+  [[sections]]
+  title = "Specification"
+  
+  [[changelog]]
+  version = "0.1.0"
+  date = "2026-01-01"
+  notes = "Initial draft"
+  fixed = ["test change"]
 exit: 0

@@ -19,41 +19,39 @@ fn test_render_rfc_display_path() {
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Test RFC",
-  "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": ["clauses/C-TEST.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "0.1.0",
-      "date": "2026-01-01",
-      "notes": "Initial draft"
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"[govctl]
+id = "RFC-0001"
+title = "Test RFC"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial draft"
+"#,
     )
     .unwrap();
 
     fs::write(
-        rfc_dir.join("clauses/C-TEST.json"),
-        r#"{
-  "clause_id": "C-TEST",
-  "title": "Test Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "Test clause content."
-}"#,
+        rfc_dir.join("clauses/C-TEST.toml"),
+        r#"[govctl]
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+
+[content]
+text = "Test clause content."
+"#,
     )
     .unwrap();
 
@@ -87,8 +85,8 @@ refs = []
 [content]
 context = "Test context"
 decision = "Test decision"
-consequences = "Test consequences"
 alternatives = []
+consequences = "Test consequences"
 "#,
     )
     .unwrap();
@@ -137,6 +135,33 @@ notes = []
         temp_dir.path(),
         &[&["work", "render", &format!("WI-{}-001", date), "--dry-run"]],
     );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_render_rfc_missing_returns_scope_context() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-9999"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_render_adr_missing_returns_scope_context() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["adr", "render", "ADR-9999"]]);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_render_work_missing_returns_scope_context() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["work", "render", "WI-9999-01-01-001"]]);
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
@@ -190,41 +215,45 @@ fn test_delete_clause_dry_run_display_path() {
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Draft RFC",
-  "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": ["clauses/C-TO-DELETE.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "0.1.0",
-      "date": "2026-01-01",
-      "notes": "Initial draft"
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Draft RFC"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-TO-DELETE.toml"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial draft"
+"#,
     )
     .unwrap();
 
     fs::write(
-        rfc_dir.join("clauses/C-TO-DELETE.json"),
-        r#"{
-  "clause_id": "C-TO-DELETE",
-  "title": "Clause To Delete",
-  "kind": "normative",
-  "status": "active",
-  "text": "This clause will be deleted."
-}"#,
+        rfc_dir.join("clauses/C-TO-DELETE.toml"),
+        r#"#:schema ../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-TO-DELETE"
+title = "Clause To Delete"
+kind = "normative"
+status = "active"
+
+[content]
+text = "This clause will be deleted."
+"#,
     )
     .unwrap();
 
@@ -245,29 +274,28 @@ fn test_rfc_set_dry_run_display_path() {
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Draft RFC",
-  "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": []
-    }
-  ],
-  "changelog": [
-    {
-      "version": "0.1.0",
-      "date": "2026-01-01",
-      "notes": "Initial draft"
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Draft RFC"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = []
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial draft"
+"#,
     )
     .unwrap();
 
@@ -295,29 +323,28 @@ fn test_rfc_bump_dry_run_display_path() {
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Draft RFC",
-  "version": "0.1.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": []
-    }
-  ],
-  "changelog": [
-    {
-      "version": "0.1.0",
-      "date": "2026-01-01",
-      "notes": "Initial draft"
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Draft RFC"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = []
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial draft"
+"#,
     )
     .unwrap();
 

@@ -1,0 +1,8 @@
+---
+source: tests/test_display_paths.rs
+assertion_line: 168
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work render WI-<DATE>-001
+No work items found
+exit: 0

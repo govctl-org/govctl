@@ -1,0 +1,148 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0037"
+title = "Canonical edit surface for nested artifact mutation"
+status = "accepted"
+date = "2026-04-06"
+refs = [
+    "ADR-0031",
+    "ADR-0029",
+    "ADR-0017",
+    "ADR-0030",
+    "ADR-0007",
+    "RFC-0002",
+]
+
+[content]
+context = """
+`govctl` currently exposes artifact mutation through resource-first verbs such as `set`, `add`, `remove`, and `tick`, with path-based field addressing layered in via [[ADR-0029]] and strict parsing via [[ADR-0030]]. The semantic engine behind those commands is being unified per [[ADR-0031]].
+
+### Problem Statement
+
+The current CLI surface is still too shape-dependent for reliable agent use:
+
+1. Whether an operation uses `set`, `add`, `remove`, or `tick` depends on the target field's storage shape rather than the user's intent alone.
+2. Nested editing support is asymmetric. Some paths behave like true field paths, while others still rely on special-case command semantics.
+3. The CLI surface leaks artifact-specific implementation details, which increases agent failure rates and makes help text harder to generalize.
+4. Upcoming schema work, including richer ADR structures, will increase nested object/array combinations and amplify the problem if the edit surface remains verb-fragmented.
+
+### Constraints
+
+- Preserve resource-first command organization from [[RFC-0002]].
+- Preserve the SSOT-driven engine direction from [[ADR-0031]].
+- Keep a stable migration path for existing human users and scripts.
+- Make the canonical mutation interface regular enough that agents can synthesize commands from field paths without artifact-specific guessing.
+- Avoid introducing a new batch-specific input language unless single-operation ergonomics prove insufficient.
+
+### Options Considered
+
+- Option A: Keep `set/add/remove/tick` as the only mutation interface and continue expanding path support.
+- Option B: Introduce a canonical `edit` command with path-first operation flags, and keep existing verbs as compatibility sugar.
+- Option C: Replace existing verbs completely with a JSONPatch-like or DSL-heavy mutation language."""
+decision = """
+We will introduce a **canonical path-oriented edit surface** for governed artifact mutation:
+
+```bash
+govctl <resource> edit <ID> <path> --set <value>
+govctl <resource> edit <ID> <path> --add <value>
+govctl <resource> edit <ID> <path> --remove <pattern>
+govctl <resource> edit <ID> <path> --tick <status>
+```
+
+where:
+- `<path>` is a canonical fully qualified field path
+- exactly one mutation flag is provided per invocation
+- existing resource-first verbs (`set`, `add`, `remove`, `tick`) remain available as human-friendly sugar that compile into the same semantic edit plan
+
+### Canonical Interface Rules
+
+1. **Canonical path syntax is fully regular.** It MUST support nested object and array traversal for arbitrary depth, subject to SSOT validation.
+2. **Canonical paths prefer explicit field names.** Aliases remain compatibility-only, but documentation and agent examples prefer full canonical paths.
+3. **`edit` is the authoritative mutation interface.** New nested-field capabilities are specified first against `edit`; shorthand verbs are layered on top.
+4. **`tick` remains checklist-oriented.** It stays available only where the schema marks a status-bearing checklist item. It is not the canonical mechanism for arbitrary state mutation.
+5. **Path semantics are SSOT-defined.** The engine resolves paths and operation legality from generated schema/rules, not from artifact-specific handwritten branching.
+6. **This ADR standardizes single-operation editing only.** Multi-step orchestration remains the responsibility of the calling agent or shell layer for now.
+
+### Compatibility Strategy
+
+- Existing commands such as `govctl adr set ...`, `govctl adr add ...`, and `govctl work tick ...` remain supported during migration.
+- Help text, docs, and agent-facing examples will progressively move to the canonical `edit` form.
+- Compatibility verbs are treated as sugar over the same `EditPlan`, not as separate semantic implementations.
+- No new YAML/JSON patch language is introduced in this phase.
+
+### Examples
+
+```bash
+govctl adr edit ADR-0001 content.decision --set "We will ..."
+govctl adr edit ADR-0001 content.alternatives --add "Option A"
+govctl adr edit ADR-0001 content.alternatives[0].pros --add "Readable"
+govctl work edit WI-2026-04-06-001 content.acceptance_criteria[0] --tick done
+```
+
+This keeps resource-first organization intact while giving both humans and agents a single canonical grammar for mutation.
+
+### Recovered Selected-Option Advantages
+
+- Gives humans and agents one stable canonical mutation grammar
+- Lets existing verbs converge onto the same EditPlan without immediate breakage
+- Keeps the target path visually primary when reading or typing commands
+"""
+consequences = """
+### Positive
+
+- Agents can synthesize mutation commands from one regular shape instead of guessing between multiple top-level verbs.
+- The CLI surface aligns with the SSOT edit engine in [[ADR-0031]], reducing semantic drift.
+- Nested object/array edits can be documented once and reused across ADRs, RFCs, work items, and future artifact types.
+- Existing human-friendly verbs can remain as convenience entrypoints without blocking engine regularization.
+- The design does not add a separate patch document format, so the CLI remains focused on a single mutation grammar.
+
+### Negative
+
+- The CLI surface grows: users must understand that `edit` is canonical even if shorthand verbs still exist.
+- Help text, docs, examples, and tests require a coordinated rewrite.
+- Compatibility layering adds temporary maintenance cost until sugar commands fully delegate to the canonical path.
+- Multi-step batch edits are not made atomic by this ADR; callers still need orchestration logic when applying a series of mutations.
+- Requires dual-surface docs during migration.
+
+### Neutral
+
+- Resource-first organization is unchanged; only the mutation entrypoint is normalized.
+- This ADR does not itself redesign artifact schemas such as ADR consequences or alternatives. It defines the edit surface that future schema work can rely on.
+- If transactional batch mutation becomes necessary later, it can be addressed in a separate ADR with clearer evidence of need.
+"""
+
+[[content.alternatives]]
+text = "Keep set/add/remove/tick as the only mutation interface and continue expanding path support"
+status = "rejected"
+pros = [
+    "Lowest immediate CLI churn",
+    "Keeps current verb-first UX intact",
+]
+cons = [
+    "Agents still need field-shape-specific verb selection",
+    "Does not establish a single canonical mutation grammar",
+]
+rejection_reason = "It fixes capability gaps incrementally but leaves the core ergonomics problem unresolved for automation."
+
+[[content.alternatives]]
+text = "Replace current verbs with a JSONPatch-like or DSL-heavy universal mutation language"
+status = "rejected"
+pros = ["Maximum expressiveness in one command family"]
+cons = [
+    "Higher cognitive load for humans",
+    "Too large a break from current resource-first mutation ergonomics",
+]
+rejection_reason = "Over-corrects toward a mini language and sacrifices discoverability for power we do not currently need."
+
+[[content.alternatives]]
+text = "Add a canonical edit command with path-first operation flags, while preserving current verbs as sugar"
+status = "accepted"
+pros = [
+    "Establishes one canonical mutation grammar without breaking existing workflows.",
+    "Keeps nested mutation semantics centered on field paths instead of ad hoc verb choice.",
+]
+cons = [
+    "Expands the CLI surface during the transition period.",
+    "Requires documentation and help text to teach the canonical form clearly.",
+]

@@ -28,16 +28,19 @@ govctl adr list                           # List all ADRs
 # RFC drafting
 govctl rfc new "<title>"                  # Create RFC (auto-assigns ID)
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 clause text here
 EOF
 
 # ADR drafting
 govctl adr new "<title>"                  # Create ADR
-govctl adr set <ADR-ID> context "..." --stdin
-govctl adr set <ADR-ID> decision "..." --stdin
-govctl adr set <ADR-ID> consequences "..." --stdin
+govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
 govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr add <ADR-ID> alternatives "Other option: Description" --reject-reason "Why it was not chosen"
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
+govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
+govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
 govctl adr add <ADR-ID> refs RFC-0001
 
 # Validation
@@ -138,7 +141,7 @@ For complex topics, explore the design space:
 
 **If the decision is high-risk** (2+ competing options with non-obvious trade-offs, irreversible change, or cross-cutting impact), follow the **decision-analysis** skill for a structured premortem/backcast analysis. The analysis output maps directly to ADR fields — see the skill's "Output → ADR Mapping" section.
 
-Document this exploration — it becomes the ADR context/alternatives or RFC rationale.
+Document this exploration — for ADRs, it should first become `alternatives` and only later become the final `decision`.
 
 ---
 
@@ -151,7 +154,7 @@ For structure, templates, and quality guidelines, follow the **rfc-writer** skil
 ```bash
 govctl rfc new "<title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 clause text
 EOF
 ```
@@ -163,11 +166,25 @@ For structure, templates, and quality guidelines, follow the **adr-writer** skil
 ```bash
 govctl adr new "<title>"
 govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
+govctl adr add <ADR-ID> alternatives "Option: Description"
+govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
+govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
 govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
 govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
 govctl adr add <ADR-ID> refs RFC-NNNN
 ```
+
+In this sequence, alternative `0` is the chosen option and alternative `1` is explicitly rejected.
+
+ADR drafting order:
+
+1. Write `context`
+2. Add and discuss `alternatives`
+3. Mark rejected and accepted alternatives
+4. Only then write `decision`
+5. Finish with `consequences`
+
+Historical backfills are the exception: if alternatives cannot be reconstructed, say so explicitly in `context` and write the best supported `decision`.
 
 ### 2.3 RFC Amendment (for changes to existing specs)
 
@@ -175,7 +192,7 @@ govctl adr add <ADR-ID> refs RFC-NNNN
 
 ```bash
 # Edit the clause content
-govctl clause edit <RFC-ID>:C-<NAME> --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 Updated specification text.
 EOF
 

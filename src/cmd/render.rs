@@ -8,6 +8,11 @@ use crate::parse::{load_adrs, load_releases, load_work_items};
 use crate::render::{expand_inline_refs_from_root, write_adr_md, write_rfc, write_work_item_md};
 use crate::ui;
 use std::collections::{HashMap, HashSet};
+use std::path::Path;
+
+fn display_path_string(config: &Config, path: impl AsRef<Path>) -> String {
+    config.display_path(path.as_ref()).display().to_string()
+}
 
 /// Render RFC markdown from JSON source
 pub fn render(
@@ -15,10 +20,9 @@ pub fn render(
     rfc_id: Option<&str>,
     dry_run: bool,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfcs = load_rfcs(config).map_err(|e| {
-        let diag: Diagnostic = e.into();
-        anyhow::anyhow!("{}", diag)
-    })?;
+    let rfcs = load_rfcs(config)
+        .map_err(Diagnostic::from)
+        .map_err(anyhow::Error::from)?;
 
     if rfcs.is_empty() {
         ui::not_found("RFC", &config.rfc_dir());
@@ -35,10 +39,11 @@ pub fn render(
     if rfcs_to_render.is_empty()
         && let Some(id) = rfc_id
     {
+        let scope = display_path_string(config, config.rfc_dir());
         return Err(Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {id}"),
-            id,
+            scope,
         )
         .into());
     }
@@ -81,10 +86,11 @@ pub fn render_adrs(
     if adrs_to_render.is_empty()
         && let Some(id) = adr_id
     {
+        let scope = display_path_string(config, config.adr_dir());
         return Err(Diagnostic::new(
             DiagnosticCode::E0302AdrNotFound,
             format!("ADR not found: {id}"),
-            id,
+            scope,
         )
         .into());
     }
@@ -128,10 +134,14 @@ pub fn render_work_items(
     if items_to_render.is_empty()
         && let Some(id) = work_id
     {
+        let scope = config
+            .display_path(&config.work_dir())
+            .display()
+            .to_string();
         return Err(Diagnostic::new(
             DiagnosticCode::E0402WorkNotFound,
             format!("Work item not found: {id}"),
-            id,
+            scope,
         )
         .into());
     }
@@ -157,8 +167,8 @@ pub fn render_changelog(
     dry_run: bool,
     force: bool,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let releases_file = load_releases(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
-    let work_items = load_work_items(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+    let releases_file = load_releases(config).map_err(anyhow::Error::from)?;
+    let work_items = load_work_items(config).map_err(anyhow::Error::from)?;
 
     // Get all released work item IDs
     let released_ids: HashSet<_> = releases_file
@@ -496,19 +506,19 @@ pub fn show_rfc(
     id: &str,
     output: OutputFormat,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfcs = load_rfcs(config).map_err(|e| {
-        let diag: Diagnostic = e.into();
-        anyhow::anyhow!("{}", diag)
-    })?;
+    let rfcs = load_rfcs(config)
+        .map_err(Diagnostic::from)
+        .map_err(anyhow::Error::from)?;
 
     let rfc = rfcs
         .into_iter()
         .find(|r| r.rfc.rfc_id == id)
         .ok_or_else(|| {
+            let scope = display_path_string(config, config.rfc_dir());
             Diagnostic::new(
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {id}"),
-                id,
+                scope,
             )
         })?;
 
@@ -542,10 +552,11 @@ pub fn show_adr(
         .into_iter()
         .find(|a| a.spec.govctl.id == id)
         .ok_or_else(|| {
+            let scope = display_path_string(config, config.adr_dir());
             Diagnostic::new(
                 DiagnosticCode::E0302AdrNotFound,
                 format!("ADR not found: {id}"),
-                id,
+                scope,
             )
         })?;
 
@@ -578,10 +589,14 @@ pub fn show_work(
         .into_iter()
         .find(|w| w.spec.govctl.id == id)
         .ok_or_else(|| {
+            let scope = config
+                .display_path(&config.work_dir())
+                .display()
+                .to_string();
             Diagnostic::new(
                 DiagnosticCode::E0402WorkNotFound,
                 format!("Work item not found: {id}"),
-                id,
+                scope,
             )
         })?;
 
@@ -621,19 +636,19 @@ pub fn show_clause(
     let rfc_id = parts[0];
     let clause_name = parts[1];
 
-    let rfcs = load_rfcs(config).map_err(|e| {
-        let diag: Diagnostic = e.into();
-        anyhow::anyhow!("{}", diag)
-    })?;
+    let rfcs = load_rfcs(config)
+        .map_err(Diagnostic::from)
+        .map_err(anyhow::Error::from)?;
 
     let rfc = rfcs
         .into_iter()
         .find(|r| r.rfc.rfc_id == rfc_id)
         .ok_or_else(|| {
+            let scope = display_path_string(config, config.rfc_dir());
             Diagnostic::new(
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {rfc_id}"),
-                rfc_id,
+                scope,
             )
         })?;
 
@@ -642,10 +657,14 @@ pub fn show_clause(
         .into_iter()
         .find(|c| c.spec.clause_id == clause_name)
         .ok_or_else(|| {
+            let scope = config
+                .display_path(&config.rfc_dir().join(rfc_id).join("clauses"))
+                .display()
+                .to_string();
             Diagnostic::new(
                 DiagnosticCode::E0202ClauseNotFound,
                 format!("Clause not found: {id}"),
-                id,
+                scope,
             )
         })?;
 

@@ -2,7 +2,7 @@
 
 use crate::OutputFormat;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{GuardCheck, GuardMeta, GuardSpec};
 use crate::parse::{load_guards, write_guard};
 use crate::ui;
@@ -19,17 +19,27 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Ve
     // Generate ID from title: slugify, uppercase, prefix with GUARD-
     let slug = slugify(title).to_uppercase().replace('_', "-");
     if slug.is_empty() || !slug.starts_with(|c: char| c.is_ascii_uppercase()) {
-        return Err(anyhow::anyhow!(
-            "Invalid guard title: must produce a slug starting with a letter (got \"{title}\")"
-        ));
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1006GuardInvalidTitle,
+            format!(
+                "Invalid guard title: must produce a slug starting with a letter (got \"{title}\")"
+            ),
+            title,
+        )
+        .into());
     }
     let id = format!("GUARD-{slug}");
 
     // Check for duplicate
     if !op.is_preview() {
-        let existing = load_guards(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+        let existing = load_guards(config).map_err(anyhow::Error::from)?;
         if existing.iter().any(|g| g.spec.govctl.id == id) {
-            return Err(anyhow::anyhow!("Guard already exists: {id}"));
+            return Err(Diagnostic::new(
+                DiagnosticCode::E1003GuardDuplicate,
+                format!("Guard already exists: {id}"),
+                &id,
+            )
+            .into());
         }
     }
 
@@ -72,11 +82,17 @@ pub fn delete_guard(
     _force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let guards = load_guards(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+    let guards = load_guards(config).map_err(anyhow::Error::from)?;
     let guard = guards
         .iter()
         .find(|g| g.spec.govctl.id == id)
-        .ok_or_else(|| anyhow::anyhow!("Guard not found: {id}"))?;
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E1002GuardNotFound,
+                format!("Guard not found: {id}"),
+                id,
+            )
+        })?;
 
     // Safety checks always run — --force only skips confirmation, not reference checks
     let mut blockers = Vec::new();
@@ -103,15 +119,20 @@ pub fn delete_guard(
     }
 
     if !blockers.is_empty() {
-        return Err(anyhow::anyhow!(
-            "Cannot delete guard '{}': still referenced:\n{}",
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1007GuardStillReferenced,
+            format!(
+                "Cannot delete guard '{}': still referenced:\n{}",
+                id,
+                blockers
+                    .iter()
+                    .map(|b| format!("  - {b}"))
+                    .collect::<Vec<_>>()
+                    .join("\n")
+            ),
             id,
-            blockers
-                .iter()
-                .map(|b| format!("  - {b}"))
-                .collect::<Vec<_>>()
-                .join("\n")
-        ));
+        )
+        .into());
     }
 
     let path = guard.path.clone();
@@ -130,11 +151,17 @@ pub fn show_guard(
     id: &str,
     output: OutputFormat,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let guards = load_guards(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+    let guards = load_guards(config).map_err(anyhow::Error::from)?;
     let guard = guards
         .iter()
         .find(|g| g.spec.govctl.id == id)
-        .ok_or_else(|| anyhow::anyhow!("Guard not found: {id}"))?;
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E1002GuardNotFound,
+                format!("Guard not found: {id}"),
+                id,
+            )
+        })?;
 
     match output {
         OutputFormat::Json => {

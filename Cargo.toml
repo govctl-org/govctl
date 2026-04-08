@@ -67,6 +67,7 @@ regex = "1"
 slug = "0.1"
 strum = { version = "0.28", features = ["derive"] }
 winnow = "0.7"
+pulldown-cmark = "0.13"
 
 # File system traversal
 walkdir = "2"

@@ -1,0 +1,100 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0038"
+title = "Keep ADR schema discussion-oriented and avoid broad migration"
+status = "accepted"
+date = "2026-04-06"
+refs = [
+    "ADR-0027",
+    "ADR-0036",
+    "ADR-0037",
+]
+
+[content]
+context = """
+We have two goals that now need to be balanced more carefully.
+
+### Problem Statement
+
+1. The canonical edit surface from [[ADR-0037]] is valuable and should remain.
+2. The broader ADR schema redesign from [[ADR-0036]] proved too heavy for the value it provides.
+3. In practice, ADR authoring works best when alternatives are written first, discussed, and then one option is marked as selected before the final decision prose is written.
+4. The `selected_option` plus structured-consequences redesign pushed the model toward a final-state representation and away from the natural discussion flow.
+5. The migration burden is not justified while this work is still on a PR branch and has not landed on the main branch.
+
+### Constraints
+
+- Preserve the canonical edit-surface work already captured in [[ADR-0037]].
+- Preserve the discussion-oriented alternative model from [[ADR-0027]].
+- Avoid a repository-wide ADR migration for a change that is not yet merged.
+- Keep the ADR schema simple enough that humans and agents can both use it reliably.
+
+### Options Considered
+
+We considered keeping the full ADR-0036 redesign, keeping the current ADR schema and workflow, and adopting a smaller additive field for the selected option only."""
+decision = """
+We will **keep the current ADR schema discussion-oriented and avoid the broad schema/migration redesign from [[ADR-0036]]** because:
+
+1. **Authoring flow matters more than final-shape normalization.** ADRs are written by exploring alternatives first and only then recording the final decision. The current alternatives-with-status model supports that flow directly.
+2. **The migration cost is disproportionate.** A schema and repository-wide migration is not justified for a redesign that has not landed on the main branch.
+3. **The canonical edit surface already solves the more valuable problem.** [[ADR-0037]] gives us the regular mutation interface we wanted without requiring the ADR artifact itself to become deeply restructured.
+4. **Future ADR refinement can still happen incrementally.** If we later need a machine-readable chosen-option field or richer consequence structure, that should be justified by a narrower problem and designed without coupling it to a broad migration.
+
+### Implementation Notes
+
+- Keep `content.consequences` as prose markdown.
+- Keep `content.alternatives[]` with `status = considered|rejected|accepted`.
+- Continue to model the selected option by marking one alternative as `accepted` and then writing the final decision prose.
+- Do not introduce `selected_option`, structured consequences, or migration-specific ADR metadata in this line of work."""
+consequences = """
+### Positive
+
+- Preserves the natural ADR writing flow: alternatives first, decision last.
+- Avoids a repository-wide ADR migration for a redesign that has not merged.
+- Keeps canonical edit-surface gains from [[ADR-0037]] without tying them to a broader artifact rewrite.
+- Keeps ADR authoring understandable for humans and agents using today's schema.
+
+### Negative
+
+- The chosen option remains represented partly by alternative status and partly by decision prose.
+- ADR tooling will have less machine-readable structure than ADR-0036 proposed.
+- Some future refinement pressure is deferred rather than eliminated. (mitigation: revisit only when a narrower, clearly justified problem emerges.)
+
+### Neutral
+
+- This decision supersedes the schema-and-migration redesign from [[ADR-0036]] but does not change the canonical edit-surface direction from [[ADR-0037]].
+- Existing ADR files remain valid without conversion."""
+
+[[content.alternatives]]
+text = "Keep ADR-0036 full redesign with selected_option, structured consequences, and migration metadata"
+status = "rejected"
+pros = [
+    "Makes the chosen option explicit",
+    "Provides more machine-readable structure",
+]
+cons = [
+    "Encourages premature final-state authoring",
+    "Requires schema and repository migration",
+]
+rejection_reason = "The migration and authoring costs are too high for a change that has not landed on the main branch."
+
+[[content.alternatives]]
+text = "Keep the current ADR schema and reinforce the alternatives-first workflow"
+status = "accepted"
+pros = [
+    "Matches the natural authoring flow of ADR discussion",
+    "Avoids repository-wide migration",
+    "Works with the canonical edit surface from ADR-0037",
+]
+cons = ["Keeps chosen-option state partly in alternative status and partly in decision prose"]
+
+[[content.alternatives]]
+text = "Add only a lightweight selected_option field and leave other ADR fields unchanged"
+status = "rejected"
+pros = ["Gives tooling a direct chosen-option field"]
+cons = [
+    "Still encourages agents to write the conclusion too early",
+    "Adds schema surface without solving the broader authoring-flow issue",
+]
+rejection_reason = "It keeps the premature-conclusion problem while still introducing schema churn."

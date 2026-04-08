@@ -1,0 +1,78 @@
+---
+source: tests/test_help.rs
+assertion_line: 76
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl clause edit --help
+Canonical path-first clause edit entrypoint
+
+Usage: govctl clause edit [OPTIONS] <ID> [PATH]
+
+Arguments:
+  <ID>
+          Clause ID
+
+  [PATH]
+          Canonical field path (`text`, `title`, `kind`, or `anchors`)
+
+Options:
+  -C, --config <CONFIG>
+          Path to govctl config (TOML)
+
+      --set [<SET>]
+          Set a scalar value (omit VALUE only when using --stdin)
+
+      --add [<ADD>]
+          Append a value to a list (omit VALUE only when using --stdin)
+
+      --dry-run
+          Dry run: preview changes without writing files
+
+      --remove [<REMOVE>]
+          Remove a matching value, or omit PATTERN when removing an indexed path
+
+      --tick <TICK>
+          Update checklist-style item status
+
+          Possible values:
+          - done:       Mark work items as done
+          - pending:    Mark work items as pending
+          - cancelled:  Mark work items as cancelled
+          - accepted:   Mark ADR alternatives as accepted
+          - considered: Mark ADR alternatives as considered
+          - rejected:   Mark ADR alternatives as rejected
+
+      --stdin
+          Read set/add value from stdin
+
+      --at <AT>
+          Match by index for remove/tick
+
+      --exact
+          Exact match for remove/tick
+
+      --regex
+          Regex match for remove/tick
+
+      --all
+          Remove all matches
+
+      --text <TEXT>
+          Legacy sugar: set text directly
+
+      --text-file <TEXT_FILE>
+          Legacy sugar: read text from file
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+EXAMPLES:
+    govctl clause edit RFC-0001:C-SUMMARY text --set "Updated clause text"
+    govctl clause edit RFC-0001:C-SUMMARY text --stdin
+    govctl clause edit RFC-0001:C-SUMMARY title --set "New Title"
+    govctl clause edit RFC-0001:C-SUMMARY kind --set informative
+
+LEGACY SUGAR:
+    govctl clause edit RFC-0001:C-SUMMARY --text "Updated clause text"
+    govctl clause edit RFC-0001:C-SUMMARY --stdin
+exit: 0

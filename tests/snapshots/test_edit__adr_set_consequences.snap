@@ -6,8 +6,8 @@ $ govctl adr new Test Decision
 Created ADR: gov/adr/ADR-XXXX-test-decision.toml
 exit: 0
 
-$ govctl adr set ADR-0001 consequences Good: faster. Bad: more memory.
-Set ADR-0001.consequences = Good: faster. Bad: more memory.
+$ govctl adr set ADR-0001 consequences Faster reads, but more memory use.
+Set ADR-0001.consequences = Faster reads, but more memory use.
 exit: 0
 
 $ govctl adr show ADR-0001
@@ -27,5 +27,5 @@ What is the change that we're proposing and/or doing?
 
 ## Consequences
 
-Good: faster. Bad: more memory.
+Faster reads, but more memory use.
 exit: 0

@@ -1,0 +1,47 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-06-001"
+title = "Redesign ADR model and migrate alternatives semantics"
+status = "done"
+created = "2026-04-06"
+started = "2026-04-06"
+completed = "2026-04-06"
+refs = [
+    "ADR-0032",
+    "ADR-0027",
+    "ADR-0036",
+]
+
+[content]
+description = "Redesign ADR data model so chosen options live in the decision, alternatives only capture non-selected options, and migration produces renderable artifacts with warnings for unresolved history."
+
+[[content.journal]]
+date = "2026-04-06"
+scope = "governance"
+content = "Paused ADR redesign/migration line to implement ADR-0037 edit-surface work first; split into a dedicated work item to keep CLI-surface changes separately auditable."
+
+[[content.journal]]
+date = "2026-04-06"
+scope = "migration"
+content = "Implemented ADR v3 with selected_option, structured consequences, and migration metadata; updated render/check/edit semantics; added a v2->v3 migrate step; migrated the repository ADRs to schema version 3; cargo test and govctl check both pass, with expected migration-review warnings on historical ADRs that need manual cleanup."
+
+[[content.acceptance_criteria]]
+text = "Define and accept an ADR for the redesigned ADR model and migration behavior"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes after the redesign and migration"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Add a versioned migration step that rewrites legacy ADRs into the new renderable model"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Implement the new ADR schema, render path, and check warnings for migration-review states"
+status = "done"
+category = "chore"

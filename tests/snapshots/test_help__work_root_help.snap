@@ -1,0 +1,42 @@
+---
+source: tests/test_help.rs
+assertion_line: 58
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl work --help
+Work item operations
+
+Usage: govctl work [OPTIONS] <COMMAND>
+
+Commands:
+  list    List work items [aliases: ls]
+  get     Get work item metadata or specific field
+  show    Show rendered work item content
+  new     Create a new work item
+  edit    Canonical path-first edit entrypoint
+  set     Set work item field value
+  add     Add value to work item array field
+  remove  Remove value from work item array field
+  move    Move work item to new status [aliases: mv]
+  tick    Tick acceptance criteria item
+  delete  Delete work item
+  render  Render a single work item to markdown
+  help    Print this message or the help of the given subcommand(s)
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+COMMON WORKFLOW:
+    1. `govctl work list` to discover work items
+    2. `govctl work get <ID> ...` for metadata/fields
+    3. `govctl work edit/add` to define scope and acceptance criteria
+    4. `govctl work tick` to update acceptance-criteria status
+    5. `govctl work move` to change lifecycle state
+
+START HERE:
+    - New work item: `govctl work new "Title"`
+    - Activate work: `govctl work move WI-<DATE>-001 active`
+    - Inspect one work item: `govctl work get WI-<DATE>-001`
+exit: 0

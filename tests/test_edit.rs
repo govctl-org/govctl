@@ -76,6 +76,33 @@ fn test_rfc_remove_owner() {
 }
 
 #[test]
+fn test_rfc_remove_owner_by_index_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners[1]", "--remove"],
+            &["rfc", "get", "RFC-0001", "owners"],
+        ],
+    );
+
+    assert!(
+        output.contains("Removed '@owner1' from RFC-0001.owners"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @owner2"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
 fn test_rfc_add_ref() {
     let temp_dir = init_project();
     let date = today();
@@ -89,6 +116,72 @@ fn test_rfc_add_ref() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_rfc_edit_set_title_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Original Title"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Canonical Title",
+            ],
+            &["rfc", "get", "RFC-0001", "title"],
+        ],
+    );
+
+    assert!(
+        output.contains("Set RFC-0001.title = Canonical Title"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 title\nCanonical Title"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
+fn test_rfc_edit_set_owner_by_index_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
+            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "owners[1]",
+                "--set",
+                "@replacement",
+            ],
+            &["rfc", "get", "RFC-0001", "owners"],
+        ],
+    );
+
+    assert!(
+        output.contains("Set RFC-0001.owners[1] = @replacement"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @replacement"),
+        "output: {}",
+        output
+    );
 }
 
 #[test]
@@ -186,6 +279,39 @@ fn test_clause_set_text() {
 }
 
 #[test]
+fn test_clause_edit_text_canonical() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "text",
+                "--set",
+                "Updated clause text",
+            ],
+            &["clause", "show", "RFC-0001:C-TEST"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
 fn test_clause_set_title() {
     let temp_dir = init_project();
     let date = today();
@@ -209,6 +335,97 @@ fn test_clause_set_title() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_clause_edit_title_canonical() {
+    let temp_dir = init_project();
+    let date = today();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Original Title",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "title",
+                "--set",
+                "New Title",
+            ],
+            &["clause", "show", "RFC-0001:C-TEST"],
+        ],
+    );
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_clause_remove_anchor_by_index_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Original Title",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "anchors",
+                "--add",
+                "anchor-one",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "anchors",
+                "--add",
+                "anchor-two",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "anchors[0]",
+                "--remove",
+            ],
+            &["clause", "show", "RFC-0001:C-TEST", "-o", "json"],
+        ],
+    );
+
+    assert!(
+        output.contains("Removed 'anchor-one' from RFC-0001:C-TEST.anchors"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("\"anchors\": [\n    \"anchor-two\"\n  ]")
+            || output.contains("\"anchors\": [\n  \"anchor-two\"\n]"),
+        "output: {}",
+        output
+    );
 }
 
 #[test]
@@ -268,8 +485,9 @@ fn test_clause_set_since_rejected() {
 }
 
 #[test]
-fn test_clause_set_text_rejected() {
+fn test_clause_set_text_sugar() {
     let temp_dir = init_project();
+    let date = today();
 
     let output = run_commands(
         temp_dir.path(),
@@ -286,10 +504,10 @@ fn test_clause_set_text_rejected() {
                 "normative",
             ],
             &["clause", "set", "RFC-0001:C-TEST", "text", "new text"],
+            &["clause", "show", "RFC-0001:C-TEST"],
         ],
     );
-    assert!(output.contains("error[E0804]"), "output: {}", output);
-    assert!(output.contains("govctl clause edit"), "output: {}", output);
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
 }
 
 #[test]
@@ -388,7 +606,7 @@ fn test_adr_set_status_rejected() {
 }
 
 #[test]
-fn test_adr_set_alternative_status_rejected() {
+fn test_adr_set_alternative_status_field_rejected() {
     let temp_dir = init_project();
 
     let output = run_commands(
@@ -406,7 +624,7 @@ fn test_adr_set_alternative_status_rejected() {
         ],
     );
     assert!(output.contains("error[E0804]"), "output: {}", output);
-    assert!(output.contains("govctl adr tick"), "output: {}", output);
+    assert!(output.contains("tick-owned"), "output: {}", output);
 }
 
 #[test]
@@ -423,6 +641,51 @@ fn test_adr_add_ref() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_edit_add_nested_path_canonical() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Canonical Edit ADR"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "content.alternatives",
+                "--add",
+                "Option A",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "content.alternatives[0].pros",
+                "--add",
+                "Readable",
+            ],
+            &["adr", "get", "ADR-0001", "alternatives[0].pros"],
+        ],
+    );
+
+    assert!(
+        output.contains("Added 'Option A' to ADR-0001.alternatives"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Added 'Readable' to ADR-0001.alternatives[0].pros"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl adr get ADR-0001 alternatives[0].pros\nReadable"),
+        "output: {}",
+        output
+    );
 }
 
 #[test]
@@ -477,7 +740,7 @@ fn test_adr_set_consequences() {
                 "set",
                 "ADR-0001",
                 "consequences",
-                "Good: faster. Bad: more memory.",
+                "Faster reads, but more memory use.",
             ],
             &["adr", "show", "ADR-0001"],
         ],
@@ -648,6 +911,52 @@ fn test_work_tick_acceptance_criteria() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_work_edit_tick_indexed_path_canonical() {
+    let temp_dir = init_project();
+    let date = today();
+    let wi_id = format!("WI-{}-001", date);
+
+    let commands = vec![
+        vec![
+            "work".to_string(),
+            "new".to_string(),
+            "Canonical Tick".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "edit".to_string(),
+            wi_id.clone(),
+            "content.acceptance_criteria".to_string(),
+            "--add".to_string(),
+            "add: Criterion 1".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "edit".to_string(),
+            wi_id.clone(),
+            "content.acceptance_criteria[0]".to_string(),
+            "--tick".to_string(),
+            "done".to_string(),
+        ],
+        vec!["work".to_string(), "show".to_string(), wi_id],
+    ];
+
+    let output = common::run_dynamic_commands(temp_dir.path(), &commands);
+
+    assert!(
+        output.contains("Added 'add: Criterion 1' to WI-"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Marked 'Criterion 1' as done"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("- ✓ Criterion 1"), "output: {}", output);
 }
 
 #[test]
@@ -1146,6 +1455,90 @@ fn test_adr_remove_nested_path_requires_selector() {
         ],
     );
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+}
+
+#[test]
+fn test_adr_edit_tick_updates_alternative_root() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Tick Root Test"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives",
+                "--tick",
+                "accepted",
+                "--at",
+                "0",
+            ],
+            &["adr", "get", "ADR-0001", "alternatives"],
+        ],
+    );
+    assert!(
+        output.contains("Marked 'Option A' as accepted"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("[accepted] Option A"), "output: {}", output);
+}
+
+#[test]
+fn test_adr_edit_tick_updates_indexed_alternative_item() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Indexed Tick Test"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &["adr", "edit", "ADR-0001", "alt[0]", "--tick", "accepted"],
+            &["adr", "get", "ADR-0001", "alternatives[0].status"],
+        ],
+    );
+    assert!(
+        output.contains("Marked 'Option A' as accepted"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl adr get ADR-0001 alternatives[0].status\naccepted"),
+        "output: {}",
+        output
+    );
+}
+
+#[test]
+fn test_adr_edit_tick_rejects_work_item_status_names() {
+    let temp_dir = init_project();
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Invalid Tick Test"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives",
+                "--tick",
+                "done",
+                "--at",
+                "0",
+            ],
+        ],
+    );
+    assert!(output.contains("error[E0820]"), "output: {}", output);
+    assert!(
+        output.contains("ADR tick status must be one of: accepted, considered, rejected"),
+        "output: {}",
+        output
+    );
 }
 
 #[test]

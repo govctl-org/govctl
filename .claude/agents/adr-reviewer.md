@@ -34,6 +34,7 @@ When invoked:
 - [ ] Decision is concrete enough to guide implementation without turning into a work-item execution log
 - [ ] Decision is proportional to the problem (not over-engineered)
 - [ ] Decision explains the chosen approach and why, without turning into a normative mini-RFC
+- [ ] Decision reads like the conclusion of the evaluated alternatives, not a premature answer with alternatives filled in afterward
 
 ### Consequences Honesty
 
@@ -44,9 +45,10 @@ When invoked:
 
 ### Alternatives
 
+- [ ] For new decisions, the ADR shows alternatives before the final decision prose is treated as settled
 - [ ] For new decisions, at least one rejected alternative is documented
 - [ ] Historical backfill ADRs may omit rejected alternatives only if the ADR states they were not recoverable
-- [ ] Each alternative has a rejection reason
+- [ ] Rejected alternatives have a rejection reason
 - [ ] Alternatives are genuinely different approaches (not strawmen)
 
 ### References
@@ -75,4 +77,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failure modes are an empty or dishonest Negative section, ADRs that drift into execution tracking, and ADRs that try to act like mini-RFCs. If the review finds any of those, flag them as Critical.
+The most common failure modes are an empty or dishonest Negative section, ADRs that drift into execution tracking, ADRs that try to act like mini-RFCs, and ADRs that jump straight to a decision without first documenting the alternatives discussion. If the review finds any of those, flag them as Critical.

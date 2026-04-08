@@ -4,7 +4,7 @@ use crate::FinalizeStatus;
 use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::load::{find_clause_json, find_rfc_json};
+use crate::load::{find_clause_toml, find_rfc_toml};
 use crate::model::{AdrStatus, ClauseStatus, Release, RfcPhase, RfcStatus, WorkItemStatus};
 use crate::parse::{
     load_adrs, load_releases, load_work_items, validate_version, write_adr, write_releases,
@@ -18,7 +18,66 @@ use crate::write::{
     write_clause, write_rfc,
 };
 use std::collections::HashSet;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+
+fn legacy_rfc_json_path(config: &Config, rfc_id: &str) -> Option<PathBuf> {
+    let path = config.rfc_dir().join(rfc_id).join("rfc.json");
+    path.exists().then_some(path)
+}
+
+fn legacy_clause_json_path(config: &Config, clause_id: &str) -> Option<PathBuf> {
+    let (rfc_id, clause_name) = clause_id.split_once(':')?;
+    let path = config
+        .rfc_dir()
+        .join(rfc_id)
+        .join("clauses")
+        .join(format!("{clause_name}.json"));
+    path.exists().then_some(path)
+}
+
+fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> anyhow::Result<PathBuf> {
+    if let Some(path) = find_rfc_toml(config, rfc_id) {
+        return Ok(path);
+    }
+    if legacy_rfc_json_path(config, rfc_id).is_some() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0505MigrationRequired,
+            format!(
+                "Legacy JSON RFC exists for {rfc_id}; run `govctl migrate` before RFC lifecycle commands."
+            ),
+            rfc_id,
+        )
+        .into());
+    }
+    Err(Diagnostic::new(
+        DiagnosticCode::E0102RfcNotFound,
+        format!("RFC not found: {rfc_id}"),
+        rfc_id,
+    )
+    .into())
+}
+
+fn require_clause_toml_path(config: &Config, clause_id: &str) -> anyhow::Result<PathBuf> {
+    if let Some(path) = find_clause_toml(config, clause_id) {
+        return Ok(path);
+    }
+    if legacy_clause_json_path(config, clause_id).is_some() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0505MigrationRequired,
+            format!(
+                "Legacy JSON clause exists for {clause_id}; run `govctl migrate` before clause lifecycle commands."
+            ),
+            clause_id,
+        )
+        .into());
+    }
+    Err(Diagnostic::new(
+        DiagnosticCode::E0202ClauseNotFound,
+        format!("Clause not found: {clause_id}"),
+        clause_id,
+    )
+    .into())
+}
 
 /// Update pending clauses (since: null) with the given version.
 ///
@@ -38,7 +97,7 @@ fn fill_pending_clause_versions(
     let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)?
         .filter_map(Result::ok)
         .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|e| e == "json" || e == "toml"))
+        .filter(|p| p.extension().is_some_and(|e| e == "toml"))
         .filter_map(|p| read_clause(config, &p).ok().map(|c| (p, c)))
         .filter(|(_, c)| c.since.is_none())
         .collect();
@@ -66,13 +125,7 @@ pub fn bump(
     changes: &[String],
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0102RfcNotFound,
-            format!("RFC not found: {rfc_id}"),
-            rfc_id,
-        )
-    })?;
+    let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let mut rfc = read_rfc(config, &rfc_path)?;
 
@@ -153,13 +206,7 @@ pub fn finalize(
     status: FinalizeStatus,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0102RfcNotFound,
-            format!("RFC not found: {rfc_id}"),
-            rfc_id,
-        )
-    })?;
+    let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let rfc = read_rfc(config, &rfc_path)?;
 
@@ -200,13 +247,7 @@ pub fn advance(
     phase: RfcPhase,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfc_path = find_rfc_json(config, rfc_id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0102RfcNotFound,
-            format!("RFC not found: {rfc_id}"),
-            rfc_id,
-        )
-    })?;
+    let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let rfc = read_rfc(config, &rfc_path)?;
 
@@ -336,13 +377,7 @@ pub fn deprecate(
 
     if id.contains(':') {
         // It's a clause
-        let clause_path = find_clause_json(config, id).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0202ClauseNotFound,
-                format!("Clause not found: {id}"),
-                id,
-            )
-        })?;
+        let clause_path = require_clause_toml_path(config, id)?;
 
         let clause = read_clause(config, &clause_path)?;
 
@@ -421,21 +456,20 @@ pub fn supersede(
     if id.contains(':') {
         // It's a clause
         // Validate replacement exists
-        let _ = find_clause_json(config, by).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0202ClauseNotFound,
-                format!("Replacement clause not found: {by}"),
-                by,
-            )
+        let _ = require_clause_toml_path(config, by).map_err(|err| {
+            match err.downcast::<Diagnostic>() {
+                Ok(diag) if diag.code == DiagnosticCode::E0202ClauseNotFound => Diagnostic::new(
+                    DiagnosticCode::E0202ClauseNotFound,
+                    format!("Replacement clause not found: {by}"),
+                    by,
+                )
+                .into(),
+                Ok(diag) => anyhow::Error::new(diag),
+                Err(err) => err,
+            }
         })?;
 
-        let clause_path = find_clause_json(config, id).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0202ClauseNotFound,
-                format!("Clause not found: {id}"),
-                id,
-            )
-        })?;
+        let clause_path = require_clause_toml_path(config, id)?;
 
         let mut clause = read_clause(config, &clause_path)?;
 
@@ -542,11 +576,11 @@ pub fn cut_release(
             format!("Invalid semver version: {version}"),
             &releases_path_str,
         );
-        anyhow::anyhow!("{}", diag)
+        anyhow::Error::from(diag)
     })?;
 
     // Load existing releases
-    let mut releases_file = load_releases(config).map_err(|d| anyhow::anyhow!("{}", d))?;
+    let mut releases_file = load_releases(config).map_err(anyhow::Error::from)?;
 
     // Check for duplicate version
     if releases_file.releases.iter().any(|r| r.version == version) {
@@ -555,7 +589,7 @@ pub fn cut_release(
             format!("Release {version} already exists"),
             &releases_path_str,
         );
-        anyhow::bail!("{}", diag);
+        return Err(diag.into());
     }
 
     // Get all work item IDs already in releases
@@ -566,7 +600,7 @@ pub fn cut_release(
         .collect();
 
     // Load all done work items
-    let work_items = load_work_items(config).map_err(|d| anyhow::anyhow!("{}", d))?;
+    let work_items = load_work_items(config).map_err(anyhow::Error::from)?;
     let unreleased: Vec<_> = work_items
         .iter()
         .filter(|w| w.spec.govctl.status == WorkItemStatus::Done)
@@ -579,7 +613,7 @@ pub fn cut_release(
             "No unreleased work items to include in release",
             &releases_path_str,
         );
-        anyhow::bail!("{}", diag);
+        return Err(diag.into());
     }
 
     // Create new release
@@ -600,7 +634,7 @@ pub fn cut_release(
     releases_file.releases.insert(0, release);
 
     // Write releases file
-    write_releases(config, &releases_file, op).map_err(|d| anyhow::anyhow!("{}", d))?;
+    write_releases(config, &releases_file, op).map_err(anyhow::Error::from)?;
 
     if !op.is_preview() {
         ui::release_created(version, &release_date, refs.len());

@@ -197,22 +197,17 @@ pub fn read_rfc(config: &Config, path: &Path) -> Result<RfcSpec> {
     Ok(rfc)
 }
 
-/// Write RFC to file, selecting JSON or TOML by extension.
-/// TOML output uses the `[govctl]` wire format.
+/// Write RFC to file in TOML only.
+/// TOML output uses the `[govctl]` wire format plus schema header.
 pub fn write_rfc(
     path: &Path,
     rfc: &RfcSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<()> {
-    let content = match path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let wire: RfcWire = rfc.clone().into();
-            let body = toml::to_string_pretty(&wire)?;
-            with_schema_header(ArtifactSchema::Rfc, &body)
-        }
-        _ => serde_json::to_string_pretty(rfc)?,
-    };
+    let wire: RfcWire = rfc.clone().into();
+    let body = toml::to_string_pretty(&wire)?;
+    let content = with_schema_header(ArtifactSchema::Rfc, &body);
     write_file(path, &content, op, display_path)
 }
 
@@ -246,22 +241,17 @@ pub fn read_clause(config: &Config, path: &Path) -> Result<ClauseSpec> {
     Ok(clause)
 }
 
-/// Write clause to file, selecting JSON or TOML by extension.
-/// TOML output uses the `[govctl]` + `[content]` wire format.
+/// Write clause to file in TOML only.
+/// TOML output uses the `[govctl]` + `[content]` wire format plus schema header.
 pub fn write_clause(
     path: &Path,
     clause: &ClauseSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<()> {
-    let content = match path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let wire: ClauseWire = clause.clone().into();
-            let body = toml::to_string_pretty(&wire)?;
-            with_schema_header(ArtifactSchema::Clause, &body)
-        }
-        _ => serde_json::to_string_pretty(clause)?,
-    };
+    let wire: ClauseWire = clause.clone().into();
+    let body = toml::to_string_pretty(&wire)?;
+    let content = with_schema_header(ArtifactSchema::Clause, &body);
     write_file(path, &content, op, display_path)
 }
 

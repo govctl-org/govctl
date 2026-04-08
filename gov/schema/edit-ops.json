@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "aliases": [
     { "alias": "ac", "canonical": "acceptance_criteria" },
     { "alias": "alt", "canonical": "alternatives" },
@@ -344,7 +344,7 @@
       "artifact": "clause",
       "name": "text",
       "get": { "path": ["text"], "render": "scalar" },
-      "set": null,
+      "set": { "path": ["text"], "mode": { "type": "string" } },
       "list_path": null
     },
     {
@@ -579,63 +579,202 @@
       "artifact": "adr",
       "root": "alternatives",
       "content_path": ["content", "alternatives"],
-      "text_key": "text",
-      "requires_index": true,
-      "max_depth": 2,
-      "fields": [
-        { "name": "text", "kind": "scalar", "verbs": ["get", "set"] },
-        { "name": "status", "kind": "scalar", "verbs": ["get"] },
-        {
-          "name": "rejection_reason",
-          "kind": "scalar",
-          "verbs": ["get", "set"]
-        },
-        {
-          "name": "pros",
-          "kind": "list",
-          "verbs": ["get", "set", "add", "remove"]
-        },
-        {
-          "name": "cons",
-          "kind": "list",
-          "verbs": ["get", "set", "add", "remove"]
+      "node": {
+        "kind": "list",
+        "verbs": ["get", "add", "remove", "tick"],
+        "text_key": "text",
+        "item": {
+          "kind": "object",
+          "verbs": ["get"],
+          "fields": [
+            {
+              "name": "text",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            },
+            {
+              "name": "status",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get"],
+                "set_mode": {
+                  "type": "enum",
+                  "allowed": ["considered", "accepted", "rejected"],
+                  "invalid_msg": "invalid status",
+                  "code": "E0820InvalidFieldValue"
+                }
+              }
+            },
+            {
+              "name": "rejection_reason",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            },
+            {
+              "name": "pros",
+              "node": {
+                "kind": "list",
+                "verbs": ["get", "set", "add", "remove"],
+                "text_key": null,
+                "item": {
+                  "kind": "scalar",
+                  "verbs": ["get", "set"],
+                  "set_mode": { "type": "string" }
+                }
+              }
+            },
+            {
+              "name": "cons",
+              "node": {
+                "kind": "list",
+                "verbs": ["get", "set", "add", "remove"],
+                "text_key": null,
+                "item": {
+                  "kind": "scalar",
+                  "verbs": ["get", "set"],
+                  "set_mode": { "type": "string" }
+                }
+              }
+            }
+          ]
         }
-      ]
+      }
     },
     {
       "artifact": "work",
       "root": "journal",
       "content_path": ["content", "journal"],
-      "text_key": "content",
-      "requires_index": true,
-      "max_depth": 2,
-      "fields": [
-        { "name": "content", "kind": "scalar", "verbs": ["get", "set"] },
-        { "name": "date", "kind": "scalar", "verbs": ["get", "set"] },
-        { "name": "scope", "kind": "scalar", "verbs": ["get", "set"] }
-      ]
+      "node": {
+        "kind": "list",
+        "verbs": ["get", "add", "remove"],
+        "text_key": "content",
+        "item": {
+          "kind": "object",
+          "verbs": ["get"],
+          "fields": [
+            {
+              "name": "content",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            },
+            {
+              "name": "date",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            },
+            {
+              "name": "scope",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            }
+          ]
+        }
+      }
     },
     {
       "artifact": "work",
       "root": "acceptance_criteria",
       "content_path": ["content", "acceptance_criteria"],
-      "text_key": "text",
-      "requires_index": true,
-      "max_depth": 2,
-      "fields": [
-        { "name": "text", "kind": "scalar", "verbs": ["get", "set"] },
-        { "name": "status", "kind": "scalar", "verbs": ["get"] },
-        { "name": "category", "kind": "scalar", "verbs": ["get", "set"] }
-      ]
+      "node": {
+        "kind": "list",
+        "verbs": ["get", "add", "remove", "tick"],
+        "text_key": "text",
+        "item": {
+          "kind": "object",
+          "verbs": ["get"],
+          "fields": [
+            {
+              "name": "text",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            },
+            {
+              "name": "status",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get"],
+                "set_mode": null
+              }
+            },
+            {
+              "name": "category",
+              "node": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            }
+          ]
+        }
+      }
     },
     {
       "artifact": "work",
       "root": "notes",
       "content_path": ["content", "notes"],
-      "text_key": null,
-      "requires_index": true,
-      "max_depth": 1,
-      "fields": []
+      "node": {
+        "kind": "list",
+        "verbs": ["get", "add", "remove"],
+        "text_key": null,
+        "item": {
+          "kind": "scalar",
+          "verbs": ["get", "set"],
+          "set_mode": { "type": "string" }
+        }
+      }
+    },
+    {
+      "artifact": "guard",
+      "root": "check",
+      "content_path": ["check"],
+      "node": {
+        "kind": "object",
+        "verbs": ["get"],
+        "fields": [
+          {
+            "name": "command",
+            "node": {
+              "kind": "scalar",
+              "verbs": ["get", "set"],
+              "set_mode": { "type": "string" }
+            }
+          },
+          {
+            "name": "timeout_secs",
+            "node": {
+              "kind": "scalar",
+              "verbs": ["get", "set"],
+              "set_mode": { "type": "integer" }
+            }
+          },
+          {
+            "name": "pattern",
+            "node": {
+              "kind": "scalar",
+              "verbs": ["get", "set"],
+              "set_mode": { "type": "string" }
+            }
+          }
+        ]
+      }
     }
   ],
   "validation_rules": [

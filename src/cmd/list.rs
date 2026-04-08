@@ -65,8 +65,7 @@ pub fn list(
     output: OutputFormat,
 ) -> anyhow::Result<Vec<Diagnostic>> {
     if target == ListTarget::Guard {
-        let result =
-            load_guards_with_warnings(config).map_err(|d| anyhow::anyhow!("{}", d.message))?;
+        let result = load_guards_with_warnings(config).map_err(anyhow::Error::from)?;
         list_guards(&result.items, filter, limit, output);
         return Ok(result.warnings);
     }

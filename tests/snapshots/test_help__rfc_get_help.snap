@@ -1,0 +1,27 @@
+---
+source: tests/test_help.rs
+assertion_line: 13
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl rfc get --help
+Get RFC metadata or specific field
+
+Usage: govctl rfc get [OPTIONS] <ID> [FIELD]
+
+Arguments:
+  <ID>     Artifact ID
+  [FIELD]  Field name or path (omit to show all)
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+VALID FIELDS:
+    - title, version, status, phase, owners, refs
+
+EXAMPLES:
+    govctl rfc get RFC-0001
+    govctl rfc get RFC-0001 title
+    govctl rfc get RFC-0001 refs
+exit: 0

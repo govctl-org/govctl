@@ -168,10 +168,22 @@ fn execute_ops(config: &Config, ops: &[FileOp]) -> anyhow::Result<()> {
     let backup_root = gov_root.join(".migrate-backup");
 
     if stage_root.exists() || backup_root.exists() {
-        return Err(anyhow::anyhow!(
-            "Migration staging directories already exist under {}",
-            config.display_path(gov_root).display()
-        ));
+        let mut conflicts = Vec::new();
+        if stage_root.exists() {
+            conflicts.push(config.display_path(&stage_root).display().to_string());
+        }
+        if backup_root.exists() {
+            conflicts.push(config.display_path(&backup_root).display().to_string());
+        }
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0504PathConflict,
+            format!(
+                "Migration staging directories already exist: {}",
+                conflicts.join(", ")
+            ),
+            config.display_path(gov_root).display().to_string(),
+        )
+        .into());
     }
 
     fs::create_dir_all(&stage_root)?;
@@ -423,7 +435,13 @@ fn plan_rfc_json_to_toml(
             let file_name = Path::new(clause_path)
                 .file_name()
                 .and_then(|n| n.to_str())
-                .ok_or_else(|| anyhow::anyhow!("Invalid clause path: {clause_path}"))?;
+                .ok_or_else(|| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0204ClausePathInvalid,
+                        format!("Invalid clause path: {clause_path}"),
+                        config.display_path(&rfc_json).display().to_string(),
+                    )
+                })?;
             if !clause_map.contains_key(file_name) {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0202ClauseNotFound,

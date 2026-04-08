@@ -1,5 +1,6 @@
 ---
 source: tests/test_edit.rs
+assertion_line: 435
 expression: "normalize_output(&output, temp_dir.path(), &date)"
 ---
 $ govctl rfc new Test RFC
@@ -8,5 +9,5 @@ Created RFC: gov/rfc/RFC-0001/rfc.toml
 exit: 0
 
 $ govctl clause edit RFC-0001:C-NONEXISTENT --text Text
-Error: Clause not found: RFC-0001:C-NONEXISTENT
+error[E0202]: Clause not found: RFC-0001:C-NONEXISTENT (gov/rfc/RFC-0001/clauses)
 exit: 1
