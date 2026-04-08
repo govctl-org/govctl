@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-08-006"
+title = "add README hero image"
+status = "done"
+created = "2026-04-08"
+started = "2026-04-08"
+completed = "2026-04-08"
+
+[content]
+description = "Move the generated README hero image into assets/ and embed it near the top of README.md."
+
+[[content.journal]]
+date = "2026-04-08"
+content = "Moved the generated hero image into assets/readme-hero.png and embedded it near the top of README.md."
+
+[[content.acceptance_criteria]]
+text = "README displays the generated hero image from assets/readme-hero.png"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

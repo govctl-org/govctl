@@ -14,162 +14,199 @@
 </p>
 
 <p align="center">
-  <strong>Governance-as-code for AI-assisted software development.</strong><br>
-  <em>Enforce spec-first discipline. Every feature starts with an RFC, not a prompt.</em>
+  <strong>A governance harness for AI coding.</strong><br>
+  <em>Turn prompts and patches into RFCs, ADRs, work items, and guarded delivery.</em>
+</p>
+
+<p align="center">
+  <img src="assets/readme-hero.png" alt="govctl hero illustration showing AI coding workflows flowing through RFCs, ADRs, work items, and guards into reviewed delivery" width="1200">
 </p>
 
 ---
 
-## The Problem
+`govctl` is a governance-as-code CLI for teams using AI to build software seriously.
 
-AI-assisted coding is powerful but undisciplined:
+It gives AI-assisted development a control plane that lives in your repo:
 
-- **Phase skipping** -- Jumping from idea to implementation without specification
-- **Documentation drift** -- Specs and code diverge silently
-- **No enforceable governance** -- "Best practices" become optional suggestions
+- **RFCs** say what must be true
+- **ADRs** record why a design was chosen
+- **Work items** track execution and acceptance criteria
+- **Verification guards** enforce executable completion gates
 
-The result: faster typing, slower thinking, unmaintainable systems.
+The point is not bureaucracy. The point is that AI-generated changes become **reviewable, traceable, and phase-gated**.
 
-### Without govctl
+## Why govctl
 
-```
-Day 1:  "Let's add caching!"
-Day 2:  AI generates 500 lines of Redis integration
-Day 7:  "Wait, did we agree on Redis or Memcached?"
-Day 14: Half the team implements one, half the other
-Day 30: Two incompatible caching layers, no spec, nobody knows why
-```
+Most AI coding tools optimize for generation. `govctl` optimizes for delivery.
 
-### With govctl
+Without explicit governance, teams drift into the same pattern:
 
-```
-Day 1:  govctl rfc new "Caching Strategy"
-Day 2:  RFC-0015 defines: Redis, TTL policy, invalidation rules
-Day 3:  govctl rfc advance RFC-0015 impl
-Day 7:  Implementation complete, traceable to spec
-Day 14: Tests pass, govctl rfc advance RFC-0015 stable
-```
+- ideas jump straight into implementation
+- decisions live in chat history instead of artifacts
+- code and specs diverge silently
+- "done" means "the agent stopped typing", not "the work passed verification"
 
----
+`govctl` closes that gap by making governed artifacts, lifecycle, and verification part of the normal workflow.
 
-## How It Works
+```text
+Without govctl:
+  prompt -> code -> drift -> arguments
 
-govctl enforces **phase discipline** on software development:
-
-```
-┌─────────┐     ┌──────────┐     ┌──────────┐     ┌──────────┐
-│  SPEC   │ ──► │   IMPL   │ ──► │   TEST   │ ──► │  STABLE  │
-└─────────┘     └──────────┘     └──────────┘     └──────────┘
-     │                │                │                │
-     ▼                ▼                ▼                ▼
-  RFC must         Code must       Tests must       Bug fixes
-  be normative     match spec      pass gates       only
+With govctl:
+  RFC / ADR -> work item -> guarded implementation -> stable history
 ```
 
-Three artifact types, one lifecycle:
+## What Makes It Different
 
-- **RFCs** -- Specifications that must exist before implementation
-- **ADRs** -- Architectural decisions with explicit trade-offs
-- **Work Items** -- Tracked tasks with acceptance criteria and verification guards
+### 1. Spec-first by default
 
-All artifacts are TOML files in `gov/`, validated by JSON schemas, and rendered to markdown in `docs/`. govctl governs itself by its own rules -- this repository is the first proof.
+`govctl` is built around the idea that implementation follows governed artifacts.
 
----
+In practice, that means:
+
+- RFCs describe externally relevant behavior and constraints
+- ADRs record design choices and trade-offs
+- work items execute against those artifacts
+- verification guards and lifecycle gates decide when work is actually done
+
+Instead of treating prompts as the source of truth, the source of truth becomes governed artifacts in the repository.
+
+### 2. Artifacts are the control plane
+
+`govctl` does not hide governance behind a web app or an MCP server.
+
+Artifacts live in `gov/` as TOML files with schema headers, references, and stable CLI access. That means:
+
+- changes are diffable
+- decisions are reviewable in PRs
+- agents can operate against files and commands you already understand
+
+### 3. One CLI agents can reliably operate
+
+The CLI is the operating surface for agents:
+
+- `list`, `show`, `get`, `edit`
+- resource-specific lifecycle verbs like `adr accept`, `rfc advance`, `rfc supersede`, and `work move`
+- path-first mutation through `edit`
+- explicit help text designed to act as a reliable command contract
+
+This matters because agent workflows get better when the interface is stable, local, and inspectable.
+
+### 4. Works in brownfield repositories
+
+This is not only for greenfield projects.
+
+For existing repositories, the `/migrate` workflow helps you adopt governance incrementally: discover undocumented decisions, backfill ADRs, and establish governed artifacts without restarting the project.
 
 ## Quick Start
-
-### Claude Code Plugin
-
-```
-/plugin marketplace add govctl-org/govctl
-/plugin install govctl@govctl
-/govctl:init
-```
-
-The plugin provides workflow skills, reviewer agents, and enforcement hooks out of the box.
 
 ### CLI
 
 ```bash
 cargo install govctl
 govctl init
+govctl status
 ```
 
-`govctl init` creates the governance structure and installs AI agent skills into `.claude/`.
-
-For complete documentation, see the [User Guide](https://govctl-org.github.io/govctl/).
-
----
-
-## AI Agent Integration
-
-govctl is built for AI-native development. Install the [Claude Code plugin](#quick-start) or run `govctl init` to get workflow skills that any Claude Code / Cursor / Codex agent can invoke:
-
-| Skill              | Purpose                                                                                 |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| `/gov <task>`      | Complete governed workflow: work item, RFC/ADR, implement, test, done                   |
-| `/migrate`         | Adopt govctl in an existing project: discover decisions, backfill ADRs, annotate source |
-| `/discuss <topic>` | Design discussion: explore options, draft RFC or ADR                                    |
-| `/commit`          | Smart commit: VCS detection, govctl checks, work item journal updates                   |
-| `/quick <task>`    | Fast path for trivial changes (skip governance ceremony)                                |
-| `/guard-writer`    | Create and edit verification guards                                                     |
-
-The plugin also includes enforcement hooks: `govctl status` runs at session start for context, `govctl check` runs at session end as a gate.
-
-Every govctl operation is a single CLI call. No MCP server needed -- the CLI is the universal interface. Every shell-capable agent already speaks it.
-
----
-
-## Features
-
-### Verification Guards
-
-Guards are executable completion checks that run when a work item moves to `done`. Define them in `gov/guard/`:
-
-```toml
-[govctl]
-id = "GUARD-CARGO-TEST"
-title = "cargo test passes"
-
-[check]
-command = "cargo test"
-timeout_secs = 300
-```
-
-Manage guards with the CLI:
+Then create your first governed artifacts:
 
 ```bash
-govctl guard new "cargo test passes"  # Create a guard
-govctl guard list                     # List all guards
-govctl guard show GUARD-CARGO-TEST    # View guard details
+govctl rfc new "Caching Strategy"
+govctl adr new "Choose cache backend"
+govctl work new --active "implement caching"
 ```
 
-Configure which guards are required in `gov/config.toml`:
+### Agent workflow
+
+Run `govctl init` and use the installed workflows with your agent:
+
+- `/discuss <topic>` to draft RFCs and ADRs
+- `/gov <task>` to execute governed implementation
+- `/quick <task>` for intentionally small changes
+- `/commit` to record work with governance checks
+
+For Claude Code plugin installation:
+
+```bash
+/plugin marketplace add govctl-org/govctl
+/plugin install govctl@govctl
+/govctl:init
+```
+
+For a global Codex installation:
+
+```bash
+mkdir -p ~/.codex
+cd ~/.codex
+govctl init
+govctl init-skills --format codex --dir .
+```
+
+This keeps the govctl-managed workspace, generated skills, and generated agents inside `~/.codex` instead of writing governance files into your home directory.
+
+### A concrete example
+
+```bash
+govctl rfc new "Verification Guard Policy"
+govctl clause new RFC-0015:C-GUARD-REQUIREMENTS "Required guards" -s "Verification" -k invariant
+govctl adr new "Require clippy on parser refactors"
+govctl work new --active "add parser lint guard"
+```
+
+## Core Capabilities
+
+### Canonical artifact operations
+
+Agents and humans work through a stable CLI contract.
+
+Read the exact field you need:
+
+```bash
+govctl rfc get RFC-0001 status
+```
+
+For precise artifact mutation, `govctl` provides a canonical path-first interface:
+
+```bash
+govctl adr edit ADR-0038 decision --stdin
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0].status --set done
+govctl clause edit RFC-0002:C-CRUD-VERBS text --stdin
+```
+
+This is not the product's identity. It is the low-level tool agents use to update governed artifacts precisely and consistently.
+
+### Verification guards
+
+Guards are executable checks that run when work reaches completion gates.
+
+Define reusable project defaults in `gov/config.toml`:
 
 ```toml
 [verification]
+enabled = true
 default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
 ```
 
-### Brownfield Adoption
+You can also require extra guards on a specific work item or waive a guard with an explicit reason. See:
 
-govctl is designed for existing projects. The `/migrate` skill systematically backfills governance:
+- [Validation & Rendering](https://github.com/govctl-org/govctl/blob/main/docs/guide/validation.md#per-work-item-guards)
+- [Working with Work Items](https://github.com/govctl-org/govctl/blob/main/docs/guide/work-items.md#per-work-item-guards)
 
-1. **Discover** undocumented architectural decisions in your codebase
-2. **Backfill** ADRs for each decision with context, rationale, and alternatives
-3. **Annotate** source files with `[[ADR-NNNN]]` references for traceability
+### Brownfield adoption vs format migration
 
-No existing files are modified without confirmation. The `gov/` directory is additive.
+These are related, but different:
 
-### Schema Migration
+- **`/migrate` workflow** — adopt `govctl` in an existing repository by discovering decisions, backfilling ADRs, and introducing governance incrementally
+- **`govctl migrate` command** — upgrade existing `govctl`-managed artifacts to the current on-disk format and schema
 
-When upgrading govctl to a version that changes the artifact file format:
+For format upgrades:
 
 ```bash
 govctl migrate
+govctl check
 ```
 
-Upgrades all governance files to the current schema version -- adding `#:schema` headers, converting legacy JSON to TOML, normalizing metadata layout. Changes are staged, backed up, and committed atomically with rollback on failure.
+As of the `0.8.x` line, RFC and clause artifacts are written canonically as TOML. Legacy JSON is supported for migration and compatibility on read, not as an ongoing write format.
 
 ### Interactive TUI
 
@@ -177,42 +214,44 @@ Upgrades all governance files to the current schema version -- adding `#:schema`
 govctl tui
 ```
 
-Browse RFCs, ADRs, and work items with styled markdown rendering. Included by default.
-
-Keymap: `1`/`2`/`3` switch lists, `j`/`k` navigate, `Enter` open, `/` filter, `Ctrl+d`/`Ctrl+u` page, `?` help.
-
----
+Browse RFCs, ADRs, work items, and guards with styled rendering in the terminal.
 
 ## Who This Is For
 
-- **Teams frustrated by AI "code now, think later" patterns**
-- **Existing projects** that need to retroactively establish governance
-- **Organizations needing audit trails** for AI-generated code
-- **Developers who believe discipline enables velocity**
+- Teams using Claude Code, Codex, Cursor, or similar agents for real product work
+- Projects that want AI assistance without losing reviewability
+- Brownfield repositories that need governance without a rewrite
+- Engineers who want specs, decisions, and work tracking to live in the repo
 
-Not for "move fast and break things" workflows. Not for projects without review processes.
+## Documentation
 
----
+- [User Guide](https://govctl-org.github.io/govctl/)
+- [Validation & Rendering](https://github.com/govctl-org/govctl/blob/main/docs/guide/validation.md)
+- [Working with Work Items](https://github.com/govctl-org/govctl/blob/main/docs/guide/work-items.md)
+- [Changelog](https://github.com/govctl-org/govctl/blob/main/CHANGELOG.md)
+- [Website](https://govctl.org)
 
 ## Community
 
-- [Discord](https://discord.gg/buBB9G8Z6n) -- Questions, discussions, feedback
-- [GitHub Issues](https://github.com/govctl-org/govctl/issues) -- Bug reports and feature requests
-- [GitHub Discussions](https://github.com/govctl-org/govctl/discussions) -- Design conversations
-
----
+- [Discord](https://discord.gg/buBB9G8Z6n)
+- [GitHub Issues](https://github.com/govctl-org/govctl/issues)
+- [GitHub Discussions](https://github.com/govctl-org/govctl/discussions)
 
 ## Contributing
 
-govctl has an opinionated workflow. Before contributing:
+`govctl` is intentionally opinionated:
 
-1. Read the [governance RFC](docs/rfc/RFC-0000.md) to understand the model
-2. All features require an RFC before implementation
-3. Phase gates are enforced -- this is the point, not bureaucracy
+- features start with governed artifacts, not implementation-first
+- RFCs and ADRs are part of the product, not side documentation
+- verification and lifecycle are core behavior, not optional extras
 
-**This workflow isn't for everyone, and that's okay.** If you thrive in structured, spec-driven development, we'd welcome your contributions.
+If that matches how you want AI-assisted development to work, contributions are welcome.
 
 ---
+
+## License
+
+MIT
 
 ## Star History
 
@@ -223,12 +262,6 @@ govctl has an opinionated workflow. Before contributing:
    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=govctl-org/govctl&type=Date" />
  </picture>
 </a>
-
----
-
-## License
-
-MIT
 
 ---
 

@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-08-004"
+title = "document Codex global install"
+status = "done"
+created = "2026-04-08"
+started = "2026-04-08"
+completed = "2026-04-08"
+
+[content]
+description = "Add a documented Codex global installation path to the README using ~/.codex as the govctl-managed workspace."
+
+[[content.journal]]
+date = "2026-04-08"
+content = "Added a Codex global install path to README using ~/.codex as the govctl-managed workspace."
+
+[[content.acceptance_criteria]]
+text = "README includes a Codex global install flow under ~/.codex"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

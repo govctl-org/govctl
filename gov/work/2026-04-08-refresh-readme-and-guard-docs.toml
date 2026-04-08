@@ -1,0 +1,36 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-08-003"
+title = "refresh README and guard docs"
+status = "done"
+created = "2026-04-08"
+started = "2026-04-08"
+completed = "2026-04-08"
+
+[content]
+description = "Rewrite README to better sell govctl's core value and clarify the distinction between /migrate and govctl migrate, and strengthen docs for per-work-item verification guards and waivers."
+
+[[content.journal]]
+date = "2026-04-08"
+content = "Refined README positioning, restored plugin installation entry, clarified lifecycle verb examples, replaced relative doc links with absolute ones, and expanded per-work-item guard documentation."
+
+[[content.acceptance_criteria]]
+text = "README emphasizes governance harness, control-plane artifacts, and agent operating surface"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "README distinguishes /migrate workflow from govctl migrate command"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "guides clearly show per-work-item required_guards and waivers"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

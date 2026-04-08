@@ -113,6 +113,41 @@ default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-MY-LINT"]
 - A guard **fails** when the command exits non-zero, times out, or doesn't match the pattern
 - All guards must pass before `govctl work move <WI-ID> done` succeeds
 
+### Per-Work-Item Guards
+
+Project-level `default_guards` are only part of the picture. A work item can also require additional guards of its own:
+
+```toml
+[verification]
+required_guards = ["GUARD-CLIPPY"]
+```
+
+This is useful when one work item needs an extra check that should not become a project-wide default.
+
+The effective required guard set for a work item is:
+
+- the project-level `default_guards` when verification is enabled
+- plus the work item's `verification.required_guards`
+- minus any explicitly waived guards
+
+You can inspect the effective set with:
+
+```bash
+govctl verify --work WI-2026-01-17-001
+```
+
+### Guard Waivers
+
+If a guard must be waived for a specific work item, record that explicitly with a reason:
+
+```toml
+[[verification.waivers]]
+guard = "GUARD-CARGO-TEST"
+reason = "Flaky on CI runner image; tracked in issue #123"
+```
+
+Waivers are scoped to a single work item. They do not disable verification globally, and they should be treated as an exception that must be explained.
+
 ## Rendering
 
 Render governance artifacts to markdown for documentation.

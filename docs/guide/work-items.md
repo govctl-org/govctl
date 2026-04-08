@@ -88,6 +88,8 @@ govctl work add WI-2026-01-17-001 acceptance_criteria "add: Documentation update
 
 Category prefixes (`add:`, `fix:`, `change:`, `chore:`, etc.) are required and drive changelog generation. Conventional-commit aliases like `feat:`, `refactor:`, `test:`, `docs:` are also accepted.
 
+Canonical changelog categories are still the preferred form in stored artifacts. The conventional-commit aliases are accepted as input sugar and normalized into the changelog model.
+
 ### Mark Criteria Complete
 
 ```bash
@@ -112,6 +114,41 @@ Completed the API layer.
 All integration tests passing.
 EOF
 ```
+
+## Per-Work-Item Guards
+
+Work items can require extra verification guards in addition to the project's default guard set.
+
+Example:
+
+```toml
+[verification]
+required_guards = ["GUARD-CLIPPY"]
+```
+
+This means:
+
+- `GUARD-CLIPPY` is required for this work item even if it is not a project default
+- project defaults from `gov/config.toml` still apply when verification is enabled
+- the work item cannot move to `done` until the effective required guards pass or are explicitly waived
+
+To run the effective guard set for a single work item:
+
+```bash
+govctl verify --work WI-2026-01-17-001
+```
+
+### Waiving A Guard
+
+If a specific guard must be waived for this work item, record that in the artifact with a reason:
+
+```toml
+[[verification.waivers]]
+guard = "GUARD-CARGO-TEST"
+reason = "Temporarily flaky on macOS runners; tracked in issue #123"
+```
+
+Waivers are per-work-item only. They do not disable the guard globally, and they should remain rare and justified.
 
 ## Notes
 
