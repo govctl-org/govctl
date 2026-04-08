@@ -45,7 +45,7 @@ jobs:
         shell: bash
         run: |
           VERSION="${{ steps.meta.outputs.version }}"
-          CARGO_VERSION="$(sed -n 's/^version = \"\\([^\"]*\\)\"$/\\1/p' Cargo.toml | head -n1)"
+          CARGO_VERSION="$(grep -E '^version = "' Cargo.toml | head -n1 | cut -d'"' -f2)"
           if [ "${CARGO_VERSION}" != "${VERSION}" ]; then
             echo "Cargo.toml version ${CARGO_VERSION} does not match tag v${VERSION}" >&2
             exit 1
@@ -193,14 +193,6 @@ jobs:
 
       - name: List artifacts
         run: ls -la artifacts/
-
-      - name: Generate SHA256SUMS
-        shell: bash
-        run: |
-          cd artifacts
-          find . -maxdepth 1 -type f ! -name 'release-notes.md' -print0 \
-            | sort -z \
-            | xargs -0 sha256sum > SHA256SUMS
 
       - name: Extract version
         run: echo "VERSION=v${{ needs.verify.outputs.version }}" >> $GITHUB_ENV

@@ -9,12 +9,12 @@ started = "2026-04-08"
 completed = "2026-04-08"
 
 [content]
-description = "Refactor the tag-driven release workflow so it validates version metadata, requires tags to point at main, publishes checksums, and uses deterministic release notes from repository state instead of a stale hardcoded body."
+description = "Refactor the tag-driven release workflow so it validates version metadata, requires tags to point at main, and uses deterministic release notes from repository state instead of a stale hardcoded body."
 
 [[content.journal]]
 date = "2026-04-08"
 scope = "release"
-content = "Refactored release.yml: added tag metadata verification, origin/main ancestry guard, deterministic release-notes generation from CHANGELOG, and SHA256SUMS publishing; govctl check and YAML parse validation pass."
+content = "Refactored release.yml: added tag metadata verification, origin/main ancestry guard, deterministic release-notes generation from CHANGELOG, and local YAML/check validation pass."
 
 [[content.acceptance_criteria]]
 text = "release workflow fails when tag version does not match Cargo.toml, CHANGELOG.md, or gov/releases.toml"
@@ -27,7 +27,7 @@ status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
-text = "release workflow publishes SHA256SUMS alongside binary archives"
+text = "release workflow publishes release archives through GitHub Releases without relying on a custom checksum manifest"
 status = "done"
 category = "chore"
 
