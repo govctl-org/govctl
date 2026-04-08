@@ -140,10 +140,13 @@ Behavior:
 
 Installs agent skills and agents into the project's agent directory (per ADR-0035).
 
-Syntax: `govctl init-skills [--force]`
+Syntax: `govctl init-skills [--force] [--format <claude|codex>] [--dir PATH]`
 
 Behavior:
-- Writes bundled skill and agent templates to the configured `agent_dir` (default `.claude`)
+- `--dir` overrides the output directory for this invocation. Resolution order: `--dir` flag > `agent_dir` from config > format-implied default (`.claude` for claude, `.codex` for codex)
+- `--format` selects the output format for agent definitions (default `claude`):
+  - `claude`: skills as `skills/*/SKILL.md`, agents as `agents/*.md` with YAML frontmatter (compatible with Claude Code, Cursor, Windsurf, and similar editors)
+  - `codex`: skills as `skills/*/SKILL.md` (same format), agents as `agents/*.toml` with `developer_instructions` field (compatible with Codex CLI)
 - Skips files that already exist unless `--force` is used
 - Reports created/updated/skipped counts
 - This command is separate from `init` because plugin users receive skills globally and do not need local copies
@@ -167,4 +170,6 @@ These commands are global because they:
 New global commands MAY be added via RFC amendment. They MUST meet at least one criterion:
 1. Operate on multiple resource types
 2. Perform project-level initialization or cleanup
-3. Provide meta-information about the CLI itself"""
+3. Provide meta-information about the CLI itself
+
+*Since: v0.1.0*"""

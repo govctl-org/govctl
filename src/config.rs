@@ -119,7 +119,7 @@ fn default_docs_output() -> PathBuf {
     PathBuf::from("docs")
 }
 
-fn default_agent_dir() -> PathBuf {
+pub fn default_agent_dir() -> PathBuf {
     PathBuf::from(".claude")
 }
 

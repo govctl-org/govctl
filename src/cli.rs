@@ -5,6 +5,16 @@ use std::path::PathBuf;
 
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 
+/// Output format for agent definitions in `init-skills`.
+#[derive(Clone, Debug, Default, ValueEnum)]
+pub enum SkillFormat {
+    /// Claude Code / Cursor / Windsurf (agents as .md with YAML frontmatter)
+    #[default]
+    Claude,
+    /// Codex CLI (agents as .toml with developer_instructions)
+    Codex,
+}
+
 #[derive(Args, Clone, Debug)]
 pub(crate) struct EditActionArgs {
     /// Set a scalar value (omit VALUE only when using --stdin)
@@ -86,6 +96,12 @@ NOTES:
         /// Force overwrite existing assets
         #[arg(short = 'f', long)]
         force: bool,
+        /// Output format for agent definitions: claude (default) or codex
+        #[arg(long, default_value = "claude")]
+        format: SkillFormat,
+        /// Override output directory (default: agent_dir from config, or format-implied)
+        #[arg(long)]
+        dir: Option<PathBuf>,
     },
 
     /// Validate all governed documents

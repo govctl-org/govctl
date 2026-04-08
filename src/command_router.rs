@@ -51,6 +51,8 @@ pub enum BuiltinOp {
     },
     InitSkills {
         force: bool,
+        format: crate::SkillFormat,
+        dir: Option<std::path::PathBuf>,
     },
     Check {
         #[allow(dead_code)]
@@ -441,7 +443,9 @@ fn execute_builtin(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     match builtin {
         BuiltinOp::Init { force } => cmd::new::init_project(config, *force, op),
-        BuiltinOp::InitSkills { force } => cmd::new::sync_skills(config, *force, op),
+        BuiltinOp::InitSkills { force, format, dir } => {
+            cmd::new::sync_skills(config, *force, format, dir.as_deref(), op)
+        }
         BuiltinOp::Check {
             deny_warnings: _,
             has_active: true,
@@ -795,8 +799,12 @@ impl CommandPlan {
 
         match cmd {
             Commands::Init { force } => Ok(global(Op::Builtin(BuiltinOp::Init { force: *force }))),
-            Commands::InitSkills { force } => {
-                Ok(global(Op::Builtin(BuiltinOp::InitSkills { force: *force })))
+            Commands::InitSkills { force, format, dir } => {
+                Ok(global(Op::Builtin(BuiltinOp::InitSkills {
+                    force: *force,
+                    format: format.clone(),
+                    dir: dir.clone(),
+                })))
             }
             Commands::Check {
                 deny_warnings,

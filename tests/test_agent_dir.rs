@@ -69,6 +69,55 @@ fn test_agent_dir_creates_subdirs() {
     assert!(!temp_dir.path().join(".claude/commands").exists());
 }
 
+/// Test: --format codex writes .toml agents instead of .md
+#[test]
+fn test_codex_format_agents() {
+    let temp_dir = init_project();
+
+    run_commands(temp_dir.path(), &[&["init-skills", "--format", "codex"]]);
+
+    // Skills are the same format regardless
+    assert!(temp_dir.path().join(".claude/skills/gov/SKILL.md").exists());
+
+    // Agents should be .toml, not .md
+    let toml_agent = temp_dir.path().join(".claude/agents/rfc-reviewer.toml");
+    assert!(
+        toml_agent.exists(),
+        "codex format should write .toml agents"
+    );
+    let content = fs::read_to_string(&toml_agent).unwrap();
+    assert!(content.contains("name = \"rfc-reviewer\""));
+    assert!(content.contains("developer_instructions"));
+
+    // .md agents should NOT exist
+    assert!(
+        !temp_dir
+            .path()
+            .join(".claude/agents/rfc-reviewer.md")
+            .exists(),
+        "codex format should not write .md agents"
+    );
+}
+
+/// Test: default format writes .md agents
+#[test]
+fn test_claude_format_agents() {
+    let temp_dir = init_project();
+
+    run_commands(temp_dir.path(), &[&["init-skills"]]);
+
+    let md_agent = temp_dir.path().join(".claude/agents/rfc-reviewer.md");
+    assert!(md_agent.exists(), "claude format should write .md agents");
+
+    assert!(
+        !temp_dir
+            .path()
+            .join(".claude/agents/rfc-reviewer.toml")
+            .exists(),
+        "claude format should not write .toml agents"
+    );
+}
+
 /// Test: init does NOT create skills/agents [[ADR-0035]]
 #[test]
 fn test_init_no_skills() {

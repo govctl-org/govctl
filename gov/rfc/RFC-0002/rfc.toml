@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.5.0"
+version = "0.6.1"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-03-27"
-signature = "3e5a5f7aa3994d443b54bddba6bcd9f7bc544b0fc2766c9b3ddf0a984901168a"
+updated = "2026-04-08"
+signature = "cc151bfa5029e201e922222957ebad390015a041fed9f8bbfa287bafc4c62af2"
 
 [[sections]]
 title = "Summary"
@@ -26,6 +26,16 @@ clauses = [
     "clauses/C-GLOBAL-COMMANDS.toml",
     "clauses/C-VERIFY-CONFIG.toml",
 ]
+
+[[changelog]]
+version = "0.6.1"
+date = "2026-04-08"
+notes = "Add --dir flag to init-skills for one-step directory override without config editing"
+
+[[changelog]]
+version = "0.6.0"
+date = "2026-04-08"
+notes = "Add --format flag to init-skills for cross-platform agent format support (claude/codex)"
 
 [[changelog]]
 version = "0.5.0"
