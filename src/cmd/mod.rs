@@ -12,4 +12,5 @@ pub mod move_;
 pub mod new;
 pub mod render;
 pub mod status;
+pub mod tag;
 pub mod verify;

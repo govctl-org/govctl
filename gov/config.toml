@@ -1,18 +1,24 @@
-[project]
-name = "govctl"
-default_owner = "@govctl-org"
-
 [paths]
 docs_output = "docs"
+
+[project]
+default_owner = "@govctl-org"
+name = "govctl"
 
 [schema]
 version = 2
 
 [source_scan]
 enabled = true
-include = ["src/**/*.rs"]
 exclude = []
+include = ["src/**/*.rs"]
+
+[tags]
+allowed = []
 
 [verification]
+default_guards = [
+    "GUARD-GOVCTL-CHECK",
+    "GUARD-CARGO-TEST",
+]
 enabled = true
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]

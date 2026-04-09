@@ -361,6 +361,7 @@ fn create_rfc(
         updated: None,
         supersedes: None,
         refs: vec![],
+        tags: vec![],
         sections: vec![
             SectionSpec {
                 title: "Summary".to_string(),
@@ -448,6 +449,7 @@ fn create_clause(
         anchors: vec![],
         superseded_by: None,
         since: None, // Will be set by rfc bump
+        tags: vec![],
     };
 
     let clause_path = config
@@ -533,6 +535,7 @@ fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<D
             date: today(),
             superseded_by: None,
             refs: vec![],
+            tags: vec![],
         },
         content: AdrContent {
             context: "Describe the context and problem statement.\nWhat is the issue that we're seeing that is motivating this decision?".to_string(),
@@ -621,6 +624,7 @@ fn create_work_item(
             started,
             completed: None,
             refs: vec![],
+            tags: vec![],
         },
         content: WorkItemContent {
             description:

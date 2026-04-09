@@ -40,10 +40,10 @@ A controlled vocabulary enforces consistency at the cost of a one-time registrat
 ### Design Outline
 
 - **Registry**: a `[tags] allowed` list in `gov/config.toml` — flat, lowercase kebab-case strings
-- **Artifact field**: an optional `tags` array in the `[govctl]` section of RFCs, ADRs, work items, and guards. Clauses inherit discoverability from the parent RFC.
-- **Management**: registry-level add/remove/list commands; artifact-level tagging via existing `add`/`remove` verbs
-- **Filtering**: `--tag` flag on existing `list` commands
-- **Validation**: `govctl check` rejects tags not in the allowed set
+- **Artifact field**: an optional `tags` array in the `[govctl]` section of RFCs, clauses, ADRs, work items, and guards (releases do not carry tags)
+- **Management**: registry-level `new`/`delete`/`list` commands; artifact-level tagging via existing `add`/`remove` verbs
+- **Filtering**: `--tag` flag on existing `list` commands for taggable resource types
+- **Validation**: `govctl check` rejects tags not in the allowed set; `add` rejects unregistered tags immediately
 
 Detailed command syntax, schema changes, and validation rules will be specified in an RFC-0002 amendment.
 
@@ -65,7 +65,7 @@ consequences = """
 
 - Friction to introduce a new tag — requires a config edit before first use (mitigation: this friction is intentional and the operation is a one-liner)
 - Retroactive tagging of existing artifacts requires effort (mitigation: incremental adoption — untagged artifacts simply don't appear in filtered queries)
-- Schema change across all four artifact types (mitigation: `tags` is optional with empty-array default — existing artifacts remain valid without modification)
+- Schema change across all five taggable artifact types (mitigation: `tags` is optional with empty-array default — existing artifacts remain valid without modification)
 
 ### Neutral
 

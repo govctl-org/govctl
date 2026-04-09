@@ -151,6 +151,24 @@ Behavior:
 - Reports created/updated/skipped counts
 - This command is separate from `init` because plugin users receive skills globally and do not need local copies
 
+**10. `govctl tag`**
+
+Manages the project's controlled tag vocabulary.
+
+Syntax:
+- `govctl tag new <tag>`
+- `govctl tag delete <tag>`
+- `govctl tag list`
+
+Behavior:
+- `new`: registers a new tag in `gov/config.toml` under `[tags] allowed`. Tags MUST match `[a-z][a-z0-9-]*` (lowercase kebab-case). MUST error if the tag already exists.
+- `delete`: removes a tag from the allowed list. MUST error if any artifact still references the tag.
+- `list`: displays all registered tags with usage counts (how many artifacts reference each tag).
+
+Artifact-level tagging uses existing resource verbs on taggable types (rfc, clause, adr, work, guard):
+- `govctl {rfc|clause|adr|work|guard} add <ID> tags <tag>` — assign a tag to an artifact
+- `govctl {rfc|clause|adr|work|guard} remove <ID> tags <tag>` — remove a tag from an artifact
+
 **Rationale:**
 
 These commands are global because they:
@@ -165,11 +183,11 @@ These commands are global because they:
 
 `govctl init-skills` qualifies because it performs project-level initialization of agent assets (criterion 2).
 
+`govctl tag` qualifies because it manages project-level configuration that applies across all resource types (criterion 1).
+
 **Future Additions:**
 
 New global commands MAY be added via RFC amendment. They MUST meet at least one criterion:
 1. Operate on multiple resource types
 2. Perform project-level initialization or cleanup
-3. Provide meta-information about the CLI itself
-
-*Since: v0.1.0*"""
+3. Provide meta-information about the CLI itself"""

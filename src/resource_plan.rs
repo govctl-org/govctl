@@ -19,7 +19,18 @@ pub(crate) trait ToPlan {
 }
 
 fn compile_common_list(target: ListTarget, args: &CommonListArgs) -> CommandPlan {
-    plan_list(target, args.filter.clone(), args.limit, args.output)
+    // Parse comma-separated tags from --tag option
+    let tags: Vec<String> = args
+        .tag
+        .as_deref()
+        .map(|t| {
+            t.split(',')
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty())
+                .collect()
+        })
+        .unwrap_or_default();
+    plan_list(target, args.filter.clone(), args.limit, args.output, tags)
 }
 
 fn compile_common_get(args: &CommonGetArgs) -> anyhow::Result<CommandPlan> {

@@ -28,7 +28,7 @@ Guard-specific: `govctl guard new "<title>"` scaffolds a new guard TOML file und
 
 **2. `list` - List Resources**
 
-Syntax: `govctl <resource> list [filter]`
+Syntax: `govctl <resource> list [filter] [--tag <tag>[,<tag>...]]`
 
 Lists all instances of the resource type. Optional filter narrows results.
 
@@ -38,6 +38,7 @@ Behavior:
 - Supports filtering (exact match or substring)
 - Sorted by ID (lexicographic order)
 - MUST respect [[RFC-0002:C-OUTPUT-FORMAT]] flags
+- With `--tag`: filters results to artifacts that carry ALL specified tags. MUST support comma-separated tag values. Applies to rfc, clause, adr, work, and guard (releases do not carry tags).
 
 **3. `get` - Read Resource**
 
@@ -114,4 +115,4 @@ Permanent deletion breaks referential integrity. These constraints ensure deleti
 
 - MUST NOT use different verb names for the same operation (e.g., "show" vs "get")
 - MUST NOT reorder arguments between resource types (ID always comes before field)
-- MUST NOT have resource-specific flags for universal operations"""
+- MUST NOT have resource-specific flags for universal operations. Flags that filter by a cross-resource metadata field (e.g., `--tag`) are permitted on resources that carry that field and silently ignored or unavailable on resources that do not."""

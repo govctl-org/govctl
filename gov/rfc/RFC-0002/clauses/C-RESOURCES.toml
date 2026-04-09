@@ -16,29 +16,29 @@ The following resource types MUST be supported as top-level command namespaces:
 Manages RFC specifications (normative documents defining system behavior).
 
 - ID Format: `RFC-NNNN` (e.g., RFC-0001)
-- Lifecycle: draft → normative → deprecated (per [[RFC-0001:C-RFC-STATUS]])
-- Phase: spec → impl → test → stable (per [[RFC-0001:C-RFC-PHASE]])
+- Lifecycle: draft → normative → deprecated (per RFC-0001:C-RFC-STATUS)
+- Phase: spec → impl → test → stable (per RFC-0001:C-RFC-PHASE)
 
 **2. `adr` - Architecture Decision Record**
 
 Manages ADRs (records of architectural decisions).
 
 - ID Format: `ADR-NNNN` (e.g., ADR-0001)
-- Lifecycle: proposed → accepted → superseded, or proposed → rejected (per [[RFC-0001:C-ADR-STATUS]])
+- Lifecycle: proposed → accepted → superseded, or proposed → rejected (per RFC-0001:C-ADR-STATUS)
 
 **3. `work` - Work Item**
 
 Manages work items (tasks, features, bugs).
 
 - ID Format: `WI-YYYY-MM-DD-NNN` (e.g., WI-2026-01-19-001)
-- Lifecycle: queue → active → done, with cancellation at any stage (per [[RFC-0001:C-WORK-STATUS]])
+- Lifecycle: queue → active → done, with cancellation at any stage (per RFC-0001:C-WORK-STATUS)
 
 **4. `clause` - RFC Clause**
 
 Manages individual clauses within RFCs.
 
 - ID Format: `RFC-NNNN:C-NAME` (e.g., RFC-0001:C-SUMMARY)
-- Lifecycle: active → deprecated → superseded (per [[RFC-0001:C-CLAUSE-STATUS]])
+- Lifecycle: active → deprecated → superseded (per RFC-0001:C-CLAUSE-STATUS)
 
 **Clause Namespace vs Storage:**
 
@@ -48,7 +48,7 @@ The CLI namespace is independent of filesystem layout. Implementations MAY store
 
 **5. `guard` - Verification Guard**
 
-Manages reusable executable completion checks defined by [[RFC-0000:C-GUARD-DEF]].
+Manages reusable executable completion checks defined by RFC-0000:C-GUARD-DEF.
 
 - ID Format: `GUARD-NAME` (e.g., GUARD-CARGO-TEST)
 - Storage: `gov/guard/` as individual TOML files
@@ -59,7 +59,7 @@ Manages reusable executable completion checks defined by [[RFC-0000:C-GUARD-DEF]
 Manages published versions and their included work item references.
 
 - ID Format: Semantic version (e.g., 1.0.0)
-- Storage: `gov/releases.toml` as defined by [[RFC-0000:C-RELEASE-DEF]]
+- Storage: `gov/releases.toml` as defined by RFC-0000:C-RELEASE-DEF
 - No lifecycle (immutable once created)
 
 **Resource Identification:**
@@ -75,6 +75,10 @@ Each resource type MUST have a unique, predictable ID format that:
 
 All date-valued resource metadata fields (such as `created`, `updated`, `started`, `completed`, and `date`) MUST use ISO 8601 calendar date format `YYYY-MM-DD`.
 
+**Tags:**
+
+RFCs, clauses, ADRs, work items, and guards MAY include an optional `tags` array in the `[govctl]` section. Each tag MUST be a string from the project's controlled vocabulary defined in `gov/config.toml` under `[tags] allowed`. Tags MUST match the pattern `[a-z][a-z0-9-]*` (lowercase kebab-case). Releases do not carry tags. `govctl check` MUST reject any artifact that references a tag not present in the allowed set.
+
 **Future Extensions:**
 
-Additional resource types MAY be added via RFC amendment. New resource types MUST follow the same structural patterns defined in [[RFC-0002:C-CRUD-VERBS]]."""
+Additional resource types MAY be added via RFC amendment. New resource types MUST follow the same structural patterns defined in RFC-0002:C-CRUD-VERBS."""

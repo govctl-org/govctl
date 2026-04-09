@@ -1,0 +1,11 @@
+---
+source: tests/test_tags.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl tag new caching
+Added tag: caching
+exit: 0
+
+$ govctl tag new caching
+error[E1102]: Tag 'caching' already exists in [tags] allowed (caching)
+exit: 1

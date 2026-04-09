@@ -1,0 +1,11 @@
+---
+source: tests/test_tags.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr list --tag caching
+┌──────────┬──────────┬────────────┬─────────────────┐
+│ ADR      ┆ Status   ┆ Date       ┆ Title           │
+╞══════════╪══════════╪════════════╪═════════════════╡
+│ ADR-0001 ┆ proposed ┆ <DATE> ┆ Tagged Decision │
+└──────────┴──────────┴────────────┴─────────────────┘
+exit: 0

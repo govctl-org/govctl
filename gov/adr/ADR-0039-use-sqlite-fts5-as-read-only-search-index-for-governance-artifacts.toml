@@ -35,7 +35,7 @@ We will use **SQLite FTS5 with lazy incremental sync** as the search backend for
 
 ### Design
 
-1. **Index location:** `gov/.search.db` (gitignored). Disposable — can be deleted and rebuilt transparently.
+1. **Index location:** `gov/.search.db` (gitignored, along with WAL sidecars `gov/.search.db-wal` and `gov/.search.db-shm`). Disposable — can be deleted and rebuilt transparently.
 
 2. **Indexed content:** All artifact types (RFCs, clauses, ADRs, work items, guards). Each entry stores the artifact ID, type, title, and a concatenation of all human-readable text fields. Tokenized with Porter stemming for English morphological matching.
 
@@ -57,7 +57,7 @@ We will use **SQLite FTS5 with lazy incremental sync** as the search backend for
 - Lazy sync avoids coupling between the write path and the index — files changed by manual editing, VCS operations, or govctl all sync identically
 - A single read-only cache file is simpler than a persistent daemon or event-driven index
 - The index is not covered by [[RFC-0004]] file locking because it is a derived cache, not a governance artifact
-- `gov/.search.db` should be added to `.gitignore` by `govctl init`"""
+- `govctl init` should add `gov/.search.db*` to `.gitignore` to cover the database and WAL sidecars"""
 consequences = """
 ### Positive
 

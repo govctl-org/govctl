@@ -1,0 +1,18 @@
+---
+source: tests/test_tags.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl adr list --tag caching,performance
+┌──────────┬──────────┬────────────┬───────────────────────┐
+│ ADR      ┆ Status   ┆ Date       ┆ Title                 │
+╞══════════╪══════════╪════════════╪═══════════════════════╡
+│ ADR-0001 ┆ proposed ┆ <DATE> ┆ Multi-Tagged Decision │
+└──────────┴──────────┴────────────┴───────────────────────┘
+exit: 0
+
+$ govctl adr list --tag caching,security
+┌─────┬────────┬──────┬───────┐
+│ ADR ┆ Status ┆ Date ┆ Title │
+╞═════╪════════╪══════╪═══════╡
+└─────┴────────┴──────┴───────┘
+exit: 0

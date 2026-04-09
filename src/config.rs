@@ -26,6 +26,8 @@ pub struct Config {
     pub verification: VerificationConfig,
     #[serde(default)]
     pub concurrency: ConcurrencyConfig,
+    #[serde(default)]
+    pub tags: TagsConfig,
 }
 
 impl Default for Config {
@@ -39,8 +41,22 @@ impl Default for Config {
             work_item: WorkItemConfig::default(),
             verification: VerificationConfig::default(),
             concurrency: ConcurrencyConfig::default(),
+            tags: TagsConfig::default(),
         }
     }
+}
+
+/// Controlled-vocabulary tag configuration.
+///
+/// Defines the allowed tag set for the project. Artifacts may only use tags
+/// listed here. Implements [[RFC-0002:C-RESOURCES]] controlled-vocabulary tags.
+/// An empty `allowed` list means no tags are permitted (deny-all).
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TagsConfig {
+    /// Allowed tag values (each must match `^[a-z][a-z0-9-]*$`).
+    /// Empty = deny all.
+    #[serde(default)]
+    pub allowed: Vec<String>,
 }
 
 /// Project-level verification guard policy.
@@ -405,6 +421,11 @@ version = {schema_version}
 # Maximum seconds to wait for exclusive lock before failing (default: 30)
 # Implements [[RFC-0004]] concurrent write safety
 # lock_timeout_secs = 30
+
+# [tags]
+# Controlled-vocabulary tags for artifact classification — [[RFC-0002:C-RESOURCES]]
+# Artifacts may only use tags listed here.
+# allowed = ["security", "breaking-change", "performance"]
 "#
         )
     }
