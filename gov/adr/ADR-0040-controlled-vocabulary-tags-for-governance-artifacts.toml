@@ -1,0 +1,111 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0040"
+title = "Controlled-vocabulary tags for governance artifacts"
+status = "accepted"
+date = "2026-04-09"
+refs = [
+    "RFC-0002",
+    "ADR-0039",
+]
+
+[content]
+context = """
+As the govctl artifact corpus grows (currently 200+ artifacts), finding related artifacts by domain becomes difficult. Users resort to `grep` or memorizing IDs.
+
+### Problem Statement
+
+There is no structured way to answer "show me everything related to caching" or "which ADRs touch the parser". Artifact titles provide some signal, but titles are inconsistent and not designed for cross-cutting categorization.
+
+### Constraints
+
+- [[RFC-0002:C-RESOURCES]] defines the field surface for each artifact type — adding `tags` requires a schema amendment
+- [[RFC-0002:C-CRUD-VERBS]] governs how fields are mutated — tags must follow existing `add`/`remove` verb semantics
+- Tags must be diffable and reviewable in PRs (no hidden state)
+- The system should prevent tag sprawl — typos and near-duplicates degrade signal
+
+### Options Considered
+
+Two tagging models: controlled vocabulary (registry-first) vs. free-form (tag-on-use). See alternatives for analysis."""
+decision = """
+We will use a **controlled-vocabulary tag system** where tags must be registered in a project-level allowed list before any artifact can reference them.
+
+### Why Controlled Vocabulary
+
+The core trade-off is between friction and signal quality. Free-form tags have zero friction but degrade rapidly — typos, case variants, and synonyms fragment the taxonomy. In a governed workflow where artifacts are meant to be auditable and cross-referenced, unreliable metadata defeats the purpose.
+
+A controlled vocabulary enforces consistency at the cost of a one-time registration step for each new tag. This cost is intentional: introducing a new domain category is a project-level decision that should be visible and reviewable.
+
+### Design Outline
+
+- **Registry**: a `[tags] allowed` list in `gov/config.toml` — flat, lowercase kebab-case strings
+- **Artifact field**: an optional `tags` array in the `[govctl]` section of RFCs, ADRs, work items, and guards. Clauses inherit discoverability from the parent RFC.
+- **Management**: registry-level add/remove/list commands; artifact-level tagging via existing `add`/`remove` verbs
+- **Filtering**: `--tag` flag on existing `list` commands
+- **Validation**: `govctl check` rejects tags not in the allowed set
+
+Detailed command syntax, schema changes, and validation rules will be specified in an RFC-0002 amendment.
+
+### Constraints
+
+- No maximum tag count per artifact — signal quality is maintained by the controlled vocabulary, not by limiting labels
+- The initial seed list of allowed tags is a separate operational decision from the mechanism itself
+- Tags complement but do not replace potential future full-text search (see [[ADR-0039]])"""
+consequences = """
+### Positive
+
+- Cross-cutting discovery becomes a first-class operation — "show me everything about caching" is a single command
+- Controlled vocabulary prevents tag sprawl — consistency is enforced, not hoped for
+- Tags are part of the TOML source — diffable, reviewable in PRs, greppable
+- Agents can enumerate available tags and use them programmatically
+- Extends existing `add`/`remove`/`list` verb model — minimal new CLI grammar
+
+### Negative
+
+- Friction to introduce a new tag — requires a config edit before first use (mitigation: this friction is intentional and the operation is a one-liner)
+- Retroactive tagging of existing artifacts requires effort (mitigation: incremental adoption — untagged artifacts simply don't appear in filtered queries)
+- Schema change across all four artifact types (mitigation: `tags` is optional with empty-array default — existing artifacts remain valid without modification)
+
+### Neutral
+
+- `govctl tag` becomes a new top-level command namespace for registry management
+- The tag vocabulary will need periodic curation as the project evolves — orphaned or overly broad tags should be pruned
+- Tags complement but do not replace full-text search; [[ADR-0039]] remains a viable future option if content-level discovery is needed
+- An RFC-0002 amendment is a prerequisite before implementation — this ADR authorizes the design direction but not the schema change"""
+
+[[content.alternatives]]
+text = "Controlled vocabulary: tags registered in gov/config.toml before use, enforced by govctl check. Lowercase kebab-case, flat list."
+status = "accepted"
+pros = [
+    "Prevents tag sprawl — typos and near-duplicates are caught at check time",
+    "Registry is diffable and reviewable in PRs",
+    "Tag list is enumerable — agents and CLI completion can offer suggestions",
+    "Removing a tag from the registry is an explicit, auditable decision",
+]
+cons = ["Friction to add a new tag — requires a config edit before first use"]
+
+[[content.alternatives]]
+text = "Free-form tags: any string can be used as a tag on any artifact. No registry. Tags are created implicitly on first use."
+status = "rejected"
+pros = ["Zero friction — tag immediately without config changes"]
+cons = [
+    "Tag sprawl is inevitable — cache vs caching vs Cache are all different tags",
+    "No way to enforce consistency across contributors",
+    "Removing a stale tag requires finding and editing every artifact that uses it",
+]
+rejection_reason = "In a governed workflow, uncontrolled metadata defeats the purpose of structured artifacts. Tag sprawl would quickly make filtering unreliable."
+
+[[content.alternatives]]
+text = "No tags — improve search and filtering instead: rely on title grep, rendered markdown search tools (rg, qmd), or future FTS (ADR-0039) to find artifacts by content rather than adding structured metadata."
+status = "rejected"
+pros = [
+    "Zero schema changes — no new fields, no config section, no validation rules",
+    "No tagging discipline burden on authors",
+]
+cons = [
+    "Finding all artifacts related to a topic requires remembering the right search terms",
+    "No enumerable taxonomy — agents cannot discover what categories exist",
+    "Cross-cutting queries remain ad hoc and fragile",
+]
+rejection_reason = "Search finds text matches, not intentional categorization. Tags express author intent about which domain an artifact belongs to — a dimension that free-text search cannot reliably recover."
