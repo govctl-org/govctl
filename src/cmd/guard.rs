@@ -52,6 +52,7 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Ve
             id: id.clone(),
             title: title.to_string(),
             refs: vec![],
+            tags: vec![],
         },
         check: GuardCheck {
             command: "echo 'GUARD NOT CONFIGURED: replace this command' && exit 1".to_string(),

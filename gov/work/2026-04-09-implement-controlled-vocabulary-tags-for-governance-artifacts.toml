@@ -1,0 +1,56 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-09-001"
+title = "Implement controlled-vocabulary tags for governance artifacts"
+status = "done"
+created = "2026-04-09"
+started = "2026-04-09"
+completed = "2026-04-09"
+refs = [
+    "RFC-0002",
+    "ADR-0040",
+]
+
+[content]
+description = "Add controlled-vocabulary tag support per ADR-0040. Amend RFC-0002 with tags field on all taggable artifact types (rfc, clause, adr, work, guard), govctl tag registry commands, --tag filter on list commands, and govctl check validation. Implement in Rust."
+
+[[content.journal]]
+date = "2026-04-09"
+scope = "rfc"
+content = "Amended RFC-0002 v0.7.0: C-RESOURCES (tags field), C-CRUD-VERBS (--tag filter on list), C-GLOBAL-COMMANDS (govctl tag new/delete/list). All checks pass."
+
+[[content.journal]]
+date = "2026-04-09"
+scope = "impl"
+content = "Implementation complete: schemas, config, model, CLI (tag new/delete/list), validation (E1101-E1105), --tag list filter, edit-ops SSOT. All tests pass. Smoke test verified."
+
+[[content.acceptance_criteria]]
+text = "RFC-0002 amended with tags spec (C-RESOURCES, C-CRUD-VERBS, C-GLOBAL-COMMANDS)"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "tags field in all five artifact schemas (rfc, clause, adr, work, guard)"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl tag new/delete/list commands with usage counts"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check validates tags against config allowed list"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "--tag filter on rfc/clause/adr/work/guard list commands"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

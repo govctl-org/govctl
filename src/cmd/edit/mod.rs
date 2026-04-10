@@ -1107,6 +1107,28 @@ pub fn add_to_field(
         .expect("mutation planning should produce target");
     let value = resolve_owned_value(value, stdin)?;
     let value = value.as_str();
+
+    // Validate tags against controlled vocabulary at add time — [[RFC-0002:C-RESOURCES]]
+    if fp.as_simple() == Some("tags") {
+        if !crate::cmd::tag::TAG_RE.is_match(value) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E1101TagInvalidFormat,
+                format!("Invalid tag format '{value}': must match ^[a-z][a-z0-9-]*$"),
+                id,
+            )
+            .into());
+        }
+        let allowed = &config.tags.allowed;
+        if !allowed.iter().any(|t| t == value) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E1105TagUnknown,
+                format!("Tag '{value}' is not in config.toml [tags] allowed. Register it first with: govctl tag new {value}"),
+                id,
+            )
+            .into());
+        }
+    }
+
     match artifact {
         ArtifactType::Adr => {
             let mut entry = AdrTomlAdapter::load(config, id)?;

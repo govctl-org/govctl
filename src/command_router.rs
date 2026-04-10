@@ -84,6 +84,15 @@ pub enum BuiltinOp {
         version: String,
         date: Option<String>,
     },
+    TagNew {
+        tag: String,
+    },
+    TagDelete {
+        tag: String,
+    },
+    TagList {
+        output: crate::OutputFormat,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -159,6 +168,8 @@ pub enum Op {
         filter: Option<String>,
         limit: Option<usize>,
         output: OutputFormat,
+        /// Tags to filter by (artifact must have ALL specified tags) — [[RFC-0002:C-CRUD-VERBS]]
+        tags: Vec<String>,
     },
     Get,
     Show {
@@ -198,6 +209,7 @@ impl CommandPlan {
             | Op::Builtin(BuiltinOp::Verify { .. })
             | Op::Builtin(BuiltinOp::Describe { .. })
             | Op::Builtin(BuiltinOp::Completions { .. })
+            | Op::Builtin(BuiltinOp::TagList { .. })
             | Op::Get
             | Op::List { .. }
             | Op::Show { .. } => LockDisposition::None,
@@ -247,6 +259,14 @@ pub(crate) fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEd
         + usize::from(args.remove.is_some());
 
     if action_count == 0 {
+        // When --stdin is present with no explicit action, infer --set
+        if args.stdin {
+            reject_selector_flags_for_value_action("set (inferred from --stdin)", args)?;
+            return Ok(OwnedEditAction::Set {
+                value: Some(None),
+                stdin: true,
+            });
+        }
         return Err(Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             "exactly one edit action is required",
@@ -500,6 +520,9 @@ fn execute_builtin(
         BuiltinOp::ReleaseCut { version, date } => {
             cmd::lifecycle::cut_release(config, version, date.as_deref(), op)
         }
+        BuiltinOp::TagNew { tag } => cmd::tag::tag_new(config, tag, op),
+        BuiltinOp::TagDelete { tag } => cmd::tag::tag_delete(config, tag, op),
+        BuiltinOp::TagList { output } => cmd::tag::tag_list(config, *output),
     }
 }
 
@@ -557,6 +580,7 @@ fn execute_list(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: &[String],
 ) -> anyhow::Result<Vec<Diagnostic>> {
     cmd::list::list(
         config,
@@ -564,6 +588,7 @@ fn execute_list(
         filter,
         limit,
         output,
+        tags,
     )
 }
 
@@ -718,7 +743,8 @@ fn execute_plan(
             filter,
             limit,
             output,
-        } => execute_list(plan, config, filter.as_deref(), *limit, *output),
+            tags,
+        } => execute_list(plan, config, filter.as_deref(), *limit, *output, tags),
         Op::Get => execute_get(plan, config),
         Op::Show { output } => execute_show(plan, config, *output),
         Op::Edit(edit) => execute_edit(plan, config, edit, op),
@@ -737,6 +763,7 @@ pub(crate) fn plan_list(
     filter: Option<String>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: Vec<String>,
 ) -> CommandPlan {
     collection(
         target_kind,
@@ -744,6 +771,7 @@ pub(crate) fn plan_list(
             filter,
             limit,
             output,
+            tags,
         },
     )
 }
@@ -848,6 +876,19 @@ impl CommandPlan {
                 version: version.clone(),
                 date: date.clone(),
             }))),
+            Commands::Tag { command } => match command {
+                crate::TagCommand::New { tag } => {
+                    Ok(global(Op::Builtin(BuiltinOp::TagNew { tag: tag.clone() })))
+                }
+                crate::TagCommand::Delete { tag } => {
+                    Ok(global(Op::Builtin(BuiltinOp::TagDelete {
+                        tag: tag.clone(),
+                    })))
+                }
+                crate::TagCommand::List { output } => {
+                    Ok(global(Op::Builtin(BuiltinOp::TagList { output: *output })))
+                }
+            },
         }
     }
 }

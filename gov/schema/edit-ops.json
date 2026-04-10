@@ -30,6 +30,7 @@
         "title",
         "date",
         "refs",
+        "tags",
         "superseded_by",
         "started",
         "completed",
@@ -83,6 +84,12 @@
       "kind": "list",
       "verbs": ["add", "remove"]
     },
+    {
+      "artifact": "clause",
+      "name": "tags",
+      "kind": "list",
+      "verbs": ["add", "remove", "get"]
+    },
 
     {
       "artifact": "rfc",
@@ -119,6 +126,12 @@
       "name": "refs",
       "kind": "list",
       "verbs": ["get", "add", "remove"]
+    },
+    {
+      "artifact": "rfc",
+      "name": "tags",
+      "kind": "list",
+      "verbs": ["add", "remove", "get"]
     },
     {
       "artifact": "rfc",
@@ -168,6 +181,12 @@
       "name": "refs",
       "kind": "list",
       "verbs": ["get", "add", "remove"]
+    },
+    {
+      "artifact": "adr",
+      "name": "tags",
+      "kind": "list",
+      "verbs": ["add", "remove", "get"]
     },
     {
       "artifact": "adr",
@@ -226,6 +245,12 @@
     },
     {
       "artifact": "work",
+      "name": "tags",
+      "kind": "list",
+      "verbs": ["add", "remove", "get"]
+    },
+    {
+      "artifact": "work",
       "name": "description",
       "kind": "scalar",
       "verbs": ["get", "set"]
@@ -255,6 +280,12 @@
       "name": "refs",
       "kind": "list",
       "verbs": ["get", "add", "remove"]
+    },
+    {
+      "artifact": "guard",
+      "name": "tags",
+      "kind": "list",
+      "verbs": ["add", "remove", "get"]
     },
     {
       "artifact": "guard",
@@ -317,6 +348,13 @@
       "get": { "path": ["refs"], "render": "csv_strings" },
       "set": null,
       "list_path": ["refs"]
+    },
+    {
+      "artifact": "rfc",
+      "name": "tags",
+      "get": { "path": ["tags"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["tags"]
     },
     {
       "artifact": "rfc",
@@ -397,6 +435,13 @@
       "set": null,
       "list_path": ["anchors"]
     },
+    {
+      "artifact": "clause",
+      "name": "tags",
+      "get": { "path": ["tags"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["tags"]
+    },
 
     {
       "artifact": "adr",
@@ -432,6 +477,13 @@
       "get": { "path": ["govctl", "refs"], "render": "csv_strings" },
       "set": null,
       "list_path": ["govctl", "refs"]
+    },
+    {
+      "artifact": "adr",
+      "name": "tags",
+      "get": { "path": ["govctl", "tags"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["govctl", "tags"]
     },
     {
       "artifact": "adr",
@@ -507,6 +559,13 @@
     },
     {
       "artifact": "work",
+      "name": "tags",
+      "get": { "path": ["govctl", "tags"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["govctl", "tags"]
+    },
+    {
+      "artifact": "work",
       "name": "description",
       "get": { "path": ["content", "description"], "render": "scalar" },
       "set": {
@@ -548,6 +607,13 @@
       "get": { "path": ["govctl", "refs"], "render": "csv_strings" },
       "set": null,
       "list_path": ["govctl", "refs"]
+    },
+    {
+      "artifact": "guard",
+      "name": "tags",
+      "get": { "path": ["govctl", "tags"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["govctl", "tags"]
     },
     {
       "artifact": "guard",

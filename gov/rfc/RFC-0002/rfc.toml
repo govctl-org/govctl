@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.6.1"
+version = "0.7.0"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-04-08"
-signature = "cc151bfa5029e201e922222957ebad390015a041fed9f8bbfa287bafc4c62af2"
+updated = "2026-04-09"
+signature = "34e3af95677441443e8931aed179b3bc3f67407276bab9c3857c3295d44e1172"
 
 [[sections]]
 title = "Summary"
@@ -26,6 +26,11 @@ clauses = [
     "clauses/C-GLOBAL-COMMANDS.toml",
     "clauses/C-VERIFY-CONFIG.toml",
 ]
+
+[[changelog]]
+version = "0.7.0"
+date = "2026-04-09"
+notes = "Add controlled-vocabulary tags: tags field on RFC/clause/ADR/work/guard, --tag filter on list, govctl tag new/delete/list for registry management (ADR-0040)"
 
 [[changelog]]
 version = "0.6.1"

@@ -1,0 +1,123 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0039"
+title = "Use SQLite FTS5 as read-only search index for governance artifacts"
+status = "proposed"
+date = "2026-04-09"
+refs = [
+    "RFC-0002",
+    "RFC-0004",
+]
+
+[content]
+context = """
+govctl manages governance artifacts (RFCs, ADRs, clauses, work items, guards) as TOML files in `gov/`. As the corpus grows (currently 200+ artifacts, projected to reach 1000+ in active projects), finding artifacts by content becomes increasingly difficult.
+
+### Problem Statement
+
+Users need to answer questions like "which ADR discussed caching?", "which RFC clause mentions backward compatibility?", or "which work items reference RFC-0002?". Currently this requires:
+
+- `grep` over raw TOML files (poor UX, no ranking, no stemming)
+- `govctl list` + manual inspection (only searches titles)
+- Memorizing artifact IDs
+
+None of these scale or provide relevance-ranked results.
+
+### Constraints
+
+- [[RFC-0002]] establishes TOML files as the source of truth — any index must be derived, not authoritative
+- [[RFC-0004]] governs concurrent write safety — the index must not interfere with the file locking protocol
+- The index must work offline with no external services
+- Rebuild must be fast enough to run transparently on every search query"""
+decision = """
+We will use **SQLite FTS5 with lazy incremental sync** as the search backend for `govctl search`.
+
+### Design
+
+1. **Index location:** `gov/.search.db` (gitignored, along with WAL sidecars `gov/.search.db-wal` and `gov/.search.db-shm`). Disposable — can be deleted and rebuilt transparently.
+
+2. **Indexed content:** All artifact types (RFCs, clauses, ADRs, work items, guards). Each entry stores the artifact ID, type, title, and a concatenation of all human-readable text fields. Tokenized with Porter stemming for English morphological matching.
+
+3. **Sync strategy — lazy incremental:**
+   - On every `govctl search`, compare content hashes of `gov/` TOML files against an index-side manifest
+   - New/changed files: parse and upsert into the search index
+   - Deleted files: remove from index
+   - Unchanged files: skip
+   - Missing or corrupt index: full rebuild (no error, just slower first query)
+
+4. **No write-through optimization.** The lazy scan is correct in all cases and fast enough (~10ms at current scale). Adding write-through coupling between the artifact write path and the index is premature complexity.
+
+5. **Concurrency:** SQLite WAL mode handles concurrent search invocations safely. If two `govctl search` calls trigger a sync simultaneously, both will complete without corruption.
+
+6. **Explicit escape hatch:** `govctl search --reindex` forces a full rebuild.
+
+### Why This Design
+
+- Lazy sync avoids coupling between the write path and the index — files changed by manual editing, VCS operations, or govctl all sync identically
+- A single read-only cache file is simpler than a persistent daemon or event-driven index
+- The index is not covered by [[RFC-0004]] file locking because it is a derived cache, not a governance artifact
+- `govctl init` should add `gov/.search.db*` to `.gitignore` to cover the database and WAL sidecars"""
+consequences = """
+### Positive
+
+- Users can find artifacts by content with relevance ranking — "which ADR discussed caching?" returns ranked results instantly
+- Porter stemming handles morphological variants (cache/caching/cached) without exact-match frustration
+- Index is disposable and self-healing — delete `gov/.search.db` and the next search rebuilds it
+- No daemon, no external service, no network — works fully offline
+- Lazy sync means zero ceremony — no separate index-build step, no cache invalidation protocol
+
+### Negative
+
+- Adds `rusqlite` (bundled) as a dependency, increasing binary size by ~3MB (mitigation: feature-gate search behind a default-on cargo feature if binary size becomes a concern)
+- First search after bulk file changes (e.g., `git checkout` switching branches, large merge) will be slower due to lazy-sync catch-up cost (mitigation: rebuild is still sub-second for 1000 artifacts; `--reindex` makes this explicit when needed)
+- CJK text requires additional tokenizer configuration beyond the default Porter stemmer (mitigation: defer to a follow-up if CJK projects adopt govctl)
+- The index file must be gitignored — if a user commits it accidentally, it will cause noisy diffs (mitigation: `govctl init` adds `gov/.search.db` to `.gitignore` by default)
+
+### Neutral
+
+- The search index introduces a second file format (SQLite) into the `gov/` directory alongside TOML, but it is explicitly non-authoritative and disposable"""
+
+[[content.alternatives]]
+text = "SQLite FTS5 with lazy incremental sync: single-file read-only index using rusqlite (bundled), Porter stemming, BM25 ranking, and content-hash-based incremental updates on each search query."
+status = "accepted"
+pros = [
+    "Battle-tested BM25 ranking out of the box",
+    "Single-file index, no daemon or external service",
+    "Porter stemming handles English morphology (cache/caching/cached)",
+    "rusqlite is mature with bundled compilation — no system SQLite dependency",
+    "Lazy sync means no separate build step or cache invalidation protocol",
+]
+cons = [
+    "Adds ~3MB to binary size from bundled SQLite",
+    "CJK segmentation requires additional tokenizer configuration",
+]
+
+[[content.alternatives]]
+text = "Tantivy (Rust-native full-text search): Use the tantivy crate, a Lucene-inspired search engine written in Rust. Supports BM25, tokenizers, and schema-defined fields natively."
+status = "rejected"
+pros = [
+    "Pure Rust, no C dependency",
+    "More powerful query language (boolean, phrase, fuzzy)",
+    "Purpose-built for search — better performance at scale",
+]
+cons = [
+    "Much heavier dependency (~50 crates in dependency tree)",
+    "Index is a directory of segment files, not a single file",
+    "Overkill for <1000 documents",
+]
+rejection_reason = "Dependency weight and complexity are disproportionate to the scale of govctl's artifact corpus. SQLite FTS5 covers the requirements with a single well-understood dependency."
+
+[[content.alternatives]]
+text = "In-memory inverted index with no persistence: Build a simple inverted index on every search invocation by scanning all TOML files, tokenizing content, and ranking by term frequency. No disk cache."
+status = "rejected"
+pros = [
+    "Zero dependencies — no SQLite, no new crates",
+    "No cache invalidation problem — always fresh",
+]
+cons = [
+    "Full rebuild on every query (~100ms at 200 files, grows linearly)",
+    "No stemming or advanced tokenization without additional code",
+    "No BM25 — would need a custom ranking implementation",
+]
+rejection_reason = "Lacks stemming and BM25 ranking out of the box. Rebuild cost scales linearly and becomes noticeable beyond 500 artifacts. The UX gap versus FTS5 is significant for the marginal dependency savings."

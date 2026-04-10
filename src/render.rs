@@ -720,6 +720,7 @@ mod tests {
                     date: "2026-02-22".to_string(),
                     superseded_by: None,
                     refs: vec![],
+                    tags: vec![],
                 },
                 content: AdrContent {
                     context: "Test context".to_string(),
@@ -755,6 +756,7 @@ mod tests {
                     date: "2026-02-22".to_string(),
                     superseded_by: None,
                     refs: vec![],
+                    tags: vec![],
                 },
                 content: AdrContent {
                     context: "Test context".to_string(),
@@ -792,6 +794,7 @@ mod tests {
                     started: Some("2026-02-22".to_string()),
                     completed: None,
                     refs: vec![],
+                    tags: vec![],
                 },
                 content: WorkItemContent {
                     description: "Test description".to_string(),
@@ -827,6 +830,7 @@ mod tests {
                     started: Some("2026-02-22".to_string()),
                     completed: None,
                     refs: vec![],
+                    tags: vec![],
                 },
                 content: WorkItemContent {
                     description: "Test description".to_string(),

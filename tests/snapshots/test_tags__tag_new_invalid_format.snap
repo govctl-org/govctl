@@ -1,0 +1,7 @@
+---
+source: tests/test_tags.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl tag new UPPER
+error[E1101]: Invalid tag format 'UPPER': tags must match ^[a-z][a-z0-9-]*$ (lowercase letters, digits, hyphens; start with a letter) (UPPER)
+exit: 1

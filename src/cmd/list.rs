@@ -63,10 +63,11 @@ pub fn list(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: &[String],
 ) -> anyhow::Result<Vec<Diagnostic>> {
     if target == ListTarget::Guard {
         let result = load_guards_with_warnings(config).map_err(anyhow::Error::from)?;
-        list_guards(&result.items, filter, limit, output);
+        list_guards(&result.items, filter, limit, output, tags);
         return Ok(result.warnings);
     }
 
@@ -76,10 +77,10 @@ pub fn list(
     };
 
     match target {
-        ListTarget::Rfc => list_rfcs(&index, filter, limit, output),
-        ListTarget::Clause => list_clauses(&index, filter, limit, output),
-        ListTarget::Adr => list_adrs(&index, filter, limit, output),
-        ListTarget::Work => list_work_items(&index, filter, limit, output),
+        ListTarget::Rfc => list_rfcs(&index, filter, limit, output, tags),
+        ListTarget::Clause => list_clauses(&index, filter, limit, output, tags),
+        ListTarget::Adr => list_adrs(&index, filter, limit, output, tags),
+        ListTarget::Work => list_work_items(&index, filter, limit, output, tags),
         ListTarget::Guard => unreachable!("handled above"),
     }
 
@@ -158,6 +159,7 @@ fn list_rfcs(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: &[String],
 ) {
     let mut rfcs: Vec<_> = index.rfcs.iter().collect();
 
@@ -166,6 +168,11 @@ fn list_rfcs(
         rfcs.retain(|r| {
             r.rfc.status.as_ref() == f || r.rfc.phase.as_ref() == f || r.rfc.rfc_id.contains(f)
         });
+    }
+
+    // Filter by tags (artifact must have ALL specified tags)
+    if !tags.is_empty() {
+        rfcs.retain(|r| tags.iter().all(|t| r.rfc.tags.contains(t)));
     }
 
     rfcs.sort_by(|a, b| a.rfc.rfc_id.cmp(&b.rfc.rfc_id));
@@ -226,6 +233,7 @@ fn list_clauses(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: &[String],
 ) {
     let mut clauses: Vec<_> = index
         .iter_clauses()
@@ -237,6 +245,11 @@ fn list_clauses(
         clauses.retain(|(rfc_id, c)| {
             rfc_id == f || c.spec.clause_id.contains(f) || c.spec.status.as_ref() == f
         });
+    }
+
+    // Filter by tags (clause must have ALL specified tags)
+    if !tags.is_empty() {
+        clauses.retain(|(_, c)| tags.iter().all(|t| c.spec.tags.contains(t)));
     }
 
     clauses.sort_by(|a, b| {
@@ -291,12 +304,18 @@ fn list_adrs(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: &[String],
 ) {
     let mut adrs: Vec<_> = index.adrs.iter().collect();
 
     // Filter by status if provided
     if let Some(f) = filter {
         adrs.retain(|a| a.meta().status.as_ref() == f || a.meta().id.contains(f));
+    }
+
+    // Filter by tags (artifact must have ALL specified tags)
+    if !tags.is_empty() {
+        adrs.retain(|a| tags.iter().all(|t| a.meta().tags.contains(t)));
     }
 
     adrs.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
@@ -353,11 +372,17 @@ fn list_guards(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: &[String],
 ) {
     let mut items: Vec<_> = guards.iter().collect();
 
     if let Some(f) = filter {
         items.retain(|g| g.meta().id.contains(f) || g.meta().title.contains(f));
+    }
+
+    // Filter by tags (artifact must have ALL specified tags)
+    if !tags.is_empty() {
+        items.retain(|g| tags.iter().all(|t| g.meta().tags.contains(t)));
     }
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
@@ -386,6 +411,7 @@ fn list_work_items(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
+    tags: &[String],
 ) {
     let mut items: Vec<_> = index.work_items.iter().collect();
 
@@ -407,6 +433,11 @@ fn list_work_items(
                 items.retain(|i| i.meta().status.as_ref() == other || i.meta().id.contains(other));
             }
         }
+    }
+
+    // Filter by tags (artifact must have ALL specified tags)
+    if !tags.is_empty() {
+        items.retain(|i| tags.iter().all(|t| i.meta().tags.contains(t)));
     }
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));

@@ -31,6 +31,8 @@ pub struct RfcSpec {
     pub supersedes: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
     pub sections: Vec<SectionSpec>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub changelog: Vec<ChangelogEntry>,
@@ -63,6 +65,8 @@ pub struct ClauseSpec {
     pub superseded_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub since: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
 }
 
 // =============================================================================
@@ -99,6 +103,8 @@ pub struct RfcMeta {
     pub supersedes: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
 }
@@ -118,6 +124,7 @@ impl From<RfcSpec> for RfcWire {
                 updated: s.updated,
                 supersedes: s.supersedes,
                 refs: s.refs,
+                tags: s.tags,
                 signature: s.signature,
             },
             sections: s.sections,
@@ -139,6 +146,7 @@ impl From<RfcWire> for RfcSpec {
             updated: w.govctl.updated,
             supersedes: w.govctl.supersedes,
             refs: w.govctl.refs,
+            tags: w.govctl.tags,
             sections: w.sections,
             changelog: w.changelog,
             signature: w.govctl.signature,
@@ -170,6 +178,8 @@ pub struct ClauseMeta {
     pub superseded_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub since: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
 }
 
 /// Clause content section `[content]`
@@ -190,6 +200,7 @@ impl From<ClauseSpec> for ClauseWire {
                 anchors: s.anchors,
                 superseded_by: s.superseded_by,
                 since: s.since,
+                tags: s.tags,
             },
             content: ClauseContent { text: s.text },
         }
@@ -207,6 +218,7 @@ impl From<ClauseWire> for ClauseSpec {
             anchors: w.govctl.anchors,
             superseded_by: w.govctl.superseded_by,
             since: w.govctl.since,
+            tags: w.govctl.tags,
         }
     }
 }
@@ -298,6 +310,8 @@ pub struct AdrMeta {
     pub superseded_by: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
 }
 
 /// Status for ADR alternatives
@@ -395,6 +409,8 @@ pub struct WorkItemMeta {
     pub completed: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
 }
 
 /// Work item-specific verification policy.
@@ -543,6 +559,8 @@ pub struct GuardMeta {
     pub title: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub tags: Vec<String>,
 }
 
 /// Executable check for a verification guard.
@@ -850,6 +868,7 @@ mod tests {
                     date: "2026-01-17".to_string(),
                     superseded_by: None,
                     refs: vec![],
+                    tags: vec![],
                 },
                 content: AdrContent::default(),
             },
@@ -872,6 +891,7 @@ mod tests {
                     started: None,
                     completed: None,
                     refs: vec![],
+                    tags: vec![],
                 },
                 content: WorkItemContent::default(),
                 verification: WorkItemVerification::default(),

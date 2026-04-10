@@ -1,0 +1,16 @@
+---
+source: tests/test_tags.rs
+expression: "normalize_output(&output, temp_dir.path(), &date)"
+---
+$ govctl check
+Checked:
+  0 RFCs
+  0 clauses
+  1 ADRs
+  0 work items
+  0 verification guards
+
+warning[W0103]: ADR has no artifact references (hint: `govctl adr add ADR-0001 refs RFC-XXXX`) (gov/adr/ADR-XXXX-test-decision.toml)
+warning[W0103]: ADR has placeholder context (hint: `govctl adr set ADR-0001 context "..."`) (gov/adr/ADR-XXXX-test-decision.toml)
+error[E1105]: Artifact 'ADR-0001' uses unknown tag 'unknown-tag' (not in config.toml [tags] allowed) (gov/adr/ADR-XXXX-test-decision.toml)
+exit: 1
