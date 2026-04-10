@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - govctl check validates tags against config allowed list (WI-2026-04-09-001)
 - --tag filter on rfc/clause/adr/work/guard list commands (WI-2026-04-09-001)
 
+### Fixed
+
+- clause edit <ID> text --stdin works without explicit --set (WI-2026-04-10-001)
+
 ## [0.8.1] - 2026-04-08
 
 ### Added

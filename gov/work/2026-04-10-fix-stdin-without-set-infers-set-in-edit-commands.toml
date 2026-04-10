@@ -1,0 +1,23 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-10-001"
+title = "Fix --stdin without --set infers --set in edit commands"
+status = "done"
+created = "2026-04-10"
+started = "2026-04-10"
+completed = "2026-04-10"
+refs = ["RFC-0002"]
+
+[content]
+description = "When --stdin is used without an explicit edit action (--set/--add/--remove/--tick), infer --set. Fixes the documented but broken pattern: govctl clause edit <ID> text --stdin."
+
+[[content.acceptance_criteria]]
+text = "clause edit <ID> text --stdin works without explicit --set"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

@@ -259,6 +259,14 @@ pub(crate) fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEd
         + usize::from(args.remove.is_some());
 
     if action_count == 0 {
+        // When --stdin is present with no explicit action, infer --set
+        if args.stdin {
+            reject_selector_flags_for_value_action("set (inferred from --stdin)", args)?;
+            return Ok(OwnedEditAction::Set {
+                value: Some(None),
+                stdin: true,
+            });
+        }
         return Err(Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             "exactly one edit action is required",
