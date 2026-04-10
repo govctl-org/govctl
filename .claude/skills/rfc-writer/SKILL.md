@@ -27,6 +27,7 @@ govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
 govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
 clause text
 EOF
+govctl rfc add <RFC-ID> tags <tag>
 ```
 
 ## RFC Structure
@@ -85,6 +86,7 @@ Use these keywords in ALL CAPS in normative clauses:
 - **One requirement per sentence.** Don't chain MUST/SHOULD in a single sentence.
 - **Reference existing artifacts.** Use `[[RFC-NNNN]]` or `[[ADR-NNNN]]` syntax.
 - **Testable.** Each MUST/SHOULD should be verifiable — if you can't test it, rewrite it.
+- **Tagged.** If the project has `[tags]` configured, tag the RFC with relevant domain tags.
 - **Stay implementation-agnostic.** Describe externally relevant behavior or constraints, not language-specific type layouts or private code structure.
 
 ### What Belongs in an RFC

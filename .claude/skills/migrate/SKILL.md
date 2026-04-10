@@ -358,14 +358,28 @@ govctl work add <WI-ID> acceptance_criteria "add: <expected outcome>"
 govctl work add <WI-ID> refs <related-ADR-or-RFC>
 ```
 
-### 5.2 Final Validation
+### 5.2 Establish Tag Vocabulary (Optional)
+
+If the project benefits from cross-cutting categorization, set up a tag vocabulary and tag the backfilled artifacts:
+
+```bash
+govctl tag new "architecture"
+govctl tag new "security"
+govctl tag new "performance"
+govctl adr add <ADR-ID> tags "architecture"
+govctl rfc add <RFC-ID> tags "security"
+```
+
+Skip this step if tagging is not needed yet — it can be adopted incrementally later.
+
+### 5.3 Final Validation
 
 ```bash
 govctl check
 govctl render
 ```
 
-### 5.3 Final Commit
+### 5.4 Final Commit
 
 Use `/commit` with `chore(gov): establish govctl governance baseline`.
 

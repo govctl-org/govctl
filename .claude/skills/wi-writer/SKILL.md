@@ -28,6 +28,7 @@ govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
 govctl work add <WI-ID> journal "Progress update" --scope module
 govctl work add <WI-ID> notes "Key observation"
 govctl work add <WI-ID> refs RFC-NNNN
+govctl work add <WI-ID> tags <tag>
 govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 govctl work move <WI-ID> done
 ```

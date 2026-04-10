@@ -37,6 +37,7 @@ govctl adr set <ADR-ID> consequences --stdin <<'EOF'
 consequences text
 EOF
 govctl adr add <ADR-ID> refs RFC-NNNN
+govctl adr add <ADR-ID> tags <tag>
 ```
 
 ## ADR Writing Order
@@ -200,6 +201,7 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 - **Consequences are honest.** Negative section is non-empty with mitigations.
 - **Alternatives are documented.** For new decisions, show the discussion in `alternatives` first and include at least one rejected option with reason. For historical backfills, document rejected options when known; otherwise state that they were not recoverable.
 - **References link to related artifacts.** Use `[[artifact-id]]` in content fields.
+- **Tagged.** If the project has `[tags]` configured, tag the ADR with relevant domain tags.
 - **Stay at the decision layer.** Capture the chosen approach and why, not full normative clause text or task-by-task execution detail.
 
 ### What Belongs in an ADR

@@ -40,6 +40,9 @@ govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
 govctl work add <WI-ID> journal "Ran tests; fixed parser bug" --scope parser
 govctl work add <WI-ID> notes "Do not retry old fixture path; it fails because snapshots are stale"
 govctl work add <WI-ID> refs RFC-0001
+govctl work add <WI-ID> tags <tag>
+govctl tag new <tag>
+govctl tag list
 govctl rfc list
 govctl adr list
 govctl rfc new "<title>"
