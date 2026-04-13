@@ -411,10 +411,13 @@ pub(crate) fn set_field_direct(
     op: WriteOp,
 ) -> anyhow::Result<()> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
-    let target = plan
-        .target
-        .as_ref()
-        .expect("mutation planning should produce target");
+    let target = plan.target.as_ref().ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            "mutation planning should produce target",
+            id,
+        )
+    })?;
     apply_set_field(config, id, target, plan.artifact, value, op, false)
 }
 
@@ -604,10 +607,13 @@ pub fn edit_field(
             let value = resolve_owned_value(value.as_ref(), *stdin)?;
             let plan = plan_edit_with_field_for_verb(id, path, Some(edit_rules::Verb::Set))?;
             let artifact = plan.artifact;
-            let target = plan
-                .target
-                .as_ref()
-                .expect("mutation planning should produce target");
+            let target = plan.target.as_ref().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    "mutation planning should produce target",
+                    id,
+                )
+            })?;
             apply_set_field(config, id, target, artifact, value.as_str(), op, true)?;
             if !op.is_preview() {
                 ui::field_set(id, &target.display_path(), value.as_str());
@@ -688,7 +694,13 @@ where
             ..
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
-                let simple = path.as_simple().expect("simple target path expected");
+                let simple = path.as_simple().ok_or_else(|| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0901IoError,
+                        "simple target path expected",
+                        id,
+                    )
+                })?;
                 if allow_forced_simple_set {
                     edit_runtime::set_simple_field_forced(artifact, &mut doc, simple, value, id)?;
                 } else {
@@ -707,9 +719,13 @@ where
             ..
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
-                let simple = container_path
-                    .as_simple()
-                    .expect("simple indexed container expected");
+                let simple = container_path.as_simple().ok_or_else(|| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0901IoError,
+                        "simple indexed container expected",
+                        id,
+                    )
+                })?;
                 edit_runtime::set_simple_list_item(artifact, &mut doc, simple, *index, value, id)?;
             }
             edit_engine::TargetOrigin::Nested => {
@@ -802,9 +818,13 @@ fn render_resolved_target(
             path,
             ..
         } => {
-            let simple = path
-                .as_simple()
-                .expect("simple node target should use a simple path");
+            let simple = path.as_simple().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    "simple node target should use a simple path",
+                    id,
+                )
+            })?;
             edit_runtime::get_simple_field(artifact, doc, simple, id)
         }
         edit_engine::ResolvedTarget::IndexedItem {
@@ -813,9 +833,13 @@ fn render_resolved_target(
             index,
             ..
         } => {
-            let simple = container_path
-                .as_simple()
-                .expect("simple indexed target should use a simple container path");
+            let simple = container_path.as_simple().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    "simple indexed target should use a simple container path",
+                    id,
+                )
+            })?;
             edit_runtime::get_simple_list_item(artifact, doc, simple, *index, id)
         }
         edit_engine::ResolvedTarget::Node {
@@ -885,9 +909,13 @@ fn set_rfc_field(
             item_kind: edit_engine::TargetKind::Scalar,
             ..
         } => {
-            let simple = container_path
-                .as_simple()
-                .expect("simple indexed container expected");
+            let simple = container_path.as_simple().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    "simple indexed container expected",
+                    id,
+                )
+            })?;
             edit_runtime::set_simple_list_item(
                 ArtifactType::Rfc,
                 &mut doc,
@@ -967,9 +995,13 @@ fn set_clause_field(
             item_kind: edit_engine::TargetKind::Scalar,
             ..
         } => {
-            let simple = container_path
-                .as_simple()
-                .expect("simple indexed container expected");
+            let simple = container_path.as_simple().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    "simple indexed container expected",
+                    id,
+                )
+            })?;
             edit_runtime::set_simple_list_item(
                 ArtifactType::Clause,
                 &mut doc,
@@ -1100,17 +1132,33 @@ pub fn add_to_field(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Add))?;
     let artifact = plan.artifact;
-    let fp = plan.field_path.as_ref().expect("validated above");
-    let target = plan
-        .target
-        .as_ref()
-        .expect("mutation planning should produce target");
+    let fp = plan.field_path.as_ref().ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            "validated above: field path must be present",
+            id,
+        )
+    })?;
+    let target = plan.target.as_ref().ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            "mutation planning should produce target",
+            id,
+        )
+    })?;
     let value = resolve_owned_value(value, stdin)?;
     let value = value.as_str();
 
     // Validate tags against controlled vocabulary at add time — [[RFC-0002:C-RESOURCES]]
     if fp.as_simple() == Some("tags") {
-        if !crate::cmd::tag::TAG_RE.is_match(value) {
+        let tag_re = crate::cmd::tag::tag_re().map_err(|e| {
+            Diagnostic::new(
+                DiagnosticCode::E0806InvalidPattern,
+                format!("Failed to compile tag regex: {e}"),
+                id,
+            )
+        })?;
+        if !tag_re.is_match(value) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1101TagInvalidFormat,
                 format!("Invalid tag format '{value}': must match ^[a-z][a-z0-9-]*$"),
@@ -1294,7 +1342,13 @@ fn add_to_target_doc(
 
     match origin {
         edit_engine::TargetOrigin::Simple => {
-            let simple = path.as_simple().expect("simple list target expected");
+            let simple = path.as_simple().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    "simple list target expected",
+                    id,
+                )
+            })?;
             if !edit_runtime::add_simple_list_value(artifact, doc, simple, value, id)? {
                 return Err(cannot_add_to_field_error(id, simple));
             }
@@ -1330,7 +1384,13 @@ fn remove_target_from_doc(
             ..
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
-                let simple = path.as_simple().expect("simple list target expected");
+                let simple = path.as_simple().ok_or_else(|| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0901IoError,
+                        "simple list target expected",
+                        id,
+                    )
+                })?;
                 let removed = remove_simple_values_from_doc(artifact, doc, simple, id, opts)?
                     .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
                 Ok((simple.to_string(), removed))
@@ -1351,9 +1411,13 @@ fn remove_target_from_doc(
             ..
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
-                let simple = container_path
-                    .as_simple()
-                    .expect("simple indexed container expected");
+                let simple = container_path.as_simple().ok_or_else(|| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0901IoError,
+                        "simple indexed container expected",
+                        id,
+                    )
+                })?;
                 let exact = MatchOptions {
                     pattern: None,
                     at: Some(*index),
@@ -1409,7 +1473,13 @@ fn tick_target_in_doc(
             }
             match origin {
                 edit_engine::TargetOrigin::Simple => {
-                    let simple = path.as_simple().expect("simple list target expected");
+                    let simple = path.as_simple().ok_or_else(|| {
+                        Diagnostic::new(
+                            DiagnosticCode::E0901IoError,
+                            "simple list target expected",
+                            id,
+                        )
+                    })?;
                     edit_runtime::tick_simple_status_list_item_with_matcher(
                         artifact,
                         doc,
@@ -1468,9 +1538,13 @@ fn tick_target_in_doc(
             };
             match origin {
                 edit_engine::TargetOrigin::Simple => {
-                    let simple = container_path
-                        .as_simple()
-                        .expect("simple indexed container expected");
+                    let simple = container_path.as_simple().ok_or_else(|| {
+                        Diagnostic::new(
+                            DiagnosticCode::E0901IoError,
+                            "simple indexed container expected",
+                            id,
+                        )
+                    })?;
                     edit_runtime::tick_simple_status_list_item_with_matcher(
                         artifact,
                         doc,
@@ -1528,10 +1602,13 @@ pub fn remove_from_field(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
     let artifact = plan.artifact;
-    let target = plan
-        .target
-        .as_ref()
-        .expect("mutation planning should produce target");
+    let target = plan.target.as_ref().ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            "mutation planning should produce target",
+            id,
+        )
+    })?;
     reject_match_flags_for_indexed_target(id, target, opts)?;
 
     match artifact {
@@ -1587,10 +1664,13 @@ pub fn tick_item(
 ) -> anyhow::Result<Vec<Diagnostic>> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Tick))?;
     let artifact = plan.artifact;
-    let target = plan
-        .target
-        .as_ref()
-        .expect("mutation planning should produce target");
+    let target = plan.target.as_ref().ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            "mutation planning should produce target",
+            id,
+        )
+    })?;
     reject_match_flags_for_indexed_target(id, target, opts)?;
 
     let status_str = match (artifact, status) {
@@ -1981,21 +2061,36 @@ mod tests {
             let len = items.len() as i32;
             let resolved = if idx < 0 { len + idx } else { idx };
             if resolved < 0 || resolved >= len {
-                return Err(anyhow::anyhow!(
-                    "Index {} out of range (array has {} items)",
-                    idx,
-                    items.len()
-                ));
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0816PathIndexOutOfBounds,
+                    format!(
+                        "Index {} out of range (array has {} items)",
+                        idx,
+                        items.len()
+                    ),
+                    "",
+                )
+                .into());
             }
             return Ok(MatchResult::Single(resolved as usize));
         }
 
-        let pattern = opts
-            .pattern
-            .ok_or_else(|| anyhow::anyhow!("Pattern or --at is required"))?;
+        let pattern = opts.pattern.ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0801MissingRequiredArg,
+                "Pattern or --at is required",
+                "",
+            )
+        })?;
 
         let indices = if opts.regex {
-            let re = Regex::new(pattern).map_err(|e| anyhow::anyhow!("Invalid regex: {e}"))?;
+            let re = Regex::new(pattern).map_err(|e| {
+                Diagnostic::new(
+                    DiagnosticCode::E0806InvalidPattern,
+                    format!("Invalid regex: {e}"),
+                    "",
+                )
+            })?;
             items
                 .iter()
                 .enumerate()
@@ -2090,55 +2185,59 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_find_matches_substring_single() {
+    fn test_find_matches_substring_single() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["apple", "banana", "cherry"];
         let opts = MatchOptions {
             pattern: Some("nan"),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 1),
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_substring_case_insensitive() {
+    fn test_find_matches_substring_case_insensitive() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["Apple", "BANANA", "Cherry"];
         let opts = MatchOptions {
             pattern: Some("banana"),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 1),
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_substring_multiple() {
+    fn test_find_matches_substring_multiple() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["test-one", "test-two", "other"];
         let opts = MatchOptions {
             pattern: Some("test"),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Multiple(indices) => assert_eq!(indices, vec![0, 1]),
-            _ => panic!("Expected multiple matches"),
+            _ => return Err("Expected multiple matches".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_substring_none() {
+    fn test_find_matches_substring_none() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["apple", "banana", "cherry"];
         let opts = MatchOptions {
             pattern: Some("xyz"),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::None => {}
-            _ => panic!("Expected no match"),
+            _ => return Err("Expected no match".into()),
         }
+        Ok(())
     }
 
     // =========================================================================
@@ -2146,45 +2245,48 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_find_matches_exact_match() {
+    fn test_find_matches_exact_match() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["test", "testing", "test"];
         let opts = MatchOptions {
             pattern: Some("test"),
             exact: true,
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Multiple(indices) => assert_eq!(indices, vec![0, 2]),
-            _ => panic!("Expected multiple matches"),
+            _ => return Err("Expected multiple matches".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_exact_case_sensitive() {
+    fn test_find_matches_exact_case_sensitive() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["Test", "test", "TEST"];
         let opts = MatchOptions {
             pattern: Some("test"),
             exact: true,
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 1),
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_exact_no_match() {
+    fn test_find_matches_exact_no_match() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["testing", "tested"];
         let opts = MatchOptions {
             pattern: Some("test"),
             exact: true,
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::None => {}
-            _ => panic!("Expected no match"),
+            _ => return Err("Expected no match".into()),
         }
+        Ok(())
     }
 
     // =========================================================================
@@ -2192,55 +2294,59 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_find_matches_at_positive() {
+    fn test_find_matches_at_positive() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["a", "b", "c"];
         let opts = MatchOptions {
             at: Some(1),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 1),
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_at_zero() {
+    fn test_find_matches_at_zero() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["first", "second"];
         let opts = MatchOptions {
             at: Some(0),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 0),
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_at_negative() {
+    fn test_find_matches_at_negative() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["a", "b", "c"];
         let opts = MatchOptions {
             at: Some(-1),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 2), // last item
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_at_negative_two() {
+    fn test_find_matches_at_negative_two() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["a", "b", "c", "d"];
         let opts = MatchOptions {
             at: Some(-2),
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 2), // second to last
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
@@ -2268,31 +2374,33 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_find_matches_regex_single() {
+    fn test_find_matches_regex_single() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["RFC-0001", "ADR-0001", "WI-001"];
         let opts = MatchOptions {
             pattern: Some("RFC-.*"),
             regex: true,
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Single(idx) => assert_eq!(idx, 0),
-            _ => panic!("Expected single match"),
+            _ => return Err("Expected single match".into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_find_matches_regex_multiple() {
+    fn test_find_matches_regex_multiple() -> Result<(), Box<dyn std::error::Error>> {
         let items = vec!["test-1", "test-2", "other"];
         let opts = MatchOptions {
             pattern: Some("test-\\d+"),
             regex: true,
             ..Default::default()
         };
-        match find_matches(&items, &opts).unwrap() {
+        match find_matches(&items, &opts)? {
             MatchResult::Multiple(indices) => assert_eq!(indices, vec![0, 1]),
-            _ => panic!("Expected multiple matches"),
+            _ => return Err("Expected multiple matches".into()),
         }
+        Ok(())
     }
 
     #[test]

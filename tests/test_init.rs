@@ -8,30 +8,31 @@ use tempfile::TempDir;
 
 /// Test: init creates .gitignore with .govctl.lock if not exists
 #[test]
-fn test_init_creates_gitignore() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_init_creates_gitignore() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
 
     // Run init
-    let output = run_commands(temp_dir.path(), &[&["init"]]);
+    let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
     // .gitignore should exist and contain .govctl.lock
     let gitignore_path = temp_dir.path().join(".gitignore");
     assert!(gitignore_path.exists(), ".gitignore should be created");
 
-    let content = fs::read_to_string(&gitignore_path).unwrap();
+    let content = fs::read_to_string(&gitignore_path)?;
     assert!(
         content.contains(".govctl.lock"),
         ".gitignore should contain .govctl.lock"
     );
+    Ok(())
 }
 
 /// Test: init installs bundled artifact JSON Schemas
 #[test]
-fn test_init_creates_artifact_schema_files() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_init_creates_artifact_schema_files() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
 
-    let output = run_commands(temp_dir.path(), &[&["init"]]);
+    let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
     for filename in [
@@ -53,23 +54,24 @@ fn test_init_creates_artifact_schema_files() {
         temp_dir.path().join("gov/guard").exists(),
         "guard directory should exist after init"
     );
+    Ok(())
 }
 
 /// Test: init appends .govctl.lock to existing .gitignore
 #[test]
-fn test_init_appends_to_existing_gitignore() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_init_appends_to_existing_gitignore() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
 
     // Create existing .gitignore
     let gitignore_path = temp_dir.path().join(".gitignore");
-    fs::write(&gitignore_path, "# Existing content\ntarget/\n").unwrap();
+    fs::write(&gitignore_path, "# Existing content\ntarget/\n")?;
 
     // Run init
-    let output = run_commands(temp_dir.path(), &[&["init"]]);
+    let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
     // .gitignore should still exist with both old and new content
-    let content = fs::read_to_string(&gitignore_path).unwrap();
+    let content = fs::read_to_string(&gitignore_path)?;
     assert!(
         content.contains("target/"),
         ".gitignore should retain existing content"
@@ -78,37 +80,39 @@ fn test_init_appends_to_existing_gitignore() {
         content.contains(".govctl.lock"),
         ".gitignore should have .govctl.lock appended"
     );
+    Ok(())
 }
 
 /// Test: init doesn't duplicate .govctl.lock if already present
 #[test]
-fn test_init_no_duplicate_gitignore_entry() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_init_no_duplicate_gitignore_entry() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
 
     // Create .gitignore with .govctl.lock already present
     let gitignore_path = temp_dir.path().join(".gitignore");
-    fs::write(&gitignore_path, ".govctl.lock\n").unwrap();
+    fs::write(&gitignore_path, ".govctl.lock\n")?;
 
     // Run init
-    let output = run_commands(temp_dir.path(), &[&["init"]]);
+    let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
     // Should not have duplicate entry
-    let content = fs::read_to_string(&gitignore_path).unwrap();
+    let content = fs::read_to_string(&gitignore_path)?;
     let count = content.matches(".govctl.lock").count();
     assert_eq!(
         count, 1,
         ".gitignore should not have duplicate .govctl.lock entries"
     );
+    Ok(())
 }
 
 /// Test: custom docs_output is respected for render
 #[test]
-fn test_init_custom_docs_output() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_init_custom_docs_output() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
 
     // Run init first
-    run_commands(temp_dir.path(), &[&["init"]]);
+    run_commands(temp_dir.path(), &[&["init"]])?;
 
     // Update gov/config.toml with custom docs_output
     let config_path = temp_dir.path().join("gov/config.toml");
@@ -118,27 +122,28 @@ name = "test-project"
 [paths]
 docs_output = "documentation"
 "#;
-    fs::write(&config_path, config_content).unwrap();
+    fs::write(&config_path, config_content)?;
 
     // Create an RFC
-    let output = run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]]);
+    let output = run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
     assert!(output.contains("Created RFC"));
 
     // Render the first RFC (RFC-0001 by default on fresh init)
-    let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-0001"]]);
+    let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-0001"]])?;
     eprintln!("render output: {}", output);
 
     // Rendered output should be under documentation/rfc/
     let docs_dir = temp_dir.path().join("documentation/rfc");
     assert!(docs_dir.exists(), "docs should be under documentation/rfc/");
+    Ok(())
 }
 
 /// Test: custom docs_output with ADR render
 #[test]
-fn test_init_custom_paths_combined() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_init_custom_paths_combined() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
 
-    run_commands(temp_dir.path(), &[&["init"]]);
+    run_commands(temp_dir.path(), &[&["init"]])?;
 
     let config_path = temp_dir.path().join("gov/config.toml");
     let config_content = r#"[project]
@@ -147,18 +152,19 @@ name = "test-project"
 [paths]
 docs_output = "output/docs"
 "#;
-    fs::write(&config_path, config_content).unwrap();
+    fs::write(&config_path, config_content)?;
 
-    let output = run_commands(temp_dir.path(), &[&["adr", "new", "Test ADR"]]);
+    let output = run_commands(temp_dir.path(), &[&["adr", "new", "Test ADR"]])?;
     assert!(output.contains("Created ADR"), "output: {}", output);
 
     let adr_dir = temp_dir.path().join("gov/adr");
     assert!(
-        adr_dir.exists() && adr_dir.read_dir().unwrap().count() > 0,
+        adr_dir.exists() && adr_dir.read_dir()?.count() > 0,
         "ADR should be under gov/adr/"
     );
 
-    let _output = run_commands(temp_dir.path(), &[&["adr", "render", "ADR-0001"]]);
+    let _output = run_commands(temp_dir.path(), &[&["adr", "render", "ADR-0001"]])?;
     let docs_dir = temp_dir.path().join("output/docs/adr");
     assert!(docs_dir.exists(), "docs should be under output/docs/adr/");
+    Ok(())
 }

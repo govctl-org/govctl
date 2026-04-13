@@ -1,6 +1,6 @@
 [package]
 name = "govctl"
-version = "0.8.2"
+version = "0.8.3"
 edition = "2024"
 rust-version = "1.88"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
@@ -76,6 +76,10 @@ globset = "0.4"
 # Process-level file locking (for concurrent write safety per RFC-0004)
 fs2 = "0.4"
 
+# Self-update (binary replacement from GitHub Releases)
+# Implements [[RFC-0002:C-SELF-UPDATE]]
+self_update = { version = "0.44", default-features = false, features = ["reqwest", "rustls", "archive-tar", "archive-zip", "compression-flate2", "compression-zip-deflate"] }
+
 # Terminal output
 comfy-table = "7"
 owo-colors = "4"
@@ -93,6 +97,19 @@ insta = { version = "1", features = ["yaml"] }
 tempfile = "3"
 regex = "1"
 chrono = "0.4"
+
+[package.metadata.binstall]
+pkg-url = "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.{ archive-format }"
+bin-dir = "govctl-v{ version }-{ target }/{ bin }{ binary-ext }"
+pkg-fmt = "tgz"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-fmt = "zip"
+
+[lints.clippy]
+unwrap_used = { level = "deny", priority = 0 }
+expect_used = { level = "deny", priority = 0 }
+panic = { level = "deny", priority = 0 }
 
 [build-dependencies]
 serde = { version = "1", features = ["derive"] }

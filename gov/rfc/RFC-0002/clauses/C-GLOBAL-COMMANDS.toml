@@ -169,6 +169,17 @@ Artifact-level tagging uses existing resource verbs on taggable types (rfc, clau
 - `govctl {rfc|clause|adr|work|guard} add <ID> tags <tag>` — assign a tag to an artifact
 - `govctl {rfc|clause|adr|work|guard} remove <ID> tags <tag>` — remove a tag from an artifact
 
+**11. `govctl self-update`**
+
+Updates the govctl binary to the latest release.
+
+Syntax: `govctl self-update [--check]`
+
+Behavior:
+- Downloads and replaces the running binary from GitHub Releases
+- With `--check`: prints version comparison without downloading
+- Full specification in [[RFC-0002:C-SELF-UPDATE]]
+
 **Rationale:**
 
 These commands are global because they:
@@ -184,6 +195,8 @@ These commands are global because they:
 `govctl init-skills` qualifies because it performs project-level initialization of agent assets (criterion 2).
 
 `govctl tag` qualifies because it manages project-level configuration that applies across all resource types (criterion 1).
+
+`govctl self-update` qualifies because it provides meta-information about the CLI itself and performs binary lifecycle management (criterion 3).
 
 **Future Additions:**
 

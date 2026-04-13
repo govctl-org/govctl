@@ -15,11 +15,23 @@ use serde::Serialize;
 use std::sync::LazyLock;
 
 /// Tag format regex: `^[a-z][a-z0-9-]*$` — [[RFC-0002:C-RESOURCES]]
-pub static TAG_RE: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"^[a-z][a-z0-9-]*$").expect("valid regex"));
+static TAG_RE_RESULT: LazyLock<Result<Regex, regex::Error>> =
+    LazyLock::new(|| Regex::new(r"^[a-z][a-z0-9-]*$"));
+
+/// Return a reference to the compiled tag format regex.
+pub fn tag_re() -> Result<&'static Regex, regex::Error> {
+    TAG_RE_RESULT.as_ref().map_err(|e| e.clone())
+}
 
 fn validate_tag_format(tag: &str) -> Result<()> {
-    if !TAG_RE.is_match(tag) {
+    let re = tag_re().map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0806InvalidPattern,
+            format!("Failed to compile tag regex: {e}"),
+            "",
+        )
+    })?;
+    if !re.is_match(tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1101TagInvalidFormat,
             format!(
@@ -110,7 +122,7 @@ fn set_allowed_tags(table: &mut toml::Table, tags: Vec<String>) -> Result<()> {
 fn count_tag_usage(config: &Config, tag: &str) -> Result<usize> {
     let mut count = 0;
 
-    let rfcs = load_rfcs(config).map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
     for rfc_index in &rfcs {
         if rfc_index.rfc.tags.iter().any(|t| t == tag) {
             count += 1;
@@ -122,21 +134,21 @@ fn count_tag_usage(config: &Config, tag: &str) -> Result<usize> {
         }
     }
 
-    let adrs = load_adrs(config).map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    let adrs = load_adrs(config)?;
     for adr in &adrs {
         if adr.spec.govctl.tags.iter().any(|t| t == tag) {
             count += 1;
         }
     }
 
-    let items = load_work_items(config).map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    let items = load_work_items(config)?;
     for item in &items {
         if item.spec.govctl.tags.iter().any(|t| t == tag) {
             count += 1;
         }
     }
 
-    let guard_result = load_guards_with_warnings(config).map_err(|e| anyhow::anyhow!("{e:?}"))?;
+    let guard_result = load_guards_with_warnings(config)?;
     for guard in &guard_result.items {
         if guard.spec.govctl.tags.iter().any(|t| t == tag) {
             count += 1;

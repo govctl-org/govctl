@@ -12,8 +12,8 @@ use std::fs;
 // ============================================================================
 
 #[test]
-fn test_finalize_draft_to_normative() {
-    let temp_dir = init_project();
+fn test_finalize_draft_to_normative() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -24,13 +24,14 @@ fn test_finalize_draft_to_normative() {
             &["rfc", "finalize", "RFC-0001", "normative"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_finalize_draft_to_deprecated() {
-    let temp_dir = init_project();
+fn test_finalize_draft_to_deprecated() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -40,13 +41,14 @@ fn test_finalize_draft_to_deprecated() {
             &["rfc", "finalize", "RFC-0001", "deprecated"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_finalize_normative_to_deprecated() {
-    let temp_dir = init_project();
+fn test_finalize_normative_to_deprecated() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -57,13 +59,14 @@ fn test_finalize_normative_to_deprecated() {
             &["rfc", "deprecate", "RFC-0001"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_finalize_already_normative_fails() {
-    let temp_dir = init_project();
+fn test_finalize_already_normative_fails() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -73,29 +76,31 @@ fn test_finalize_already_normative_fails() {
             &["rfc", "finalize", "RFC-0001", "normative"],
             &["rfc", "finalize", "RFC-0001", "normative"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_finalize_nonexistent_rfc() {
-    let temp_dir = init_project();
+fn test_finalize_nonexistent_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "finalize", "RFC-9999", "normative"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_finalize_legacy_json_rfc_requires_migrate() {
-    let temp_dir = init_project();
+fn test_finalize_legacy_json_rfc_requires_migrate() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(&rfc_dir).unwrap();
+    fs::create_dir_all(&rfc_dir)?;
     fs::write(
         rfc_dir.join("rfc.json"),
         r#"{
@@ -109,14 +114,14 @@ fn test_finalize_legacy_json_rfc_requires_migrate() {
   "sections": [],
   "changelog": [{ "version": "0.1.0", "date": "2026-01-01", "notes": "Initial draft" }]
 }"#,
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "finalize", "RFC-0001", "normative"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -124,8 +129,8 @@ fn test_finalize_legacy_json_rfc_requires_migrate() {
 // ============================================================================
 
 #[test]
-fn test_advance_spec_to_impl() {
-    let temp_dir = init_project();
+fn test_advance_spec_to_impl() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -136,13 +141,14 @@ fn test_advance_spec_to_impl() {
             &["rfc", "advance", "RFC-0001", "impl"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_advance_impl_to_test() {
-    let temp_dir = init_project();
+fn test_advance_impl_to_test() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -154,13 +160,14 @@ fn test_advance_impl_to_test() {
             &["rfc", "advance", "RFC-0001", "test"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_advance_test_to_stable() {
-    let temp_dir = init_project();
+fn test_advance_test_to_stable() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -173,14 +180,15 @@ fn test_advance_test_to_stable() {
             &["rfc", "advance", "RFC-0001", "stable"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_advance_draft_to_impl_fails() {
+fn test_advance_draft_to_impl_fails() -> common::TestResult {
     // Cannot advance draft RFC to impl phase
-    let temp_dir = init_project();
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -189,14 +197,15 @@ fn test_advance_draft_to_impl_fails() {
             &["rfc", "new", "Test RFC"],
             &["rfc", "advance", "RFC-0001", "impl"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_advance_skip_phase_fails() {
+fn test_advance_skip_phase_fails() -> common::TestResult {
     // Cannot skip phases (e.g., spec -> test)
-    let temp_dir = init_project();
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -206,14 +215,15 @@ fn test_advance_skip_phase_fails() {
             &["rfc", "finalize", "RFC-0001", "normative"],
             &["rfc", "advance", "RFC-0001", "test"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_advance_backwards_fails() {
+fn test_advance_backwards_fails() -> common::TestResult {
     // Cannot go backwards (e.g., impl -> spec)
-    let temp_dir = init_project();
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -224,22 +234,24 @@ fn test_advance_backwards_fails() {
             &["rfc", "advance", "RFC-0001", "impl"],
             &["rfc", "advance", "RFC-0001", "spec"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_advance_nonexistent_rfc() {
-    let temp_dir = init_project();
+fn test_advance_nonexistent_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
-    let output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-9999", "impl"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-9999", "impl"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_finalize_sets_updated_field() {
-    let temp_dir = init_project();
+fn test_finalize_sets_updated_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -249,13 +261,14 @@ fn test_finalize_sets_updated_field() {
             &["rfc", "finalize", "RFC-0001", "normative"],
             &["rfc", "get", "RFC-0001", "updated"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_advance_sets_updated_field() {
-    let temp_dir = init_project();
+fn test_advance_sets_updated_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -266,17 +279,18 @@ fn test_advance_sets_updated_field() {
             &["rfc", "advance", "RFC-0001", "impl"],
             &["rfc", "get", "RFC-0001", "updated"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_deprecate_legacy_json_clause_requires_migrate() {
-    let temp_dir = init_project();
+fn test_deprecate_legacy_json_clause_requires_migrate() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let clauses_dir = temp_dir.path().join("gov/rfc/RFC-0001/clauses");
-    fs::create_dir_all(&clauses_dir).unwrap();
+    fs::create_dir_all(&clauses_dir)?;
     fs::write(
         clauses_dir.join("C-TEST.json"),
         r#"{
@@ -286,14 +300,14 @@ fn test_deprecate_legacy_json_clause_requires_migrate() {
   "status": "active",
   "text": "Legacy clause content."
 }"#,
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["clause", "deprecate", "RFC-0001:C-TEST", "--force"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -301,8 +315,8 @@ fn test_deprecate_legacy_json_clause_requires_migrate() {
 // ============================================================================
 
 #[test]
-fn test_bump_patch_version() {
-    let temp_dir = init_project();
+fn test_bump_patch_version() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -320,13 +334,14 @@ fn test_bump_patch_version() {
             ],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_bump_minor_version() {
-    let temp_dir = init_project();
+fn test_bump_minor_version() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -344,13 +359,14 @@ fn test_bump_minor_version() {
             ],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_bump_major_version() {
-    let temp_dir = init_project();
+fn test_bump_major_version() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -368,13 +384,14 @@ fn test_bump_major_version() {
             ],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_bump_requires_summary() {
-    let temp_dir = init_project();
+fn test_bump_requires_summary() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -384,13 +401,14 @@ fn test_bump_requires_summary() {
             &["rfc", "finalize", "RFC-0001", "normative"],
             &["rfc", "bump", "RFC-0001", "--patch"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_bump_with_change() {
-    let temp_dir = init_project();
+fn test_bump_with_change() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -401,20 +419,22 @@ fn test_bump_with_change() {
             &["rfc", "bump", "RFC-0001", "--change", "Added new clause"],
             &["rfc", "show", "RFC-0001"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_bump_nonexistent_rfc() {
-    let temp_dir = init_project();
+fn test_bump_nonexistent_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "bump", "RFC-9999", "--patch", "--summary", "Fix"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -422,8 +442,8 @@ fn test_bump_nonexistent_rfc() {
 // ============================================================================
 
 #[test]
-fn test_accept_proposed_adr() {
-    let temp_dir = init_project();
+fn test_accept_proposed_adr() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -434,13 +454,14 @@ fn test_accept_proposed_adr() {
             &["adr", "accept", "ADR-0001"],
             &["adr", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_reject_proposed_adr() {
-    let temp_dir = init_project();
+fn test_reject_proposed_adr() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -450,13 +471,14 @@ fn test_reject_proposed_adr() {
             &["adr", "reject", "ADR-0001"],
             &["adr", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_accept_already_accepted_fails() {
-    let temp_dir = init_project();
+fn test_accept_already_accepted_fails() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -466,13 +488,14 @@ fn test_accept_already_accepted_fails() {
             &["adr", "accept", "ADR-0001"],
             &["adr", "accept", "ADR-0001"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_accept_rejected_adr_fails() {
-    let temp_dir = init_project();
+fn test_accept_rejected_adr_fails() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -482,17 +505,19 @@ fn test_accept_rejected_adr_fails() {
             &["adr", "reject", "ADR-0001"],
             &["adr", "accept", "ADR-0001"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_accept_nonexistent_adr() {
-    let temp_dir = init_project();
+fn test_accept_nonexistent_adr() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
-    let output = run_commands(temp_dir.path(), &[&["adr", "accept", "ADR-9999"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["adr", "accept", "ADR-9999"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -500,8 +525,8 @@ fn test_accept_nonexistent_adr() {
 // ============================================================================
 
 #[test]
-fn test_deprecate_normative_rfc() {
-    let temp_dir = init_project();
+fn test_deprecate_normative_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -512,13 +537,14 @@ fn test_deprecate_normative_rfc() {
             &["rfc", "deprecate", "RFC-0001", "--force"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_supersede_rfc() {
-    let temp_dir = init_project();
+fn test_supersede_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -532,13 +558,14 @@ fn test_supersede_rfc() {
             &["rfc", "supersede", "RFC-0001", "--by", "RFC-0002"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_supersede_nonexistent_rfc() {
-    let temp_dir = init_project();
+fn test_supersede_nonexistent_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -548,8 +575,9 @@ fn test_supersede_nonexistent_rfc() {
             &["rfc", "finalize", "RFC-0001", "normative"],
             &["rfc", "supersede", "RFC-9999", "--by", "RFC-0001"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -557,8 +585,8 @@ fn test_supersede_nonexistent_rfc() {
 // ============================================================================
 
 #[test]
-fn test_supersede_clause() {
-    let temp_dir = init_project();
+fn test_supersede_clause() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -595,13 +623,14 @@ fn test_supersede_clause() {
             ],
             &["clause", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_deprecate_clause_force() {
-    let temp_dir = init_project();
+fn test_deprecate_clause_force() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -621,13 +650,14 @@ fn test_deprecate_clause_force() {
             &["clause", "deprecate", "RFC-0001:C-ONE", "--force"],
             &["clause", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_deprecate_clause_already_deprecated_fails() {
-    let temp_dir = init_project();
+fn test_deprecate_clause_already_deprecated_fails() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -647,13 +677,14 @@ fn test_deprecate_clause_already_deprecated_fails() {
             &["clause", "deprecate", "RFC-0001:C-ONE", "--force"],
             &["clause", "deprecate", "RFC-0001:C-ONE", "--force"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_deprecate_clause_superseded_fails() {
-    let temp_dir = init_project();
+fn test_deprecate_clause_superseded_fails() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -690,6 +721,7 @@ fn test_deprecate_clause_superseded_fails() {
             ],
             &["clause", "deprecate", "RFC-0001:C-OLD", "--force"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }

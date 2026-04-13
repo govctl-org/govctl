@@ -7,11 +7,11 @@ use std::fs;
 
 /// Test: RFC files fail check when they contain unknown fields rejected by schema
 #[test]
-fn test_invalid_rfc_schema_check() {
-    let temp_dir = init_project();
+fn test_invalid_rfc_schema_check() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.json"),
@@ -26,21 +26,21 @@ fn test_invalid_rfc_schema_check() {
   "sections": [],
   "unexpected": true
 }"#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("error[E0101]"), "output: {}", output);
     assert!(output.contains("rfc.schema.json"), "output: {}", output);
+    Ok(())
 }
 
 /// Test: Clause files fail check when they contain unknown fields rejected by schema
 #[test]
-fn test_invalid_clause_schema_check() {
-    let temp_dir = init_project();
+fn test_invalid_clause_schema_check() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.json"),
@@ -54,8 +54,7 @@ fn test_invalid_clause_schema_check() {
   "created": "2026-01-01",
   "sections": [{"title": "Test", "clauses": ["clauses/C-TEST.json"]}]
 }"#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-TEST.json"),
@@ -66,23 +65,23 @@ fn test_invalid_clause_schema_check() {
   "text": "Clause text",
   "unexpected": "should fail schema validation"
 }"#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("error[E0201]"), "output: {}", output);
     assert!(output.contains("clause.schema.json"), "output: {}", output);
+    Ok(())
 }
 
 /// Test: Clause claims superseded_by a non-existent clause
 #[test]
-fn test_broken_superseded_check() {
-    let temp_dir = init_project();
+fn test_broken_superseded_check() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create RFC with broken supersession
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.json"),
@@ -108,8 +107,7 @@ fn test_broken_superseded_check() {
     }
   ]
 }"#,
-    )
-    .unwrap();
+    )?;
 
     // C-OLD claims to be superseded by C-NONEXISTENT (which doesn't exist)
     fs::write(
@@ -123,8 +121,7 @@ fn test_broken_superseded_check() {
   "superseded_by": "C-NONEXISTENT",
   "since": "1.0.0"
 }"#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-NEW.json"),
@@ -136,22 +133,22 @@ fn test_broken_superseded_check() {
   "text": "This is the new clause.",
   "since": "1.0.0"
 }"#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: RFC has invalid status/phase combination (draft + stable)
 #[test]
-fn test_invalid_transition_check() {
-    let temp_dir = init_project();
+fn test_invalid_transition_check() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create RFC with invalid state
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.json"),
@@ -177,8 +174,7 @@ fn test_invalid_transition_check() {
     }
   ]
 }"#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-TEST.json"),
@@ -190,11 +186,11 @@ fn test_invalid_transition_check() {
   "text": "A test clause in an invalid RFC.",
   "since": "0.1.0"
 }"#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // =============================================================================
@@ -203,12 +199,12 @@ fn test_invalid_transition_check() {
 
 /// Test: Valid RFC TOML in [govctl] wire format passes check
 #[test]
-fn test_valid_rfc_toml_wire_format() {
-    let temp_dir = init_project();
+fn test_valid_rfc_toml_wire_format() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -227,21 +223,21 @@ created = "2026-01-01"
 [[sections]]
 title = "Summary"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Valid clause TOML in [govctl]+[content] wire format passes check
 #[test]
-fn test_valid_clause_toml_wire_format() {
-    let temp_dir = init_project();
+fn test_valid_clause_toml_wire_format() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -261,8 +257,7 @@ created = "2026-01-01"
 title = "Spec"
 clauses = ["clauses/C-TEST.toml"]
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-TEST.toml"),
@@ -279,21 +274,21 @@ since = "0.1.0"
 [content]
 text = "Clause body text."
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: RFC TOML in wire format rejects unknown fields in [govctl]
 #[test]
-fn test_invalid_rfc_toml_wire_unknown_field() {
-    let temp_dir = init_project();
+fn test_invalid_rfc_toml_wire_unknown_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -311,21 +306,21 @@ unexpected = "extra field"
 [[sections]]
 title = "Summary"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Clause TOML in wire format rejects unknown fields in [content]
 #[test]
-fn test_invalid_clause_toml_wire_unknown_field() {
-    let temp_dir = init_project();
+fn test_invalid_clause_toml_wire_unknown_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -343,8 +338,7 @@ created = "2026-01-01"
 title = "Spec"
 clauses = ["clauses/C-BAD.toml"]
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-BAD.toml"),
@@ -358,21 +352,21 @@ kind = "normative"
 text = "Body."
 unexpected = "extra field"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: RFC TOML in wire format rejects missing required field (owners)
 #[test]
-fn test_invalid_rfc_toml_wire_missing_required() {
-    let temp_dir = init_project();
+fn test_invalid_rfc_toml_wire_missing_required() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -388,21 +382,21 @@ created = "2026-01-01"
 [[sections]]
 title = "Summary"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Clause TOML in wire format rejects missing [content].text
 #[test]
-fn test_invalid_clause_toml_wire_missing_text() {
-    let temp_dir = init_project();
+fn test_invalid_clause_toml_wire_missing_text() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -420,8 +414,7 @@ created = "2026-01-01"
 title = "Spec"
 clauses = ["clauses/C-NOTEXT.toml"]
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-NOTEXT.toml"),
@@ -433,21 +426,21 @@ kind = "normative"
 
 [content]
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Legacy flat RFC TOML is still accepted via normalization
 #[test]
-fn test_legacy_flat_rfc_toml_accepted() {
-    let temp_dir = init_project();
+fn test_legacy_flat_rfc_toml_accepted() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -462,21 +455,21 @@ created = "2026-01-01"
 [[sections]]
 title = "Summary"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Legacy flat clause TOML is still accepted via normalization
 #[test]
-fn test_legacy_flat_clause_toml_accepted() {
-    let temp_dir = init_project();
+fn test_legacy_flat_clause_toml_accepted() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -492,8 +485,7 @@ created = "2026-01-01"
 title = "Spec"
 clauses = ["clauses/C-FLAT.toml"]
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-FLAT.toml"),
@@ -503,17 +495,17 @@ kind = "normative"
 status = "active"
 text = "Legacy flat format body."
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: ADR files fail check when they contain unknown fields rejected by schema
 #[test]
-fn test_invalid_adr_schema_check() {
-    let temp_dir = init_project();
+fn test_invalid_adr_schema_check() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     fs::write(
         temp_dir.path().join("gov/adr/ADR-0001-invalid.toml"),
@@ -530,18 +522,18 @@ decision = "Decision"
 consequences = "Consequences"
 unexpected = "should fail schema validation"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("error[E0301]"), "output: {}", output);
     assert!(output.contains("adr.schema.json"), "output: {}", output);
+    Ok(())
 }
 
 /// Test: Work item files fail check when they contain unknown fields rejected by schema
 #[test]
-fn test_invalid_work_schema_check() {
-    let temp_dir = init_project();
+fn test_invalid_work_schema_check() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     fs::write(
         temp_dir.path().join("gov/work/2026-01-01-invalid.toml"),
@@ -556,18 +548,18 @@ created = "2026-01-01"
 description = "Work description"
 unexpected = "should fail schema validation"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("error[E0401]"), "output: {}", output);
     assert!(output.contains("work.schema.json"), "output: {}", output);
+    Ok(())
 }
 
 /// Test: Release files fail check when they contain unknown fields rejected by schema
 #[test]
-fn test_invalid_release_schema_check() {
-    let temp_dir = init_project();
+fn test_invalid_release_schema_check() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     fs::write(
         temp_dir.path().join("gov/releases.toml"),
@@ -579,18 +571,18 @@ version = "1.0.0"
 date = "2026-01-01"
 unexpected = "should fail schema validation"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("error[E0704]"), "output: {}", output);
     assert!(output.contains("release.schema.json"), "output: {}", output);
+    Ok(())
 }
 
 /// Test: Verification guard files fail check when they contain unknown fields rejected by schema
 #[test]
-fn test_invalid_guard_schema_check() {
-    let temp_dir = init_project();
+fn test_invalid_guard_schema_check() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     fs::write(
         temp_dir.path().join("gov/guard/check.toml"),
@@ -603,10 +595,10 @@ title = "Invalid Guard"
 command = "true"
 unexpected = "should fail schema validation"
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("error[E1001]"), "output: {}", output);
     assert!(output.contains("guard.schema.json"), "output: {}", output);
+    Ok(())
 }

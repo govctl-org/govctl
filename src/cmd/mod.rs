@@ -11,6 +11,7 @@ pub mod migrate;
 pub mod move_;
 pub mod new;
 pub mod render;
+pub mod self_update;
 pub mod status;
 pub mod tag;
 pub mod verify;

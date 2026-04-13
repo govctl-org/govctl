@@ -1,0 +1,98 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0041"
+title = "Self-update and cargo-binstall binary distribution"
+status = "accepted"
+date = "2026-04-13"
+refs = [
+    "RFC-0002",
+    "ADR-0018",
+    "ADR-0033",
+]
+
+[content]
+context = """
+govctl is distributed via `cargo install govctl` and as prebuilt binaries on GitHub Releases. The release CI (`.github/workflows/release.yml`) already produces binaries for five platform targets: `x86_64-unknown-linux-gnu`, `aarch64-unknown-linux-gnu`, `x86_64-apple-darwin`, `aarch64-apple-darwin`, and `x86_64-pc-windows-msvc`.
+
+### Problem Statement
+
+Two gaps exist in the binary distribution story:
+
+1. **No in-place update.** Users must remember to re-run `cargo install govctl` or manually download from GitHub Releases to get a new version. There is no built-in way to check for or apply updates.
+
+2. **No `cargo binstall` support.** `cargo-binstall` can install prebuilt binaries from GitHub Releases without compiling from source, but requires `[package.metadata.binstall]` in `Cargo.toml` to locate the correct asset. Without this metadata, `cargo binstall govctl` falls back to a full source build.
+
+### Constraints
+
+- [[RFC-0002:C-GLOBAL-COMMANDS]] requires new global commands to meet at least one criterion: (1) multi-resource, (2) project-level init/cleanup, or (3) meta-information about the CLI itself. A self-update command qualifies under criterion 3.
+- [[ADR-0018]] established "one canonical way" — the update mechanism should be singular.
+- Release assets use the naming convention `govctl-v{version}-{target}.{ext}` (tar.gz for Unix, zip for Windows).
+- The project already depends on `reqwest` for HTTP (via other crates), so adding network capability is not a new dependency class."""
+decision = """
+We will **use the `self_update` crate for a built-in `govctl self-update` command and add `[package.metadata.binstall]` to `Cargo.toml` for `cargo-binstall` support**, because:
+
+1. **Existing infrastructure fits perfectly.** The release CI already produces platform binaries with naming that `self_update` expects (`govctl-v{version}-{target}.{ext}`). No CI changes needed.
+
+2. **Minimal effort, maximum coverage.** The `self_update` crate handles the hard parts (API queries, platform detection, archive extraction, binary replacement) in ~20 lines. `cargo-binstall` metadata is a 4-line addition to `Cargo.toml`.
+
+3. **Two complementary install paths, one asset layout.** Users who installed via `cargo binstall` can update via `cargo binstall govctl`. Users who installed via direct download or `govctl self-update` can update in place. Both paths consume the same GitHub Release assets."""
+consequences = """
+### Positive
+
+- Users can update govctl with a single command (`govctl self-update`) regardless of how it was originally installed
+- `cargo binstall govctl` installs prebuilt binaries in seconds instead of compiling from source (~2 min)
+- Both update paths share the same GitHub Release assets — no additional CI or hosting required
+- Version check (`govctl self-update --check`) enables scripted staleness detection in CI or hooks
+
+### Negative
+
+- New runtime dependency on `self_update` crate and its transitive dependencies (mitigation: the crate is well-maintained with 8M+ downloads; feature-flag to compile only the GitHub backend + rustls)
+- Binary replacement requires write permission to the install directory (mitigation: clear error message when permission is denied, suggesting `sudo` or ownership fix)
+- GitHub API rate limits apply to unauthenticated requests — 60 requests/hour per IP (mitigation: self-update is infrequent; document `GITHUB_TOKEN` env var for authenticated requests if needed)
+
+### Neutral
+
+- `cargo install govctl` continues to work unchanged — this adds paths, does not replace existing ones
+- Plugin users ([[ADR-0033]]) are unaffected — plugin updates are managed by Claude Code's plugin system"""
+
+[[content.alternatives]]
+text = "self_update crate with GitHub Releases backend: Use the self_update crate (v0.44, ~8M downloads, actively maintained) to query GitHub Releases API, download platform-appropriate binary, and replace the running executable. Pair with cargo-binstall metadata in Cargo.toml so both self-update and cargo-binstall share the same release asset layout."
+status = "accepted"
+pros = [
+    "Minimal code (~20 lines) — the crate handles API queries, platform detection, archive extraction, and binary replacement",
+    "Actively maintained with broad adoption (8M+ downloads)",
+    "Reuses existing release CI assets without changes — asset naming already matches",
+    "cargo-binstall support is additive metadata only, zero code",
+    "Both update paths share one asset layout, reducing maintenance",
+]
+cons = ["Adds a runtime dependency (~5 transitive crates for HTTP, archive, self-replace)"]
+
+[[content.alternatives]]
+text = "Manual implementation with reqwest: Implement GitHub Releases API querying, asset download, archive extraction, and binary replacement manually using reqwest and flate2/tar crates."
+status = "rejected"
+pros = [
+    "Full control over behavior and error messages",
+    "No dependency on third-party update crate",
+]
+cons = [
+    "Significant implementation effort (~200+ lines) for a solved problem",
+    "Must handle platform detection, archive formats, binary replacement, and edge cases manually",
+    "Ongoing maintenance burden for update logic",
+]
+rejection_reason = "The self_update crate already solves this reliably. Reimplementing is unnecessary complexity for marginal control benefit."
+
+[[content.alternatives]]
+text = "Shell out to cargo install or cargo binstall: Instead of a built-in self-update, invoke cargo install govctl or cargo binstall govctl as a subprocess."
+status = "rejected"
+pros = [
+    "Zero new code for the update mechanism itself",
+    "Leverages existing package manager infrastructure",
+]
+cons = [
+    "Requires Rust toolchain (cargo install) or cargo-binstall installed separately",
+    "Slow for source builds — full compilation on every update",
+    "Poor UX — error messages come from external tools, not govctl",
+    "Cannot work in environments where govctl was installed via direct binary download",
+]
+rejection_reason = "Depends on external toolchain being present. Users who installed from GitHub Releases would not have cargo available. Per [[ADR-0018]], prefer one canonical path."

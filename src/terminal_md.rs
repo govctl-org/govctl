@@ -8,24 +8,41 @@ use crate::ui::stdout_supports_color;
 use regex::Regex;
 use std::sync::LazyLock;
 
-static HTML_COMMENT: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"<!--[\s\S]*?-->").expect("valid regex"));
+static HTML_COMMENT: LazyLock<Result<Regex, regex::Error>> =
+    LazyLock::new(|| Regex::new(r"<!--[\s\S]*?-->"));
 
-static HTML_ANCHOR: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r#"\s*<a\s+id="[^"]*"\s*></a>"#).expect("valid regex"));
+static HTML_ANCHOR: LazyLock<Result<Regex, regex::Error>> =
+    LazyLock::new(|| Regex::new(r#"\s*<a\s+id="[^"]*"\s*></a>"#));
 
-static HTML_DEL: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"</?del>").expect("valid regex"));
+static HTML_DEL: LazyLock<Result<Regex, regex::Error>> = LazyLock::new(|| Regex::new(r"</?del>"));
 
-static MD_LINK: LazyLock<Regex> =
-    LazyLock::new(|| Regex::new(r"\[([^\]]+)\]\([^)]+\.md(?:#[^)]*)?\)").expect("valid regex"));
+static MD_LINK: LazyLock<Result<Regex, regex::Error>> =
+    LazyLock::new(|| Regex::new(r"\[([^\]]+)\]\([^)]+\.md(?:#[^)]*)?\)"));
 
 /// Strip HTML artifacts that are meaningful in rendered .md files
 /// but visual noise in a terminal.
 pub fn strip_for_terminal(md: &str) -> String {
-    let s = HTML_COMMENT.replace_all(md, "");
-    let s = HTML_ANCHOR.replace_all(&s, "");
-    let s = HTML_DEL.replace_all(&s, "");
-    let s = MD_LINK.replace_all(&s, "$1");
+    let html_comment = match HTML_COMMENT.as_ref() {
+        Ok(r) => r,
+        Err(_) => return md.to_string(),
+    };
+    let html_anchor = match HTML_ANCHOR.as_ref() {
+        Ok(r) => r,
+        Err(_) => return md.to_string(),
+    };
+    let html_del = match HTML_DEL.as_ref() {
+        Ok(r) => r,
+        Err(_) => return md.to_string(),
+    };
+    let md_link = match MD_LINK.as_ref() {
+        Ok(r) => r,
+        Err(_) => return md.to_string(),
+    };
+
+    let s = html_comment.replace_all(md, "");
+    let s = html_anchor.replace_all(&s, "");
+    let s = html_del.replace_all(&s, "");
+    let s = md_link.replace_all(&s, "$1");
 
     let mut out = String::with_capacity(s.len());
     for line in s.lines() {

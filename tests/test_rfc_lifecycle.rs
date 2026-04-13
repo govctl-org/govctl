@@ -6,8 +6,8 @@ use common::{init_project, normalize_output, run_commands, today};
 
 /// Test: RFC amendment tracking with signature-based detection
 #[test]
-fn test_rfc_amendment_tracking() {
-    let temp_dir = init_project();
+fn test_rfc_amendment_tracking() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create RFC and clause
@@ -33,7 +33,7 @@ fn test_rfc_amendment_tracking() {
                 "Original text for amendment test.",
             ],
         ],
-    );
+    )?;
 
     // Finalize and bump to set baseline signature
     let baseline = run_commands(
@@ -50,7 +50,7 @@ fn test_rfc_amendment_tracking() {
             ],
             &["rfc", "list"],
         ],
-    );
+    )?;
 
     // Edit clause to create amendment
     let edit = run_commands(
@@ -62,10 +62,10 @@ fn test_rfc_amendment_tracking() {
             "--text",
             "AMENDED text - content changed.",
         ]],
-    );
+    )?;
 
     // List should show asterisk for amended RFC
-    let amended = run_commands(temp_dir.path(), &[&["rfc", "list"]]);
+    let amended = run_commands(temp_dir.path(), &[&["rfc", "list"]])?;
 
     // Bump version to release amendment
     let released = run_commands(
@@ -81,8 +81,9 @@ fn test_rfc_amendment_tracking() {
             ],
             &["rfc", "list"],
         ],
-    );
+    )?;
 
     let combined = format!("{}{}{}{}{}", setup, baseline, edit, amended, released);
-    insta::assert_snapshot!(normalize_output(&combined, temp_dir.path(), &date));
+    insta::assert_snapshot!(normalize_output(&combined, temp_dir.path(), &date)?);
+    Ok(())
 }

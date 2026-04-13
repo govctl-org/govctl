@@ -10,13 +10,13 @@ use std::fs;
 
 /// Test: RFC render shows relative output path
 #[test]
-fn test_render_rfc_display_path() {
-    let temp_dir = init_project();
+fn test_render_rfc_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create draft RFC with clause
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -38,8 +38,7 @@ version = "0.1.0"
 date = "2026-01-01"
 notes = "Initial draft"
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-TEST.toml"),
@@ -52,25 +51,25 @@ status = "active"
 [content]
 text = "Test clause content."
 "#,
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "render", "RFC-0001", "--dry-run"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: ADR render shows relative output path
 #[test]
-fn test_render_adr_display_path() {
-    let temp_dir = init_project();
+fn test_render_adr_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create ADR
     let adr_dir = temp_dir.path().join("gov/adr");
-    fs::create_dir_all(&adr_dir).unwrap();
+    fs::create_dir_all(&adr_dir)?;
 
     fs::write(
         adr_dir.join("ADR-0001-test-decision.toml"),
@@ -88,25 +87,25 @@ decision = "Test decision"
 alternatives = []
 consequences = "Test consequences"
 "#,
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["adr", "render", "ADR-0001", "--dry-run"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Work item render shows relative output path
 #[test]
-fn test_render_work_display_path() {
-    let temp_dir = init_project();
+fn test_render_work_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create work item
     let work_dir = temp_dir.path().join("gov/work");
-    fs::create_dir_all(&work_dir).unwrap();
+    fs::create_dir_all(&work_dir)?;
 
     let work_filename = format!("{}-test-work.toml", date);
     fs::write(
@@ -128,52 +127,55 @@ notes = []
 "#,
             date, date, date
         ),
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["work", "render", &format!("WI-{}-001", date), "--dry-run"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_render_rfc_missing_returns_scope_context() {
-    let temp_dir = init_project();
+fn test_render_rfc_missing_returns_scope_context() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
-    let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-9999"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-9999"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_render_adr_missing_returns_scope_context() {
-    let temp_dir = init_project();
+fn test_render_adr_missing_returns_scope_context() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
-    let output = run_commands(temp_dir.path(), &[&["adr", "render", "ADR-9999"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["adr", "render", "ADR-9999"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_render_work_missing_returns_scope_context() {
-    let temp_dir = init_project();
+fn test_render_work_missing_returns_scope_context() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
-    let output = run_commands(temp_dir.path(), &[&["work", "render", "WI-9999-01-01-001"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["work", "render", "WI-9999-01-01-001"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Delete work item dry-run shows relative path
 #[test]
-fn test_delete_work_dry_run_display_path() {
-    let temp_dir = init_project();
+fn test_delete_work_dry_run_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create a queued work item
     let work_dir = temp_dir.path().join("gov/work");
-    fs::create_dir_all(&work_dir).unwrap();
+    fs::create_dir_all(&work_dir)?;
 
     let work_filename = format!("{}-test-work.toml", date);
     fs::write(
@@ -194,25 +196,25 @@ notes = []
 "#,
             date, date
         ),
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["work", "delete", &format!("WI-{}-001", date), "--dry-run"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: Delete clause dry-run shows relative path
 #[test]
-fn test_delete_clause_dry_run_display_path() {
-    let temp_dir = init_project();
+fn test_delete_clause_dry_run_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create draft RFC with clause (draft status allows deletion)
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -237,8 +239,7 @@ version = "0.1.0"
 date = "2026-01-01"
 notes = "Initial draft"
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-TO-DELETE.toml"),
@@ -254,25 +255,25 @@ status = "active"
 [content]
 text = "This clause will be deleted."
 "#,
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["clause", "delete", "RFC-0001:C-TO-DELETE", "--dry-run"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: RFC set dry-run shows relative path
 #[test]
-fn test_rfc_set_dry_run_display_path() {
-    let temp_dir = init_project();
+fn test_rfc_set_dry_run_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create draft RFC
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
     fs::write(
         rfc_dir.join("rfc.toml"),
         r#"#:schema ../../schema/rfc.schema.json
@@ -296,8 +297,7 @@ version = "0.1.0"
 date = "2026-01-01"
 notes = "Initial draft"
 "#,
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -309,19 +309,20 @@ notes = "Initial draft"
             "Updated Title",
             "--dry-run",
         ]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: RFC bump dry-run shows relative path
 #[test]
-fn test_rfc_bump_dry_run_display_path() {
-    let temp_dir = init_project();
+fn test_rfc_bump_dry_run_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create draft RFC
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
     fs::write(
         rfc_dir.join("rfc.toml"),
         r#"#:schema ../../schema/rfc.schema.json
@@ -345,8 +346,7 @@ version = "0.1.0"
 date = "2026-01-01"
 notes = "Initial draft"
 "#,
-    )
-    .unwrap();
+    )?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -358,27 +358,30 @@ notes = "Initial draft"
             "fix: test change",
             "--dry-run",
         ]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: RFC new dry-run shows relative paths
 #[test]
-fn test_rfc_new_dry_run_display_path() {
-    let temp_dir = init_project();
+fn test_rfc_new_dry_run_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    let output = run_commands(temp_dir.path(), &[&["rfc", "new", "New RFC", "--dry-run"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["rfc", "new", "New RFC", "--dry-run"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 /// Test: work new dry-run shows relative paths
 #[test]
-fn test_work_new_dry_run_display_path() {
-    let temp_dir = init_project();
+fn test_work_new_dry_run_display_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let output = run_commands(
         temp_dir.path(),
         &[&["work", "new", "New Work", "--dry-run"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }

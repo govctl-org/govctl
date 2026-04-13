@@ -1,0 +1,51 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-13-001"
+title = "Implement self-update command and cargo-binstall support"
+status = "done"
+created = "2026-04-13"
+started = "2026-04-13"
+completed = "2026-04-13"
+refs = [
+    "RFC-0002",
+    "ADR-0041",
+]
+
+[content]
+description = "Add govctl self-update command using the self_update crate to download prebuilt binaries from GitHub Releases, and add cargo-binstall metadata to Cargo.toml. Amends RFC-0002 with C-SELF-UPDATE clause and ADR-0041 for the mechanism decision."
+
+[[content.journal]]
+date = "2026-04-13"
+scope = "cli"
+content = "Implemented self-update command and cargo-binstall metadata; all 192 unit tests + integration tests pass; govctl check passes with 0 warnings"
+
+[[content.acceptance_criteria]]
+text = "Implement govctl self-update command with --check flag"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Add cargo-binstall metadata to Cargo.toml"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "RFC-0002 amended with C-SELF-UPDATE clause and version bumped"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR-0041 accepted"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"

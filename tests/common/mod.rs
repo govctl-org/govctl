@@ -6,6 +6,8 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::TempDir;
 
+pub type TestResult = Result<(), Box<dyn std::error::Error>>;
+
 /// Get today's date in YYYY-MM-DD format (same as govctl uses)
 pub fn today() -> String {
     chrono::Local::now().format("%Y-%m-%d").to_string()
@@ -16,7 +18,7 @@ pub fn today() -> String {
 /// - Replace today's date with `<DATE>`
 /// - Replace work item IDs (WI-YYYY-MM-DD-NNN) with WI-<DATE>-NNN
 /// - Replace ADR IDs with date component normalized
-pub fn normalize_output(output: &str, dir: &Path, date: &str) -> String {
+pub fn normalize_output(output: &str, dir: &Path, date: &str) -> Result<String, regex::Error> {
     let canonical = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
     let canonical_str = canonical.display().to_string();
     let dir_str = dir.display().to_string();
@@ -25,19 +27,19 @@ pub fn normalize_output(output: &str, dir: &Path, date: &str) -> String {
     normalized = normalized.replace(date, "<DATE>");
 
     // Replace work item IDs
-    let wi_pattern = regex::Regex::new(r"WI-\d{4}-\d{2}-\d{2}-(\d{3})").unwrap();
+    let wi_pattern = regex::Regex::new(r"WI-\d{4}-\d{2}-\d{2}-(\d{3})")?;
     normalized = wi_pattern
         .replace_all(&normalized, "WI-<DATE>-$1")
         .to_string();
 
     // Replace ADR filenames with dates
-    let adr_file_pattern = regex::Regex::new(r"ADR-(\d{4})-").unwrap();
+    let adr_file_pattern = regex::Regex::new(r"ADR-(\d{4})-")?;
     normalized = adr_file_pattern
         .replace_all(&normalized, "ADR-XXXX-")
         .to_string();
 
     // Replace signature hashes (date-dependent due to embedded dates in specs)
-    let sig_pattern = regex::Regex::new(r"sha256:[0-9a-f]{64}").unwrap();
+    let sig_pattern = regex::Regex::new(r"sha256:[0-9a-f]{64}")?;
     normalized = sig_pattern
         .replace_all(&normalized, "sha256:<HASH>")
         .to_string();
@@ -47,11 +49,11 @@ pub fn normalize_output(output: &str, dir: &Path, date: &str) -> String {
     let version = env!("CARGO_PKG_VERSION");
     normalized = normalized.replace(&format!("\"{version}\""), "\"<VERSION>\"");
 
-    normalized
+    Ok(normalized)
 }
 
 /// Run govctl commands in a directory and capture output.
-pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> String {
+pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> Result<String, std::io::Error> {
     let mut output = String::new();
 
     for args in commands {
@@ -62,8 +64,7 @@ pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> String {
             .current_dir(dir)
             .env("NO_COLOR", "1")
             .env("GOVCTL_DEFAULT_OWNER", "@test-user")
-            .output()
-            .expect("failed to run govctl");
+            .output()?;
 
         let stdout = String::from_utf8_lossy(&result.stdout);
         let stderr = String::from_utf8_lossy(&result.stderr);
@@ -84,11 +85,14 @@ pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> String {
         output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
     }
 
-    output
+    Ok(output)
 }
 
 /// Run commands with dynamic String arguments (for work item IDs with dates)
-pub fn run_dynamic_commands(dir: &Path, commands: &[Vec<String>]) -> String {
+pub fn run_dynamic_commands(
+    dir: &Path,
+    commands: &[Vec<String>],
+) -> Result<String, std::io::Error> {
     let mut output = String::new();
 
     for args in commands {
@@ -100,8 +104,7 @@ pub fn run_dynamic_commands(dir: &Path, commands: &[Vec<String>]) -> String {
             .current_dir(dir)
             .env("NO_COLOR", "1")
             .env("GOVCTL_DEFAULT_OWNER", "@test-user")
-            .output()
-            .expect("failed to run govctl");
+            .output()?;
 
         let stdout = String::from_utf8_lossy(&result.stdout);
         let stderr = String::from_utf8_lossy(&result.stderr);
@@ -122,15 +125,15 @@ pub fn run_dynamic_commands(dir: &Path, commands: &[Vec<String>]) -> String {
         output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
     }
 
-    output
+    Ok(output)
 }
 
 /// Initialize a govctl project in a temp directory.
 ///
 /// If `schema_version` is provided, overrides the config schema version
 /// (used by migration tests to simulate older repositories).
-pub fn init_project_at(schema_version: Option<u32>) -> TempDir {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+pub fn init_project_at(schema_version: Option<u32>) -> Result<TempDir, Box<dyn std::error::Error>> {
+    let temp_dir = TempDir::new()?;
     let mut cmd = Command::new(env!("CARGO_BIN_EXE_govctl"));
     cmd.args(["init"])
         .current_dir(temp_dir.path())
@@ -141,15 +144,15 @@ pub fn init_project_at(schema_version: Option<u32>) -> TempDir {
         cmd.env("GOVCTL_SCHEMA_VERSION", v.to_string());
     }
 
-    let result = cmd.output().expect("failed to run govctl init");
+    let result = cmd.output()?;
     assert!(result.status.success(), "govctl init failed");
-    temp_dir
+    Ok(temp_dir)
 }
 
-pub fn init_project() -> TempDir {
+pub fn init_project() -> Result<TempDir, Box<dyn std::error::Error>> {
     init_project_at(None)
 }
 
-pub fn init_project_v1() -> TempDir {
+pub fn init_project_v1() -> Result<TempDir, Box<dyn std::error::Error>> {
     init_project_at(Some(1))
 }

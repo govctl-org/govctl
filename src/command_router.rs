@@ -78,6 +78,9 @@ pub enum BuiltinOp {
     Completions {
         shell: clap_complete::Shell,
     },
+    SelfUpdate {
+        check: bool,
+    },
     #[cfg(feature = "tui")]
     Tui,
     ReleaseCut {
@@ -209,6 +212,7 @@ impl CommandPlan {
             | Op::Builtin(BuiltinOp::Verify { .. })
             | Op::Builtin(BuiltinOp::Describe { .. })
             | Op::Builtin(BuiltinOp::Completions { .. })
+            | Op::Builtin(BuiltinOp::SelfUpdate { .. })
             | Op::Builtin(BuiltinOp::TagList { .. })
             | Op::Get
             | Op::List { .. }
@@ -505,6 +509,7 @@ fn execute_builtin(
             cmd::verify::verify(config, guard_ids, work.as_deref())
         }
         BuiltinOp::Describe { context, output: _ } => cmd::describe::describe(config, *context),
+        BuiltinOp::SelfUpdate { check } => cmd::self_update::self_update(*check),
         BuiltinOp::Completions { shell } => {
             use crate::Cli;
             use clap::CommandFactory;
@@ -865,6 +870,9 @@ impl CommandPlan {
             Commands::Completions { shell } => Ok(global(Op::Builtin(BuiltinOp::Completions {
                 shell: *shell,
             }))),
+            Commands::SelfUpdate { check } => {
+                Ok(global(Op::Builtin(BuiltinOp::SelfUpdate { check: *check })))
+            }
             #[cfg(feature = "tui")]
             Commands::Tui => Ok(global(Op::Builtin(BuiltinOp::Tui))),
             Commands::Rfc { command } => command.to_plan(),
@@ -901,8 +909,9 @@ mod tests {
     use clap::{Parser, error::ErrorKind};
 
     #[test]
-    fn test_owned_edit_action_requires_exactly_one_action() {
-        let err = owned_edit_action(&EditActionArgs {
+    fn test_owned_edit_action_requires_exactly_one_action() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let result = owned_edit_action(&EditActionArgs {
             set: None,
             add: None,
             remove: None,
@@ -912,15 +921,19 @@ mod tests {
             exact: false,
             regex: false,
             all: false,
-        })
-        .expect_err("missing action should fail");
-
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        });
+        assert!(result.is_err(), "missing action should fail");
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0801MissingRequiredArg);
+        Ok(())
     }
 
     #[test]
-    fn test_from_clause_command_uses_canonical_edit_when_path_is_present() {
+    fn test_from_clause_command_uses_canonical_edit_when_path_is_present()
+    -> Result<(), Box<dyn std::error::Error>> {
         let cmd = ClauseCommand::Edit {
             id: "RFC-0001:C-TEST".to_string(),
             path: Some("text".to_string()),
@@ -937,7 +950,7 @@ mod tests {
             text_file: None,
         };
 
-        let plan = cmd.to_plan().expect("canonical edit");
+        let plan = cmd.to_plan()?;
         assert!(matches!(
             plan.scope,
             Scope::Target {
@@ -951,14 +964,16 @@ mod tests {
                     assert_eq!(value.as_ref(), Some(&Some("Updated".to_string())));
                     assert!(!stdin);
                 }
-                other => panic!("expected set action, got {other:?}"),
+                other => return Err(format!("expected set action, got {other:?}").into()),
             },
-            other => panic!("expected field edit, got {other:?}"),
+            other => return Err(format!("expected field edit, got {other:?}").into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_from_clause_command_requires_path_for_canonical_flags() {
+    fn test_from_clause_command_requires_path_for_canonical_flags()
+    -> Result<(), Box<dyn std::error::Error>> {
         let cmd = ClauseCommand::Edit {
             id: "RFC-0001:C-TEST".to_string(),
             path: None,
@@ -975,13 +990,19 @@ mod tests {
             text_file: None,
         };
 
-        let err = cmd.to_plan().expect_err("missing path");
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        let result = cmd.to_plan();
+        assert!(result.is_err(), "missing path should fail");
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0801MissingRequiredArg);
+        Ok(())
     }
 
     #[test]
-    fn test_from_clause_command_uses_legacy_edit_without_canonical_flags() {
+    fn test_from_clause_command_uses_legacy_edit_without_canonical_flags()
+    -> Result<(), Box<dyn std::error::Error>> {
         let cmd = ClauseCommand::Edit {
             id: "RFC-0001:C-TEST".to_string(),
             path: None,
@@ -998,7 +1019,7 @@ mod tests {
             text_file: None,
         };
 
-        let plan = cmd.to_plan().expect("legacy edit");
+        let plan = cmd.to_plan()?;
         assert!(matches!(
             plan.scope,
             Scope::Artifact {
@@ -1016,12 +1037,14 @@ mod tests {
                 assert!(text_file.is_none());
                 assert!(stdin);
             }
-            other => panic!("expected legacy clause edit, got {other:?}"),
+            other => return Err(format!("expected legacy clause edit, got {other:?}").into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_owned_edit_action_builds_tick_match_options() {
+    fn test_owned_edit_action_builds_tick_match_options() -> Result<(), Box<dyn std::error::Error>>
+    {
         let action = owned_edit_action(&EditActionArgs {
             set: None,
             add: None,
@@ -1032,8 +1055,7 @@ mod tests {
             exact: true,
             regex: false,
             all: false,
-        })
-        .expect("tick action");
+        })?;
 
         match action {
             OwnedEditAction::Tick { match_opts, status } => {
@@ -1041,13 +1063,15 @@ mod tests {
                 assert_eq!(match_opts.at, Some(2));
                 assert!(match_opts.exact);
             }
-            other => panic!("expected tick action, got {other:?}"),
+            other => return Err(format!("expected tick action, got {other:?}").into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_owned_edit_action_rejects_tick_all_combination() {
-        let err = owned_edit_action(&EditActionArgs {
+    fn test_owned_edit_action_rejects_tick_all_combination()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let result = owned_edit_action(&EditActionArgs {
             set: None,
             add: None,
             remove: None,
@@ -1057,16 +1081,19 @@ mod tests {
             exact: false,
             regex: false,
             all: true,
-        })
-        .expect_err("tick with --all should fail");
-
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        });
+        assert!(result.is_err(), "tick with --all should fail");
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+        Ok(())
     }
 
     #[test]
-    fn test_owned_edit_action_rejects_multiple_actions() {
-        let err = owned_edit_action(&EditActionArgs {
+    fn test_owned_edit_action_rejects_multiple_actions() -> Result<(), Box<dyn std::error::Error>> {
+        let result = owned_edit_action(&EditActionArgs {
             set: Some(Some("x".to_string())),
             add: Some(Some("y".to_string())),
             remove: None,
@@ -1076,15 +1103,19 @@ mod tests {
             exact: false,
             regex: false,
             all: false,
-        })
-        .expect_err("multiple actions should fail");
-
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        });
+        assert!(result.is_err(), "multiple actions should fail");
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+        Ok(())
     }
 
     #[test]
-    fn test_owned_edit_action_preserves_explicit_empty_strings() {
+    fn test_owned_edit_action_preserves_explicit_empty_strings()
+    -> Result<(), Box<dyn std::error::Error>> {
         let set = owned_edit_action(&EditActionArgs {
             set: Some(Some(String::new())),
             add: None,
@@ -1095,14 +1126,13 @@ mod tests {
             exact: false,
             regex: false,
             all: false,
-        })
-        .expect("set action");
+        })?;
         match set {
             OwnedEditAction::Set { value, stdin } => {
                 assert_eq!(value.as_ref(), Some(&Some(String::new())));
                 assert!(!stdin);
             }
-            other => panic!("expected set action, got {other:?}"),
+            other => return Err(format!("expected set action, got {other:?}").into()),
         }
 
         let add = owned_edit_action(&EditActionArgs {
@@ -1115,14 +1145,13 @@ mod tests {
             exact: false,
             regex: false,
             all: false,
-        })
-        .expect("add action");
+        })?;
         match add {
             OwnedEditAction::Add { value, stdin } => {
                 assert_eq!(value.as_ref(), Some(&Some(String::new())));
                 assert!(!stdin);
             }
-            other => panic!("expected add action, got {other:?}"),
+            other => return Err(format!("expected add action, got {other:?}").into()),
         }
 
         let remove = owned_edit_action(&EditActionArgs {
@@ -1135,18 +1164,18 @@ mod tests {
             exact: false,
             regex: false,
             all: false,
-        })
-        .expect("remove action");
+        })?;
         match remove {
             OwnedEditAction::Remove { match_opts } => {
                 assert_eq!(match_opts.pattern.as_deref(), Some(""));
             }
-            other => panic!("expected remove action, got {other:?}"),
+            other => return Err(format!("expected remove action, got {other:?}").into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_edit_plans_are_mutating() {
+    fn test_edit_plans_are_mutating() -> Result<(), Box<dyn std::error::Error>> {
         let plan = crate::RfcCommand::Edit(crate::CommonEditArgs {
             id: "RFC-0001".to_string(),
             path: "title".to_string(),
@@ -1162,8 +1191,7 @@ mod tests {
                 all: false,
             },
         })
-        .to_plan()
-        .expect("rfc edit");
+        .to_plan()?;
         assert!(matches!(plan.scope, Scope::Target { .. }));
         assert!(matches!(plan.op, Op::Edit(EditOp::Field { .. })));
         assert_eq!(plan.lock_disposition(), LockDisposition::GovRootExclusive);
@@ -1183,33 +1211,33 @@ mod tests {
             text: None,
             text_file: None,
         }
-        .to_plan()
-        .expect("legacy edit");
+        .to_plan()?;
         assert!(matches!(plan.op, Op::Edit(EditOp::ClauseLegacy { .. })));
         assert_eq!(plan.lock_disposition(), LockDisposition::GovRootExclusive);
+        Ok(())
     }
 
     #[test]
-    fn test_read_plans_are_lock_free() {
+    fn test_read_plans_are_lock_free() -> Result<(), Box<dyn std::error::Error>> {
         let status = global(Op::Builtin(BuiltinOp::Status));
         assert_eq!(status.lock_disposition(), LockDisposition::None);
 
-        let plan = plan_get("RFC-0001", Some("title")).expect("get");
+        let plan = plan_get("RFC-0001", Some("title"))?;
         assert!(matches!(plan.scope, Scope::Target { .. }));
         assert!(matches!(plan.op, Op::Get));
         assert_eq!(plan.lock_disposition(), LockDisposition::None);
+        Ok(())
     }
 
     #[test]
-    fn test_lock_disposition_is_lock_free_for_inspect_commands() {
+    fn test_lock_disposition_is_lock_free_for_inspect_commands()
+    -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(
             global(Op::Builtin(BuiltinOp::Status)).lock_disposition(),
             LockDisposition::None
         );
         assert_eq!(
-            plan_get("RFC-0001", Some("title"))
-                .expect("get")
-                .lock_disposition(),
+            plan_get("RFC-0001", Some("title"))?.lock_disposition(),
             LockDisposition::None
         );
         assert_eq!(
@@ -1221,10 +1249,12 @@ mod tests {
             .lock_disposition(),
             LockDisposition::None
         );
+        Ok(())
     }
 
     #[test]
-    fn test_lock_disposition_requires_lock_for_mutating_commands() {
+    fn test_lock_disposition_requires_lock_for_mutating_commands()
+    -> Result<(), Box<dyn std::error::Error>> {
         assert_eq!(
             global(Op::Builtin(BuiltinOp::Init { force: false })).lock_disposition(),
             LockDisposition::GovRootExclusive
@@ -1235,8 +1265,7 @@ mod tests {
                 "acceptance_criteria[0]",
                 tick_action(OwnedMatchOptions::default(), TickStatus::Done),
                 EditExtras::default(),
-            )
-            .expect("work edit")
+            )?
             .lock_disposition(),
             LockDisposition::GovRootExclusive
         );
@@ -1252,16 +1281,48 @@ mod tests {
             .lock_disposition(),
             LockDisposition::GovRootExclusive
         );
+        Ok(())
     }
 
     #[test]
-    fn test_target_resolves_get_and_edit_to_same_field_target() {
+    fn test_self_update_routes_to_builtin_op() -> Result<(), Box<dyn std::error::Error>> {
+        let check_plan = CommandPlan::from_parsed(&Commands::SelfUpdate { check: true }, false)?;
+        assert!(matches!(check_plan.scope, Scope::Global));
+        assert!(matches!(
+            check_plan.op,
+            Op::Builtin(BuiltinOp::SelfUpdate { check: true })
+        ));
+
+        let update_plan = CommandPlan::from_parsed(&Commands::SelfUpdate { check: false }, false)?;
+        assert!(matches!(update_plan.scope, Scope::Global));
+        assert!(matches!(
+            update_plan.op,
+            Op::Builtin(BuiltinOp::SelfUpdate { check: false })
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn test_self_update_is_lock_free() {
+        // Self-update replaces the binary, not governance files — no gov-root lock needed.
+        assert_eq!(
+            global(Op::Builtin(BuiltinOp::SelfUpdate { check: true })).lock_disposition(),
+            LockDisposition::None
+        );
+        assert_eq!(
+            global(Op::Builtin(BuiltinOp::SelfUpdate { check: false })).lock_disposition(),
+            LockDisposition::None
+        );
+    }
+
+    #[test]
+    fn test_target_resolves_get_and_edit_to_same_field_target()
+    -> Result<(), Box<dyn std::error::Error>> {
         let get = crate::AdrCommand::Get(crate::CommonGetArgs {
             id: "ADR-0038".to_string(),
             field: Some("alternatives[1].status".to_string()),
         })
-        .to_plan()
-        .expect("get routed");
+        .to_plan()?;
         let edit = crate::AdrCommand::Edit(crate::AdrEditArgs {
             common: crate::CommonEditArgs {
                 id: "ADR-0038".to_string(),
@@ -1282,8 +1343,7 @@ mod tests {
             con: vec![],
             reject_reason: None,
         })
-        .to_plan()
-        .expect("edit routed");
+        .to_plan()?;
 
         match ((&get.op, &get.scope), (&edit.op, &edit.scope)) {
             (
@@ -1308,13 +1368,15 @@ mod tests {
                 assert_eq!(get_id, edit_id);
                 assert_eq!(get_target, edit_target);
             }
-            other => panic!("expected field targets, got {other:?}"),
+            other => return Err(format!("expected field targets, got {other:?}").into()),
         }
+        Ok(())
     }
 
     #[test]
-    fn test_owned_edit_action_rejects_selector_flags_for_set() {
-        let err = owned_edit_action(&EditActionArgs {
+    fn test_owned_edit_action_rejects_selector_flags_for_set()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let result = owned_edit_action(&EditActionArgs {
             set: Some(Some("x".to_string())),
             add: None,
             remove: None,
@@ -1324,16 +1386,19 @@ mod tests {
             exact: false,
             regex: false,
             all: false,
-        })
-        .expect_err("set with --at should fail");
-
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        });
+        assert!(result.is_err(), "set with --at should fail");
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+        Ok(())
     }
 
     #[test]
-    fn test_owned_edit_action_rejects_stdin_for_remove() {
-        let err = owned_edit_action(&EditActionArgs {
+    fn test_owned_edit_action_rejects_stdin_for_remove() -> Result<(), Box<dyn std::error::Error>> {
+        let result = owned_edit_action(&EditActionArgs {
             set: None,
             add: None,
             remove: Some(None),
@@ -1343,15 +1408,19 @@ mod tests {
             exact: false,
             regex: false,
             all: false,
-        })
-        .expect_err("remove with --stdin should fail");
-
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        });
+        assert!(result.is_err(), "remove with --stdin should fail");
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+        Ok(())
     }
 
     #[test]
-    fn test_from_clause_command_rejects_mixed_canonical_and_legacy_edit_flags() {
+    fn test_from_clause_command_rejects_mixed_canonical_and_legacy_edit_flags()
+    -> Result<(), Box<dyn std::error::Error>> {
         let cmd = ClauseCommand::Edit {
             id: "RFC-0001:C-TEST".to_string(),
             path: Some("text".to_string()),
@@ -1368,13 +1437,18 @@ mod tests {
             text_file: None,
         };
 
-        let err = cmd.to_plan().expect_err("mixed modes should fail");
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        let result = cmd.to_plan();
+        assert!(result.is_err(), "mixed modes should fail");
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
+        Ok(())
     }
 
     #[test]
-    fn test_work_tick_defaults_status_to_done() {
+    fn test_work_tick_defaults_status_to_done() -> Result<(), Box<dyn std::error::Error>> {
         let cli = crate::Cli::parse_from([
             "govctl",
             "work",
@@ -1388,14 +1462,15 @@ mod tests {
             crate::Commands::Work {
                 command: crate::WorkCommand::Tick(crate::WorkTickArgs { status, .. }),
             } => assert!(matches!(status, WorkTickStatus::Done)),
-            _ => panic!("expected work tick command"),
+            _ => return Err("expected work tick command".into()),
         }
+        Ok(())
     }
 
     #[test]
     fn test_rfc_get_help_restores_resource_specific_examples() {
         let err = match crate::Cli::try_parse_from(["govctl", "rfc", "get", "--help"]) {
-            Ok(_) => panic!("help should exit"),
+            Ok(_) => unreachable!("help should exit"),
             Err(err) => err,
         };
         assert_eq!(err.kind(), ErrorKind::DisplayHelp);
@@ -1410,7 +1485,7 @@ mod tests {
     #[test]
     fn test_work_get_help_restores_resource_specific_examples() {
         let err = match crate::Cli::try_parse_from(["govctl", "work", "get", "--help"]) {
-            Ok(_) => panic!("help should exit"),
+            Ok(_) => unreachable!("help should exit"),
             Err(err) => err,
         };
         assert_eq!(err.kind(), ErrorKind::DisplayHelp);

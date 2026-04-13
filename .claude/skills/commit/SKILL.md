@@ -24,7 +24,9 @@ Commit changes using the project's version control system, with govctl-aware che
 
 ### Step 1: Detect VCS
 
-Run `jj root` first. If succeeds, use **Jujutsu**. If fails, run `git rev-parse --git-dir`. If succeeds, use **Git**. If both fail, stop and inform user.
+Run `jj root` first. If it succeeds, use **Jujutsu** — do NOT also check git. A jj-git colocated repo has both `.jj/` and `.git/`, so checking git would also succeed and cause you to use the wrong VCS. Only if `jj root` fails, run `git rev-parse --git-dir`. If that succeeds, use **Git**. If both fail, stop and inform user.
+
+**CRITICAL:** Do NOT run `jj root` and `git rev-parse` in parallel. Run `jj root` first, and only proceed to git detection if jj is not found.
 
 ### Step 2: Govctl Pre-Commit Checks
 

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.3] - 2026-04-13
+
+### Added
+
+- Implement govctl self-update command with --check flag (WI-2026-04-13-001)
+- Add cargo-binstall metadata to Cargo.toml (WI-2026-04-13-001)
+
 ## [0.8.2] - 2026-04-10
 
 ### Added
