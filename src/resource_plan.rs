@@ -248,10 +248,10 @@ impl ToPlan for AdrCommand {
                 },
             ),
             AdrCommand::Remove(args) => compile_common_remove(args),
-            AdrCommand::Accept(CommonIdArgs { id }) => Ok(plan_lifecycle(
+            AdrCommand::Accept { id, force } => Ok(plan_lifecycle(
                 cmd::edit::ArtifactType::Adr,
                 id,
-                LifecycleOp::AcceptAdr,
+                LifecycleOp::AcceptAdr { force: *force },
             )),
             AdrCommand::Reject(CommonIdArgs { id }) => Ok(plan_lifecycle(
                 cmd::edit::ArtifactType::Adr,

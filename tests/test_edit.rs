@@ -748,6 +748,29 @@ fn test_adr_set_decision() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
+            // Implements [[ADR-0042]]: must have alternatives before setting decision
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option B"],
+            &[
+                "adr",
+                "tick",
+                "ADR-0001",
+                "alternatives",
+                "--at",
+                "0",
+                "-s",
+                "accepted",
+            ],
+            &[
+                "adr",
+                "tick",
+                "ADR-0001",
+                "alternatives",
+                "--at",
+                "1",
+                "-s",
+                "rejected",
+            ],
             &["adr", "set", "ADR-0001", "decision", "We decided to do X"],
             &["adr", "show", "ADR-0001"],
         ],
@@ -1644,6 +1667,29 @@ fn test_path_backward_compat() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Compat Test"],
+            // Implements [[ADR-0042]]: must have alternatives before setting decision
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option B"],
+            &[
+                "adr",
+                "tick",
+                "ADR-0001",
+                "alternatives",
+                "--at",
+                "0",
+                "-s",
+                "accepted",
+            ],
+            &[
+                "adr",
+                "tick",
+                "ADR-0001",
+                "alternatives",
+                "--at",
+                "1",
+                "-s",
+                "rejected",
+            ],
             // Legacy dotted paths should still work
             &[
                 "adr",

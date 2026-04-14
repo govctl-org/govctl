@@ -1,0 +1,94 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0042"
+title = "Enforce ADR writing order with structural gates"
+status = "accepted"
+date = "2026-04-14"
+refs = [
+    "ADR-0027",
+    "RFC-0001",
+]
+
+[content]
+context = """
+The adr-writer skill prescribes a specific writing order — context, alternatives, mark alternatives as accepted/rejected, decision, consequences — but nothing in the CLI enforces it. Today, an agent or user can write `decision` on a fresh ADR with zero alternatives, or accept an ADR with empty context and no rejected options.
+
+### Problem Statement
+
+Without structural enforcement, ADRs drift toward "conclusion-first" writing: a decision is stated without evidence that alternatives were considered. This undermines the purpose of ADRs as justificatory artifacts per [[ADR-0027]].
+
+The threshold of "at least 2 alternatives, with at least 1 accepted and 1 rejected" comes from the adr-writer skill's core principle: "Let the alternatives show the discussion." A decision that evaluated zero alternatives is not a decision — it is an assertion. A decision with only one option (the chosen one) has no visible trade-off. Two alternatives (one chosen, one rejected) is the minimum structure that demonstrates deliberation.
+
+### Current State
+
+- `govctl adr set <ID> decision` has no precondition checks
+- `govctl adr accept <ID>` only validates the status transition (proposed -> accepted) per [[RFC-0001:C-ADR-STATUS]], not content completeness
+- `govctl check` validates schema and cross-references but has no ADR completeness rules
+- The adr-writer skill documents the order but cannot enforce it
+
+### Constraints
+
+- Historical backfills are a legitimate use case where alternatives may not be recoverable — enforcement must have an escape hatch
+- Write-time gates should not block exploratory drafting of other fields (context, alternatives, consequences) — only `decision` is order-sensitive
+- The force flag is the established override pattern in govctl (used by `init`, `init-skills`, `delete`); it applies to the lifecycle gate (`adr accept --force`) but not to the write-time gate"""
+decision = """
+We will **enforce ADR writing order at two points: when the decision field is written, and when the ADR is accepted**, because:
+
+1. **Write-time gates catch conclusion-first thinking at the source.** Blocking `decision` before alternatives are evaluated forces the author to consider options before committing to a conclusion. This is the critical moment — once a decision is written, the mental model shifts from exploration to defense. This gate is strict and not bypassable.
+
+2. **Lifecycle gates provide a completeness checkpoint.** Acceptance requires evaluated alternatives per the adr-writer skill's prescribed order and the minimum-deliberation threshold described in the context.
+
+3. **The force flag on `adr accept` preserves historical backfill workflows.** When alternatives cannot be reconstructed, the lifecycle gate can be bypassed explicitly via `adr accept --force` rather than silently.
+
+The specific validation rules (minimum alternative count, required statuses) are implementation details guided by the adr-writer skill's prescribed order and the minimum-deliberation threshold described in the context."""
+consequences = """
+### Positive
+
+- ADRs become structurally complete before decisions are recorded — alternatives-first thinking is enforced, not just recommended
+- Agents cannot shortcut the process by writing decision before evaluating options
+- Acceptance gate catches incomplete ADRs even when write-time gate was bypassed
+- Historical backfills remain possible via the force flag with explicit intent
+
+### Negative
+
+- Authors who prefer to draft decision first and refine alternatives later face friction on every ADR (mitigation: this friction is intentional — the force flag exists for genuinely exceptional cases like historical backfills, not as a routine workflow bypass; the expected frequency of force usage should be low)
+- Validation logic spans two code paths (edit and lifecycle), which adds maintenance surface as the ADR schema evolves (mitigation: the checks are field-presence and count checks with clear error messages; both paths share the same validation function)
+
+### Neutral
+
+- Existing accepted ADRs are unaffected — the gates only apply to future write and accept operations
+- The adr-writer skill documentation remains the same; the CLI now enforces what the skill recommends"""
+
+[[content.alternatives]]
+text = "Both write-time and lifecycle gates: Gate the decision field behind alternatives completeness, and gate acceptance behind overall ADR completeness. Both gates bypassable with the force flag for historical backfills."
+status = "accepted"
+pros = [
+    "Enforces alternatives-first thinking at the moment it matters most",
+    "Lifecycle gate provides a second checkpoint at acceptance time",
+    "Consistent with the adr-writer skill prescribed order",
+]
+cons = ["Adds validation logic to two code paths (edit and lifecycle)"]
+
+[[content.alternatives]]
+text = "Lifecycle gate only: Enforce completeness only at adr accept time, no write-time restrictions on setting decision."
+status = "rejected"
+pros = [
+    "No new edit-path complexity",
+    "Allows flexible drafting order",
+]
+cons = [
+    "Decision can be written without evidence of alternatives-first thinking",
+    "Quality check only at acceptance, not at authoring time",
+]
+rejection_reason = "Lifecycle-only enforcement misses the critical moment: when the decision is being written. By then, the conclusion-first pattern is already established."
+
+[[content.alternatives]]
+text = "No enforcement: Keep the current behavior where the adr-writer skill documents the order but the CLI does not enforce it."
+status = "rejected"
+pros = ["Zero implementation effort"]
+cons = [
+    "No enforcement at all — relies entirely on skill guidance and human discipline",
+    "Agents can and do skip alternatives when not enforced",
+]
+rejection_reason = "The adr-writer skill already documents the order. The problem is that documentation alone does not prevent conclusion-first writing."

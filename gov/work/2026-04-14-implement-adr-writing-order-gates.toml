@@ -1,0 +1,53 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-14-001"
+title = "Implement ADR writing order gates"
+status = "done"
+created = "2026-04-14"
+started = "2026-04-14"
+completed = "2026-04-14"
+refs = ["ADR-0042"]
+
+[content]
+description = "Add structural validation gates to enforce ADR writing order per ADR-0042. Write-time gate blocks setting decision before alternatives are complete (not bypassable). Lifecycle gate blocks adr accept for incomplete ADRs (bypassable with --force for historical backfills)."
+
+[[content.journal]]
+date = "2026-04-14"
+scope = "cli"
+content = "Implemented both gates; all tests pass; pre-commit clean"
+
+[[content.acceptance_criteria]]
+text = "Write-time gate blocks adr set/edit decision when alternatives incomplete"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Lifecycle gate blocks adr accept for incomplete ADRs"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "adr accept --force bypasses lifecycle gate for historical backfills"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Unit tests for both gates"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Integration tests for gate behavior"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
