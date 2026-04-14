@@ -103,9 +103,20 @@ For existing repositories, the `/migrate` workflow helps you adopt governance in
 ### CLI
 
 ```bash
+# Install from source
 cargo install govctl
+
+# Or install a prebuilt binary (faster, skips compilation)
+cargo binstall govctl
+
 govctl init
 govctl status
+```
+
+To update an existing installation:
+
+```bash
+govctl self-update
 ```
 
 Then create your first governed artifacts:
@@ -148,7 +159,7 @@ This keeps the govctl-managed workspace, generated skills, and generated agents 
 
 ```bash
 govctl rfc new "Verification Guard Policy"
-govctl clause new RFC-0015:C-GUARD-REQUIREMENTS "Required guards" -s "Verification" -k invariant
+govctl clause new RFC-0015:C-GUARD-REQUIREMENTS "Required guards" -s "Verification" -k normative
 govctl adr new "Require clippy on parser refactors"
 govctl work new --active "add parser lint guard"
 ```
