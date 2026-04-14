@@ -206,28 +206,30 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_simple_field() {
-        let p = parse_field_path("title").unwrap();
+    fn test_simple_field() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("title")?;
         assert_eq!(p.segments.len(), 1);
         assert_eq!(p.segments[0].name, "title");
         assert_eq!(p.segments[0].index, None);
         assert!(p.is_simple());
         assert_eq!(p.as_simple(), Some("title"));
+        Ok(())
     }
 
     #[test]
-    fn test_indexed_field() {
-        let p = parse_field_path("alternatives[0]").unwrap();
+    fn test_indexed_field() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alternatives[0]")?;
         assert_eq!(p.segments.len(), 1);
         assert_eq!(p.segments[0].name, "alternatives");
         assert_eq!(p.segments[0].index, Some(0));
         assert!(!p.is_simple());
         assert!(p.has_terminal_index());
+        Ok(())
     }
 
     #[test]
-    fn test_dotted_path() {
-        let p = parse_field_path("alt[0].pros").unwrap();
+    fn test_dotted_path() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alt[0].pros")?;
         assert_eq!(p.segments.len(), 2);
         assert_eq!(p.segments[0].name, "alternatives");
         assert_eq!(p.segments[0].index, Some(0));
@@ -235,23 +237,26 @@ mod tests {
         assert_eq!(p.segments[1].index, None);
         assert!(!p.is_simple());
         assert!(!p.has_terminal_index());
+        Ok(())
     }
 
     #[test]
-    fn test_dotted_path_with_terminal_index() {
-        let p = parse_field_path("alt[0].pros[1]").unwrap();
+    fn test_dotted_path_with_terminal_index() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alt[0].pros[1]")?;
         assert_eq!(p.segments.len(), 2);
         assert_eq!(p.segments[0].name, "alternatives");
         assert_eq!(p.segments[0].index, Some(0));
         assert_eq!(p.segments[1].name, "pros");
         assert_eq!(p.segments[1].index, Some(1));
         assert!(p.has_terminal_index());
+        Ok(())
     }
 
     #[test]
-    fn test_negative_index() {
-        let p = parse_field_path("alt[-1]").unwrap();
+    fn test_negative_index() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alt[-1]")?;
         assert_eq!(p.segments[0].index, Some(-1));
+        Ok(())
     }
 
     // =========================================================================
@@ -259,41 +264,47 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_alias_alt() {
-        let p = parse_field_path("alt[0]").unwrap();
+    fn test_alias_alt() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alt[0]")?;
         assert_eq!(p.segments[0].name, "alternatives");
+        Ok(())
     }
 
     #[test]
-    fn test_raw_parse_keeps_alias_token() {
-        let p = parse_raw_field_path("alt[0]").unwrap();
+    fn test_raw_parse_keeps_alias_token() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_raw_field_path("alt[0]")?;
         assert_eq!(p.segments[0].name, "alt");
+        Ok(())
     }
 
     #[test]
-    fn test_alias_ac() {
-        let p = parse_field_path("ac[0]").unwrap();
+    fn test_alias_ac() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("ac[0]")?;
         assert_eq!(p.segments[0].name, "acceptance_criteria");
+        Ok(())
     }
 
     #[test]
-    fn test_alias_pro_con() {
-        let p = parse_field_path("alt[0].pro[0]").unwrap();
+    fn test_alias_pro_con() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alt[0].pro[0]")?;
         assert_eq!(p.segments[1].name, "pros");
-        let p = parse_field_path("alt[0].con[0]").unwrap();
+        let p = parse_field_path("alt[0].con[0]")?;
         assert_eq!(p.segments[1].name, "cons");
+        Ok(())
     }
 
     #[test]
-    fn test_alias_reason() {
-        let p = parse_field_path("alt[0].reason").unwrap();
+    fn test_alias_reason() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alt[0].reason")?;
         assert_eq!(p.segments[1].name, "rejection_reason");
+        Ok(())
     }
 
     #[test]
-    fn test_alias_desc() {
-        let p = parse_field_path("desc").unwrap();
+    fn test_alias_desc() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("desc")?;
         assert_eq!(p.segments[0].name, "description");
+        Ok(())
     }
 
     // =========================================================================
@@ -301,58 +312,52 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_collapse_content_decision() {
-        let p = parse_field_path("content.decision")
-            .unwrap()
-            .collapse_legacy_prefixes();
+    fn test_collapse_content_decision() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("content.decision")?.collapse_legacy_prefixes();
         assert!(p.is_simple());
         assert_eq!(p.as_simple(), Some("decision"));
+        Ok(())
     }
 
     #[test]
-    fn test_collapse_govctl_status() {
-        let p = parse_field_path("govctl.status")
-            .unwrap()
-            .collapse_legacy_prefixes();
+    fn test_collapse_govctl_status() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("govctl.status")?.collapse_legacy_prefixes();
         assert!(p.is_simple());
         assert_eq!(p.as_simple(), Some("status"));
+        Ok(())
     }
 
     #[test]
-    fn test_no_collapse_when_indexed() {
+    fn test_no_collapse_when_indexed() -> Result<(), Box<dyn std::error::Error>> {
         // content[0].decision should NOT collapse — content has index
-        let p = parse_field_path("content[0].decision")
-            .unwrap()
-            .collapse_legacy_prefixes();
+        let p = parse_field_path("content[0].decision")?.collapse_legacy_prefixes();
         assert_eq!(p.segments.len(), 2);
+        Ok(())
     }
 
     #[test]
-    fn test_no_collapse_non_legacy_prefix() {
-        let p = parse_field_path("alt[0].pros")
-            .unwrap()
-            .collapse_legacy_prefixes();
+    fn test_no_collapse_non_legacy_prefix() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("alt[0].pros")?.collapse_legacy_prefixes();
         assert_eq!(p.segments.len(), 2);
+        Ok(())
     }
 
     #[test]
-    fn test_no_collapse_unknown_legacy_field() {
-        let p = parse_field_path("content.unknown")
-            .unwrap()
-            .collapse_legacy_prefixes();
+    fn test_no_collapse_unknown_legacy_field() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("content.unknown")?.collapse_legacy_prefixes();
         assert_eq!(p.segments.len(), 2);
         assert_eq!(p.segments[0].name, "content");
+        Ok(())
     }
 
     #[test]
-    fn test_collapse_legacy_prefix_for_deeper_path() {
-        let p = parse_field_path("content.alternatives[0].pros")
-            .unwrap()
-            .collapse_legacy_prefixes();
+    fn test_collapse_legacy_prefix_for_deeper_path() -> Result<(), Box<dyn std::error::Error>> {
+        let p = parse_field_path("content.alternatives[0].pros")?.collapse_legacy_prefixes();
         assert_eq!(p.segments.len(), 2);
         assert_eq!(p.segments[0].name, "alternatives");
         assert_eq!(p.segments[0].index, Some(0));
         assert_eq!(p.segments[1].name, "pros");
+        Ok(())
     }
 
     // =========================================================================
@@ -401,19 +406,22 @@ mod tests {
     // =========================================================================
 
     #[test]
-    fn test_resolve_index_zero() {
-        assert_eq!(resolve_index(0, 3).unwrap(), 0);
+    fn test_resolve_index_zero() -> Result<(), Box<dyn std::error::Error>> {
+        assert_eq!(resolve_index(0, 3)?, 0);
+        Ok(())
     }
 
     #[test]
-    fn test_resolve_index_positive() {
-        assert_eq!(resolve_index(2, 5).unwrap(), 2);
+    fn test_resolve_index_positive() -> Result<(), Box<dyn std::error::Error>> {
+        assert_eq!(resolve_index(2, 5)?, 2);
+        Ok(())
     }
 
     #[test]
-    fn test_resolve_index_negative() {
-        assert_eq!(resolve_index(-1, 3).unwrap(), 2);
-        assert_eq!(resolve_index(-3, 3).unwrap(), 0);
+    fn test_resolve_index_negative() -> Result<(), Box<dyn std::error::Error>> {
+        assert_eq!(resolve_index(-1, 3)?, 2);
+        assert_eq!(resolve_index(-3, 3)?, 0);
+        Ok(())
     }
 
     #[test]

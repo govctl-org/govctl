@@ -9,8 +9,8 @@ use common::{init_project, normalize_output, run_commands, today};
 // ============================================================================
 
 #[test]
-fn test_rfc_set_title() {
-    let temp_dir = init_project();
+fn test_rfc_set_title() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -20,13 +20,14 @@ fn test_rfc_set_title() {
             &["rfc", "set", "RFC-0001", "title", "New Title"],
             &["rfc", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_rfc_get_field() {
-    let temp_dir = init_project();
+fn test_rfc_get_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -37,13 +38,14 @@ fn test_rfc_get_field() {
             &["rfc", "get", "RFC-0001", "status"],
             &["rfc", "get", "RFC-0001", "phase"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_rfc_add_owner() {
-    let temp_dir = init_project();
+fn test_rfc_add_owner() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -53,13 +55,14 @@ fn test_rfc_add_owner() {
             &["rfc", "add", "RFC-0001", "owners", "@newowner"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_rfc_remove_owner() {
-    let temp_dir = init_project();
+fn test_rfc_remove_owner() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -71,13 +74,14 @@ fn test_rfc_remove_owner() {
             &["rfc", "remove", "RFC-0001", "owners", "@owner1"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_rfc_remove_owner_by_index_canonical() {
-    let temp_dir = init_project();
+fn test_rfc_remove_owner_by_index_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -88,7 +92,7 @@ fn test_rfc_remove_owner_by_index_canonical() {
             &["rfc", "edit", "RFC-0001", "owners[1]", "--remove"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
-    );
+    )?;
 
     assert!(
         output.contains("Removed '@owner1' from RFC-0001.owners"),
@@ -100,11 +104,12 @@ fn test_rfc_remove_owner_by_index_canonical() {
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_rfc_add_ref() {
-    let temp_dir = init_project();
+fn test_rfc_add_ref() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -114,13 +119,14 @@ fn test_rfc_add_ref() {
             &["rfc", "add", "RFC-0001", "refs", "ADR-0001"],
             &["rfc", "get", "RFC-0001", "refs"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_rfc_edit_set_title_canonical() {
-    let temp_dir = init_project();
+fn test_rfc_edit_set_title_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -136,7 +142,7 @@ fn test_rfc_edit_set_title_canonical() {
             ],
             &["rfc", "get", "RFC-0001", "title"],
         ],
-    );
+    )?;
 
     assert!(
         output.contains("Set RFC-0001.title = Canonical Title"),
@@ -148,11 +154,12 @@ fn test_rfc_edit_set_title_canonical() {
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_rfc_edit_set_owner_by_index_canonical() {
-    let temp_dir = init_project();
+fn test_rfc_edit_set_owner_by_index_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -170,7 +177,7 @@ fn test_rfc_edit_set_owner_by_index_canonical() {
             ],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
-    );
+    )?;
 
     assert!(
         output.contains("Set RFC-0001.owners[1] = @replacement"),
@@ -182,11 +189,12 @@ fn test_rfc_edit_set_owner_by_index_canonical() {
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_rfc_set_nonexistent_field() {
-    let temp_dir = init_project();
+fn test_rfc_set_nonexistent_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -195,13 +203,14 @@ fn test_rfc_set_nonexistent_field() {
             &["rfc", "new", "Test RFC"],
             &["rfc", "set", "RFC-0001", "nonexistent", "value"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_rfc_set_version_rejected() {
-    let temp_dir = init_project();
+fn test_rfc_set_version_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -209,18 +218,19 @@ fn test_rfc_set_version_rejected() {
             &["rfc", "new", "Test RFC"],
             &["rfc", "set", "RFC-0001", "version", "0.2.0"],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(
         output.contains("Use `govctl rfc bump`"),
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_rfc_set_status_rejected() {
-    let temp_dir = init_project();
+fn test_rfc_set_status_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -228,18 +238,20 @@ fn test_rfc_set_status_rejected() {
             &["rfc", "new", "Test RFC"],
             &["rfc", "set", "RFC-0001", "status", "normative"],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(output.contains("govctl rfc finalize"), "output: {}", output);
+    Ok(())
 }
 
 #[test]
-fn test_rfc_get_nonexistent() {
-    let temp_dir = init_project();
+fn test_rfc_get_nonexistent() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
-    let output = run_commands(temp_dir.path(), &[&["rfc", "get", "RFC-9999", "title"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["rfc", "get", "RFC-9999", "title"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -247,8 +259,8 @@ fn test_rfc_get_nonexistent() {
 // ============================================================================
 
 #[test]
-fn test_clause_set_text() {
-    let temp_dir = init_project();
+fn test_clause_set_text() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -274,13 +286,14 @@ fn test_clause_set_text() {
             ],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_clause_edit_text_canonical() {
-    let temp_dir = init_project();
+fn test_clause_edit_text_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -307,13 +320,14 @@ fn test_clause_edit_text_canonical() {
             ],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_clause_set_title() {
-    let temp_dir = init_project();
+fn test_clause_set_title() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -333,13 +347,14 @@ fn test_clause_set_title() {
             &["clause", "set", "RFC-0001:C-TEST", "title", "New Title"],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_clause_edit_title_canonical() {
-    let temp_dir = init_project();
+fn test_clause_edit_title_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -366,13 +381,14 @@ fn test_clause_edit_title_canonical() {
             ],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_clause_remove_anchor_by_index_canonical() {
-    let temp_dir = init_project();
+fn test_clause_remove_anchor_by_index_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -413,7 +429,7 @@ fn test_clause_remove_anchor_by_index_canonical() {
             ],
             &["clause", "show", "RFC-0001:C-TEST", "-o", "json"],
         ],
-    );
+    )?;
 
     assert!(
         output.contains("Removed 'anchor-one' from RFC-0001:C-TEST.anchors"),
@@ -426,11 +442,12 @@ fn test_clause_remove_anchor_by_index_canonical() {
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_clause_get_field() {
-    let temp_dir = init_project();
+fn test_clause_get_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -451,13 +468,14 @@ fn test_clause_get_field() {
             &["clause", "get", "RFC-0001:C-TEST", "kind"],
             &["clause", "get", "RFC-0001:C-TEST", "status"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_clause_set_since_rejected() {
-    let temp_dir = init_project();
+fn test_clause_set_since_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -475,18 +493,19 @@ fn test_clause_set_since_rejected() {
             ],
             &["clause", "set", "RFC-0001:C-TEST", "since", "0.1.0"],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(
         output.contains("Clause 'since' is derived from RFC versioning"),
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_clause_set_text_sugar() {
-    let temp_dir = init_project();
+fn test_clause_set_text_sugar() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -506,13 +525,14 @@ fn test_clause_set_text_sugar() {
             &["clause", "set", "RFC-0001:C-TEST", "text", "new text"],
             &["clause", "show", "RFC-0001:C-TEST"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_clause_set_status_rejected() {
-    let temp_dir = init_project();
+fn test_clause_set_status_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -530,18 +550,19 @@ fn test_clause_set_status_rejected() {
             ],
             &["clause", "set", "RFC-0001:C-TEST", "status", "deprecated"],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(
         output.contains("govctl clause deprecate"),
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_clause_edit_nonexistent() {
-    let temp_dir = init_project();
+fn test_clause_edit_nonexistent() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -550,8 +571,9 @@ fn test_clause_edit_nonexistent() {
             &["rfc", "new", "Test RFC"],
             &["clause", "edit", "RFC-0001:C-NONEXISTENT", "--text", "Text"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -559,8 +581,8 @@ fn test_clause_edit_nonexistent() {
 // ============================================================================
 
 #[test]
-fn test_adr_get_field() {
-    let temp_dir = init_project();
+fn test_adr_get_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -570,13 +592,14 @@ fn test_adr_get_field() {
             &["adr", "get", "ADR-0001", "title"],
             &["adr", "get", "ADR-0001", "status"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_set_title() {
-    let temp_dir = init_project();
+fn test_adr_set_title() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -586,13 +609,14 @@ fn test_adr_set_title() {
             &["adr", "set", "ADR-0001", "title", "New Title"],
             &["adr", "list"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_set_status_rejected() {
-    let temp_dir = init_project();
+fn test_adr_set_status_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -600,14 +624,15 @@ fn test_adr_set_status_rejected() {
             &["adr", "new", "Test Decision"],
             &["adr", "set", "ADR-0001", "status", "accepted"],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(output.contains("govctl adr accept"), "output: {}", output);
+    Ok(())
 }
 
 #[test]
-fn test_adr_set_alternative_status_field_rejected() {
-    let temp_dir = init_project();
+fn test_adr_set_alternative_status_field_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -622,14 +647,15 @@ fn test_adr_set_alternative_status_field_rejected() {
                 "accepted",
             ],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(output.contains("tick-owned"), "output: {}", output);
+    Ok(())
 }
 
 #[test]
-fn test_adr_add_ref() {
-    let temp_dir = init_project();
+fn test_adr_add_ref() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -639,13 +665,14 @@ fn test_adr_add_ref() {
             &["adr", "add", "ADR-0001", "refs", "RFC-0001"],
             &["adr", "get", "ADR-0001", "refs"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_edit_add_nested_path_canonical() {
-    let temp_dir = init_project();
+fn test_adr_edit_add_nested_path_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -669,7 +696,7 @@ fn test_adr_edit_add_nested_path_canonical() {
             ],
             &["adr", "get", "ADR-0001", "alternatives[0].pros"],
         ],
-    );
+    )?;
 
     assert!(
         output.contains("Added 'Option A' to ADR-0001.alternatives"),
@@ -686,11 +713,12 @@ fn test_adr_edit_add_nested_path_canonical() {
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_adr_set_context() {
-    let temp_dir = init_project();
+fn test_adr_set_context() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -706,13 +734,14 @@ fn test_adr_set_context() {
             ],
             &["adr", "show", "ADR-0001"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_set_decision() {
-    let temp_dir = init_project();
+fn test_adr_set_decision() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -722,13 +751,14 @@ fn test_adr_set_decision() {
             &["adr", "set", "ADR-0001", "decision", "We decided to do X"],
             &["adr", "show", "ADR-0001"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_set_consequences() {
-    let temp_dir = init_project();
+fn test_adr_set_consequences() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -744,17 +774,19 @@ fn test_adr_set_consequences() {
             ],
             &["adr", "show", "ADR-0001"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_get_nonexistent() {
-    let temp_dir = init_project();
+fn test_adr_get_nonexistent() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
-    let output = run_commands(temp_dir.path(), &[&["adr", "get", "ADR-9999", "title"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["adr", "get", "ADR-9999", "title"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -762,8 +794,8 @@ fn test_adr_get_nonexistent() {
 // ============================================================================
 
 #[test]
-fn test_work_get_field() {
-    let temp_dir = init_project();
+fn test_work_get_field() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -773,13 +805,14 @@ fn test_work_get_field() {
             &["work", "get", &format!("WI-{}-001", date), "title"],
             &["work", "get", &format!("WI-{}-001", date), "status"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_set_title() {
-    let temp_dir = init_project();
+fn test_work_set_title() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -795,13 +828,14 @@ fn test_work_set_title() {
             ],
             &["work", "list", "all"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_set_status_rejected() {
-    let temp_dir = init_project();
+fn test_work_set_status_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let work_id = format!("WI-{}-001", date);
 
@@ -811,14 +845,15 @@ fn test_work_set_status_rejected() {
             &["work", "new", "Test Task"],
             &["work", "set", &work_id, "status", "active"],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(output.contains("govctl work move"), "output: {}", output);
+    Ok(())
 }
 
 #[test]
-fn test_work_set_acceptance_criteria_status_rejected() {
-    let temp_dir = init_project();
+fn test_work_set_acceptance_criteria_status_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let work_id = format!("WI-{}-001", date);
 
@@ -841,14 +876,15 @@ fn test_work_set_acceptance_criteria_status_rejected() {
                 "done",
             ],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
     assert!(output.contains("govctl work tick"), "output: {}", output);
+    Ok(())
 }
 
 #[test]
-fn test_work_add_acceptance_criteria() {
-    let temp_dir = init_project();
+fn test_work_add_acceptance_criteria() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -871,13 +907,14 @@ fn test_work_add_acceptance_criteria() {
             ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_tick_acceptance_criteria() {
-    let temp_dir = init_project();
+fn test_work_tick_acceptance_criteria() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -909,13 +946,14 @@ fn test_work_tick_acceptance_criteria() {
             ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_edit_tick_indexed_path_canonical() {
-    let temp_dir = init_project();
+fn test_work_edit_tick_indexed_path_canonical() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let wi_id = format!("WI-{}-001", date);
 
@@ -944,7 +982,7 @@ fn test_work_edit_tick_indexed_path_canonical() {
         vec!["work".to_string(), "show".to_string(), wi_id],
     ];
 
-    let output = common::run_dynamic_commands(temp_dir.path(), &commands);
+    let output = common::run_dynamic_commands(temp_dir.path(), &commands)?;
 
     assert!(
         output.contains("Added 'add: Criterion 1' to WI-"),
@@ -957,11 +995,12 @@ fn test_work_edit_tick_indexed_path_canonical() {
         output
     );
     assert!(output.contains("- ✓ Criterion 1"), "output: {}", output);
+    Ok(())
 }
 
 #[test]
-fn test_work_tick_cancel_acceptance_criteria() {
-    let temp_dir = init_project();
+fn test_work_tick_cancel_acceptance_criteria() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -986,13 +1025,14 @@ fn test_work_tick_cancel_acceptance_criteria() {
             ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_add_journal() {
-    let temp_dir = init_project();
+fn test_work_add_journal() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1015,13 +1055,14 @@ fn test_work_add_journal() {
             ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_add_ref() {
-    let temp_dir = init_project();
+fn test_work_add_ref() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1037,13 +1078,14 @@ fn test_work_add_ref() {
             ],
             &["work", "get", &format!("WI-{}-001", date), "refs"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_remove_acceptance_criteria() {
-    let temp_dir = init_project();
+fn test_work_remove_acceptance_criteria() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1073,20 +1115,22 @@ fn test_work_remove_acceptance_criteria() {
             ],
             &["work", "show", &format!("WI-{}-001", date)],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_get_nonexistent() {
-    let temp_dir = init_project();
+fn test_work_get_nonexistent() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
         temp_dir.path(),
         &[&["work", "get", "WI-9999-99-999", "title"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -1094,9 +1138,9 @@ fn test_work_get_nonexistent() {
 // ============================================================================
 
 #[test]
-fn test_field_alias_ac() {
+fn test_field_alias_ac() -> common::TestResult {
     // 'ac' should resolve to 'acceptance_criteria'
-    let temp_dir = init_project();
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1112,14 +1156,15 @@ fn test_field_alias_ac() {
             ],
             &["work", "get", &format!("WI-{}-001", date), "ac"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_field_alias_desc() {
+fn test_field_alias_desc() -> common::TestResult {
     // 'desc' should resolve to 'description'
-    let temp_dir = init_project();
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1135,14 +1180,15 @@ fn test_field_alias_desc() {
             ],
             &["work", "get", &format!("WI-{}-001", date), "desc"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_field_alias_desc_under_legacy_prefix() {
+fn test_field_alias_desc_under_legacy_prefix() -> common::TestResult {
     // content.desc should resolve to description on work items
-    let temp_dir = init_project();
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1158,14 +1204,15 @@ fn test_field_alias_desc_under_legacy_prefix() {
             ],
             &["work", "get", &format!("WI-{}-001", date), "description"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_field_alias_desc_not_global_on_adr() {
+fn test_field_alias_desc_not_global_on_adr() -> common::TestResult {
     // desc is not a valid ADR root field alias and should not be rewritten globally
-    let temp_dir = init_project();
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1174,13 +1221,14 @@ fn test_field_alias_desc_not_global_on_adr() {
             &["adr", "new", "Alias Scope"],
             &["adr", "set", "ADR-0001", "desc", "nope"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_tick_rejects_nested_path() {
-    let temp_dir = init_project();
+fn test_tick_rejects_nested_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1204,8 +1252,9 @@ fn test_tick_rejects_nested_path() {
                 "done",
             ],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 // ============================================================================
@@ -1213,8 +1262,8 @@ fn test_tick_rejects_nested_path() {
 // ============================================================================
 
 #[test]
-fn test_adr_get_nested_path() {
-    let temp_dir = init_project();
+fn test_adr_get_nested_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1240,13 +1289,14 @@ fn test_adr_get_nested_path() {
             &["adr", "get", "ADR-0001", "alt[0].cons"],
             &["adr", "get", "ADR-0001", "alternatives[0]"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_set_nested_path() {
-    let temp_dir = init_project();
+fn test_adr_set_nested_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1277,13 +1327,14 @@ fn test_adr_set_nested_path() {
             ],
             &["adr", "get", "ADR-0001", "alt[0].rejection_reason"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_add_nested_path() {
-    let temp_dir = init_project();
+fn test_adr_add_nested_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1304,13 +1355,14 @@ fn test_adr_add_nested_path() {
             &["adr", "add", "ADR-0001", "alt[0].cons", "Slow"],
             &["adr", "get", "ADR-0001", "alt[0].cons"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_nested_path_rejects_extra_segments() {
-    let temp_dir = init_project();
+fn test_adr_nested_path_rejects_extra_segments() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1328,13 +1380,14 @@ fn test_adr_nested_path_rejects_extra_segments() {
             ],
             &["adr", "get", "ADR-0001", "alt[0].pros[0].oops"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_add_nested_path_rejects_indexed_terminal() {
-    let temp_dir = init_project();
+fn test_adr_add_nested_path_rejects_indexed_terminal() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1352,13 +1405,14 @@ fn test_adr_add_nested_path_rejects_indexed_terminal() {
             ],
             &["adr", "add", "ADR-0001", "alt[0].pros[999]", "Ignored"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_get_nested_scalar_rejects_index() {
-    let temp_dir = init_project();
+fn test_adr_get_nested_scalar_rejects_index() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1376,13 +1430,14 @@ fn test_adr_get_nested_scalar_rejects_index() {
             ],
             &["adr", "get", "ADR-0001", "alt[0].text[0]"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_remove_nested_path() {
-    let temp_dir = init_project();
+fn test_adr_remove_nested_path() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1412,13 +1467,14 @@ fn test_adr_remove_nested_path() {
             &["adr", "remove", "ADR-0001", "alt[0]"],
             &["adr", "get", "ADR-0001", "alternatives"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_work_get_nested_scalar_rejects_index() {
-    let temp_dir = init_project();
+fn test_work_get_nested_scalar_rejects_index() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let wi_id = format!("WI-{}-001", date);
@@ -1429,13 +1485,14 @@ fn test_work_get_nested_scalar_rejects_index() {
             &["work", "add", &wi_id, "journal", "Did something"],
             &["work", "get", &wi_id, "journal[0].content[0]"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_remove_nested_path_requires_selector() {
-    let temp_dir = init_project();
+fn test_adr_remove_nested_path_requires_selector() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1453,13 +1510,14 @@ fn test_adr_remove_nested_path_requires_selector() {
             ],
             &["adr", "remove", "ADR-0001", "alt[0].cons"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_adr_edit_tick_updates_alternative_root() {
-    let temp_dir = init_project();
+fn test_adr_edit_tick_updates_alternative_root() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -1478,18 +1536,19 @@ fn test_adr_edit_tick_updates_alternative_root() {
             ],
             &["adr", "get", "ADR-0001", "alternatives"],
         ],
-    );
+    )?;
     assert!(
         output.contains("Marked 'Option A' as accepted"),
         "output: {}",
         output
     );
     assert!(output.contains("[accepted] Option A"), "output: {}", output);
+    Ok(())
 }
 
 #[test]
-fn test_adr_edit_tick_updates_indexed_alternative_item() {
-    let temp_dir = init_project();
+fn test_adr_edit_tick_updates_indexed_alternative_item() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -1499,7 +1558,7 @@ fn test_adr_edit_tick_updates_indexed_alternative_item() {
             &["adr", "edit", "ADR-0001", "alt[0]", "--tick", "accepted"],
             &["adr", "get", "ADR-0001", "alternatives[0].status"],
         ],
-    );
+    )?;
     assert!(
         output.contains("Marked 'Option A' as accepted"),
         "output: {}",
@@ -1510,11 +1569,12 @@ fn test_adr_edit_tick_updates_indexed_alternative_item() {
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_adr_edit_tick_rejects_work_item_status_names() {
-    let temp_dir = init_project();
+fn test_adr_edit_tick_rejects_work_item_status_names() -> common::TestResult {
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -1532,18 +1592,19 @@ fn test_adr_edit_tick_rejects_work_item_status_names() {
                 "0",
             ],
         ],
-    );
+    )?;
     assert!(output.contains("error[E0820]"), "output: {}", output);
     assert!(
         output.contains("ADR tick status must be one of: accepted, considered, rejected"),
         "output: {}",
         output
     );
+    Ok(())
 }
 
 #[test]
-fn test_remove_indexed_path_conflict() {
-    let temp_dir = init_project();
+fn test_remove_indexed_path_conflict() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1569,13 +1630,14 @@ fn test_remove_indexed_path_conflict() {
                 "Bad",
             ],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_path_backward_compat() {
-    let temp_dir = init_project();
+fn test_path_backward_compat() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     let output = run_commands(
@@ -1594,6 +1656,7 @@ fn test_path_backward_compat() {
             &["adr", "set", "ADR-0001", "govctl.title", "Compat Title"],
             &["adr", "get", "ADR-0001", "govctl.title"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }

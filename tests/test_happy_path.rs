@@ -7,12 +7,12 @@ use std::fs;
 use std::path::Path;
 
 /// Create a minimal valid project with RFC, clause, ADR, and work item
-fn setup_minimal_valid(dir: &Path, date: &str) {
+fn setup_minimal_valid(dir: &Path, date: &str) -> common::TestResult {
     let wi1 = format!("WI-{}-001", date);
 
     // Create RFC with clause
     let rfc_dir = dir.join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.json"),
@@ -38,8 +38,7 @@ fn setup_minimal_valid(dir: &Path, date: &str) {
     }
   ]
 }"#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-EXAMPLE.json"),
@@ -51,8 +50,7 @@ fn setup_minimal_valid(dir: &Path, date: &str) {
   "text": "This is an example clause for testing.",
   "since": "1.0.0"
 }"#,
-    )
-    .unwrap();
+    )?;
 
     // Create ADR
     fs::write(
@@ -70,8 +68,7 @@ context = "We need to test ADR functionality."
 decision = "We will create a test ADR."
 consequences = "Tests will pass."
 "#,
-    )
-    .unwrap();
+    )?;
 
     // Create work item via commands
     let commands: Vec<Vec<String>> = vec![
@@ -90,74 +87,81 @@ consequences = "Tests will pass."
         ],
     ];
 
-    let _ = run_dynamic_commands(dir, &commands);
+    let _ = run_dynamic_commands(dir, &commands)?;
+    Ok(())
 }
 
 #[test]
-fn test_minimal_valid_check() {
-    let temp_dir = init_project();
+fn test_minimal_valid_check() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    setup_minimal_valid(temp_dir.path(), &date);
+    setup_minimal_valid(temp_dir.path(), &date)?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_minimal_valid_list_rfc() {
-    let temp_dir = init_project();
+fn test_minimal_valid_list_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    setup_minimal_valid(temp_dir.path(), &date);
+    setup_minimal_valid(temp_dir.path(), &date)?;
 
-    let output = run_commands(temp_dir.path(), &[&["rfc", "list"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["rfc", "list"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_minimal_valid_list_clause() {
-    let temp_dir = init_project();
+fn test_minimal_valid_list_clause() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    setup_minimal_valid(temp_dir.path(), &date);
+    setup_minimal_valid(temp_dir.path(), &date)?;
 
-    let output = run_commands(temp_dir.path(), &[&["clause", "list"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["clause", "list"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_minimal_valid_list_adr() {
-    let temp_dir = init_project();
+fn test_minimal_valid_list_adr() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    setup_minimal_valid(temp_dir.path(), &date);
+    setup_minimal_valid(temp_dir.path(), &date)?;
 
-    let output = run_commands(temp_dir.path(), &[&["adr", "list"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["adr", "list"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_minimal_valid_list_work() {
-    let temp_dir = init_project();
+fn test_minimal_valid_list_work() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    setup_minimal_valid(temp_dir.path(), &date);
+    setup_minimal_valid(temp_dir.path(), &date)?;
 
-    let output = run_commands(temp_dir.path(), &[&["work", "list"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["work", "list"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_minimal_valid_status() {
-    let temp_dir = init_project();
+fn test_minimal_valid_status() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    setup_minimal_valid(temp_dir.path(), &date);
+    setup_minimal_valid(temp_dir.path(), &date)?;
 
-    let output = run_commands(temp_dir.path(), &[&["status"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["status"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }
 
 #[test]
-fn test_minimal_valid_full_workflow() {
-    let temp_dir = init_project();
+fn test_minimal_valid_full_workflow() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
-    setup_minimal_valid(temp_dir.path(), &date);
+    setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -169,6 +173,7 @@ fn test_minimal_valid_full_workflow() {
             &["work", "list"],
             &["status"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }

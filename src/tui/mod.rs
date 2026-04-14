@@ -73,7 +73,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_project_load_error_prefers_error_diagnostic() {
+    fn test_project_load_error_prefers_error_diagnostic() -> Result<(), Box<dyn std::error::Error>>
+    {
         let err = project_load_error(
             vec![
                 Diagnostic::new(DiagnosticCode::W0109WorkNoActive, "warning", "warn"),
@@ -82,13 +83,17 @@ mod tests {
             std::path::Path::new("gov"),
         );
 
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0302AdrNotFound);
         assert_eq!(diag.message, "missing adr");
+        Ok(())
     }
 
     #[test]
-    fn test_project_load_error_uses_warning_when_no_errors_exist() {
+    fn test_project_load_error_uses_warning_when_no_errors_exist()
+    -> Result<(), Box<dyn std::error::Error>> {
         let err = project_load_error(
             vec![Diagnostic::new(
                 DiagnosticCode::W0109WorkNoActive,
@@ -98,18 +103,24 @@ mod tests {
             std::path::Path::new("gov"),
         );
 
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::W0109WorkNoActive);
         assert_eq!(diag.message, "warning only");
+        Ok(())
     }
 
     #[test]
-    fn test_project_load_error_falls_back_when_empty() {
+    fn test_project_load_error_falls_back_when_empty() -> Result<(), Box<dyn std::error::Error>> {
         let err = project_load_error(vec![], std::path::Path::new("gov"));
 
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0501ConfigInvalid);
         assert_eq!(diag.message, "Failed to load project");
         assert_eq!(diag.file, "gov");
+        Ok(())
     }
 }

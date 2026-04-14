@@ -7,13 +7,13 @@ use std::fs;
 
 /// Test: Source code scanning detects valid and invalid [[RFC-XXX:C-XXX]] references
 #[test]
-fn test_source_scan_detects_refs() {
-    let temp_dir = init_project();
+fn test_source_scan_detects_refs() -> common::TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create RFC with a valid clause
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.json"),
@@ -39,8 +39,7 @@ fn test_source_scan_detects_refs() {
     }
   ]
 }"#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-VALID.json"),
@@ -52,12 +51,11 @@ fn test_source_scan_detects_refs() {
   "text": "This is a valid clause.",
   "since": "1.0.0"
 }"#,
-    )
-    .unwrap();
+    )?;
 
     // Create source file with references
     let src_dir = temp_dir.path().join("src");
-    fs::create_dir_all(&src_dir).unwrap();
+    fs::create_dir_all(&src_dir)?;
 
     fs::write(
         src_dir.join("example.rs"),
@@ -79,9 +77,9 @@ fn main() {
     println!("Test file for source scanning");
 }
 "#,
-    )
-    .unwrap();
+    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]]);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
 }

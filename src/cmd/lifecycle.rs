@@ -89,7 +89,16 @@ fn fill_pending_clause_versions(
     version: &str,
     op: WriteOp,
 ) -> anyhow::Result<()> {
-    let clauses_dir = rfc_path.parent().unwrap().join("clauses");
+    let clauses_dir = rfc_path
+        .parent()
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                "RFC path has no parent directory",
+                rfc_path.display().to_string(),
+            )
+        })?
+        .join("clauses");
     if !clauses_dir.exists() {
         return Ok(());
     }

@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.7.0"
+version = "0.8.0"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-04-09"
-signature = "34e3af95677441443e8931aed179b3bc3f67407276bab9c3857c3295d44e1172"
+updated = "2026-04-13"
+signature = "ca2304d86d19ee4b4947d84c5c218ab7d8f47e34eb30fd163e55c7c26f2a2399"
 
 [[sections]]
 title = "Summary"
@@ -25,7 +25,15 @@ clauses = [
     "clauses/C-OUTPUT-FORMAT.toml",
     "clauses/C-GLOBAL-COMMANDS.toml",
     "clauses/C-VERIFY-CONFIG.toml",
+    "clauses/C-SELF-UPDATE.toml",
 ]
+
+[[changelog]]
+version = "0.8.0"
+date = "2026-04-13"
+notes = "Add self-update global command (ADR-0041)"
+added = ["C-SELF-UPDATE clause for govctl self-update command"]
+changed = ["C-GLOBAL-COMMANDS updated with entry 11 and rationale for self-update"]
 
 [[changelog]]
 version = "0.7.0"

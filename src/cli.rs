@@ -349,6 +349,24 @@ NOTES:
         shell: clap_complete::Shell,
     },
 
+    /// Update govctl binary to the latest release
+    #[command(name = "self-update")]
+    #[command(after_help = "\
+EXAMPLES:
+    govctl self-update
+    govctl self-update --check
+
+NOTES:
+    - Downloads the latest binary from GitHub Releases and replaces the current executable.
+    - Use `--check` to see if an update is available without installing it.
+    - Implements [[RFC-0002:C-SELF-UPDATE]].
+")]
+    SelfUpdate {
+        /// Check for updates without installing
+        #[arg(long)]
+        check: bool,
+    },
+
     /// Launch interactive TUI dashboard
     #[cfg(feature = "tui")]
     Tui,

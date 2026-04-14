@@ -910,7 +910,18 @@ fn validate_artifact_tags(index: &ProjectIndex, config: &Config, result: &mut Va
     let mut check_tags = |tags: &[String], artifact_id: &str, path_display: &str| {
         for tag in tags {
             // Validate format
-            if !crate::cmd::tag::TAG_RE.is_match(tag) {
+            let tag_re = match crate::cmd::tag::tag_re() {
+                Ok(r) => r,
+                Err(e) => {
+                    result.diagnostics.push(Diagnostic::new(
+                        DiagnosticCode::E0806InvalidPattern,
+                        format!("Failed to compile tag regex: {e}"),
+                        path_display,
+                    ));
+                    continue;
+                }
+            };
+            if !tag_re.is_match(tag) {
                 result.diagnostics.push(Diagnostic::new(
                     DiagnosticCode::E1101TagInvalidFormat,
                     format!(

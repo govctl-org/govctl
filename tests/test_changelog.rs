@@ -12,8 +12,8 @@ use tempfile::TempDir;
 /// 4. Create more unreleased work items
 /// 5. Render changelog and test release command
 #[test]
-fn test_changelog_release_workflow() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_changelog_release_workflow() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
     let dir = temp_dir.path();
     let date = today();
 
@@ -122,10 +122,10 @@ fn test_changelog_release_workflow() {
         ],
     ];
 
-    let setup_output = run_dynamic_commands(dir, &setup_commands);
+    let setup_output = run_dynamic_commands(dir, &setup_commands)?;
     insta::assert_snapshot!(
         "changelog_setup",
-        normalize_output(&setup_output, dir, &date)
+        normalize_output(&setup_output, dir, &date)?
     );
 
     // Phase 2: Create unreleased work items for v0.2.0
@@ -236,10 +236,10 @@ fn test_changelog_release_workflow() {
         ],
     ];
 
-    let unreleased_output = run_dynamic_commands(dir, &unreleased_commands);
+    let unreleased_output = run_dynamic_commands(dir, &unreleased_commands)?;
     insta::assert_snapshot!(
         "changelog_unreleased",
-        normalize_output(&unreleased_output, dir, &date)
+        normalize_output(&unreleased_output, dir, &date)?
     );
 
     // Phase 3: Test changelog rendering and release preview
@@ -250,21 +250,22 @@ fn test_changelog_release_workflow() {
             &["render", "changelog", "--dry-run"],
             &["release", "0.2.0", "--dry-run"],
         ],
-    );
+    )?;
     insta::assert_snapshot!(
         "changelog_render",
-        normalize_output(&changelog_output, dir, &date)
+        normalize_output(&changelog_output, dir, &date)?
     );
 
     // Phase 4: Test error cases
     let error_output = run_commands(
         dir,
         &[&["release", "invalid-version"], &["release", "0.1.0"]],
-    );
+    )?;
     insta::assert_snapshot!(
         "changelog_errors",
-        normalize_output(&error_output, dir, &date)
+        normalize_output(&error_output, dir, &date)?
     );
+    Ok(())
 }
 
 /// Integration test: changelog preservation across the full adoption lifecycle.
@@ -280,8 +281,8 @@ fn test_changelog_release_workflow() {
 /// and re-rendered. Verifies manual edits, hand-written versions, and
 /// unexpanded inline refs are all preserved.
 #[test]
-fn test_changelog_preservation_lifecycle() {
-    let temp_dir = TempDir::new().expect("failed to create temp dir");
+fn test_changelog_preservation_lifecycle() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
     let dir = temp_dir.path();
     let date = today();
 
@@ -290,7 +291,7 @@ fn test_changelog_preservation_lifecycle() {
 
     // ── Phase 1: Brownfield adoption ──────────────────────────────────
 
-    let _ = run_commands(dir, &[&["init"]]);
+    let _ = run_commands(dir, &[&["init"]])?;
 
     // Legacy CHANGELOG: no [Unreleased], no govctl artifacts, mixed v-prefix
     let legacy_changelog = "\
@@ -327,8 +328,7 @@ All notable changes to this project will be documented in this file.
 - Initial public release
 - REST API with OpenAPI spec
 ";
-    std::fs::write(dir.join("CHANGELOG.md"), legacy_changelog)
-        .expect("failed to write legacy CHANGELOG.md");
+    std::fs::write(dir.join("CHANGELOG.md"), legacy_changelog)?;
 
     // First govctl work item — includes an inline ref
     let phase1_commands: Vec<Vec<String>> = vec![
@@ -367,11 +367,10 @@ All notable changes to this project will be documented in this file.
             "2026-03-01".to_string(),
         ],
     ];
-    let _ = run_dynamic_commands(dir, &phase1_commands);
+    let _ = run_dynamic_commands(dir, &phase1_commands)?;
 
-    let _ = run_commands(dir, &[&["render", "changelog"]]);
-    let rendered = std::fs::read_to_string(dir.join("CHANGELOG.md"))
-        .expect("failed to read CHANGELOG.md after phase 1");
+    let _ = run_commands(dir, &[&["render", "changelog"]])?;
+    let rendered = std::fs::read_to_string(dir.join("CHANGELOG.md"))?;
 
     // New govctl release appears
     assert!(rendered.contains("## [1.0.0]"), "1.0.0 should be present");
@@ -418,7 +417,7 @@ All notable changes to this project will be documented in this file.
 
     insta::assert_snapshot!(
         "changelog_lifecycle_phase1",
-        normalize_output(&rendered, dir, &date)
+        normalize_output(&rendered, dir, &date)?
     );
 
     // ── Phase 2: Manual edits + second release ───────────────────────
@@ -485,8 +484,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 "#,
         wi1 = wi1,
     );
-    std::fs::write(dir.join("CHANGELOG.md"), &phase2_changelog)
-        .expect("failed to write edited CHANGELOG.md");
+    std::fs::write(dir.join("CHANGELOG.md"), &phase2_changelog)?;
 
     // Second govctl release
     let phase2_commands: Vec<Vec<String>> = vec![
@@ -525,11 +523,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
             "2026-03-14".to_string(),
         ],
     ];
-    let _ = run_dynamic_commands(dir, &phase2_commands);
+    let _ = run_dynamic_commands(dir, &phase2_commands)?;
 
-    let _ = run_commands(dir, &[&["render", "changelog"]]);
-    let rendered = std::fs::read_to_string(dir.join("CHANGELOG.md"))
-        .expect("failed to read CHANGELOG.md after phase 2");
+    let _ = run_commands(dir, &[&["render", "changelog"]])?;
+    let rendered = std::fs::read_to_string(dir.join("CHANGELOG.md"))?;
 
     // New release appears
     assert!(rendered.contains("## [2.0.0]"), "2.0.0 should be present");
@@ -599,6 +596,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
     insta::assert_snapshot!(
         "changelog_lifecycle_phase2",
-        normalize_output(&rendered, dir, &date)
+        normalize_output(&rendered, dir, &date)?
     );
+    Ok(())
 }

@@ -2,18 +2,20 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, run_dynamic_commands, today};
+use common::{
+    TestResult, init_project, normalize_output, run_commands, run_dynamic_commands, today,
+};
 use std::fs;
 
 /// Test: Delete clause - safeguard prevents deleting from normative RFC
 #[test]
-fn test_delete_clause_safeguard_normative() {
-    let temp_dir = init_project();
+fn test_delete_clause_safeguard_normative() -> TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create normative RFC with clause
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -38,8 +40,7 @@ version = "1.0.0"
 date = "2026-01-01"
 added = ["Initial release"]
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-LOCKED.toml"),
@@ -56,26 +57,27 @@ since = "1.0.0"
 [content]
 text = "This clause cannot be deleted - RFC is normative."
 "#,
-    )
-    .unwrap();
+    )?;
 
     // Try to delete the clause (should fail)
     let output = run_commands(
         temp_dir.path(),
         &[&["clause", "delete", "RFC-0001:C-LOCKED", "-f"]],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+
+    Ok(())
 }
 
 /// Test: Delete clause - successful deletion from draft RFC
 #[test]
-fn test_delete_clause_success_draft() {
-    let temp_dir = init_project();
+fn test_delete_clause_success_draft() -> TestResult {
+    let temp_dir = init_project()?;
     let date = today();
 
     // Create draft RFC with two clauses
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses")).unwrap();
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
         rfc_dir.join("rfc.toml"),
@@ -100,8 +102,7 @@ version = "0.1.0"
 date = "2026-01-01"
 notes = "Initial draft"
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-KEEP.toml"),
@@ -118,8 +119,7 @@ since = "0.1.0"
 [content]
 text = "This clause will remain."
 "#,
-    )
-    .unwrap();
+    )?;
 
     fs::write(
         rfc_dir.join("clauses/C-DELETE.toml"),
@@ -136,8 +136,7 @@ since = "0.1.0"
 [content]
 text = "This clause will be deleted."
 "#,
-    )
-    .unwrap();
+    )?;
 
     // Delete the clause with force flag, then verify
     let output = run_commands(
@@ -147,14 +146,16 @@ text = "This clause will be deleted."
             &["clause", "list", "RFC-0001"],
             &["check"],
         ],
-    );
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    )?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+
+    Ok(())
 }
 
 /// Test: Delete work item - safeguard prevents deleting active work item
 #[test]
-fn test_delete_work_safeguard_active() {
-    let temp_dir = init_project();
+fn test_delete_work_safeguard_active() -> TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let wi1 = format!("WI-{}-001", date);
 
@@ -181,14 +182,16 @@ fn test_delete_work_safeguard_active() {
         ],
     ];
 
-    let output = run_dynamic_commands(temp_dir.path(), &commands);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_dynamic_commands(temp_dir.path(), &commands)?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+
+    Ok(())
 }
 
 /// Test: Delete work item - safeguard prevents deleting done work item
 #[test]
-fn test_delete_work_safeguard_done() {
-    let temp_dir = init_project();
+fn test_delete_work_safeguard_done() -> TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let wi1 = format!("WI-{}-001", date);
 
@@ -230,14 +233,16 @@ fn test_delete_work_safeguard_done() {
         ],
     ];
 
-    let output = run_dynamic_commands(temp_dir.path(), &commands);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_dynamic_commands(temp_dir.path(), &commands)?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+
+    Ok(())
 }
 
 /// Test: Delete work item - successful deletion of queued work item
 #[test]
-fn test_delete_work_success_queue() {
-    let temp_dir = init_project();
+fn test_delete_work_success_queue() -> TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let wi1 = format!("WI-{}-001", date);
 
@@ -264,14 +269,16 @@ fn test_delete_work_success_queue() {
         vec!["check".to_string()],
     ];
 
-    let output = run_dynamic_commands(temp_dir.path(), &commands);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_dynamic_commands(temp_dir.path(), &commands)?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+
+    Ok(())
 }
 
 /// Test: Delete work item - safeguard prevents deletion when referenced
 #[test]
-fn test_delete_work_safeguard_referenced() {
-    let temp_dir = init_project();
+fn test_delete_work_safeguard_referenced() -> TestResult {
+    let temp_dir = init_project()?;
     let date = today();
     let wi1 = format!("WI-{}-001", date);
     let wi2 = format!("WI-{}-002", date);
@@ -297,7 +304,7 @@ fn test_delete_work_safeguard_referenced() {
         ],
     ];
 
-    let _ = run_dynamic_commands(temp_dir.path(), &setup_commands);
+    let _ = run_dynamic_commands(temp_dir.path(), &setup_commands)?;
 
     // Try to delete wi1 (should fail because wi2 references it)
     let delete_commands: Vec<Vec<String>> = vec![vec![
@@ -307,6 +314,8 @@ fn test_delete_work_safeguard_referenced() {
         "-f".to_string(),
     ]];
 
-    let output = run_dynamic_commands(temp_dir.path(), &delete_commands);
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date));
+    let output = run_dynamic_commands(temp_dir.path(), &delete_commands)?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+
+    Ok(())
 }

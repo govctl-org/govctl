@@ -709,7 +709,7 @@ mod tests {
     // Tests for render_adr with new Alternative fields per [[ADR-0027]]
 
     #[test]
-    fn test_render_adr_alternatives_with_pros_cons() {
+    fn test_render_adr_alternatives_with_pros_cons() -> Result<(), Box<dyn std::error::Error>> {
         let adr = AdrEntry {
             spec: AdrSpec {
                 govctl: AdrMeta {
@@ -738,14 +738,16 @@ mod tests {
             path: std::path::PathBuf::new(),
         };
 
-        let result = render_adr(&adr).unwrap();
+        let result = render_adr(&adr)?;
         assert!(result.contains("### Option A"));
         assert!(result.contains("- **Pros:** Fast, Cheap"));
         assert!(result.contains("- **Cons:** Less reliable"));
+        Ok(())
     }
 
     #[test]
-    fn test_render_adr_alternatives_rejected_with_reason() {
+    fn test_render_adr_alternatives_rejected_with_reason() -> Result<(), Box<dyn std::error::Error>>
+    {
         let adr = AdrEntry {
             spec: AdrSpec {
                 govctl: AdrMeta {
@@ -774,15 +776,16 @@ mod tests {
             path: std::path::PathBuf::new(),
         };
 
-        let result = render_adr(&adr).unwrap();
+        let result = render_adr(&adr)?;
         assert!(result.contains("### Option B (rejected)"));
         assert!(result.contains("- **Rejected because:** Budget constraints"));
+        Ok(())
     }
 
     // Tests for render_work_item with journal field per [[ADR-0026]]
 
     #[test]
-    fn test_render_work_item_journal() {
+    fn test_render_work_item_journal() -> Result<(), Box<dyn std::error::Error>> {
         let item = WorkItemEntry {
             spec: WorkItemSpec {
                 govctl: WorkItemMeta {
@@ -811,14 +814,15 @@ mod tests {
             path: std::path::PathBuf::new(),
         };
 
-        let result = render_work_item(&item).unwrap();
+        let result = render_work_item(&item)?;
         assert!(result.contains("## Journal"));
         assert!(result.contains("### 2026-02-22"));
         assert!(result.contains("Started implementation"));
+        Ok(())
     }
 
     #[test]
-    fn test_render_work_item_journal_with_scope() {
+    fn test_render_work_item_journal_with_scope() -> Result<(), Box<dyn std::error::Error>> {
         let item = WorkItemEntry {
             spec: WorkItemSpec {
                 govctl: WorkItemMeta {
@@ -854,10 +858,11 @@ mod tests {
             path: std::path::PathBuf::new(),
         };
 
-        let result = render_work_item(&item).unwrap();
+        let result = render_work_item(&item)?;
         assert!(result.contains("### 2026-02-22 · API"));
         assert!(result.contains("Created endpoint"));
         assert!(result.contains("### 2026-02-23 · Testing"));
         assert!(result.contains("Added unit tests"));
+        Ok(())
     }
 }

@@ -624,7 +624,13 @@ fn ensure_value_path_mut<'a>(
                 },
             );
         }
-        cur = obj.get_mut(*key).expect("inserted above");
+        cur = obj.get_mut(*key).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Cannot resolve field path '{}'", path.join(".")),
+                id,
+            )
+        })?;
     }
     Ok(cur)
 }
@@ -653,7 +659,13 @@ fn ensure_array_path_mut<'a>(
                 },
             );
         }
-        cur = obj.get_mut(*key).expect("inserted above");
+        cur = obj.get_mut(*key).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Cannot resolve field path '{}'", path.join(".")),
+                id,
+            )
+        })?;
     }
     Ok(cur)
 }
@@ -1202,7 +1214,13 @@ fn ensure_node_path_mut<'a>(
                 },
             );
         }
-        cur = obj.get_mut(*key).expect("inserted above");
+        cur = obj.get_mut(*key).ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                format!("Cannot resolve field path '{}'", path.join(".")),
+                id,
+            )
+        })?;
     }
     Ok(cur)
 }
@@ -1362,14 +1380,13 @@ mod tests {
     use super::*;
     use serde_json::json;
 
-    fn path(input: &str) -> FieldPath {
-        path::parse_field_path(input)
-            .expect("valid path")
-            .collapse_legacy_prefixes()
+    fn path(input: &str) -> Result<FieldPath, Box<dyn std::error::Error>> {
+        Ok(path::parse_field_path(input)?.collapse_legacy_prefixes())
     }
 
     #[test]
-    fn test_add_nested_object_list_value_deduplicates_by_text() {
+    fn test_add_nested_object_list_value_deduplicates_by_text()
+    -> Result<(), Box<dyn std::error::Error>> {
         let mut doc = json!({
             "content": {
                 "alternatives": [
@@ -1381,27 +1398,29 @@ mod tests {
         add_nested_list_value(
             ArtifactType::Adr,
             &mut doc,
-            &path("alternatives"),
+            &path("alternatives")?,
             "Option A",
             "ADR-0001",
-        )
-        .unwrap();
+        )?;
         add_nested_list_value(
             ArtifactType::Adr,
             &mut doc,
-            &path("alternatives"),
+            &path("alternatives")?,
             "Option B",
             "ADR-0001",
-        )
-        .unwrap();
+        )?;
 
-        let alternatives = doc["content"]["alternatives"].as_array().unwrap();
+        let alternatives = doc["content"]["alternatives"]
+            .as_array()
+            .ok_or("expected array")?;
         assert_eq!(alternatives.len(), 2);
         assert_eq!(alternatives[1]["text"], "Option B");
+        Ok(())
     }
 
     #[test]
-    fn test_set_nested_field_rejects_list_path_without_index() {
+    fn test_set_nested_field_rejects_list_path_without_index()
+    -> Result<(), Box<dyn std::error::Error>> {
         let mut doc = json!({
             "content": {
                 "alternatives": [
@@ -1410,21 +1429,25 @@ mod tests {
             }
         });
 
-        let err = set_nested_field(
+        let result = set_nested_field(
             ArtifactType::Adr,
             &mut doc,
-            &path("alternatives[0].pros"),
+            &path("alternatives[0].pros")?,
             "oops",
             "ADR-0001",
-        )
-        .expect_err("list path should reject set");
-
-        let diag = err.downcast_ref::<Diagnostic>().expect("diagnostic");
+        );
+        assert!(result.is_err());
+        let err = result.err().ok_or("expected Err")?;
+        let diag = err
+            .downcast_ref::<Diagnostic>()
+            .ok_or("expected Diagnostic")?;
         assert_eq!(diag.code, DiagnosticCode::E0817PathTypeMismatch);
+        Ok(())
     }
 
     #[test]
-    fn test_get_nested_field_renders_object_item_with_scalar_lists() {
+    fn test_get_nested_field_renders_object_item_with_scalar_lists()
+    -> Result<(), Box<dyn std::error::Error>> {
         let doc = json!({
             "content": {
                 "alternatives": [
@@ -1442,14 +1465,14 @@ mod tests {
         let rendered = get_nested_field(
             ArtifactType::Adr,
             &doc,
-            &path("alternatives[0]"),
+            &path("alternatives[0]")?,
             "ADR-0001",
-        )
-        .unwrap();
+        )?;
 
         assert!(rendered.contains("text: Option A"));
         assert!(rendered.contains("status: accepted"));
         assert!(rendered.contains("pros: Readable, Simple"));
         assert!(rendered.contains("cons: More maintenance"));
+        Ok(())
     }
 }

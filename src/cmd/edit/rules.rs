@@ -192,10 +192,11 @@ mod tests {
     }
 
     #[test]
-    fn test_nested_rule_lookup() {
-        let rule = nested_root_rule("adr", "alternatives").expect("rule should exist");
+    fn test_nested_rule_lookup() -> Result<(), Box<dyn std::error::Error>> {
+        let rule = nested_root_rule("adr", "alternatives").ok_or("rule should exist")?;
         assert_eq!(rule.node.kind, NestedNodeKind::List);
         assert_eq!(EDIT_RULES_VERSION, 2);
+        Ok(())
     }
 
     #[test]
@@ -215,11 +216,12 @@ mod tests {
     }
 
     #[test]
-    fn test_nested_object_root_lookup() {
-        let rule = nested_root_rule("guard", "check").expect("rule should exist");
+    fn test_nested_object_root_lookup() -> Result<(), Box<dyn std::error::Error>> {
+        let rule = nested_root_rule("guard", "check").ok_or("rule should exist")?;
         assert_eq!(rule.node.kind, NestedNodeKind::Object);
-        let child = nested_field_rule("guard", "check", "timeout_secs").expect("child exists");
+        let child = nested_field_rule("guard", "check", "timeout_secs").ok_or("child exists")?;
         assert_eq!(child.node.kind, NestedNodeKind::Scalar);
+        Ok(())
     }
 
     #[test]

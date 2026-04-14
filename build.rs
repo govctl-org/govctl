@@ -1,3 +1,5 @@
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
