@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-04-15
+
 ### Added
 
 - Write-time gate blocks adr set/edit decision when alternatives incomplete (WI-2026-04-14-001)
