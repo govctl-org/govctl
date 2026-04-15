@@ -1,9 +1,25 @@
 ---
 source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: "normalize_output(&output, temp_dir.path(), &date)?"
 ---
 $ govctl adr new Compat Test
 Created ADR: gov/adr/ADR-XXXX-compat-test.toml
+exit: 0
+
+$ govctl adr add ADR-0001 alternatives Option A
+Added 'Option A' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr add ADR-0001 alternatives Option B
+Added 'Option B' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr tick ADR-0001 alternatives --at 0 -s accepted
+Marked 'Option A' as accepted
+exit: 0
+
+$ govctl adr tick ADR-0001 alternatives --at 1 -s rejected
+Marked 'Option B' as rejected
 exit: 0
 
 $ govctl adr set ADR-0001 content.decision A dotted decision

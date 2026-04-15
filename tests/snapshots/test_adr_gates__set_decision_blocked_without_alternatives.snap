@@ -1,0 +1,11 @@
+---
+source: tests/test_adr_gates.rs
+expression: normalized
+---
+$ govctl adr new Test ADR
+Created ADR: gov/adr/ADR-XXXX-test-adr.toml
+exit: 0
+
+$ govctl adr set ADR-0001 decision We chose X.
+error[E0303]: ADR alternatives incomplete: at least 2 alternatives required (found 0); at least 1 accepted alternative required; at least 1 rejected alternative required. Use --force to bypass for historical backfills. (ADR-0001)
+exit: 1

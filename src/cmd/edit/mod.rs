@@ -434,6 +434,10 @@ fn apply_set_field(
     if enforce_verb_ownership {
         reject_verb_owned_set(artifact, fp, id)?;
     }
+    // Implements [[ADR-0042]]: block setting `decision` without complete alternatives
+    if artifact == ArtifactType::Adr && fp.as_simple() == Some("decision") {
+        crate::cmd::lifecycle::validate_adr_completeness(config, id)?;
+    }
     match artifact {
         ArtifactType::Adr => set_toml_field::<AdrTomlAdapter>(
             config,

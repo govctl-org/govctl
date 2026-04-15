@@ -1276,12 +1276,21 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl adr accept ADR-0001
+    govctl adr accept ADR-0001 --force   # bypass completeness checks
 
 NOTES:
     - Use this when discussion is complete and the ADR becomes governing.
     - Mark the selected alternative as `accepted` before accepting the ADR.
+    - Requires at least 2 alternatives (1 accepted, 1 rejected) per [[ADR-0042]].
+    - Use --force for historical backfills where alternatives cannot be reconstructed.
 ")]
-    Accept(CommonIdArgs),
+    Accept {
+        /// ADR ID
+        id: String,
+        /// Bypass alternatives-completeness checks (for historical backfills)
+        #[arg(short = 'f', long)]
+        force: bool,
+    },
     /// Reject ADR (proposed → rejected)
     #[command(after_help = "\
 EXAMPLES:

@@ -155,7 +155,9 @@ pub enum LifecycleOp {
         by: String,
         force: bool,
     },
-    AcceptAdr,
+    AcceptAdr {
+        force: bool,
+    },
     RejectAdr,
     MoveWork {
         file_or_id: PathBuf,
@@ -687,9 +689,9 @@ fn execute_lifecycle(
         LifecycleOp::Supersede { by, force } => {
             cmd::lifecycle::supersede(config, id, by, *force, op)
         }
-        LifecycleOp::AcceptAdr => {
+        LifecycleOp::AcceptAdr { force } => {
             debug_assert!(matches!(artifact, cmd::edit::ArtifactType::Adr));
-            cmd::lifecycle::accept_adr(config, id, op)
+            cmd::lifecycle::accept_adr(config, id, *force, op)
         }
         LifecycleOp::RejectAdr => {
             debug_assert!(matches!(artifact, cmd::edit::ArtifactType::Adr));

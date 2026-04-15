@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Write-time gate blocks adr set/edit decision when alternatives incomplete (WI-2026-04-14-001)
+- Lifecycle gate blocks adr accept for incomplete ADRs (WI-2026-04-14-001)
+- adr accept --force bypasses lifecycle gate for historical backfills (WI-2026-04-14-001)
+
 ## [0.8.3] - 2026-04-14
 
 ### Added
