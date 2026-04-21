@@ -59,9 +59,9 @@ govctl rfc list --tag caching,api
 All RFC and clause fields are accessible through path-based editing:
 
 ```bash
-# Set scalar fields
-govctl rfc edit RFC-0010 version --set 1.2.0
-govctl rfc edit RFC-0010 status --set normative
+# Lifecycle-managed fields use dedicated verbs
+govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
+govctl rfc finalize RFC-0010 normative
 
 # Add to array fields
 govctl rfc edit RFC-0010 refs --add RFC-0001

@@ -102,7 +102,7 @@ The pattern matches case-insensitively by substring.
 
 ### Canonical Edit Paths
 
-All work item fields are accessible through the unified path-based edit interface:
+Most work item fields are accessible through the unified path-based edit interface. Lifecycle-managed fields (such as `status`) are excluded — use `govctl work move` for status transitions instead.
 
 ```bash
 # Set scalar fields

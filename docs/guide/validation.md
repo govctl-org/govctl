@@ -63,7 +63,7 @@ govctl tag delete caching
 
 ### Tagging Artifacts
 
-Once a tag is registered, apply it to any artifact via the standard `add` verb:
+Once a tag is registered, apply it to any artifact via the standard `edit` command with `--add`:
 
 ```bash
 govctl rfc edit RFC-0010 tags --add caching
@@ -160,7 +160,7 @@ Use `govctl verify` to run guards without moving a work item:
 govctl verify
 
 # Run specific guards
-govctl verify --guard GUARD-CARGO-TEST --guard GUARD-GOVCTL-CHECK
+govctl verify GUARD-CARGO-TEST GUARD-GOVCTL-CHECK
 
 # Run guards required by a specific work item
 govctl verify --work WI-2026-01-17-001

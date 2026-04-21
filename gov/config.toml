@@ -29,6 +29,8 @@ allowed = [
     "testing",
     "plugin",
     "migration",
+    "collaboration",
+    "work-items",
 ]
 
 [verification]

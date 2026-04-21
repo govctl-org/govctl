@@ -25,7 +25,7 @@ status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
-text = "tag delete still uses count_tag_usage for safety check — refactored to use batch function too"
+text = "tag delete performs safety check via batch usage map instead of per-tag scan"
 status = "done"
 category = "added"
 
