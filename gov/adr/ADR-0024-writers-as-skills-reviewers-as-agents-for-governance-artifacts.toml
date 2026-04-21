@@ -6,6 +6,7 @@ title = "Writers as skills, reviewers as agents for governance artifacts"
 status = "accepted"
 date = "2026-02-11"
 refs = ["ADR-0023"]
+tags = ["skills-agents"]
 
 [content]
 context = """

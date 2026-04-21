@@ -9,6 +9,8 @@ refs = [
     "ADR-0027",
     "RFC-0001",
 ]
+tags = ["validation"]
+
 
 [content]
 context = """

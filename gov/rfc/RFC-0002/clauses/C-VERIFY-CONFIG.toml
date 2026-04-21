@@ -6,6 +6,7 @@ title = "Verification Configuration"
 kind = "normative"
 status = "active"
 since = "0.3.0"
+tags = ["cli", "validation"]
 
 [content]
 text = """

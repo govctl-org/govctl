@@ -6,6 +6,7 @@ title = "CLI Command Implementation Details"
 status = "accepted"
 date = "2026-01-19"
 refs = ["RFC-0002"]
+tags = ["cli"]
 
 [content]
 context = """

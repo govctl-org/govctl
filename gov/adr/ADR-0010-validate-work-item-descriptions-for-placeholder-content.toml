@@ -6,6 +6,8 @@ title = "Validate work item descriptions for placeholder content"
 status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000:C-WORK-DEF"]
+tags = ["validation"]
+
 
 [content]
 context = """

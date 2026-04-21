@@ -9,6 +9,7 @@ phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-02-15"
 updated = "2026-03-17"
+tags = ["safety"]
 
 [[sections]]
 title = "Summary"

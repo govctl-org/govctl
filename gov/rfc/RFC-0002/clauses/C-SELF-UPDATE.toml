@@ -6,6 +6,7 @@ title = "Self-Update Command"
 kind = "normative"
 status = "active"
 since = "0.8.0"
+tags = ["cli", "release"]
 
 [content]
 text = """

@@ -6,6 +6,7 @@ title = "Add journal field to WorkItem for execution tracking"
 status = "accepted"
 date = "2026-02-22"
 refs = ["RFC-0000"]
+tags = ["editing"]
 
 [content]
 context = """

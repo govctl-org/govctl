@@ -6,6 +6,7 @@ title = "Output Format Control"
 kind = "normative"
 status = "active"
 since = "0.1.0"
+tags = ["cli"]
 
 [content]
 text = """

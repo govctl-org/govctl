@@ -1,0 +1,40 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-21-002"
+title = "Optimize tag list performance: batch load artifact tags"
+status = "done"
+created = "2026-04-21"
+started = "2026-04-21"
+completed = "2026-04-21"
+
+[content]
+description = """
+`govctl tag list` currently calls `count_tag_usage()` once per registered tag. Since that function loads and parses ALL artifacts (RFCs, clauses, ADRs, work items, guards) on every invocation, N tags means N full project loads. For govctl's own 14 tags, this results in 14× redundant disk I/O, TOML parsing, and schema validation.
+
+Fix: refactor tag_list to load artifacts once, build a HashMap<String, usize> of tag→count, then look up each tag in O(1). The public `count_tag_usage` function should either be replaced or internally batch-load with caching."""
+
+[[content.journal]]
+date = "2026-04-21"
+scope = "cli"
+content = "Replaced per-tag count_tag_usage (N full project loads) with build_tag_usage_map (1 full project load, HashMap lookup). Applied to tag_list and tag_delete. Removed dead count_tag_usage fn. 202+ tests pass, govctl check clean."
+
+[[content.acceptance_criteria]]
+text = "tag list loads artifacts once instead of N times"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "tag delete still uses count_tag_usage for safety check — refactored to use batch function too"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"

@@ -6,6 +6,7 @@ title = "Artifact Reference Hierarchy"
 kind = "normative"
 status = "active"
 since = "1.0.1"
+tags = ["core", "validation"]
 
 [content]
 text = '''

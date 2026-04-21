@@ -6,6 +6,7 @@ title = "Work Item Definition"
 kind = "normative"
 status = "active"
 since = "1.0.0"
+tags = ["core"]
 
 [content]
 text = """

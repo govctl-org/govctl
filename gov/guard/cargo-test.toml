@@ -3,7 +3,12 @@
 [govctl]
 id = "GUARD-CARGO-TEST"
 title = "cargo test passes"
-refs = ["RFC-0000", "RFC-0001", "RFC-0002"]
+refs = [
+    "RFC-0000",
+    "RFC-0001",
+    "RFC-0002",
+]
+tags = ["testing"]
 
 [check]
 command = "cargo test"

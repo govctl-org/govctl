@@ -6,6 +6,7 @@ title = "Verification Guard Definition"
 kind = "normative"
 status = "active"
 since = "1.1.0"
+tags = ["core", "validation"]
 
 [content]
 text = """

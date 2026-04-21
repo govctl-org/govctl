@@ -12,6 +12,7 @@ use anyhow::{Context, Result};
 use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use regex::Regex;
 use serde::Serialize;
+use std::collections::HashMap;
 use std::sync::LazyLock;
 
 /// Tag format regex: `^[a-z][a-z0-9-]*$` — [[RFC-0002:C-RESOURCES]]
@@ -118,44 +119,40 @@ fn set_allowed_tags(table: &mut toml::Table, tags: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-/// Count how many artifacts use a given tag across all artifact types.
-fn count_tag_usage(config: &Config, tag: &str) -> Result<usize> {
-    let mut count = 0;
+/// Build a tag → usage count map by loading all artifacts once.
+fn build_tag_usage_map(config: &Config) -> Result<HashMap<String, usize>> {
+    let mut usage: HashMap<String, usize> = HashMap::new();
+
+    fn increment(map: &mut HashMap<String, usize>, tags: &[String]) {
+        for t in tags {
+            *map.entry(t.clone()).or_insert(0) += 1;
+        }
+    }
 
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
     for rfc_index in &rfcs {
-        if rfc_index.rfc.tags.iter().any(|t| t == tag) {
-            count += 1;
-        }
+        increment(&mut usage, &rfc_index.rfc.tags);
         for clause in &rfc_index.clauses {
-            if clause.spec.tags.iter().any(|t| t == tag) {
-                count += 1;
-            }
+            increment(&mut usage, &clause.spec.tags);
         }
     }
 
     let adrs = load_adrs(config)?;
     for adr in &adrs {
-        if adr.spec.govctl.tags.iter().any(|t| t == tag) {
-            count += 1;
-        }
+        increment(&mut usage, &adr.spec.govctl.tags);
     }
 
     let items = load_work_items(config)?;
     for item in &items {
-        if item.spec.govctl.tags.iter().any(|t| t == tag) {
-            count += 1;
-        }
+        increment(&mut usage, &item.spec.govctl.tags);
     }
 
     let guard_result = load_guards_with_warnings(config)?;
     for guard in &guard_result.items {
-        if guard.spec.govctl.tags.iter().any(|t| t == tag) {
-            count += 1;
-        }
+        increment(&mut usage, &guard.spec.govctl.tags);
     }
 
-    Ok(count)
+    Ok(usage)
 }
 
 /// Add a new allowed tag to config.toml [tags] allowed.
@@ -206,7 +203,8 @@ pub fn tag_delete(
     }
 
     // Check for usage across all artifact types — [[RFC-0002:C-RESOURCES]]
-    let usage = count_tag_usage(config, tag)?;
+    let usage_map = build_tag_usage_map(config)?;
+    let usage = usage_map.get(tag).copied().unwrap_or(0);
     if usage > 0 {
         return Err(Diagnostic::new(
             DiagnosticCode::E1104TagStillReferenced,
@@ -241,10 +239,11 @@ pub fn tag_list(config: &Config, output: OutputFormat) -> Result<Vec<Diagnostic>
         usage: usize,
     }
 
+    let usage_map = build_tag_usage_map(config)?;
     let entries: Vec<TagEntry> = allowed
         .iter()
         .map(|tag| {
-            let usage = count_tag_usage(config, tag).unwrap_or(0);
+            let usage = usage_map.get(tag).copied().unwrap_or(0);
             TagEntry {
                 tag: tag.clone(),
                 usage,

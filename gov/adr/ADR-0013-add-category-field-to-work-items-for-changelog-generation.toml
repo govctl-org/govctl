@@ -6,6 +6,7 @@ title = "Add category field to acceptance criteria for changelog generation"
 status = "accepted"
 date = "2026-01-17"
 refs = ["ADR-0012"]
+tags = ["schema"]
 
 [content]
 context = "Work items track implementation work (features, fixes, refactoring), but lack categorization that maps to Keep a Changelog format. RFC changelog entries already use Keep a Changelog categories (Added, Changed, Deprecated, Removed, Fixed, Security). To generate a repo-level CHANGELOG.md from completed work items, we need the same categorization. Acceptance criteria are the natural atomic unit for changelog entries - each criterion represents one deliverable."
