@@ -38,6 +38,45 @@ refs = []
 summary = "Brief summary of this RFC."
 ```
 
+## Tagging RFCs
+
+Once tags are registered in the project vocabulary, apply them to RFCs:
+
+```bash
+govctl rfc edit RFC-0010 tags --add caching
+govctl rfc edit RFC-0010 tags --add api
+```
+
+Filter lists by tag:
+
+```bash
+govctl rfc list --tag caching
+govctl rfc list --tag caching,api
+```
+
+## Canonical Edit Surface
+
+All RFC and clause fields are accessible through path-based editing:
+
+```bash
+# Set scalar fields
+govctl rfc edit RFC-0010 version --set 1.2.0
+govctl rfc edit RFC-0010 status --set normative
+
+# Add to array fields
+govctl rfc edit RFC-0010 refs --add RFC-0001
+govctl rfc edit RFC-0010 owners --add "@co-maintainer"
+
+# Remove by index or pattern
+govctl rfc edit RFC-0010 refs --at 0 --remove
+govctl rfc edit RFC-0010 owners --remove "@old-owner" --exact
+
+# Edit clause text
+govctl clause edit RFC-0010:C-SCOPE text --stdin <<'EOF'
+New clause text here
+EOF
+```
+
 ## Working with Clauses
 
 ### Create a Clause
@@ -104,6 +143,7 @@ For normative RFCs, use `govctl clause deprecate RFC-0010:C-OLD` instead.
 ```bash
 govctl clause list
 govctl clause list RFC-0010
+govctl clause list --tag core    # Filter by tag
 ```
 
 ### View a Clause
@@ -176,5 +216,6 @@ govctl rfc bump RFC-0010 --major -m "Breaking change to API contract"
 govctl rfc list
 govctl rfc list normative    # Filter by status
 govctl rfc list impl         # Filter by phase
+govctl rfc list --tag api    # Filter by tag
 govctl rfc show RFC-0010     # Styled markdown to stdout
 ```
