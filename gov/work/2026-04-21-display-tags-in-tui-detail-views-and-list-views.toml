@@ -1,0 +1,79 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-21-003"
+title = "Display tags in TUI detail views and list views"
+status = "done"
+created = "2026-04-21"
+started = "2026-04-21"
+completed = "2026-04-21"
+
+[content]
+description = """
+Tags are currently invisible in the TUI. The CLI supports tags (list --tag, tag list, E1105 validation) but the TUI has no tag display and no tag-based filtering.
+
+Changes needed:
+
+1. **RFC detail view**: Show tags as styled pill/badge chips in the header area, after Refs
+2. **ADR detail view**: Show tags in the rendered markdown header metadata line
+3. **Work item detail view**: Show tags in the rendered markdown header metadata line
+4. **Clause detail view**: Show tags in the rendered markdown header metadata line
+5. **List views**: Add a tags column to RFC/ADR/Work/Clause list tables
+6. **TUI list filtering**: Expose tag-based filtering in the TUI list views (e.g. /tag:core filter syntax or similar)
+
+The render module (render.rs) is the shared pipeline for ADR/Work/Clause detail views in TUI, so adding tags there will automatically surface them in the TUI."""
+
+[[content.journal]]
+date = "2026-04-21"
+scope = "tui"
+content = "Added tags display to all TUI surfaces: render_adr/render_work_item/render_clause now emit '> **Tags:** `tag1`, `tag2`' in rendered markdown (surfacing in ADR/Work/Clause TUI detail views and file output); draw_rfc_detail shows tags in header with magenta styling; draw_rfc_list/draw_adr_list/draw_work_list have new Tags column. Tags are hidden when empty. govctl check and cargo test pass clean."
+
+[[content.acceptance_criteria]]
+text = "RFC detail view shows tags in header"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "ADR rendered markdown shows tags in metadata"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Work item rendered markdown shows tags in metadata"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Clause rendered markdown shows tags in metadata"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "RFC list view has tags column"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "ADR list view has tags column"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Work list view has tags column"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Clause list view has tags column"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"

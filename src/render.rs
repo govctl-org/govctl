@@ -266,6 +266,12 @@ pub fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::Clau
         let _ = writeln!(out);
     }
 
+    // Tags
+    if !spec.tags.is_empty() {
+        let _ = writeln!(out, "> **Tags:** `{}`", spec.tags.join("`, `"));
+        let _ = writeln!(out);
+    }
+
     // Since version
     if let Some(ref since) = spec.since {
         let _ = writeln!(out, "*Since: v{since}*");
@@ -353,6 +359,12 @@ pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
         let _ = writeln!(out, "> **Superseded by:** {by}");
     }
     let _ = writeln!(out);
+
+    // Tags
+    if !meta.tags.is_empty() {
+        let _ = writeln!(out, "> **Tags:** `{}`", meta.tags.join("`, `"));
+        let _ = writeln!(out);
+    }
 
     // References (expanded to markdown links)
     if !meta.refs.is_empty() {
@@ -465,6 +477,12 @@ pub fn render_work_item(item: &WorkItemEntry) -> anyhow::Result<String> {
     }
     let _ = writeln!(out, "{status_line}");
     let _ = writeln!(out);
+
+    // Tags
+    if !meta.tags.is_empty() {
+        let _ = writeln!(out, "> **Tags:** `{}`", meta.tags.join("`, `"));
+        let _ = writeln!(out);
+    }
 
     // References (expanded to markdown links)
     if !meta.refs.is_empty() {

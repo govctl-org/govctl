@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - All guards tagged (WI-2026-04-21-001)
 - tag list loads artifacts once instead of N times (WI-2026-04-21-002)
 - tag delete still uses count_tag_usage for safety check — refactored to use batch function too (WI-2026-04-21-002)
+- RFC detail view shows tags in header (WI-2026-04-21-003)
+- ADR rendered markdown shows tags in metadata (WI-2026-04-21-003)
+- Work item rendered markdown shows tags in metadata (WI-2026-04-21-003)
+- Clause rendered markdown shows tags in metadata (WI-2026-04-21-003)
+- RFC list view has tags column (WI-2026-04-21-003)
+- ADR list view has tags column (WI-2026-04-21-003)
+- Work list view has tags column (WI-2026-04-21-003)
+- Clause list view has tags column (WI-2026-04-21-003)
 
 ## [0.8.4] - 2026-04-15
 
