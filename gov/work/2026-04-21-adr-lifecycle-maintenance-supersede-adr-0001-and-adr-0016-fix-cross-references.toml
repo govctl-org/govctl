@@ -1,0 +1,64 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-21-004"
+title = "ADR lifecycle maintenance: supersede ADR-0001 and ADR-0016, fix cross-references"
+status = "done"
+created = "2026-04-21"
+started = "2026-04-21"
+completed = "2026-04-21"
+tags = ["lifecycle", "schema"]
+
+[content]
+description = """
+ADR lifecycle maintenance: mark effectively-superseded ADRs and fix missing cross-references.
+
+Outcome:
+- ADR-0001: Marked superseded_by = ADR-0034 (TOML format split eliminated by ADR-0034, which extended TOML to all artifacts including RFCs). ADR-0034's decision text explicitly states it supersedes ADR-0001.
+- ADR-0016: Kept as accepted. An ADR records why a decision was made; being absorbed into an RFC is success, not obsolescence. RFCs are constitutional law (what must be true), ADRs are justificatory history (why it was chosen). These roles are complementary, not superseding. No schema change needed.
+- ADR-0006: Added ADR-0019 to refs (ADR-0019 reassigned the -n flag from dry-run to limit, partially superseding ADR-0006 on that specific point).
+- ADR-0017: Added ADR-0037 to refs (canonical edit command extends the CLI surface defined in ADR-0017).
+- src/render.rs: Updated doc comment example and test to use ADR-0042 instead of the now-superseded ADR-0001. Eliminated W0107 warning.
+
+Note: ADR-0016 was kept as accepted because an ADR whose rationale is absorbed into an RFC is not superseded — it has fulfilled its purpose. RFCs and ADRs occupy distinct roles in the governance hierarchy (law vs justification), so cross-type supersession is not a meaningful concept.
+"""
+
+[[content.journal]]
+date = "2026-04-21"
+scope = "governance"
+content = "ADR lifecycle maintenance complete. ADR-0001 superseded by ADR-0034. ADR-0006 and ADR-0017 refs updated. ADR-0016 kept as accepted (RFC absorption is not supersession). Source reference to ADR-0001 in render.rs updated. govctl check and cargo test pass clean."
+
+[[content.acceptance_criteria]]
+text = "ADR-0001 marked superseded_by ADR-0034"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR-0006 refs updated to include ADR-0019"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR-0017 refs updated to include ADR-0037"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Source references to superseded ADR-0001 updated"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR-0016 evaluated but kept as accepted — RFC absorption is not supersession"
+status = "done"
+category = "chore"

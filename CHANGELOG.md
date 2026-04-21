@@ -9,15 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- All 14 tags registered in gov/config.toml [tags] allowed (WI-2026-04-21-001)
-- RFC-0000 tagged: core, schema, validation, lifecycle (WI-2026-04-21-001)
-- RFC-0001 tagged: core, lifecycle (WI-2026-04-21-001)
-- RFC-0002 tagged: cli, editing, lifecycle, validation, release (WI-2026-04-21-001)
-- RFC-0003 tagged: tui (WI-2026-04-21-001)
-- RFC-0004 tagged: safety (WI-2026-04-21-001)
-- All clauses tagged appropriately (WI-2026-04-21-001)
-- All ADRs tagged appropriately (WI-2026-04-21-001)
-- All guards tagged (WI-2026-04-21-001)
 - tag list loads artifacts once instead of N times (WI-2026-04-21-002)
 - tag delete still uses count_tag_usage for safety check — refactored to use batch function too (WI-2026-04-21-002)
 - RFC detail view shows tags in header (WI-2026-04-21-003)

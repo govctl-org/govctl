@@ -5,7 +5,10 @@ id = "ADR-0006"
 title = "Global dry-run support for content-modifying commands"
 status = "accepted"
 date = "2026-01-17"
-refs = ["RFC-0000:C-WORK-DEF"]
+refs = [
+    "RFC-0000:C-WORK-DEF",
+    "ADR-0019",
+]
 tags = ["cli"]
 
 [content]

@@ -40,47 +40,47 @@ content = "Backfilled 14 controlled-vocabulary tags across all governance artifa
 [[content.acceptance_criteria]]
 text = "All 14 tags registered in gov/config.toml [tags] allowed"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "RFC-0000 tagged: core, schema, validation, lifecycle"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "RFC-0001 tagged: core, lifecycle"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "RFC-0002 tagged: cli, editing, lifecycle, validation, release"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "RFC-0003 tagged: tui"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "RFC-0004 tagged: safety"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "All clauses tagged appropriately"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "All ADRs tagged appropriately"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "All guards tagged"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
