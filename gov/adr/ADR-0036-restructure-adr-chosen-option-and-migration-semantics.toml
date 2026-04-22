@@ -12,6 +12,7 @@ refs = [
     "ADR-0027",
     "ADR-0032",
 ]
+tags = ["editing"]
 
 [content]
 context = """

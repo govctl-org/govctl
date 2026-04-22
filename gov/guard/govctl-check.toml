@@ -3,7 +3,12 @@
 [govctl]
 id = "GUARD-GOVCTL-CHECK"
 title = "govctl check passes"
-refs = ["RFC-0000", "RFC-0001", "RFC-0002"]
+refs = [
+    "RFC-0000",
+    "RFC-0001",
+    "RFC-0002",
+]
+tags = ["validation"]
 
 [check]
 command = "cargo run --quiet -- check"

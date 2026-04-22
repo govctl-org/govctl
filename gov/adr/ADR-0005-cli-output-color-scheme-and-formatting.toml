@@ -6,6 +6,7 @@ title = "CLI output color scheme and formatting"
 status = "accepted"
 date = "2026-01-17"
 refs = ["RFC-0000"]
+tags = ["cli"]
 
 [content]
 context = "CLI output uses plain text with no visual hierarchy. Users cannot quickly distinguish success from failure, or identify important values. Status messages blend together making output hard to scan."

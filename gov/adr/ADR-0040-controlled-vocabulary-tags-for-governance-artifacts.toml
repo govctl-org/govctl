@@ -9,6 +9,8 @@ refs = [
     "RFC-0002",
     "ADR-0039",
 ]
+tags = ["schema"]
+
 
 [content]
 context = """

@@ -6,6 +6,7 @@ title = "Behaviour when concurrency mechanism is unavailable"
 kind = "normative"
 status = "active"
 since = "0.1.0"
+tags = ["safety"]
 
 [content]
 text = """

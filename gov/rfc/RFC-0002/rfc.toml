@@ -9,6 +9,13 @@ phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
 updated = "2026-04-13"
+tags = [
+    "cli",
+    "editing",
+    "lifecycle",
+    "validation",
+    "release",
+]
 signature = "ca2304d86d19ee4b4947d84c5c218ab7d8f47e34eb30fd163e55c7c26f2a2399"
 
 [[sections]]

@@ -6,6 +6,7 @@ title = "Summary"
 kind = "informative"
 status = "active"
 since = "0.1.0"
+tags = ["lifecycle"]
 
 [content]
 text = "This RFC defines state machines governing RFC, ADR, Work Item, and Clause lifecycles, including the additional transition gates that control when work may be treated as complete."

@@ -14,7 +14,24 @@ exclude = []
 include = ["src/**/*.rs"]
 
 [tags]
-allowed = []
+allowed = [
+    "tui",
+    "lifecycle",
+    "core",
+    "editing",
+    "cli",
+    "validation",
+    "release",
+    "skills-agents",
+    "schema",
+    "safety",
+    "documentation",
+    "testing",
+    "plugin",
+    "migration",
+    "collaboration",
+    "work-items",
+]
 
 [verification]
 default_guards = [

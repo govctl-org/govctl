@@ -9,6 +9,12 @@ phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
 updated = "2026-03-22"
+tags = [
+    "core",
+    "schema",
+    "validation",
+    "lifecycle",
+]
 signature = "d05eb40d0eb61a843eb2b0279c290f3c9d5a16b17d97f88790b2f6466510190b"
 
 [[sections]]

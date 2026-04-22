@@ -6,6 +6,7 @@ title = "Extend Alternative structure with pros, cons, and rejection_reason"
 status = "accepted"
 date = "2026-02-22"
 refs = ["RFC-0000:C-ADR-DEF"]
+tags = ["schema"]
 
 [content]
 context = """

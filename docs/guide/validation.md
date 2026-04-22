@@ -15,6 +15,7 @@ This validates:
 - **Schema conformance** — All required fields present, correct types
 - **Phase discipline** — No invalid state transitions
 - **Cross-references** — `refs` and `[[...]]` annotations point to existing artifacts
+- **Controlled-vocabulary tags** — All artifact tags are registered in `gov/config.toml [tags] allowed`
 - **Clause structure** — Normative clauses in spec sections
 - **Source code scanning** — `[[RFC-0001]]` annotations in source files are verified
 
@@ -42,6 +43,45 @@ enabled = true
 include = ["src/**/*.rs"]
 exclude = []
 ```
+
+## Controlled-Vocabulary Tags
+
+Tags provide cross-cutting categorization across all governance artifacts. Every tag must be registered in a project-level allow list before use.
+
+### Managing the Tag Registry
+
+```bash
+# List all registered tags with usage counts
+govctl tag list
+
+# Register a new tag
+govctl tag new caching
+
+# Remove a tag (fails if any artifact still uses it)
+govctl tag delete caching
+```
+
+### Tagging Artifacts
+
+Once a tag is registered, apply it to any artifact via the standard `edit` command with `--add`:
+
+```bash
+govctl rfc edit RFC-0010 tags --add caching
+govctl adr edit ADR-0003 tags --add caching
+govctl work edit WI-2026-01-17-001 tags --add caching
+```
+
+### Filtering by Tag
+
+List commands support `--tag` to filter by one or more tags (comma-separated, AND logic):
+
+```bash
+govctl rfc list --tag caching
+govctl adr list --tag caching,performance
+govctl work list --tag breaking-change
+```
+
+Tags are validated at `govctl check` time — any tag not in the allow list produces error `E1105`.
 
 ## Verification Guards
 
@@ -72,6 +112,28 @@ command = "cargo test"
 timeout_secs = 300
 ```
 
+### Guard Subcommands
+
+Guards are first-class resources with their own CRUD verbs:
+
+```bash
+# Create a new guard
+govctl guard new "My Lint Check"
+
+# List all guards
+govctl guard list
+
+# Show guard definition
+govctl guard show GUARD-MY-LINT
+
+# Set guard fields
+govctl guard edit GUARD-MY-LINT check.command --set "npm run lint"
+govctl guard edit GUARD-MY-LINT check.timeout_secs --set 60
+
+# Delete a guard (blocked if still referenced by work items or project defaults)
+govctl guard delete GUARD-MY-LINT
+```
+
 ### Guard Fields
 
 | Field          | Required | Description                                  |
@@ -83,35 +145,26 @@ timeout_secs = 300
 | `timeout_secs` | No       | Max execution time (default: 300s)           |
 | `pattern`      | No       | Regex pattern that must match stdout+stderr  |
 
-### Creating Custom Guards
-
-```bash
-# Create a guard file
-cat > gov/guard/my-lint.toml <<'EOF'
-#:schema ../schema/guard.schema.json
-
-[govctl]
-id = "GUARD-MY-LINT"
-title = "Linting passes"
-
-[check]
-command = "npm run lint"
-timeout_secs = 60
-EOF
-```
-
-Then add it to `gov/config.toml`:
-
-```toml
-[verification]
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-MY-LINT"]
-```
-
 ### Guard Behavior
 
 - A guard **passes** when its command exits with code 0 (and matches `pattern` if specified)
 - A guard **fails** when the command exits non-zero, times out, or doesn't match the pattern
 - All guards must pass before `govctl work move <WI-ID> done` succeeds
+
+### Running Guards Independently
+
+Use `govctl verify` to run guards without moving a work item:
+
+```bash
+# Run all project default guards
+govctl verify
+
+# Run specific guards
+govctl verify GUARD-CARGO-TEST GUARD-GOVCTL-CHECK
+
+# Run guards required by a specific work item
+govctl verify --work WI-2026-01-17-001
+```
 
 ### Per-Work-Item Guards
 
@@ -129,12 +182,6 @@ The effective required guard set for a work item is:
 - the project-level `default_guards` when verification is enabled
 - plus the work item's `verification.required_guards`
 - minus any explicitly waived guards
-
-You can inspect the effective set with:
-
-```bash
-govctl verify --work WI-2026-01-17-001
-```
 
 ### Guard Waivers
 
@@ -199,12 +246,63 @@ govctl status
 
 Shows RFC/ADR/work item counts by status, phase breakdown, and active work items.
 
+## CLI Self-Description
+
+govctl provides a machine-readable command catalog for agent discoverability:
+
+```bash
+govctl describe
+govctl describe --context   # Includes project context (RFCs, ADRs, active work items)
+govctl describe --output json
+```
+
+## Self-Update
+
+Update govctl to the latest release:
+
+```bash
+govctl self-update          # Download and replace binary
+govctl self-update --check  # Check for newer version without downloading
+```
+
+Supports `GITHUB_TOKEN` environment variable for authenticated API requests.
+
+## Agent Skill Installation
+
+Install or update govctl's agent skills and reviewer agents for your AI coding tool:
+
+```bash
+# Claude Code (default)
+govctl init-skills
+
+# Codex CLI
+govctl init-skills --format codex
+
+# Custom output directory
+govctl init-skills --dir /path/to/agent-config
+```
+
+This writes workflow skills (`/gov`, `/quick`, `/discuss`, `/commit`) and reviewer agents (RFC/ADR/WI reviewer, compliance checker) to the configured agent directory.
+
 ## Schema Migration
 
-When the governance schema evolves between govctl versions:
+When the governance schema evolves between govctl versions, artifact files may need format upgrades:
 
 ```bash
 govctl migrate
 ```
 
 This upgrades artifact file formats (e.g., adding `#:schema` headers, converting JSON to TOML) with transactional safety — changes are staged, backed up, and committed atomically.
+
+### `govctl migrate` vs the `/migrate` Workflow
+
+These are related but serve different purposes:
+
+|            | `govctl migrate`                                    | `/migrate` skill                                      |
+| ---------- | --------------------------------------------------- | ----------------------------------------------------- |
+| **What**   | Upgrade existing govctl artifacts to current format | Adopt govctl in an existing project                   |
+| **When**   | After updating govctl version                       | When starting governance in a brownfield repo         |
+| **Effect** | Rewrites TOML/JSON files in `gov/`                  | Discovers decisions, backfills ADRs, annotates source |
+| **Risk**   | Low — transactional, reversible                     | Medium — requires human review of generated ADRs      |
+
+Run `govctl migrate` when govctl tells you a migration is needed (error `E0505`). Use the `/migrate` skill when bringing a legacy project under governance for the first time.

@@ -1,0 +1,100 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-21-005"
+title = "Document missing CLI features in user guide"
+status = "done"
+created = "2026-04-21"
+started = "2026-04-21"
+completed = "2026-04-21"
+tags = ["documentation"]
+refs = []
+
+[content]
+description = """
+User guide in docs/guide/ is missing documentation for several CLI features that have been implemented:
+
+1. **Tags system**: govctl tag new/delete/list, --tag filter on list commands, controlled-vocabulary in gov/config.toml. No mention anywhere in the guide.
+
+2. **Guard subcommands**: govctl guard new/list/show/set/delete. Only manual guard file creation is documented.
+
+3. **govctl verify**: Only mentioned in passing as a work-item context. Needs its own section.
+
+4. **govctl self-update**: In README but not in the guide.
+
+5. **govctl init-skills**: --format codex, --dir flags undocumented.
+
+6. **govctl migrate vs /migrate skill**: The distinction is unclear in current docs.
+
+7. **govctl describe**: Machine-readable CLI introspection.
+
+8. **govctl release**: Release cutting workflow.
+
+9. **govctl tui**: Keyboard shortcuts and navigation.
+
+10. **Canonical edit surface**: <resource> edit <ID> <path> --set/--add/--remove/--tick pattern."""
+
+[[content.journal]]
+date = "2026-04-21"
+scope = "docs"
+content = "Updated docs/guide/validation.md with tags system, guard subcommands, verify, self-update, init-skills, and migrate distinction. Updated getting-started.md with TUI shortcuts, release workflow, canonical edit surface, describe command, and migrate comparison table. Updated adrs.md, rfcs.md, and work-items.md with canonical edit paths, path aliases, and tagging examples. Tags field added to work item. govctl check and cargo test pass clean."
+
+[[content.acceptance_criteria]]
+text = "Tags system documented (tag new/delete/list, --tag filter, controlled vocabulary)"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Guard subcommands documented (guard new/list/show/set/delete)"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "verify command has its own section"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "self-update documented in guide"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "init-skills documented (--format, --dir)"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "migrate vs /migrate distinction clarified"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "describe command documented"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "release command documented"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "TUI keyboard shortcuts documented"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Canonical edit surface documented"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "docs/guide/ files render cleanly"
+status = "done"
+category = "chore"

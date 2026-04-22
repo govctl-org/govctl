@@ -6,6 +6,7 @@ title = "Scope of write commands"
 kind = "normative"
 status = "active"
 since = "0.1.0"
+tags = ["safety"]
 
 [content]
 text = """

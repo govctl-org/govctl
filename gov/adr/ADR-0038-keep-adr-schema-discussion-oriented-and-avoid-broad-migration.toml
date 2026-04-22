@@ -10,6 +10,8 @@ refs = [
     "ADR-0036",
     "ADR-0037",
 ]
+tags = ["schema"]
+
 
 [content]
 context = """

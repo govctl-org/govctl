@@ -442,6 +442,7 @@ fn draw_rfc_list(frame: &mut Frame, app: &mut App, area: Rect) {
         .map(|rfc| {
             let status = rfc.rfc.status.as_ref();
             let phase = rfc.rfc.phase.as_ref();
+            let tags = rfc.rfc.tags.join(" ");
 
             Row::new(vec![
                 Line::from(rfc.rfc.rfc_id.clone()),
@@ -451,6 +452,7 @@ fn draw_rfc_list(frame: &mut Frame, app: &mut App, area: Rect) {
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
                 Line::from(Span::styled(phase.to_string(), phase_style(phase))),
+                Line::from(Span::styled(tags, Style::default().fg(Color::Magenta))),
             ])
         })
         .collect();
@@ -459,13 +461,14 @@ fn draw_rfc_list(frame: &mut Frame, app: &mut App, area: Rect) {
         rows,
         [
             Constraint::Length(10),
-            Constraint::Min(30),
+            Constraint::Min(20),
             Constraint::Length(14),
             Constraint::Length(10),
+            Constraint::Min(15),
         ],
     )
     .header(
-        Row::new(vec!["ID", "Title", "Status", "Phase"])
+        Row::new(vec!["ID", "Title", "Status", "Phase", "Tags"])
             .style(Style::default().bold().fg(Color::Cyan))
             .bottom_margin(1),
     )
@@ -483,6 +486,7 @@ fn draw_adr_list(frame: &mut Frame, app: &mut App, area: Rect) {
         .map(|adr| {
             let meta = adr.meta();
             let status = meta.status.as_ref();
+            let tags = meta.tags.join(" ");
 
             Row::new(vec![
                 Line::from(meta.id.clone()),
@@ -491,6 +495,7 @@ fn draw_adr_list(frame: &mut Frame, app: &mut App, area: Rect) {
                     Span::styled(format!("{} ", status_icon(status)), status_style(status)),
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
+                Line::from(Span::styled(tags, Style::default().fg(Color::Magenta))),
             ])
         })
         .collect();
@@ -498,14 +503,15 @@ fn draw_adr_list(frame: &mut Frame, app: &mut App, area: Rect) {
     let table = Table::new(
         rows,
         [
-            Constraint::Length(12),
+            Constraint::Length(10),
             Constraint::Min(40),
             Constraint::Length(14),
+            Constraint::Min(15),
         ],
     )
     .header(
-        Row::new(vec!["ID", "Title", "Status"])
-            .style(Style::default().bold().fg(Color::Cyan))
+        Row::new(vec!["ID", "Title", "Status", "Tags"])
+            .style(Style::default().bold().fg(Color::Green))
             .bottom_margin(1),
     )
     .row_highlight_style(Style::default().bg(Color::DarkGray))
@@ -522,6 +528,7 @@ fn draw_work_list(frame: &mut Frame, app: &mut App, area: Rect) {
         .map(|item| {
             let meta = item.meta();
             let status = meta.status.as_ref();
+            let tags = meta.tags.join(" ");
 
             Row::new(vec![
                 Line::from(meta.id.clone()),
@@ -530,6 +537,7 @@ fn draw_work_list(frame: &mut Frame, app: &mut App, area: Rect) {
                     Span::styled(format!("{} ", status_icon(status)), status_style(status)),
                     Span::styled(status.to_string(), status_style(status)),
                 ]),
+                Line::from(Span::styled(tags, Style::default().fg(Color::Magenta))),
             ])
         })
         .collect();
@@ -537,14 +545,15 @@ fn draw_work_list(frame: &mut Frame, app: &mut App, area: Rect) {
     let table = Table::new(
         rows,
         [
-            Constraint::Length(20),
-            Constraint::Min(40),
-            Constraint::Length(12),
+            Constraint::Length(22),
+            Constraint::Min(35),
+            Constraint::Length(14),
+            Constraint::Min(15),
         ],
     )
     .header(
-        Row::new(vec!["ID", "Title", "Status"])
-            .style(Style::default().bold().fg(Color::Cyan))
+        Row::new(vec!["ID", "Title", "Status", "Tags"])
+            .style(Style::default().bold().fg(Color::Yellow))
             .bottom_margin(1),
     )
     .row_highlight_style(Style::default().bg(Color::DarkGray))
@@ -593,6 +602,16 @@ fn draw_rfc_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
         header_lines.push(Line::from(vec![
             Span::styled("Refs:    ", Style::default().fg(Color::DarkGray)),
             Span::raw(rfc.rfc.refs.join(", ")),
+        ]));
+    }
+
+    if !rfc.rfc.tags.is_empty() {
+        header_lines.push(Line::from(vec![
+            Span::styled("Tags:    ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                rfc.rfc.tags.join("  "),
+                Style::default().fg(Color::Magenta).bold(),
+            ),
         ]));
     }
 

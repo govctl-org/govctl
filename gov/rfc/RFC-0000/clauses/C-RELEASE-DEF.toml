@@ -6,6 +6,7 @@ title = "Release Definition"
 kind = "normative"
 status = "active"
 since = "1.0.2"
+tags = ["core", "release"]
 
 [content]
 text = """

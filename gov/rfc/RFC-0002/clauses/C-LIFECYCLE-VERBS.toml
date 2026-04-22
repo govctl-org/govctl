@@ -6,6 +6,7 @@ title = "Resource-Specific Lifecycle Verbs"
 kind = "normative"
 status = "active"
 since = "0.1.0"
+tags = ["cli", "lifecycle"]
 
 [content]
 text = """

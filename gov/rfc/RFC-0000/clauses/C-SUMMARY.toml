@@ -6,6 +6,7 @@ title = "Framework Summary"
 kind = "informative"
 status = "active"
 since = "1.0.0"
+tags = ["core"]
 
 [content]
 text = """

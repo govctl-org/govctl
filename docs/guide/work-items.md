@@ -2,6 +2,8 @@
 
 Work Items track units of work from inception to completion. They provide an audit trail of what was done and when.
 
+> **See also:** [Tags](../guide/validation.md#controlled-vocabulary-tags), [TUI](../guide/getting-started.md#interactive-tui), [Canonical Edit](../guide/getting-started.md#canonical-edit-surface)
+
 ## Creating Work Items
 
 ```bash
@@ -97,6 +99,61 @@ govctl work tick WI-2026-01-17-001 acceptance_criteria "Unit tests" -s done
 ```
 
 The pattern matches case-insensitively by substring.
+
+### Canonical Edit Paths
+
+Most work item fields are accessible through the unified path-based edit interface. Lifecycle-managed fields (such as `status`) are excluded — use `govctl work move` for status transitions instead.
+
+```bash
+# Set scalar fields
+govctl work edit WI-2026-01-17-001 content.description --stdin <<'EOF'
+New description here
+EOF
+
+# Add to array fields
+govctl work edit WI-2026-01-17-001 refs --add RFC-0010
+govctl work edit WI-2026-01-17-001 acceptance_criteria --add "fix: Handle edge case"
+
+# Remove by index
+govctl work edit WI-2026-01-17-001 acceptance_criteria --at 0 --remove
+
+# Tick checklist items
+govctl work edit WI-2026-01-17-001 acceptance_criteria --tick done --at 0
+govctl work edit WI-2026-01-17-001 acceptance_criteria --tick cancelled --at 1
+
+# Nested journal fields
+govctl work edit WI-2026-01-17-001 "journal[0].scope" --set backend
+govctl work edit WI-2026-01-17-001 "journal[0].content" --stdin <<'EOF'
+Detailed progress update here
+EOF
+```
+
+Path aliases are available for common fields:
+
+| Alias         | Resolves to                               |
+| ------------- | ----------------------------------------- |
+| `description` | `content.description`                     |
+| `ac`          | `content.acceptance_criteria`             |
+| `journal`     | `content.journal`                         |
+| `notes`       | `content.notes`                           |
+| `category`    | `content.acceptance_criteria[i].category` |
+| `scope`       | `content.journal[i].scope`                |
+
+### Tagging Work Items
+
+Once tags are registered in the project vocabulary, apply them to work items:
+
+```bash
+govctl work edit WI-2026-01-17-001 tags --add backend
+govctl work edit WI-2026-01-17-001 tags --add performance
+```
+
+Filter lists by tag:
+
+```bash
+govctl work list --tag backend
+govctl work list --tag backend,performance
+```
 
 ## Journal
 

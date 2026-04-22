@@ -62,12 +62,66 @@ We need a caching layer that can handle
 EOF
 ```
 
-For alternatives (pros/cons/rejection reason), path-based edits are supported:
+### Canonical Edit Paths
+
+All ADR fields are accessible through a unified path-based edit interface:
 
 ```bash
-# Direct nested edit
-govctl adr set ADR-0001 "alt[2].pros[0]" "Updated pro"
-govctl adr add ADR-0001 "alt[0].cons" "New disadvantage"
+# Scalar fields
+govctl adr edit ADR-0003 content.decision --set "We will use Redis"
+govctl adr edit ADR-0003 content.context --stdin < context.md
+
+# Array fields — add, remove, tick
+govctl adr edit ADR-0003 refs --add RFC-0010
+govctl adr edit ADR-0003 refs --at 0 --remove
+
+# Nested alternatives
+govctl adr edit ADR-0003 content.alternatives --add "Option C: Use etcd"
+govctl adr edit ADR-0003 "content.alternatives[0].pros" --add "Fast reads"
+govctl adr edit ADR-0003 "content.alternatives[0].cons" --add "Operational cost"
+govctl adr edit ADR-0003 "content.alternatives[0].status" --set accepted
+govctl adr edit ADR-0003 "content.alternatives[0].rejection_reason" --set "Too complex"
+
+# Tick alternative status
+govctl adr edit ADR-0003 content.alternatives --tick accepted --at 0
+```
+
+Path aliases are available for common fields:
+
+| Alias          | Resolves to                                |
+| -------------- | ------------------------------------------ |
+| `decision`     | `content.decision`                         |
+| `context`      | `content.context`                          |
+| `consequences` | `content.consequences`                     |
+| `alt`          | `content.alternatives`                     |
+| `pro`          | `content.alternatives[i].pros`             |
+| `con`          | `content.alternatives[i].cons`             |
+| `reason`       | `content.alternatives[i].rejection_reason` |
+
+### Legacy Set/Add/Remove Verbs
+
+The original verbs remain available and compile into the same edit pipeline:
+
+```bash
+govctl adr set ADR-0003 decision "We will use Redis because..."
+govctl adr add ADR-0003 alternatives "Option C"
+govctl adr remove ADR-0003 refs RFC-0001
+```
+
+### Tagging ADRs
+
+Once tags are registered in the project vocabulary, apply them to ADRs:
+
+```bash
+govctl adr edit ADR-0003 tags --add caching
+govctl adr edit ADR-0003 tags --add performance
+```
+
+Filter lists by tag:
+
+```bash
+govctl adr list --tag caching
+govctl adr list --tag caching,performance
 ```
 
 ## Status Lifecycle
@@ -78,6 +132,21 @@ proposed → accepted → superseded
 ```
 
 ### Accept a Decision
+
+Before accepting, the ADR must have at least 2 alternatives with 1 accepted and 1 rejected per [[ADR-0042]]:
+
+```bash
+govctl adr edit ADR-0003 "content.alternatives[0].status" --set accepted
+govctl adr edit ADR-0003 "content.alternatives[1].status" --set rejected
+
+govctl adr accept ADR-0003
+```
+
+Use `--force` for historical backfills where alternatives cannot be reconstructed:
+
+```bash
+govctl adr accept ADR-0003 --force
+```
 
 When consensus is reached:
 

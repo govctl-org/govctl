@@ -1,0 +1,88 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-04-21-001"
+title = "Backfill controlled-vocabulary tags across governance artifacts"
+status = "done"
+created = "2026-04-21"
+started = "2026-04-21"
+completed = "2026-04-21"
+tags = [
+    "schema",
+    "testing",
+]
+
+[content]
+description = """
+Backfill the controlled-vocabulary tags system (per RFC-0002 and ADR-0040) across all governance artifacts in govctl itself. Currently tags.allowed is empty in gov/config.toml and no artifacts have tags. This work item establishes the tag vocabulary and applies tags to RFCs, clauses, ADRs, work items, and guards, so the tags system is dogfooded and validated before users encounter it.
+
+Tags to create:
+- core: Core governance framework and meta-governance
+- cli: CLI architecture, commands, and routing
+- tui: Terminal UI (ratatui)
+- validation: Validation, diagnostics, checking
+- editing: Edit engine and field manipulation
+- lifecycle: Status/phase state machines
+- release: Release management and changelog
+- skills-agents: Skills and agent framework
+- schema: Schema definitions and serialization
+- safety: Concurrent access and locking
+- documentation: README, docs, guides
+- testing: Test infrastructure and coverage
+- plugin: Claude Code plugin integration
+- migration: Migration tools and brownfield adoption"""
+
+[[content.journal]]
+date = "2026-04-21"
+scope = "governance"
+content = "Backfilled 14 controlled-vocabulary tags across all governance artifacts: 5 RFCs, 35 clauses, 42 ADRs, 2 guards, and this work item. Tags registered in gov/config.toml [tags] allowed. govctl check passes clean."
+
+[[content.acceptance_criteria]]
+text = "All 14 tags registered in gov/config.toml [tags] allowed"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0000 tagged: core, schema, validation, lifecycle"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0001 tagged: core, lifecycle"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0002 tagged: cli, editing, lifecycle, validation, release"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0003 tagged: tui"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0004 tagged: safety"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "All clauses tagged appropriately"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "All ADRs tagged appropriately"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "All guards tagged"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

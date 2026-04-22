@@ -6,6 +6,7 @@ title = "Context-aware self-describing CLI for agent discoverability"
 status = "accepted"
 date = "2026-01-18"
 refs = ["RFC-0000"]
+tags = ["cli"]
 
 [content]
 context = """

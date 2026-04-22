@@ -9,6 +9,7 @@ refs = [
     "RFC-0002",
     "ADR-0018",
 ]
+tags = ["cli"]
 
 [content]
 context = """

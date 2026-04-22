@@ -5,7 +5,11 @@ id = "ADR-0017"
 title = "CLI Command Implementation Details"
 status = "accepted"
 date = "2026-01-19"
-refs = ["RFC-0002"]
+refs = [
+    "RFC-0002",
+    "ADR-0037",
+]
+tags = ["cli"]
 
 [content]
 context = """

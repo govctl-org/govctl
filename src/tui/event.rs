@@ -85,16 +85,8 @@ fn handle_list_keys(app: &mut App, key: KeyEvent) {
         KeyCode::Char('u') if is_ctrl(&key) => app.select_half_page_up(),
         KeyCode::PageDown => app.select_half_page_down(),
         KeyCode::PageUp => app.select_half_page_up(),
-        KeyCode::Char('n') => {
-            if app.filter_active() {
-                app.select_next();
-            }
-        }
-        KeyCode::Char('p') => {
-            if app.filter_active() {
-                app.select_prev();
-            }
-        }
+        KeyCode::Char('n') if app.filter_active() => app.select_next(),
+        KeyCode::Char('p') if app.filter_active() => app.select_prev(),
         KeyCode::Enter => app.enter_detail(),
         KeyCode::Esc => app.go_back(),
         // Implements [[RFC-0003:C-FILTER]]
