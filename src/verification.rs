@@ -5,7 +5,9 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{GuardEntry, WorkItemEntry};
 use regex::RegexBuilder;
 use std::collections::{HashMap, HashSet};
-use std::process::{Command, Stdio};
+use std::io::{self, Read};
+use std::process::{Child, Command, ExitStatus, Stdio};
+use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 
 pub const DEFAULT_GUARD_TIMEOUT_SECS: u64 = 300;
@@ -15,6 +17,7 @@ pub struct GuardRunResult {
     pub id: String,
     pub passed: bool,
     pub timed_out: bool,
+    pub primary_shell_running_at_timeout: Option<bool>,
     pub output: String,
 }
 
@@ -203,37 +206,60 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
         guard.spec.check.timeout_secs
     };
 
-    let mut child = Command::new("/bin/bash")
+    let mut command = Command::new("/bin/bash");
+    command
         .args(["-lc", &guard.spec.check.command])
         .current_dir(project_root)
         .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()
-        .map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E1004GuardCheckFailed,
-                format!(
-                    "Failed to start verification guard '{}': {}",
-                    guard.meta().id,
-                    err
-                ),
-                guard.path.display().to_string(),
-            )
-        })?;
+        .stderr(Stdio::piped());
+    configure_guard_process_group(&mut command);
+
+    let mut child = command.spawn().map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E1004GuardCheckFailed,
+            format!(
+                "Failed to start verification guard '{}': {}",
+                guard.meta().id,
+                err
+            ),
+            guard.path.display().to_string(),
+        )
+    })?;
+    let child_id = child.id();
+    let stdout_reader = child.stdout.take().map(spawn_output_reader);
+    let stderr_reader = child.stderr.take().map(spawn_output_reader);
 
     let deadline = Duration::from_secs(timeout);
     let started = Instant::now();
     let mut timed_out = false;
+    let mut primary_shell_running_at_timeout = None;
+    let status: ExitStatus;
 
     loop {
         match child.try_wait() {
-            Ok(Some(_)) => break,
+            Ok(Some(exit_status)) => {
+                status = exit_status;
+                terminate_guard_process_group(child_id);
+                break;
+            }
             Ok(None) if started.elapsed() < deadline => {
                 std::thread::sleep(Duration::from_millis(50))
             }
             Ok(None) => {
                 timed_out = true;
-                let _ = child.kill();
+                primary_shell_running_at_timeout = Some(true);
+                terminate_guard_process(&mut child);
+                status = child.wait().map_err(|err| {
+                    Diagnostic::new(
+                        DiagnosticCode::E1004GuardCheckFailed,
+                        format!(
+                            "Failed while waiting on timed-out verification guard '{}': {}",
+                            guard.meta().id,
+                            err
+                        ),
+                        guard.path.display().to_string(),
+                    )
+                })?;
                 break;
             }
             Err(err) => {
@@ -250,21 +276,12 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
         }
     }
 
-    let output = child.wait_with_output().map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E1004GuardCheckFailed,
-            format!(
-                "Failed to collect output for verification guard '{}': {}",
-                guard.meta().id,
-                err
-            ),
-            guard.path.display().to_string(),
-        )
-    })?;
+    let stdout = collect_guard_output(stdout_reader, guard, "stdout")?;
+    let stderr = collect_guard_output(stderr_reader, guard, "stderr")?;
     let combined_output = format!(
         "{}{}",
-        String::from_utf8_lossy(&output.stdout),
-        String::from_utf8_lossy(&output.stderr)
+        String::from_utf8_lossy(&stdout),
+        String::from_utf8_lossy(&stderr)
     );
 
     let pattern_matched = match &guard.spec.check.pattern {
@@ -288,11 +305,89 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
 
     Ok(GuardRunResult {
         id: guard.meta().id.clone(),
-        passed: !timed_out && output.status.success() && pattern_matched,
+        passed: !timed_out && status.success() && pattern_matched,
         timed_out,
+        primary_shell_running_at_timeout,
         output: combined_output,
     })
 }
+
+fn spawn_output_reader<R>(mut reader: R) -> JoinHandle<io::Result<Vec<u8>>>
+where
+    R: Read + Send + 'static,
+{
+    std::thread::spawn(move || {
+        let mut output = Vec::new();
+        reader.read_to_end(&mut output)?;
+        Ok(output)
+    })
+}
+
+fn collect_guard_output(
+    reader: Option<JoinHandle<io::Result<Vec<u8>>>>,
+    guard: &GuardEntry,
+    stream_name: &str,
+) -> Result<Vec<u8>, Diagnostic> {
+    let Some(reader) = reader else {
+        return Ok(Vec::new());
+    };
+
+    reader.join().map_err(|_| {
+        Diagnostic::new(
+            DiagnosticCode::E1004GuardCheckFailed,
+            format!(
+                "Failed to collect {stream_name} for verification guard '{}': reader thread panicked",
+                guard.meta().id
+            ),
+            guard.path.display().to_string(),
+        )
+    })?
+    .map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E1004GuardCheckFailed,
+            format!(
+                "Failed to collect {stream_name} for verification guard '{}': {}",
+                guard.meta().id,
+                err
+            ),
+            guard.path.display().to_string(),
+        )
+    })
+}
+
+#[cfg(unix)]
+fn configure_guard_process_group(command: &mut Command) {
+    use std::os::unix::process::CommandExt;
+    command.process_group(0);
+}
+
+#[cfg(not(unix))]
+fn configure_guard_process_group(_command: &mut Command) {}
+
+fn terminate_guard_process(child: &mut Child) {
+    terminate_guard_process_group(child.id());
+    let _ = child.kill();
+}
+
+#[cfg(unix)]
+fn terminate_guard_process_group(child_id: u32) {
+    signal_process_group(child_id, "TERM");
+    std::thread::sleep(Duration::from_millis(25));
+    signal_process_group(child_id, "KILL");
+}
+
+#[cfg(unix)]
+fn signal_process_group(child_id: u32, signal: &str) {
+    let _ = Command::new("/bin/kill")
+        .arg(format!("-{signal}"))
+        .arg(format!("-{child_id}"))
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status();
+}
+
+#[cfg(not(unix))]
+fn terminate_guard_process_group(_child_id: u32) {}
 
 pub fn unknown_guard_diagnostic(guard_id: &str, location: &str) -> Diagnostic {
     Diagnostic::new(

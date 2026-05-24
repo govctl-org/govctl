@@ -149,9 +149,16 @@ fn run_selected_guards(
         }
 
         let message = if result.timed_out {
+            let primary_shell_state = match result.primary_shell_running_at_timeout {
+                Some(true) => "primary shell process was still running when timeout handling began",
+                Some(false) => {
+                    "primary shell process had already exited when timeout handling began"
+                }
+                None => "primary shell process state at timeout was unavailable",
+            };
             format!(
-                "Verification guard '{}' timed out after {} seconds",
-                result.id, guard.spec.check.timeout_secs
+                "Verification guard '{}' timed out after {} seconds; {}",
+                result.id, guard.spec.check.timeout_secs, primary_shell_state
             )
         } else {
             format!("Verification guard '{}' failed", result.id)

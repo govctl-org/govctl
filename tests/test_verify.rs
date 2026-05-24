@@ -21,6 +21,44 @@ fn test_verify_runs_project_default_guard() -> TestResult {
 }
 
 #[test]
+fn test_verify_noisy_guard_output_does_not_timeout() -> TestResult {
+    let temp_dir = init_project()?;
+
+    append_verification_config(temp_dir.path(), true, &["GUARD-NOISY"])?;
+    write_guard_with_timeout(
+        temp_dir.path(),
+        "GUARD-NOISY",
+        "yes noisy | head -c 131072",
+        None,
+        1,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["verify"]])?;
+    assert!(output.contains("PASS GUARD-NOISY"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+
+    Ok(())
+}
+
+#[test]
+fn test_verify_timeout_diagnostic_mentions_primary_shell_state() -> TestResult {
+    let temp_dir = init_project()?;
+
+    append_verification_config(temp_dir.path(), true, &["GUARD-SLEEP"])?;
+    write_guard_with_timeout(temp_dir.path(), "GUARD-SLEEP", "sleep 2", None, 1)?;
+
+    let output = run_commands(temp_dir.path(), &[&["verify"]])?;
+    assert!(
+        output.contains("primary shell process was still running when timeout handling began"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("exit: 1"), "output: {}", output);
+
+    Ok(())
+}
+
+#[test]
 fn test_work_move_done_rejects_failed_required_guard() -> TestResult {
     let temp_dir = init_project()?;
 
@@ -98,6 +136,16 @@ fn write_guard(
     command: &str,
     pattern: Option<&str>,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    write_guard_with_timeout(dir, guard_id, command, pattern, 300)
+}
+
+fn write_guard_with_timeout(
+    dir: &Path,
+    guard_id: &str,
+    command: &str,
+    pattern: Option<&str>,
+    timeout_secs: u64,
+) -> Result<(), Box<dyn std::error::Error>> {
     let path = dir
         .join("gov/guard")
         .join(format!("{}.toml", guard_id.to_lowercase()));
@@ -105,7 +153,7 @@ fn write_guard(
         .map(|pattern| format!("pattern = \"{pattern}\"\n"))
         .unwrap_or_default();
     let content = format!(
-        "[govctl]\nschema = 1\nid = \"{guard_id}\"\ntitle = \"{guard_id}\"\n\n[check]\ncommand = \"{command}\"\n{pattern_line}"
+        "[govctl]\nschema = 1\nid = \"{guard_id}\"\ntitle = \"{guard_id}\"\n\n[check]\ncommand = \"{command}\"\ntimeout_secs = {timeout_secs}\n{pattern_line}"
     );
     fs::write(path, content)?;
     Ok(())
