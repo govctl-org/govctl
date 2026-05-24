@@ -9,6 +9,8 @@ use crate::ui;
 
 const REPO_OWNER: &str = "govctl-org";
 const REPO_NAME: &str = "govctl";
+const BIN_NAME: &str = "govctl";
+const SELF_UPDATE_BIN_PATH_IN_ARCHIVE: &str = "govctl-v{{ version }}-{{ target }}/{{ bin }}";
 
 /// Result of comparing the current version against the latest available.
 #[derive(Debug, PartialEq, Eq)]
@@ -46,6 +48,14 @@ pub(crate) fn compare_versions(current: &str, latest_raw: &str) -> anyhow::Resul
             latest: latest.to_string(),
         })
     }
+}
+
+#[cfg(test)]
+fn render_bin_path_in_archive(version: &str, target: &str, bin: &str) -> String {
+    SELF_UPDATE_BIN_PATH_IN_ARCHIVE
+        .replace("{{ version }}", version)
+        .replace("{{ target }}", target)
+        .replace("{{ bin }}", bin)
 }
 
 /// Check for the latest version and optionally update the binary.
@@ -101,7 +111,8 @@ fn perform_update(current: &str) -> anyhow::Result<Vec<Diagnostic>> {
     let status = self_update::backends::github::Update::configure()
         .repo_owner(REPO_OWNER)
         .repo_name(REPO_NAME)
-        .bin_name("govctl")
+        .bin_name(BIN_NAME)
+        .bin_path_in_archive(SELF_UPDATE_BIN_PATH_IN_ARCHIVE)
         .show_download_progress(show_progress)
         .current_version(current)
         .build()?
@@ -190,5 +201,60 @@ mod tests {
     #[test]
     fn test_invalid_latest_version_errors() {
         assert!(compare_versions("0.8.3", "not-a-version").is_err());
+    }
+
+    #[test]
+    fn test_unix_archive_bin_path_matches_release_layout() {
+        assert_eq!(
+            render_bin_path_in_archive("0.8.4", "aarch64-apple-darwin", "govctl"),
+            "govctl-v0.8.4-aarch64-apple-darwin/govctl"
+        );
+    }
+
+    #[test]
+    fn test_windows_archive_bin_path_matches_release_layout() {
+        assert_eq!(
+            render_bin_path_in_archive("0.8.4", "x86_64-pc-windows-msvc", "govctl.exe"),
+            "govctl-v0.8.4-x86_64-pc-windows-msvc/govctl.exe"
+        );
+    }
+
+    #[test]
+    fn test_release_metadata_uses_matching_archive_layout() -> Result<(), Box<dyn std::error::Error>>
+    {
+        assert_eq!(
+            SELF_UPDATE_BIN_PATH_IN_ARCHIVE,
+            "govctl-v{{ version }}-{{ target }}/{{ bin }}"
+        );
+
+        let manifest_path = format!("{}/Cargo.toml", env!("CARGO_MANIFEST_DIR"));
+        let manifest: toml::Value = toml::from_str(&std::fs::read_to_string(manifest_path)?)?;
+        let bin_dir = manifest
+            .get("package")
+            .and_then(|package| package.get("metadata"))
+            .and_then(|metadata| metadata.get("binstall"))
+            .and_then(|binstall| binstall.get("bin-dir"))
+            .and_then(toml::Value::as_str)
+            .ok_or("missing package.metadata.binstall.bin-dir")?;
+        assert_eq!(
+            bin_dir,
+            "govctl-v{ version }-{ target }/{ bin }{ binary-ext }"
+        );
+
+        let release_workflow = std::fs::read_to_string(format!(
+            "{}/.github/workflows/release.yml",
+            env!("CARGO_MANIFEST_DIR")
+        ))?;
+        assert!(
+            release_workflow.contains(r#"ARCHIVE_NAME="govctl-${VERSION}-${{ matrix.target }}""#),
+            "Unix release archive directory must match self-update and cargo-binstall layout"
+        );
+        assert!(
+            release_workflow
+                .contains(r#"$ARCHIVE_NAME = "govctl-${VERSION}-${{ matrix.target }}""#),
+            "Windows release archive directory must match self-update and cargo-binstall layout"
+        );
+
+        Ok(())
     }
 }
