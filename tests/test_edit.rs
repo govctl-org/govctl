@@ -1017,7 +1017,11 @@ fn test_work_edit_tick_indexed_path_canonical() -> common::TestResult {
         "output: {}",
         output
     );
-    assert!(output.contains("- ✓ Criterion 1"), "output: {}", output);
+    assert!(
+        output.contains("- ✓ added: Criterion 1"),
+        "output: {}",
+        output
+    );
     Ok(())
 }
 

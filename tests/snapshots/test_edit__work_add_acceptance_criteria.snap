@@ -1,6 +1,6 @@
 ---
 source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: "normalize_output(&output, temp_dir.path(), &date)?"
 ---
 $ govctl work new Test Task
 Created work item: gov/work/<DATE>-test-task.toml
@@ -27,6 +27,6 @@ What is the goal? What are the acceptance criteria?
 
 ## Acceptance Criteria
 
-- ○ Criterion 1
-- ○ Criterion 2
+- ○ added: Criterion 1
+- ○ added: Criterion 2
 exit: 0

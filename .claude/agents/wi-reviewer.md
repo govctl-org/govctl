@@ -15,7 +15,7 @@ It does not implement code, modify work items directly, execute lifecycle verbs,
 When invoked:
 
 1. Read the rendered work item using `govctl work show <WI-ID>` (never read the raw TOML file — use the rendered markdown)
-2. Evaluate against the checklist below
+2. Use the rendered acceptance-criteria category labels such as `added:`, `fixed:`, `changed:`, and `chore:` as the source of truth for category checks
 3. Report findings organized by severity
 
 ## Review Checklist
@@ -38,16 +38,16 @@ When invoked:
 ### Acceptance Criteria
 
 - [ ] At least one criterion exists
-- [ ] Every criterion has a category prefix (`add:`, `fix:`, `chore:`, etc.)
+- [ ] Every criterion exposes a rendered category label (`added:`, `fixed:`, `changed:`, `chore:`, etc.)
 - [ ] Each criterion is specific and testable — can be marked done/not-done without ambiguity
 - [ ] At least one `chore:` criterion for validation (e.g., "chore: govctl check passes")
 - [ ] No duplicate or overlapping criteria
 
 ### Category Correctness
 
-- [ ] `add:` is used for genuinely new features (not modifications)
-- [ ] `fix:` is used for bug fixes (not new features)
-- [ ] `change:` is used for modifications to existing behavior
+- [ ] `added:` is used for genuinely new features (not modifications)
+- [ ] `fixed:` is used for bug fixes (not new features)
+- [ ] `changed:` is used for modifications to existing behavior
 - [ ] `chore:` is used for internal/maintenance tasks that don't appear in changelog
 - [ ] Categories match what will actually show up in the changelog
 

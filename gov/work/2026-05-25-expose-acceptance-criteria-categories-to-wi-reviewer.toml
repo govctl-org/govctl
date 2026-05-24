@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-05-25-003"
 title = "Expose acceptance-criteria categories to WI reviewer"
-status = "queue"
+status = "done"
 created = "2026-05-25"
+started = "2026-05-25"
+completed = "2026-05-25"
 refs = [
     "ADR-0013",
     "ADR-0024",
@@ -15,27 +17,32 @@ refs = [
 description = "Expose work item acceptance-criteria categories through the review surface so `wi-reviewer`, which reads rendered work-item output rather than raw `TOML`, can evaluate category correctness from `govctl work show`."
 notes = ["GitHub issue: https://github.com/govctl-org/govctl/issues/13"]
 
+[[content.journal]]
+date = "2026-05-25"
+scope = "render"
+content = "Updated work item rendering so each acceptance criterion includes its stored changelog category label in `govctl work show` output. Updated `wi-reviewer` to treat rendered category labels as the review source of truth, refreshed affected `work show` snapshots, and verified with the targeted render test, affected edit/move snapshot tests, `cargo fmt --check`, and `govctl check`."
+
 [[content.acceptance_criteria]]
 text = "Render each work-item acceptance criterion with its stored changelog category or an equivalent unambiguous label in `govctl work show` output"
-status = "pending"
+status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "Update `wi-reviewer` guidance so category checks use the rendered category signal"
-status = "pending"
+status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
 text = "Refresh affected snapshots for `govctl work show` or work item render output"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "Targeted work item render or edit snapshot tests pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`govctl check` passes"
-status = "pending"
+status = "done"
 category = "chore"

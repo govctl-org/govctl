@@ -521,7 +521,8 @@ pub fn render_work_item(item: &WorkItemEntry) -> anyhow::Result<String> {
         let _ = writeln!(out);
         for ac_item in &content.acceptance_criteria {
             // Indent continuation lines to keep them within the list item
-            let indented_text = indent_continuation(&ac_item.text);
+            let categorized_text = format!("{}: {}", ac_item.category.as_ref(), ac_item.text);
+            let indented_text = indent_continuation(&categorized_text);
             let line = match ac_item.status {
                 ChecklistStatus::Pending => format!("- [ ] {}", indented_text),
                 ChecklistStatus::Done => format!("- [x] {}", indented_text),
@@ -565,8 +566,9 @@ pub fn write_work_item_md(
 mod tests {
     use super::*;
     use crate::model::{
-        AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus, JournalEntry,
-        WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus,
+        AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus, ChangelogCategory,
+        ChecklistItem, ChecklistStatus, JournalEntry, WorkItemContent, WorkItemMeta, WorkItemSpec,
+        WorkItemStatus,
     };
 
     const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]";
@@ -881,6 +883,54 @@ mod tests {
         assert!(result.contains("Created endpoint"));
         assert!(result.contains("### 2026-02-23 · Testing"));
         assert!(result.contains("Added unit tests"));
+        Ok(())
+    }
+
+    #[test]
+    fn test_render_work_item_acceptance_criteria_show_categories()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut done =
+            ChecklistItem::with_category("Fix rendered category", ChangelogCategory::Fixed);
+        done.status = ChecklistStatus::Done;
+        let mut cancelled =
+            ChecklistItem::with_category("Obsolete validation path", ChangelogCategory::Chore);
+        cancelled.status = ChecklistStatus::Cancelled;
+
+        let item = WorkItemEntry {
+            spec: WorkItemSpec {
+                govctl: WorkItemMeta {
+                    schema: 1,
+                    id: "WI-2026-02-22-003".to_string(),
+                    title: "Test Work Item Categories".to_string(),
+                    status: WorkItemStatus::Active,
+                    created: Some("2026-02-22".to_string()),
+                    started: Some("2026-02-22".to_string()),
+                    completed: None,
+                    refs: vec![],
+                    tags: vec![],
+                },
+                content: WorkItemContent {
+                    description: "Test description".to_string(),
+                    journal: vec![],
+                    acceptance_criteria: vec![
+                        ChecklistItem::with_category(
+                            "Add reviewer context",
+                            ChangelogCategory::Added,
+                        ),
+                        done,
+                        cancelled,
+                    ],
+                    notes: vec![],
+                },
+                verification: crate::model::WorkItemVerification::default(),
+            },
+            path: std::path::PathBuf::new(),
+        };
+
+        let result = render_work_item(&item)?;
+        assert!(result.contains("- [ ] added: Add reviewer context"));
+        assert!(result.contains("- [x] fixed: Fix rendered category"));
+        assert!(result.contains("- ~~chore: Obsolete validation path~~"));
         Ok(())
     }
 }

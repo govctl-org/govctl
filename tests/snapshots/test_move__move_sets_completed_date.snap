@@ -1,6 +1,6 @@
 ---
 source: tests/test_move.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: "normalize_output(&output, temp_dir.path(), &date)?"
 ---
 $ govctl work tick WI-<DATE>-001 acceptance_criteria Done -s done
 Marked 'Done' as done
@@ -18,7 +18,7 @@ What is the goal? What are the acceptance criteria?
 
 ## Acceptance Criteria
 
-- ✓ Done
+- ✓ added: Done
 exit: 0
 
 $ govctl work move WI-<DATE>-001 done
@@ -37,5 +37,5 @@ What is the goal? What are the acceptance criteria?
 
 ## Acceptance Criteria
 
-- ✓ Done
+- ✓ added: Done
 exit: 0
