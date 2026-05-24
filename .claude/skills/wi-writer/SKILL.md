@@ -184,6 +184,21 @@ govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 
 This ensures validation is an explicit gate, not an afterthought.
 
+### Guardable Command Checks
+
+Prefer verification guards over plain acceptance criteria for repeatable command-style checks.
+When a criterion is only "`cargo test` passes", "`clippy` passes", or another shell command succeeds, first check whether an existing guard already covers it.
+If so, require that guard through the work item's `[verification]` section instead of duplicating the command as a behavioral acceptance criterion.
+Use `verification.required_guards` for per-work-item guard requirements.
+
+```toml
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]
+```
+
+Use acceptance criteria for observable task outcomes.
+Keep `chore:` criteria for validation summaries, especially when the validation is not fully enforced by a guard or the work item needs an explicit closure checklist item.
+
 ## Common Mistakes
 
 | Mistake                            | Fix                                                         |

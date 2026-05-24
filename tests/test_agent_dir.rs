@@ -26,6 +26,26 @@ fn test_default_agent_dir() -> common::TestResult {
     Ok(())
 }
 
+/// Test: generated wi-writer skill recommends reusable verification guards.
+#[test]
+fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    run_commands(temp_dir.path(), &[&["init-skills"]])?;
+
+    let wi_writer = temp_dir.path().join(".claude/skills/wi-writer/SKILL.md");
+    let content = fs::read_to_string(&wi_writer)?;
+    assert!(
+        content.contains("Guardable Command Checks"),
+        "wi-writer should include guard guidance for command-style checks"
+    );
+    assert!(
+        content.contains("verification.required_guards"),
+        "wi-writer should mention per-work-item verification guards"
+    );
+    Ok(())
+}
+
 /// Test: Custom agent_dir is respected
 #[test]
 fn test_custom_agent_dir() -> common::TestResult {

@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-05-25-002"
 title = "Teach wi-writer to recommend verification guards"
-status = "queue"
+status = "done"
 created = "2026-05-25"
+started = "2026-05-25"
+completed = "2026-05-25"
 refs = [
     "ADR-0024",
     "RFC-0000:C-WORK-DEF",
@@ -16,22 +18,27 @@ refs = [
 description = "Update the `wi-writer` guidance so work items that only assert routine command completion, such as `cargo test` passing, direct authors toward reusable verification guards or per-work-item `verification.required_guards` rather than duplicating guardable checks as plain acceptance criteria."
 notes = ["GitHub issue: https://github.com/govctl-org/govctl/issues/14"]
 
+[[content.journal]]
+date = "2026-05-25"
+scope = "wi-writer"
+content = "Added generated-asset coverage for `wi-writer` guard recommendation guidance and updated `.claude/skills/wi-writer/SKILL.md` to prefer reusable verification guards for command-style checks. Verified with `cargo test -q test_wi_writer_recommends_verification_guards --test test_agent_dir`, `cargo test -q --test test_agent_dir`, and `govctl check`."
+
 [[content.acceptance_criteria]]
 text = "Document when `wi-writer` should recommend existing guards or per-work-item `verification.required_guards` for command-style checks"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Keep acceptance-criteria guidance focused on behavioral outcomes while preserving explicit `chore:` validation criteria"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Add or update coverage that confirms generated `wi-writer` assets include the new guard recommendation guidance"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`govctl check` passes"
-status = "pending"
+status = "done"
 category = "chore"
