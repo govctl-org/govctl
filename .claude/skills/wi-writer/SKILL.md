@@ -191,6 +191,10 @@ When a criterion is only "`cargo test` passes", "`clippy` passes", or another sh
 If so, require that guard through the work item's `[verification]` section instead of duplicating the command as a behavioral acceptance criterion.
 Use `verification.required_guards` for per-work-item guard requirements.
 
+Project-level `verification.default_guards` apply broadly to work-item completion when verification is enabled.
+Use work-item-level `verification.required_guards` to add task-specific guards on top of those defaults, not to repeat guards that already apply globally.
+Waivers apply to the effective guard set: project defaults plus work-item-specific required guards.
+
 ```toml
 [verification]
 required_guards = ["GUARD-CARGO-TEST"]

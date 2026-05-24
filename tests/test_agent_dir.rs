@@ -43,6 +43,14 @@ fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
         content.contains("verification.required_guards"),
         "wi-writer should mention per-work-item verification guards"
     );
+    assert!(
+        content.contains("verification.default_guards"),
+        "wi-writer should mention project-level default guards"
+    );
+    assert!(
+        content.contains("Project-level `verification.default_guards` apply broadly"),
+        "wi-writer should explain how default guards relate to per-work-item guards"
+    );
     Ok(())
 }
 

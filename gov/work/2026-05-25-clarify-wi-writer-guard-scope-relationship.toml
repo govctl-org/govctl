@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-25-005"
+title = "Clarify wi-writer guard scope relationship"
+status = "done"
+created = "2026-05-25"
+started = "2026-05-25"
+completed = "2026-05-25"
+refs = [
+    "ADR-0024",
+    "RFC-0000:C-GUARD-DEF",
+    "RFC-0002:C-VERIFY-CONFIG",
+]
+
+[content]
+description = "Clarify `wi-writer` guidance so authors understand the relationship between project-level `verification.default_guards` and per-work-item `verification.required_guards` when deciding where to attach repeatable command-style checks."
+
+[[content.journal]]
+date = "2026-05-25"
+scope = "wi-writer"
+content = "Clarified `wi-writer` guard guidance: project-level `verification.default_guards` apply broadly, work-item-level `verification.required_guards` adds task-specific guards on top of those defaults, and waivers apply to the effective combined guard set. Extended generated asset coverage to assert the default-vs-work-item relationship guidance is present. Verified with `cargo test -q test_wi_writer_recommends_verification_guards --test test_agent_dir`, `cargo test -q --test test_agent_dir`, and `govctl check`."
+
+[[content.acceptance_criteria]]
+text = "Document that `verification.default_guards` are project-level defaults and `verification.required_guards` adds task-specific guards"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Generated `wi-writer` asset coverage checks the default-vs-work-item guard relationship guidance"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Targeted `wi-writer` asset test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`govctl check` passes"
+status = "done"
+category = "chore"
