@@ -1,0 +1,40 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-25-001"
+title = "Fix guard runner timeout after noisy successful commands"
+status = "queue"
+created = "2026-05-25"
+refs = [
+    "RFC-0000:C-GUARD-DEF",
+    "RFC-0002:C-VERIFY-CONFIG",
+]
+
+[content]
+description = "Fix guard execution so noisy commands and commands that spawn child processes do not incorrectly time out after the primary command exits successfully. The work focuses on `src/verification.rs` guard process management, `stdout`/`stderr` draining, timeout diagnostics, and regression coverage for noisy output or pipe backpressure."
+notes = ["GitHub issue: https://github.com/govctl-org/govctl/issues/15"]
+
+[[content.acceptance_criteria]]
+text = "Drain guard `stdout` and `stderr` while the command is running so large uncaptured output cannot block successful commands"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Add timeout diagnostics that state whether the primary guard shell process was still running when timeout handling began"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Add regression coverage for a noisy guard command that previously could hang or time out after successful output"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Targeted guard-runner regression tests and `cargo test -q --test test_verify` pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`govctl check` passes"
+status = "pending"
+category = "chore"

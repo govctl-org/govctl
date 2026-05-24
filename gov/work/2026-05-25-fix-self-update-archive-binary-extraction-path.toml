@@ -1,0 +1,43 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-25-004"
+title = "Fix self-update archive binary extraction path"
+status = "queue"
+created = "2026-05-25"
+refs = [
+    "RFC-0002:C-SELF-UPDATE",
+    "ADR-0041",
+]
+
+[content]
+description = "Fix `govctl self-update` so it extracts the binary from the actual `GitHub Release` archive layout used by the release workflow and `cargo-binstall` metadata. The current updater looks for `govctl` at the archive root, while release assets place it under `govctl-v{version}-{target}/govctl` or `govctl.exe`."
+notes = [
+    "GitHub issue: https://github.com/govctl-org/govctl/issues/12",
+    "Latest checked release asset layout: govctl-v0.8.4-aarch64-apple-darwin/govctl inside govctl-v0.8.4-aarch64-apple-darwin.tar.gz.",
+]
+
+[[content.acceptance_criteria]]
+text = "Configure self-update extraction to use `govctl-v{{ version }}-{{ target }}/{{ bin }}` for Unix and Windows release archives"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Add regression coverage for self-update extraction-path construction for Unix `govctl` and Windows `govctl.exe` binary names"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Verify release workflow archive directories, `Cargo.toml` cargo-binstall `bin-dir`, and self-update `bin_path_in_archive` use the same version-target-bin layout"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`self_update` unit tests pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`govctl check` passes"
+status = "pending"
+category = "chore"

@@ -1,0 +1,41 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-25-003"
+title = "Expose acceptance-criteria categories to WI reviewer"
+status = "queue"
+created = "2026-05-25"
+refs = [
+    "ADR-0013",
+    "ADR-0024",
+    "RFC-0000:C-WORK-DEF",
+]
+
+[content]
+description = "Expose work item acceptance-criteria categories through the review surface so `wi-reviewer`, which reads rendered work-item output rather than raw `TOML`, can evaluate category correctness from `govctl work show`."
+notes = ["GitHub issue: https://github.com/govctl-org/govctl/issues/13"]
+
+[[content.acceptance_criteria]]
+text = "Render each work-item acceptance criterion with its stored changelog category or an equivalent unambiguous label in `govctl work show` output"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Update `wi-reviewer` guidance so category checks use the rendered category signal"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Refresh affected snapshots for `govctl work show` or work item render output"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Targeted work item render or edit snapshot tests pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`govctl check` passes"
+status = "pending"
+category = "chore"
