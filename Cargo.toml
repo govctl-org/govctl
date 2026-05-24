@@ -72,6 +72,7 @@ pulldown-cmark = "0.13"
 # File system traversal
 walkdir = "2"
 globset = "0.4"
+tempfile = "3"
 
 # Process-level file locking (for concurrent write safety per RFC-0004)
 fs2 = "0.4"
@@ -94,7 +95,6 @@ ansi-to-tui = { version = "8", optional = true }
 
 [dev-dependencies]
 insta = { version = "1", features = ["yaml"] }
-tempfile = "3"
 regex = "1"
 chrono = "0.4"
 

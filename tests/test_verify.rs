@@ -5,6 +5,8 @@ mod common;
 use common::{TestResult, init_project, run_commands};
 use std::fs;
 use std::path::Path;
+use std::process::Command;
+use std::time::{Duration, Instant};
 
 #[test]
 fn test_verify_runs_project_default_guard() -> TestResult {
@@ -54,6 +56,32 @@ fn test_verify_timeout_diagnostic_mentions_primary_shell_state() -> TestResult {
         output
     );
     assert!(output.contains("exit: 1"), "output: {}", output);
+
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_verify_detached_guard_descendant_holding_output_open_does_not_hang() -> TestResult {
+    if !perl_supports_setsid() {
+        return Ok(());
+    }
+
+    let temp_dir = init_project()?;
+
+    append_verification_config(temp_dir.path(), true, &["GUARD-DETACHED"])?;
+    write_guard_with_timeout(
+        temp_dir.path(),
+        "GUARD-DETACHED",
+        "perl -MPOSIX=setsid -e 'if (fork() == 0) { setsid(); sleep 6 }'",
+        None,
+        1,
+    )?;
+
+    let output = run_command_with_timeout(temp_dir.path(), &["verify"], Duration::from_secs(2))?
+        .ok_or("govctl verify hung while collecting output from a detached guard descendant")?;
+    assert!(output.contains("PASS GUARD-DETACHED"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
 
     Ok(())
 }
@@ -109,6 +137,67 @@ fn test_work_move_done_allows_waived_guard() -> TestResult {
     );
 
     Ok(())
+}
+
+#[cfg(unix)]
+fn perl_supports_setsid() -> bool {
+    Command::new("perl")
+        .args(["-MPOSIX=setsid", "-e", "setsid(); exit 0"])
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+}
+
+#[cfg(unix)]
+fn run_command_with_timeout(
+    dir: &Path,
+    args: &[&str],
+    timeout: Duration,
+) -> Result<Option<String>, Box<dyn std::error::Error>> {
+    let mut child = Command::new(env!("CARGO_BIN_EXE_govctl"))
+        .args(args)
+        .current_dir(dir)
+        .env("NO_COLOR", "1")
+        .env("GOVCTL_DEFAULT_OWNER", "@test-user")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()?;
+
+    let started = Instant::now();
+    while started.elapsed() < timeout {
+        if child.try_wait()?.is_some() {
+            let result = child.wait_with_output()?;
+            return Ok(Some(format_command_output(args, &result)));
+        }
+        std::thread::sleep(Duration::from_millis(25));
+    }
+
+    let _ = child.kill();
+    let _ = child.wait();
+    Ok(None)
+}
+
+#[cfg(unix)]
+fn format_command_output(args: &[&str], result: &std::process::Output) -> String {
+    let mut output = format!("$ govctl {}\n", args.join(" "));
+    let stdout = String::from_utf8_lossy(&result.stdout);
+    let stderr = String::from_utf8_lossy(&result.stderr);
+
+    if !stdout.is_empty() {
+        output.push_str(&stdout);
+        if !stdout.ends_with('\n') {
+            output.push('\n');
+        }
+    }
+    if !stderr.is_empty() {
+        output.push_str(&stderr);
+        if !stderr.ends_with('\n') {
+            output.push('\n');
+        }
+    }
+
+    output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
+    output
 }
 
 fn append_verification_config(

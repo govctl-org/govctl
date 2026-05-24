@@ -5,10 +5,10 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{GuardEntry, WorkItemEntry};
 use regex::RegexBuilder;
 use std::collections::{HashMap, HashSet};
-use std::io::{self, Read};
+use std::io::{Read, Seek, SeekFrom};
 use std::process::{Child, Command, ExitStatus, Stdio};
-use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
+use tempfile::NamedTempFile;
 
 pub const DEFAULT_GUARD_TIMEOUT_SECS: u64 = 300;
 
@@ -206,12 +206,15 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
         guard.spec.check.timeout_secs
     };
 
+    let mut stdout_capture = GuardOutputCapture::new(guard, "stdout")?;
+    let mut stderr_capture = GuardOutputCapture::new(guard, "stderr")?;
+
     let mut command = Command::new("/bin/bash");
     command
         .args(["-lc", &guard.spec.check.command])
         .current_dir(project_root)
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped());
+        .stdout(stdout_capture.stdio(guard, "stdout")?)
+        .stderr(stderr_capture.stdio(guard, "stderr")?);
     configure_guard_process_group(&mut command);
 
     let mut child = command.spawn().map_err(|err| {
@@ -226,8 +229,6 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
         )
     })?;
     let child_id = child.id();
-    let stdout_reader = child.stdout.take().map(spawn_output_reader);
-    let stderr_reader = child.stderr.take().map(spawn_output_reader);
 
     let deadline = Duration::from_secs(timeout);
     let started = Instant::now();
@@ -276,8 +277,8 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
         }
     }
 
-    let stdout = collect_guard_output(stdout_reader, guard, "stdout")?;
-    let stderr = collect_guard_output(stderr_reader, guard, "stderr")?;
+    let stdout = stdout_capture.read(guard, "stdout")?;
+    let stderr = stderr_capture.read(guard, "stderr")?;
     let combined_output = format!(
         "{}{}",
         String::from_utf8_lossy(&stdout),
@@ -312,47 +313,68 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
     })
 }
 
-fn spawn_output_reader<R>(mut reader: R) -> JoinHandle<io::Result<Vec<u8>>>
-where
-    R: Read + Send + 'static,
-{
-    std::thread::spawn(move || {
-        let mut output = Vec::new();
-        reader.read_to_end(&mut output)?;
-        Ok(output)
-    })
+struct GuardOutputCapture {
+    file: NamedTempFile,
 }
 
-fn collect_guard_output(
-    reader: Option<JoinHandle<io::Result<Vec<u8>>>>,
-    guard: &GuardEntry,
-    stream_name: &str,
-) -> Result<Vec<u8>, Diagnostic> {
-    let Some(reader) = reader else {
-        return Ok(Vec::new());
-    };
+impl GuardOutputCapture {
+    fn new(guard: &GuardEntry, stream_name: &str) -> Result<Self, Diagnostic> {
+        let file = NamedTempFile::new().map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E1004GuardCheckFailed,
+                format!(
+                    "Failed to create {stream_name} capture file for verification guard '{}': {}",
+                    guard.meta().id,
+                    err
+                ),
+                guard.path.display().to_string(),
+            )
+        })?;
+        Ok(Self { file })
+    }
 
-    reader.join().map_err(|_| {
-        Diagnostic::new(
-            DiagnosticCode::E1004GuardCheckFailed,
-            format!(
-                "Failed to collect {stream_name} for verification guard '{}': reader thread panicked",
-                guard.meta().id
-            ),
-            guard.path.display().to_string(),
-        )
-    })?
-    .map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E1004GuardCheckFailed,
-            format!(
-                "Failed to collect {stream_name} for verification guard '{}': {}",
-                guard.meta().id,
-                err
-            ),
-            guard.path.display().to_string(),
-        )
-    })
+    fn stdio(&self, guard: &GuardEntry, stream_name: &str) -> Result<Stdio, Diagnostic> {
+        self.file.reopen().map(Stdio::from).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E1004GuardCheckFailed,
+                format!(
+                    "Failed to prepare {stream_name} capture file for verification guard '{}': {}",
+                    guard.meta().id,
+                    err
+                ),
+                guard.path.display().to_string(),
+            )
+        })
+    }
+
+    fn read(&mut self, guard: &GuardEntry, stream_name: &str) -> Result<Vec<u8>, Diagnostic> {
+        let file = self.file.as_file_mut();
+        file.seek(SeekFrom::Start(0)).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E1004GuardCheckFailed,
+                format!(
+                    "Failed to rewind {stream_name} capture file for verification guard '{}': {}",
+                    guard.meta().id,
+                    err
+                ),
+                guard.path.display().to_string(),
+            )
+        })?;
+
+        let mut output = Vec::new();
+        file.read_to_end(&mut output).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E1004GuardCheckFailed,
+                format!(
+                    "Failed to collect {stream_name} for verification guard '{}': {}",
+                    guard.meta().id,
+                    err
+                ),
+                guard.path.display().to_string(),
+            )
+        })?;
+        Ok(output)
+    }
 }
 
 #[cfg(unix)]

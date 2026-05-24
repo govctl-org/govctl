@@ -1,0 +1,37 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-25-006"
+title = "Fix guard output collection hang after shell exit"
+status = "done"
+created = "2026-05-25"
+started = "2026-05-25"
+completed = "2026-05-25"
+
+[content]
+description = "Fix the guard runner path where output reader threads can wait indefinitely after the primary shell exits while a descendant still holds stdout or stderr pipes open. The change should bound output collection and preserve timeout diagnostics so guard execution cannot hang after review-discovered process-tree edge cases."
+
+[[content.journal]]
+date = "2026-05-25"
+scope = "verification"
+content = "Addressed subagent review finding for guard output collection after primary shell exit. Replaced stdout/stderr pipe reader threads with temporary-file capture so descendants holding inherited output descriptors cannot block collection, and added a regression test that previously failed by timing out."
+
+[[content.journal]]
+date = "2026-05-25"
+scope = "verification"
+content = "Verified guard output capture changes with cargo fmt --check, cargo test -q --test test_verify, cargo run --quiet -- check, and full cargo test -q."
+
+[[content.acceptance_criteria]]
+text = "Guard output collection returns instead of blocking when a descendant holds stdout or stderr open after the primary shell exits"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Regression coverage exercises the post-shell-exit pipe-hold hang path"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and relevant tests pass"
+status = "done"
+category = "chore"

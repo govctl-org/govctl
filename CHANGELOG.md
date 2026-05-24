@@ -30,6 +30,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - TUI keyboard shortcuts documented (WI-2026-04-21-005)
 - Canonical edit surface documented (WI-2026-04-21-005)
 
+### Changed
+
+- Document when `wi-writer` should recommend existing guards or per-work-item `verification.required_guards` for command-style checks (WI-2026-05-25-002)
+- Keep acceptance-criteria guidance focused on behavioral outcomes while preserving explicit `chore:` validation criteria (WI-2026-05-25-002)
+- Document that `verification.default_guards` are project-level defaults and `verification.required_guards` adds task-specific guards (WI-2026-05-25-005)
+
+### Fixed
+
+- Drain guard `stdout` and `stderr` while the command is running so large uncaptured output cannot block successful commands (WI-2026-05-25-001)
+- Add timeout diagnostics that state whether the primary guard shell process was still running when timeout handling began (WI-2026-05-25-001)
+- Add regression coverage for a noisy guard command that previously could hang or time out after successful output (WI-2026-05-25-001)
+- Render each work-item acceptance criterion with its stored changelog category or an equivalent unambiguous label in `govctl work show` output (WI-2026-05-25-003)
+- Update `wi-reviewer` guidance so category checks use the rendered category signal (WI-2026-05-25-003)
+- Configure self-update extraction to use `govctl-v{{ version }}-{{ target }}/{{ bin }}` for Unix and Windows release archives (WI-2026-05-25-004)
+- Add regression coverage for self-update extraction-path construction for Unix `govctl` and Windows `govctl.exe` binary names (WI-2026-05-25-004)
+- Guard output collection returns instead of blocking when a descendant holds stdout or stderr open after the primary shell exits (WI-2026-05-25-006)
+
 ## [0.8.4] - 2026-04-15
 
 ### Added
