@@ -32,22 +32,22 @@ refs = ["RFC-0010", "ADR-0003"]
 
 [content]
 description = "Add Redis caching for the query endpoint."
+notes = ["Do not retry the old validation path"]
 
 [[content.acceptance_criteria]]
-text = "add: Cache invalidation on write"
+text = "Cache invalidation on write"
 status = "pending"
+category = "added"
 
 [[content.acceptance_criteria]]
-text = "chore: govctl check passes"
+text = "govctl check passes"
 status = "pending"
+category = "chore"
 
 [[content.journal]]
 date = "2026-01-17"
-text = "Implemented core logic"
 scope = "backend"
-
-[[content.notes]]
-text = "Do not retry the old validation path"
+content = "Implemented core logic"
 ```
 
 Work items contain:
@@ -115,15 +115,15 @@ govctl work edit WI-2026-01-17-001 refs --add RFC-0010
 govctl work edit WI-2026-01-17-001 acceptance_criteria --add "fix: Handle edge case"
 
 # Remove by index
-govctl work edit WI-2026-01-17-001 acceptance_criteria --at 0 --remove
+govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --remove
 
 # Tick checklist items
-govctl work edit WI-2026-01-17-001 acceptance_criteria --tick done --at 0
-govctl work edit WI-2026-01-17-001 acceptance_criteria --tick cancelled --at 1
+govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
+govctl work edit WI-2026-01-17-001 content.acceptance_criteria[1] --tick cancelled
 
 # Nested journal fields
-govctl work edit WI-2026-01-17-001 "journal[0].scope" --set backend
-govctl work edit WI-2026-01-17-001 "journal[0].content" --stdin <<'EOF'
+govctl work edit WI-2026-01-17-001 "content.journal[0].scope" --set backend
+govctl work edit WI-2026-01-17-001 "content.journal[0].content" --stdin <<'EOF'
 Detailed progress update here
 EOF
 ```
@@ -218,7 +218,7 @@ govctl work add WI-2026-01-17-001 notes "Do not retry the old validation path; i
 Nested path edits are also available for structured fields:
 
 ```bash
-govctl work set WI-2026-01-17-001 "journal[0].scope" "parser"
+govctl work edit WI-2026-01-17-001 "content.journal[0].scope" --set parser
 ```
 
 ## Removing Items

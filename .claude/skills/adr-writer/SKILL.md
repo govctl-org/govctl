@@ -120,8 +120,8 @@ govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
 # Update alternative state after discussion
 govctl adr tick <ADR-ID> alternatives --at 0 -s rejected
 govctl adr tick <ADR-ID> alternatives --at 1 -s accepted
-govctl adr add <ADR-ID> alt[0].pros "New advantage"
-govctl adr remove <ADR-ID> alt[0].cons "Outdated disadvantage"
+govctl adr edit <ADR-ID> content.alternatives[0].pros --add "New advantage"
+govctl adr edit <ADR-ID> content.alternatives[0].cons --remove "Outdated disadvantage"
 ```
 
 **When to add pros/cons:**

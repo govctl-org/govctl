@@ -4,7 +4,7 @@ This guide walks you through installing govctl and creating your first governed 
 
 ## Requirements
 
-- **Rust 1.94+** (uses edition 2024)
+- **Rust 1.88+** (per `Cargo.toml` `rust-version`)
 
 ## Installation
 
@@ -206,11 +206,11 @@ govctl rfc edit RFC-0010 version --set 1.2.0
 govctl adr edit ADR-0003 refs --add RFC-0010
 
 # Remove by index
-govctl work edit WI-2026-01-17-001 acceptance_criteria --at 0 --remove
+govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --remove
 
 # Tick checklist items
-govctl adr edit ADR-0003 alternatives --tick accepted --at 0
-govctl work edit WI-2026-01-17-001 acceptance_criteria --tick done --at 0
+govctl adr edit ADR-0003 content.alternatives[0] --tick accepted
+govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
 ```
 
 Nested object fields use dot-delimited paths:
@@ -218,7 +218,7 @@ Nested object fields use dot-delimited paths:
 ```bash
 govctl adr edit ADR-0003 content.decision --set "We will use Redis"
 govctl adr edit ADR-0003 "content.alternatives[0].pros" --add "Low latency"
-govctl work edit WI-2026-01-17-001 "journal[0].scope" --set backend
+govctl work edit WI-2026-01-17-001 "content.journal[0].scope" --set backend
 ```
 
 ## CLI Self-Description

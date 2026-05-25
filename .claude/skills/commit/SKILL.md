@@ -40,13 +40,13 @@ If check fails, stop. Show the diagnostics, fix the issue, and rerun `govctl che
 
 ### Step 3: Work Item Status Check
 
-Check for active work items:
+Check for queued and active work items:
 
 ```bash
 govctl work list pending
 ```
 
-**If active work item exists:**
+**If an active work item exists:**
 
 1. Determine whether the active work item actually matches this diff.
 2. If the diff is spec-only governance maintenance unrelated to the active work item, the commit may remain work-item-free even while another work item is active.
@@ -63,7 +63,7 @@ govctl work list pending
      ```
 4. If the active work item does not apply and the diff is not spec-only, ask whether to switch to a different work item or create a new one before committing
 
-**If no active work item:**
+**If no active work item exists:**
 
 - If the changes are spec-only governance maintenance, a work item is optional. Typical examples:
   - `gov/**` artifact files
@@ -172,7 +172,7 @@ After successful commit, if work item exists:
 ```bash
 # Govctl checks
 govctl check                    # Validate all artifacts
-govctl work list pending        # List active work items
+govctl work list pending        # List queued and active work items
 govctl work show <WI-ID>        # Show work item details
 govctl work add <WI-ID> journal "Progress update"
 govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done

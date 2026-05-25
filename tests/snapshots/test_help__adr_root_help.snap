@@ -19,7 +19,7 @@ Commands:
   remove     Remove value from ADR array field
   accept     Accept ADR (proposed → accepted)
   reject     Reject ADR (proposed → rejected)
-  deprecate  Deprecate ADR
+  deprecate  Explain that ADRs must be superseded, not deprecated
   supersede  Supersede ADR
   tick       Update ADR alternative status
   render     Render a single ADR to markdown

@@ -53,7 +53,17 @@ govctl init
 
 If it already exists, skip — the project is already initialized.
 
-### 3. Verify
+### 3. Optional: Install project-local agent assets
+
+If the user wants the bundled skills and reviewer agents copied into the project or agent config directory, run:
+
+```bash
+govctl init-skills
+```
+
+Use `govctl init-skills --format codex` for Codex agent role output, and `--dir <path>` when the assets should be written outside the project directory.
+
+### 4. Verify
 
 ```bash
 govctl status

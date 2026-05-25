@@ -1301,11 +1301,11 @@ NOTES:
     - Use `adr tick ... -s rejected` to reject a specific alternative instead.
 ")]
     Reject(CommonIdArgs),
-    /// Deprecate ADR
+    /// Explain that ADRs must be superseded, not deprecated
     #[command(after_help = "\
-EXAMPLES:
-    govctl adr deprecate ADR-0001
-    govctl adr deprecate ADR-0001 --force
+NOTES:
+    - ADRs cannot be deprecated; use `govctl adr supersede ADR-0001 --by ADR-0002` when a newer ADR replaces it.
+    - Use `govctl adr reject ADR-0001` for a proposal that should not proceed.
 ")]
     Deprecate(CommonDeprecateArgs),
     /// Supersede ADR

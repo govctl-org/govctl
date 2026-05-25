@@ -28,15 +28,16 @@ gov/                    ← Source of truth (governance artifacts)
 ├── schema/                JSON/TOML schemas
 └── config.toml            Project configuration
 
-docs/                   ← Rendered output (read-only, generated)
+docs/                   ← User guide plus rendered projections
 ├── rfc/                   Rendered RFC markdown
 ├── adr/                   Rendered ADR markdown
-└── guide/                 User documentation
+├── work/                  Rendered work item markdown
+└── guide/                 Hand-authored user documentation
 
 src/                    ← Implementation (Rust)
 ```
 
-The `gov/` directory is authoritative. The `docs/` directory is generated output.
+The `gov/` directory is authoritative for governance artifacts. Rendered projections under `docs/rfc`, `docs/adr`, and `docs/work` are generated; guide pages are hand-authored docs.
 
 **Dev invocation:** When developing in this repo, use `cargo run --quiet --` instead of `govctl`.
 
@@ -167,9 +168,9 @@ govctl rfc finalize RFC-0001 normative
 govctl rfc advance RFC-0001 impl
 
 # Nested field editing (path-based per ADR-0029)
-govctl adr set ADR-0001 "alt[0].text" "Updated option"
-govctl adr add ADR-0001 "alt[0].pros" "New advantage"
-govctl work set WI-001 "journal[0].scope" "backend"
+govctl adr edit ADR-0001 content.alternatives[0].text --set "Updated option"
+govctl adr edit ADR-0001 content.alternatives[0].pros --add "New advantage"
+govctl work edit WI-001 content.journal[0].scope --set backend
 ```
 
 Before requesting review: `just pre-commit`

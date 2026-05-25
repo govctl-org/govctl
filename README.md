@@ -129,7 +129,7 @@ govctl work new --active "implement caching"
 
 ### Agent workflow
 
-Run `govctl init` and use the installed workflows with your agent:
+Initialize governance, then install or load the agent workflows for your tool:
 
 - `/discuss <topic>` to draft RFCs and ADRs
 - `/gov <task>` to execute governed implementation
@@ -179,8 +179,8 @@ govctl rfc get RFC-0001 status
 For precise artifact mutation, `govctl` provides a canonical path-first interface:
 
 ```bash
-govctl adr edit ADR-0038 decision --stdin
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0].status --set done
+govctl adr edit ADR-0038 content.decision --stdin
+govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
 govctl clause edit RFC-0002:C-CRUD-VERBS text --stdin
 ```
 

@@ -282,7 +282,7 @@ govctl init-skills --format codex
 govctl init-skills --dir /path/to/agent-config
 ```
 
-This writes workflow skills (`/gov`, `/quick`, `/discuss`, `/commit`) and reviewer agents (RFC/ADR/WI reviewer, compliance checker) to the configured agent directory.
+This writes bundled workflow skills, writer/helper skills, and reviewer agents to the configured agent directory. Use `--format codex` when the destination expects Codex agent-role TOML files instead of Claude-style Markdown agents.
 
 ## Schema Migration
 

@@ -154,13 +154,15 @@ When consensus is reached:
 govctl adr accept ADR-0003
 ```
 
-### Deprecate
+### Reject a Proposal
 
-When a decision is no longer relevant:
+When a proposed ADR should not proceed:
 
 ```bash
-govctl adr deprecate ADR-0003
+govctl adr reject ADR-0003
 ```
+
+Accepted ADRs are not deprecated. When a newer decision replaces an accepted ADR, supersede it instead.
 
 ### Supersede
 

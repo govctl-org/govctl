@@ -20,9 +20,9 @@ It is responsible for guard definition and validation, not for deciding which wo
 govctl guard new "<title>"
 govctl guard list
 govctl guard show GUARD-ID
-govctl guard set GUARD-ID command "new command"
-govctl guard set GUARD-ID timeout_secs 600
-govctl guard set GUARD-ID pattern "regex pattern"
+govctl guard set GUARD-ID check.command "new command"
+govctl guard set GUARD-ID check.timeout_secs 600
+govctl guard set GUARD-ID check.pattern "regex pattern"
 govctl guard add GUARD-ID refs RFC-NNNN
 govctl guard delete GUARD-ID
 ```

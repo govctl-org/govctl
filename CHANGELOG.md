@@ -46,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Configure self-update extraction to use `govctl-v{{ version }}-{{ target }}/{{ bin }}` for Unix and Windows release archives (WI-2026-05-25-004)
 - Add regression coverage for self-update extraction-path construction for Unix `govctl` and Windows `govctl.exe` binary names (WI-2026-05-25-004)
 - Guard output collection returns instead of blocking when a descendant holds stdout or stderr open after the primary shell exits (WI-2026-05-25-006)
+- Stale README, CLAUDE, embedded skill, or agent documentation references found in the audit are corrected (WI-2026-05-25-007)
 
 ## [0.8.4] - 2026-04-15
 

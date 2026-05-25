@@ -129,74 +129,73 @@ queue → active → done
 
 ## Schema Definitions
 
-### RFC (JSON)
+### RFC (TOML)
 
-```json
-{
-  "rfc_id": "RFC-0001",
-  "title": "Example RFC",
-  "version": "1.0.0",
-  "status": "draft",
-  "phase": "spec",
-  "owners": ["@owner"],
-  "created": "2026-01-17",
-  "updated": "2026-01-17",
-  "supersedes": "RFC-0000",
-  "sections": [
-    {
-      "title": "Section Name",
-      "clauses": ["clauses/C-EXAMPLE.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "1.0.0",
-      "date": "2026-01-17",
-      "summary": "Initial release"
-    }
-  ]
-}
+```toml
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0001"
+title = "Example RFC"
+version = "1.0.0"
+status = "draft"
+phase = "spec"
+owners = ["@owner"]
+created = "2026-01-17"
+updated = "2026-01-17"
+supersedes = "RFC-0000"
+
+[[sections]]
+title = "Section Name"
+clauses = ["clauses/C-EXAMPLE.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-17"
+notes = "Initial release"
 ```
 
-| Field        | Required | Type   | Description                            |
-| ------------ | -------- | ------ | -------------------------------------- |
-| `rfc_id`     | yes      | string | Unique identifier `RFC-NNNN`           |
-| `title`      | yes      | string | Human-readable title                   |
-| `version`    | yes      | string | Semantic version `X.Y.Z`               |
-| `status`     | yes      | enum   | `draft` \| `normative` \| `deprecated` |
-| `phase`      | yes      | enum   | `spec` \| `impl` \| `test` \| `stable` |
-| `owners`     | yes      | array  | List of responsible parties            |
-| `created`    | yes      | date   | Creation date                          |
-| `updated`    | no       | date   | Last modification date                 |
-| `supersedes` | no       | string | RFC ID this replaces                   |
-| `sections`   | yes      | array  | Ordered sections with clause refs      |
-| `changelog`  | no       | array  | Version history                        |
+| Field             | Required | Type   | Description                            |
+| ----------------- | -------- | ------ | -------------------------------------- |
+| `govctl.id`       | yes      | string | Unique identifier `RFC-NNNN`           |
+| `govctl.title`    | yes      | string | Human-readable title                   |
+| `govctl.version`  | yes      | string | Semantic version `X.Y.Z`               |
+| `govctl.status`   | yes      | enum   | `draft` \| `normative` \| `deprecated` |
+| `govctl.phase`    | yes      | enum   | `spec` \| `impl` \| `test` \| `stable` |
+| `govctl.owners`   | yes      | array  | List of responsible parties            |
+| `govctl.created`  | yes      | date   | Creation date                          |
+| `govctl.updated`  | no       | date   | Last modification date                 |
+| `govctl.supersedes` | no     | string | RFC ID this replaces                   |
+| `sections`        | yes      | array  | Ordered sections with clause refs      |
+| `changelog`       | no       | array  | Version history                        |
 
-### Clause (JSON)
+### Clause (TOML)
 
-```json
-{
-  "clause_id": "C-EXAMPLE",
-  "title": "Example Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "The system MUST do X.",
-  "since": "1.0.0",
-  "superseded_by": null,
-  "anchors": []
-}
+```toml
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-EXAMPLE"
+title = "Example Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+anchors = []
+
+[content]
+text = "The system MUST do X."
 ```
 
-| Field           | Required | Type   | Description                                                  |
-| --------------- | -------- | ------ | ------------------------------------------------------------ |
-| `clause_id`     | yes      | string | Unique within RFC `C-NAME`                                   |
-| `title`         | yes      | string | Human-readable title                                         |
-| `kind`          | yes      | enum   | `normative` \| `informative`                                 |
-| `status`        | no       | enum   | `active` \| `superseded` \| `deprecated` (default: `active`) |
-| `text`          | yes      | string | Clause content (Markdown)                                    |
-| `since`         | no       | string | Version introduced                                           |
-| `superseded_by` | no       | string | Clause ID that replaces this                                 |
-| `anchors`       | no       | array  | Cross-reference targets                                      |
+| Field                   | Required | Type   | Description                                                  |
+| ----------------------- | -------- | ------ | ------------------------------------------------------------ |
+| `govctl.id`             | yes      | string | Unique within RFC `C-NAME`                                   |
+| `govctl.title`          | yes      | string | Human-readable title                                         |
+| `govctl.kind`           | yes      | enum   | `normative` \| `informative`                                 |
+| `govctl.status`         | no       | enum   | `active` \| `superseded` \| `deprecated` (default: `active`) |
+| `content.text`          | yes      | string | Clause content (Markdown)                                    |
+| `govctl.since`          | no       | string | Version introduced                                           |
+| `govctl.superseded_by`  | no       | string | Clause ID that replaces this                                 |
+| `govctl.anchors`        | no       | array  | Cross-reference targets                                      |
 
 ### ADR (TOML)
 
@@ -280,7 +279,7 @@ content = "Implemented the core logic."
 [[content.acceptance_criteria]]
 text = "First criterion"
 status = "done"
-category = "add"
+category = "added"
 
 [[content.acceptance_criteria]]
 text = "Second criterion"
@@ -353,7 +352,7 @@ The signature is computed as follows:
    - Object keys sorted alphabetically at all nesting levels
    - Arrays preserve element order
    - Compact format (no extra whitespace)
-3. For RFCs: sort clauses by `clause_id` before hashing
+3. For RFCs: sort clauses by clause ID before hashing
 4. Prepend signature version header
 5. Compute SHA-256 hash
 6. Encode as 64-character lowercase hex string

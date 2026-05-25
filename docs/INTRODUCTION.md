@@ -26,9 +26,11 @@ All governance artifacts have a **Single Source of Truth (SSOT)** in the `gov/` 
 ```
 gov/
 ├── config.toml           # govctl configuration
-├── rfc/                  # RFC-NNNN/rfc.json + clauses/
+├── rfc/                  # RFC-NNNN/rfc.toml + clauses/*.toml
 ├── adr/                  # ADR-NNNN-*.toml
-└── work/                 # WI-YYYY-MM-DD-NNN-*.toml
+├── work/                 # WI-YYYY-MM-DD-NNN-*.toml
+├── guard/                # GUARD-*.toml verification guards
+└── releases.toml         # Release history
 ```
 
 The markdown files in this book are **rendered projections** — generated from the SSOT by `govctl render`. Each includes a SHA-256 signature for tampering detection.

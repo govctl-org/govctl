@@ -16,7 +16,7 @@ description = """
 Describe the work to be done.
 What is the goal? What are the acceptance criteria?
 """
-notes = ""
+notes = []
 
 # Add acceptance criteria as needed:
 # [[content.acceptance_criteria]]
@@ -25,5 +25,5 @@ notes = ""
 # category = "added"  # added | changed | deprecated | removed | fixed | security | chore (chore items excluded from changelog)
 #
 # CLI supports prefix parsing per ADR-0012/ADR-0013:
-#   govctl add WI-xxx acceptance_criteria "fix: memory leak"
+#   govctl work add WI-xxx acceptance_criteria "fix: memory leak"
 #   → creates criterion with text="memory leak", category="fixed"
