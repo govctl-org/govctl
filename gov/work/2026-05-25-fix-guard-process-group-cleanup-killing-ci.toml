@@ -1,0 +1,40 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-25-008"
+title = "Fix guard process-group cleanup killing CI"
+status = "done"
+created = "2026-05-25"
+started = "2026-05-25"
+completed = "2026-05-25"
+
+[content]
+description = "Fix repeated GitHub Actions SIGTERM failures during verification tests after the guard process-group cleanup change. The guard runner must only signal process groups it has proven are isolated guard child groups, so timeout cleanup cannot terminate the CI runner or cargo test process."
+
+[[content.journal]]
+date = "2026-05-25"
+scope = "ci"
+content = """
+Investigated repeated GitHub Actions failures on commit 53488bb0. CI and Pre-commit both reached `cargo test --all-features` and were terminated with SIGTERM/exit 143 during `tests/test_verify.rs`, with no Rust assertion or compilation failure. This points to the recent guard process-group cleanup path rather than changelog or docs changes.
+
+Updated guard cleanup to capture the actual child process group after spawn, reject the current runner/cargo process group, require the group to match the isolated child PID, and signal it via direct Unix `kill` only after those checks. Added Unix regression coverage for rejecting the current process group and capturing an isolated child group."""
+
+[[content.journal]]
+date = "2026-05-25"
+scope = "validation"
+content = "Verified the process-group cleanup fix with cargo fmt --all -- --check, cargo test --test test_verify -- --test-threads=1, cargo test verification::unix_process_group_tests --all-features, cargo clippy --all-features -- -D warnings, full cargo test --all-features, and cargo run --quiet -- check."
+
+[[content.acceptance_criteria]]
+text = "cargo fmt, relevant tests, full tests, clippy, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Regression coverage checks guard process-group capture rejects the current process group"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Guard process cleanup only signals an isolated guard child process group, never the current runner process group"
+status = "done"
+category = "fixed"

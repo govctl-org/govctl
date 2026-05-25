@@ -229,6 +229,7 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
         )
     })?;
     let child_id = child.id();
+    let process_group = guard_process_group(child_id);
 
     let deadline = Duration::from_secs(timeout);
     let started = Instant::now();
@@ -240,7 +241,7 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
         match child.try_wait() {
             Ok(Some(exit_status)) => {
                 status = exit_status;
-                terminate_guard_process_group(child_id);
+                terminate_guard_process_group(process_group);
                 break;
             }
             Ok(None) if started.elapsed() < deadline => {
@@ -249,7 +250,7 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
             Ok(None) => {
                 timed_out = true;
                 primary_shell_running_at_timeout = Some(true);
-                terminate_guard_process(&mut child);
+                terminate_guard_process(&mut child, process_group);
                 status = child.wait().map_err(|err| {
                     Diagnostic::new(
                         DiagnosticCode::E1004GuardCheckFailed,
@@ -386,30 +387,86 @@ fn configure_guard_process_group(command: &mut Command) {
 #[cfg(not(unix))]
 fn configure_guard_process_group(_command: &mut Command) {}
 
-fn terminate_guard_process(child: &mut Child) {
-    terminate_guard_process_group(child.id());
+#[cfg(unix)]
+#[derive(Clone, Copy)]
+struct GuardProcessGroup {
+    pgid: i32,
+}
+
+#[cfg(not(unix))]
+#[derive(Clone, Copy)]
+struct GuardProcessGroup;
+
+#[cfg(unix)]
+fn guard_process_group(child_id: u32) -> Option<GuardProcessGroup> {
+    let child_pid = i32::try_from(child_id).ok()?;
+    let pgid = unix_getpgid(child_pid)?;
+    let current_pgid = unix_getpgrp()?;
+
+    if pgid == current_pgid || pgid != child_pid {
+        return None;
+    }
+
+    Some(GuardProcessGroup { pgid })
+}
+
+#[cfg(not(unix))]
+fn guard_process_group(_child_id: u32) -> Option<GuardProcessGroup> {
+    None
+}
+
+fn terminate_guard_process(child: &mut Child, process_group: Option<GuardProcessGroup>) {
+    terminate_guard_process_group(process_group);
     let _ = child.kill();
 }
 
 #[cfg(unix)]
-fn terminate_guard_process_group(child_id: u32) {
-    signal_process_group(child_id, "TERM");
+fn terminate_guard_process_group(process_group: Option<GuardProcessGroup>) {
+    let Some(process_group) = process_group else {
+        return;
+    };
+
+    signal_process_group(process_group, SIGTERM);
     std::thread::sleep(Duration::from_millis(25));
-    signal_process_group(child_id, "KILL");
+    signal_process_group(process_group, SIGKILL);
 }
 
 #[cfg(unix)]
-fn signal_process_group(child_id: u32, signal: &str) {
-    let _ = Command::new("/bin/kill")
-        .arg(format!("-{signal}"))
-        .arg(format!("-{child_id}"))
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status();
+fn signal_process_group(process_group: GuardProcessGroup, signal: i32) {
+    // Negative PID targets the process group. The group is captured after spawn
+    // and rejected if it is not the isolated child group.
+    unsafe {
+        let _ = kill(-process_group.pgid, signal);
+    }
 }
 
 #[cfg(not(unix))]
-fn terminate_guard_process_group(_child_id: u32) {}
+fn terminate_guard_process_group(_process_group: Option<GuardProcessGroup>) {}
+
+#[cfg(unix)]
+const SIGTERM: i32 = 15;
+
+#[cfg(unix)]
+const SIGKILL: i32 = 9;
+
+#[cfg(unix)]
+fn unix_getpgid(pid: i32) -> Option<i32> {
+    let pgid = unsafe { getpgid(pid) };
+    (pgid > 0).then_some(pgid)
+}
+
+#[cfg(unix)]
+fn unix_getpgrp() -> Option<i32> {
+    let pgid = unsafe { getpgrp() };
+    (pgid > 0).then_some(pgid)
+}
+
+#[cfg(unix)]
+unsafe extern "C" {
+    fn getpgid(pid: i32) -> i32;
+    fn getpgrp() -> i32;
+    fn kill(pid: i32, sig: i32) -> i32;
+}
 
 pub fn unknown_guard_diagnostic(guard_id: &str, location: &str) -> Diagnostic {
     Diagnostic::new(
@@ -430,4 +487,30 @@ fn dedup_guard_ids(ids: impl IntoIterator<Item = String>) -> Vec<String> {
     }
 
     deduped
+}
+
+#[cfg(all(test, unix))]
+mod unix_process_group_tests {
+    use super::*;
+
+    #[test]
+    fn current_process_group_is_not_treated_as_guard_group() {
+        assert!(guard_process_group(std::process::id()).is_none());
+    }
+
+    #[test]
+    fn isolated_child_process_group_is_captured() -> Result<(), Box<dyn std::error::Error>> {
+        let mut command = Command::new("/bin/sleep");
+        command.arg("5");
+        configure_guard_process_group(&mut command);
+
+        let mut child = command.spawn()?;
+        let process_group = guard_process_group(child.id());
+
+        assert!(process_group.is_some());
+        terminate_guard_process(&mut child, process_group);
+        let _ = child.wait();
+
+        Ok(())
+    }
 }

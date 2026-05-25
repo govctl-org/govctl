@@ -26,7 +26,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ### Fixed
 
-- Fixed guard execution for noisy commands and detached child processes by collecting output safely and reporting timeout state more clearly.
+- Fixed guard execution for noisy commands, detached child processes, and CI-safe process-group cleanup by collecting output safely, only signaling isolated guard child process groups, and reporting timeout state more clearly.
 - Fixed `self-update` archive extraction so release archives and cargo-binstall resolve binaries under `govctl-v{{ version }}-{{ target }}/{{ bin }}`.
 - Rendered acceptance-criterion category labels in `govctl work show`, giving reviewers the same category signal as raw TOML.
 
