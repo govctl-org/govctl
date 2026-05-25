@@ -155,19 +155,19 @@ date = "2026-01-17"
 notes = "Initial release"
 ```
 
-| Field             | Required | Type   | Description                            |
-| ----------------- | -------- | ------ | -------------------------------------- |
-| `govctl.id`       | yes      | string | Unique identifier `RFC-NNNN`           |
-| `govctl.title`    | yes      | string | Human-readable title                   |
-| `govctl.version`  | yes      | string | Semantic version `X.Y.Z`               |
-| `govctl.status`   | yes      | enum   | `draft` \| `normative` \| `deprecated` |
-| `govctl.phase`    | yes      | enum   | `spec` \| `impl` \| `test` \| `stable` |
-| `govctl.owners`   | yes      | array  | List of responsible parties            |
-| `govctl.created`  | yes      | date   | Creation date                          |
-| `govctl.updated`  | no       | date   | Last modification date                 |
-| `govctl.supersedes` | no     | string | RFC ID this replaces                   |
-| `sections`        | yes      | array  | Ordered sections with clause refs      |
-| `changelog`       | no       | array  | Version history                        |
+| Field               | Required | Type   | Description                            |
+| ------------------- | -------- | ------ | -------------------------------------- |
+| `govctl.id`         | yes      | string | Unique identifier `RFC-NNNN`           |
+| `govctl.title`      | yes      | string | Human-readable title                   |
+| `govctl.version`    | yes      | string | Semantic version `X.Y.Z`               |
+| `govctl.status`     | yes      | enum   | `draft` \| `normative` \| `deprecated` |
+| `govctl.phase`      | yes      | enum   | `spec` \| `impl` \| `test` \| `stable` |
+| `govctl.owners`     | yes      | array  | List of responsible parties            |
+| `govctl.created`    | yes      | date   | Creation date                          |
+| `govctl.updated`    | no       | date   | Last modification date                 |
+| `govctl.supersedes` | no       | string | RFC ID this replaces                   |
+| `sections`          | yes      | array  | Ordered sections with clause refs      |
+| `changelog`         | no       | array  | Version history                        |
 
 ### Clause (TOML)
 
@@ -186,16 +186,16 @@ anchors = []
 text = "The system MUST do X."
 ```
 
-| Field                   | Required | Type   | Description                                                  |
-| ----------------------- | -------- | ------ | ------------------------------------------------------------ |
-| `govctl.id`             | yes      | string | Unique within RFC `C-NAME`                                   |
-| `govctl.title`          | yes      | string | Human-readable title                                         |
-| `govctl.kind`           | yes      | enum   | `normative` \| `informative`                                 |
-| `govctl.status`         | no       | enum   | `active` \| `superseded` \| `deprecated` (default: `active`) |
-| `content.text`          | yes      | string | Clause content (Markdown)                                    |
-| `govctl.since`          | no       | string | Version introduced                                           |
-| `govctl.superseded_by`  | no       | string | Clause ID that replaces this                                 |
-| `govctl.anchors`        | no       | array  | Cross-reference targets                                      |
+| Field                  | Required | Type   | Description                                                  |
+| ---------------------- | -------- | ------ | ------------------------------------------------------------ |
+| `govctl.id`            | yes      | string | Unique within RFC `C-NAME`                                   |
+| `govctl.title`         | yes      | string | Human-readable title                                         |
+| `govctl.kind`          | yes      | enum   | `normative` \| `informative`                                 |
+| `govctl.status`        | no       | enum   | `active` \| `superseded` \| `deprecated` (default: `active`) |
+| `content.text`         | yes      | string | Clause content (Markdown)                                    |
+| `govctl.since`         | no       | string | Version introduced                                           |
+| `govctl.superseded_by` | no       | string | Clause ID that replaces this                                 |
+| `govctl.anchors`       | no       | array  | Cross-reference targets                                      |
 
 ### ADR (TOML)
 
