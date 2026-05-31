@@ -9,6 +9,7 @@ pub mod engine;
 mod json_target;
 mod matching;
 pub mod path;
+mod remove;
 pub mod rules;
 pub mod runtime;
 mod set;
@@ -17,13 +18,14 @@ mod toml_target;
 
 use self::adapter::{
     AdrTomlAdapter, ClauseJsonAdapter, ClauseTomlAdapter, DocAdapter, GuardTomlAdapter,
-    RfcJsonAdapter, RfcTomlAdapter, WorkTomlAdapter,
+    RfcJsonAdapter, WorkTomlAdapter,
 };
 pub use self::add::add_to_field;
-use self::json_target::{get_json_field, remove_json_simple_list_field};
+use self::json_target::get_json_field;
+pub use self::remove::remove_from_field;
 use self::set::apply_set_field;
 pub(crate) use self::set::set_field_direct;
-use self::toml_target::{get_toml_field, remove_toml_field, tick_toml_field};
+use self::toml_target::{get_toml_field, tick_toml_field};
 use self::{engine as edit_engine, rules as edit_rules};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -327,67 +329,6 @@ fn reject_match_flags_for_indexed_target(
         .into());
     }
     Ok(())
-}
-
-pub fn remove_from_field(
-    config: &Config,
-    id: &str,
-    field: &str,
-    opts: &MatchOptions,
-    op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
-    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
-    let artifact = plan.artifact;
-    let target = plan.target.as_ref().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            "mutation planning should produce target",
-            id,
-        )
-    })?;
-    reject_match_flags_for_indexed_target(id, target, opts)?;
-
-    match artifact {
-        ArtifactType::Adr => {
-            remove_toml_field::<AdrTomlAdapter>(config, id, target, opts, op, ArtifactType::Adr)?
-        }
-        ArtifactType::WorkItem => remove_toml_field::<WorkTomlAdapter>(
-            config,
-            id,
-            target,
-            opts,
-            op,
-            ArtifactType::WorkItem,
-        )?,
-        ArtifactType::Rfc => remove_json_simple_list_field::<RfcTomlAdapter>(
-            config,
-            id,
-            target,
-            opts,
-            op,
-            ArtifactType::Rfc,
-            "RFC fields do not support nested paths for remove",
-        )?,
-        ArtifactType::Clause => remove_json_simple_list_field::<ClauseTomlAdapter>(
-            config,
-            id,
-            target,
-            opts,
-            op,
-            ArtifactType::Clause,
-            "Clause fields do not support nested paths for remove",
-        )?,
-        ArtifactType::Guard => remove_toml_field::<GuardTomlAdapter>(
-            config,
-            id,
-            target,
-            opts,
-            op,
-            ArtifactType::Guard,
-        )?,
-    }
-
-    Ok(vec![])
 }
 
 pub fn tick_item(
