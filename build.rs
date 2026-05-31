@@ -129,6 +129,7 @@ fn main() {
     println!("cargo:rerun-if-changed=.claude/skills/commit/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/migrate/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/decision-analysis/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/detach/SKILL.md");
     // Agents
     println!("cargo:rerun-if-changed=.claude/agents/rfc-reviewer.md");
     println!("cargo:rerun-if-changed=.claude/agents/adr-reviewer.md");
