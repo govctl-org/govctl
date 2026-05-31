@@ -1,5 +1,3 @@
-#![allow(dead_code)] // Storage helpers are consumed by upcoming loop command/execution slices.
-
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::WriteOp;
@@ -393,10 +391,6 @@ pub fn loop_state_root(config: &Config) -> PathBuf {
     project_root(config).join(".govctl").join("loops")
 }
 
-pub fn write_loop_state(config: &Config, state: &LoopState) -> anyhow::Result<()> {
-    write_loop_state_with_op(config, state, WriteOp::Execute)
-}
-
 pub fn write_loop_state_with_op(
     config: &Config,
     state: &LoopState,
@@ -607,7 +601,7 @@ mod tests {
             deps(&[(root, &[dependency]), (dependency, &[])]),
         )?;
 
-        write_loop_state(&config, &state)?;
+        write_loop_state_with_op(&config, &state, WriteOp::Execute)?;
 
         let state_path = temp_dir.path().join(".govctl/loops/loop-1/state.toml");
         assert!(state_path.exists(), "state path: {}", state_path.display());
@@ -643,7 +637,7 @@ mod tests {
         state.transition_to(LoopLifecycleState::Active)?;
         state.set_item_status(work_id, LoopWorkItemStatus::Active)?;
         assert_eq!(state.increment_round_count(work_id)?, 1);
-        write_loop_state(&config, &state)?;
+        write_loop_state_with_op(&config, &state, WriteOp::Execute)?;
 
         let loaded = load_loop_state(&config, "loop-2")?;
         assert_eq!(loaded.loop_meta.state, LoopLifecycleState::Active);

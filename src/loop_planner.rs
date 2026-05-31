@@ -1,5 +1,3 @@
-#![allow(dead_code)] // Planner helpers are wired into the loop command surface in the next slice.
-
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::loop_state::{LoopState, LoopWorkItemStatus};
