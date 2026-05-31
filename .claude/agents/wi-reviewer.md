@@ -53,7 +53,9 @@ When invoked:
 
 ### References
 
-- [ ] Links to governing RFCs/ADRs where applicable
+- [ ] All artifact IDs in description and notes use `[[artifact-id]]` syntax — never bare IDs like "ADR-0026" or "RFC-0001" in running text
+- [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
+- [ ] No redundant "References:" paragraph at the end of content fields — the `refs` field already tracks cross-references
 - [ ] If implementing an RFC, the RFC ID is in refs
 - [ ] If following an ADR, the ADR ID is in refs
 - [ ] If the work depends on requirements or decisions not yet captured in refs, the work item flags that gap instead of inventing authority locally

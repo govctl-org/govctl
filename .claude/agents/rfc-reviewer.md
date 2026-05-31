@@ -42,7 +42,9 @@ When invoked:
 
 ### Cross-references
 
-- [ ] References to other artifacts use `[[artifact-id]]` syntax
+- [ ] All artifact IDs in clause text use `[[artifact-id]]` syntax — never bare IDs like "ADR-0026" or "RFC-0001" in running text. The `[[...]]` wrapper makes references clickable when rendered.
+- [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
+- [ ] No redundant "References:" paragraph at the end of clause text — the `refs` field already tracks cross-references
 - [ ] Referenced artifacts exist and are not deprecated
 - [ ] No circular dependencies between RFCs
 

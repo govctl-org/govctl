@@ -54,8 +54,10 @@ When invoked:
 ### References
 
 - [ ] Links to related RFCs/ADRs that constrained or informed the decision
-- [ ] Content fields use `[[artifact-id]]` syntax for cross-references
+- [ ] All artifact IDs in prose use `[[artifact-id]]` syntax — never bare IDs like "ADR-0026" or "RFC-0001" in running text. The `[[...]]` wrapper makes references clickable when rendered.
 - [ ] `refs` field uses plain IDs (not `[[...]]` syntax)
+- [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
+- [ ] No redundant "References:" paragraph at the end of content fields — the `refs` field already tracks cross-references; repeating them as prose is noise
 - [ ] ADR does not drift into task planning, journal-style implementation updates, or closure checklists
 
 ## Output Contract
