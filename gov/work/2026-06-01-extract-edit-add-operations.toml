@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-027"
+title = "Extract edit add operations"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract add-field execution and its ADR/work item helper logic from src/cmd/edit/mod.rs into a focused edit child module while preserving public add behavior, tag validation, and work dependency loop checks."
+
+[[content.acceptance_criteria]]
+text = "edit add-field executor lives in a focused child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "tag validation and work dependency loop checks remain on add paths"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit tests and full verification pass"
+status = "done"
+category = "chore"
