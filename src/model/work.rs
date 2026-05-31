@@ -5,9 +5,8 @@ use strum::AsRefStr;
 /// Work Item metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemMeta {
-    #[allow(dead_code)]
-    #[serde(default, skip_serializing)]
-    pub schema: u32,
+    #[serde(default, rename = "schema", skip_serializing)]
+    _schema: u32,
     pub id: String,
     pub title: String,
     pub status: WorkItemStatus,
@@ -23,6 +22,23 @@ pub struct WorkItemMeta {
     pub depends_on: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+}
+
+impl WorkItemMeta {
+    pub fn new(id: impl Into<String>, title: impl Into<String>, status: WorkItemStatus) -> Self {
+        Self {
+            _schema: 1,
+            id: id.into(),
+            title: title.into(),
+            status,
+            created: None,
+            started: None,
+            completed: None,
+            refs: vec![],
+            depends_on: vec![],
+            tags: vec![],
+        }
+    }
 }
 
 /// Work item-specific verification policy.

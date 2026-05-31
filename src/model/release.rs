@@ -3,9 +3,12 @@ use serde::{Deserialize, Serialize};
 /// Release file metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ReleasesMeta {
-    #[allow(dead_code)]
-    #[serde(default, skip_serializing)]
-    pub schema: u32,
+    #[serde(
+        default = "default_schema_version",
+        rename = "schema",
+        skip_serializing
+    )]
+    _schema: u32,
 }
 
 fn default_schema_version() -> u32 {
@@ -15,7 +18,7 @@ fn default_schema_version() -> u32 {
 impl Default for ReleasesMeta {
     fn default() -> Self {
         Self {
-            schema: default_schema_version(),
+            _schema: default_schema_version(),
         }
     }
 }

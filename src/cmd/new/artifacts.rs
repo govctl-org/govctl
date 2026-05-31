@@ -258,16 +258,7 @@ fn create_adr(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<D
     let adr_path = adr_dir.join(&filename);
 
     let spec = AdrSpec {
-        govctl: AdrMeta {
-            schema: 1,
-            id: adr_id.clone(),
-            title: title.to_string(),
-            status: AdrStatus::Proposed,
-            date: today(),
-            superseded_by: None,
-            refs: vec![],
-            tags: vec![],
-        },
+        govctl: AdrMeta::new(adr_id.clone(), title, AdrStatus::Proposed, today()),
         content: AdrContent {
             context: "Describe the context and problem statement.\nWhat is the issue that we're seeing that is motivating this decision?".to_string(),
             decision: "Describe the decision that was made.\nWhat is the change that we're proposing and/or doing?".to_string(),
@@ -336,19 +327,12 @@ fn create_work_item(
         (WorkItemStatus::Queue, None)
     };
 
+    let mut meta = WorkItemMeta::new(work_id.clone(), title, status);
+    meta.created = Some(date.clone());
+    meta.started = started;
+
     let spec = WorkItemSpec {
-        govctl: WorkItemMeta {
-            schema: 1,
-            id: work_id.clone(),
-            title: title.to_string(),
-            status,
-            created: Some(date.clone()),
-            started,
-            completed: None,
-            refs: vec![],
-            depends_on: vec![],
-            tags: vec![],
-        },
+        govctl: meta,
         content: WorkItemContent {
             description:
                 "Describe the work to be done.\nWhat is the goal? What are the acceptance criteria?"

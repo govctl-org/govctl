@@ -200,16 +200,7 @@ mod tests {
     fn test_render_adr_alternatives_with_pros_cons() -> Result<(), Box<dyn std::error::Error>> {
         let adr = AdrEntry {
             spec: AdrSpec {
-                govctl: AdrMeta {
-                    schema: 1,
-                    id: "ADR-9999".to_string(),
-                    title: "Test ADR".to_string(),
-                    status: AdrStatus::Accepted,
-                    date: "2026-02-22".to_string(),
-                    superseded_by: None,
-                    refs: vec![],
-                    tags: vec![],
-                },
+                govctl: AdrMeta::new("ADR-9999", "Test ADR", AdrStatus::Accepted, "2026-02-22"),
                 content: AdrContent {
                     context: "Test context".to_string(),
                     decision: "Test decision".to_string(),
@@ -238,16 +229,12 @@ mod tests {
     {
         let adr = AdrEntry {
             spec: AdrSpec {
-                govctl: AdrMeta {
-                    schema: 1,
-                    id: "ADR-9998".to_string(),
-                    title: "Test ADR Rejected".to_string(),
-                    status: AdrStatus::Accepted,
-                    date: "2026-02-22".to_string(),
-                    superseded_by: None,
-                    refs: vec![],
-                    tags: vec![],
-                },
+                govctl: AdrMeta::new(
+                    "ADR-9998",
+                    "Test ADR Rejected",
+                    AdrStatus::Accepted,
+                    "2026-02-22",
+                ),
                 content: AdrContent {
                     context: "Test context".to_string(),
                     decision: "Test decision".to_string(),
@@ -274,20 +261,17 @@ mod tests {
 
     #[test]
     fn test_render_work_item_journal() -> Result<(), Box<dyn std::error::Error>> {
+        let mut meta = WorkItemMeta::new(
+            "WI-2026-02-22-001",
+            "Test Work Item",
+            WorkItemStatus::Active,
+        );
+        meta.created = Some("2026-02-22".to_string());
+        meta.started = Some("2026-02-22".to_string());
+
         let item = WorkItemEntry {
             spec: WorkItemSpec {
-                govctl: WorkItemMeta {
-                    schema: 1,
-                    id: "WI-2026-02-22-001".to_string(),
-                    title: "Test Work Item".to_string(),
-                    status: WorkItemStatus::Active,
-                    created: Some("2026-02-22".to_string()),
-                    started: Some("2026-02-22".to_string()),
-                    completed: None,
-                    refs: vec![],
-                    depends_on: vec![],
-                    tags: vec![],
-                },
+                govctl: meta,
                 content: WorkItemContent {
                     description: "Test description".to_string(),
                     journal: vec![JournalEntry {
@@ -314,20 +298,17 @@ mod tests {
 
     #[test]
     fn test_render_work_item_journal_with_scope() -> Result<(), Box<dyn std::error::Error>> {
+        let mut meta = WorkItemMeta::new(
+            "WI-2026-02-22-002",
+            "Test Work Item with Scope",
+            WorkItemStatus::Active,
+        );
+        meta.created = Some("2026-02-22".to_string());
+        meta.started = Some("2026-02-22".to_string());
+
         let item = WorkItemEntry {
             spec: WorkItemSpec {
-                govctl: WorkItemMeta {
-                    schema: 1,
-                    id: "WI-2026-02-22-002".to_string(),
-                    title: "Test Work Item with Scope".to_string(),
-                    status: WorkItemStatus::Active,
-                    created: Some("2026-02-22".to_string()),
-                    started: Some("2026-02-22".to_string()),
-                    completed: None,
-                    refs: vec![],
-                    depends_on: vec![],
-                    tags: vec![],
-                },
+                govctl: meta,
                 content: WorkItemContent {
                     description: "Test description".to_string(),
                     journal: vec![
@@ -368,20 +349,17 @@ mod tests {
             ChecklistItem::with_category("Obsolete validation path", ChangelogCategory::Chore);
         cancelled.status = ChecklistStatus::Cancelled;
 
+        let mut meta = WorkItemMeta::new(
+            "WI-2026-02-22-003",
+            "Test Work Item Categories",
+            WorkItemStatus::Active,
+        );
+        meta.created = Some("2026-02-22".to_string());
+        meta.started = Some("2026-02-22".to_string());
+
         let item = WorkItemEntry {
             spec: WorkItemSpec {
-                govctl: WorkItemMeta {
-                    schema: 1,
-                    id: "WI-2026-02-22-003".to_string(),
-                    title: "Test Work Item Categories".to_string(),
-                    status: WorkItemStatus::Active,
-                    created: Some("2026-02-22".to_string()),
-                    started: Some("2026-02-22".to_string()),
-                    completed: None,
-                    refs: vec![],
-                    depends_on: vec![],
-                    tags: vec![],
-                },
+                govctl: meta,
                 content: WorkItemContent {
                     description: "Test description".to_string(),
                     journal: vec![],

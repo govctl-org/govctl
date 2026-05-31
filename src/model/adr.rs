@@ -5,9 +5,8 @@ use strum::AsRefStr;
 /// ADR metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdrMeta {
-    #[allow(dead_code)]
-    #[serde(default, skip_serializing)]
-    pub schema: u32,
+    #[serde(default, rename = "schema", skip_serializing)]
+    _schema: u32,
     pub id: String,
     pub title: String,
     pub status: AdrStatus,
@@ -18,6 +17,26 @@ pub struct AdrMeta {
     pub refs: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+}
+
+impl AdrMeta {
+    pub fn new(
+        id: impl Into<String>,
+        title: impl Into<String>,
+        status: AdrStatus,
+        date: impl Into<String>,
+    ) -> Self {
+        Self {
+            _schema: 1,
+            id: id.into(),
+            title: title.into(),
+            status,
+            date: date.into(),
+            superseded_by: None,
+            refs: vec![],
+            tags: vec![],
+        }
+    }
 }
 
 /// Status for ADR alternatives

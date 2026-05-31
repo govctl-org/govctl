@@ -273,20 +273,12 @@ mod tests {
     use std::path::PathBuf;
 
     fn work_item(id: &str, status: WorkItemStatus, depends_on: &[&str]) -> WorkItemEntry {
+        let mut meta = WorkItemMeta::new(id, id, status);
+        meta.depends_on = depends_on.iter().map(|id| (*id).to_string()).collect();
+
         WorkItemEntry {
             spec: WorkItemSpec {
-                govctl: WorkItemMeta {
-                    schema: 2,
-                    id: id.to_string(),
-                    title: id.to_string(),
-                    status,
-                    created: None,
-                    started: None,
-                    completed: None,
-                    refs: vec![],
-                    depends_on: depends_on.iter().map(|id| (*id).to_string()).collect(),
-                    tags: vec![],
-                },
+                govctl: meta,
                 content: WorkItemContent::default(),
                 verification: WorkItemVerification::default(),
             },

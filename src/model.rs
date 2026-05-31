@@ -144,16 +144,7 @@ mod tests {
     fn test_adr_entry_meta_accessor() {
         let entry = AdrEntry {
             spec: AdrSpec {
-                govctl: AdrMeta {
-                    schema: 1,
-                    id: "ADR-0001".to_string(),
-                    title: "Test ADR".to_string(),
-                    status: AdrStatus::Proposed,
-                    date: "2026-01-17".to_string(),
-                    superseded_by: None,
-                    refs: vec![],
-                    tags: vec![],
-                },
+                govctl: AdrMeta::new("ADR-0001", "Test ADR", AdrStatus::Proposed, "2026-01-17"),
                 content: AdrContent::default(),
             },
             path: std::path::PathBuf::from("test.toml"),
@@ -164,20 +155,13 @@ mod tests {
 
     #[test]
     fn test_work_item_entry_meta_accessor() {
+        let mut meta =
+            WorkItemMeta::new("WI-2026-01-17-001", "Test Work Item", WorkItemStatus::Queue);
+        meta.created = Some("2026-01-17".to_string());
+
         let entry = WorkItemEntry {
             spec: WorkItemSpec {
-                govctl: WorkItemMeta {
-                    schema: 1,
-                    id: "WI-2026-01-17-001".to_string(),
-                    title: "Test Work Item".to_string(),
-                    status: WorkItemStatus::Queue,
-                    created: Some("2026-01-17".to_string()),
-                    started: None,
-                    completed: None,
-                    refs: vec![],
-                    depends_on: vec![],
-                    tags: vec![],
-                },
+                govctl: meta,
                 content: WorkItemContent::default(),
                 verification: WorkItemVerification::default(),
             },

@@ -63,18 +63,12 @@ pub(super) fn rfc(
 }
 
 pub(super) fn adr(id: &str, title: &str, status: AdrStatus, tags: &[&str]) -> AdrEntry {
+    let mut meta = AdrMeta::new(id, title, status, "2026-01-01");
+    meta.tags = tags.iter().map(|tag| tag.to_string()).collect();
+
     AdrEntry {
         spec: AdrSpec {
-            govctl: AdrMeta {
-                schema: 1,
-                id: id.to_string(),
-                title: title.to_string(),
-                status,
-                date: "2026-01-01".to_string(),
-                superseded_by: None,
-                refs: vec![],
-                tags: tags.iter().map(|tag| tag.to_string()).collect(),
-            },
+            govctl: meta,
             content: AdrContent::default(),
         },
         path: PathBuf::from(format!("gov/adr/{id}.toml")),
@@ -87,20 +81,12 @@ pub(super) fn work_item(
     status: WorkItemStatus,
     tags: &[&str],
 ) -> WorkItemEntry {
+    let mut meta = WorkItemMeta::new(id, title, status);
+    meta.tags = tags.iter().map(|tag| tag.to_string()).collect();
+
     WorkItemEntry {
         spec: WorkItemSpec {
-            govctl: WorkItemMeta {
-                schema: 1,
-                id: id.to_string(),
-                title: title.to_string(),
-                status,
-                created: None,
-                started: None,
-                completed: None,
-                refs: vec![],
-                depends_on: vec![],
-                tags: tags.iter().map(|tag| tag.to_string()).collect(),
-            },
+            govctl: meta,
             content: WorkItemContent::default(),
             verification: WorkItemVerification::default(),
         },

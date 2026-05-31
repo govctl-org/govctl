@@ -70,9 +70,8 @@ pub struct RfcWire {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RfcMeta {
     /// Backward-compat: accepted on read, never written. See `config.toml [schema] version`.
-    #[allow(dead_code)]
-    #[serde(default, skip_serializing)]
-    pub schema: u32,
+    #[serde(default, rename = "schema", skip_serializing)]
+    _schema: u32,
     pub id: String,
     pub title: String,
     pub version: String,
@@ -96,7 +95,7 @@ impl From<RfcSpec> for RfcWire {
     fn from(s: RfcSpec) -> Self {
         Self {
             govctl: RfcMeta {
-                schema: 1,
+                _schema: 1,
                 id: s.rfc_id,
                 title: s.title,
                 version: s.version,
@@ -147,9 +146,8 @@ pub struct ClauseWire {
 /// Clause metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClauseMeta {
-    #[allow(dead_code)]
-    #[serde(default, skip_serializing)]
-    pub schema: u32,
+    #[serde(default, rename = "schema", skip_serializing)]
+    _schema: u32,
     pub id: String,
     pub title: String,
     pub kind: ClauseKind,
@@ -175,7 +173,7 @@ impl From<ClauseSpec> for ClauseWire {
     fn from(s: ClauseSpec) -> Self {
         Self {
             govctl: ClauseMeta {
-                schema: 1,
+                _schema: 1,
                 id: s.clause_id,
                 title: s.title,
                 kind: s.kind,
