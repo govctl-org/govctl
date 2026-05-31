@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-004"
+title = "Prune unused command plan fields"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Remove unused data from the internal command execution plan where parsed CLI fields are handled elsewhere or are fixed-format today. Keep CLI behavior unchanged while reducing dead-code suppressions in command routing."
+
+[[content.acceptance_criteria]]
+text = "Internal command plan no longer stores unused check or describe fields"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "CLI check and describe behavior remains unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused command-router verification and full verification pass"
+status = "done"
+category = "chore"

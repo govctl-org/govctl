@@ -55,8 +55,6 @@ pub enum BuiltinOp {
         dir: Option<std::path::PathBuf>,
     },
     Check {
-        #[allow(dead_code)]
-        deny_warnings: bool,
         has_active: bool,
     },
     Status,
@@ -72,8 +70,6 @@ pub enum BuiltinOp {
     },
     Describe {
         context: bool,
-        #[allow(dead_code)]
-        output: String,
     },
     Completions {
         shell: clap_complete::Shell,
@@ -490,14 +486,8 @@ fn execute_builtin(
         BuiltinOp::InitSkills { force, format, dir } => {
             cmd::new::sync_skills(config, *force, format, dir.as_deref(), op)
         }
-        BuiltinOp::Check {
-            deny_warnings: _,
-            has_active: true,
-        } => cmd::check::check_has_active(config),
-        BuiltinOp::Check {
-            deny_warnings: _,
-            has_active: false,
-        } => cmd::check::check_all(config),
+        BuiltinOp::Check { has_active: true } => cmd::check::check_has_active(config),
+        BuiltinOp::Check { has_active: false } => cmd::check::check_all(config),
         BuiltinOp::Status => cmd::status::show_status(config),
         BuiltinOp::RenderGlobal {
             target,
@@ -528,7 +518,7 @@ fn execute_builtin(
         BuiltinOp::Verify { guard_ids, work } => {
             cmd::verify::verify(config, guard_ids, work.as_deref())
         }
-        BuiltinOp::Describe { context, output: _ } => cmd::describe::describe(config, *context),
+        BuiltinOp::Describe { context } => cmd::describe::describe(config, *context),
         BuiltinOp::SelfUpdate { check } => cmd::self_update::self_update(*check),
         BuiltinOp::Completions { shell } => {
             use crate::Cli;
@@ -873,11 +863,7 @@ impl CommandPlan {
                     dir: dir.clone(),
                 })))
             }
-            Commands::Check {
-                deny_warnings,
-                has_active,
-            } => Ok(global(Op::Builtin(BuiltinOp::Check {
-                deny_warnings: *deny_warnings,
+            Commands::Check { has_active, .. } => Ok(global(Op::Builtin(BuiltinOp::Check {
                 has_active: *has_active,
             }))),
             Commands::Status => Ok(global(Op::Builtin(BuiltinOp::Status))),
@@ -895,12 +881,9 @@ impl CommandPlan {
                 guard_ids: guard_ids.clone(),
                 work: work.clone(),
             }))),
-            Commands::Describe { context, output } => {
-                Ok(global(Op::Builtin(BuiltinOp::Describe {
-                    context: *context,
-                    output: output.clone(),
-                })))
-            }
+            Commands::Describe { context, .. } => Ok(global(Op::Builtin(BuiltinOp::Describe {
+                context: *context,
+            }))),
             Commands::Completions { shell } => Ok(global(Op::Builtin(BuiltinOp::Completions {
                 shell: *shell,
             }))),
