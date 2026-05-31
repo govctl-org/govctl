@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-048"
 title = "Extract release migration planner"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract release metadata migration planning from `src/cmd/migrate.rs` into a focused child module while preserving release schema normalization and validation behavior."
 
 [[content.acceptance_criteria]]
 text = "release metadata migration planning lives in a focused migration child module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "release `govctl.schema` normalization and validation diagnostics remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "migration tests and full verification pass"
-status = "pending"
+status = "done"
 category = "chore"
