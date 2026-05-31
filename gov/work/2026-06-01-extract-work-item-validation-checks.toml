@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-043"
+title = "Extract work item validation checks"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract work item placeholder-description validation and legacy inline history reporting from src/validate.rs into a focused child module while preserving diagnostics."
+
+[[content.acceptance_criteria]]
+text = "work item validation checks live in a focused child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "placeholder and legacy history diagnostics remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "validation tests and full verification pass"
+status = "done"
+category = "chore"
