@@ -9,8 +9,6 @@ use regex::RegexBuilder;
 use std::collections::{HashMap, HashSet};
 
 pub use runner::run_guard;
-#[allow(unused_imports)]
-pub use runner::{DEFAULT_GUARD_TIMEOUT_SECS, GuardRunResult};
 
 pub fn build_guard_index(
     guards: Vec<GuardEntry>,

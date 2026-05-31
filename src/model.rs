@@ -17,19 +17,17 @@ mod work;
 pub use adr::{AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus};
 pub use guard::{GuardCheck, GuardMeta, GuardSpec};
 pub use index::{AdrEntry, ClauseEntry, GuardEntry, ProjectIndex, RfcIndex, WorkItemEntry};
-#[allow(unused_imports)]
-pub use release::ReleasesMeta;
 pub use release::{Release, ReleasesFile};
 pub use rfc::{
     ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus, ClauseWire, RfcPhase, RfcSpec, RfcStatus,
     RfcWire, SectionSpec,
 };
+#[cfg(test)]
+pub use work::JournalEntry;
 pub use work::{
     ChangelogCategory, ChecklistItem, ChecklistStatus, WorkItemContent, WorkItemMeta, WorkItemSpec,
     WorkItemStatus, WorkItemVerification,
 };
-#[allow(unused_imports)]
-pub use work::{GuardWaiver, JournalEntry};
 
 #[cfg(test)]
 mod tests {
