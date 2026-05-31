@@ -16,6 +16,6 @@ The unified loop model (single primitive for both single-WI and multi-WI executi
 
 2. **Simpler mental model**: "A loop drives work items to completion" is one concept. "A loop drives one work item, a batch drives multiple" is two concepts with overlapping semantics.
 
-3. **Consistent state model**: `.govctl/loops/<loop-id>/` works the same whether the loop contains one work item or ten. The journal, state file, and round logs scale naturally.
+3. **Consistent state model**: `.govctl/loops/<loop-id>/` works the same whether the loop contains one work item or ten. Execution logs, state file, and round logs scale naturally.
 
 4. **Downstream flexibility**: The loop does not prescribe sequential or parallel execution. Downstream applications (agents, CI systems) can choose the execution model that fits their constraints."""

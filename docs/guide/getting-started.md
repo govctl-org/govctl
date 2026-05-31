@@ -218,7 +218,7 @@ Nested object fields use dot-delimited paths:
 ```bash
 govctl adr edit ADR-0003 content.decision --set "We will use Redis"
 govctl adr edit ADR-0003 "content.alternatives[0].pros" --add "Low latency"
-govctl work edit WI-2026-01-17-001 "content.journal[0].scope" --set backend
+govctl work edit WI-2026-01-17-001 "content.acceptance_criteria[0].category" --set fixed
 ```
 
 ## CLI Self-Description

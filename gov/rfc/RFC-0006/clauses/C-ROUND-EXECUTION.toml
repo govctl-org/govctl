@@ -19,7 +19,7 @@ Each round MUST:
 2. Implement changes addressing pending acceptance criteria
 3. Run verification guards
 4. Evaluate acceptance criteria (ticked, still pending, or failed)
-5. Record a journal entry (what was done, what changed, why)
+5. Record loop execution state (what was done, what changed, why) outside the work item file
 6. Decide: continue (pending criteria remain) or terminate (all done or failed)
 
 **Termination conditions:**
@@ -37,5 +37,5 @@ A work item MUST terminate when:
 - On failure: The work item remains in `active` state but is marked as `failed` in loop state
 - Failed work items trigger failure propagation per C-DEPENDENCY-SEMANTICS
 
-Rationale: Rounds provide iterative refinement toward acceptance criteria. The round structure ensures each iteration makes measurable progress. Termination conditions prevent infinite loops while allowing implementations to define appropriate limits.
+Rationale: Rounds provide iterative refinement toward acceptance criteria. The round structure ensures each iteration makes measurable progress without writing execution trace into the work item field surface. Termination conditions prevent infinite loops while allowing implementations to define appropriate limits.
 """

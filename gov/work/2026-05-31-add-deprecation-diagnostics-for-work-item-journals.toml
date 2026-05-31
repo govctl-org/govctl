@@ -1,0 +1,43 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-004"
+title = "Report legacy inline execution history during checks"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+refs = [
+    "ADR-0047",
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0006",
+    "WI-2026-05-31-003",
+]
+
+[content]
+description = "Implement the ADR-0047 check path by detecting legacy inline execution-history entries during validation and reporting them as non-blocking informational diagnostics. Existing repositories continue to pass validation while users get targeted guidance to move durable takeaways to notes and keep new execution trace in loop state."
+
+[[content.acceptance_criteria]]
+text = "govctl check reports work items that contain legacy inline execution-history entries with an informational diagnostic"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "The diagnostic message points users to notes for durable takeaways and loop state for new execution trace"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Existing repositories with legacy inline execution-history entries continue to pass govctl check unless they have unrelated blocking errors"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Tests cover diagnostic output for work items with and without legacy inline execution-history entries"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

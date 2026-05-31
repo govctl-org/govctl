@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-003"
+title = "Remove work item journal field surface"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+refs = [
+    "ADR-0047",
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0006",
+]
+
+[content]
+description = "Implement ADR-0047 by removing journal from the path-addressable work item field surface. Existing inline content.journal data remains parsed for legacy work items and appears through work show/render, but journal cannot be fetched, added, edited, ticked, or removed as a separate work item field."
+
+[[content.acceptance_criteria]]
+text = "Journal cannot be fetched, added, edited, ticked, or removed as a path-addressable work item field"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Newly created work items omit content.journal from serialized TOML"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Work item show/render still renders legacy inline journal entries correctly"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Regression tests cover unavailable journal field operations, new-work serialization without journal, and legacy journal rendering"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

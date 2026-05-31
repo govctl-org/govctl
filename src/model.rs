@@ -478,8 +478,7 @@ impl ChecklistItem {
     }
 }
 
-/// A journal entry for execution tracking per [[ADR-0026]].
-/// Records progress updates with date, optional scope, and content.
+/// A legacy inline journal entry preserved for work item rendering per [[ADR-0047]].
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct JournalEntry {
     /// ISO date string "YYYY-MM-DD"
@@ -496,7 +495,7 @@ pub struct JournalEntry {
 pub struct WorkItemContent {
     #[serde(default)]
     pub description: String,
-    /// Execution process tracking entries per [[ADR-0026]]
+    /// Legacy inline journal entries are parsed for render/show only.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub journal: Vec<JournalEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

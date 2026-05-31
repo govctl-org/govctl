@@ -22,7 +22,6 @@ Do not use this for new behavior, RFC-governed work, or architecture decisions. 
 3. Read the active work item with `govctl work show <WI-ID>`.
 4. Use work item fields correctly:
    - `description`: scope and why
-   - `journal`: what you did and what happened
    - `notes`: constraints or lessons future steps must remember
 5. If the change becomes behavioral, ambiguous, or architectural, stop using `/quick` and switch to `/gov`.
 6. Use `/commit` for raw VCS operations. Do not embed `jj` or `git` procedures here.
@@ -82,11 +81,10 @@ govctl check
 Update working memory as needed:
 
 ```bash
-govctl work add <WI-ID> journal "Updated docs; govctl check passes"
 govctl work add <WI-ID> notes "Do not use old command name in examples"
 ```
 
-For very small changes, `journal` may be enough. Add `notes` only when there is something future steps should remember.
+Add `notes` only when there is something future steps should remember. Transient execution progress belongs in loop state, not in work item fields.
 
 ### 4. Record
 

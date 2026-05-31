@@ -1058,32 +1058,74 @@ fn test_work_tick_cancel_acceptance_criteria() -> common::TestResult {
 }
 
 #[test]
-fn test_work_add_journal() -> common::TestResult {
+fn test_work_journal_field_surface_is_unavailable() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = today();
 
+    let wi_id = format!("WI-{date}-001");
     let output = run_commands(
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
+            &["work", "add", &wi_id, "journal", "First progress update"],
+            &["work", "get", &wi_id, "journal"],
             &[
                 "work",
-                "add",
-                &format!("WI-{}-001", date),
+                "edit",
+                &wi_id,
                 "journal",
-                "First progress update",
-            ],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "journal",
+                "--add",
                 "Second progress update",
             ],
-            &["work", "show", &format!("WI-{}-001", date)],
+            &[
+                "work",
+                "edit",
+                &wi_id,
+                "journal[0].content",
+                "--set",
+                "Changed history",
+            ],
+            &["work", "remove", &wi_id, "journal", "--all"],
+            &["work", "tick", &wi_id, "journal", "--at", "0"],
+            &["work", "show", &wi_id],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    let normalized = normalize_output(&output, temp_dir.path(), &date)?;
+    assert!(
+        normalized.contains("Unknown work item field: journal"),
+        "output: {normalized}"
+    );
+    assert_eq!(
+        normalized.matches("error[E0803]").count(),
+        6,
+        "all journal field-surface operations should be rejected: {normalized}"
+    );
+    assert!(
+        !normalized.contains("## Journal"),
+        "journal write should not persist: {normalized}"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_work_new_omits_journal_field() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["work", "new", "Test Task"]])?;
+    assert!(output.contains("Created work item"), "output: {output}");
+
+    let work_path = temp_dir
+        .path()
+        .join("gov")
+        .join("work")
+        .join(format!("{date}-test-task.toml"));
+    let content = std::fs::read_to_string(work_path)?;
+
+    assert!(
+        !content.contains("journal") && !content.contains("[[content.journal]]"),
+        "new work items should omit journal: {content}"
+    );
     Ok(())
 }
 
@@ -1509,11 +1551,86 @@ fn test_work_get_nested_scalar_rejects_index() -> common::TestResult {
         temp_dir.path(),
         &[
             &["work", "new", "Work Scalar Index Test"],
-            &["work", "add", &wi_id, "journal", "Did something"],
-            &["work", "get", &wi_id, "journal[0].content[0]"],
+            &[
+                "work",
+                "add",
+                &wi_id,
+                "acceptance_criteria",
+                "add: Did something",
+            ],
+            &["work", "get", &wi_id, "acceptance_criteria[0].text[0]"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    let normalized = normalize_output(&output, temp_dir.path(), &date)?;
+    assert!(
+        normalized.contains("error[E0817]: Cannot index into non-list field 'text'"),
+        "output: {normalized}"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_work_journal_legacy_entries_are_read_only() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = today();
+
+    let wi_id = format!("WI-{}-001", date);
+    let work_path = temp_dir
+        .path()
+        .join("gov")
+        .join("work")
+        .join(format!("{}-legacy-journal-test.toml", date));
+    let output = run_commands(temp_dir.path(), &[&["work", "new", "Legacy Journal Test"]])?;
+    assert!(output.contains("Created work item"), "output: {output}");
+
+    let mut content = std::fs::read_to_string(&work_path)?;
+    content.push_str(
+        r#"
+
+[[content.journal]]
+date = "2026-02-22"
+content = "Keep this history"
+"#,
+    );
+    std::fs::write(&work_path, content)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "get", &wi_id, "journal[0].content"],
+            &[
+                "work",
+                "edit",
+                &wi_id,
+                "journal[0].content",
+                "--set",
+                "Changed history",
+            ],
+            &["work", "remove", &wi_id, "journal", "--all"],
+            &["work", "show", &wi_id],
+        ],
+    )?;
+    let normalized = normalize_output(&output, temp_dir.path(), &date)?;
+    assert!(
+        normalized.contains("Keep this history"),
+        "legacy journal should still render via work show: {normalized}"
+    );
+    assert_eq!(
+        normalized.matches("error[E0803]").count(),
+        3,
+        "legacy journal get/set/remove field operations should be rejected: {normalized}"
+    );
+    assert!(
+        normalized.contains("## Journal")
+            && normalized.contains("Legacy execution history")
+            && normalized.contains("loop state"),
+        "legacy journal should render with neutral migration guidance: {normalized}"
+    );
+    let persisted = std::fs::read_to_string(&work_path)?;
+    assert!(
+        !persisted.contains("Changed history"),
+        "legacy journal should not be mutated: {persisted}"
+    );
     Ok(())
 }
 

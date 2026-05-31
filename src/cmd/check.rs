@@ -1,7 +1,7 @@
 //! Check/lint command implementation.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel};
 use crate::load::load_project_with_warnings;
 use crate::model::WorkItemStatus;
 use crate::parse::{load_guards_with_warnings, load_releases, load_work_items};
@@ -83,7 +83,10 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
 
     eprintln!();
 
-    if all_diagnostics.is_empty() {
+    let has_blocking_diagnostics = all_diagnostics
+        .iter()
+        .any(|diag| matches!(diag.level, DiagnosticLevel::Error | DiagnosticLevel::Warning));
+    if !has_blocking_diagnostics {
         ui::success("All checks passed");
     }
 

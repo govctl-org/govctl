@@ -1,0 +1,84 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0047"
+title = "Remove journal from work item field surface for loop-centric execution state"
+status = "accepted"
+date = "2026-05-31"
+refs = [
+    "ADR-0043",
+    "ADR-0026",
+    "RFC-0006",
+    "RFC-0000:C-WORK-DEF",
+]
+
+[content]
+context = """
+ADR-0026 added a journal field to work items for execution tracking. ADR-0043 proposed removing it entirely and redirecting to `.govctl/loops/<WI-ID>/journal.toml`. RFC-0006 then introduced a loop-centric model where `.govctl/loops/<loop-id>/journal.toml` replaces the WI-centric path.
+
+Three problems with ADR-0043's "remove and redirect" approach:
+
+1. **Breaking change**: 58 work items have inline journal entries. Removing the field forces migration.
+2. **ADR-0043 is superseded by RFC-0006**: Its target path (`.govctl/loops/<WI-ID>/`) conflicts with the loop-centric model (`.govctl/loops/<loop-id>/`).
+3. **RFC-0000:C-WORK-DEF mandates journal**: Removing it contradicts the normative clause without a proper amendment path.
+
+The loop execution model (RFC-0006) makes inline journals obsolete: loop journals in `.govctl/loops/<loop-id>/journal.toml` are the new source of truth for execution tracking. The work item's inline journal is now legacy compatibility data.
+
+Rather than preserve `journal` as a separate read-only field, we remove it from the path-addressable work item field surface. Existing inline journal data may still be parsed so `work show` and render output can display historical entries without forcing an immediate migration."""
+decision = """
+Remove `journal` from the path-addressable work item field surface. `journal` MUST NOT be accepted by `work get`, `work add`, `work edit`, `work remove`, or `work tick` as a separate field.
+
+For backward compatibility, implementations MAY continue to deserialize legacy inline `content.journal` entries and render them from `work show` / work item render output. This compatibility path MUST NOT make `journal` available as a normal editable or fetchable field.
+
+## Removal steps
+
+1. **RFC-0000:C-WORK-DEF**: Amend the Work Item definition so `[content]` contains `description`, `acceptance_criteria`, and `notes`. Legacy inline journal entries are render-only compatibility data, not a Work Item field.
+2. **CLI field-surface removal**: Remove `journal` from work item get/add/edit/remove/tick field rules.
+3. **Render compatibility**: `govctl work show WI` continues to render existing inline journal entries when present.
+4. **New work items**: `govctl work new` does not initialize the `journal` field.
+5. **Migration guidance**: `govctl check` emits an informational diagnostic for work items with journal entries, suggesting migration of durable insights to `notes`.
+6. **Supersede ADR-0043**: ADR-0043 is superseded by this decision.
+
+## Loop journal path
+
+Execution tracking moves to `.govctl/loops/<loop-id>/journal.toml` per RFC-0006. This is separate from the legacy inline render compatibility path."""
+consequences = """
+Positive:
+- No breaking changes: 58 work items with journal entries continue to render correctly
+- Clear model boundary: `journal` is not a Work Item field even though legacy data can render
+- Historical journal data remains inspectable through work item show/render output
+- Establishes loop-centric model as the single future path for execution tracking
+- Supersedes the conflicting ADR-0043 with a more practical approach
+
+Negative:
+- Legacy journal data persists in work item files indefinitely, adding minor file size overhead
+- Two journal storage concepts coexist during transition (legacy inline render data + loop journal)
+- No automated migration path for durable insights from journal to notes (manual process)
+
+Neutral:
+- `govctl check` gains an informational diagnostic for work items with journal entries
+- `JournalEntry` struct and render code remain in the codebase for legacy render compatibility
+- New work items omit `content.journal`"""
+
+[[content.alternatives]]
+text = "Remove journal from field surface while preserving render compatibility"
+status = "accepted"
+pros = [
+    "No breaking changes for 58 existing work items",
+    "Clear field model: journal cannot be fetched or edited separately",
+    "Historical entries remain visible through show/render",
+]
+cons = [
+    "Legacy journal data persists indefinitely",
+    "Render compatibility keeps journal parsing code",
+]
+
+[[content.alternatives]]
+text = "Remove journal field entirely and force migration"
+status = "rejected"
+pros = ["Clean break; single journal concept going forward"]
+cons = [
+    "Breaking change for 58 work items with journal entries",
+    "Requires forced migration; destroys readable history",
+]
+rejection_reason = "Immediate forced migration is unnecessary; ADR-0043 target path also conflicts with RFC-0006 loop-centric model"

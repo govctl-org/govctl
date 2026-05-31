@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0043"
 title = "Redirect journal entries to local .govctl storage"
-status = "accepted"
+status = "superseded"
 date = "2026-05-31"
+superseded_by = "ADR-0047"
 refs = [
     "ADR-0032",
     "ADR-0026",

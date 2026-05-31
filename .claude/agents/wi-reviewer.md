@@ -30,10 +30,8 @@ When invoked:
 
 ### Working Memory Fields
 
-- [ ] `journal`, if present, records actions and outcomes rather than task scope
 - [ ] `notes`, if present, record durable learnings, constraints, decisions, or retry rules
-- [ ] `notes` do not merely duplicate `journal`
-- [ ] Missing `journal` or `notes` is acceptable for very small work items
+- [ ] Missing `notes` is acceptable for very small work items
 
 ### Acceptance Criteria
 

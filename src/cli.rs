@@ -776,8 +776,8 @@ pub(crate) struct WorkEditArgs {
     /// Changelog category for acceptance-criteria creation
     #[arg(short = 'c', long, value_enum)]
     pub(crate) category: Option<ChangelogCategory>,
-    /// Scope/topic for journal creation
-    #[arg(long)]
+    /// Deprecated compatibility flag; hidden from help
+    #[arg(long, hide = true)]
     pub(crate) scope: Option<String>,
 }
 
@@ -788,8 +788,8 @@ pub(crate) struct WorkAddArgs {
     /// Changelog category for acceptance_criteria (alternative to prefix)
     #[arg(short = 'c', long, value_enum)]
     pub(crate) category: Option<ChangelogCategory>,
-    /// Scope/topic for journal entry (e.g., "backend", "frontend", "docs")
-    #[arg(long)]
+    /// Deprecated compatibility flag; hidden from help
+    #[arg(long, hide = true)]
     pub(crate) scope: Option<String>,
 }
 
@@ -1357,7 +1357,7 @@ EXAMPLES:
     #[command(after_help = "\
 VALID FIELDS:
     - title, description, status, completed_at, refs
-    - journal, notes, acceptance_criteria
+    - notes, acceptance_criteria
 
 EXAMPLES:
     govctl work get WI-2026-04-06-001
@@ -1406,13 +1406,11 @@ VALID FIELDS:
 
   Array fields (use 'add'/'remove' instead):
     - refs: Cross-references to RFCs/ADRs
-    - journal: Execution tracking entries (date + content)
     - notes: Ad-hoc key points (short strings)
     - acceptance_criteria: Completion criteria with category
 
-FIELD SEMANTICS (per ADR-0026):
+FIELD SEMANTICS:
   - description: Task scope - define once, rarely change
-  - journal: Execution tracking - append on each progress (has date, scope, content)
   - notes: Ad-hoc points - add anytime, keep concise
 
 EXAMPLES:
@@ -1430,16 +1428,11 @@ Use dedicated verbs instead of `set` for:
     #[command(after_help = "\
 VALID ARRAY FIELDS:
     - refs: Cross-references to RFCs/ADRs (e.g., \"RFC-0001\", \"ADR-0002\")
-    - journal: Execution tracking entries - append progress with date
     - notes: Ad-hoc key points (short strings)
     - acceptance_criteria: Completion criteria with category prefix
 
 FIELD SEMANTICS:
   - description: Task scope - define once, rarely change
-  - journal: Execution tracking - append on each progress
-    * Each entry has: date (auto-filled), scope (optional), content
-    * Use --stdin for multi-line entries
-    * Use --scope to set the scope/topic
   - notes: Ad-hoc points - add anytime, keep concise
 
 ACCEPTANCE CRITERIA FORMAT:
@@ -1452,16 +1445,13 @@ ACCEPTANCE CRITERIA FORMAT:
 EXAMPLES:
     govctl work add WI-001 refs RFC-0001
     govctl work add WI-001 acceptance_criteria \"add: Implement feature\"
-    govctl work add WI-001 journal --scope typub-html --stdin <<'EOF'
-    Progress update for today...
-    EOF
     govctl work add WI-001 notes \"Remember to test edge cases\"
 ")]
     Add(WorkAddArgs),
     /// Remove value from work item array field
     #[command(after_help = "\
 VALID ARRAY FIELDS:
-    - refs, journal, notes, acceptance_criteria
+    - refs, notes, acceptance_criteria
 
 MATCHING OPTIONS:
     - pattern: Substring match (default)

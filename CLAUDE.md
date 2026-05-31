@@ -129,7 +129,7 @@ Never blur these roles:
 
 - Do not put language-specific type definitions, private field layouts, function signatures, or module organization into RFCs unless they are part of an external wire/storage contract.
 - Do not turn ADRs into mini-RFCs or implementation plans.
-- Do not use work item `description`, `journal`, or `notes` as normative authority.
+- Do not use work item `description` or `notes` as normative authority.
 
 ---
 
@@ -170,7 +170,7 @@ govctl rfc advance RFC-0001 impl
 # Nested field editing (path-based per ADR-0029)
 govctl adr edit ADR-0001 content.alternatives[0].text --set "Updated option"
 govctl adr edit ADR-0001 content.alternatives[0].pros --add "New advantage"
-govctl work edit WI-001 content.journal[0].scope --set backend
+govctl work edit WI-001 content.acceptance_criteria[0].category --set fixed
 ```
 
 Before requesting review: `just pre-commit`

@@ -1,7 +1,6 @@
 ---
 source: tests/test_help.rs
-assertion_line: 31
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: "normalize_output(&output, temp_dir.path(), &date)?"
 ---
 $ govctl work get --help
 Get work item metadata or specific field
@@ -19,7 +18,7 @@ Options:
 
 VALID FIELDS:
     - title, description, status, completed_at, refs
-    - journal, notes, acceptance_criteria
+    - notes, acceptance_criteria
 
 EXAMPLES:
     govctl work get WI-<DATE>-001

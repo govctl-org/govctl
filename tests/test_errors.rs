@@ -556,6 +556,75 @@ unexpected = "should fail schema validation"
     Ok(())
 }
 
+/// Test: Work item files with legacy inline execution history report info and pass check
+#[test]
+fn test_work_legacy_inline_history_reports_info_and_passes_check() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    fs::write(
+        temp_dir.path()
+            .join("gov/work/2026-01-01-legacy-history.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Legacy History"
+status = "queue"
+created = "2026-01-01"
+
+[content]
+description = "Work description"
+
+[[content.journal]]
+date = "2026-01-01"
+content = "Historical execution detail"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"], &["check", "--deny-warnings"]])?;
+    assert!(output.contains("info[I0401]"), "output: {}", output);
+    assert!(
+        output.contains("legacy inline execution history"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("notes"), "output: {}", output);
+    assert!(output.contains("loop state"), "output: {}", output);
+    assert!(output.contains("✓ All checks passed"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    assert!(!output.contains("exit: 1"), "output: {}", output);
+    Ok(())
+}
+
+/// Test: Work item files without legacy inline execution history do not report info
+#[test]
+fn test_work_without_legacy_inline_history_has_no_info() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    fs::write(
+        temp_dir.path().join("gov/work/2026-01-01-normal.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Normal Work"
+status = "queue"
+created = "2026-01-01"
+
+[content]
+description = "Work description"
+
+[[content.acceptance_criteria]]
+text = "Criterion"
+status = "pending"
+category = "added"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(!output.contains("info[I0401]"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    Ok(())
+}
+
 /// Test: Release files fail check when they contain unknown fields rejected by schema
 #[test]
 fn test_invalid_release_schema_check() -> common::TestResult {

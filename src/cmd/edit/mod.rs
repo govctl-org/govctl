@@ -355,9 +355,8 @@ struct AdrAddContext {
     reject_reason: Option<String>,
 }
 
-struct WorkAddContext<'a> {
+struct WorkAddContext {
     category_override: Option<crate::model::ChangelogCategory>,
-    scope_override: Option<&'a str>,
 }
 
 trait TomlEditableEntry {
@@ -1138,21 +1137,6 @@ fn work_add_acceptance_criteria(
     Ok(())
 }
 
-fn work_add_journal(
-    entry: &mut WorkItemEntry,
-    value: &str,
-    ctx: &WorkAddContext,
-) -> anyhow::Result<()> {
-    use crate::model::JournalEntry;
-    use crate::write::today;
-    entry.spec.content.journal.push(JournalEntry {
-        date: today(),
-        scope: ctx.scope_override.map(String::from),
-        content: value.to_string(),
-    });
-    Ok(())
-}
-
 #[allow(clippy::too_many_arguments)]
 pub fn add_to_field(
     config: &Config,
@@ -1161,7 +1145,7 @@ pub fn add_to_field(
     value: Option<&Option<String>>,
     stdin: bool,
     category_override: Option<crate::model::ChangelogCategory>,
-    scope_override: Option<&str>,
+    _scope_override: Option<&str>,
     pros: Option<Vec<String>>,
     cons: Option<Vec<String>>,
     reject_reason: Option<String>,
@@ -1233,16 +1217,9 @@ pub fn add_to_field(
         }
         ArtifactType::WorkItem => {
             let mut entry = WorkTomlAdapter::load(config, id)?;
-            if fp.as_simple() == Some("acceptance_criteria") || fp.as_simple() == Some("journal") {
-                let ctx = WorkAddContext {
-                    category_override,
-                    scope_override,
-                };
-                if fp.as_simple() == Some("acceptance_criteria") {
-                    work_add_acceptance_criteria(&mut entry, value, &ctx)?;
-                } else {
-                    work_add_journal(&mut entry, value, &ctx)?;
-                }
+            if fp.as_simple() == Some("acceptance_criteria") {
+                let ctx = WorkAddContext { category_override };
+                work_add_acceptance_criteria(&mut entry, value, &ctx)?;
             } else {
                 let mut doc = serde_json::to_value(entry.spec())?;
                 add_to_target_doc(ArtifactType::WorkItem, &mut doc, target, value, id)?;

@@ -58,7 +58,7 @@ When invoked:
 - [ ] `refs` field uses plain IDs (not `[[...]]` syntax)
 - [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
 - [ ] No redundant "References:" paragraph at the end of content fields — the `refs` field already tracks cross-references; repeating them as prose is noise
-- [ ] ADR does not drift into task planning, journal-style implementation updates, or closure checklists
+- [ ] ADR does not drift into task planning, progress-log implementation updates, or closure checklists
 
 ## Output Contract
 

@@ -15,7 +15,7 @@ A Work Item tracks a unit of work from inception to completion.
 Every Work Item MUST be stored as a TOML file containing:
 - `[govctl]` section with: `id`, `title`, `status`, `created`, `refs`
 - optional `[govctl]` fields: `started`, `completed`
-- `[content]` section with: `description`, `acceptance_criteria`, `journal`, `notes`
+- `[content]` section with: `description`, `acceptance_criteria`, `notes`
 - optional `[verification]` section with: `required_guards`, `waivers`
 
 Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.

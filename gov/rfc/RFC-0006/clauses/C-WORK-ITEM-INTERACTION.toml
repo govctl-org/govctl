@@ -26,14 +26,14 @@ Before transitioning a work item to `done`, the loop MUST verify:
 2. All required verification guards pass (per RFC-0001:C-GATE-CONDITIONS)
 3. The work item has been in `active` state during this loop execution
 
-**Journal field usage:**
+**Durable work item context:**
 
-The work item `journal` field is reserved for **durable context** that should persist across sessions:
+The work item `notes` field is reserved for **durable context** that should persist across sessions:
 - Key decisions made during implementation
 - Blockers encountered and how they were resolved
 - Important technical insights
 
-Execution trace (round-by-round progress) MUST be tracked in loop state, not in the work item `journal` field. This maintains the work item as a durable governance artifact while allowing rich execution tracking in ephemeral loop state.
+Execution trace (round-by-round progress) MUST be tracked in loop state, not in work item fields.
 
 **Loop-level status:**
 
@@ -46,5 +46,5 @@ The loop tracks additional execution status in loop state:
 
 These loop-level statuses are independent of work item `status` field values (queue, active, done, cancelled).
 
-Rationale: Using `govctl work move` commands ensures all status transitions are validated and auditable. Separating loop-level status from work item status maintains clear boundaries between execution state (ephemeral) and governance artifacts (durable).
+Rationale: Using `govctl work move` commands ensures all status transitions are validated and auditable. Separating loop-level status from work item status and notes maintains clear boundaries between execution state (ephemeral) and governance artifacts (durable).
 """

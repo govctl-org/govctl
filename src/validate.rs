@@ -364,6 +364,9 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
     // Validate work item descriptions
     validate_work_item_descriptions(index, config, &mut result);
 
+    // Surface legacy inline execution history without blocking validation.
+    validate_work_item_legacy_inline_history(index, config, &mut result);
+
     // Validate tags against allowed set — [[RFC-0002:C-RESOURCES]]
     validate_artifact_tags(index, config, &mut result);
 
@@ -896,6 +899,26 @@ fn validate_work_item_descriptions(
                 path_display,
             ));
         }
+    }
+}
+
+/// Report legacy inline execution history for migration awareness per [[ADR-0047]].
+fn validate_work_item_legacy_inline_history(
+    index: &ProjectIndex,
+    config: &Config,
+    result: &mut ValidationResult,
+) {
+    for work in &index.work_items {
+        if work.spec.content.journal.is_empty() {
+            continue;
+        }
+
+        let path_display = config.display_path(&work.path).display().to_string();
+        result.diagnostics.push(Diagnostic::new(
+            DiagnosticCode::I0401WorkLegacyInlineHistory,
+            "Work item contains legacy inline execution history; move durable takeaways to notes and keep new execution trace in loop state.",
+            path_display,
+        ));
     }
 }
 

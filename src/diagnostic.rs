@@ -7,6 +7,7 @@ use std::fmt;
 pub enum DiagnosticLevel {
     Error,
     Warning,
+    Info,
 }
 
 /// Diagnostic error codes
@@ -138,6 +139,9 @@ pub enum DiagnosticCode {
     W0110SchemaOutdated,
     W0111AdrMigrationNeedsReview,
     W0112AdrMigrationWarning,
+
+    // Informational diagnostics (I04xx)
+    I0401WorkLegacyInlineHistory,
 }
 
 impl DiagnosticCode {
@@ -155,6 +159,7 @@ impl DiagnosticCode {
             | Self::W0110SchemaOutdated
             | Self::W0111AdrMigrationNeedsReview
             | Self::W0112AdrMigrationWarning => DiagnosticLevel::Warning,
+            Self::I0401WorkLegacyInlineHistory => DiagnosticLevel::Info,
             _ => DiagnosticLevel::Error,
         }
     }
@@ -268,6 +273,8 @@ impl DiagnosticCode {
             Self::W0110SchemaOutdated => "W0110",
             Self::W0111AdrMigrationNeedsReview => "W0111",
             Self::W0112AdrMigrationWarning => "W0112",
+            // I04xx - Work Item info
+            Self::I0401WorkLegacyInlineHistory => "I0401",
         }
     }
 }
@@ -297,6 +304,7 @@ impl fmt::Display for Diagnostic {
         let level_str = match self.level {
             DiagnosticLevel::Error => "error",
             DiagnosticLevel::Warning => "warning",
+            DiagnosticLevel::Info => "info",
         };
         write!(
             f,

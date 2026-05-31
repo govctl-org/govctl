@@ -3,19 +3,19 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.1.1"
+version = "1.2.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-03-22"
+updated = "2026-05-31"
 tags = [
     "core",
     "schema",
     "validation",
     "lifecycle",
 ]
-signature = "d05eb40d0eb61a843eb2b0279c290f3c9d5a16b17d97f88790b2f6466510190b"
+signature = "9cfff584cdf6bb19b19dc0c74d63f0b7b3ba1d3db8c6498408badb8041cb04ec"
 
 [[sections]]
 title = "Summary"
@@ -49,6 +49,13 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.2.0"
+date = "2026-05-31"
+notes = "Remove a legacy execution-history field from Work Item field operations"
+removed = ["legacy execution-history field is no longer path-addressable per ADR-0047"]
+changed = ["historical execution entries may still be parsed for Work Item rendering"]
 
 [[changelog]]
 version = "1.1.1"

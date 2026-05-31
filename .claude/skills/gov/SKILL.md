@@ -37,7 +37,6 @@ govctl work new --active "<title>"
 govctl work move <WI-ID> <status>
 govctl work set <WI-ID> description "Scope and why"
 govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
-govctl work add <WI-ID> journal "Ran tests; fixed parser bug" --scope parser
 govctl work add <WI-ID> notes "Do not retry old fixture path; it fails because snapshots are stale"
 govctl work add <WI-ID> refs RFC-0001
 govctl work add <WI-ID> tags <tag>
@@ -63,11 +62,10 @@ govctl render
 6. In source comments, reference artifacts with `[[artifact-id]]`.
 7. Use work item fields correctly:
    - `description`: task scope and why; set once, rarely change
-   - `journal`: execution log; append actions and outcomes
    - `notes`: durable learnings; record constraints, decisions, retry rules, and failure causes
 8. Avoid loops. If the same approach already failed, do not repeat it unchanged.
 9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
-10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description`, `journal`, or `notes`.
+10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description` or `notes`.
 
 ## Working Memory
 
@@ -76,17 +74,14 @@ The active work item is persistent working memory. Read it with `govctl work sho
 ### Read order
 
 1. `description` tells you the scope.
-2. `journal` tells you what was tried and what happened.
-3. `notes` tells you what to remember before the next attempt.
-4. `acceptance_criteria` tells you what must be true before closure.
+2. `notes` tells you what to remember before the next attempt.
+3. `acceptance_criteria` tells you what must be true before closure.
 
 ### Write rules
 
-- Add a `journal` entry after meaningful progress, verification, or failure.
 - Add a `notes` entry when you learn something future steps must obey.
-- On failure, write both when appropriate:
-  - `journal`: what you ran and what failed
-  - `notes`: why it failed, what not to retry, or what to try instead
+- Record execution trace in loop state when available.
+- On failure, put durable retry rules in `notes`.
 
 ## Workflow
 
@@ -176,10 +171,9 @@ Implementation rules:
 1. Keep changes focused.
 2. Follow RFC clauses and cite them in source comments when useful.
 3. After each substantive change, run the relevant validation.
-4. Update working memory as you go:
+4. Update durable working memory as you go:
 
 ```bash
-govctl work add <WI-ID> journal "Implemented X; govctl check passes" --scope <scope>
 govctl work add <WI-ID> notes "Do not retry Y; it fails because Z"
 ```
 
@@ -195,8 +189,8 @@ Run the relevant verification for the change:
 
 If a check fails:
 
-- Record the failed attempt in `journal`
-- Record the lesson or retry rule in `notes`
+- Record the failed attempt in loop state when available
+- Record the durable lesson or retry rule in `notes`
 - Change approach before retrying
 
 Do not continue until green.
@@ -253,7 +247,7 @@ govctl work move <WI-ID> done
 | `govctl check` fails          | Read diagnostics, fix, rerun                                    |
 | Tests fail                    | Debug, fix, rerun                                               |
 | `work move ... done` rejected | Add or tick acceptance criteria first                           |
-| Same failure repeats          | Read `notes`, then `journal`; record a new plan or stop and ask |
+| Same failure repeats          | Read `notes`; record a new plan or stop and ask |
 
 ## Commit Conventions
 
@@ -268,7 +262,7 @@ Use the `commit` skill for all raw VCS operations.
 - [ ] Environment validated; config read
 - [ ] Active work item exists
 - [ ] `govctl work show <WI-ID>` read before implementation
-- [ ] `description`, `journal`, and `notes` used correctly
+- [ ] `description` and `notes` used correctly
 - [ ] Governance analysis completed or explicitly skipped
 - [ ] Validation and tests passed
 - [ ] Acceptance criteria ticked

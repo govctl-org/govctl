@@ -35,7 +35,7 @@ The loop MUST preserve:
 - Round count for each work item
 
 The loop MAY preserve:
-- Detailed execution trace (journal entries, round logs)
+- Detailed execution trace (execution entries, round logs)
 - Guard execution results
 - Agent context and decision history
 

@@ -447,6 +447,7 @@ pub fn diagnostic(diag: &Diagnostic) {
         let level_str = match diag.level {
             DiagnosticLevel::Error => "error".red().bold().to_string(),
             DiagnosticLevel::Warning => "warning".yellow().bold().to_string(),
+            DiagnosticLevel::Info => "info".cyan().bold().to_string(),
         };
         eprintln!(
             "{}[{}]: {} ({})",
@@ -459,6 +460,7 @@ pub fn diagnostic(diag: &Diagnostic) {
         let level_str = match diag.level {
             DiagnosticLevel::Error => "error",
             DiagnosticLevel::Warning => "warning",
+            DiagnosticLevel::Info => "info",
         };
         eprintln!(
             "{}[{}]: {} ({})",

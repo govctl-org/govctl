@@ -216,7 +216,7 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 
 - Full RFC-style obligation lists
 - Private code structure or language-specific type definitions unless they are central to the design decision itself
-- Work-item plans, journal entries, or implementation progress tracking
+- Work-item plans, implementation logs, or progress tracking
 
 ### Content Field Formatting
 

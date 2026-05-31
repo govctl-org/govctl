@@ -496,9 +496,14 @@ pub fn render_work_item(item: &WorkItemEntry) -> anyhow::Result<String> {
     let _ = writeln!(out, "{}", content.description);
     let _ = writeln!(out);
 
-    // Journal (per ADR-0026)
+    // Legacy inline history remains renderable for existing work items per [[ADR-0047]].
     if !content.journal.is_empty() {
         let _ = writeln!(out, "## Journal");
+        let _ = writeln!(out);
+        let _ = writeln!(
+            out,
+            "> Legacy execution history preserved from older work items. Move durable takeaways to `notes` and keep new execution trace in loop state."
+        );
         let _ = writeln!(out);
         for entry in &content.journal {
             // Render heading with date and optional scope
@@ -802,7 +807,7 @@ mod tests {
         Ok(())
     }
 
-    // Tests for render_work_item with journal field per [[ADR-0026]]
+    // Tests for render_work_item with legacy inline history rendering per [[ADR-0047]]
 
     #[test]
     fn test_render_work_item_journal() -> Result<(), Box<dyn std::error::Error>> {
@@ -836,6 +841,8 @@ mod tests {
 
         let result = render_work_item(&item)?;
         assert!(result.contains("## Journal"));
+        assert!(result.contains("Legacy execution history"));
+        assert!(result.contains("loop state"));
         assert!(result.contains("### 2026-02-22"));
         assert!(result.contains("Started implementation"));
         Ok(())

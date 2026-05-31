@@ -101,7 +101,7 @@ Use these keywords in ALL CAPS in normative clauses:
 - Rust/TypeScript/Python type declarations
 - Private struct field lists or enum variant names
 - Function signatures, module layout, helper names
-- Work-item execution plans, step sequencing, or journal-style progress notes
+- Work-item execution plans, step sequencing, or progress-log notes
 
 Only include representation details when they are themselves the external contract.
 

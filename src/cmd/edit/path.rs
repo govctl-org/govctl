@@ -1,7 +1,7 @@
 //! Path-based nested field addressing per [[ADR-0029]].
 //!
 //! Parses field paths like `alt[0].pros[1]` into structured segments
-//! for nested access into ADR alternatives, work item journal entries, etc.
+//! for nested access into ADR alternatives, work item acceptance criteria, etc.
 
 use super::rules as edit_rules;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};

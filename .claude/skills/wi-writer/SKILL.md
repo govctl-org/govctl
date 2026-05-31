@@ -25,7 +25,6 @@ They are operational memory, not normative authority and not decision records.
 govctl work new --active "<title>"
 govctl work set <WI-ID> description "Task scope description"
 govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
-govctl work add <WI-ID> journal "Progress update" --scope module
 govctl work add <WI-ID> notes "Key observation"
 govctl work add <WI-ID> refs RFC-NNNN
 govctl work add <WI-ID> tags <tag>
@@ -52,39 +51,16 @@ Replace the placeholder immediately. One paragraph explaining:
 - Why it's needed
 - Any relevant context
 
-**Important:** Description is for task scope, NOT execution tracking. Use `journal` for progress and outcomes, and `notes` for durable learnings.
+**Important:** Description is for task scope, NOT execution tracking. Use loop state for execution trace when available, and `notes` for durable learnings that belong on the work item.
 It must not introduce new product behavior requirements that are missing from the governing RFC or ADR.
 
-### Journal
+### Execution Trace
 
-**Purpose:** Execution process tracking — how the work is progressing.
+**Where execution information goes now:**
 
-Journal entries record progress updates, bug fixes, and verification results during execution. Each entry has:
-
-- `date` (required): ISO date "YYYY-MM-DD"
-- `scope` (optional): Topic/module identifier
-- `content` (required): Markdown text with details
-
-```bash
-# Add journal entry (date is auto-filled to today)
-govctl work add <WI-ID> journal "Added journal section rendering to work item output."
-
-# With scope (topic/module tag)
-govctl work add <WI-ID> journal "Fixed parser edge case" --scope parser
-
-# Multi-line via stdin
-govctl work add <WI-ID> journal --scope render --stdin <<'EOF'
-Completed the rendering pipeline.
-All snapshot tests updated.
-EOF
-```
-
-**When to add journal entries:**
-
-- After completing a significant chunk of work
-- When fixing bugs during implementation
-- After running verification gates
-- After a failed attempt that changed the next step
+- Round-by-round execution trace belongs in loop state.
+- Durable lessons, constraints, retry rules, and future-facing observations belong in `notes`.
+- Acceptance progress belongs in `acceptance_criteria` status.
 
 ### Notes
 
@@ -144,11 +120,10 @@ govctl work add <WI-ID> refs ADR-0023
 | Field                 | Purpose                    | Update Pattern                                |
 | --------------------- | -------------------------- | --------------------------------------------- |
 | `description`         | Task scope declaration     | Define once, rarely change                    |
-| `journal`             | Execution process tracking | Append on each progress                       |
 | `notes`               | Durable learnings          | Add when future steps must remember something |
 | `acceptance_criteria` | Completion criteria        | Define then tick                              |
 
-**Per ADR-0026:** Keep description focused on "what", journal on "what happened", and notes on "what to remember next".
+**Per ADR-0047:** Keep description focused on "what", notes on durable "what to remember next", and execution trace outside the work item field surface.
 If you discover a missing requirement or unresolved design choice, stop and route that back to RFC/ADR work rather than inventing it inside the work item.
 
 ## Writing Rules
@@ -212,6 +187,6 @@ Keep `chore:` criteria for validation summaries, especially when the validation 
 | Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"         |
 | No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass" |
 | No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                 |
-| Description used for tracking      | Use journal field for execution progress per ADR-0026       |
-| No journal entries for long task   | Add journal entries for significant progress updates        |
+| Description used for tracking      | Use loop state for execution trace or `notes` for durable memory |
+| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state |
 | Work item invents new requirements | Move those requirements into an RFC or ADR first            |

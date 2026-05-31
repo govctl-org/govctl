@@ -271,11 +271,6 @@ What needs to be done.
 
 notes = ["Key observation", "Remember edge case"]
 
-[[content.journal]]
-date = "2026-01-17"
-scope = "backend"
-content = "Implemented the core logic."
-
 [[content.acceptance_criteria]]
 text = "First criterion"
 status = "done"
@@ -297,10 +292,6 @@ category = "chore"
 | `govctl.completed`                       | no       | date   | When work finished                                  |
 | `govctl.refs`                            | no       | array  | Cross-references                                    |
 | `content.description`                    | yes      | string | Work description                                    |
-| `content.journal`                        | no       | array  | Execution tracking entries (per [[ADR-0026]])       |
-| `content.journal[].date`                 | yes      | string | ISO date `YYYY-MM-DD`                               |
-| `content.journal[].scope`                | no       | string | Topic/module identifier                             |
-| `content.journal[].content`              | yes      | string | Progress details (Markdown)                         |
 | `content.notes`                          | no       | array  | Ad-hoc key points (string array)                    |
 | `content.acceptance_criteria`            | no       | array  | Completion checklist                                |
 | `content.acceptance_criteria[].text`     | yes      | string | Criterion text                                      |
