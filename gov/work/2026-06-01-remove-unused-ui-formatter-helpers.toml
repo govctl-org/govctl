@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-005"
+title = "Remove unused UI formatter helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Remove unused CLI UI formatter helpers that are currently hidden by a broad module-level dead_code allowance. Keep the active output formatting surface unchanged and leave only helpers that are exercised by commands or internal formatting."
+
+[[content.acceptance_criteria]]
+text = "Unused UI formatter helpers are deleted"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Broad ui module dead_code allowance is removed"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Focused UI verification and full verification pass"
+status = "done"
+category = "chore"

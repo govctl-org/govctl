@@ -5,8 +5,6 @@
 //! Provides consistent, colorized output for all CLI commands.
 //! Colors auto-disable when output is not a TTY (agent-friendly).
 
-#![allow(dead_code)] // Helpers for future command migrations
-
 use owo_colors::OwoColorize;
 use std::fmt::Display;
 use std::path::Path;
@@ -72,22 +70,11 @@ pub fn created(kind: &str, path: &Path) {
 }
 
 /// Format a file path (cyan)
-#[allow(dead_code)]
 pub fn path_str(p: &Path) -> String {
     if use_colors() {
         format!("{}", p.display().cyan())
     } else {
         format!("{}", p.display())
-    }
-}
-
-/// Format an artifact ID (cyan, bold)
-#[allow(dead_code)]
-pub fn id_str(id: &str) -> String {
-    if use_colors() {
-        format!("{}", id.cyan().bold())
-    } else {
-        id.to_string()
     }
 }
 
@@ -139,15 +126,6 @@ pub fn moved(filename: &str, status: &str) {
         eprintln!("Moved {} to {}", filename.cyan(), status.green().bold());
     } else {
         eprintln!("Moved {} to {}", filename, status);
-    }
-}
-
-/// Format a status transition message
-pub fn transitioned(id: &str, action: &str, target: &str) {
-    if use_colors() {
-        eprintln!("{} {}: {}", action, id.cyan().bold(), target.green());
-    } else {
-        eprintln!("{} {}: {}", action, id, target);
     }
 }
 
@@ -409,35 +387,6 @@ pub fn dry_run_mkdir(path: &Path) {
         eprintln!("{}: {}", "Would create dir".yellow(), path.display().cyan());
     } else {
         eprintln!("Would create dir: {}", path.display());
-    }
-}
-
-/// Format a dry-run file move preview
-pub fn dry_run_move(from: &Path, to: &Path) {
-    if use_colors() {
-        eprintln!(
-            "{}: {} -> {}",
-            "Would move".yellow(),
-            from.display().cyan(),
-            to.display().cyan()
-        );
-    } else {
-        eprintln!("Would move: {} -> {}", from.display(), to.display());
-    }
-}
-
-/// Format a dry-run operation summary
-pub fn dry_run_summary(kind: &str, id: &str, action: &str) {
-    if use_colors() {
-        eprintln!(
-            "{} {} {}: {}",
-            "Would".yellow(),
-            action,
-            kind,
-            id.cyan().bold()
-        );
-    } else {
-        eprintln!("Would {} {}: {}", action, kind, id);
     }
 }
 
