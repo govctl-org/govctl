@@ -16,11 +16,6 @@ refs = [
 [content]
 description = "Clarify `wi-writer` guidance so authors understand the relationship between project-level `verification.default_guards` and per-work-item `verification.required_guards` when deciding where to attach repeatable command-style checks."
 
-[[content.journal]]
-date = "2026-05-25"
-scope = "wi-writer"
-content = "Clarified `wi-writer` guard guidance: project-level `verification.default_guards` apply broadly, work-item-level `verification.required_guards` adds task-specific guards on top of those defaults, and waivers apply to the effective combined guard set. Extended generated asset coverage to assert the default-vs-work-item relationship guidance is present. Verified with `cargo test -q test_wi_writer_recommends_verification_guards --test test_agent_dir`, `cargo test -q --test test_agent_dir`, and `govctl check`."
-
 [[content.acceptance_criteria]]
 text = "Document that `verification.default_guards` are project-level defaults and `verification.required_guards` adds task-specific guards"
 status = "done"

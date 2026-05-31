@@ -23,32 +23,6 @@ plain VCS commit.
 See: https://github.com/govctl-org/govctl/issues/16"""
 notes = ["For jj-git colocated repositories, detect jj with jj root before checking git and avoid parallel VCS detection that could choose the wrong commit workflow."]
 
-[[content.journal]]
-date = "2026-05-31"
-content = "Added governance detection gate (Step 1.5) to commit skill. Checks for gov/config.toml or gov/ directory. Non-governed repos skip govctl steps and do plain VCS commit."
-
-[[content.journal]]
-date = "2026-05-31"
-scope = "skills-agents"
-content = "Synced same fix to global skill copy at ~/.agents/skills/commit/SKILL.md. Also improved Step 1 wording to warn against parallel VCS detection (jj root + git rev-parse)."
-
-[[content.journal]]
-date = "2026-05-31"
-scope = "skills-agents"
-content = "Added governance detection gate (Step 1.5) to .claude/skills/commit/SKILL.md. Checks for gov/config.toml or gov/ directory before running govctl commands. If not governed, skips Steps 2-3 and 7, falls through to plain VCS commit."
-
-[[content.journal]]
-date = "2026-05-31"
-content = "Synced fix to global skill copy at ~/.agents/skills/commit/SKILL.md. Also improved Step 1 to warn against parallel VCS detection."
-
-[[content.journal]]
-date = "2026-05-31"
-content = "Renamed Step 1.5 to Step 1b — folded governance detection into Step 1 as sub-steps 1a (VCS) and 1b (governance). Cleaner naming, no renumbering churn."
-
-[[content.journal]]
-date = "2026-05-31"
-content = "Committed fix(skills-agents): add governance detection gate to commit skill; govctl check passes"
-
 [[content.acceptance_criteria]]
 text = "commit skill detects governance before running govctl commands"
 status = "done"

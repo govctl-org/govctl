@@ -16,16 +16,6 @@ refs = [
 [content]
 description = "Redesign ADR data model so chosen options live in the decision, alternatives only capture non-selected options, and migration produces renderable artifacts with warnings for unresolved history."
 
-[[content.journal]]
-date = "2026-04-06"
-scope = "governance"
-content = "Paused ADR redesign/migration line to implement ADR-0037 edit-surface work first; split into a dedicated work item to keep CLI-surface changes separately auditable."
-
-[[content.journal]]
-date = "2026-04-06"
-scope = "migration"
-content = "Implemented ADR v3 with selected_option, structured consequences, and migration metadata; updated render/check/edit semantics; added a v2->v3 migrate step; migrated the repository ADRs to schema version 3; cargo test and govctl check both pass, with expected migration-review warnings on historical ADRs that need manual cleanup."
-
 [[content.acceptance_criteria]]
 text = "Define and accept an ADR for the redesigned ADR model and migration behavior"
 status = "done"

@@ -11,11 +11,6 @@ completed = "2026-04-06"
 [content]
 description = "Scope: add regression tests for canonical edit, targeted ADR restoration, and structured diagnostics so the adr-refactor patch coverage clears Codecov. Why: the branch landed large changes in edit/runtime/router/diagnostic paths and currently leaves significant new logic uncovered."
 
-[[content.journal]]
-date = "2026-04-06"
-scope = "coverage"
-content = "Added regression tests for canonical edit/runtime/router paths, targeted ADR restoration behavior, guard diagnostics, render missing-item behavior, lock failures before init, and TUI project-load diagnostic selection; cargo test -q, cargo run --quiet -- check, and cargo llvm-cov --summary-only all pass."
-
 [[content.acceptance_criteria]]
 text = "add regression coverage for canonical edit/runtime/router branches introduced by ADR-0037"
 status = "done"

@@ -12,14 +12,6 @@ completed = "2026-02-24"
 description = "Fix govctl work add journal command which returned E0810 (not an array or unsupported). Also fix snapshot test instability caused by date-dependent signature hashes."
 notes = ["Snapshot tests that include generated signatures should normalize unstable hashes or dates; stale snapshot churn can hide real edit regressions."]
 
-[[content.journal]]
-date = "2026-02-24"
-content = "Fixed missing journal arm in add_to_field match statement"
-
-[[content.journal]]
-date = "2026-02-24"
-content = "Added journal arm to add_to_field match in edit.rs. Fixed snapshot instability by normalizing sha256 hashes in test output. Added test_work_add_journal integration test. Updated 14 stale snapshots."
-
 [[content.acceptance_criteria]]
 text = "work add journal command succeeds"
 status = "done"

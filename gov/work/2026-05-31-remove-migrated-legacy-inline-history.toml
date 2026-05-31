@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-006"
+title = "Remove migrated legacy inline history"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+
+[content]
+description = "Remove the repository's remaining legacy inline execution-history blocks after WI-2026-05-31-005 copied durable takeaways into notes. This cleans local governance artifacts without changing compatibility code that can still render legacy data in external repositories."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes without I0401 diagnostics for local work items"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Remaining content.journal blocks are removed from local work items"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Legacy render compatibility code remains unchanged"
+status = "done"
+category = "chore"

@@ -22,11 +22,6 @@ Refactor init/sync/migrate commands to fix three issues:
 Changes: (a) remove skill/agent dumping from init, add hint; (b) rename `sync` to `init-skills`; (c) add schema file overwrite to migrate pipeline."""
 notes = ["Project init should not install skills or agents; use init-skills for generated agent assets, and keep migrate responsible for syncing schemas."]
 
-[[content.journal]]
-date = "2026-03-17"
-scope = "cli"
-content = "Implementation complete: removed skills/agents from init, renamed sync to init-skills, added schema sync to migrate, amended RFC-0002:C-GLOBAL-COMMANDS v0.4.0, drafted ADR-0035. All 159 unit tests + 163 integration tests pass. govctl check passes."
-
 [[content.acceptance_criteria]]
 text = "govctl check passes"
 status = "done"

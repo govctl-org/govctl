@@ -11,21 +11,6 @@ completed = "2026-05-25"
 [content]
 description = "Audit project-facing documentation, embedded agent/skill docs, and README/CLAUDE guidance for stale command names, governance workflow references, and behavior descriptions after the recent guard, work-item, and self-update changes. Correct documentation-only drift where found and preserve current implementation behavior."
 
-[[content.journal]]
-date = "2026-05-25"
-scope = "docs"
-content = "Audited README, CLAUDE.md, .claude skill/agent docs, plugin metadata, docs guide pages, schema notes, and templates for stale references. Corrected outdated Rust version guidance, TOML data-model examples, canonical edit examples, guard field names, work-item storage examples, init-skills guidance, and stale ADR/work-item command examples."
-
-[[content.journal]]
-date = "2026-05-25"
-scope = "validation"
-content = "Verified documentation-only audit with cargo run --quiet -- check, cargo test -q --test test_agent_dir, and git diff --check."
-
-[[content.journal]]
-date = "2026-05-25"
-scope = "cli-help"
-content = "Follow-up audit pass also corrected ADR deprecate CLI help text so the command list matches the implementation's supersede-only ADR lifecycle."
-
 [[content.acceptance_criteria]]
 text = "Stale README, CLAUDE, embedded skill, or agent documentation references found in the audit are corrected"
 status = "done"

@@ -15,11 +15,6 @@ refs = [
 [content]
 description = "Add govctl self-update command using the self_update crate to download prebuilt binaries from GitHub Releases, and add cargo-binstall metadata to Cargo.toml. Amends RFC-0002 with C-SELF-UPDATE clause and ADR-0041 for the mechanism decision."
 
-[[content.journal]]
-date = "2026-04-13"
-scope = "cli"
-content = "Implemented self-update command and cargo-binstall metadata; all 192 unit tests + integration tests pass; govctl check passes with 0 warnings"
-
 [[content.acceptance_criteria]]
 text = "Implement govctl self-update command with --check flag"
 status = "done"

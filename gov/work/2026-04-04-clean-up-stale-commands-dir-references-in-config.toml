@@ -11,11 +11,6 @@ completed = "2026-04-04"
 [content]
 description = "Remove stale commands/ references from agent_dir doc comments and config template in src/config.rs. The commands/ subdirectory no longer exists; only skills/ and agents/ are used."
 
-[[content.journal]]
-date = "2026-04-04"
-scope = "config"
-content = "Fixed two stale comments in src/config.rs: agent_dir doc comment and config template no longer mention commands/ subdirectory. All tests pass."
-
 [[content.acceptance_criteria]]
 text = "govctl check passes"
 status = "done"

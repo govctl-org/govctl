@@ -18,11 +18,6 @@ refs = [
 description = "Update the `wi-writer` guidance so work items that only assert routine command completion, such as `cargo test` passing, direct authors toward reusable verification guards or per-work-item `verification.required_guards` rather than duplicating guardable checks as plain acceptance criteria."
 notes = ["GitHub issue: https://github.com/govctl-org/govctl/issues/14"]
 
-[[content.journal]]
-date = "2026-05-25"
-scope = "wi-writer"
-content = "Added generated-asset coverage for `wi-writer` guard recommendation guidance and updated `.claude/skills/wi-writer/SKILL.md` to prefer reusable verification guards for command-style checks. Verified with `cargo test -q test_wi_writer_recommends_verification_guards --test test_agent_dir`, `cargo test -q --test test_agent_dir`, and `govctl check`."
-
 [[content.acceptance_criteria]]
 text = "Document when `wi-writer` should recommend existing guards or per-work-item `verification.required_guards` for command-style checks"
 status = "done"

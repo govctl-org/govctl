@@ -32,11 +32,6 @@ Tags to create:
 - plugin: Claude Code plugin integration
 - migration: Migration tools and brownfield adoption"""
 
-[[content.journal]]
-date = "2026-04-21"
-scope = "governance"
-content = "Backfilled 14 controlled-vocabulary tags across all governance artifacts: 5 RFCs, 35 clauses, 42 ADRs, 2 guards, and this work item. Tags registered in gov/config.toml [tags] allowed. govctl check passes clean."
-
 [[content.acceptance_criteria]]
 text = "All 14 tags registered in gov/config.toml [tags] allowed"
 status = "done"

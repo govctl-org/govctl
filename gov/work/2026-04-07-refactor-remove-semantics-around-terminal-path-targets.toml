@@ -11,11 +11,6 @@ completed = "2026-04-07"
 [content]
 description = "Refactor canonical edit planning so set/add/remove/tick all target the terminal path node instead of artifact-specific special cases."
 
-[[content.journal]]
-date = "2026-04-07"
-scope = "edit"
-content = "Refactored edit planning around terminal targets: planner now classifies simple/nested node vs indexed-item targets, set/add/remove/tick dispatch through shared target semantics, and coverage now includes indexed set plus canonicalized remove feedback."
-
 [[content.acceptance_criteria]]
 text = "set/add/remove/tick share a unified terminal-target planning model"
 status = "done"

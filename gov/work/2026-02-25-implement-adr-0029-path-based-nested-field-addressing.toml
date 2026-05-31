@@ -26,25 +26,6 @@ notes = [
     "Phase 3 focus: parity snapshots docs help text and migration compatibility verification",
 ]
 
-[[content.journal]]
-date = "2026-02-25"
-scope = "cli"
-content = "Kickoff implementation for ADR-0029; start with parser and command wiring"
-
-[[content.journal]]
-date = "2026-02-25"
-scope = "design"
-content = "Expanded scope with ADR-0030: adopt strict parser strategy and JSON SSOT plus schema-driven generation for edit rules."
-
-[[content.journal]]
-date = "2026-02-25"
-scope = "planning"
-content = "Reorganized WI into Phase 1/2/3 execution plan and aligned scope with ADR-0030 parser strategy."
-
-[[content.journal]]
-date = "2026-02-26"
-content = "Implemented JSON SSOT for edit rules (edit-ops.json + schema), build-time schema validation/code generation in build.rs, generated alias/prefix macro resolvers, strict lowercase segment parser policy, and wired nested depth checks to generated rules."
-
 [[content.acceptance_criteria]]
 text = "Path parser supports segment/index grammar with tests"
 status = "done"

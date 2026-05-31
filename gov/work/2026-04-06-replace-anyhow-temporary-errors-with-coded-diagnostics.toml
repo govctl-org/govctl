@@ -12,11 +12,6 @@ completed = "2026-04-06"
 description = "Scope: replace remaining user-facing anyhow temporary errors with structured diagnostics and stable codes, starting from direct CLI command paths. Why: the project already requires strict machine-parseable diagnostics, but several commands still emit uncoded temporary errors or stringify diagnostics into anyhow wrappers."
 notes = ["User-facing failures should use structured diagnostic codes and normalized scope context; avoid reintroducing temporary anyhow errors for CLI-visible paths."]
 
-[[content.journal]]
-date = "2026-04-06"
-scope = "diagnostics"
-content = "Replaced user-facing temporary anyhow errors in guard, render, lifecycle, edit adapter/runtime, lock, main, and TUI paths with structured diagnostics; normalized not-found context to search scope; cargo test -q, cargo test -q --test test_edit, cargo test -q --test test_changelog, cargo clippy --all-targets --all-features -- -D warnings, and govctl check all pass."
-
 [[content.acceptance_criteria]]
 text = "diagnostics for the converted paths use explicit DiagnosticCode values and preserve stable formatting for automation"
 status = "done"

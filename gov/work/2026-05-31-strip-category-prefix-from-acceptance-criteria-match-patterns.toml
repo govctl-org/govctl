@@ -12,10 +12,6 @@ completed = "2026-05-31"
 description = "After e3d19afd, acceptance criteria render with category prefixes (e.g. 'fixed: some text'). But tick/remove matching only compares against the text field, so agents using displayed text fail with E0806. Fix: strip known category prefixes from patterns before matching."
 notes = ["Acceptance-criteria match patterns strip known changelog category prefixes before matching, except in regex mode where the pattern remains literal."]
 
-[[content.journal]]
-date = "2026-05-31"
-content = "Added strip_category_prefix in resolve_match_indices. Strips known category prefixes (added:, fixed:, chore:, etc.) case-insensitively from patterns before matching. Regex mode excluded. Added 7 unit tests. Manual verification: 'fixed: tick matches...' pattern now works."
-
 [[content.acceptance_criteria]]
 text = "tick matches category-prefixed pattern on acceptance criteria"
 status = "done"

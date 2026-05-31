@@ -34,11 +34,6 @@ User guide in docs/guide/ is missing documentation for several CLI features that
 
 10. **Canonical edit surface**: <resource> edit <ID> <path> --set/--add/--remove/--tick pattern."""
 
-[[content.journal]]
-date = "2026-04-21"
-scope = "docs"
-content = "Updated docs/guide/validation.md with tags system, guard subcommands, verify, self-update, init-skills, and migrate distinction. Updated getting-started.md with TUI shortcuts, release workflow, canonical edit surface, describe command, and migrate comparison table. Updated adrs.md, rfcs.md, and work-items.md with canonical edit paths, path aliases, and tagging examples. Tags field added to work item. govctl check and cargo test pass clean."
-
 [[content.acceptance_criteria]]
 text = "Tags system documented (tag new/delete/list, --tag filter, controlled vocabulary)"
 status = "done"
