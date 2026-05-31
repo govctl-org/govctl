@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-052"
 title = "Extract render reference helpers"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract inline-reference expansion, reference link rendering, and shared rendered-markdown file writing from `src/render.rs` into focused render child modules while preserving public render API behavior."
 
 [[content.acceptance_criteria]]
 text = "reference link and inline expansion helpers live in focused render child modules"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "rendered markdown file writing helper remains behavior-preserving for dry-run and write paths"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "render unit tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

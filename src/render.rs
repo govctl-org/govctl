@@ -13,101 +13,23 @@ use crate::signature::{
     compute_adr_signature, compute_rfc_signature, compute_work_item_signature,
     format_signature_header,
 };
-use crate::ui;
-use regex::Regex;
 use std::fmt::Write as FmtWrite;
-use std::io::Write;
 
-/// Generate a markdown link for an artifact reference.
-///
-/// Supports:
-/// - RFC refs: `RFC-0000` → `[RFC-0000](../rfc/RFC-0000.md)`
-/// - Clause refs: `RFC-0000:C-NAME` → `[RFC-0000:C-NAME](../rfc/RFC-0000.md#rfc-0000c-name)`
-/// - ADR refs: `ADR-0042` → `[ADR-0042](../adr/ADR-0042.md)`
-/// - Work Item refs: `WI-2026-01-17-001` → `[WI-2026-01-17-001](../work/WI-2026-01-17-001.md)`
-fn ref_link(ref_id: &str) -> String {
-    ref_link_with_base(ref_id, "..")
-}
+mod links;
+mod output;
 
-/// Generate a markdown link for an artifact reference from the repository root.
-///
-/// Used for files like CHANGELOG.md that live at the root level.
-/// The `docs_output` path comes from config (e.g., "docs").
+pub use links::expand_inline_refs;
+use links::render_refs;
+use output::write_rendered_md;
+
 pub fn ref_link_from_root(ref_id: &str, docs_output: &str) -> String {
-    ref_link_with_base(ref_id, docs_output)
+    links::ref_link_from_root(ref_id, docs_output)
 }
 
-/// Generate a markdown link with a configurable base path.
-///
-/// - `base`: Path prefix before `/rfc/`, `/adr/`, `/work/` (e.g., ".." or "docs")
-fn ref_link_with_base(ref_id: &str, base: &str) -> String {
-    if ref_id.starts_with("RFC-") {
-        if ref_id.contains(':') {
-            // Clause reference: RFC-0000:C-NAME
-            let rfc_id = ref_id.split(':').next().unwrap_or(ref_id);
-            // Anchor: lowercase, no special chars (GitHub-style slug)
-            let anchor = ref_id.to_lowercase().replace(':', "");
-            format!("[{}]({}/rfc/{}.md#{})", ref_id, base, rfc_id, anchor)
-        } else {
-            // RFC reference
-            format!("[{}]({}/rfc/{}.md)", ref_id, base, ref_id)
-        }
-    } else if ref_id.starts_with("ADR-") {
-        format!("[{}]({}/adr/{}.md)", ref_id, base, ref_id)
-    } else if ref_id.starts_with("WI-") {
-        format!("[{}]({}/work/{}.md)", ref_id, base, ref_id)
-    } else {
-        // Unknown type, return as-is
-        ref_id.to_string()
-    }
-}
-
-/// Render a list of refs as markdown links.
-fn render_refs(refs: &[String]) -> String {
-    refs.iter()
-        .map(|r| ref_link(r))
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-/// Expand inline `[[artifact-id]]` references to markdown links.
-///
-/// Uses the pattern from source_scan config (per ADR-0011).
-/// The pattern must have a capture group for the artifact ID.
-pub fn expand_inline_refs(text: &str, pattern: &str) -> String {
-    expand_inline_refs_with_linker(text, pattern, ref_link)
-}
-
-/// Expand inline `[[artifact-id]]` references to markdown links from repository root.
-///
-/// Used for files like CHANGELOG.md that live at the root level.
-/// The `docs_output` path comes from config (e.g., "docs").
 pub fn expand_inline_refs_from_root(text: &str, pattern: &str, docs_output: &str) -> String {
-    expand_inline_refs_with_linker(text, pattern, |ref_id| {
+    links::expand_inline_refs_with_linker(text, pattern, |ref_id| {
         ref_link_from_root(ref_id, docs_output)
     })
-}
-
-/// Expand inline references using a custom link generator function.
-fn expand_inline_refs_with_linker<F>(text: &str, pattern: &str, linker: F) -> String
-where
-    F: Fn(&str) -> String,
-{
-    let Ok(re) = Regex::new(pattern) else {
-        // Invalid pattern, return text unchanged
-        return text.to_string();
-    };
-
-    re.replace_all(text, |caps: &regex::Captures| {
-        // Capture group 1 contains the artifact ID
-        if let Some(artifact_id) = caps.get(1) {
-            linker(artifact_id.as_str())
-        } else {
-            // No capture group, return match unchanged
-            caps.get(0).map_or("", |m| m.as_str()).to_string()
-        }
-    })
-    .to_string()
 }
 
 /// Indent continuation lines in multi-line text to preserve markdown list structure.
@@ -277,40 +199,6 @@ pub fn render_clause(out: &mut String, rfc_id: &str, clause: &crate::model::Clau
         let _ = writeln!(out, "*Since: v{since}*");
         let _ = writeln!(out);
     }
-}
-
-/// Write rendered markdown to file with common formatting.
-///
-/// Handles dry-run preview, directory creation, and consistent formatting.
-/// `preview_lines` controls how many lines to show in dry-run mode.
-fn write_rendered_md(
-    config: &Config,
-    output_path: &std::path::Path,
-    content: &str,
-    dry_run: bool,
-    preview_lines: usize,
-) -> anyhow::Result<()> {
-    // Trim trailing whitespace, ensure single trailing newline
-    let content = format!("{}\n", content.trim_end());
-    let display_path = config.display_path(output_path);
-
-    if dry_run {
-        ui::dry_run_preview(&display_path);
-        for line in content.lines().take(preview_lines) {
-            ui::preview_line(line);
-        }
-        ui::preview_truncated();
-    } else {
-        // Ensure parent directory exists
-        if let Some(parent) = output_path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let mut file = std::fs::File::create(output_path)?;
-        file.write_all(content.as_bytes())?;
-        ui::rendered(&display_path);
-    }
-
-    Ok(())
 }
 
 /// Write rendered RFC to file
