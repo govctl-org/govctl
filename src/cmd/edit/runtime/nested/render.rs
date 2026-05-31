@@ -1,4 +1,5 @@
-use super::super::{render_scalar, render_status_lines, type_mismatch};
+use super::super::render::{render_scalar, render_status_lines};
+use super::super::type_mismatch;
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule};
 use serde_json::Value;
 
