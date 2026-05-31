@@ -10,6 +10,7 @@ completed = "2026-03-17"
 
 [content]
 description = "Replace monolithic migrate with a versioned step pipeline driven by [schema] version in config.toml. Each step is a function from version N to N+1 producing Vec<FileOp>. Existing v0.5->v0.6 logic becomes step v1->v2."
+notes = ["The migrate command is intentionally a versioned step pipeline with a MIGRATIONS registry and stage/backup/commit flow; add future migrations as steps instead of ad hoc rewrites."]
 
 [[content.journal]]
 date = "2026-03-17"

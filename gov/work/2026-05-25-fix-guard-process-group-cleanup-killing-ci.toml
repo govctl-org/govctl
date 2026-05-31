@@ -10,6 +10,7 @@ completed = "2026-05-25"
 
 [content]
 description = "Fix repeated GitHub Actions SIGTERM failures during verification tests after the guard process-group cleanup change. The guard runner must only signal process groups it has proven are isolated guard child groups, so timeout cleanup cannot terminate the CI runner or cargo test process."
+notes = ["Guard cleanup must not signal the current process group; only isolated child process groups are safe to terminate during cleanup."]
 
 [[content.journal]]
 date = "2026-05-25"

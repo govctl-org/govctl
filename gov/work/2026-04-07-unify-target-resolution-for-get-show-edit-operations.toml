@@ -10,6 +10,7 @@ completed = "2026-04-07"
 
 [content]
 description = "Refactor CLI dispatch around a shared target/operation model: unify get with edit target resolution, simplify write-lock classification onto mutating operations, and delete deprecated JSON artifact edit paths while preserving migration support."
+notes = ["Keep legacy JSON reads for validation, display, and migration compatibility even while new RFC and clause writes use TOML locators and serializers."]
 
 [[content.journal]]
 date = "2026-04-07"

@@ -15,6 +15,7 @@ refs = [
 
 [content]
 description = "Add first-class verification guard artifacts, project-level guard policy in gov/config.toml, and work-item guard requirements/waivers so completion depends on executable proofs instead of manual checklist ticking alone."
+notes = ["Work-item-required verification guards are effective in addition to project defaults; waivers apply to the effective combined guard set."]
 
 [[content.journal]]
 date = "2026-03-17"

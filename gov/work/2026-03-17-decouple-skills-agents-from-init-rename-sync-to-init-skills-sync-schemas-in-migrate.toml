@@ -20,6 +20,7 @@ Refactor init/sync/migrate commands to fix three issues:
 3. `govctl migrate` does not ensure schema JSON files exist, leaving projects initialized with older versions without working `#:schema` comments
 
 Changes: (a) remove skill/agent dumping from init, add hint; (b) rename `sync` to `init-skills`; (c) add schema file overwrite to migrate pipeline."""
+notes = ["Project init should not install skills or agents; use init-skills for generated agent assets, and keep migrate responsible for syncing schemas."]
 
 [[content.journal]]
 date = "2026-03-17"

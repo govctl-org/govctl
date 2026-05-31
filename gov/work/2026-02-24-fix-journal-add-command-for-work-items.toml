@@ -10,6 +10,7 @@ completed = "2026-02-24"
 
 [content]
 description = "Fix govctl work add journal command which returned E0810 (not an array or unsupported). Also fix snapshot test instability caused by date-dependent signature hashes."
+notes = ["Snapshot tests that include generated signatures should normalize unstable hashes or dates; stale snapshot churn can hide real edit regressions."]
 
 [[content.journal]]
 date = "2026-02-24"

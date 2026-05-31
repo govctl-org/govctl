@@ -11,6 +11,7 @@ refs = ["ADR-0034"]
 
 [content]
 description = "Switch all governance TOML artifacts to IDE-discoverable #:schema comment headers, remove configurable gov_root, and align RFC/clause TOML to the spec-defined metadata layout. Migration limited to legacy JSON inputs."
+notes = ["gov_root is intentionally fixed to <project_root>/gov; custom gov_root support was removed and should not be reintroduced casually."]
 
 [[content.journal]]
 date = "2026-03-17"

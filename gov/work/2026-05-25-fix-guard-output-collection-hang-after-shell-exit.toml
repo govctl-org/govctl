@@ -10,6 +10,7 @@ completed = "2026-05-25"
 
 [content]
 description = "Fix the guard runner path where output reader threads can wait indefinitely after the primary shell exits while a descendant still holds stdout or stderr pipes open. The change should bound output collection and preserve timeout diagnostics so guard execution cannot hang after review-discovered process-tree edge cases."
+notes = ["Guard output capture should not rely on pipe EOF from descendant processes; temporary-file capture avoids hangs after the primary shell exits."]
 
 [[content.journal]]
 date = "2026-05-25"

@@ -10,6 +10,7 @@ completed = "2026-03-17"
 
 [content]
 description = "Audit verb-owned and derived fields that generic set should not mutate directly, remove those setters from the edit SSOT and command path, and enforce dedicated lifecycle or tick verbs instead."
+notes = ["Lifecycle-owned fields such as RFC status, version, phase and clause status or superseded_by must remain owned by lifecycle verbs, not generic set."]
 
 [[content.journal]]
 date = "2026-03-17"

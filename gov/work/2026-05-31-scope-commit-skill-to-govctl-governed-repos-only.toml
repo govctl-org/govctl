@@ -21,6 +21,7 @@ When the repo is not governed, skip all govctl-specific steps and fall through t
 plain VCS commit.
 
 See: https://github.com/govctl-org/govctl/issues/16"""
+notes = ["For jj-git colocated repositories, detect jj with jj root before checking git and avoid parallel VCS detection that could choose the wrong commit workflow."]
 
 [[content.journal]]
 date = "2026-05-31"

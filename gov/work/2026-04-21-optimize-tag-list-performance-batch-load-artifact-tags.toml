@@ -13,6 +13,7 @@ description = """
 `govctl tag list` currently calls `count_tag_usage()` once per registered tag. Since that function loads and parses ALL artifacts (RFCs, clauses, ADRs, work items, guards) on every invocation, N tags means N full project loads. For govctl's own 14 tags, this results in 14× redundant disk I/O, TOML parsing, and schema validation.
 
 Fix: refactor tag_list to load artifacts once, build a HashMap<String, usize> of tag→count, then look up each tag in O(1). The public `count_tag_usage` function should either be replaced or internally batch-load with caching."""
+notes = ["Tag usage should be computed with one project load and a usage map; avoid per-tag full project loads in list or delete paths."]
 
 [[content.journal]]
 date = "2026-04-21"

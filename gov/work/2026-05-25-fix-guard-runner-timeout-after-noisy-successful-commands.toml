@@ -14,7 +14,10 @@ refs = [
 
 [content]
 description = "Fix guard execution so noisy commands and commands that spawn child processes do not incorrectly time out after the primary command exits successfully. The work focuses on `src/verification.rs` guard process management, `stdout`/`stderr` draining, timeout diagnostics, and regression coverage for noisy output or pipe backpressure."
-notes = ["GitHub issue: https://github.com/govctl-org/govctl/issues/15"]
+notes = [
+    "GitHub issue: https://github.com/govctl-org/govctl/issues/15",
+    "Guard execution must drain stdout and stderr concurrently while the command runs; sequential collection can deadlock or turn noisy successful commands into timeouts.",
+]
 
 [[content.journal]]
 date = "2026-05-25"

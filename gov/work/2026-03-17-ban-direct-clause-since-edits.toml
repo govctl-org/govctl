@@ -14,6 +14,7 @@ refs = [
 
 [content]
 description = "Correct the governance model for clause since handling by banning direct clause.since edits, updating the edit SSOT/tests accordingly, and assigning C-RELEASE-DEF.since through an RFC version bump instead of a direct field set."
+notes = ["Clause since is lifecycle-owned metadata; avoid reintroducing direct generic set support for clause.since."]
 
 [[content.journal]]
 date = "2026-03-17"

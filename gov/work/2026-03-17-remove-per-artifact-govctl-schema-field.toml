@@ -10,6 +10,7 @@ completed = "2026-03-17"
 
 [content]
 description = "Remove govctl.schema field from all artifact structs, JSON schemas, and generated TOML. Per-artifact schema versioning is redundant; format evolution is tracked by project-level [schema] version in config.toml."
+notes = ["Per-artifact govctl.schema is legacy compatibility data: readers may accept it, but writers should not serialize it or require it in schemas."]
 
 [[content.journal]]
 date = "2026-03-17"
