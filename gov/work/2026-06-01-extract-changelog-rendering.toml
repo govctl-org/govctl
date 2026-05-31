@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-022"
+title = "Extract changelog rendering"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract changelog rendering from src/cmd/render.rs into a focused child module while preserving the public cmd::render::render_changelog entrypoint."
+
+[[content.acceptance_criteria]]
+text = "changelog rendering lives in a render child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cmd::render::render_changelog callers keep the same API"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "changelog tests and full verification pass"
+status = "done"
+category = "chore"
