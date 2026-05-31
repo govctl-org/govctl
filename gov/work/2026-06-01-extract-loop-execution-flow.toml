@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-016"
+title = "Extract loop execution flow"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract loop run execution-round orchestration and helper routines from src/cmd/loop_cmd.rs into a focused child module while preserving the existing loop command API and behavior."
+
+[[content.acceptance_criteria]]
+text = "Loop execution-round orchestration and helper routines live in a loop command child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing loop start/show/resume/run CLI behavior is preserved"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Loop command tests and full verification pass"
+status = "done"
+category = "chore"
