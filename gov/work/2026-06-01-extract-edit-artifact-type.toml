@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-031"
+title = "Extract edit artifact type"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract ArtifactType and its ID-classification tests from src/cmd/edit/mod.rs into a focused edit artifact module while preserving the public cmd::edit::ArtifactType API."
+
+[[content.acceptance_criteria]]
+text = "ArtifactType lives in a focused edit artifact module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "public cmd::edit::ArtifactType references remain compatible"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "artifact type tests and full verification pass"
+status = "done"
+category = "chore"
