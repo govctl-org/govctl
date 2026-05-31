@@ -1,13 +1,14 @@
 //! UI rendering for TUI.
 
 mod dashboard;
+mod lists;
 
 use super::app::{App, View};
 use crate::theme::{phase_semantic, status_icon, status_semantic};
 use ratatui::{
     prelude::*,
     symbols::border,
-    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Row, Table, Wrap},
+    widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
 
 fn status_style(status: &str) -> Style {
@@ -193,9 +194,9 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
 
     match app.view {
         View::Dashboard => dashboard::draw(frame, app, chunks[1]),
-        View::RfcList => draw_rfc_list(frame, app, chunks[1]),
-        View::AdrList => draw_adr_list(frame, app, chunks[1]),
-        View::WorkList => draw_work_list(frame, app, chunks[1]),
+        View::RfcList => lists::draw_rfc(frame, app, chunks[1]),
+        View::AdrList => lists::draw_adr(frame, app, chunks[1]),
+        View::WorkList => lists::draw_work(frame, app, chunks[1]),
         View::RfcDetail(idx) => draw_rfc_detail(frame, app, chunks[1], idx),
         View::AdrDetail(idx) => {
             // Implements [[RFC-0003:C-DETAIL]]
@@ -259,134 +260,6 @@ fn rounded_block(title: &str) -> Block<'_> {
         .title(format!(" {} ", title))
         .borders(Borders::ALL)
         .border_set(border::ROUNDED)
-}
-
-fn draw_rfc_list(frame: &mut Frame, app: &mut App, area: Rect) {
-    let indices = app.list_indices();
-    let rows: Vec<Row> = indices
-        .iter()
-        .filter_map(|&idx| app.index.rfcs.get(idx))
-        .map(|rfc| {
-            let status = rfc.rfc.status.as_ref();
-            let phase = rfc.rfc.phase.as_ref();
-            let tags = rfc.rfc.tags.join(" ");
-
-            Row::new(vec![
-                Line::from(rfc.rfc.rfc_id.clone()),
-                Line::from(rfc.rfc.title.clone()),
-                Line::from(vec![
-                    Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-                    Span::styled(status.to_string(), status_style(status)),
-                ]),
-                Line::from(Span::styled(phase.to_string(), phase_style(phase))),
-                Line::from(Span::styled(tags, Style::default().fg(Color::Magenta))),
-            ])
-        })
-        .collect();
-
-    let table = Table::new(
-        rows,
-        [
-            Constraint::Length(10),
-            Constraint::Min(20),
-            Constraint::Length(14),
-            Constraint::Length(10),
-            Constraint::Min(15),
-        ],
-    )
-    .header(
-        Row::new(vec!["ID", "Title", "Status", "Phase", "Tags"])
-            .style(Style::default().bold().fg(Color::Cyan))
-            .bottom_margin(1),
-    )
-    .row_highlight_style(Style::default().bg(Color::DarkGray))
-    .block(rounded_block("📋 RFCs").border_style(Style::default().fg(Color::Blue)));
-
-    frame.render_stateful_widget(table, area, &mut app.table_state);
-}
-
-fn draw_adr_list(frame: &mut Frame, app: &mut App, area: Rect) {
-    let indices = app.list_indices();
-    let rows: Vec<Row> = indices
-        .iter()
-        .filter_map(|&idx| app.index.adrs.get(idx))
-        .map(|adr| {
-            let meta = adr.meta();
-            let status = meta.status.as_ref();
-            let tags = meta.tags.join(" ");
-
-            Row::new(vec![
-                Line::from(meta.id.clone()),
-                Line::from(meta.title.clone()),
-                Line::from(vec![
-                    Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-                    Span::styled(status.to_string(), status_style(status)),
-                ]),
-                Line::from(Span::styled(tags, Style::default().fg(Color::Magenta))),
-            ])
-        })
-        .collect();
-
-    let table = Table::new(
-        rows,
-        [
-            Constraint::Length(10),
-            Constraint::Min(40),
-            Constraint::Length(14),
-            Constraint::Min(15),
-        ],
-    )
-    .header(
-        Row::new(vec!["ID", "Title", "Status", "Tags"])
-            .style(Style::default().bold().fg(Color::Green))
-            .bottom_margin(1),
-    )
-    .row_highlight_style(Style::default().bg(Color::DarkGray))
-    .block(rounded_block("📝 ADRs").border_style(Style::default().fg(Color::Green)));
-
-    frame.render_stateful_widget(table, area, &mut app.table_state);
-}
-
-fn draw_work_list(frame: &mut Frame, app: &mut App, area: Rect) {
-    let indices = app.list_indices();
-    let rows: Vec<Row> = indices
-        .iter()
-        .filter_map(|&idx| app.index.work_items.get(idx))
-        .map(|item| {
-            let meta = item.meta();
-            let status = meta.status.as_ref();
-            let tags = meta.tags.join(" ");
-
-            Row::new(vec![
-                Line::from(meta.id.clone()),
-                Line::from(meta.title.clone()),
-                Line::from(vec![
-                    Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-                    Span::styled(status.to_string(), status_style(status)),
-                ]),
-                Line::from(Span::styled(tags, Style::default().fg(Color::Magenta))),
-            ])
-        })
-        .collect();
-
-    let table = Table::new(
-        rows,
-        [
-            Constraint::Length(22),
-            Constraint::Min(35),
-            Constraint::Length(14),
-            Constraint::Min(15),
-        ],
-    )
-    .header(
-        Row::new(vec!["ID", "Title", "Status", "Tags"])
-            .style(Style::default().bold().fg(Color::Yellow))
-            .bottom_margin(1),
-    )
-    .row_highlight_style(Style::default().bg(Color::DarkGray))
-    .block(rounded_block("📌 Work Items").border_style(Style::default().fg(Color::Yellow)));
-
-    frame.render_stateful_widget(table, area, &mut app.table_state);
 }
 
 fn draw_rfc_detail(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {

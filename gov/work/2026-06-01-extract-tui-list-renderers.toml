@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-070"
+title = "Extract TUI list renderers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract RFC, ADR, and work-item TUI list table rendering from src/tui/ui.rs into a focused child module so the main renderer keeps view orchestration separate from list row and table construction while preserving existing table layout and selection behavior."
+
+[[content.acceptance_criteria]]
+text = "focused TUI list rendering coverage, cargo fmt, cargo clippy, cargo test, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "TUI main renderer no longer contains list row and table construction"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "TUI RFC, ADR, and work list table rendering lives in a focused child module"
+status = "done"
+category = "chore"
