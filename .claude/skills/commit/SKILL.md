@@ -22,11 +22,20 @@ Commit changes using the project's version control system, with govctl-aware che
 3. Implementation-bearing commits should belong to an active work item.
 4. Spec-only governance commits may proceed without a work item only when the diff is limited to governance artifacts, rendered governance docs, embedded skill/agent templates, or related metadata.
 
-### Step 1: Detect VCS
+### Step 1: Detect VCS and Governance
 
-Run `jj root` first. If it succeeds, use **Jujutsu** — do NOT also check git. A jj-git colocated repo has both `.jj/` and `.git/`, so checking git would also succeed and cause you to use the wrong VCS. Only if `jj root` fails, run `git rev-parse --git-dir`. If that succeeds, use **Git**. If both fail, stop and inform user.
+**1a. Detect VCS.** Run `jj root` first. If it succeeds, use **Jujutsu** — do NOT also check git. A jj-git colocated repo has both `.jj/` and `.git/`, so checking git would also succeed and cause you to use the wrong VCS. Only if `jj root` fails, run `git rev-parse --git-dir`. If that succeeds, use **Git**. If both fail, stop and inform user.
 
 **CRITICAL:** Do NOT run `jj root` and `git rev-parse` in parallel. Run `jj root` first, and only proceed to git detection if jj is not found.
+
+**1b. Detect governance.** Check whether the current repository is governed by govctl:
+
+```bash
+test -f gov/config.toml || test -d gov
+```
+
+- **If governed** (exit 0): continue with Steps 2–7 as written below.
+- **If not governed** (exit 1): skip all govctl-specific steps (Steps 2–3 and 7). Proceed directly to Step 4 (Inspect Changes), then Step 5 (Compose Message), then Step 6 (Execute Commit) using plain VCS commands. Omit work-item tracking and `govctl check` entirely. Mention in your summary that no govctl governance was detected.
 
 ### Step 2: Govctl Pre-Commit Checks
 
