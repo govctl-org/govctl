@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-041"
+title = "Extract bracket reference validation"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract RFC and ADR bracket-reference hierarchy validation from src/validate.rs into a focused child module while preserving validation order and diagnostics."
+
+[[content.acceptance_criteria]]
+text = "RFC and ADR bracket-reference hierarchy validation lives in a focused child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "bracket-reference hierarchy diagnostics remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "validation tests and full verification pass"
+status = "done"
+category = "chore"
