@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-051"
+title = "Extract work guard resource planners"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Extract work item and guard command planning from `src/resource_plan.rs` into focused child modules while preserving work edit extras, lifecycle movement, and guard edits."
+
+[[content.acceptance_criteria]]
+text = "work item and guard `ToPlan` implementations live in focused resource planning child modules"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "work edit extras, work movement, and guard add/remove planning behavior remain unchanged"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "work/guard command tests, `cargo test`, and `govctl check` pass"
+status = "pending"
+category = "chore"
