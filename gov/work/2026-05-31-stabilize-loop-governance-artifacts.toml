@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-007"
+title = "Stabilize loop governance artifacts"
+status = "queue"
+created = "2026-05-31"
+refs = [
+    "RFC-0006",
+    "ADR-0044",
+    "ADR-0045",
+    "ADR-0046",
+]
+
+[content]
+description = "Prepare the loop feature for implementation by resolving the RFC-0006 lifecycle gate and the related ADR decisions before code work begins. This item covers governance readiness only: review RFC-0006 and ADR-0044/0045/0046, make any needed wording fixes, and move the artifacts through the approved lifecycle steps before implementation starts."
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 is ready for implementation phase or explicit blockers are recorded"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR-0044 ADR-0045 and ADR-0046 are accepted or intentionally revised before implementation"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"

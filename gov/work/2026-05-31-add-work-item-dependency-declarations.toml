@@ -1,0 +1,39 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-008"
+title = "Add work item dependency declarations"
+status = "queue"
+created = "2026-05-31"
+refs = [
+    "RFC-0006",
+    "ADR-0045",
+]
+
+[content]
+description = "Implement the work-item dependency declaration surface required by RFC-0006 and ADR-0045. This slice adds a first-class depends_on field to the work item model, schemas, rendering, edit rules, and validation without implementing loop execution."
+
+[[content.acceptance_criteria]]
+text = "Work item TOML model and schema support depends_on as a list of work item IDs"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Work item show and render output display dependency declarations distinctly from refs"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Edit and validation paths reject malformed dependency IDs and unknown dependency targets"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests cover dependency field creation rendering editing and validation"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"
