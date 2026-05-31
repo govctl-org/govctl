@@ -146,6 +146,45 @@ fn test_guard_set_command() -> common::TestResult {
 }
 
 #[test]
+fn test_guard_add_remove_refs() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_guard(temp_dir.path(), "GUARD-ECHO", "echo hello")?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["guard", "add", "GUARD-ECHO", "refs", "RFC-0001"],
+            &["guard", "get", "GUARD-ECHO", "refs"],
+            &["guard", "remove", "GUARD-ECHO", "refs", "RFC-0001"],
+        ],
+    )?;
+    assert!(
+        output.contains("Added 'RFC-0001' to GUARD-ECHO.refs"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl guard get GUARD-ECHO refs\nRFC-0001"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Removed 'RFC-0001' from GUARD-ECHO.refs"),
+        "output: {}",
+        output
+    );
+
+    let guard_path = temp_dir.path().join("gov/guard/guard-echo.toml");
+    let content = fs::read_to_string(guard_path)?;
+    assert!(
+        !content.contains("RFC-0001"),
+        "ref should be removed: {}",
+        content
+    );
+    Ok(())
+}
+
+#[test]
 fn test_guard_delete_unreferenced() -> common::TestResult {
     let temp_dir = init_project()?;
     write_guard(temp_dir.path(), "GUARD-TEMP", "true")?;

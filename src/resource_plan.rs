@@ -1,19 +1,20 @@
 use crate::cmd;
 use crate::command_router::{
-    CommandPlan, CreateOp, EditExtras, LifecycleOp, OwnedMatchOptions, add_action,
-    owned_edit_action, plan_artifact_render, plan_create, plan_delete, plan_edit, plan_get,
-    plan_lifecycle, plan_list, plan_show, remove_action, set_action, tick_action,
+    CommandPlan, EditExtras, LifecycleOp, OwnedMatchOptions, add_action, owned_edit_action,
+    plan_artifact_render, plan_delete, plan_edit, plan_get, plan_lifecycle, plan_list, plan_show,
+    remove_action, set_action, tick_action,
 };
 use crate::{
     CommonAddArgs, CommonDeleteArgs, CommonDeprecateArgs, CommonEditArgs, CommonGetArgs,
     CommonListArgs, CommonRemoveArgs, CommonRenderArgs, CommonSetArgs, CommonShowArgs,
-    CommonSupersedeArgs, CommonTickSelectorArgs, GuardAddArgs, GuardCommand, ListTarget,
-    TickStatus, WorkAddArgs, WorkCommand, WorkEditArgs, WorkTickArgs,
+    CommonSupersedeArgs, CommonTickSelectorArgs, ListTarget, TickStatus,
 };
 
 mod adr;
 mod clause;
+mod guard;
 mod rfc;
+mod work;
 
 pub(crate) trait ToPlan {
     fn to_plan(&self) -> anyhow::Result<CommandPlan>;
@@ -142,96 +143,4 @@ fn compile_common_supersede(
             force: args.force,
         },
     ))
-}
-
-impl ToPlan for WorkCommand {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan> {
-        match self {
-            WorkCommand::List(args) => Ok(compile_common_list(ListTarget::Work, args)),
-            WorkCommand::Get(args) => compile_common_get(args),
-            WorkCommand::Show(args) => {
-                Ok(compile_common_show(cmd::edit::ArtifactType::WorkItem, args))
-            }
-            WorkCommand::Move { file, status } => Ok(plan_lifecycle(
-                cmd::edit::ArtifactType::WorkItem,
-                &file.display().to_string(),
-                LifecycleOp::MoveWork {
-                    file_or_id: file.clone(),
-                    status: *status,
-                },
-            )),
-            WorkCommand::New { title, active } => Ok(plan_create(
-                ListTarget::Work,
-                CreateOp::Work {
-                    title: title.clone(),
-                    active: *active,
-                },
-            )),
-            WorkCommand::Edit(WorkEditArgs {
-                common,
-                category,
-                scope,
-            }) => compile_common_edit(
-                common,
-                EditExtras {
-                    category: *category,
-                    scope: scope.clone(),
-                    ..EditExtras::default()
-                },
-            ),
-            WorkCommand::Set(args) => compile_common_set(args),
-            WorkCommand::Add(WorkAddArgs {
-                common,
-                category,
-                scope,
-            }) => compile_common_add(
-                common,
-                EditExtras {
-                    category: *category,
-                    scope: scope.clone(),
-                    ..EditExtras::default()
-                },
-            ),
-            WorkCommand::Remove(args) => compile_common_remove(args),
-            WorkCommand::Tick(WorkTickArgs { common, status }) => {
-                compile_common_tick(common, (*status).into())
-            }
-            WorkCommand::Delete(args) => {
-                compile_common_delete(cmd::edit::ArtifactType::WorkItem, args)
-            }
-            WorkCommand::Render(args) => {
-                compile_common_render(cmd::edit::ArtifactType::WorkItem, args)
-            }
-        }
-    }
-}
-
-impl ToPlan for GuardCommand {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan> {
-        match self {
-            GuardCommand::List(args) => Ok(compile_common_list(ListTarget::Guard, args)),
-            GuardCommand::Get(args) => compile_common_get(args),
-            GuardCommand::Show(args) => {
-                Ok(compile_common_show(cmd::edit::ArtifactType::Guard, args))
-            }
-            GuardCommand::New { title } => Ok(plan_create(
-                ListTarget::Guard,
-                CreateOp::Guard {
-                    title: title.clone(),
-                },
-            )),
-            GuardCommand::Edit(args) => compile_common_edit(args, EditExtras::default()),
-            GuardCommand::Set(args) => compile_common_set(args),
-            GuardCommand::Add(GuardAddArgs { id, field, value }) => plan_edit(
-                id,
-                field,
-                add_action(Some(value.clone()), false),
-                EditExtras::default(),
-            ),
-            GuardCommand::Remove(args) => compile_common_remove(args),
-            GuardCommand::Delete(args) => {
-                compile_common_delete(cmd::edit::ArtifactType::Guard, args)
-            }
-        }
-    }
 }

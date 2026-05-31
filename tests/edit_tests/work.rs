@@ -122,6 +122,56 @@ fn test_work_add_acceptance_criteria() -> common::TestResult {
 }
 
 #[test]
+fn test_work_add_and_edit_acceptance_criteria_extras() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = today();
+    let work_id = format!("WI-{}-001", date);
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Category Extras"],
+            &[
+                "work",
+                "add",
+                &work_id,
+                "acceptance_criteria",
+                "Add without prefix",
+                "--category",
+                "fixed",
+                "--scope",
+                "legacy-add",
+            ],
+            &[
+                "work",
+                "edit",
+                &work_id,
+                "acceptance_criteria",
+                "--add",
+                "Edit without prefix",
+                "--category",
+                "changed",
+                "--scope",
+                "legacy-edit",
+            ],
+            &["work", "show", &work_id],
+        ],
+    )?;
+
+    assert!(
+        output.contains("- ○ fixed: Add without prefix"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("- ○ changed: Edit without prefix"),
+        "output: {}",
+        output
+    );
+    Ok(())
+}
+
+#[test]
 fn test_work_tick_acceptance_criteria() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = today();
@@ -569,4 +619,3 @@ fn test_work_get_nonexistent() -> common::TestResult {
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
-
