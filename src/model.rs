@@ -10,10 +10,12 @@
 use serde::{Deserialize, Serialize};
 
 mod adr;
+mod guard;
 mod rfc;
 mod work;
 
 pub use adr::{AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus};
+pub use guard::{GuardCheck, GuardMeta, GuardSpec};
 pub use rfc::{
     ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus, ClauseWire, RfcPhase, RfcSpec, RfcStatus,
     RfcWire, SectionSpec,
@@ -24,45 +26,6 @@ pub use work::{
 };
 #[allow(unused_imports)]
 pub use work::{GuardWaiver, JournalEntry};
-
-// =============================================================================
-// Verification Guard Models (TOML SSOT)
-// =============================================================================
-
-/// Verification Guard metadata section `[govctl]`
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GuardMeta {
-    #[allow(dead_code)]
-    #[serde(default, skip_serializing)]
-    pub schema: u32,
-    pub id: String,
-    pub title: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub refs: Vec<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-}
-
-/// Executable check for a verification guard.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GuardCheck {
-    pub command: String,
-    #[serde(default = "default_guard_timeout_secs")]
-    pub timeout_secs: u64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub pattern: Option<String>,
-}
-
-fn default_guard_timeout_secs() -> u64 {
-    300
-}
-
-/// Complete Verification Guard file structure.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct GuardSpec {
-    pub govctl: GuardMeta,
-    pub check: GuardCheck,
-}
 
 // =============================================================================
 // Release Models (TOML - gov/releases.toml)
