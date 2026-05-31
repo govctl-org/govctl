@@ -14,6 +14,7 @@ pub mod rules;
 pub mod runtime;
 mod set;
 mod target_doc;
+mod tick;
 mod toml_target;
 
 use self::adapter::{
@@ -25,7 +26,8 @@ use self::json_target::get_json_field;
 pub use self::remove::remove_from_field;
 use self::set::apply_set_field;
 pub(crate) use self::set::set_field_direct;
-use self::toml_target::{get_toml_field, tick_toml_field};
+pub use self::tick::tick_item;
+use self::toml_target::get_toml_field;
 use self::{engine as edit_engine, rules as edit_rules};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -156,12 +158,6 @@ fn plan_edit_with_field_for_verb(
     })?;
     Ok(plan)
 }
-
-const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
-const ADR_TICK_STATUS_ERROR: &str =
-    "ADR tick status must be one of: accepted, considered, rejected";
-const WORK_TICK_STATUS_ERROR: &str =
-    "Work item tick status must be one of: done, pending, cancelled";
 
 pub fn edit_clause(
     config: &Config,
@@ -329,88 +325,6 @@ fn reject_match_flags_for_indexed_target(
         .into());
     }
     Ok(())
-}
-
-pub fn tick_item(
-    config: &Config,
-    id: &str,
-    field: &str,
-    opts: &MatchOptions,
-    status: crate::TickStatus,
-    op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
-    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Tick))?;
-    let artifact = plan.artifact;
-    let target = plan.target.as_ref().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            "mutation planning should produce target",
-            id,
-        )
-    })?;
-    reject_match_flags_for_indexed_target(id, target, opts)?;
-
-    let status_str = match (artifact, status) {
-        (ArtifactType::Adr, crate::TickStatus::Accepted) => "accepted",
-        (ArtifactType::Adr, crate::TickStatus::Considered) => "considered",
-        (ArtifactType::Adr, crate::TickStatus::Rejected) => "rejected",
-        (ArtifactType::Adr, _) => {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0820InvalidFieldValue,
-                ADR_TICK_STATUS_ERROR,
-                id,
-            )
-            .into());
-        }
-        (ArtifactType::WorkItem, crate::TickStatus::Done) => "done",
-        (ArtifactType::WorkItem, crate::TickStatus::Pending) => "pending",
-        (ArtifactType::WorkItem, crate::TickStatus::Cancelled) => "cancelled",
-        (ArtifactType::WorkItem, _) => {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0820InvalidFieldValue,
-                WORK_TICK_STATUS_ERROR,
-                id,
-            )
-            .into());
-        }
-        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard, _) => {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0813SupersedeNotSupported,
-                TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
-                id,
-            )
-            .into());
-        }
-    };
-    let ticked_text = match artifact {
-        ArtifactType::Adr => tick_toml_field::<AdrTomlAdapter>(
-            config,
-            id,
-            target,
-            opts,
-            op,
-            ArtifactType::Adr,
-            status_str,
-        )?,
-        ArtifactType::WorkItem => tick_toml_field::<WorkTomlAdapter>(
-            config,
-            id,
-            target,
-            opts,
-            op,
-            ArtifactType::WorkItem,
-            status_str,
-        )?,
-        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard => {
-            unreachable!("handled above")
-        }
-    };
-
-    if !op.is_preview() {
-        ui::ticked(&ticked_text, status_str);
-    }
-
-    Ok(vec![])
 }
 
 #[cfg(test)]
