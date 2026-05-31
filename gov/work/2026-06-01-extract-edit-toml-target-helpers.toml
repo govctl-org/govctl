@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-012"
+title = "Extract edit TOML target helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract the generic TOML target get/set/remove/tick helper cluster from cmd/edit/mod.rs into a focused child module while preserving existing edit command behavior and work-item dependency validation."
+
+[[content.acceptance_criteria]]
+text = "TOML target get/set/remove/tick helpers live in a focused cmd/edit child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Work-item depends_on edits still run dependency loop validation"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused edit tests and full verification pass"
+status = "done"
+category = "chore"
