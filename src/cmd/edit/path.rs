@@ -53,6 +53,7 @@ impl FieldPath {
     }
 
     /// Normalize aliases on each path segment (`alt` -> `alternatives`, etc.).
+    #[cfg(test)]
     pub fn normalize_aliases(mut self) -> Self {
         for seg in &mut self.segments {
             seg.name = normalize_segment_name(&seg.name);
@@ -91,6 +92,7 @@ impl std::fmt::Display for FieldPath {
 }
 
 /// Normalize a single field name, expanding aliases to canonical form.
+#[cfg(test)]
 fn normalize_segment_name(name: &str) -> String {
     edit_rules::normalize_alias(name).to_string()
 }
@@ -99,7 +101,7 @@ fn normalize_segment_name(name: &str) -> String {
 ///
 /// Grammar: `segment ('.' segment | '[' index ']')*`
 /// where `segment` is `[a-z_][a-z0-9_]*` and `index` is `-?[0-9]+`.
-#[allow(dead_code)]
+#[cfg(test)]
 pub fn parse_field_path(input: &str) -> anyhow::Result<FieldPath> {
     parse_raw_field_path(input).map(FieldPath::normalize_aliases)
 }

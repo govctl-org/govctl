@@ -57,7 +57,6 @@ fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
 }
 
 /// Adapter contract for RFC/clause document-backed artifacts.
-#[allow(dead_code)]
 pub trait DocAdapter {
     type Data;
 
@@ -66,7 +65,6 @@ pub trait DocAdapter {
 }
 
 /// Adapter contract for TOML-backed artifacts.
-#[allow(dead_code)]
 pub trait TomlAdapter {
     type Entry;
 

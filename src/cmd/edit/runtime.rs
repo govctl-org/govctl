@@ -26,6 +26,8 @@ struct SimpleFieldSpec {
 #[derive(Clone, Copy)]
 enum SetMode {
     String,
+    // Supported by the edit-ops schema/generator, but not instantiated by the
+    // current simple-field rule data.
     #[allow(dead_code)]
     OptionalString {
         empty_as_null: bool,
