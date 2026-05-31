@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-059"
+title = "Extract RFC clause models"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract RFC and clause domain, wire, changelog-entry, and lifecycle enum model definitions from src/model.rs into a focused child module while preserving the current crate::model public API used by loaders, writers, lifecycle code, rendering, validation, and CLI planning."
+
+[[content.acceptance_criteria]]
+text = "RFC and clause model definitions live in a focused model child module"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "current crate::model RFC and clause type imports remain compatible"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "model tests, lifecycle/edit/migration tests, cargo test, and govctl check pass"
+status = "done"
+category = "chore"
