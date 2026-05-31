@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-002"
+title = "strip category prefix from acceptance criteria match patterns"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+
+[content]
+description = "After e3d19afd, acceptance criteria render with category prefixes (e.g. 'fixed: some text'). But tick/remove matching only compares against the text field, so agents using displayed text fail with E0806. Fix: strip known category prefixes from patterns before matching."
+
+[[content.journal]]
+date = "2026-05-31"
+content = "Added strip_category_prefix in resolve_match_indices. Strips known category prefixes (added:, fixed:, chore:, etc.) case-insensitively from patterns before matching. Regex mode excluded. Added 7 unit tests. Manual verification: 'fixed: tick matches...' pattern now works."
+
+[[content.acceptance_criteria]]
+text = "tick matches category-prefixed pattern on acceptance criteria"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

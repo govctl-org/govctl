@@ -127,6 +127,33 @@ enum MatchUse {
     TickSingle,
 }
 
+/// Known category prefixes that appear in rendered status list output.
+/// Stripping these from user-supplied patterns allows matching against
+/// the text-only stored value (e.g., "fixed: some text" matches "some text").
+const CATEGORY_PREFIXES: &[&str] = &[
+    "added:",
+    "changed:",
+    "deprecated:",
+    "removed:",
+    "fixed:",
+    "security:",
+    "chore:",
+];
+
+/// Strip a known category prefix (case-insensitive) from a match pattern.
+/// Returns the original string unchanged if no known prefix is found.
+fn strip_category_prefix(pattern: &str) -> &str {
+    let lower = pattern.to_ascii_lowercase();
+    for prefix in CATEGORY_PREFIXES {
+        if let Some(rest) = lower.strip_prefix(prefix) {
+            // Return the corresponding slice from the original string
+            let start = pattern.len() - rest.len();
+            return pattern[start..].trim_start();
+        }
+    }
+    pattern
+}
+
 fn resolve_match_indices(
     id: &str,
     field: &str,
@@ -172,7 +199,13 @@ fn resolve_match_indices(
         }
         vec![actual_idx as usize]
     } else {
-        let pattern = opts.pattern.unwrap_or("<index>");
+        let raw_pattern = opts.pattern.unwrap_or("<index>");
+        // Strip category prefix so "fixed: some text" matches "some text"
+        let pattern = if opts.regex {
+            raw_pattern
+        } else {
+            strip_category_prefix(raw_pattern)
+        };
         let matches = if opts.regex {
             let re = Regex::new(pattern).map_err(|e| {
                 Diagnostic::new(
@@ -207,7 +240,7 @@ fn resolve_match_indices(
         if matches.is_empty() {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0806InvalidPattern,
-                format!("No items match '{}' in {}.{}", pattern, id, field),
+                format!("No items match '{}' in {}.{}", raw_pattern, id, field),
                 id,
             )
             .into());
@@ -2455,5 +2488,55 @@ mod tests {
         let mut items = vec!["a", "b"];
         remove_indices(&mut items, &[]);
         assert_eq!(items, vec!["a", "b"]);
+    }
+
+    // =========================================================================
+    // strip_category_prefix tests
+    // =========================================================================
+
+    #[test]
+    fn test_strip_category_prefix_fixed() {
+        assert_eq!(strip_category_prefix("fixed: some text"), "some text");
+    }
+
+    #[test]
+    fn test_strip_category_prefix_added() {
+        assert_eq!(strip_category_prefix("added: new feature"), "new feature");
+    }
+
+    #[test]
+    fn test_strip_category_prefix_chore() {
+        assert_eq!(strip_category_prefix("chore: cleanup"), "cleanup");
+    }
+
+    #[test]
+    fn test_strip_category_prefix_case_insensitive() {
+        assert_eq!(strip_category_prefix("Fixed: some text"), "some text");
+        assert_eq!(strip_category_prefix("ADDED: new feature"), "new feature");
+    }
+
+    #[test]
+    fn test_strip_category_prefix_no_match() {
+        assert_eq!(strip_category_prefix("some text"), "some text");
+        assert_eq!(
+            strip_category_prefix("not a prefix: text"),
+            "not a prefix: text"
+        );
+    }
+
+    #[test]
+    fn test_strip_category_prefix_empty() {
+        assert_eq!(strip_category_prefix(""), "");
+    }
+
+    #[test]
+    fn test_strip_category_prefix_all_categories() {
+        assert_eq!(strip_category_prefix("added: x"), "x");
+        assert_eq!(strip_category_prefix("changed: x"), "x");
+        assert_eq!(strip_category_prefix("deprecated: x"), "x");
+        assert_eq!(strip_category_prefix("removed: x"), "x");
+        assert_eq!(strip_category_prefix("fixed: x"), "x");
+        assert_eq!(strip_category_prefix("security: x"), "x");
+        assert_eq!(strip_category_prefix("chore: x"), "x");
     }
 }
