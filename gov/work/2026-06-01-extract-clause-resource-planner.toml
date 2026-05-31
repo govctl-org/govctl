@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-049"
 title = "Extract clause resource planner"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract clause command planning from `src/resource_plan.rs` into a focused child module while preserving canonical and legacy clause edit behavior."
 
 [[content.acceptance_criteria]]
 text = "clause `ToPlan` implementation lives in a focused resource planning child module"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "canonical and legacy clause edit planning behavior remains unchanged"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "command routing tests, `cargo test`, and `govctl check` pass"
-status = "pending"
+status = "done"
 category = "chore"
