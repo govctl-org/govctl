@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-054"
 title = "Extract ADR work renderers"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-053"]
 
 [content]
@@ -12,15 +14,15 @@ description = "Extract ADR and work-item markdown rendering from `src/render.rs`
 
 [[content.acceptance_criteria]]
 text = "ADR and work-item render functions live in focused render child modules"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "ADR alternatives, work notes, acceptance criteria, and legacy inline execution-history output remain unchanged"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "render unit tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

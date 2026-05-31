@@ -7,21 +7,18 @@
 //! - A SHA-256 signature for tampering detection
 //! - Inline `[[artifact-id]]` references expanded to markdown links
 
-use crate::config::Config;
-use crate::model::{AdrEntry, WorkItemEntry};
-use crate::signature::{
-    compute_adr_signature, compute_work_item_signature, format_signature_header,
-};
-use std::fmt::Write as FmtWrite;
-
+mod adr;
 mod links;
 mod output;
 mod rfc;
+mod work;
 
+pub use adr::{render_adr, write_adr_md};
 pub use links::expand_inline_refs;
 use links::render_refs;
 use output::write_rendered_md;
 pub use rfc::{render_clause, render_rfc, write_rfc};
+pub use work::{render_work_item, write_work_item_md};
 
 pub fn ref_link_from_root(ref_id: &str, docs_output: &str) -> String {
     links::ref_link_from_root(ref_id, docs_output)
@@ -33,278 +30,13 @@ pub fn expand_inline_refs_from_root(text: &str, pattern: &str, docs_output: &str
     })
 }
 
-/// Indent continuation lines in multi-line text to preserve markdown list structure.
-/// The first line is returned as-is; subsequent lines are prefixed with the indent.
-fn indent_continuation(text: &str) -> String {
-    let mut lines = text.lines();
-    let Some(first) = lines.next() else {
-        return String::new();
-    };
-    let mut result = first.to_string();
-    for line in lines {
-        result.push('\n');
-        result.push_str("  ");
-        result.push_str(line);
-    }
-    result
-}
-
-// =============================================================================
-// ADR Rendering
-// =============================================================================
-
-/// Render an ADR to Markdown
-///
-/// # Errors
-/// Returns an error if signature computation fails.
-pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
-    let meta = adr.meta();
-    let content = &adr.spec.content;
-    let mut out = String::new();
-
-    // Compute signature (per ADR-0003)
-    let signature = compute_adr_signature(adr)?;
-
-    // Signature header
-    out.push_str(&format_signature_header(&meta.id, &signature));
-    let _ = writeln!(out);
-
-    // Title
-    let _ = writeln!(out, "# {}: {}", meta.id, meta.title);
-    let _ = writeln!(out);
-
-    // Status and date
-    let _ = writeln!(
-        out,
-        "> **Status:** {} | **Date:** {}",
-        meta.status.as_ref(),
-        meta.date
-    );
-    if let Some(ref by) = meta.superseded_by {
-        let _ = writeln!(out, "> **Superseded by:** {by}");
-    }
-    let _ = writeln!(out);
-
-    // Tags
-    if !meta.tags.is_empty() {
-        let _ = writeln!(out, "> **Tags:** `{}`", meta.tags.join("`, `"));
-        let _ = writeln!(out);
-    }
-
-    // References (expanded to markdown links)
-    if !meta.refs.is_empty() {
-        let _ = writeln!(out, "**References:** {}", render_refs(&meta.refs));
-        let _ = writeln!(out);
-    }
-
-    // Context
-    let _ = writeln!(out, "## Context");
-    let _ = writeln!(out);
-    let _ = writeln!(out, "{}", content.context);
-    let _ = writeln!(out);
-
-    // Decision
-    let _ = writeln!(out, "## Decision");
-    let _ = writeln!(out);
-    let _ = writeln!(out, "{}", content.decision);
-    let _ = writeln!(out);
-
-    // Consequences
-    let _ = writeln!(out, "## Consequences");
-    let _ = writeln!(out);
-    let _ = writeln!(out, "{}", content.consequences);
-    let _ = writeln!(out);
-
-    // Alternatives Considered (extended per ADR-0027)
-    if !content.alternatives.is_empty() {
-        use crate::model::AlternativeStatus;
-        let _ = writeln!(out, "## Alternatives Considered");
-        let _ = writeln!(out);
-        for alt in &content.alternatives {
-            // Render as subheading with status
-            let status_suffix = match alt.status {
-                AlternativeStatus::Considered => "",
-                AlternativeStatus::Accepted => " (accepted)",
-                AlternativeStatus::Rejected => " (rejected)",
-            };
-            let _ = writeln!(out, "### {}{}", alt.text, status_suffix);
-            let _ = writeln!(out);
-
-            // Pros
-            if !alt.pros.is_empty() {
-                let _ = writeln!(out, "- **Pros:** {}", alt.pros.join(", "));
-            }
-
-            // Cons
-            if !alt.cons.is_empty() {
-                let _ = writeln!(out, "- **Cons:** {}", alt.cons.join(", "));
-            }
-
-            // Rejection reason
-            if let Some(ref reason) = alt.rejection_reason {
-                let _ = writeln!(out, "- **Rejected because:** {}", reason);
-            }
-
-            let _ = writeln!(out);
-        }
-    }
-
-    Ok(out)
-}
-
-/// Write rendered ADR to file
-pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::Result<()> {
-    let meta = adr.meta();
-    let output_path = config.adr_output().join(format!("{}.md", meta.id));
-
-    // Render and expand inline references (per ADR-0011)
-    let raw = render_adr(adr)?;
-    let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-
-    write_rendered_md(config, &output_path, &expanded, dry_run, 15)
-}
-
-// =============================================================================
-// Work Item Rendering
-// =============================================================================
-
-/// Render a Work Item to Markdown
-///
-/// # Errors
-/// Returns an error if signature computation fails.
-pub fn render_work_item(item: &WorkItemEntry) -> anyhow::Result<String> {
-    let meta = item.meta();
-    let content = &item.spec.content;
-    let mut out = String::new();
-
-    // Compute signature (per ADR-0003)
-    let signature = compute_work_item_signature(item)?;
-
-    // Signature header
-    out.push_str(&format_signature_header(&meta.id, &signature));
-    let _ = writeln!(out);
-
-    // Title
-    let _ = writeln!(out, "# {}", meta.title);
-    let _ = writeln!(out);
-
-    // Status
-    let mut status_line = format!(
-        "> **ID:** {} | **Status:** {}",
-        meta.id,
-        meta.status.as_ref()
-    );
-    if let Some(ref start) = meta.started {
-        status_line.push_str(&format!(" | **Started:** {start}"));
-    }
-    if let Some(ref done) = meta.completed {
-        status_line.push_str(&format!(" | **Completed:** {done}"));
-    }
-    let _ = writeln!(out, "{status_line}");
-    let _ = writeln!(out);
-
-    // Tags
-    if !meta.tags.is_empty() {
-        let _ = writeln!(out, "> **Tags:** `{}`", meta.tags.join("`, `"));
-        let _ = writeln!(out);
-    }
-
-    // References (expanded to markdown links)
-    if !meta.refs.is_empty() {
-        let _ = writeln!(out, "**References:** {}", render_refs(&meta.refs));
-        let _ = writeln!(out);
-    }
-
-    // Work item dependencies (expanded to markdown links)
-    if !meta.depends_on.is_empty() {
-        let _ = writeln!(out, "**Depends On:** {}", render_refs(&meta.depends_on));
-        let _ = writeln!(out);
-    }
-
-    // Description
-    let _ = writeln!(out, "## Description");
-    let _ = writeln!(out);
-    let _ = writeln!(out, "{}", content.description);
-    let _ = writeln!(out);
-
-    // Legacy inline history remains renderable for existing work items per [[ADR-0047]].
-    if !content.journal.is_empty() {
-        let _ = writeln!(out, "## Journal");
-        let _ = writeln!(out);
-        let _ = writeln!(
-            out,
-            "> Legacy execution history preserved from older work items. Move durable takeaways to `notes` and keep new execution trace in loop state."
-        );
-        let _ = writeln!(out);
-        for entry in &content.journal {
-            // Render heading with date and optional scope
-            if let Some(ref scope) = entry.scope {
-                let _ = writeln!(out, "### {} · {}", entry.date, scope);
-            } else {
-                let _ = writeln!(out, "### {}", entry.date);
-            }
-            let _ = writeln!(out);
-            // Render content (multi-line markdown)
-            let _ = writeln!(out, "{}", entry.content);
-            let _ = writeln!(out);
-        }
-    }
-
-    // Acceptance Criteria
-    if !content.acceptance_criteria.is_empty() {
-        use crate::model::ChecklistStatus;
-        let _ = writeln!(out, "## Acceptance Criteria");
-        let _ = writeln!(out);
-        for ac_item in &content.acceptance_criteria {
-            // Indent continuation lines to keep them within the list item
-            let categorized_text = format!("{}: {}", ac_item.category.as_ref(), ac_item.text);
-            let indented_text = indent_continuation(&categorized_text);
-            let line = match ac_item.status {
-                ChecklistStatus::Pending => format!("- [ ] {}", indented_text),
-                ChecklistStatus::Done => format!("- [x] {}", indented_text),
-                ChecklistStatus::Cancelled => format!("- ~~{}~~", indented_text),
-            };
-            let _ = writeln!(out, "{line}");
-        }
-        let _ = writeln!(out);
-    }
-
-    // Notes
-    if !content.notes.is_empty() {
-        let _ = writeln!(out, "## Notes");
-        let _ = writeln!(out);
-        for note in &content.notes {
-            let _ = writeln!(out, "- {}", note);
-        }
-        let _ = writeln!(out);
-    }
-
-    Ok(out)
-}
-
-/// Write rendered Work Item to file
-pub fn write_work_item_md(
-    config: &Config,
-    item: &WorkItemEntry,
-    dry_run: bool,
-) -> anyhow::Result<()> {
-    let meta = item.meta();
-    let output_path = config.work_output().join(format!("{}.md", meta.id));
-
-    // Render and expand inline references (per ADR-0011)
-    let raw = render_work_item(item)?;
-    let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-
-    write_rendered_md(config, &output_path, &expanded, dry_run, 15)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::model::{
-        AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus, ChangelogCategory,
-        ChecklistItem, ChecklistStatus, JournalEntry, WorkItemContent, WorkItemMeta, WorkItemSpec,
-        WorkItemStatus,
+        AdrContent, AdrEntry, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus,
+        ChangelogCategory, ChecklistItem, ChecklistStatus, JournalEntry, WorkItemContent,
+        WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus,
     };
 
     const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]";
