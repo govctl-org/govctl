@@ -6,6 +6,7 @@ pub mod adapter;
 mod add;
 mod delete;
 pub mod engine;
+mod get;
 mod json_target;
 mod matching;
 pub mod path;
@@ -17,17 +18,13 @@ mod target_doc;
 mod tick;
 mod toml_target;
 
-use self::adapter::{
-    AdrTomlAdapter, ClauseJsonAdapter, ClauseTomlAdapter, DocAdapter, GuardTomlAdapter,
-    RfcJsonAdapter, WorkTomlAdapter,
-};
+use self::adapter::{ClauseTomlAdapter, DocAdapter};
 pub use self::add::add_to_field;
-use self::json_target::get_json_field;
+pub use self::get::get_field;
 pub use self::remove::remove_from_field;
 use self::set::apply_set_field;
 pub(crate) use self::set::set_field_direct;
 pub use self::tick::tick_item;
-use self::toml_target::get_toml_field;
 use self::{engine as edit_engine, rules as edit_rules};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -191,47 +188,6 @@ pub fn edit_clause(
     if !op.is_preview() {
         ui::updated("clause", clause_id);
     }
-    Ok(vec![])
-}
-
-pub fn get_field(
-    config: &Config,
-    id: &str,
-    field: Option<&str>,
-) -> anyhow::Result<Vec<Diagnostic>> {
-    let plan = edit_engine::plan_request(id, field)?;
-    match plan.artifact {
-        ArtifactType::Adr => {
-            get_toml_field::<AdrTomlAdapter>(config, id, plan.target.as_ref(), ArtifactType::Adr)?
-        }
-        ArtifactType::WorkItem => get_toml_field::<WorkTomlAdapter>(
-            config,
-            id,
-            plan.target.as_ref(),
-            ArtifactType::WorkItem,
-        )?,
-        ArtifactType::Rfc => get_json_field::<RfcJsonAdapter>(
-            config,
-            id,
-            plan.target.as_ref(),
-            ArtifactType::Rfc,
-            "RFC fields do not support nested paths",
-        )?,
-        ArtifactType::Clause => get_json_field::<ClauseJsonAdapter>(
-            config,
-            id,
-            plan.target.as_ref(),
-            ArtifactType::Clause,
-            "Clause fields do not support nested paths",
-        )?,
-        ArtifactType::Guard => get_toml_field::<GuardTomlAdapter>(
-            config,
-            id,
-            plan.target.as_ref(),
-            ArtifactType::Guard,
-        )?,
-    }
-
     Ok(vec![])
 }
 

@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-030"
+title = "Extract edit get operations"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract get-field dispatch from src/cmd/edit/mod.rs into a focused edit child module while preserving public get behavior for TOML-backed and JSON-backed artifacts."
+
+[[content.acceptance_criteria]]
+text = "edit get-field dispatcher lives in a focused child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "public get behavior is preserved for all artifact types"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit tests and full verification pass"
+status = "done"
+category = "chore"
