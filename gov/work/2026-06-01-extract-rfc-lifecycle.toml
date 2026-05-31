@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-025"
+title = "Extract RFC lifecycle"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract RFC bump, finalization, phase advancement, and RFC-only lifecycle helpers from src/cmd/lifecycle.rs into a focused lifecycle child module while preserving public cmd::lifecycle entrypoints."
+
+[[content.acceptance_criteria]]
+text = "RFC lifecycle logic lives in a lifecycle child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC lifecycle public entrypoints keep the same API"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC lifecycle tests and full verification pass"
+status = "done"
+category = "chore"
