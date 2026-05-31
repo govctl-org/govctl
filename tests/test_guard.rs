@@ -58,12 +58,24 @@ fn test_guard_new_invalid_title_rejected_with_code() -> common::TestResult {
 fn test_guard_list() -> common::TestResult {
     let temp_dir = init_project()?;
     write_guard(temp_dir.path(), "GUARD-ALPHA", "true")?;
-    write_guard(temp_dir.path(), "GUARD-BETA", "echo ok")?;
+    let long_command = "echo 1234567890 1234567890 1234567890 1234567890 1234567890";
+    write_guard(temp_dir.path(), "GUARD-BETA", long_command)?;
 
     let output = run_commands(temp_dir.path(), &[&["guard", "list"]])?;
     assert!(output.contains("exit: 0"), "output: {}", output);
     assert!(output.contains("GUARD-ALPHA"), "output: {}", output);
     assert!(output.contains("GUARD-BETA"), "output: {}", output);
+    let truncated_command = format!("{}…", long_command.chars().take(50).collect::<String>());
+    assert!(
+        output.contains(&truncated_command),
+        "guard list should truncate long command: {}",
+        output
+    );
+    assert!(
+        !output.contains(long_command),
+        "guard list should not print full long command: {}",
+        output
+    );
     Ok(())
 }
 

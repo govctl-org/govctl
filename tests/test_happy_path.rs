@@ -147,6 +147,29 @@ fn test_minimal_valid_list_work() -> common::TestResult {
 }
 
 #[test]
+fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = today();
+    setup_minimal_valid(temp_dir.path(), &date)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "list", "-o", "json"],
+            &["work", "list", "-o", "plain"],
+        ],
+    )?;
+
+    assert!(output.contains("\"id\": \"RFC-0001\""), "output: {output}");
+    assert!(output.contains("\"phase\": \"stable\""), "output: {output}");
+    assert!(
+        output.contains(&format!("WI-{date}-001\tactive\tTest work item")),
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_minimal_valid_status() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = today();

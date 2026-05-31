@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-067"
+title = "Extract list output helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract the generic list command output rendering helpers from src/cmd/list.rs into a focused child module so artifact filtering and summary construction remain separate from table/plain/JSON presentation behavior."
+
+[[content.acceptance_criteria]]
+text = "list output rendering helpers live in a focused src/cmd/list child module"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "list command table, plain, and JSON output remain compatible"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "list tests, cargo test, and govctl check pass"
+status = "done"
+category = "chore"
