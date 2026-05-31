@@ -490,6 +490,12 @@ pub fn render_work_item(item: &WorkItemEntry) -> anyhow::Result<String> {
         let _ = writeln!(out);
     }
 
+    // Work item dependencies (expanded to markdown links)
+    if !meta.depends_on.is_empty() {
+        let _ = writeln!(out, "**Depends On:** {}", render_refs(&meta.depends_on));
+        let _ = writeln!(out);
+    }
+
     // Description
     let _ = writeln!(out, "## Description");
     let _ = writeln!(out);
@@ -822,6 +828,7 @@ mod tests {
                     started: Some("2026-02-22".to_string()),
                     completed: None,
                     refs: vec![],
+                    depends_on: vec![],
                     tags: vec![],
                 },
                 content: WorkItemContent {
@@ -861,6 +868,7 @@ mod tests {
                     started: Some("2026-02-22".to_string()),
                     completed: None,
                     refs: vec![],
+                    depends_on: vec![],
                     tags: vec![],
                 },
                 content: WorkItemContent {
@@ -914,6 +922,7 @@ mod tests {
                     started: Some("2026-02-22".to_string()),
                     completed: None,
                     refs: vec![],
+                    depends_on: vec![],
                     tags: vec![],
                 },
                 content: WorkItemContent {

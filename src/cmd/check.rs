@@ -83,9 +83,12 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
 
     eprintln!();
 
-    let has_blocking_diagnostics = all_diagnostics
-        .iter()
-        .any(|diag| matches!(diag.level, DiagnosticLevel::Error | DiagnosticLevel::Warning));
+    let has_blocking_diagnostics = all_diagnostics.iter().any(|diag| {
+        matches!(
+            diag.level,
+            DiagnosticLevel::Error | DiagnosticLevel::Warning
+        )
+    });
     if !has_blocking_diagnostics {
         ui::success("All checks passed");
     }

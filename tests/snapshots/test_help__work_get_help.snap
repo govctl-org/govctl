@@ -17,7 +17,7 @@ Options:
   -h, --help             Print help
 
 VALID FIELDS:
-    - title, description, status, completed_at, refs
+    - title, description, status, completed_at, refs, depends_on
     - notes, acceptance_criteria
 
 EXAMPLES:

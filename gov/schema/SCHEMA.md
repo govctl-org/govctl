@@ -263,6 +263,7 @@ created = "2026-01-17"
 started = "2026-01-17"
 completed = "2026-01-18"
 refs = ["RFC-0001"]
+depends_on = ["WI-2026-01-16-001"]
 
 [content]
 description = """
@@ -291,6 +292,7 @@ category = "chore"
 | `govctl.started`                         | no       | date   | When work began                                     |
 | `govctl.completed`                       | no       | date   | When work finished                                  |
 | `govctl.refs`                            | no       | array  | Cross-references                                    |
+| `govctl.depends_on`                      | no       | array  | Blocking dependencies on other work items           |
 | `content.description`                    | yes      | string | Work description                                    |
 | `content.notes`                          | no       | array  | Ad-hoc key points (string array)                    |
 | `content.acceptance_criteria`            | no       | array  | Completion checklist                                |

@@ -628,6 +628,7 @@ fn create_work_item(
             started,
             completed: None,
             refs: vec![],
+            depends_on: vec![],
             tags: vec![],
         },
         content: WorkItemContent {

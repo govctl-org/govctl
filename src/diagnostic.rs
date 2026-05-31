@@ -59,6 +59,9 @@ pub enum DiagnosticCode {
     E0406WorkAmbiguousMatch,
     E0407WorkMissingCriteria,
     E0408WorkCriteriaMissingCategory,
+    E0409WorkDependencyInvalid,
+    E0410WorkDependencyNotFound,
+    E0411WorkDependencyCycle,
 
     // Config errors (E05xx)
     E0501ConfigInvalid,
@@ -206,6 +209,9 @@ impl DiagnosticCode {
             Self::E0406WorkAmbiguousMatch => "E0406",
             Self::E0407WorkMissingCriteria => "E0407",
             Self::E0408WorkCriteriaMissingCategory => "E0408",
+            Self::E0409WorkDependencyInvalid => "E0409",
+            Self::E0410WorkDependencyNotFound => "E0410",
+            Self::E0411WorkDependencyCycle => "E0411",
             // E05xx - Config
             Self::E0501ConfigInvalid => "E0501",
             Self::E0502PathNotFound => "E0502",

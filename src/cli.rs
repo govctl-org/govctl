@@ -1356,7 +1356,7 @@ EXAMPLES:
     /// Get work item metadata or specific field
     #[command(after_help = "\
 VALID FIELDS:
-    - title, description, status, completed_at, refs
+    - title, description, status, completed_at, refs, depends_on
     - notes, acceptance_criteria
 
 EXAMPLES:
@@ -1393,6 +1393,7 @@ NOTES:
     #[command(after_help = "\
 EXAMPLES:
     govctl work edit WI-2026-04-06-001 description --set \"Scope and why\"
+    govctl work edit WI-2026-04-06-001 depends_on --add WI-2026-04-06-002
     govctl work edit WI-2026-04-06-001 content.acceptance_criteria --add \"add: Implement feature X\"
     govctl work edit WI-2026-04-06-001 content.acceptance_criteria[0] --tick done
 ")]
@@ -1406,11 +1407,13 @@ VALID FIELDS:
 
   Array fields (use 'add'/'remove' instead):
     - refs: Cross-references to RFCs/ADRs
+    - depends_on: Blocking dependencies on other work items
     - notes: Ad-hoc key points (short strings)
     - acceptance_criteria: Completion criteria with category
 
 FIELD SEMANTICS:
   - description: Task scope - define once, rarely change
+  - depends_on: Work item IDs that must complete before this item starts
   - notes: Ad-hoc points - add anytime, keep concise
 
 EXAMPLES:
@@ -1428,11 +1431,13 @@ Use dedicated verbs instead of `set` for:
     #[command(after_help = "\
 VALID ARRAY FIELDS:
     - refs: Cross-references to RFCs/ADRs (e.g., \"RFC-0001\", \"ADR-0002\")
+    - depends_on: Blocking dependencies on work items (e.g., \"WI-2026-04-06-001\")
     - notes: Ad-hoc key points (short strings)
     - acceptance_criteria: Completion criteria with category prefix
 
 FIELD SEMANTICS:
   - description: Task scope - define once, rarely change
+  - depends_on: Work item IDs only; cyclic dependencies are rejected
   - notes: Ad-hoc points - add anytime, keep concise
 
 ACCEPTANCE CRITERIA FORMAT:
@@ -1444,6 +1449,7 @@ ACCEPTANCE CRITERIA FORMAT:
 
 EXAMPLES:
     govctl work add WI-001 refs RFC-0001
+    govctl work add WI-001 depends_on WI-2026-04-06-002
     govctl work add WI-001 acceptance_criteria \"add: Implement feature\"
     govctl work add WI-001 notes \"Remember to test edge cases\"
 ")]
@@ -1451,7 +1457,7 @@ EXAMPLES:
     /// Remove value from work item array field
     #[command(after_help = "\
 VALID ARRAY FIELDS:
-    - refs, notes, acceptance_criteria
+    - refs, depends_on, notes, acceptance_criteria
 
 MATCHING OPTIONS:
     - pattern: Substring match (default)
@@ -1462,6 +1468,7 @@ MATCHING OPTIONS:
 
 EXAMPLES:
     govctl work remove WI-001 refs RFC-0001     # Remove first match
+    govctl work remove WI-001 depends_on WI-2026-04-06-002
     govctl work remove WI-001 refs --at 1       # Remove by index
     govctl work remove WI-001 notes --all       # Remove all
 ")]

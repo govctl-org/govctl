@@ -29,6 +29,7 @@
         "title",
         "date",
         "refs",
+        "depends_on",
         "tags",
         "superseded_by",
         "started",
@@ -239,6 +240,12 @@
     {
       "artifact": "work",
       "name": "refs",
+      "kind": "list",
+      "verbs": ["get", "add", "remove"]
+    },
+    {
+      "artifact": "work",
+      "name": "depends_on",
       "kind": "list",
       "verbs": ["get", "add", "remove"]
     },
@@ -554,6 +561,13 @@
       "get": { "path": ["govctl", "refs"], "render": "csv_strings" },
       "set": null,
       "list_path": ["govctl", "refs"]
+    },
+    {
+      "artifact": "work",
+      "name": "depends_on",
+      "get": { "path": ["govctl", "depends_on"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["govctl", "depends_on"]
     },
     {
       "artifact": "work",

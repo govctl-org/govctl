@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-05-31-008"
 title = "Add work item dependency declarations"
-status = "queue"
+status = "done"
 created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
 refs = [
     "RFC-0006",
     "ADR-0045",
@@ -15,25 +17,30 @@ description = "Implement the work-item dependency declaration surface required b
 
 [[content.acceptance_criteria]]
 text = "Work item TOML model and schema support depends_on as a list of work item IDs"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Work item show and render output display dependency declarations distinctly from refs"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Edit and validation paths reject malformed dependency IDs and unknown dependency targets"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Tests cover dependency field creation rendering editing and validation"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and work add reject cyclic work item dependencies"
+status = "done"
+category = "added"

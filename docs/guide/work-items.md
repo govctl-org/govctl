@@ -29,6 +29,7 @@ title = "Implement caching layer"
 status = "active"
 started = "2026-01-17"
 refs = ["RFC-0010", "ADR-0003"]
+depends_on = ["WI-2026-01-16-001"]
 
 [content]
 description = "Add Redis caching for the query endpoint."
@@ -52,6 +53,7 @@ Work items contain:
 - **Notes** — Durable learnings and constraints
 - **Acceptance Criteria** — Checkable completion criteria with changelog category
 - **Refs** — Links to related RFCs, ADRs, or external resources
+- **Depends On** — Blocking dependencies on other work items
 
 ## Status Lifecycle
 
@@ -106,6 +108,7 @@ EOF
 
 # Add to array fields
 govctl work edit WI-2026-01-17-001 refs --add RFC-0010
+govctl work edit WI-2026-01-17-001 depends_on --add WI-2026-01-16-001
 govctl work edit WI-2026-01-17-001 acceptance_criteria --add "fix: Handle edge case"
 
 # Remove by index

@@ -319,3 +319,53 @@ fn test_delete_work_safeguard_referenced() -> TestResult {
 
     Ok(())
 }
+
+/// Test: Delete work item - safeguard prevents deletion when depended on
+#[test]
+fn test_delete_work_safeguard_depended_on() -> TestResult {
+    let temp_dir = init_project()?;
+    let date = today();
+    let wi1 = format!("WI-{}-001", date);
+    let wi2 = format!("WI-{}-002", date);
+
+    let setup_commands: Vec<Vec<String>> = vec![
+        vec![
+            "work".to_string(),
+            "new".to_string(),
+            "Dependency work item".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "new".to_string(),
+            "Dependent work item".to_string(),
+        ],
+        vec![
+            "work".to_string(),
+            "add".to_string(),
+            wi2.clone(),
+            "depends_on".to_string(),
+            wi1.clone(),
+        ],
+    ];
+
+    let _ = run_dynamic_commands(temp_dir.path(), &setup_commands)?;
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "work".to_string(),
+            "delete".to_string(),
+            wi1.clone(),
+            "-f".to_string(),
+        ]],
+    )?;
+
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    assert!(
+        output.contains("Cannot delete work item"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains(&wi2), "output: {}", output);
+    Ok(())
+}

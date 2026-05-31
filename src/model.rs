@@ -410,6 +410,8 @@ pub struct WorkItemMeta {
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub depends_on: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
 }
 
@@ -890,6 +892,7 @@ mod tests {
                     started: None,
                     completed: None,
                     refs: vec![],
+                    depends_on: vec![],
                     tags: vec![],
                 },
                 content: WorkItemContent::default(),

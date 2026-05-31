@@ -16,7 +16,9 @@ use self::path::FieldPath;
 use self::{engine as edit_engine, rules as edit_rules, runtime as edit_runtime};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{AdrEntry, AdrSpec, GuardEntry, GuardSpec, WorkItemEntry, WorkItemSpec};
+use crate::model::{
+    AdrEntry, AdrSpec, GuardEntry, GuardSpec, ProjectIndex, WorkItemEntry, WorkItemSpec,
+};
 use crate::ui;
 use crate::write::{WriteOp, delete_file, today};
 use anyhow::Context;
@@ -1137,6 +1139,38 @@ fn work_add_acceptance_criteria(
     Ok(())
 }
 
+fn is_work_dependency_target(fp: &FieldPath, target: &edit_engine::ResolvedTarget) -> bool {
+    fp.as_simple() == Some("depends_on") || target.display_path() == "govctl.depends_on"
+}
+
+fn validate_work_dependency_edit(config: &Config, entry: &WorkItemEntry) -> anyhow::Result<()> {
+    let mut index = ProjectIndex {
+        work_items: crate::parse::load_work_items(config)?,
+        ..Default::default()
+    };
+
+    let mut replaced = false;
+    for work in &mut index.work_items {
+        if work.spec.govctl.id == entry.spec.govctl.id {
+            *work = entry.clone();
+            replaced = true;
+            break;
+        }
+    }
+    if !replaced {
+        index.work_items.push(entry.clone());
+    }
+
+    if let Some(diagnostic) = crate::validate::validate_work_dependencies(&index, config)
+        .into_iter()
+        .next()
+    {
+        return Err(diagnostic.into());
+    }
+
+    Ok(())
+}
+
 #[allow(clippy::too_many_arguments)]
 pub fn add_to_field(
     config: &Config,
@@ -1224,6 +1258,9 @@ pub fn add_to_field(
                 let mut doc = serde_json::to_value(entry.spec())?;
                 add_to_target_doc(ArtifactType::WorkItem, &mut doc, target, value, id)?;
                 *entry.spec_mut() = serde_json::from_value(doc)?;
+            }
+            if is_work_dependency_target(fp, target) {
+                validate_work_dependency_edit(config, &entry)?;
             }
             WorkTomlAdapter::write(config, &entry, op)?;
         }
@@ -2017,7 +2054,8 @@ pub fn delete_work_item(
 
     for other_wi in &index.work_items {
         if other_wi.spec.govctl.id != wi.govctl.id
-            && other_wi.spec.govctl.refs.contains(&wi.govctl.id)
+            && (other_wi.spec.govctl.refs.contains(&wi.govctl.id)
+                || other_wi.spec.govctl.depends_on.contains(&wi.govctl.id))
         {
             referenced_by.push(other_wi.spec.govctl.id.clone());
         }
