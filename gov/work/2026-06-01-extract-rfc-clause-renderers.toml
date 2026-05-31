@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-053"
 title = "Extract RFC clause renderers"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-052"]
 
 [content]
@@ -12,15 +14,15 @@ description = "Extract RFC and clause markdown rendering from `src/render.rs` in
 
 [[content.acceptance_criteria]]
 text = "RFC and clause render functions live in a focused render child module"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "RFC signature, changelog, clause anchor, and write output behavior remain unchanged"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "render unit tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
