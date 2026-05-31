@@ -1,16 +1,21 @@
+mod list;
 mod mutate;
 mod nested;
 mod render;
 
+pub use self::list::{
+    add_simple_list_value, get_simple_list_item, remove_simple_list_values_with_matcher,
+    remove_simple_status_list_values_with_matcher, set_simple_list_item,
+    tick_simple_status_list_item_with_matcher,
+};
 pub use nested::{
     add_nested_list_value, get_nested_field, remove_nested_list_values, set_nested_field,
     set_nested_list_item, tick_nested_list_item_with_matcher,
 };
 
-use self::mutate::{apply_set, array_items_mut, ensure_array_path_mut, ensure_value_path_mut};
+use self::mutate::{apply_set, ensure_value_path_mut};
 use self::render::render_field;
 use super::ArtifactType;
-use super::path;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde_json::Value;
 
@@ -91,64 +96,6 @@ pub fn get_simple_field(
     render_field(doc, spec, id)
 }
 
-pub fn get_simple_list_item(
-    artifact: ArtifactType,
-    doc: &Value,
-    field: &str,
-    index: i32,
-    id: &str,
-) -> anyhow::Result<String> {
-    if let Some(path) = simple_runtime_list_path(artifact, field) {
-        let Some(items) = value_at_path(doc, path).and_then(Value::as_array) else {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                "Expected an array value",
-                id,
-            )
-            .into());
-        };
-        let resolved = path::resolve_index(index, items.len())?;
-        let item = &items[resolved];
-        return Ok(match item {
-            Value::String(s) => s.clone(),
-            Value::Null => String::new(),
-            _ => item.to_string(),
-        });
-    }
-
-    if let Some(spec) = simple_status_list_spec(artifact, field) {
-        let Some(items) = value_at_path(doc, spec.path).and_then(Value::as_array) else {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                "Expected an array value",
-                id,
-            )
-            .into());
-        };
-        let resolved = path::resolve_index(index, items.len())?;
-        let item = &items[resolved];
-        let Some(obj) = item.as_object() else {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                "Expected object entries in array",
-                id,
-            )
-            .into());
-        };
-        let status = obj
-            .get(spec.status_key)
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let text = obj
-            .get(spec.text_key)
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        return Ok(format!("[{status}] {text}"));
-    }
-
-    Err(unknown_field_error(artifact, field, id).into())
-}
-
 /// Set a simple field on a serialized artifact document.
 pub fn set_simple_field(
     artifact: ArtifactType,
@@ -188,165 +135,6 @@ pub fn set_simple_field_forced(
 
 pub fn supports_simple_set_field(artifact: ArtifactType, field: &str) -> bool {
     simple_set_spec(artifact, field).is_some()
-}
-
-pub fn add_simple_list_value(
-    artifact: ArtifactType,
-    doc: &mut Value,
-    field: &str,
-    value: &str,
-    id: &str,
-) -> anyhow::Result<bool> {
-    let Some(path) = simple_runtime_list_path(artifact, field) else {
-        return Ok(false);
-    };
-    let slot = ensure_array_path_mut(doc, path, id)?;
-    let items = slot.as_array_mut().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            "Expected an array value",
-            id,
-        )
-    })?;
-    if !items.iter().any(|item| item.as_str() == Some(value)) {
-        items.push(Value::String(value.to_string()));
-    }
-    Ok(true)
-}
-
-pub fn set_simple_list_item(
-    artifact: ArtifactType,
-    doc: &mut Value,
-    field: &str,
-    index: i32,
-    value: &str,
-    id: &str,
-) -> anyhow::Result<()> {
-    let Some(path) = simple_runtime_list_path(artifact, field) else {
-        return Err(unknown_field_error(artifact, field, id).into());
-    };
-    let items = array_items_mut(doc, path, id)?;
-    let resolved = path::resolve_index(index, items.len())?;
-    let slot = &mut items[resolved];
-    if !slot.is_string() && !slot.is_null() {
-        return Err(type_mismatch("Expected string item in list", id).into());
-    }
-    *slot = Value::String(value.to_string());
-    Ok(())
-}
-
-pub fn remove_simple_list_values_with_matcher<F>(
-    artifact: ArtifactType,
-    doc: &mut Value,
-    field: &str,
-    id: &str,
-    resolve: F,
-) -> anyhow::Result<Option<Vec<String>>>
-where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
-{
-    let Some(path) = simple_runtime_list_path(artifact, field) else {
-        return Ok(None);
-    };
-    let items = array_items_mut(doc, path, id)?;
-
-    let texts: Vec<&str> = items
-        .iter()
-        .map(|item| {
-            item.as_str().ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    "Expected string entries in array",
-                    id,
-                )
-            })
-        })
-        .collect::<Result<Vec<_>, _>>()?;
-    let indices = resolve(&texts)?;
-    let mut sorted = indices;
-    sorted.sort_unstable_by(|a, b| b.cmp(a));
-
-    let mut removed = Vec::with_capacity(sorted.len());
-    for idx in sorted {
-        let item = items.remove(idx);
-        let text = item.as_str().ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                "Expected string entries in array",
-                id,
-            )
-        })?;
-        removed.push(text.to_string());
-    }
-    removed.reverse();
-    Ok(Some(removed))
-}
-
-pub fn remove_simple_status_list_values_with_matcher<F>(
-    artifact: ArtifactType,
-    doc: &mut Value,
-    field: &str,
-    id: &str,
-    resolve: F,
-) -> anyhow::Result<Option<Vec<String>>>
-where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
-{
-    let Some(spec) = simple_status_list_spec(artifact, field) else {
-        return Ok(None);
-    };
-    let items = array_items_mut(doc, spec.path, id)?;
-
-    let texts: Vec<&str> = items
-        .iter()
-        .map(|item| status_list_text(item, spec.text_key, id))
-        .collect::<Result<Vec<_>, _>>()?;
-    let indices = resolve(&texts)?;
-    let mut sorted = indices;
-    sorted.sort_unstable_by(|a, b| b.cmp(a));
-
-    let mut removed = Vec::with_capacity(sorted.len());
-    for idx in sorted {
-        let item = items.remove(idx);
-        removed.push(status_list_text(&item, spec.text_key, id)?.to_string());
-    }
-    removed.reverse();
-    Ok(Some(removed))
-}
-
-pub fn tick_simple_status_list_item_with_matcher<F>(
-    artifact: ArtifactType,
-    doc: &mut Value,
-    field: &str,
-    id: &str,
-    new_status: &str,
-    resolve: F,
-) -> anyhow::Result<Option<String>>
-where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
-{
-    let Some(spec) = simple_status_list_spec(artifact, field) else {
-        return Ok(None);
-    };
-    let items = array_items_mut(doc, spec.path, id)?;
-    let texts: Vec<&str> = items
-        .iter()
-        .map(|item| status_list_text(item, spec.text_key, id))
-        .collect::<Result<Vec<_>, _>>()?;
-    let idx = resolve(&texts)?[0];
-    let text = texts[idx].to_string();
-    let obj = items[idx].as_object_mut().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            "Expected object entries in array",
-            id,
-        )
-    })?;
-    obj.insert(
-        spec.status_key.to_string(),
-        Value::String(new_status.to_string()),
-    );
-    Ok(Some(text))
 }
 
 fn simple_field_spec(artifact: ArtifactType, field: &str) -> Option<SimpleFieldSpec> {
