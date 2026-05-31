@@ -15,29 +15,37 @@ Loops MAY support resumption after interruption (agent session end, user cancell
 **Resumption requirements:**
 
 If a loop implementation supports resumption, it MUST:
-1. Persist loop state to durable storage (independent of work item files)
-2. Detect existing loop state when invoked with the same work item set
-3. Resume from the last recorded state rather than starting fresh
+1. Persist loop state using the storage contract defined by [[RFC-0006:C-LOOP-STATE-STORAGE]]
+2. Resume by explicit loop ID when the caller provides one
+3. Detect existing non-terminal loop state when invoked with the same explicit root work item set and no loop ID
+4. Resume from the last recorded state rather than starting fresh when an unambiguous existing loop is found
+
+**Discovery semantics:**
+
+When no loop ID is provided, the implementation MUST inspect `.govctl/loops/*/state.toml` files whose `loop.state` is `pending`, `active`, or `paused`.
+
+A stored loop matches a requested root set when its `loop.root_work_items` array contains the same Work Item IDs as the request, ignoring order. If exactly one matching non-terminal loop exists, the implementation MUST resume that loop. If more than one matching non-terminal loop exists, the implementation MUST reject the resume attempt as ambiguous and require an explicit loop ID. If no matching non-terminal loop exists, the implementation MAY start a new loop.
 
 **Resumption semantics:**
 
 When resuming a loop:
 - Work items in `done` loop state MUST NOT be re-executed
 - Work items in `active` loop state MAY be resumed from their last round or restarted
-- Work items in `blocked` loop state MUST remain blocked
+- Work items in `blocked`, `failed`, or `cancelled` loop state MUST remain terminal for dependency planning
 - Work items in `pending` loop state MUST be executed in dependency order
 
 **State preservation:**
 
 The loop MUST preserve:
-- Execution status of each work item (pending, active, done, failed, blocked)
-- Dependency graph (if multi-WI loop)
+- Execution status of each work item (pending, active, done, failed, blocked, cancelled)
+- Dependency graph
 - Round count for each work item
+- Explicit root work item set
+- Resolved dependency closure
 
 The loop MAY preserve:
 - Detailed execution trace (execution entries, round logs)
 - Guard execution results
 - Agent context and decision history
 
-Rationale: Resumption enables long-running multi-WI loops to survive agent session boundaries without losing progress. By persisting state independently of work item files, we maintain the separation between execution state (ephemeral) and governance artifacts (durable).
-"""
+Rationale: Resumption enables long-running multi-WI loops to survive agent session boundaries without losing progress. Explicit loop IDs provide precise lookup, while root-set discovery preserves ergonomic resume behavior when there is exactly one matching local loop. By persisting state independently of work item files, we maintain the separation between execution state (ephemeral) and governance artifacts (durable)."""

@@ -10,7 +10,7 @@ tags = ["core"]
 
 [content]
 text = """
-Execution state lives in `.govctl/loops/` (not in work item TOML) because:
+Execution state lives in `.govctl/loops/<loop-id>/` (not in work item TOML) because:
 
 1. **Work items are outcome artifacts**: They should contain scope (description), success criteria (acceptance_criteria), and durable context (notes). They should not accumulate execution logs during active work.
 
@@ -18,4 +18,6 @@ Execution state lives in `.govctl/loops/` (not in work item TOML) because:
 
 3. **Clean diffs**: Work item TOML files remain stable and reviewable. Execution state changes frequently during a loop and is not meant for code review.
 
-4. **Ephemeral by design**: Loop state is local to the developer's machine. It can be deleted without losing governance artifacts. The work item's `notes` field captures durable learnings."""
+4. **Ephemeral by design**: Loop state is local to the developer's machine. It can be deleted without losing governance artifacts. The work item's `notes` field captures durable learnings.
+
+5. **Shared loop coordination**: Multi-work-item loops need one state root for lifecycle, dependency graph, failure propagation, and resumption. A per-work-item state root would force the loop to reconstruct shared state from fragments."""

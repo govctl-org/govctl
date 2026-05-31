@@ -3,13 +3,16 @@
 [govctl]
 id = "WI-2026-05-31-007"
 title = "Stabilize loop governance artifacts"
-status = "queue"
+status = "done"
 created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
 refs = [
     "RFC-0006",
     "ADR-0044",
     "ADR-0045",
     "ADR-0046",
+    "ADR-0047",
 ]
 
 [content]
@@ -17,15 +20,15 @@ description = "Prepare the loop feature for implementation by resolving the RFC-
 
 [[content.acceptance_criteria]]
 text = "RFC-0006 is ready for implementation phase or explicit blockers are recorded"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "ADR-0044 ADR-0045 and ADR-0046 are accepted or intentionally revised before implementation"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"

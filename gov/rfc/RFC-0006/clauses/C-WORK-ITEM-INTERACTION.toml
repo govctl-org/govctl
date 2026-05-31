@@ -6,7 +6,11 @@ title = "Work Item Interaction"
 kind = "normative"
 status = "active"
 since = "0.1.0"
-tags = ["lifecycle", "validation", "work-items"]
+tags = [
+    "lifecycle",
+    "validation",
+    "work-items",
+]
 
 [content]
 text = """
@@ -14,10 +18,11 @@ Loops interact with work items through status transitions and validation checks.
 
 **Status transitions:**
 
-1. **Before execution**: Work items in the loop set MUST be in `queue` or `active` state
-2. **During execution**: The loop transitions work items from `queue` to `active` via `govctl work move`
+1. **Before execution**: Work items in the resolved loop set MUST be in `queue`, `active`, `done`, or `cancelled` state
+2. **During execution**: The loop transitions executable work items from `queue` to `active` via `govctl work move`
 3. **On success**: The loop transitions work items from `active` to `done` via `govctl work move`
 4. **On failure**: Work items remain in `active` state (the loop marks them as `failed` in loop state, but does not change their work item `status` field)
+5. **On pre-existing cancellation**: A work item with status `cancelled` is represented as `cancelled` in loop state and is not executed
 
 **Validation requirements:**
 
@@ -35,16 +40,16 @@ The work item `notes` field is reserved for **durable context** that should pers
 
 Execution trace (round-by-round progress) MUST be tracked in loop state, not in work item fields.
 
-**Loop-level status:**
+**Loop-level work item status:**
 
-The loop tracks additional execution status in loop state:
+The loop tracks additional execution status for each work item in loop state:
 - `pending`: Work item has not started execution
 - `active`: Work item is currently being executed
 - `done`: Work item completed successfully (matches work item `done` state)
-- `failed`: Work item execution failed
-- `blocked`: Work item cannot execute due to failed/cancelled dependencies
+- `failed`: Work item execution failed and dependents must not execute
+- `blocked`: Work item cannot execute due to failed, blocked, or cancelled dependencies
+- `cancelled`: Work item has work item status `cancelled` and is not executed
 
-These loop-level statuses are independent of work item `status` field values (queue, active, done, cancelled).
+The loop-level statuses are independent of work item `status` field values except where explicitly mapped above. `done`, `failed`, `blocked`, and `cancelled` are terminal loop-level outcomes for dependency planning.
 
-Rationale: Using `govctl work move` commands ensures all status transitions are validated and auditable. Separating loop-level status from work item status and notes maintains clear boundaries between execution state (ephemeral) and governance artifacts (durable).
-"""
+Rationale: Using `govctl work move` commands ensures all status transitions are validated and auditable. Separating loop-level status from work item status and notes maintains clear boundaries between execution state (ephemeral) and governance artifacts (durable)."""

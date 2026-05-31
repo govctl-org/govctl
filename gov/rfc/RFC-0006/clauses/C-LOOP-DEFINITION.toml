@@ -13,15 +13,14 @@ text = """
 A **loop** is an execution session that drives one or more work items to completion through iterative rounds of implementation, verification, and refinement.
 
 Each loop MUST:
-1. Operate on an explicit, finite set of work items specified at loop start
-2. Resolve work item dependencies before execution begins
+1. Start from an explicit, finite root set of work items specified at loop start
+2. Resolve the transitive dependency closure before execution begins
 3. Track execution state independently of work item files
-4. Terminate when all work items reach terminal state or a failure condition is met
+4. Terminate when all work items in the resolved loop set reach terminal loop-level outcomes or a failure condition is met
 
 A loop MUST NOT:
 1. Modify work item files directly (MUST use `govctl work` commands for status transitions)
 2. Persist execution trace to work item fields; execution trace belongs in loop state
 3. Assume a specific execution order (sequential or parallel) — downstream implementations choose
 
-Rationale: Loops are a first-class execution concept that orchestrate work item completion. By keeping loops separate from work item files, we maintain clear separation between execution state (ephemeral) and governance artifacts (durable). Work item `notes` hold durable constraints and learnings that should survive future work; loop state holds execution trace. Using `govctl work` commands ensures all status transitions are validated and auditable.
-"""
+Rationale: Loops are a first-class execution concept that orchestrate work item completion. By keeping loops separate from work item files, we maintain clear separation between execution state (ephemeral) and governance artifacts (durable). Work item `notes` hold durable constraints and learnings that should survive future work; loop state holds execution trace. Using `govctl work` commands ensures all status transitions are validated and auditable."""

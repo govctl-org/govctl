@@ -6,21 +6,29 @@ title = "Work Item Dependency Semantics"
 kind = "normative"
 status = "active"
 since = "0.1.0"
-tags = ["lifecycle", "validation", "work-items"]
+tags = [
+    "lifecycle",
+    "validation",
+    "work-items",
+]
 
 [content]
 text = """
 Work items MAY declare dependencies on other work items using the `depends_on` field in the `[govctl]` section. The `depends_on` field MUST contain a list of work item IDs.
 
+The `depends_on` field is an optional Work Item metadata field for repositories implementing this RFC. Implementations that validate Work Items against a JSON Schema MUST include `govctl.depends_on` as an optional array of Work Item IDs in that schema.
+
+A loop starts from an explicit finite root set of work items. Before execution begins, the loop MUST resolve the dependency closure for that root set. The resolved loop set MUST include every transitive `depends_on` dependency needed by the root set. If any dependency ID does not identify an existing Work Item, the loop MUST be rejected before execution.
+
 **Dependency rules:**
 
-1. **Acyclicity**: The dependency graph MUST be acyclic. Implementations MUST detect cycles at loop start and reject the loop with a clear error message identifying the cycle.
+1. **Acyclicity**: The dependency graph MUST be acyclic. Implementations MUST detect cycles at loop start and reject the loop before execution. The diagnostic MUST include at least one Work Item ID from the detected cycle.
 
-2. **Blocking semantics**: A work item MUST NOT begin execution until all its dependencies reach terminal state (done or cancelled).
+2. **Blocking semantics**: A work item MUST NOT begin execution until every dependency has a terminal loop-level outcome.
 
-3. **Outcome checking**: After all dependencies reach terminal state, the loop MUST check their outcomes:
+3. **Outcome checking**: After a dependency reaches a terminal loop-level outcome, the loop MUST check that outcome:
    - If all dependencies are `done`: the dependent work item MAY proceed with execution
-   - If any dependency is `cancelled` or `failed`: the dependent work item MUST be marked as `blocked` and MUST NOT be executed
+   - If any dependency is `cancelled`, `failed`, or `blocked`: the dependent work item MUST be marked as `blocked` in loop state and MUST NOT be executed
 
 4. **Distinction from refs**: The `depends_on` field is distinct from `refs`:
    - `refs`: informational cross-references to related artifacts (RFCs, ADRs, work items)
@@ -28,7 +36,6 @@ Work items MAY declare dependencies on other work items using the `depends_on` f
 
 5. **Failure propagation**: When a work item is marked as `blocked`, all work items that depend on it (directly or transitively) MUST also be marked as `blocked`.
 
-**Loop-level status tracking**: The `blocked` and `failed` states are loop-level execution statuses tracked in loop state, not work item `status` field values. Work items maintain their own lifecycle states (queue, active, done, cancelled) per RFC-0001:C-WORK-STATUS.
+**Loop-level status tracking**: The `blocked`, `failed`, and `cancelled` states are loop-level execution statuses tracked in loop state, not additional work item `status` field values. Work items maintain their own lifecycle states (queue, active, done, cancelled) per RFC-0001:C-WORK-STATUS. A work item with Work Item status `cancelled` MUST be represented as `cancelled` in loop state when it is part of the resolved loop set.
 
-Rationale: Dependencies enable complex workflows where work items must be executed in a specific order. By keeping `depends_on` separate from `refs`, we maintain clear semantics: `refs` are informational, `depends_on` are blocking. Loop-level status tracking avoids polluting the work item status field with execution-specific states.
-"""
+Rationale: Dependencies enable complex workflows where work items must be executed in a specific order. By keeping `depends_on` separate from `refs`, we maintain clear semantics: `refs` are informational, `depends_on` are blocking. Resolving a dependency closure preserves an explicit root set while ensuring the loop has every prerequisite needed for deterministic planning. Loop-level status tracking avoids polluting the work item status field with execution-specific states."""

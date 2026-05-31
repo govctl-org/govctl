@@ -3,12 +3,9 @@
 [govctl]
 id = "ADR-0044"
 title = "Unified loop model for single and multi-WI execution"
-status = "proposed"
+status = "accepted"
 date = "2026-05-31"
-refs = [
-    "ADR-0043",
-    "RFC-0006",
-]
+refs = ["RFC-0006"]
 
 [content]
 context = """
@@ -36,21 +33,24 @@ Key design points:
 
 This treats single-WI and multi-WI cases as the same primitive with different cardinality."""
 consequences = """
-**Positive:**
-- One mental model to learn instead of two
-- State management is consistent (`.govctl/loops/` works for both)
-- Natural support for DAGs (work items with dependencies)
-- Agents can use the same pattern for both use cases
-- Future enhancements apply to both automatically
+### Positive
 
-**Negative:**
-- Initial implementation is slightly more complex (need dependency resolution even for single WI)
-- Users who only need single-WI iteration may find the multi-WI features unnecessary
-- Documentation needs to cover both use cases
+- One mental model to learn instead of two.
+- State management is consistent (`.govctl/loops/` works for both single and multi-work-item loops).
+- Natural support for DAGs through work item dependencies.
+- Agents can use the same pattern for both use cases.
+- Future enhancements apply to both automatically.
 
-**Neutral:**
-- Aligns with existing agent workflow patterns (batch create WIs, then iterate)
-- No breaking changes to existing `/gov` or `/quick` skills"""
+### Negative
+
+- Initial implementation is more complex because dependency resolution is present even for single-work-item loops. Mitigation: single-work-item loops use the same planner with an empty dependency graph.
+- Users who only need single-work-item iteration may see multi-work-item options as overhead. Mitigation: the command surface keeps the one-work-item invocation as the simple path.
+- Documentation must cover both use cases. Mitigation: docs introduce the single-work-item case first, then describe multi-work-item dependency behavior as an extension.
+
+### Neutral
+
+- Aligns with existing agent workflow patterns (batch create work items, then iterate).
+- No breaking changes to existing `/gov` or `/quick` skills."""
 
 [[content.alternatives]]
 text = "Separate primitives: distinct /loop (single WI) and /batch (multiple WIs) skills"

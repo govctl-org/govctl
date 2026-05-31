@@ -6,7 +6,10 @@ title = "Round Execution"
 kind = "normative"
 status = "active"
 since = "0.1.0"
-tags = ["core", "validation"]
+tags = [
+    "core",
+    "validation",
+]
 
 [content]
 text = """
@@ -27,9 +30,9 @@ Each round MUST:
 A work item MUST terminate when:
 - **Success**: All acceptance criteria are satisfied and all required guards pass
 - **Failure**: Any of the following conditions are met:
-  - Maximum rounds reached (implementation-defined limit)
-  - Critical guard failure (guard execution error, not guard check failure)
-  - Agent decides unable to proceed (e.g., missing information, architectural conflict)
+  - Maximum rounds reached. Implementations MUST define and display the max-round limit before or when execution starts.
+  - Critical guard execution error, such as a guard command that cannot be launched or a guard timeout. A normal guard assertion failure is a failed verification result, not a critical guard execution error.
+  - Execution cannot proceed because required information, permissions, or a non-conflicting specification path is unavailable.
 
 **Post-termination:**
 
@@ -37,5 +40,4 @@ A work item MUST terminate when:
 - On failure: The work item remains in `active` state but is marked as `failed` in loop state
 - Failed work items trigger failure propagation per C-DEPENDENCY-SEMANTICS
 
-Rationale: Rounds provide iterative refinement toward acceptance criteria. The round structure ensures each iteration makes measurable progress without writing execution trace into the work item field surface. Termination conditions prevent infinite loops while allowing implementations to define appropriate limits.
-"""
+Rationale: Rounds provide iterative refinement toward acceptance criteria. The round structure ensures each iteration makes measurable progress without writing execution trace into the work item field surface. Termination conditions prevent infinite loops while allowing implementations to define appropriate limits."""

@@ -4,10 +4,11 @@
 id = "RFC-0006"
 title = "Loop Execution Model"
 version = "0.1.0"
-status = "draft"
-phase = "spec"
+status = "normative"
+phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-05-31"
+updated = "2026-05-31"
 
 [[sections]]
 title = "Summary"
@@ -22,6 +23,7 @@ clauses = [
     "clauses/C-ROUND-EXECUTION.toml",
     "clauses/C-WORK-ITEM-INTERACTION.toml",
     "clauses/C-LOOP-RESUMPTION.toml",
+    "clauses/C-LOOP-STATE-STORAGE.toml",
 ]
 
 [[sections]]
