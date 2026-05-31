@@ -1,4 +1,5 @@
-use super::{LoopRoundRecord, LoopState, ensure_work_item_id, invalid_state, validate_loop_id};
+use super::validation::{ensure_work_item_id, invalid_state, validate_loop_id};
+use super::{LoopRoundRecord, LoopState};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::WriteOp;

@@ -2,10 +2,13 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::WriteOp;
 use serde::{Deserialize, Serialize};
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 mod storage;
+mod validation;
+
+pub use validation::validate_loop_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -104,14 +107,7 @@ impl LoopState {
 
     pub fn transition_to(&mut self, next: LoopLifecycleState) -> anyhow::Result<()> {
         let current = self.loop_meta.state;
-        if !is_valid_loop_transition(current, next) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E1203LoopInvalidTransition,
-                format!("Invalid loop transition: {current:?} -> {next:?}"),
-                self.loop_meta.id.clone(),
-            )
-            .into());
-        }
+        validation::validate_loop_transition(&self.loop_meta.id, current, next)?;
         self.loop_meta.state = next;
         Ok(())
     }
@@ -153,145 +149,13 @@ impl LoopState {
     }
 
     pub fn validate(&self, expected_loop_id: Option<&str>) -> anyhow::Result<()> {
-        validate_loop_id(&self.loop_meta.id)?;
-        if let Some(expected) = expected_loop_id
-            && self.loop_meta.id != expected
-        {
-            return Err(invalid_state(
-                &self.loop_meta.id,
-                format!(
-                    "loop.id '{}' does not match loop directory '{}'",
-                    self.loop_meta.id, expected
-                ),
-            ));
-        }
-
-        ensure_no_duplicates(
-            &self.loop_meta.root_work_items,
-            "loop.root_work_items",
-            &self.loop_meta.id,
-        )?;
-        ensure_no_duplicates(
-            &self.loop_meta.work_items,
-            "loop.work_items",
-            &self.loop_meta.id,
-        )?;
-
-        let work_items: BTreeSet<&str> = self
-            .loop_meta
-            .work_items
-            .iter()
-            .map(String::as_str)
-            .collect();
-        for work_id in &self.loop_meta.work_items {
-            ensure_work_item_id(work_id, &self.loop_meta.id)?;
-        }
-        for root in &self.loop_meta.root_work_items {
-            ensure_work_item_id(root, &self.loop_meta.id)?;
-            if !work_items.contains(root.as_str()) {
-                return Err(invalid_state(
-                    &self.loop_meta.id,
-                    format!("root work item '{root}' is missing from loop.work_items"),
-                ));
-            }
-        }
-
-        for work_id in &self.loop_meta.work_items {
-            if !self.dependencies.contains_key(work_id) {
-                return Err(invalid_state(
-                    &self.loop_meta.id,
-                    format!("missing dependency entry for work item: {work_id}"),
-                ));
-            }
-            if !self.items.contains_key(work_id) {
-                return Err(invalid_state(
-                    &self.loop_meta.id,
-                    format!("missing item state for work item: {work_id}"),
-                ));
-            }
-        }
-
-        for (work_id, dependencies) in &self.dependencies {
-            if !work_items.contains(work_id.as_str()) {
-                return Err(invalid_state(
-                    &self.loop_meta.id,
-                    format!("dependency entry '{work_id}' is not in loop.work_items"),
-                ));
-            }
-            ensure_no_duplicates(
-                dependencies,
-                &format!("dependencies.{work_id}"),
-                &self.loop_meta.id,
-            )?;
-            for dependency in dependencies {
-                ensure_work_item_id(dependency, &self.loop_meta.id)?;
-                if !work_items.contains(dependency.as_str()) {
-                    return Err(invalid_state(
-                        &self.loop_meta.id,
-                        format!(
-                            "dependency '{dependency}' for '{work_id}' is missing from loop.work_items"
-                        ),
-                    ));
-                }
-            }
-        }
-
-        for work_id in self.items.keys() {
-            if !work_items.contains(work_id.as_str()) {
-                return Err(invalid_state(
-                    &self.loop_meta.id,
-                    format!("item state '{work_id}' is not in loop.work_items"),
-                ));
-            }
-        }
-
-        Ok(())
+        validation::validate_loop_state(self, expected_loop_id)
     }
 }
 
 impl LoopRoundRecord {
     pub fn validate(&self) -> anyhow::Result<()> {
-        validate_loop_id(&self.loop_id)?;
-        ensure_work_item_id(&self.work_item_id, &self.loop_id)?;
-        if self.round_number == 0 {
-            return Err(invalid_state(
-                &self.loop_id,
-                "loop round record round_number must be at least 1",
-            ));
-        }
-        if self.max_rounds == 0 {
-            return Err(invalid_state(
-                &self.loop_id,
-                "loop round record max_rounds must be at least 1",
-            ));
-        }
-        if self.round_number > self.max_rounds {
-            return Err(invalid_state(
-                &self.loop_id,
-                format!(
-                    "loop round record round_number {} exceeds max_rounds {}",
-                    self.round_number, self.max_rounds
-                ),
-            ));
-        }
-        ensure_loop_item_status(
-            &self.item_status_before,
-            "item_status_before",
-            &self.loop_id,
-        )?;
-        ensure_loop_item_status(&self.item_status_after, "item_status_after", &self.loop_id)?;
-        ensure_work_status(
-            &self.work_status_before,
-            "work_status_before",
-            &self.loop_id,
-        )?;
-        ensure_work_status(&self.work_status_after, "work_status_after", &self.loop_id)?;
-        ensure_loop_item_status(&self.outcome, "outcome", &self.loop_id)?;
-        ensure_non_empty(&self.action, "action", &self.loop_id)?;
-        if let Some(reason) = &self.reason {
-            ensure_non_empty(reason, "reason", &self.loop_id)?;
-        }
-        Ok(())
+        validation::validate_loop_round_record(self)
     }
 }
 
@@ -320,45 +184,6 @@ impl LoopWorkItemStatus {
     }
 }
 
-pub fn is_valid_loop_transition(from: LoopLifecycleState, to: LoopLifecycleState) -> bool {
-    matches!(
-        (from, to),
-        (LoopLifecycleState::Pending, LoopLifecycleState::Active)
-            | (LoopLifecycleState::Active, LoopLifecycleState::Paused)
-            | (LoopLifecycleState::Paused, LoopLifecycleState::Active)
-            | (LoopLifecycleState::Active, LoopLifecycleState::Completed)
-            | (LoopLifecycleState::Active, LoopLifecycleState::Failed)
-            | (LoopLifecycleState::Paused, LoopLifecycleState::Failed)
-    )
-}
-
-pub fn validate_loop_id(loop_id: &str) -> anyhow::Result<()> {
-    let valid_first = loop_id
-        .chars()
-        .next()
-        .is_some_and(|ch| ch.is_ascii_alphanumeric());
-    let valid_rest = loop_id
-        .chars()
-        .all(|ch| ch.is_ascii_alphanumeric() || matches!(ch, '.' | '_' | '-'));
-    if loop_id.is_empty()
-        || !valid_first
-        || !valid_rest
-        || loop_id.contains('/')
-        || loop_id.contains('\\')
-        || loop_id.contains("..")
-    {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1204LoopInvalidId,
-            format!(
-                "Invalid loop ID '{loop_id}': must match ^[A-Za-z0-9][A-Za-z0-9._-]*$ and must not contain path traversal"
-            ),
-            loop_id,
-        )
-        .into());
-    }
-    Ok(())
-}
-
 pub fn loop_state_path(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf> {
     storage::loop_state_path(config, loop_id)
 }
@@ -385,70 +210,6 @@ pub fn write_loop_round_record(
     op: WriteOp,
 ) -> anyhow::Result<()> {
     storage::write_loop_round_record(config, record, op)
-}
-
-fn ensure_work_item_id(work_id: &str, loop_id: &str) -> anyhow::Result<()> {
-    if crate::validate::is_work_item_id(work_id) {
-        Ok(())
-    } else {
-        Err(invalid_state(
-            loop_id,
-            format!("invalid work item ID in loop state: {work_id}"),
-        ))
-    }
-}
-
-fn ensure_no_duplicates(values: &[String], field: &str, loop_id: &str) -> anyhow::Result<()> {
-    let mut seen = BTreeSet::new();
-    for value in values {
-        if !seen.insert(value.as_str()) {
-            return Err(invalid_state(
-                loop_id,
-                format!("duplicate value '{value}' in {field}"),
-            ));
-        }
-    }
-    Ok(())
-}
-
-fn invalid_state(loop_id: &str, message: impl Into<String>) -> anyhow::Error {
-    Diagnostic::new(DiagnosticCode::E1201LoopStateInvalid, message, loop_id).into()
-}
-
-fn ensure_loop_item_status(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
-    if matches!(
-        value,
-        "pending" | "active" | "done" | "failed" | "blocked" | "cancelled"
-    ) {
-        Ok(())
-    } else {
-        Err(invalid_state(
-            loop_id,
-            format!("invalid loop round record {field}: {value}"),
-        ))
-    }
-}
-
-fn ensure_work_status(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
-    if matches!(value, "queue" | "active" | "done" | "cancelled") {
-        Ok(())
-    } else {
-        Err(invalid_state(
-            loop_id,
-            format!("invalid loop round record {field}: {value}"),
-        ))
-    }
-}
-
-fn ensure_non_empty(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
-    if value.trim().is_empty() {
-        Err(invalid_state(
-            loop_id,
-            format!("loop round record {field} must not be empty"),
-        ))
-    } else {
-        Ok(())
-    }
 }
 
 #[cfg(test)]
