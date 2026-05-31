@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-010"
+title = "Extract command router execution dispatch"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract command-router execution dispatch helpers from the large command_router module into a focused child module. Keep planning types, plan constructors, and CommandPlan::execute behavior stable for existing callers."
+
+[[content.acceptance_criteria]]
+text = "Command router execution dispatch lives in a focused child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing CommandPlan::execute behavior remains stable"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Command router tests and full verification pass"
+status = "done"
+category = "chore"
