@@ -6,6 +6,7 @@ pub mod edit;
 pub mod guard;
 pub mod lifecycle;
 pub mod list;
+pub mod loop_cmd;
 pub mod migrate;
 #[path = "move_.rs"]
 pub mod move_;

@@ -2,6 +2,7 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::write::WriteOp;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -232,6 +233,31 @@ impl LoopState {
     }
 }
 
+impl LoopLifecycleState {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Active => "active",
+            Self::Paused => "paused",
+            Self::Completed => "completed",
+            Self::Failed => "failed",
+        }
+    }
+}
+
+impl LoopWorkItemStatus {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Pending => "pending",
+            Self::Active => "active",
+            Self::Done => "done",
+            Self::Failed => "failed",
+            Self::Blocked => "blocked",
+            Self::Cancelled => "cancelled",
+        }
+    }
+}
+
 pub fn is_valid_loop_transition(from: LoopLifecycleState, to: LoopLifecycleState) -> bool {
     matches!(
         (from, to),
@@ -278,13 +304,22 @@ pub fn loop_state_path(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf
 
 pub fn loop_state_dir(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf> {
     validate_loop_id(loop_id)?;
-    Ok(project_root(config)
-        .join(".govctl")
-        .join("loops")
-        .join(loop_id))
+    Ok(loop_state_root(config).join(loop_id))
+}
+
+pub fn loop_state_root(config: &Config) -> PathBuf {
+    project_root(config).join(".govctl").join("loops")
 }
 
 pub fn write_loop_state(config: &Config, state: &LoopState) -> anyhow::Result<()> {
+    write_loop_state_with_op(config, state, WriteOp::Execute)
+}
+
+pub fn write_loop_state_with_op(
+    config: &Config,
+    state: &LoopState,
+    op: WriteOp,
+) -> anyhow::Result<()> {
     state.validate(Some(&state.loop_meta.id))?;
     let path = loop_state_path(config, &state.loop_meta.id)?;
     let parent = path.parent().ok_or_else(|| {
@@ -294,7 +329,6 @@ pub fn write_loop_state(config: &Config, state: &LoopState) -> anyhow::Result<()
             path.display().to_string(),
         )
     })?;
-    std::fs::create_dir_all(parent)?;
     let body = toml::to_string_pretty(state).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E1201LoopStateInvalid,
@@ -302,7 +336,10 @@ pub fn write_loop_state(config: &Config, state: &LoopState) -> anyhow::Result<()
             path.display().to_string(),
         )
     })?;
-    std::fs::write(&path, body)?;
+    let display_parent = config.display_path(parent);
+    let display_path = config.display_path(&path);
+    crate::write::create_dir_all(parent, op, Some(&display_parent))?;
+    crate::write::write_file(&path, &body, op, Some(&display_path))?;
     Ok(())
 }
 

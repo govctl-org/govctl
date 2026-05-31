@@ -135,6 +135,10 @@ pub fn propagate_blocked_outcomes(state: &mut LoopState) -> anyhow::Result<Vec<S
     Ok(blocked)
 }
 
+pub fn topological_order_for_state(state: &LoopState) -> anyhow::Result<Vec<String>> {
+    deterministic_execution_order(&state.loop_meta.id, &state.dependencies)
+}
+
 fn resolve_dependency_closure(
     work_id: &str,
     loop_id: &str,

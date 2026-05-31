@@ -1235,6 +1235,7 @@ fn test_work_depends_on_rejects_invalid_unknown_and_cycle() -> common::TestResul
     let date = today();
     let first_id = format!("WI-{date}-001");
     let second_id = format!("WI-{date}-002");
+    let third_id = format!("WI-{date}-003");
     let unknown_id = format!("WI-{date}-999");
 
     let output = common::run_dynamic_commands(
@@ -1242,6 +1243,7 @@ fn test_work_depends_on_rejects_invalid_unknown_and_cycle() -> common::TestResul
         &[
             vec!["work".to_string(), "new".to_string(), "First".to_string()],
             vec!["work".to_string(), "new".to_string(), "Second".to_string()],
+            vec!["work".to_string(), "new".to_string(), "Third".to_string()],
             vec![
                 "work".to_string(),
                 "add".to_string(),
@@ -1270,6 +1272,27 @@ fn test_work_depends_on_rejects_invalid_unknown_and_cycle() -> common::TestResul
                 "depends_on".to_string(),
                 second_id.clone(),
             ],
+            vec![
+                "work".to_string(),
+                "add".to_string(),
+                first_id.clone(),
+                "depends_on".to_string(),
+                third_id.clone(),
+            ],
+            vec![
+                "work".to_string(),
+                "edit".to_string(),
+                first_id.clone(),
+                "depends_on[0]".to_string(),
+                "--set".to_string(),
+                second_id.clone(),
+            ],
+            vec![
+                "work".to_string(),
+                "get".to_string(),
+                first_id.clone(),
+                "depends_on".to_string(),
+            ],
         ],
     )?;
 
@@ -1293,6 +1316,18 @@ fn test_work_depends_on_rejects_invalid_unknown_and_cycle() -> common::TestResul
     assert!(output.contains("error[E0411]"), "output: {}", output);
     assert!(
         output.contains("cyclic work item dependency"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains(&format!("Added '{third_id}' to {first_id}.depends_on")),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains(&format!(
+            "$ govctl work get {first_id} depends_on\n{third_id}"
+        )),
         "output: {}",
         output
     );

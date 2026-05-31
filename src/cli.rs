@@ -200,6 +200,22 @@ NOTES:
         work: Option<String>,
     },
 
+    /// Loop execution-state commands
+    #[command(after_help = "\
+COMMON WORKFLOW:
+    1. `govctl loop start WI-2026-04-06-001` to create local loop state
+    2. `govctl loop show <LOOP-ID>` to inspect persisted state
+    3. `govctl loop resume WI-2026-04-06-001` to find matching non-terminal state
+
+NOTES:
+    - Loop state is local under `.govctl/loops/<LOOP-ID>/state.toml`.
+    - These commands manage loop state and planning only; execution rounds are separate.
+")]
+    Loop {
+        #[command(subcommand)]
+        command: LoopCommand,
+    },
+
     // ========================================
     // Resource-First Commands (RFC-0002)
     // ========================================
@@ -1517,6 +1533,55 @@ EXAMPLES:
     govctl work render WI-2026-04-06-001 --dry-run
 ")]
     Render(CommonRenderArgs),
+}
+
+#[derive(Subcommand, Clone, Debug)]
+pub(crate) enum LoopCommand {
+    /// Start a loop for one or more explicit work items
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop start WI-2026-04-06-001
+    govctl loop start --id loop-demo WI-2026-04-06-001 WI-2026-04-06-002
+
+NOTES:
+    - Resolves transitive `depends_on` dependencies before writing state.
+    - Reuses an existing non-terminal loop with the same root set when unambiguous.
+")]
+    Start {
+        /// Optional loop ID; generated when omitted
+        #[arg(long)]
+        id: Option<String>,
+        /// Explicit root work item IDs
+        #[arg(required = true, value_name = "WI-ID")]
+        work_items: Vec<String>,
+    },
+    /// Show persisted loop state
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop show loop-demo
+")]
+    Show {
+        /// Loop ID
+        id: String,
+    },
+    /// Resume or inspect an existing non-terminal loop
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop resume --id loop-demo
+    govctl loop resume WI-2026-04-06-001
+
+NOTES:
+    - With `--id`, resumes that explicit loop.
+    - Without `--id`, searches for exactly one non-terminal loop with the same root set.
+")]
+    Resume {
+        /// Explicit loop ID
+        #[arg(long)]
+        id: Option<String>,
+        /// Root work item IDs for discovery when --id is omitted
+        #[arg(value_name = "WI-ID")]
+        work_items: Vec<String>,
+    },
 }
 
 /// Guard commands (resource-first structure)

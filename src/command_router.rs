@@ -96,6 +96,17 @@ pub enum BuiltinOp {
     TagList {
         output: crate::OutputFormat,
     },
+    LoopStart {
+        loop_id: Option<String>,
+        work_items: Vec<String>,
+    },
+    LoopShow {
+        loop_id: String,
+    },
+    LoopResume {
+        loop_id: Option<String>,
+        work_items: Vec<String>,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -216,6 +227,8 @@ impl CommandPlan {
             | Op::Builtin(BuiltinOp::Completions { .. })
             | Op::Builtin(BuiltinOp::SelfUpdate { .. })
             | Op::Builtin(BuiltinOp::TagList { .. })
+            | Op::Builtin(BuiltinOp::LoopShow { .. })
+            | Op::Builtin(BuiltinOp::LoopResume { .. })
             | Op::Get
             | Op::List { .. }
             | Op::Show { .. } => LockDisposition::None,
@@ -530,6 +543,15 @@ fn execute_builtin(
         BuiltinOp::TagNew { tag } => cmd::tag::tag_new(config, tag, op),
         BuiltinOp::TagDelete { tag } => cmd::tag::tag_delete(config, tag, op),
         BuiltinOp::TagList { output } => cmd::tag::tag_list(config, *output),
+        BuiltinOp::LoopStart {
+            loop_id,
+            work_items,
+        } => cmd::loop_cmd::start(config, loop_id.as_deref(), work_items, op),
+        BuiltinOp::LoopShow { loop_id } => cmd::loop_cmd::show(config, loop_id),
+        BuiltinOp::LoopResume {
+            loop_id,
+            work_items,
+        } => cmd::loop_cmd::resume(config, loop_id.as_deref(), work_items),
     }
 }
 
@@ -882,6 +904,23 @@ impl CommandPlan {
             Commands::Adr { command } => command.to_plan(),
             Commands::Work { command } => command.to_plan(),
             Commands::Guard { command } => command.to_plan(),
+            Commands::Loop { command } => match command {
+                crate::LoopCommand::Start { id, work_items } => {
+                    Ok(global(Op::Builtin(BuiltinOp::LoopStart {
+                        loop_id: id.clone(),
+                        work_items: work_items.clone(),
+                    })))
+                }
+                crate::LoopCommand::Show { id } => Ok(global(Op::Builtin(BuiltinOp::LoopShow {
+                    loop_id: id.clone(),
+                }))),
+                crate::LoopCommand::Resume { id, work_items } => {
+                    Ok(global(Op::Builtin(BuiltinOp::LoopResume {
+                        loop_id: id.clone(),
+                        work_items: work_items.clone(),
+                    })))
+                }
+            },
             Commands::Release { version, date } => Ok(global(Op::Builtin(BuiltinOp::ReleaseCut {
                 version: version.clone(),
                 date: date.clone(),

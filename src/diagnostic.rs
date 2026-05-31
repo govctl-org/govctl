@@ -109,6 +109,9 @@ pub enum DiagnosticCode {
     E1204LoopInvalidId,
     E1205LoopDependencyNotFound,
     E1206LoopDependencyCycle,
+    E1207LoopResumeNotFound,
+    E1208LoopResumeAmbiguous,
+    E1209LoopRootMismatch,
 
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
@@ -256,6 +259,9 @@ impl DiagnosticCode {
             Self::E1204LoopInvalidId => "E1204",
             Self::E1205LoopDependencyNotFound => "E1205",
             Self::E1206LoopDependencyCycle => "E1206",
+            Self::E1207LoopResumeNotFound => "E1207",
+            Self::E1208LoopResumeAmbiguous => "E1208",
+            Self::E1209LoopRootMismatch => "E1209",
             // E08xx - CLI/Command
             Self::E0801MissingRequiredArg => "E0801",
             Self::E0802ConflictingArgs => "E0802",

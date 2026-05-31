@@ -65,6 +65,16 @@ fn test_work_root_help() -> common::TestResult {
 }
 
 #[test]
+fn test_loop_root_help() -> common::TestResult {
+    let temp_dir = tempfile::TempDir::new()?;
+    let date = today();
+
+    let output = run_commands(temp_dir.path(), &[&["loop", "--help"]])?;
+    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[test]
 fn test_clause_root_help() -> common::TestResult {
     let temp_dir = tempfile::TempDir::new()?;
     let date = today();

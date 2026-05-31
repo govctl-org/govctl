@@ -491,15 +491,7 @@ fn apply_set_field(
                 )
                 .into());
             }
-            set_toml_field::<WorkTomlAdapter>(
-                config,
-                id,
-                target,
-                value,
-                op,
-                ArtifactType::WorkItem,
-                !enforce_verb_ownership,
-            )?
+            set_work_toml_field(config, id, target, value, op, !enforce_verb_ownership)?
         }
         ArtifactType::Rfc => {
             set_rfc_field(config, id, fp, target, value, op, !enforce_verb_ownership)?
@@ -723,6 +715,53 @@ where
     A::Entry: TomlEditableEntry,
 {
     let mut entry = A::load(config, id)?;
+    apply_toml_target_to_entry(
+        &mut entry,
+        target,
+        value,
+        artifact,
+        allow_forced_simple_set,
+        id,
+    )?;
+    A::write(config, &entry, op)?;
+    Ok(())
+}
+
+fn set_work_toml_field(
+    config: &Config,
+    id: &str,
+    target: &edit_engine::ResolvedTarget,
+    value: &str,
+    op: WriteOp,
+    allow_forced_simple_set: bool,
+) -> anyhow::Result<()> {
+    let mut entry = WorkTomlAdapter::load(config, id)?;
+    apply_toml_target_to_entry(
+        &mut entry,
+        target,
+        value,
+        ArtifactType::WorkItem,
+        allow_forced_simple_set,
+        id,
+    )?;
+    if is_work_dependency_target(target) {
+        validate_work_dependency_edit(config, &entry)?;
+    }
+    WorkTomlAdapter::write(config, &entry, op)?;
+    Ok(())
+}
+
+fn apply_toml_target_to_entry<E>(
+    entry: &mut E,
+    target: &edit_engine::ResolvedTarget,
+    value: &str,
+    artifact: ArtifactType,
+    allow_forced_simple_set: bool,
+    id: &str,
+) -> anyhow::Result<()>
+where
+    E: TomlEditableEntry,
+{
     let mut doc = serde_json::to_value(entry.spec())?;
     match target {
         edit_engine::ResolvedTarget::Node {
@@ -787,7 +826,6 @@ where
         }
     }
     *entry.spec_mut() = serde_json::from_value(doc)?;
-    A::write(config, &entry, op)?;
     Ok(())
 }
 
@@ -1139,8 +1177,17 @@ fn work_add_acceptance_criteria(
     Ok(())
 }
 
-fn is_work_dependency_target(fp: &FieldPath, target: &edit_engine::ResolvedTarget) -> bool {
-    fp.as_simple() == Some("depends_on") || target.display_path() == "govctl.depends_on"
+fn is_work_dependency_target(target: &edit_engine::ResolvedTarget) -> bool {
+    match target {
+        edit_engine::ResolvedTarget::Node { path, .. } => is_work_dependency_path(path),
+        edit_engine::ResolvedTarget::IndexedItem { container_path, .. } => {
+            is_work_dependency_path(container_path)
+        }
+    }
+}
+
+fn is_work_dependency_path(path: &FieldPath) -> bool {
+    path.as_simple() == Some("depends_on") || path.to_string() == "govctl.depends_on"
 }
 
 fn validate_work_dependency_edit(config: &Config, entry: &WorkItemEntry) -> anyhow::Result<()> {
@@ -1259,7 +1306,7 @@ pub fn add_to_field(
                 add_to_target_doc(ArtifactType::WorkItem, &mut doc, target, value, id)?;
                 *entry.spec_mut() = serde_json::from_value(doc)?;
             }
-            if is_work_dependency_target(fp, target) {
+            if is_work_dependency_target(target) {
                 validate_work_dependency_edit(config, &entry)?;
             }
             WorkTomlAdapter::write(config, &entry, op)?;
