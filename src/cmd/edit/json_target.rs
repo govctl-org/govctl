@@ -3,6 +3,7 @@ use super::adapter::DocAdapter;
 use super::engine as edit_engine;
 use super::matching::MatchOptions;
 use super::runtime as edit_runtime;
+use super::target_doc::{cannot_add_to_field_error, notify_removed, remove_target_from_doc};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::{WriteOp, today};
@@ -198,7 +199,7 @@ where
     let mut loaded = A::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
     if !edit_runtime::add_simple_list_value(artifact, &mut doc, simple, value, id)? {
-        return Err(super::cannot_add_to_field_error(id, simple));
+        return Err(cannot_add_to_field_error(id, simple));
     }
     loaded.data = serde_json::from_value(doc)?;
     A::write(config, &loaded, op)?;
@@ -220,8 +221,7 @@ where
 {
     let mut loaded = A::load(config, id)?;
     let mut doc = serde_json::to_value(&loaded.data)?;
-    let (display_field, removed) =
-        super::remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
+    let (display_field, removed) = remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
     if !matches!(
         target,
         edit_engine::ResolvedTarget::Node {
@@ -238,7 +238,7 @@ where
     }
     loaded.data = serde_json::from_value(doc)?;
     A::write(config, &loaded, op)?;
-    super::notify_removed(id, &display_field, &removed, op);
+    notify_removed(id, &display_field, &removed, op);
     Ok(())
 }
 

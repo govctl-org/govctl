@@ -4,6 +4,7 @@ use super::engine as edit_engine;
 use super::matching::{MatchOptions, MatchUse, resolve_match_indices};
 use super::path::FieldPath;
 use super::runtime as edit_runtime;
+use super::target_doc::{notify_removed, remove_target_from_doc};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
@@ -134,12 +135,11 @@ where
 {
     let mut entry = A::load(config, id)?;
     let mut doc = serde_json::to_value(entry.spec())?;
-    let (display_field, removed) =
-        super::remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
+    let (display_field, removed) = remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
 
     *entry.spec_mut() = serde_json::from_value(doc)?;
     A::write(config, &entry, op)?;
-    super::notify_removed(id, &display_field, &removed, op);
+    notify_removed(id, &display_field, &removed, op);
     Ok(())
 }
 

@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-014"
+title = "Extract edit document target helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract shared edit document target add/remove and removal-notification helpers from cmd/edit/mod.rs into a focused child module so TOML, JSON, and parent edit flows reuse one implementation without changing behavior."
+
+[[content.acceptance_criteria]]
+text = "Shared edit document add/remove helpers live in a focused cmd/edit child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TOML, JSON, and parent edit flows use the shared document target helpers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused edit tests and full verification pass"
+status = "done"
+category = "chore"
