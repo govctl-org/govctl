@@ -46,12 +46,24 @@ fn test_init_creates_artifact_schema_files() -> common::TestResult {
         "work.schema.json",
         "release.schema.json",
         "guard.schema.json",
+        "loop-state.schema.json",
+        "loop-round.schema.json",
     ] {
+        let schema_path = temp_dir.path().join("gov/schema").join(filename);
         assert!(
-            temp_dir.path().join("gov/schema").join(filename).exists(),
+            schema_path.exists(),
             "schema file should exist: {}",
             filename
         );
+        let schema_text = fs::read_to_string(&schema_path)?;
+        let schema_value: serde_json::Value = serde_json::from_str(&schema_text)?;
+        jsonschema::validator_for(&schema_value)?;
+        if filename == "work.schema.json" {
+            assert!(
+                !schema_text.contains("journal"),
+                "work schema should not advertise legacy inline execution history"
+            );
+        }
     }
 
     assert!(

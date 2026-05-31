@@ -67,27 +67,6 @@
         "description": {
           "type": "string"
         },
-        "journal": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["date", "content"],
-            "properties": {
-              "date": {
-                "type": "string",
-                "format": "date"
-              },
-              "scope": {
-                "type": "string"
-              },
-              "content": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "additionalProperties": false
-          }
-        },
         "acceptance_criteria": {
           "type": "array",
           "items": {

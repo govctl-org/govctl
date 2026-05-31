@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loop State",
+  "description": "JSON Schema for local loop state TOML after parsing",
+  "type": "object",
+  "required": ["loop", "dependencies", "items"],
+  "properties": {
+    "loop": {
+      "type": "object",
+      "required": ["id", "state", "root_work_items", "work_items"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+          "not": {
+            "pattern": "\\.\\."
+          }
+        },
+        "state": {
+          "type": "string",
+          "enum": ["pending", "active", "paused", "completed", "failed"]
+        },
+        "root_work_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/workItemId"
+          },
+          "uniqueItems": true
+        },
+        "work_items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/workItemId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
+    },
+    "dependencies": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/definitions/workItemId"
+      },
+      "additionalProperties": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/workItemId"
+        },
+        "uniqueItems": true
+      }
+    },
+    "items": {
+      "type": "object",
+      "propertyNames": {
+        "$ref": "#/definitions/workItemId"
+      },
+      "additionalProperties": {
+        "type": "object",
+        "required": ["status", "round_count"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["pending", "active", "done", "failed", "blocked", "cancelled"]
+          },
+          "round_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "workItemId": {
+      "type": "string",
+      "pattern": "^WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3})$"
+    }
+  }
+}

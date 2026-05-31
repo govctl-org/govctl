@@ -1,0 +1,76 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Loop Round Record",
+  "description": "JSON Schema for local loop round TOML after parsing",
+  "type": "object",
+  "required": [
+    "loop_id",
+    "work_item_id",
+    "round_number",
+    "max_rounds",
+    "item_status_before",
+    "item_status_after",
+    "work_status_before",
+    "work_status_after",
+    "action",
+    "outcome"
+  ],
+  "properties": {
+    "loop_id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*$",
+      "not": {
+        "pattern": "\\.\\."
+      }
+    },
+    "work_item_id": {
+      "$ref": "#/definitions/workItemId"
+    },
+    "round_number": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "max_rounds": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "item_status_before": {
+      "$ref": "#/definitions/loopItemStatus"
+    },
+    "item_status_after": {
+      "$ref": "#/definitions/loopItemStatus"
+    },
+    "work_status_before": {
+      "$ref": "#/definitions/workStatus"
+    },
+    "work_status_after": {
+      "$ref": "#/definitions/workStatus"
+    },
+    "action": {
+      "type": "string",
+      "minLength": 1
+    },
+    "outcome": {
+      "$ref": "#/definitions/loopItemStatus"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "workItemId": {
+      "type": "string",
+      "pattern": "^WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3})$"
+    },
+    "loopItemStatus": {
+      "type": "string",
+      "enum": ["pending", "active", "done", "failed", "blocked", "cancelled"]
+    },
+    "workStatus": {
+      "type": "string",
+      "enum": ["queue", "active", "done", "cancelled"]
+    }
+  }
+}

@@ -260,7 +260,9 @@ pub fn load_work_item(config: &Config, path: &Path) -> Result<WorkItemEntry, Dia
             path.display().to_string(),
         )
     })?;
-    validate_toml_value(ArtifactSchema::WorkItem, config, path, &raw)?;
+    let mut schema_raw = raw.clone();
+    strip_legacy_inline_history_for_schema(&mut schema_raw);
+    validate_toml_value(ArtifactSchema::WorkItem, config, path, &schema_raw)?;
     let spec: WorkItemSpec = raw.try_into().map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0401WorkSchemaInvalid,
@@ -273,6 +275,17 @@ pub fn load_work_item(config: &Config, path: &Path) -> Result<WorkItemEntry, Dia
         spec,
         path: path.to_path_buf(),
     })
+}
+
+fn strip_legacy_inline_history_for_schema(raw: &mut toml::Value) {
+    let Some(content) = raw
+        .as_table_mut()
+        .and_then(|root| root.get_mut("content"))
+        .and_then(toml::Value::as_table_mut)
+    else {
+        return;
+    };
+    content.remove("journal");
 }
 
 /// Write a work item to TOML file

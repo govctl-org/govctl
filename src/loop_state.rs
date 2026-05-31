@@ -52,6 +52,22 @@ pub struct LoopState {
     pub items: BTreeMap<String, LoopItemState>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct LoopRoundRecord {
+    pub loop_id: String,
+    pub work_item_id: String,
+    pub round_number: u32,
+    pub max_rounds: u32,
+    pub item_status_before: String,
+    pub item_status_after: String,
+    pub work_status_before: String,
+    pub work_status_after: String,
+    pub action: String,
+    pub outcome: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 impl LoopState {
     pub fn new(
         loop_id: impl Into<String>,
@@ -233,6 +249,52 @@ impl LoopState {
     }
 }
 
+impl LoopRoundRecord {
+    pub fn validate(&self) -> anyhow::Result<()> {
+        validate_loop_id(&self.loop_id)?;
+        ensure_work_item_id(&self.work_item_id, &self.loop_id)?;
+        if self.round_number == 0 {
+            return Err(invalid_state(
+                &self.loop_id,
+                "loop round record round_number must be at least 1",
+            ));
+        }
+        if self.max_rounds == 0 {
+            return Err(invalid_state(
+                &self.loop_id,
+                "loop round record max_rounds must be at least 1",
+            ));
+        }
+        if self.round_number > self.max_rounds {
+            return Err(invalid_state(
+                &self.loop_id,
+                format!(
+                    "loop round record round_number {} exceeds max_rounds {}",
+                    self.round_number, self.max_rounds
+                ),
+            ));
+        }
+        ensure_loop_item_status(
+            &self.item_status_before,
+            "item_status_before",
+            &self.loop_id,
+        )?;
+        ensure_loop_item_status(&self.item_status_after, "item_status_after", &self.loop_id)?;
+        ensure_work_status(
+            &self.work_status_before,
+            "work_status_before",
+            &self.loop_id,
+        )?;
+        ensure_work_status(&self.work_status_after, "work_status_after", &self.loop_id)?;
+        ensure_loop_item_status(&self.outcome, "outcome", &self.loop_id)?;
+        ensure_non_empty(&self.action, "action", &self.loop_id)?;
+        if let Some(reason) = &self.reason {
+            ensure_non_empty(reason, "reason", &self.loop_id)?;
+        }
+        Ok(())
+    }
+}
+
 impl LoopLifecycleState {
     pub fn as_str(self) -> &'static str {
         match self {
@@ -302,6 +364,26 @@ pub fn loop_state_path(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf
     Ok(loop_state_dir(config, loop_id)?.join("state.toml"))
 }
 
+pub fn loop_round_path(
+    config: &Config,
+    loop_id: &str,
+    work_id: &str,
+    round_number: u32,
+) -> anyhow::Result<PathBuf> {
+    validate_loop_id(loop_id)?;
+    ensure_work_item_id(work_id, loop_id)?;
+    if round_number == 0 {
+        return Err(invalid_state(
+            loop_id,
+            "loop round path round_number must be at least 1",
+        ));
+    }
+    Ok(loop_state_dir(config, loop_id)?
+        .join("rounds")
+        .join(work_id)
+        .join(format!("round-{round_number:03}.toml")))
+}
+
 pub fn loop_state_dir(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf> {
     validate_loop_id(loop_id)?;
     Ok(loop_state_root(config).join(loop_id))
@@ -363,6 +445,39 @@ pub fn load_loop_state(config: &Config, loop_id: &str) -> anyhow::Result<LoopSta
     Ok(state)
 }
 
+pub fn write_loop_round_record(
+    config: &Config,
+    record: &LoopRoundRecord,
+    op: WriteOp,
+) -> anyhow::Result<()> {
+    record.validate()?;
+    let path = loop_round_path(
+        config,
+        &record.loop_id,
+        &record.work_item_id,
+        record.round_number,
+    )?;
+    let parent = path.parent().ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E1201LoopStateInvalid,
+            "Loop round path has no parent directory",
+            path.display().to_string(),
+        )
+    })?;
+    let body = toml::to_string_pretty(record).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E1201LoopStateInvalid,
+            format!("Failed to serialize loop round record: {e}"),
+            path.display().to_string(),
+        )
+    })?;
+    let display_parent = config.display_path(parent);
+    let display_path = config.display_path(&path);
+    crate::write::create_dir_all(parent, op, Some(&display_parent))?;
+    crate::write::write_file(&path, &body, op, Some(&display_path))?;
+    Ok(())
+}
+
 fn project_root(config: &Config) -> &Path {
     config
         .gov_root
@@ -397,6 +512,42 @@ fn ensure_no_duplicates(values: &[String], field: &str, loop_id: &str) -> anyhow
 
 fn invalid_state(loop_id: &str, message: impl Into<String>) -> anyhow::Error {
     Diagnostic::new(DiagnosticCode::E1201LoopStateInvalid, message, loop_id).into()
+}
+
+fn ensure_loop_item_status(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
+    if matches!(
+        value,
+        "pending" | "active" | "done" | "failed" | "blocked" | "cancelled"
+    ) {
+        Ok(())
+    } else {
+        Err(invalid_state(
+            loop_id,
+            format!("invalid loop round record {field}: {value}"),
+        ))
+    }
+}
+
+fn ensure_work_status(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
+    if matches!(value, "queue" | "active" | "done" | "cancelled") {
+        Ok(())
+    } else {
+        Err(invalid_state(
+            loop_id,
+            format!("invalid loop round record {field}: {value}"),
+        ))
+    }
+}
+
+fn ensure_non_empty(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
+    if value.trim().is_empty() {
+        Err(invalid_state(
+            loop_id,
+            format!("loop round record {field} must not be empty"),
+        ))
+    } else {
+        Ok(())
+    }
 }
 
 #[cfg(test)]

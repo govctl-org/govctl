@@ -112,6 +112,8 @@ pub enum DiagnosticCode {
     E1207LoopResumeNotFound,
     E1208LoopResumeAmbiguous,
     E1209LoopRootMismatch,
+    E1210LoopExecutionFailed,
+    E1211LoopInvalidMaxRounds,
 
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
@@ -262,6 +264,8 @@ impl DiagnosticCode {
             Self::E1207LoopResumeNotFound => "E1207",
             Self::E1208LoopResumeAmbiguous => "E1208",
             Self::E1209LoopRootMismatch => "E1209",
+            Self::E1210LoopExecutionFailed => "E1210",
+            Self::E1211LoopInvalidMaxRounds => "E1211",
             // E08xx - CLI/Command
             Self::E0801MissingRequiredArg => "E0801",
             Self::E0802ConflictingArgs => "E0802",

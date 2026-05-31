@@ -300,6 +300,59 @@ category = "chore"
 | `content.acceptance_criteria[].status`   | no       | enum   | `pending` \| `done` \| `cancelled`                  |
 | `content.acceptance_criteria[].category` | no       | enum   | Changelog category (`add` \| `fix` \| `chore` etc.) |
 
+### Local Loop State (TOML)
+
+Loop execution state is local runtime data under `.govctl/loops/<loop-id>/`, not a governed work item field. `loop-state.schema.json` defines `state.toml`; `loop-round.schema.json` defines per-round records under `rounds/<WI-ID>/round-NNN.toml`.
+
+```toml
+[loop]
+id = "loop-example"
+state = "active"
+root_work_items = ["WI-2026-01-17-002"]
+work_items = ["WI-2026-01-17-001", "WI-2026-01-17-002"]
+
+[dependencies]
+WI-2026-01-17-001 = []
+WI-2026-01-17-002 = ["WI-2026-01-17-001"]
+
+[items.WI-2026-01-17-001]
+status = "done"
+round_count = 1
+
+[items.WI-2026-01-17-002]
+status = "active"
+round_count = 1
+```
+
+```toml
+loop_id = "loop-example"
+work_item_id = "WI-2026-01-17-002"
+round_number = 1
+max_rounds = 2
+item_status_before = "pending"
+item_status_after = "active"
+work_status_before = "queue"
+work_status_after = "active"
+action = "evaluated acceptance criteria"
+outcome = "active"
+reason = "pending acceptance criteria remain; max rounds not reached"
+```
+
+| Field                | Required | Type    | Description                                      |
+| -------------------- | -------- | ------- | ------------------------------------------------ |
+| `loop.id`            | yes      | string  | Local loop identifier                            |
+| `loop.state`         | yes      | enum    | `pending` \| `active` \| `paused` \| `completed` \| `failed` |
+| `loop.root_work_items` | yes    | array   | Root work item IDs requested by the user         |
+| `loop.work_items`    | yes      | array   | Dependency-closed work item IDs                  |
+| `dependencies`       | yes      | table   | Work item dependency adjacency map               |
+| `items.<WI-ID>.status` | yes    | enum    | `pending` \| `active` \| `done` \| `failed` \| `blocked` \| `cancelled` |
+| `items.<WI-ID>.round_count` | yes | integer | Number of executed rounds for the work item      |
+| `round_number`       | yes      | integer | One-based round number for a work item record    |
+| `max_rounds`         | yes      | integer | Round limit used for that invocation             |
+| `action`             | yes      | string  | Summary of what the runner attempted             |
+| `outcome`            | yes      | enum    | Resulting loop item status for the round         |
+| `reason`             | no       | string  | Pending or failure explanation                   |
+
 ---
 
 ## Cross-Reference Format

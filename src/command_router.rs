@@ -107,6 +107,11 @@ pub enum BuiltinOp {
         loop_id: Option<String>,
         work_items: Vec<String>,
     },
+    LoopRun {
+        loop_id: Option<String>,
+        work_items: Vec<String>,
+        max_rounds: u32,
+    },
 }
 
 #[derive(Debug, Clone)]
@@ -552,6 +557,11 @@ fn execute_builtin(
             loop_id,
             work_items,
         } => cmd::loop_cmd::resume(config, loop_id.as_deref(), work_items),
+        BuiltinOp::LoopRun {
+            loop_id,
+            work_items,
+            max_rounds,
+        } => cmd::loop_cmd::run(config, loop_id.as_deref(), work_items, *max_rounds, op),
     }
 }
 
@@ -920,6 +930,15 @@ impl CommandPlan {
                         work_items: work_items.clone(),
                     })))
                 }
+                crate::LoopCommand::Run {
+                    id,
+                    work_items,
+                    max_rounds,
+                } => Ok(global(Op::Builtin(BuiltinOp::LoopRun {
+                    loop_id: id.clone(),
+                    work_items: work_items.clone(),
+                    max_rounds: *max_rounds,
+                }))),
             },
             Commands::Release { version, date } => Ok(global(Op::Builtin(BuiltinOp::ReleaseCut {
                 version: version.clone(),

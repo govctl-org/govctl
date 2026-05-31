@@ -111,6 +111,14 @@ pub const ARTIFACT_SCHEMA_TEMPLATES: &[SchemaTemplate] = &[
         filename: "guard.schema.json",
         content: include_str!("../gov/schema/guard.schema.json"),
     },
+    SchemaTemplate {
+        filename: "loop-state.schema.json",
+        content: include_str!("../gov/schema/loop-state.schema.json"),
+    },
+    SchemaTemplate {
+        filename: "loop-round.schema.json",
+        content: include_str!("../gov/schema/loop-round.schema.json"),
+    },
 ];
 
 pub fn validate_json_value(

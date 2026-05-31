@@ -204,12 +204,13 @@ NOTES:
     #[command(after_help = "\
 COMMON WORKFLOW:
     1. `govctl loop start WI-2026-04-06-001` to create local loop state
-    2. `govctl loop show <LOOP-ID>` to inspect persisted state
-    3. `govctl loop resume WI-2026-04-06-001` to find matching non-terminal state
+    2. `govctl loop run WI-2026-04-06-001` to execute one round for ready work
+    3. `govctl loop show <LOOP-ID>` to inspect persisted state
+    4. `govctl loop resume WI-2026-04-06-001` to find matching non-terminal state
 
 NOTES:
     - Loop state is local under `.govctl/loops/<LOOP-ID>/state.toml`.
-    - These commands manage loop state and planning only; execution rounds are separate.
+    - `loop run` uses work-item lifecycle commands for status transitions.
 ")]
     Loop {
         #[command(subcommand)]
@@ -1579,6 +1580,29 @@ NOTES:
         #[arg(long)]
         id: Option<String>,
         /// Root work item IDs for discovery when --id is omitted
+        #[arg(value_name = "WI-ID")]
+        work_items: Vec<String>,
+    },
+    /// Run one execution round for each currently executable work item
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop run WI-2026-04-06-001
+    govctl loop run --id loop-demo
+    govctl loop run --id loop-demo --max-rounds 2 WI-2026-04-06-001
+
+NOTES:
+    - Starts a new loop when no matching non-terminal loop exists.
+    - Resumes existing loop state by explicit ID or unambiguous root set.
+    - Uses `govctl work move` semantics for work item status transitions.
+")]
+    Run {
+        /// Explicit loop ID; generated when omitted and a new loop is started
+        #[arg(long)]
+        id: Option<String>,
+        /// Maximum rounds each work item may run before loop-level failure
+        #[arg(long, default_value_t = 1)]
+        max_rounds: u32,
+        /// Root work item IDs for start/discovery when needed
         #[arg(value_name = "WI-ID")]
         work_items: Vec<String>,
     },
