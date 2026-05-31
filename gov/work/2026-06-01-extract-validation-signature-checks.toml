@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-040"
+title = "Extract validation signature checks"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract rendered RFC signature validation from src/validate.rs into a focused child module while preserving project validation behavior and signature diagnostics."
+
+[[content.acceptance_criteria]]
+text = "rendered RFC signature validation lives in a focused child module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "project validation signature diagnostics remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "validation tests and full verification pass"
+status = "done"
+category = "chore"
