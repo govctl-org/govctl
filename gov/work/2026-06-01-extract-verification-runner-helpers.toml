@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-065"
+title = "Extract verification runner helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Extract verification guard execution, output capture, timeout, and process-group cleanup helpers from src/verification.rs into a focused runner child module while preserving the current crate::verification public API used by verify, loop, and check commands."
+
+[[content.acceptance_criteria]]
+text = "verification guard runner helpers live in a focused child module"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "current crate::verification runner imports and command behavior remain compatible"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "verification guard tests, loop guard tests, cargo test, and govctl check pass"
+status = "done"
+category = "chore"
