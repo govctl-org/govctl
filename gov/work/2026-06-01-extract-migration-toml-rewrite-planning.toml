@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-046"
+title = "Extract migration TOML rewrite planning"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Extract TOML schema-header rewrite detection, rewriting, collection, and planning from `src/cmd/migrate.rs` into a focused child module while preserving migration planning behavior."
+
+[[content.acceptance_criteria]]
+text = "`TOML` rewrite planning lives in a focused migration child module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "rewrite detection, schema-header insertion, and `govctl.schema` stripping remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "migration rewrite tests and full verification pass"
+status = "pending"
+category = "chore"

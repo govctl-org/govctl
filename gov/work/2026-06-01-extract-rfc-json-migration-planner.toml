@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-047"
+title = "Extract RFC JSON migration planner"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Extract `RFC` `JSON`-to-`TOML` migration planning and validation from `src/cmd/migrate.rs` into a focused child module while preserving mixed-storage and clause-path diagnostics."
+
+[[content.acceptance_criteria]]
+text = "`RFC` `JSON`-to-`TOML` migration planning lives in a focused migration child module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "mixed-storage, unexpected-file, missing-clause, and invalid-path diagnostics remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "migration tests and full verification pass"
+status = "pending"
+category = "chore"
