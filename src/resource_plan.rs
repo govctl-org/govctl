@@ -4,16 +4,16 @@ use crate::command_router::{
     owned_edit_action, plan_artifact_render, plan_create, plan_delete, plan_edit, plan_get,
     plan_lifecycle, plan_list, plan_show, remove_action, set_action, tick_action,
 };
-use crate::write::BumpLevel;
 use crate::{
-    AdrAddArgs, AdrCommand, AdrEditArgs, AdrTickArgs, CommonAddArgs, CommonDeleteArgs,
-    CommonDeprecateArgs, CommonEditArgs, CommonGetArgs, CommonIdArgs, CommonListArgs,
-    CommonRemoveArgs, CommonRenderArgs, CommonSetArgs, CommonShowArgs, CommonSupersedeArgs,
-    CommonTickSelectorArgs, GuardAddArgs, GuardCommand, ListTarget, RfcCommand, TickStatus,
-    WorkAddArgs, WorkCommand, WorkEditArgs, WorkTickArgs,
+    CommonAddArgs, CommonDeleteArgs, CommonDeprecateArgs, CommonEditArgs, CommonGetArgs,
+    CommonListArgs, CommonRemoveArgs, CommonRenderArgs, CommonSetArgs, CommonShowArgs,
+    CommonSupersedeArgs, CommonTickSelectorArgs, GuardAddArgs, GuardCommand, ListTarget,
+    TickStatus, WorkAddArgs, WorkCommand, WorkEditArgs, WorkTickArgs,
 };
 
+mod adr;
 mod clause;
+mod rfc;
 
 pub(crate) trait ToPlan {
     fn to_plan(&self) -> anyhow::Result<CommandPlan>;
@@ -142,135 +142,6 @@ fn compile_common_supersede(
             force: args.force,
         },
     ))
-}
-
-impl ToPlan for RfcCommand {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan> {
-        match self {
-            RfcCommand::List(args) => Ok(compile_common_list(ListTarget::Rfc, args)),
-            RfcCommand::Get(args) => compile_common_get(args),
-            RfcCommand::Show(args) => Ok(compile_common_show(cmd::edit::ArtifactType::Rfc, args)),
-            RfcCommand::New { title, id } => Ok(plan_create(
-                ListTarget::Rfc,
-                CreateOp::Rfc {
-                    title: title.clone(),
-                    id: id.clone(),
-                },
-            )),
-            RfcCommand::Edit(args) => compile_common_edit(args, EditExtras::default()),
-            RfcCommand::Set(args) => compile_common_set(args),
-            RfcCommand::Add(args) => compile_common_add(args, EditExtras::default()),
-            RfcCommand::Remove(args) => compile_common_remove(args),
-            RfcCommand::Bump {
-                id,
-                patch,
-                minor,
-                major,
-                summary,
-                changes,
-            } => {
-                let level = match (patch, minor, major) {
-                    (true, false, false) => Some(BumpLevel::Patch),
-                    (false, true, false) => Some(BumpLevel::Minor),
-                    (false, false, true) => Some(BumpLevel::Major),
-                    (false, false, false) => None,
-                    _ => unreachable!("clap arg group ensures mutual exclusivity"),
-                };
-                Ok(plan_lifecycle(
-                    cmd::edit::ArtifactType::Rfc,
-                    id,
-                    LifecycleOp::Bump {
-                        level,
-                        summary: summary.clone(),
-                        changes: changes.clone(),
-                    },
-                ))
-            }
-            RfcCommand::Finalize { id, status } => Ok(plan_lifecycle(
-                cmd::edit::ArtifactType::Rfc,
-                id,
-                LifecycleOp::Finalize { status: *status },
-            )),
-            RfcCommand::Advance { id, phase } => Ok(plan_lifecycle(
-                cmd::edit::ArtifactType::Rfc,
-                id,
-                LifecycleOp::Advance { phase: *phase },
-            )),
-            RfcCommand::Deprecate(args) => {
-                compile_common_deprecate(cmd::edit::ArtifactType::Rfc, args)
-            }
-            RfcCommand::Supersede(args) => {
-                compile_common_supersede(cmd::edit::ArtifactType::Rfc, args)
-            }
-            RfcCommand::Render(args) => compile_common_render(cmd::edit::ArtifactType::Rfc, args),
-        }
-    }
-}
-
-impl ToPlan for AdrCommand {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan> {
-        match self {
-            AdrCommand::List(args) => Ok(compile_common_list(ListTarget::Adr, args)),
-            AdrCommand::Get(args) => compile_common_get(args),
-            AdrCommand::Show(args) => Ok(compile_common_show(cmd::edit::ArtifactType::Adr, args)),
-            AdrCommand::New { title } => Ok(plan_create(
-                ListTarget::Adr,
-                CreateOp::Adr {
-                    title: title.clone(),
-                },
-            )),
-            AdrCommand::Edit(AdrEditArgs {
-                common,
-                pro,
-                con,
-                reject_reason,
-            }) => compile_common_edit(
-                common,
-                EditExtras {
-                    pros: pro.clone(),
-                    cons: con.clone(),
-                    reject_reason: reject_reason.clone(),
-                    ..EditExtras::default()
-                },
-            ),
-            AdrCommand::Set(args) => compile_common_set(args),
-            AdrCommand::Add(AdrAddArgs {
-                common,
-                pro,
-                con,
-                reject_reason,
-            }) => compile_common_add(
-                common,
-                EditExtras {
-                    pros: pro.clone(),
-                    cons: con.clone(),
-                    reject_reason: reject_reason.clone(),
-                    ..EditExtras::default()
-                },
-            ),
-            AdrCommand::Remove(args) => compile_common_remove(args),
-            AdrCommand::Accept { id, force } => Ok(plan_lifecycle(
-                cmd::edit::ArtifactType::Adr,
-                id,
-                LifecycleOp::AcceptAdr { force: *force },
-            )),
-            AdrCommand::Reject(CommonIdArgs { id }) => Ok(plan_lifecycle(
-                cmd::edit::ArtifactType::Adr,
-                id,
-                LifecycleOp::RejectAdr,
-            )),
-            AdrCommand::Deprecate(args) => {
-                compile_common_deprecate(cmd::edit::ArtifactType::Adr, args)
-            }
-            AdrCommand::Supersede(args) => {
-                compile_common_supersede(cmd::edit::ArtifactType::Adr, args)
-            }
-            AdrCommand::Tick(AdrTickArgs { common, status }) => {
-                compile_common_tick(common, (*status).into())
-            }
-            AdrCommand::Render(args) => compile_common_render(cmd::edit::ArtifactType::Adr, args),
-        }
-    }
 }
 
 impl ToPlan for WorkCommand {
