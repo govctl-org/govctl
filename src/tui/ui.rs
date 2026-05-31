@@ -1,5 +1,7 @@
 //! UI rendering for TUI.
 
+mod dashboard;
+
 use super::app::{App, View};
 use crate::theme::{phase_semantic, status_icon, status_semantic};
 use ratatui::{
@@ -190,7 +192,7 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
     };
 
     match app.view {
-        View::Dashboard => draw_dashboard(frame, app, chunks[1]),
+        View::Dashboard => dashboard::draw(frame, app, chunks[1]),
         View::RfcList => draw_rfc_list(frame, app, chunks[1]),
         View::AdrList => draw_adr_list(frame, app, chunks[1]),
         View::WorkList => draw_work_list(frame, app, chunks[1]),
@@ -257,181 +259,6 @@ fn rounded_block(title: &str) -> Block<'_> {
         .title(format!(" {} ", title))
         .borders(Borders::ALL)
         .border_set(border::ROUNDED)
-}
-
-fn draw_dashboard(frame: &mut Frame, app: &mut App, area: Rect) {
-    // Content: 3 columns for RFC, ADR, Work
-    let content_chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(33),
-            Constraint::Percentage(34),
-            Constraint::Percentage(33),
-        ])
-        .split(area);
-
-    // RFC stats
-    let rfc_stats = build_rfc_stats(app);
-    frame.render_widget(rfc_stats, content_chunks[0]);
-
-    // ADR stats
-    let adr_stats = build_adr_stats(app);
-    frame.render_widget(adr_stats, content_chunks[1]);
-
-    // Work stats
-    let work_stats = build_work_stats(app);
-    frame.render_widget(work_stats, content_chunks[2]);
-}
-
-fn build_rfc_stats(app: &App) -> Paragraph<'static> {
-    let mut lines = vec![Line::from("")];
-
-    // Count by status
-    let mut draft = 0;
-    let mut normative = 0;
-    let mut deprecated = 0;
-
-    for rfc in &app.index.rfcs {
-        match rfc.rfc.status.as_ref() {
-            "draft" => draft += 1,
-            "normative" => normative += 1,
-            "deprecated" => deprecated += 1,
-            _ => {}
-        }
-    }
-
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("○", Style::default().fg(Color::Yellow)),
-        Span::raw(format!(" Draft:      {}", draft)),
-    ]));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("●", Style::default().fg(Color::Green)),
-        Span::raw(format!(" Normative:  {}", normative)),
-    ]));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("✗", Style::default().fg(Color::Red)),
-        Span::raw(format!(" Deprecated: {}", deprecated)),
-    ]));
-    lines.push(Line::from(""));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("Σ", Style::default().fg(Color::Cyan).bold()),
-        Span::styled(
-            format!(" Total: {}", app.index.rfcs.len()),
-            Style::default().bold(),
-        ),
-    ]));
-
-    Paragraph::new(lines).block(
-        Block::default()
-            .title(" 📋 RFCs ")
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::Blue)),
-    )
-}
-
-fn build_adr_stats(app: &App) -> Paragraph<'static> {
-    let mut lines = vec![Line::from("")];
-
-    let mut proposed = 0;
-    let mut accepted = 0;
-    let mut superseded = 0;
-
-    for adr in &app.index.adrs {
-        match adr.meta().status.as_ref() {
-            "proposed" => proposed += 1,
-            "accepted" => accepted += 1,
-            "superseded" => superseded += 1,
-            _ => {}
-        }
-    }
-
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("○", Style::default().fg(Color::Yellow)),
-        Span::raw(format!(" Proposed:   {}", proposed)),
-    ]));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("●", Style::default().fg(Color::Green)),
-        Span::raw(format!(" Accepted:   {}", accepted)),
-    ]));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("✗", Style::default().fg(Color::Red)),
-        Span::raw(format!(" Superseded: {}", superseded)),
-    ]));
-    lines.push(Line::from(""));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("Σ", Style::default().fg(Color::Cyan).bold()),
-        Span::styled(
-            format!(" Total: {}", app.index.adrs.len()),
-            Style::default().bold(),
-        ),
-    ]));
-
-    Paragraph::new(lines).block(
-        Block::default()
-            .title(" 📝 ADRs ")
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::Green)),
-    )
-}
-
-fn build_work_stats(app: &App) -> Paragraph<'static> {
-    let mut lines = vec![Line::from("")];
-
-    let mut queue = 0;
-    let mut active = 0;
-    let mut done = 0;
-
-    for item in &app.index.work_items {
-        match item.meta().status.as_ref() {
-            "queue" => queue += 1,
-            "active" => active += 1,
-            "done" => done += 1,
-            _ => {}
-        }
-    }
-
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("○", Style::default().fg(Color::Yellow)),
-        Span::raw(format!(" Queue:  {}", queue)),
-    ]));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("◉", Style::default().fg(Color::Green)),
-        Span::raw(format!(" Active: {}", active)),
-    ]));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("●", Style::default().fg(Color::Green)),
-        Span::raw(format!(" Done:   {}", done)),
-    ]));
-    lines.push(Line::from(""));
-    lines.push(Line::from(vec![
-        Span::raw("  "),
-        Span::styled("Σ", Style::default().fg(Color::Cyan).bold()),
-        Span::styled(
-            format!(" Total: {}", app.index.work_items.len()),
-            Style::default().bold(),
-        ),
-    ]));
-
-    Paragraph::new(lines).block(
-        Block::default()
-            .title(" 📌 Work Items ")
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::Yellow)),
-    )
 }
 
 fn draw_rfc_list(frame: &mut Frame, app: &mut App, area: Rect) {
