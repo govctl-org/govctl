@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-05-31-009"
 title = "Implement loop state persistence"
-status = "queue"
+status = "done"
 created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
 refs = [
     "RFC-0006",
     "ADR-0044",
@@ -16,25 +18,25 @@ description = "Add local loop state storage under .govctl/loops/<loop-id>/ as th
 
 [[content.acceptance_criteria]]
 text = "Loop state structs serialize and deserialize state.toml under .govctl/loops/<loop-id>"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Loop state tracks lifecycle status work item statuses dependency graph and round counts"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Loop state storage is local under .govctl and does not write execution trace to work item fields"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Tests cover loop state create load update and invalid transition cases"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"

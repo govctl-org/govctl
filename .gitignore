@@ -14,4 +14,5 @@ result
 .DS_Store
 Thumbs.db
 .govctl.lock
+.govctl/
 .omc

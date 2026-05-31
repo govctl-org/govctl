@@ -822,8 +822,7 @@ enum WorkDependencyVisit {
 
 pub fn is_work_item_id(value: &str) -> bool {
     Regex::new(r"^WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3})$")
-        .expect("work item ID regex is valid")
-        .is_match(value)
+        .is_ok_and(|re| re.is_match(value))
 }
 
 /// Validate work item `depends_on` declarations per [[RFC-0006:C-DEPENDENCY-SEMANTICS]].

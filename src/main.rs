@@ -10,6 +10,7 @@ mod config;
 mod diagnostic;
 mod load;
 mod lock;
+mod loop_state;
 mod model;
 mod parse;
 mod render;

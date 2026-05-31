@@ -102,6 +102,12 @@ pub enum DiagnosticCode {
     /// Artifact uses a tag not in config.toml [tags] allowed — per [[RFC-0002:C-RESOURCES]]
     E1105TagUnknown,
 
+    // Loop state errors (E12xx)
+    E1201LoopStateInvalid,
+    E1202LoopStateNotFound,
+    E1203LoopInvalidTransition,
+    E1204LoopInvalidId,
+
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
     E0802ConflictingArgs,
@@ -241,6 +247,11 @@ impl DiagnosticCode {
             Self::E1103TagNotFound => "E1103",
             Self::E1104TagStillReferenced => "E1104",
             Self::E1105TagUnknown => "E1105",
+            // E12xx - Loop state
+            Self::E1201LoopStateInvalid => "E1201",
+            Self::E1202LoopStateNotFound => "E1202",
+            Self::E1203LoopInvalidTransition => "E1203",
+            Self::E1204LoopInvalidId => "E1204",
             // E08xx - CLI/Command
             Self::E0801MissingRequiredArg => "E0801",
             Self::E0802ConflictingArgs => "E0802",

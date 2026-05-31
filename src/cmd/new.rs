@@ -153,7 +153,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
         }
     }
 
-    // Ensure .gitignore contains .govctl.lock
+    // Ensure .gitignore contains local govctl state entries
     ensure_gitignore_lock_entry(op)?;
 
     if !op.is_preview() {
@@ -683,30 +683,38 @@ fn find_max_sequence(work_dir: &std::path::Path, id_prefix: &str) -> u32 {
         .unwrap_or(0)
 }
 
-/// Ensure .gitignore contains .govctl.lock entry
+/// Ensure .gitignore contains local govctl state entries.
 fn ensure_gitignore_lock_entry(op: WriteOp) -> anyhow::Result<()> {
-    const LOCK_ENTRY: &str = ".govctl.lock";
+    const LOCAL_STATE_ENTRIES: &[&str] = &[".govctl.lock", ".govctl/"];
     let gitignore_path = PathBuf::from(".gitignore");
 
     if gitignore_path.exists() {
         let content = std::fs::read_to_string(&gitignore_path)?;
-        // Check if already present
-        if content.lines().any(|line| line.trim() == LOCK_ENTRY) {
+        let missing_entries: Vec<&str> = LOCAL_STATE_ENTRIES
+            .iter()
+            .copied()
+            .filter(|entry| !content.lines().any(|line| line.trim() == *entry))
+            .collect();
+
+        if missing_entries.is_empty() {
             return Ok(());
         }
-        // Append to existing .gitignore
+
+        let missing_content = missing_entries.join("\n");
         let new_content = if content.ends_with('\n') {
-            format!("{}{}\n", content, LOCK_ENTRY)
+            format!("{content}{missing_content}\n")
         } else {
-            format!("{}\n{}\n", content, LOCK_ENTRY)
+            format!("{content}\n{missing_content}\n")
         };
         write_file(&gitignore_path, &new_content, op, None)?;
         if !op.is_preview() {
-            ui::info(format!("Added '{}' to .gitignore", LOCK_ENTRY));
+            ui::info(format!(
+                "Added local govctl state entries to .gitignore: {}",
+                missing_entries.join(", ")
+            ));
         }
     } else {
-        // Create new .gitignore
-        let content = format!("# govctl lock file\n{}\n", LOCK_ENTRY);
+        let content = format!("# govctl local state\n{}\n", LOCAL_STATE_ENTRIES.join("\n"));
         write_file(&gitignore_path, &content, op, None)?;
         if !op.is_preview() {
             ui::created_path(&gitignore_path);

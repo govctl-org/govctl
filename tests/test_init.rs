@@ -6,7 +6,7 @@ use common::run_commands;
 use std::fs;
 use tempfile::TempDir;
 
-/// Test: init creates .gitignore with .govctl.lock if not exists
+/// Test: init creates .gitignore with local govctl state entries if not exists
 #[test]
 fn test_init_creates_gitignore() -> common::TestResult {
     let temp_dir = TempDir::new()?;
@@ -15,7 +15,7 @@ fn test_init_creates_gitignore() -> common::TestResult {
     let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
-    // .gitignore should exist and contain .govctl.lock
+    // .gitignore should exist and contain local govctl state entries
     let gitignore_path = temp_dir.path().join(".gitignore");
     assert!(gitignore_path.exists(), ".gitignore should be created");
 
@@ -23,6 +23,10 @@ fn test_init_creates_gitignore() -> common::TestResult {
     assert!(
         content.contains(".govctl.lock"),
         ".gitignore should contain .govctl.lock"
+    );
+    assert!(
+        content.contains(".govctl/"),
+        ".gitignore should contain .govctl/"
     );
     Ok(())
 }
@@ -57,7 +61,7 @@ fn test_init_creates_artifact_schema_files() -> common::TestResult {
     Ok(())
 }
 
-/// Test: init appends .govctl.lock to existing .gitignore
+/// Test: init appends local govctl state entries to existing .gitignore
 #[test]
 fn test_init_appends_to_existing_gitignore() -> common::TestResult {
     let temp_dir = TempDir::new()?;
@@ -80,17 +84,21 @@ fn test_init_appends_to_existing_gitignore() -> common::TestResult {
         content.contains(".govctl.lock"),
         ".gitignore should have .govctl.lock appended"
     );
+    assert!(
+        content.contains(".govctl/"),
+        ".gitignore should have .govctl/ appended"
+    );
     Ok(())
 }
 
-/// Test: init doesn't duplicate .govctl.lock if already present
+/// Test: init doesn't duplicate local govctl state entries if already present
 #[test]
 fn test_init_no_duplicate_gitignore_entry() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 
-    // Create .gitignore with .govctl.lock already present
+    // Create .gitignore with local govctl state entries already present
     let gitignore_path = temp_dir.path().join(".gitignore");
-    fs::write(&gitignore_path, ".govctl.lock\n")?;
+    fs::write(&gitignore_path, ".govctl.lock\n.govctl/\n")?;
 
     // Run init
     let output = run_commands(temp_dir.path(), &[&["init"]])?;
@@ -98,10 +106,15 @@ fn test_init_no_duplicate_gitignore_entry() -> common::TestResult {
 
     // Should not have duplicate entry
     let content = fs::read_to_string(&gitignore_path)?;
-    let count = content.matches(".govctl.lock").count();
+    let lock_count = content.matches(".govctl.lock").count();
     assert_eq!(
-        count, 1,
+        lock_count, 1,
         ".gitignore should not have duplicate .govctl.lock entries"
+    );
+    let state_count = content.matches(".govctl/").count();
+    assert_eq!(
+        state_count, 1,
+        ".gitignore should not have duplicate .govctl/ entries"
     );
     Ok(())
 }
