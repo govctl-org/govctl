@@ -134,20 +134,16 @@ fn work_stats(app: &App) -> Paragraph<'static> {
 
 #[cfg(test)]
 mod tests {
+    use super::super::test_support::{adr, buffer_lines, project_index, rfc, work_item};
     use super::*;
-    use crate::model::{
-        AdrContent, AdrEntry, AdrMeta, AdrSpec, AdrStatus, ProjectIndex, RfcIndex, RfcPhase,
-        RfcSpec, RfcStatus, WorkItemContent, WorkItemEntry, WorkItemMeta, WorkItemSpec,
-        WorkItemStatus, WorkItemVerification,
-    };
-    use ratatui::{Terminal, backend::TestBackend, buffer::Buffer};
-    use std::path::PathBuf;
+    use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
+    use ratatui::{Terminal, backend::TestBackend};
 
     #[test]
     fn dashboard_draws_summary_counts() -> Result<(), Box<dyn std::error::Error>> {
         let backend = TestBackend::new(90, 8);
         let mut terminal = Terminal::new(backend)?;
-        let app = App::new(project_index());
+        let app = App::new(dashboard_project_index());
 
         terminal.draw(|frame| draw(frame, &app, frame.area()))?;
 
@@ -161,99 +157,42 @@ mod tests {
         Ok(())
     }
 
-    fn buffer_lines(buffer: &Buffer) -> Vec<String> {
-        let width = buffer.area().width as usize;
-        buffer
-            .content()
-            .chunks(width)
-            .map(|row| {
-                let mut line = String::new();
-                for cell in row {
-                    line.push_str(cell.symbol());
-                }
-                line
-            })
-            .collect()
-    }
-
-    fn project_index() -> ProjectIndex {
-        ProjectIndex {
-            rfcs: vec![
-                rfc("RFC-0001", RfcStatus::Draft),
-                rfc("RFC-0002", RfcStatus::Normative),
+    fn dashboard_project_index() -> crate::model::ProjectIndex {
+        project_index(
+            vec![
+                rfc(
+                    "RFC-0001",
+                    "RFC-0001",
+                    RfcStatus::Draft,
+                    RfcPhase::Spec,
+                    &[],
+                ),
+                rfc(
+                    "RFC-0002",
+                    "RFC-0002",
+                    RfcStatus::Normative,
+                    RfcPhase::Spec,
+                    &[],
+                ),
             ],
-            adrs: vec![
-                adr("ADR-0001", AdrStatus::Proposed),
-                adr("ADR-0002", AdrStatus::Accepted),
+            vec![
+                adr("ADR-0001", "ADR-0001", AdrStatus::Proposed, &[]),
+                adr("ADR-0002", "ADR-0002", AdrStatus::Accepted, &[]),
             ],
-            work_items: vec![
-                work_item("WI-2026-01-01-001", WorkItemStatus::Queue),
-                work_item("WI-2026-01-01-002", WorkItemStatus::Active),
+            vec![
+                work_item(
+                    "WI-2026-01-01-001",
+                    "WI-2026-01-01-001",
+                    WorkItemStatus::Queue,
+                    &[],
+                ),
+                work_item(
+                    "WI-2026-01-01-002",
+                    "WI-2026-01-01-002",
+                    WorkItemStatus::Active,
+                    &[],
+                ),
             ],
-        }
-    }
-
-    fn rfc(id: &str, status: RfcStatus) -> RfcIndex {
-        RfcIndex {
-            rfc: RfcSpec {
-                rfc_id: id.to_string(),
-                title: id.to_string(),
-                version: "0.1.0".to_string(),
-                status,
-                phase: RfcPhase::Spec,
-                owners: vec![],
-                created: "2026-01-01".to_string(),
-                updated: None,
-                supersedes: None,
-                refs: vec![],
-                tags: vec![],
-                sections: vec![],
-                changelog: vec![],
-                signature: None,
-            },
-            clauses: vec![],
-            path: PathBuf::from(format!("gov/rfc/{id}.toml")),
-        }
-    }
-
-    fn adr(id: &str, status: AdrStatus) -> AdrEntry {
-        AdrEntry {
-            spec: AdrSpec {
-                govctl: AdrMeta {
-                    schema: 1,
-                    id: id.to_string(),
-                    title: id.to_string(),
-                    status,
-                    date: "2026-01-01".to_string(),
-                    superseded_by: None,
-                    refs: vec![],
-                    tags: vec![],
-                },
-                content: AdrContent::default(),
-            },
-            path: PathBuf::from(format!("gov/adr/{id}.toml")),
-        }
-    }
-
-    fn work_item(id: &str, status: WorkItemStatus) -> WorkItemEntry {
-        WorkItemEntry {
-            spec: WorkItemSpec {
-                govctl: WorkItemMeta {
-                    schema: 1,
-                    id: id.to_string(),
-                    title: id.to_string(),
-                    status,
-                    created: None,
-                    started: None,
-                    completed: None,
-                    refs: vec![],
-                    depends_on: vec![],
-                    tags: vec![],
-                },
-                content: WorkItemContent::default(),
-                verification: WorkItemVerification::default(),
-            },
-            path: PathBuf::from(format!("gov/work/{id}.toml")),
-        }
+        )
     }
 }

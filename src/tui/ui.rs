@@ -2,6 +2,8 @@
 
 mod dashboard;
 mod lists;
+#[cfg(test)]
+mod test_support;
 
 use super::app::{App, View};
 use crate::theme::{phase_semantic, status_icon, status_semantic};
