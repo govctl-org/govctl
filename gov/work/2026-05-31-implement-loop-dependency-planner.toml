@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-05-31-010"
 title = "Implement loop dependency planner"
-status = "queue"
+status = "done"
 created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
 refs = [
     "RFC-0006",
     "ADR-0044",
@@ -16,30 +18,30 @@ description = "Implement dependency resolution for loop work-item sets according
 
 [[content.acceptance_criteria]]
 text = "Planner builds a dependency graph from explicit loop work items and their depends_on fields"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Planner rejects cycles and missing dependencies with coded diagnostics"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Planner computes a deterministic execution order for dependency-satisfied work items"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Planner marks downstream work items blocked in loop state when dependencies fail or cancel"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "Tests cover single work item multi work item cycle missing dependency and blocked propagation cases"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"
