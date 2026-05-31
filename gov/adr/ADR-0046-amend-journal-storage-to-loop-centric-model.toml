@@ -1,0 +1,74 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0046"
+title = "Amend journal storage to loop-centric model"
+status = "proposed"
+date = "2026-05-31"
+refs = [
+    "ADR-0043",
+    "RFC-0006",
+]
+
+[content]
+context = """
+ADR-0043 established `.govctl/loops/<WI-ID>/journal.toml` for journal storage, keying directories by work item ID.
+
+RFC-0006 introduces the unified loop model where a single loop can drive multiple work items with dependencies. This requires a loop-centric directory structure (`.govctl/loops/<loop-id>/`) rather than a WI-centric one.
+
+The conflict:
+- ADR-0043: `.govctl/loops/<WI-ID>/journal.toml` (one directory per WI)
+- RFC-0006: `.govctl/loops/<loop-id>/journal.toml` (one directory per loop, journal entries tagged with `wi_id`)
+
+The loop-centric model is necessary because:
+1. Multi-WI loops need shared state (dependency graph, execution order, overall progress)
+2. Journal entries are already tagged with `wi_id` fields, making WI-level directories redundant
+3. Loop resumption requires reading a single `state.toml` file, not scanning multiple WI directories
+4. Failure propagation (blocking dependent WIs) requires loop-level coordination
+
+ADR-0043 was drafted before the multi-WI loop model was fully designed. It must be amended to align with RFC-0006."""
+decision = """
+We will amend ADR-0043 to use the loop-centric directory structure specified in RFC-0006.
+
+Changes to ADR-0043:
+1. Replace `.govctl/loops/<WI-ID>/journal.toml` with `.govctl/loops/<loop-id>/journal.toml`
+2. Journal entries are tagged with `wi_id` fields (already specified in RFC-0006:C-JOURNAL-STRUCTURE)
+3. Loop state (dependency graph, execution order, WI statuses) lives in `.govctl/loops/<loop-id>/state.toml`
+4. Round logs organized as `.govctl/loops/<loop-id>/rounds/<WI-ID>/round-N.md`
+
+This aligns ADR-0043 with RFC-0006's unified loop model and enables multi-WI loop execution."""
+consequences = """
+**Positive:**
+- Enables unified multi-WI loop execution
+- Shared loop state simplifies coordination and resumption
+- Journal entries remain tagged with `wi_id` for per-WI filtering
+- Aligns ADR-0043 with RFC-0006 (single source of truth)
+
+**Negative:**
+- Amends an accepted ADR (ADR-0043 must be marked as amended by ADR-0046)
+- Existing implementations (if any) using WI-centric paths need migration
+
+**Neutral:**
+- Journal entries are already designed with `wi_id` fields, so no schema change needed
+- Loop ID generation becomes critical (must be unique per loop invocation)"""
+
+[[content.alternatives]]
+text = "Keep WI-centric model (ADR-0043)"
+status = "rejected"
+pros = ["No amendment needed"]
+cons = [
+    "Requires separate loop state file outside loops dir",
+    "Multi-WI coordination becomes complex",
+    "Resumption requires scanning multiple directories",
+]
+rejection_reason = "Incompatible with unified loop model for multi-WI execution"
+
+[[content.alternatives]]
+text = "Loop-centric model (RFC-0006)"
+status = "accepted"
+pros = [
+    "Natural multi-WI support",
+    "Shared loop state",
+    "Simpler resumption",
+]
+cons = ["Amends accepted ADR"]

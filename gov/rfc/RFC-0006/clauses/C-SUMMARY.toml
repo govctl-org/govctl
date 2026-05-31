@@ -1,0 +1,29 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SUMMARY"
+title = "Summary"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+tags = ["core"]
+
+[content]
+text = """
+This RFC defines the **loop execution model** for driving work items to completion through iterative rounds.
+
+A loop is a first-class execution concept that orchestrates one or more work items through implementation, verification, and refinement cycles. Loops support:
+
+- **Single work item execution**: Drive one work item through rounds until acceptance criteria are satisfied
+- **Multi-work item execution**: Drive multiple work items with dependency resolution, executing them in topological order
+- **Failure propagation**: When a work item fails, dependent work items are automatically blocked
+- **Resumption**: Interrupted loops can resume from their last recorded state
+
+The loop model maintains clear separation between:
+- **Work items**: Durable governance artifacts tracking what needs to be done and why
+- **Loop state**: Ephemeral execution state tracking progress through rounds
+
+This separation ensures work items remain clean outcome artifacts while enabling rich execution traceability for debugging and resumption.
+
+Loops interact with work items exclusively through `govctl work` commands, ensuring all status transitions are validated and auditable per RFC-0001 lifecycle rules.
+"""

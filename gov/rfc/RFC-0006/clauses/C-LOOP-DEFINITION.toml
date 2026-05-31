@@ -1,0 +1,27 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-LOOP-DEFINITION"
+title = "Loop Definition"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["core"]
+
+[content]
+text = """
+A **loop** is an execution session that drives one or more work items to completion through iterative rounds of implementation, verification, and refinement.
+
+Each loop MUST:
+1. Operate on an explicit, finite set of work items specified at loop start
+2. Resolve work item dependencies before execution begins
+3. Track execution state independently of work item files
+4. Terminate when all work items reach terminal state or a failure condition is met
+
+A loop MUST NOT:
+1. Modify work item files directly (MUST use `govctl work` commands for status transitions)
+2. Persist execution trace to work item `journal` field (journal is for durable context only)
+3. Assume a specific execution order (sequential or parallel) — downstream implementations choose
+
+Rationale: Loops are a first-class execution concept that orchestrate work item completion. By keeping loops separate from work item files, we maintain clear separation between execution state (ephemeral) and governance artifacts (durable). Using `govctl work` commands ensures all status transitions are validated and auditable.
+"""

@@ -1,0 +1,38 @@
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0006"
+title = "Loop Execution Model"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["@govctl-org"]
+created = "2026-05-31"
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-LOOP-DEFINITION.toml",
+    "clauses/C-LOOP-LIFECYCLE.toml",
+    "clauses/C-DEPENDENCY-SEMANTICS.toml",
+    "clauses/C-ROUND-EXECUTION.toml",
+    "clauses/C-WORK-ITEM-INTERACTION.toml",
+    "clauses/C-LOOP-RESUMPTION.toml",
+]
+
+[[sections]]
+title = "Rationale"
+clauses = [
+    "clauses/C-UNIFIED-MODEL.toml",
+    "clauses/C-EXECUTION-STATE-SEPARATION.toml",
+    "clauses/C-DEPENDENCY-SEPARATION.toml",
+]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-05-31"
+notes = "Initial draft"

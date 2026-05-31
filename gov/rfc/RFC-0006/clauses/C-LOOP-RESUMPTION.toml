@@ -1,0 +1,43 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-LOOP-RESUMPTION"
+title = "Loop Resumption"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["lifecycle"]
+
+[content]
+text = """
+Loops MAY support resumption after interruption (agent session end, user cancellation, system failure).
+
+**Resumption requirements:**
+
+If a loop implementation supports resumption, it MUST:
+1. Persist loop state to durable storage (independent of work item files)
+2. Detect existing loop state when invoked with the same work item set
+3. Resume from the last recorded state rather than starting fresh
+
+**Resumption semantics:**
+
+When resuming a loop:
+- Work items in `done` loop state MUST NOT be re-executed
+- Work items in `active` loop state MAY be resumed from their last round or restarted
+- Work items in `blocked` loop state MUST remain blocked
+- Work items in `pending` loop state MUST be executed in dependency order
+
+**State preservation:**
+
+The loop MUST preserve:
+- Execution status of each work item (pending, active, done, failed, blocked)
+- Dependency graph (if multi-WI loop)
+- Round count for each work item
+
+The loop MAY preserve:
+- Detailed execution trace (journal entries, round logs)
+- Guard execution results
+- Agent context and decision history
+
+Rationale: Resumption enables long-running multi-WI loops to survive agent session boundaries without losing progress. By persisting state independently of work item files, we maintain the separation between execution state (ephemeral) and governance artifacts (durable).
+"""

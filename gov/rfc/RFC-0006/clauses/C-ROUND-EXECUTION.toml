@@ -1,0 +1,41 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-ROUND-EXECUTION"
+title = "Round Execution"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["core", "validation"]
+
+[content]
+text = """
+Each work item is processed through iterative **rounds** until termination.
+
+**Round structure:**
+
+Each round MUST:
+1. Read the work item (description, acceptance criteria, refs, notes)
+2. Implement changes addressing pending acceptance criteria
+3. Run verification guards
+4. Evaluate acceptance criteria (ticked, still pending, or failed)
+5. Record a journal entry (what was done, what changed, why)
+6. Decide: continue (pending criteria remain) or terminate (all done or failed)
+
+**Termination conditions:**
+
+A work item MUST terminate when:
+- **Success**: All acceptance criteria are satisfied and all required guards pass
+- **Failure**: Any of the following conditions are met:
+  - Maximum rounds reached (implementation-defined limit)
+  - Critical guard failure (guard execution error, not guard check failure)
+  - Agent decides unable to proceed (e.g., missing information, architectural conflict)
+
+**Post-termination:**
+
+- On success: The work item MUST transition to `done` via `govctl work move`
+- On failure: The work item remains in `active` state but is marked as `failed` in loop state
+- Failed work items trigger failure propagation per C-DEPENDENCY-SEMANTICS
+
+Rationale: Rounds provide iterative refinement toward acceptance criteria. The round structure ensures each iteration makes measurable progress. Termination conditions prevent infinite loops while allowing implementations to define appropriate limits.
+"""

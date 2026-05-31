@@ -1,0 +1,21 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-EXECUTION-STATE-SEPARATION"
+title = "Execution State Separation Rationale"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+tags = ["core"]
+
+[content]
+text = """
+Execution state lives in `.govctl/loops/` (not in work item TOML) because:
+
+1. **Work items are outcome artifacts**: They should contain scope (description), success criteria (acceptance_criteria), and durable context (notes). They should not accumulate execution logs during active work.
+
+2. **Rich execution traceability**: Loops need to track round-by-round progress, guard results, criteria addressed per round, and detailed logs. This is too much data for a work item TOML file.
+
+3. **Clean diffs**: Work item TOML files remain stable and reviewable. Execution state changes frequently during a loop and is not meant for code review.
+
+4. **Ephemeral by design**: Loop state is local to the developer's machine. It can be deleted without losing governance artifacts. The work item's `notes` field captures durable learnings."""

@@ -1,0 +1,19 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-DEPENDENCY-SEPARATION"
+title = "Dependency Separation Rationale"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+tags = ["core", "work-items"]
+
+[content]
+text = """
+The `depends_on` field is separate from `refs` because they serve different purposes:
+
+- **`refs`**: Informational cross-references ("this work item is related to that RFC"). Does not block execution. Used for traceability and navigation.
+
+- **`depends_on`**: Execution dependencies ("this work item cannot start until that work item completes"). Blocks execution. Used for dependency resolution and failure propagation.
+
+Conflating these would force the loop to guess whether a ref is a hard dependency or just a related artifact. Separate fields make intent explicit."""

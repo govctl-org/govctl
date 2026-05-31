@@ -1,0 +1,50 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-WORK-ITEM-INTERACTION"
+title = "Work Item Interaction"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["lifecycle", "validation", "work-items"]
+
+[content]
+text = """
+Loops interact with work items through status transitions and validation checks.
+
+**Status transitions:**
+
+1. **Before execution**: Work items in the loop set MUST be in `queue` or `active` state
+2. **During execution**: The loop transitions work items from `queue` to `active` via `govctl work move`
+3. **On success**: The loop transitions work items from `active` to `done` via `govctl work move`
+4. **On failure**: Work items remain in `active` state (the loop marks them as `failed` in loop state, but does not change their work item `status` field)
+
+**Validation requirements:**
+
+Before transitioning a work item to `done`, the loop MUST verify:
+1. All acceptance criteria are satisfied (per RFC-0001:C-GATE-CONDITIONS)
+2. All required verification guards pass (per RFC-0001:C-GATE-CONDITIONS)
+3. The work item has been in `active` state during this loop execution
+
+**Journal field usage:**
+
+The work item `journal` field is reserved for **durable context** that should persist across sessions:
+- Key decisions made during implementation
+- Blockers encountered and how they were resolved
+- Important technical insights
+
+Execution trace (round-by-round progress) MUST be tracked in loop state, not in the work item `journal` field. This maintains the work item as a durable governance artifact while allowing rich execution tracking in ephemeral loop state.
+
+**Loop-level status:**
+
+The loop tracks additional execution status in loop state:
+- `pending`: Work item has not started execution
+- `active`: Work item is currently being executed
+- `done`: Work item completed successfully (matches work item `done` state)
+- `failed`: Work item execution failed
+- `blocked`: Work item cannot execute due to failed/cancelled dependencies
+
+These loop-level statuses are independent of work item `status` field values (queue, active, done, cancelled).
+
+Rationale: Using `govctl work move` commands ensures all status transitions are validated and auditable. Separating loop-level status from work item status maintains clear boundaries between execution state (ephemeral) and governance artifacts (durable).
+"""

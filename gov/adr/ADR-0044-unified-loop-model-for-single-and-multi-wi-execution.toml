@@ -1,0 +1,74 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0044"
+title = "Unified loop model for single and multi-WI execution"
+status = "proposed"
+date = "2026-05-31"
+refs = [
+    "ADR-0043",
+    "RFC-0006",
+]
+
+[content]
+context = """
+The `/loop` skill needs to drive work items to completion through iterative rounds. Two distinct use cases emerged:
+
+1. **Single work item iteration**: Agent works on one WI until acceptance criteria are satisfied
+2. **Multi-WI batch execution**: Agent creates multiple related WIs with dependencies, then iterates through them as a batch
+
+The question: should these be handled by separate primitives (`/loop` for single WI, `/batch` for multiple WIs) or a unified primitive?
+
+Key observations:
+- Work items naturally form DAGs (dependencies)
+- The execution mechanism is identical: resolve dependencies → iterate → verify → terminate
+- The state model is identical: `.govctl/loops/<loop-id>/` works for both
+- Agents already use the pattern: "batch create WIs, then iterate through all of them""""
+decision = """
+We will use the unified model: a single `/loop` skill that accepts one or more work item IDs.
+
+Key design points:
+1. `/loop WI-001` drives a single work item
+2. `/loop WI-001 WI-002 WI-003` drives multiple work items with dependency resolution
+3. Work items declare dependencies via `depends_on` field
+4. Execution state lives in `.govctl/loops/<loop-id>/`
+5. Downstream applications choose execution model (sequential/parallel)
+
+This treats single-WI and multi-WI cases as the same primitive with different cardinality."""
+consequences = """
+**Positive:**
+- One mental model to learn instead of two
+- State management is consistent (`.govctl/loops/` works for both)
+- Natural support for DAGs (work items with dependencies)
+- Agents can use the same pattern for both use cases
+- Future enhancements apply to both automatically
+
+**Negative:**
+- Initial implementation is slightly more complex (need dependency resolution even for single WI)
+- Users who only need single-WI iteration may find the multi-WI features unnecessary
+- Documentation needs to cover both use cases
+
+**Neutral:**
+- Aligns with existing agent workflow patterns (batch create WIs, then iterate)
+- No breaking changes to existing `/gov` or `/quick` skills"""
+
+[[content.alternatives]]
+text = "Separate primitives: distinct /loop (single WI) and /batch (multiple WIs) skills"
+status = "rejected"
+pros = ["Simpler initial implementation"]
+cons = [
+    "Two concepts with overlapping semantics",
+    "Forced choice for users",
+    "Duplicate state management",
+]
+rejection_reason = "Underlying mechanism is identical; separate skills create artificial distinction"
+
+[[content.alternatives]]
+text = "Unified model: single /loop skill accepts one or more WI IDs"
+status = "accepted"
+pros = [
+    "Simpler mental model",
+    "Consistent state model",
+    "Natural DAG support",
+]
+cons = ["Slightly more complex implementation"]
