@@ -1,9 +1,10 @@
 use super::adapter::{DocAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter};
+use super::delete_referrers::{clause_deletion_referrers, work_item_deletion_referrers};
 use crate::cmd::confirmation::confirm_destructive_action;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::load::split_clause_id;
-use crate::model::{ProjectIndex, RfcStatus};
+use crate::model::RfcStatus;
 use crate::ui;
 use crate::write::{WriteOp, delete_file};
 use std::path::Path;
@@ -113,17 +114,7 @@ fn ensure_clause_not_referenced(config: &Config, clause_id: &str) -> DiagnosticR
             )
         })
     })?;
-    let referenced_by = deletion_referrers(
-        config,
-        &load_result.index,
-        clause_id,
-        ReferrerOptions {
-            skip_work_id: None,
-            include_work_dependencies: false,
-            include_guards: true,
-            sort_unique: true,
-        },
-    )?;
+    let referenced_by = clause_deletion_referrers(config, &load_result.index, clause_id)?;
 
     if !referenced_by.is_empty() {
         return Err(Diagnostic::new(
@@ -172,17 +163,7 @@ pub fn delete_work_item(
     };
 
     let index = &load_result.index;
-    let referenced_by = deletion_referrers(
-        config,
-        index,
-        &wi.govctl.id,
-        ReferrerOptions {
-            skip_work_id: Some(&wi.govctl.id),
-            include_work_dependencies: true,
-            include_guards: false,
-            sort_unique: false,
-        },
-    )?;
+    let referenced_by = work_item_deletion_referrers(index, &wi.govctl.id);
 
     if !referenced_by.is_empty() {
         return Err(Diagnostic::new(
@@ -197,89 +178,6 @@ pub fn delete_work_item(
     }
 
     proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op)
-}
-
-#[derive(Clone, Copy)]
-struct ReferrerOptions<'a> {
-    skip_work_id: Option<&'a str>,
-    include_work_dependencies: bool,
-    include_guards: bool,
-    sort_unique: bool,
-}
-
-fn deletion_referrers(
-    config: &Config,
-    index: &ProjectIndex,
-    target_id: &str,
-    options: ReferrerOptions<'_>,
-) -> DiagnosticResult<Vec<String>> {
-    let mut referrers = project_referrers(index, target_id, options);
-    if options.include_guards {
-        referrers.extend(guard_referrers(config, target_id)?);
-    }
-    if options.sort_unique {
-        referrers.sort();
-        referrers.dedup();
-    }
-    Ok(referrers)
-}
-
-fn project_referrers(
-    index: &ProjectIndex,
-    target_id: &str,
-    options: ReferrerOptions<'_>,
-) -> Vec<String> {
-    let mut referenced_by = Vec::new();
-
-    for rfc in &index.rfcs {
-        if rfc.rfc.refs.iter().any(|ref_id| ref_id == target_id) {
-            referenced_by.push(rfc.rfc.rfc_id.clone());
-        }
-    }
-
-    for adr in &index.adrs {
-        if adr
-            .spec
-            .govctl
-            .refs
-            .iter()
-            .any(|ref_id| ref_id == target_id)
-        {
-            referenced_by.push(adr.spec.govctl.id.clone());
-        }
-    }
-
-    for work in &index.work_items {
-        if options.skip_work_id == Some(work.spec.govctl.id.as_str()) {
-            continue;
-        }
-        let has_ref = work
-            .spec
-            .govctl
-            .refs
-            .iter()
-            .any(|ref_id| ref_id == target_id);
-        let has_dependency = options.include_work_dependencies
-            && work
-                .spec
-                .govctl
-                .depends_on
-                .iter()
-                .any(|dep_id| dep_id == target_id);
-        if has_ref || has_dependency {
-            referenced_by.push(work.spec.govctl.id.clone());
-        }
-    }
-
-    referenced_by
-}
-
-fn guard_referrers(config: &Config, target_id: &str) -> DiagnosticResult<Vec<String>> {
-    Ok(crate::parse::load_guards(config)?
-        .into_iter()
-        .filter(|guard| guard.meta().refs.iter().any(|ref_id| ref_id == target_id))
-        .map(|guard| guard.meta().id.clone())
-        .collect())
 }
 
 fn proceed_with_deletion(

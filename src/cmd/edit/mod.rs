@@ -6,6 +6,7 @@ pub mod adapter;
 mod add;
 mod artifact;
 mod delete;
+mod delete_referrers;
 mod doc_adapter;
 pub mod engine;
 mod get;
