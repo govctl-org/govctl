@@ -6,6 +6,8 @@ use std::path::Path;
 use std::process::Command;
 use tempfile::TempDir;
 
+pub mod loop_helpers;
+
 pub type TestResult = Result<(), Box<dyn std::error::Error>>;
 
 /// Get today's date in YYYY-MM-DD format (same as govctl uses)
