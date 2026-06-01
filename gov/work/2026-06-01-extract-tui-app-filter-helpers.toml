@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-111"
 title = "Extract TUI app filter helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0003"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move TUI list filtering and cached-index maintenance out of the A
 
 [[content.acceptance_criteria]]
 text = "TUI list filter cache logic lives in a focused app filter helper module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "list filter behavior and selection bounds remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "focused TUI tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

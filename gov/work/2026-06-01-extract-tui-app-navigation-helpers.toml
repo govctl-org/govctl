@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-112"
 title = "Extract TUI app navigation helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0003"]
 depends_on = ["WI-2026-06-01-111"]
 
@@ -14,15 +15,15 @@ description = "Move TUI list/detail navigation, scroll movement, and clause sele
 
 [[content.acceptance_criteria]]
 text = "TUI navigation, scroll, and clause-selection helpers live in a focused app navigation module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "existing event and renderer call sites continue to use App without behavior changes"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "focused TUI tests, cargo clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
