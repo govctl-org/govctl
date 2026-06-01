@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-146"
 title = "Extract loop work-item round execution"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "RFC-0006:C-ROUND-EXECUTION",
     "RFC-0006:C-WORK-ITEM-INTERACTION",
@@ -16,15 +17,15 @@ description = "Extract per-work-item loop round execution from src/cmd/loop_cmd/
 
 [[content.acceptance_criteria]]
 text = "per-work-item loop round execution and its private status/retry helpers live in a focused execution item module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop round orchestration keeps dependency readiness and finalization behavior unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
