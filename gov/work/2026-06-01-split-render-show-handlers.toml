@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-118"
 title = "Split render show handlers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Split stdout-oriented render show handlers out of src/cmd/render/mod.rs into a focused child module while keeping the existing public render/show function surface and behavior unchanged. This leaves bulk file rendering in the root render command module and avoids over-splitting the coherent per-artifact show handlers."
 
 [[content.acceptance_criteria]]
 text = "render/show tests, cargo clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "show_rfc, show_adr, show_work, and show_clause live in a focused render::show module with public reexports unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "bulk render functions remain in the root render command module without behavior changes"
-status = "pending"
+status = "done"
 category = "chore"
