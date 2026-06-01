@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-147"
 title = "Share work item ID lookup helper"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract the duplicate work-item-by-ID lookup helper shared by verify and loop item execution into a focused command helper module. Preserve E0402 diagnostics, exact-ID matching semantics, verify behavior, and loop run behavior without changing render/edit filename matching paths."
 
 [[content.acceptance_criteria]]
 text = "verify and loop item execution share one exact work-item ID lookup helper"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "render/edit path matching and not-found scopes remain outside this helper"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "verify tests, loop tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

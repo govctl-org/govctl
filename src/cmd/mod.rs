@@ -16,3 +16,4 @@ pub mod self_update;
 pub mod status;
 pub mod tag;
 pub mod verify;
+pub(crate) mod work_lookup;

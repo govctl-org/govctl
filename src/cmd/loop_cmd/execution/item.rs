@@ -1,3 +1,4 @@
+use crate::cmd::work_lookup::load_work_item_by_id;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::loop_state::{LoopRoundRecord, LoopState, LoopWorkItemStatus, write_loop_round_record};
@@ -171,20 +172,6 @@ fn work_item_status_string(status: WorkItemStatus) -> String {
         WorkItemStatus::Cancelled => "cancelled",
     }
     .to_string()
-}
-
-fn load_work_item_by_id(config: &Config, work_id: &str) -> anyhow::Result<WorkItemEntry> {
-    crate::parse::load_work_items(config)?
-        .into_iter()
-        .find(|entry| entry.spec.govctl.id == work_id)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0402WorkNotFound,
-                format!("Work item not found: {work_id}"),
-                work_id,
-            )
-            .into()
-        })
 }
 
 fn error_summary(err: &anyhow::Error) -> String {

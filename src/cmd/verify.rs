@@ -2,10 +2,12 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel};
-use crate::parse::{load_guards_with_warnings, load_work_items};
+use crate::parse::load_guards_with_warnings;
 use crate::ui;
 use crate::verification;
 use std::collections::HashMap;
+
+use super::work_lookup::load_work_item_by_id;
 
 pub fn verify(
     config: &Config,
@@ -182,21 +184,4 @@ fn run_selected_guards(
     }
 
     Ok(diagnostics)
-}
-
-fn load_work_item_by_id(
-    config: &Config,
-    work_id: &str,
-) -> anyhow::Result<crate::model::WorkItemEntry> {
-    load_work_items(config)?
-        .into_iter()
-        .find(|item| item.spec.govctl.id == work_id)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0402WorkNotFound,
-                format!("Work item not found: {work_id}"),
-                work_id,
-            )
-            .into()
-        })
 }
