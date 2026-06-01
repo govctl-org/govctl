@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-136"
+title = "Extract reference hierarchy validation helper"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Extract RFC/ADR/Work Item authority ordering checks from validate::fields into a shared validate reference-hierarchy helper. Preserve current structured refs diagnostics and internal callers."
+
+[[content.acceptance_criteria]]
+text = "shared validate reference hierarchy helper owns RFC ADR Work Item authority ordering"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "structured refs validation keeps existing diagnostic codes and messages"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "validate tests and govctl check pass"
+status = "pending"
+category = "chore"
