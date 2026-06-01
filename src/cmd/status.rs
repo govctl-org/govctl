@@ -8,6 +8,7 @@ use crate::theme::status_semantic;
 use crate::ui::stdout_supports_color;
 use owo_colors::OwoColorize;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 fn use_colors() -> bool {
     stdout_supports_color()
@@ -47,6 +48,36 @@ fn total_line(count: usize) {
     }
 }
 
+fn count_by<I, T, K, F>(items: I, mut key: F) -> HashMap<K, usize>
+where
+    I: IntoIterator<Item = T>,
+    K: Eq + Hash,
+    F: FnMut(T) -> K,
+{
+    let mut counts = HashMap::new();
+    for item in items {
+        *counts.entry(key(item)).or_insert(0) += 1;
+    }
+    counts
+}
+
+fn count_for<K: Eq + Hash>(counts: &HashMap<K, usize>, key: K) -> usize {
+    counts.get(&key).copied().unwrap_or(0)
+}
+
+fn total_count<K>(counts: &HashMap<K, usize>) -> usize {
+    counts.values().sum()
+}
+
+fn status_breakdown<K>(counts: &HashMap<K, usize>, rows: &[(&str, K, &str)])
+where
+    K: Copy + Eq + Hash,
+{
+    for &(label, key, semantic) in rows {
+        status_line(label, count_for(counts, key), semantic);
+    }
+}
+
 /// Show summary status
 pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     let index = match load_project(config) {
@@ -64,28 +95,23 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     // RFC summary
     section_header("RFCs");
 
-    let mut by_status: HashMap<RfcStatus, usize> = HashMap::new();
-    let mut by_phase: HashMap<RfcPhase, usize> = HashMap::new();
+    let by_status = count_by(&index.rfcs, |rfc| rfc.rfc.status);
+    let by_phase = count_by(&index.rfcs, |rfc| rfc.rfc.phase);
 
-    for rfc in &index.rfcs {
-        *by_status.entry(rfc.rfc.status).or_insert(0) += 1;
-        *by_phase.entry(rfc.rfc.phase).or_insert(0) += 1;
-    }
-
-    // Show status breakdown
-    let draft = by_status.get(&RfcStatus::Draft).copied().unwrap_or(0);
-    let normative = by_status.get(&RfcStatus::Normative).copied().unwrap_or(0);
-    let deprecated = by_status.get(&RfcStatus::Deprecated).copied().unwrap_or(0);
-
-    status_line("draft", draft, "draft");
-    status_line("normative", normative, "normative");
-    status_line("deprecated", deprecated, "deprecated");
+    status_breakdown(
+        &by_status,
+        &[
+            ("draft", RfcStatus::Draft, "draft"),
+            ("normative", RfcStatus::Normative, "normative"),
+            ("deprecated", RfcStatus::Deprecated, "deprecated"),
+        ],
+    );
 
     // Show phase breakdown for non-stable RFCs
-    let spec = by_phase.get(&RfcPhase::Spec).copied().unwrap_or(0);
-    let impl_phase = by_phase.get(&RfcPhase::Impl).copied().unwrap_or(0);
-    let test = by_phase.get(&RfcPhase::Test).copied().unwrap_or(0);
-    let stable = by_phase.get(&RfcPhase::Stable).copied().unwrap_or(0);
+    let spec = count_for(&by_phase, RfcPhase::Spec);
+    let impl_phase = count_for(&by_phase, RfcPhase::Impl);
+    let test = count_for(&by_phase, RfcPhase::Test);
+    let stable = count_for(&by_phase, RfcPhase::Stable);
 
     if spec > 0 || impl_phase > 0 || test > 0 {
         println!();
@@ -124,89 +150,44 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     // Clause summary
     section_header("Clauses");
 
-    let mut clause_by_status: HashMap<ClauseStatus, usize> = HashMap::new();
-    let mut total_clauses = 0;
-
-    for (_, clause) in index.iter_clauses() {
-        *clause_by_status.entry(clause.spec.status).or_insert(0) += 1;
-        total_clauses += 1;
-    }
-
-    let active = clause_by_status
-        .get(&ClauseStatus::Active)
-        .copied()
-        .unwrap_or(0);
-    let clause_deprecated = clause_by_status
-        .get(&ClauseStatus::Deprecated)
-        .copied()
-        .unwrap_or(0);
-    let superseded = clause_by_status
-        .get(&ClauseStatus::Superseded)
-        .copied()
-        .unwrap_or(0);
-
-    status_line("active", active, "active");
-    status_line("deprecated", clause_deprecated, "deprecated");
-    status_line("superseded", superseded, "superseded");
-    total_line(total_clauses);
+    let clause_by_status = count_by(index.iter_clauses(), |(_, clause)| clause.spec.status);
+    status_breakdown(
+        &clause_by_status,
+        &[
+            ("active", ClauseStatus::Active, "active"),
+            ("deprecated", ClauseStatus::Deprecated, "deprecated"),
+            ("superseded", ClauseStatus::Superseded, "superseded"),
+        ],
+    );
+    total_line(total_count(&clause_by_status));
 
     // ADR summary
     section_header("ADRs");
 
-    let mut adr_by_status: HashMap<AdrStatus, usize> = HashMap::new();
-
-    for adr in &index.adrs {
-        *adr_by_status.entry(adr.meta().status).or_insert(0) += 1;
-    }
-
-    let proposed = adr_by_status
-        .get(&AdrStatus::Proposed)
-        .copied()
-        .unwrap_or(0);
-    let accepted = adr_by_status
-        .get(&AdrStatus::Accepted)
-        .copied()
-        .unwrap_or(0);
-    let adr_superseded = adr_by_status
-        .get(&AdrStatus::Superseded)
-        .copied()
-        .unwrap_or(0);
-
-    status_line("proposed", proposed, "proposed");
-    status_line("accepted", accepted, "accepted");
-    status_line("superseded", adr_superseded, "superseded");
+    let adr_by_status = count_by(&index.adrs, |adr| adr.meta().status);
+    status_breakdown(
+        &adr_by_status,
+        &[
+            ("proposed", AdrStatus::Proposed, "proposed"),
+            ("accepted", AdrStatus::Accepted, "accepted"),
+            ("superseded", AdrStatus::Superseded, "superseded"),
+        ],
+    );
     total_line(index.adrs.len());
 
     // Work Item summary
     section_header("Work Items");
 
-    let mut work_by_status: HashMap<WorkItemStatus, usize> = HashMap::new();
-
-    for item in &index.work_items {
-        *work_by_status.entry(item.meta().status).or_insert(0) += 1;
-    }
-
-    let queue = work_by_status
-        .get(&WorkItemStatus::Queue)
-        .copied()
-        .unwrap_or(0);
-    let work_active = work_by_status
-        .get(&WorkItemStatus::Active)
-        .copied()
-        .unwrap_or(0);
-    let done = work_by_status
-        .get(&WorkItemStatus::Done)
-        .copied()
-        .unwrap_or(0);
-    let cancelled = work_by_status
-        .get(&WorkItemStatus::Cancelled)
-        .copied()
-        .unwrap_or(0);
-
-    status_line("queue", queue, "queue");
-    status_line("active", work_active, "active");
-    status_line("done", done, "done");
-    status_line("cancelled", cancelled, "cancelled");
+    let work_by_status = count_by(&index.work_items, |item| item.meta().status);
+    status_breakdown(
+        &work_by_status,
+        &[
+            ("queue", WorkItemStatus::Queue, "queue"),
+            ("active", WorkItemStatus::Active, "active"),
+            ("done", WorkItemStatus::Done, "done"),
+            ("cancelled", WorkItemStatus::Cancelled, "cancelled"),
+        ],
+    );
     total_line(index.work_items.len());
 
     // Show active work items if any
