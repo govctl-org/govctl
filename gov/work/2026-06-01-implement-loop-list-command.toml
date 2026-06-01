@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-090"
 title = "Implement loop list command"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = ["RFC-0006"]
 depends_on = ["WI-2026-06-01-089"]
 

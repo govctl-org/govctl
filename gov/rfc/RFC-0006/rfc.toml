@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0006"
 title = "Loop Execution Model"
-version = "0.2.0"
+version = "0.3.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-05-31"
 updated = "2026-06-01"
-signature = "5b3f810e3c9279809638f4aff60a9e57a5483c0e114de1cf155e4c9fcbe0feaf"
+signature = "30f3369d0597c2caa81115ed0a284512a6f75c370f52ff55fcac44c8e80ce169"
 
 [[sections]]
 title = "Summary"
@@ -26,6 +26,7 @@ clauses = [
     "clauses/C-LOOP-RESUMPTION.toml",
     "clauses/C-LOOP-STATE-STORAGE.toml",
     "clauses/C-LOOP-SCOPE-MUTATION.toml",
+    "clauses/C-LOOP-LISTING.toml",
 ]
 
 [[sections]]
@@ -35,6 +36,12 @@ clauses = [
     "clauses/C-EXECUTION-STATE-SEPARATION.toml",
     "clauses/C-DEPENDENCY-SEPARATION.toml",
 ]
+
+[[changelog]]
+version = "0.3.0"
+date = "2026-06-01"
+notes = "Define loop listing discovery"
+added = ["Loop listing command discovers persisted local loop state"]
 
 [[changelog]]
 version = "0.2.0"
