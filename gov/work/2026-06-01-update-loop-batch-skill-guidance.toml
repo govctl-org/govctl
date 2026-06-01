@@ -1,0 +1,36 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-083"
+title = "Update loop batch skill guidance"
+status = "queue"
+created = "2026-06-01"
+refs = [
+    "RFC-0006",
+    "ADR-0044",
+    "ADR-0046",
+]
+depends_on = ["WI-2026-06-01-082"]
+
+[content]
+description = "Update bundled gov/quick/wi-writer workflow guidance so agents set up related work items as a batch, start one generated-ID loop for the batch, and use replan/scope mutation when cleanup scope changes instead of creating scattered single-item loops or hand-written plain-text loop IDs."
+
+[[content.acceptance_criteria]]
+text = "Skills instruct agents to create related work items first and execute them through one batch loop"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Skills prefer generated LOOP IDs and avoid examples with hand-written plain-text loop IDs"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Skills explain when to replan loop scope instead of starting scattered single-item loops"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"
