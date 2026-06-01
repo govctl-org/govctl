@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-045"
+title = "Extract TUI inline tests"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Move inline TUI test modules out of production rendering and module files into sibling test-only modules. Keep TUI rendering behavior, test coverage, and module shape unchanged."
+
+[[content.acceptance_criteria]]
+text = "TUI inline tests live in sibling test modules without changing production module names"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI renderer and project-load test coverage remains equivalent after extraction"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"
