@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-107"
 title = "Extract list resource handlers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0002"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move RFC, clause, ADR, work item, and guard list handlers out of 
 
 [[content.acceptance_criteria]]
 text = "list resource handlers live in src/cmd/list/resources.rs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "src/cmd/list/mod.rs remains a small dispatcher without per-resource filtering bulk"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "list-related tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
