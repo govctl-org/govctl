@@ -43,6 +43,7 @@ govctl work add <WI-ID> tags <tag>
 govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
 govctl tag new <tag>
 govctl tag list
+govctl loop list open
 govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]
 govctl loop run --id <LOOP-ID>
 govctl loop replan --id <LOOP-ID>
@@ -100,6 +101,8 @@ For a multi-step task, cleanup run, refactor, or feature that naturally splits i
 3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
 4. Start one loop for the batch root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
 5. Continue with `govctl loop run --id <LOOP-ID>` or `govctl loop resume --id <LOOP-ID>`.
+
+When resuming after an interruption or inspecting current local execution state, run `govctl loop list open` first. Use the listed generated loop ID for `run`, `show`, `resume`, `add`, `remove`, or `replan`; do not guess a loop ID from memory.
 
 If the scope changes during execution, keep the same loop identity:
 

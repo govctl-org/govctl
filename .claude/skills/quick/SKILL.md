@@ -48,6 +48,7 @@ govctl work list pending
 - Matching queued item: `govctl work move <WI-ID> active`
 - No match for a single trivial change: `govctl work new --active "<concise-title>"`
 - No match for several related trivial changes: create the batch work items first, add any `depends_on` edges, then start one loop with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]` and use the generated `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
+- Interrupted batch work: run `govctl loop list open` before resuming so you use the persisted generated loop ID.
 
 Then:
 

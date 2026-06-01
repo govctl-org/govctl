@@ -124,6 +124,7 @@ When a requested change naturally splits into several related work items, write 
 - Use `depends_on` only for hard execution ordering; keep `refs` for informational links.
 - Prefer one batch loop over scattered single-item loops for work that shares one goal.
 - Let govctl generate the loop ID with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; use the returned `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
+- Use `govctl loop list open` to discover existing non-terminal loops before resuming interrupted batch work.
 
 If the batch scope changes after the loop starts, update the same loop:
 
