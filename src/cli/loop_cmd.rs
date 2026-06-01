@@ -91,7 +91,7 @@ NOTES:
     Add {
         /// Loop ID
         id: String,
-        /// Loop field name
+        /// Loop field name (`work`; `wi` alias)
         field: String,
         /// Work item ID to add
         #[arg(value_name = "WI-ID")]
@@ -111,7 +111,7 @@ NOTES:
     Remove {
         /// Loop ID
         id: String,
-        /// Loop field name
+        /// Loop field name (`work`; `wi` alias)
         field: String,
         /// Work item ID to remove
         #[arg(value_name = "WI-ID")]

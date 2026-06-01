@@ -16,7 +16,7 @@ Loop command arguments MUST have stable roles:
 
 1. A positional `LOOP-ID` argument identifies an existing persisted local loop state directory.
 2. A `--id LOOP-ID` flag MAY be used only by commands that create a loop state, where it requests the ID to create or reuse.
-3. Positional `WI-ID...` arguments identify explicit loop work item field values for loop creation or field mutation.
+3. Positional `WI-ID...` arguments identify explicit loop `work` field values for loop creation or field mutation.
 4. Positional `WI-ID...` arguments MUST NOT mean an execution target subset.
 5. Execution target selection MUST use an explicit selector flag.
 6. Loop field mutation MUST use the same `add` and `remove` field-position shape used by governed artifact resources.
@@ -27,18 +27,18 @@ The canonical loop subcommands are:
 
 1. `loop list [filter]`: read persisted loop states. This command MUST be read-only.
 2. `loop show LOOP-ID`: read one persisted loop state by loop ID. This command MUST be read-only.
-3. `loop start [--id LOOP-ID] WI-ID...`: create or reuse a loop for an explicit work item field set.
+3. `loop start [--id LOOP-ID] WI-ID...`: create or reuse a loop for an explicit `work` field set.
 4. `loop resume LOOP-ID`: select and display an existing non-terminal loop by loop ID. This command MUST be read-only and MUST NOT execute rounds.
 5. `loop run LOOP-ID [--work WI-ID ...] [--max-rounds N]`: run one execution pass for an existing loop state.
-6. `loop replan LOOP-ID`: recompute the dependency closure for the current explicit work item field set.
+6. `loop replan LOOP-ID`: recompute the dependency closure for the current explicit `work` field set.
 7. `loop add LOOP-ID work WI-ID`: add a Work Item ID to the loop's editable `work` field and replan.
 8. `loop remove LOOP-ID work WI-ID`: remove a Work Item ID from the loop's editable `work` field and replan.
 
-The `work` field is the user-facing field name for the loop's explicit work item set. Implementations MAY accept `wi` as an alias for `work`. Implementations MAY keep older compatibility aliases, but user-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID`.
+The `work` field is the only user-facing field name for the loop's explicit work set. Implementations MAY accept `wi` as an alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID`.
 
 **Discovery semantics:**
 
-`loop start [--id LOOP-ID] WI-ID...` MAY reuse an existing non-terminal loop with the same current explicit work item field set instead of creating a new loop. If more than one non-terminal loop matches the requested work set, the implementation MUST reject the operation as ambiguous and require the caller to use `loop list` and then pass a positional `LOOP-ID` to the desired operation.
+`loop start [--id LOOP-ID] WI-ID...` MAY reuse an existing non-terminal loop with the same current explicit `work` field set instead of creating a new loop. If more than one non-terminal loop matches the requested work set, the implementation MUST reject the operation as ambiguous and require the caller to use `loop list` and then pass a positional `LOOP-ID` to the desired operation.
 
 `loop list [filter]` MUST support discovering loop state without requiring a caller to know a loop ID first per [[RFC-0006:C-LOOP-LISTING]]. Work-set discovery is a discovery behavior, not an execution selector.
 

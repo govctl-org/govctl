@@ -1407,7 +1407,7 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
                 "loop".into(),
                 "add".into(),
                 loop_id.clone(),
-                "work".into(),
+                "wi".into(),
                 new_root_id.clone(),
             ],
         ],
@@ -1445,7 +1445,7 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
                 "loop".into(),
                 "remove".into(),
                 loop_id.clone(),
-                "wi".into(),
+                "work".into(),
                 original_id.clone(),
             ],
             vec![
