@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-032"
+title = "Extract RFC supersede lifecycle logic"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract the RFC supersede lifecycle rule set from src/cmd/lifecycle/rfc.rs into a focused flat lifecycle helper module. Preserve existing RFC supersede diagnostics, status updates, replacement validation, and CLI behavior without creating a same-name rfc/ module directory."
+
+[[content.acceptance_criteria]]
+text = "src/cmd/lifecycle/rfc.rs remains focused on bump/finalize/advance and shared RFC lifecycle helpers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted lifecycle tests and full verification pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC supersede validation and write logic live in a focused flat lifecycle module"
+status = "done"
+category = "changed"

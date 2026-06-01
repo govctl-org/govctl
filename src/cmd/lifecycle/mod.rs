@@ -12,6 +12,7 @@ mod paths;
 mod release;
 mod rfc;
 mod rfc_clause_versions;
+mod rfc_supersede;
 pub use adr::{accept_adr, reject_adr, validate_adr_completeness};
 pub use release::cut_release;
 pub use rfc::{advance, bump, finalize};
@@ -77,7 +78,7 @@ pub fn supersede(
     if id.contains(':') {
         clause::supersede_clause(config, id, by, op)
     } else if id.starts_with("RFC-") {
-        rfc::supersede_rfc(config, id, by, op)
+        rfc_supersede::supersede_rfc(config, id, by, op)
     } else if id.starts_with("ADR-") {
         adr::supersede_adr(config, id, by, op)
     } else {
