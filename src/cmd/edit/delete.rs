@@ -1,26 +1,10 @@
 use super::adapter::{DocAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter};
+use crate::cmd::confirmation::confirm_destructive_action;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::ui;
 use crate::write::{WriteOp, delete_file};
-use std::io::{self, Write};
 use std::path::Path;
-
-fn confirm_delete_prompt(force: bool, op: WriteOp, prompt: &str) -> anyhow::Result<bool> {
-    if force || op.is_preview() {
-        return Ok(true);
-    }
-
-    print!("{prompt} [y/N] ");
-    io::stdout().flush()?;
-    let mut response = String::new();
-    io::stdin().read_line(&mut response)?;
-    if !response.trim().eq_ignore_ascii_case("y") {
-        ui::info("Deletion cancelled");
-        return Ok(false);
-    }
-    Ok(true)
-}
 
 pub fn delete_clause(
     config: &Config,
@@ -76,10 +60,11 @@ pub fn delete_clause(
             )
         })?;
 
-    if !confirm_delete_prompt(
+    if !confirm_destructive_action(
         force,
         op,
         &format!("Delete clause {} from {}?", clause_name, rfc_id),
+        "Deletion cancelled",
     )? {
         return Ok(vec![]);
     }
@@ -204,7 +189,12 @@ fn proceed_with_deletion(
     force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    if !confirm_delete_prompt(force, op, &format!("Delete work item {}?", id))? {
+    if !confirm_destructive_action(
+        force,
+        op,
+        &format!("Delete work item {}?", id),
+        "Deletion cancelled",
+    )? {
         return Ok(vec![]);
     }
 

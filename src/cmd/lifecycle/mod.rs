@@ -1,6 +1,7 @@
 //! Lifecycle command implementations.
 
 use crate::FinalizeStatus;
+use crate::cmd::confirmation::confirm_destructive_action;
 use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -60,19 +61,13 @@ pub fn deprecate(
     force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    // Confirmation prompt (unless force or dry-run)
-    if !force && !op.is_preview() {
-        use std::io::{self, Write};
-        print!("Deprecate {}? [y/N] ", id);
-        io::stdout().flush()?;
-
-        let mut response = String::new();
-        io::stdin().read_line(&mut response)?;
-
-        if !response.trim().eq_ignore_ascii_case("y") {
-            ui::info("Deprecation cancelled");
-            return Ok(vec![]);
-        }
+    if !confirm_destructive_action(
+        force,
+        op,
+        &format!("Deprecate {}?", id),
+        "Deprecation cancelled",
+    )? {
+        return Ok(vec![]);
     }
 
     if id.contains(':') {
@@ -138,19 +133,13 @@ pub fn supersede(
     force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    // Confirmation prompt (unless force or dry-run)
-    if !force && !op.is_preview() {
-        use std::io::{self, Write};
-        print!("Supersede {} with {}? [y/N] ", id, by);
-        io::stdout().flush()?;
-
-        let mut response = String::new();
-        io::stdin().read_line(&mut response)?;
-
-        if !response.trim().eq_ignore_ascii_case("y") {
-            ui::info("Supersede cancelled");
-            return Ok(vec![]);
-        }
+    if !confirm_destructive_action(
+        force,
+        op,
+        &format!("Supersede {} with {}?", id, by),
+        "Supersede cancelled",
+    )? {
+        return Ok(vec![]);
     }
 
     if id.contains(':') {

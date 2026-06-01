@@ -3,29 +3,30 @@
 [govctl]
 id = "WI-2026-06-01-163"
 title = "Share destructive command confirmation helper"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract the duplicated destructive confirmation prompt handling used by delete, deprecate, and supersede commands into a shared command helper. Preserve --force, dry-run preview, prompt text, cancellation messages, and lifecycle/delete behavior while keeping the cleanup narrowly scoped."
 
 [[content.acceptance_criteria]]
 text = "lifecycle and delete regression tests pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "force and dry-run preview still bypass confirmation without changing command behavior"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "delete, deprecate, and supersede commands use one shared destructive confirmation helper"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"
