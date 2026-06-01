@@ -40,8 +40,14 @@ govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
 govctl work add <WI-ID> notes "Do not retry old fixture path; it fails because snapshots are stale"
 govctl work add <WI-ID> refs RFC-0001
 govctl work add <WI-ID> tags <tag>
+govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
 govctl tag new <tag>
 govctl tag list
+govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]
+govctl loop run --id <LOOP-ID>
+govctl loop replan --id <LOOP-ID>
+govctl loop add --id <LOOP-ID> <ROOT-WI-ID>
+govctl loop remove --id <LOOP-ID> <ROOT-WI-ID>
 govctl rfc list
 govctl adr list
 govctl rfc new "<title>"
@@ -63,9 +69,11 @@ govctl render
 7. Use work item fields correctly:
    - `description`: task scope and why; set once, rarely change
    - `notes`: durable learnings; record constraints, decisions, retry rules, and failure causes
-8. Avoid loops. If the same approach already failed, do not repeat it unchanged.
+8. Avoid retry cycles. If the same approach already failed, do not repeat it unchanged.
 9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
 10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description` or `notes`.
+11. For related work, create the work item batch first, declare `depends_on` ordering, then execute it through one generated-ID loop.
+12. Do not invent loop IDs. Omit `--id` when starting a loop; use the generated `LOOP-YYYY-MM-DD-NNN` ID printed by the command for later `run`, `show`, `replan`, `add`, or `remove`.
 
 ## Working Memory
 
@@ -82,6 +90,24 @@ The active work item is persistent working memory. Read it with `govctl work sho
 - Add a `notes` entry when you learn something future steps must obey.
 - Record execution trace in loop state when available.
 - On failure, put durable retry rules in `notes`.
+
+### Loop usage
+
+For a multi-step task, cleanup run, refactor, or feature that naturally splits into related work items:
+
+1. Create or activate the known work items before implementation starts.
+2. Add `depends_on` edges for hard execution ordering.
+3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
+4. Start one loop for the batch root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
+5. Continue with `govctl loop run --id <LOOP-ID>` or `govctl loop resume --id <LOOP-ID>`.
+
+If the scope changes during execution, keep the same loop identity:
+
+- Use `govctl loop add --id <LOOP-ID> <ROOT-WI-ID>` when newly discovered work belongs in the current batch.
+- Use `govctl loop remove --id <LOOP-ID> <ROOT-WI-ID>` when a root no longer belongs in the batch.
+- Use `govctl loop replan --id <LOOP-ID>` after dependency edits that should refresh the current closure.
+
+Do not create scattered single-item loops for work that is part of one coherent batch.
 
 ## Workflow
 
@@ -107,7 +133,8 @@ govctl work list pending
 
 - Matching active item: use it
 - Matching queued item: `govctl work move <WI-ID> active`
-- No match: `govctl work new --active "<concise-title>"`
+- No match and the task is single-slice: `govctl work new --active "<concise-title>"`
+- No match and the task splits naturally: create the related work items first, wire `depends_on`, then start one generated-ID loop for the batch.
 
 Then immediately:
 
@@ -261,6 +288,7 @@ Use the `commit` skill for all raw VCS operations.
 
 - [ ] Environment validated; config read
 - [ ] Active work item exists
+- [ ] Related work was batched into one loop where applicable
 - [ ] `govctl work show <WI-ID>` read before implementation
 - [ ] `description` and `notes` used correctly
 - [ ] Governance analysis completed or explicitly skipped

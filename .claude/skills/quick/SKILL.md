@@ -25,6 +25,7 @@ Do not use this for new behavior, RFC-governed work, or architecture decisions. 
    - `notes`: constraints or lessons future steps must remember
 5. If the change becomes behavioral, ambiguous, or architectural, stop using `/quick` and switch to `/gov`.
 6. Use `/commit` for raw VCS operations. Do not embed `jj` or `git` procedures here.
+7. If several trivial changes are part of one coherent cleanup batch, create the related work items first and execute them through one generated-ID loop instead of starting scattered single-item loops.
 
 ## Workflow
 
@@ -45,7 +46,8 @@ govctl work list pending
 
 - Matching active item: use it
 - Matching queued item: `govctl work move <WI-ID> active`
-- No match: `govctl work new --active "<concise-title>"`
+- No match for a single trivial change: `govctl work new --active "<concise-title>"`
+- No match for several related trivial changes: create the batch work items first, add any `depends_on` edges, then start one loop with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]` and use the generated `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
 
 Then:
 
@@ -85,6 +87,7 @@ govctl work add <WI-ID> notes "Do not use old command name in examples"
 ```
 
 Add `notes` only when there is something future steps should remember. Transient execution progress belongs in loop state, not in work item fields.
+When a related cleanup batch gains or loses roots, use `govctl loop add --id <LOOP-ID>`, `govctl loop remove --id <LOOP-ID>`, or `govctl loop replan --id <LOOP-ID>` rather than creating a new loop for each small item.
 
 ### 4. Record
 

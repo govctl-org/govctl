@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-083"
 title = "Update loop batch skill guidance"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "RFC-0006",
     "ADR-0044",
@@ -18,20 +19,20 @@ description = "Update bundled gov/quick/wi-writer workflow guidance so agents se
 
 [[content.acceptance_criteria]]
 text = "Skills instruct agents to create related work items first and execute them through one batch loop"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Skills prefer generated LOOP IDs and avoid examples with hand-written plain-text loop IDs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Skills explain when to replan loop scope instead of starting scattered single-item loops"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"

@@ -27,6 +27,7 @@ govctl work set <WI-ID> description "Task scope description"
 govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
 govctl work add <WI-ID> notes "Key observation"
 govctl work add <WI-ID> refs RFC-NNNN
+govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
 govctl work add <WI-ID> tags <tag>
 govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 govctl work move <WI-ID> done
@@ -114,6 +115,25 @@ Link to governing artifacts:
 govctl work add <WI-ID> refs RFC-0001
 govctl work add <WI-ID> refs ADR-0023
 ```
+
+### Dependencies and Batches
+
+When a requested change naturally splits into several related work items, write the batch before implementation starts:
+
+- Create work items for the coherent slices that should be reviewed or completed separately.
+- Use `depends_on` only for hard execution ordering; keep `refs` for informational links.
+- Prefer one batch loop over scattered single-item loops for work that shares one goal.
+- Let govctl generate the loop ID with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; use the returned `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
+
+If the batch scope changes after the loop starts, update the same loop:
+
+```bash
+govctl loop add --id <LOOP-ID> <ROOT-WI-ID>
+govctl loop remove --id <LOOP-ID> <ROOT-WI-ID>
+govctl loop replan --id <LOOP-ID>
+```
+
+Do not hand-write descriptive loop IDs or encode time finer than the day in loop IDs.
 
 ## Field Semantics Summary
 
