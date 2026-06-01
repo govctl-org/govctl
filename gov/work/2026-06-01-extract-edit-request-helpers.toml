@@ -3,24 +3,26 @@
 [govctl]
 id = "WI-2026-06-01-172"
 title = "Extract edit request helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move shared edit action, edit-field request, and CLI value input helpers out of the cmd/edit root module into one focused helper module. Preserve the current public cmd::edit import surface and edit behavior; do not split edit execution modules further in this slice."
+notes = ["Extracted a single edit request helper module to keep cmd/edit root focused without splitting execution modules. request.rs still follows the current edit execution anyhow boundary and can be part of a later diagnostics migration."]
 
 [[content.acceptance_criteria]]
 text = "cmd/edit root no longer defines shared edit action and request helper types directly"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit value input resolution is extracted and reused by add, clause edit, and field edit paths without behavior changes"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "command router tests, edit tests, full tests, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

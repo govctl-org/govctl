@@ -12,6 +12,7 @@ mod json_target;
 mod matching;
 pub mod path;
 mod remove;
+mod request;
 pub mod rules;
 pub mod runtime;
 mod set;
@@ -24,19 +25,20 @@ pub use self::add::{AddFieldRequest, add_to_field};
 pub use self::artifact::ArtifactType;
 pub use self::get::get_field;
 pub use self::remove::remove_from_field;
+pub use self::request::{EditFieldRequest, OwnedEditAction};
 use self::set::apply_set_field;
 pub(crate) use self::set::set_field_direct;
 pub use self::tick::tick_item;
 use self::{engine as edit_engine, rules as edit_rules};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::ChangelogCategory;
 use crate::ui;
 use crate::write::WriteOp;
 pub use delete::{delete_clause, delete_work_item};
 pub use matching::{MatchOptions, MatchOptionsOwned};
-use std::io::Read;
 use std::path::Path;
+
+use self::request::{read_stdin, resolve_owned_value};
 
 // Field normalization is centralized in edit_engine::plan_request.
 
@@ -70,71 +72,6 @@ pub(super) fn deserialize_edit_doc<T: serde::de::DeserializeOwned>(
 
 pub(super) fn unexpected_edit_state(id: &str, message: impl Into<String>) -> anyhow::Error {
     Diagnostic::new(DiagnosticCode::E0903UnexpectedError, message, id).into()
-}
-
-#[derive(Debug, Clone)]
-pub enum OwnedEditAction {
-    Set {
-        value: Option<Option<String>>,
-        stdin: bool,
-    },
-    Add {
-        value: Option<Option<String>>,
-        stdin: bool,
-    },
-    Remove {
-        match_opts: MatchOptionsOwned,
-    },
-    Tick {
-        match_opts: MatchOptionsOwned,
-        status: crate::TickStatus,
-    },
-}
-
-pub struct EditFieldRequest<'a> {
-    pub config: &'a Config,
-    pub id: &'a str,
-    pub path: &'a str,
-    pub action: &'a OwnedEditAction,
-    pub category_override: Option<ChangelogCategory>,
-    pub pros: Option<Vec<String>>,
-    pub cons: Option<Vec<String>>,
-    pub reject_reason: Option<String>,
-    pub op: WriteOp,
-}
-
-fn read_stdin() -> anyhow::Result<String> {
-    let mut buffer = String::new();
-    std::io::stdin()
-        .read_to_string(&mut buffer)
-        .map_err(|err| Diagnostic::io_error("read from stdin", err, "stdin"))?;
-    // Trim trailing newline that HEREDOC adds
-    Ok(buffer.trim_end_matches('\n').to_string())
-}
-
-fn resolve_owned_value(value: Option<&Option<String>>, stdin: bool) -> anyhow::Result<String> {
-    match (value, stdin) {
-        (Some(Some(v)), false) => Ok(v.clone()),
-        (Some(None), true) => read_stdin(),
-        (Some(None), false) => Err(Diagnostic::new(
-            DiagnosticCode::E0801MissingRequiredArg,
-            "Provide a value or use --stdin",
-            "input",
-        )
-        .into()),
-        (Some(Some(_)), true) => Err(Diagnostic::new(
-            DiagnosticCode::E0802ConflictingArgs,
-            "Cannot use both value and --stdin",
-            "input",
-        )
-        .into()),
-        (None, _) => Err(Diagnostic::new(
-            DiagnosticCode::E0801MissingRequiredArg,
-            "Provide a value or use --stdin",
-            "input",
-        )
-        .into()),
-    }
 }
 
 fn plan_edit_with_field_for_verb(
