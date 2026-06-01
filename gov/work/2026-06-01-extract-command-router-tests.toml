@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-076"
 title = "Extract command router tests"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract the inline `#[cfg(test)]` command-router tests from `src/command_router/mod.rs` into a focused child test module. Keep the production planner API and command routing behavior unchanged, and avoid adding new abstractions or splitting runtime logic in this slice."
 
 [[content.acceptance_criteria]]
 text = "Command-router tests live in a focused child test module without changing production planner APIs"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`src/command_router/mod.rs` no longer contains the inline command-router test body"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`cargo test command_router::`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, and `govctl check --deny-warnings` pass"
-status = "pending"
+status = "done"
 category = "chore"
