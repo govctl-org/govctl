@@ -34,20 +34,23 @@ pub enum LoopWorkItemStatus {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LoopMeta {
     pub id: String,
     pub state: LoopLifecycleState,
-    pub root_work_items: Vec<String>,
-    pub work_items: Vec<String>,
+    pub work: Vec<String>,
+    pub resolved: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LoopItemState {
     pub status: LoopWorkItemStatus,
     pub round_count: u32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct LoopState {
     #[serde(rename = "loop")]
     pub loop_meta: LoopMeta,
@@ -76,11 +79,11 @@ pub struct LoopRoundRecord {
 impl LoopState {
     pub fn new(
         loop_id: impl Into<String>,
-        root_work_items: Vec<String>,
-        work_items: Vec<String>,
+        work: Vec<String>,
+        resolved: Vec<String>,
         dependencies: BTreeMap<String, Vec<String>>,
     ) -> DiagnosticResult<Self> {
-        let items = work_items
+        let items = resolved
             .iter()
             .map(|work_id| {
                 (
@@ -97,8 +100,8 @@ impl LoopState {
             loop_meta: LoopMeta {
                 id: loop_id.into(),
                 state: LoopLifecycleState::Pending,
-                root_work_items,
-                work_items,
+                work,
+                resolved,
             },
             dependencies,
             items,

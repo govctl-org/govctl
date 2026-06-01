@@ -308,8 +308,8 @@ Loop execution state is local runtime data under `.govctl/loops/<loop-id>/`, not
 [loop]
 id = "LOOP-2026-01-17-001"
 state = "active"
-root_work_items = ["WI-2026-01-17-002"]
-work_items = ["WI-2026-01-17-001", "WI-2026-01-17-002"]
+work = ["WI-2026-01-17-002"]
+resolved = ["WI-2026-01-17-001", "WI-2026-01-17-002"]
 
 [dependencies]
 WI-2026-01-17-001 = []
@@ -342,8 +342,8 @@ reason = "pending acceptance criteria remain; max rounds not reached"
 | -------------------- | -------- | ------- | ------------------------------------------------ |
 | `loop.id`            | yes      | string  | Local loop identifier                            |
 | `loop.state`         | yes      | enum    | `pending` \| `active` \| `paused` \| `completed` \| `failed` |
-| `loop.root_work_items` | yes    | array   | Root work item IDs requested by the user         |
-| `loop.work_items`    | yes      | array   | Dependency-closed work item IDs                  |
+| `loop.work`         | yes      | array   | Editable work item IDs requested by the user      |
+| `loop.resolved`     | yes      | array   | Dependency-closed work item IDs                  |
 | `dependencies`       | yes      | table   | Work item dependency adjacency map               |
 | `items.<WI-ID>.status` | yes    | enum    | `pending` \| `active` \| `done` \| `failed` \| `blocked` \| `cancelled` |
 | `items.<WI-ID>.round_count` | yes | integer | Number of executed rounds for the work item      |

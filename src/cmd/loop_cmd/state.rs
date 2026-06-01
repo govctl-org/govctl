@@ -9,12 +9,12 @@ use std::collections::BTreeSet;
 pub(super) fn find_reusable_loop(
     config: &Config,
     loop_id: Option<&str>,
-    root_work_items: &[String],
+    work: &[String],
 ) -> DiagnosticResult<Option<LoopState>> {
     if let Some(loop_id) = loop_id {
         match load_loop_state(config, loop_id) {
             Ok(state) => {
-                ensure_same_root_set(&state, root_work_items)?;
+                ensure_same_work_set(&state, work)?;
                 return Ok(Some(state));
             }
             Err(err) if diagnostic_code(&err) == DiagnosticCode::E1202LoopStateNotFound => {
@@ -24,12 +24,12 @@ pub(super) fn find_reusable_loop(
         }
     }
 
-    find_matching_non_terminal_loop(config, root_work_items)
+    find_matching_non_terminal_loop(config, work)
 }
 
 pub(super) fn find_matching_non_terminal_loop(
     config: &Config,
-    root_work_items: &[String],
+    work: &[String],
 ) -> DiagnosticResult<Option<LoopState>> {
     let mut matches = Vec::new();
     for loop_id in canonical_loop_ids(config)? {
@@ -38,9 +38,7 @@ pub(super) fn find_matching_non_terminal_loop(
             continue;
         }
         let state = load_loop_state(config, &loop_id)?;
-        if is_non_terminal(state.loop_meta.state)
-            && same_root_set(&state.loop_meta.root_work_items, root_work_items)
-        {
+        if is_non_terminal(state.loop_meta.state) && same_work_set(&state.loop_meta.work, work) {
             matches.push(state);
         }
     }
@@ -58,7 +56,7 @@ pub(super) fn find_matching_non_terminal_loop(
                     .collect::<Vec<_>>()
                     .join(", ")
             ),
-            root_work_items.join(", "),
+            work.join(", "),
         )),
     }
 }
@@ -90,8 +88,8 @@ pub(super) fn canonical_loop_ids(config: &Config) -> DiagnosticResult<Vec<String
     Ok(loop_ids)
 }
 
-pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> DiagnosticResult<()> {
-    if root_work_items.is_empty() {
+pub(super) fn ensure_work_values(work: &[String]) -> DiagnosticResult<()> {
+    if work.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             "At least one loop work item ID is required",
@@ -99,7 +97,7 @@ pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> DiagnosticRe
         ));
     }
     let mut seen = BTreeSet::new();
-    for work_id in root_work_items {
+    for work_id in work {
         if !crate::validate::is_work_item_id(work_id) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0409WorkDependencyInvalid,
@@ -118,19 +116,16 @@ pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> DiagnosticRe
     Ok(())
 }
 
-pub(super) fn ensure_same_root_set(
-    state: &LoopState,
-    root_work_items: &[String],
-) -> DiagnosticResult<()> {
-    if same_root_set(&state.loop_meta.root_work_items, root_work_items) {
+pub(super) fn ensure_same_work_set(state: &LoopState, work: &[String]) -> DiagnosticResult<()> {
+    if same_work_set(&state.loop_meta.work, work) {
         Ok(())
     } else {
         Err(Diagnostic::new(
             DiagnosticCode::E1209LoopWorkMismatch,
             format!(
                 "Loop work field does not match existing loop state: stored [{}], requested [{}]",
-                state.loop_meta.root_work_items.join(", "),
-                root_work_items.join(", ")
+                state.loop_meta.work.join(", "),
+                work.join(", ")
             ),
             state.loop_meta.id.clone(),
         ))
@@ -146,7 +141,7 @@ pub(super) fn diagnostic_code(err: &Diagnostic) -> DiagnosticCode {
     err.code
 }
 
-fn same_root_set(left: &[String], right: &[String]) -> bool {
+fn same_work_set(left: &[String], right: &[String]) -> bool {
     left.iter().collect::<BTreeSet<_>>() == right.iter().collect::<BTreeSet<_>>()
 }
 

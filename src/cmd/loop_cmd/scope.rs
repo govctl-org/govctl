@@ -1,4 +1,4 @@
-use super::{output::print_loop, state::ensure_root_work_items};
+use super::{output::print_loop, state::ensure_work_values};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::loop_planner::replan_loop_state_from_config;
@@ -20,7 +20,7 @@ pub fn add_work_item(
     work_item: &str,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    ensure_work_items_field(field)?;
+    ensure_work_field(field)?;
     let work_items = [work_item.to_string()];
     mutate_scope(config, loop_id, ScopeMutation::Add, &work_items, op)
 }
@@ -32,7 +32,7 @@ pub fn remove_work_item(
     work_item: &str,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    ensure_work_items_field(field)?;
+    ensure_work_field(field)?;
     let work_items = [work_item.to_string()];
     mutate_scope(config, loop_id, ScopeMutation::Remove, &work_items, op)
 }
@@ -48,13 +48,13 @@ fn mutate_scope(
     config: &Config,
     loop_id: &str,
     mutation: ScopeMutation,
-    root_work_items: &[String],
+    work: &[String],
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     let state = load_loop_state(config, loop_id)?;
     ensure_loop_can_mutate_scope(&state)?;
-    let roots = mutated_root_set(&state, mutation, root_work_items)?;
-    let plan = replan_loop_state_from_config(config, &state, &roots)?;
+    let updated_work = mutated_work_set(&state, mutation, work)?;
+    let plan = replan_loop_state_from_config(config, &state, &updated_work)?;
     write_loop_state_with_op(config, &plan.state, op)?;
     let verb = if op.is_preview() {
         match mutation {
@@ -89,38 +89,38 @@ fn ensure_loop_can_mutate_scope(state: &LoopState) -> DiagnosticResult<()> {
     Ok(())
 }
 
-fn mutated_root_set(
+fn mutated_work_set(
     state: &LoopState,
     mutation: ScopeMutation,
-    root_work_items: &[String],
+    work: &[String],
 ) -> DiagnosticResult<Vec<String>> {
     match mutation {
         ScopeMutation::Replan => {
-            if !root_work_items.is_empty() {
-                ensure_root_work_items(root_work_items)?;
+            if !work.is_empty() {
+                ensure_work_values(work)?;
             }
-            Ok(state.loop_meta.root_work_items.clone())
+            Ok(state.loop_meta.work.clone())
         }
         ScopeMutation::Add => {
-            ensure_root_work_items(root_work_items)?;
+            ensure_work_values(work)?;
             let mut roots = state
                 .loop_meta
-                .root_work_items
+                .work
                 .iter()
                 .cloned()
                 .collect::<BTreeSet<_>>();
-            roots.extend(root_work_items.iter().cloned());
+            roots.extend(work.iter().cloned());
             Ok(roots.into_iter().collect())
         }
         ScopeMutation::Remove => {
-            ensure_root_work_items(root_work_items)?;
+            ensure_work_values(work)?;
             let mut roots = state
                 .loop_meta
-                .root_work_items
+                .work
                 .iter()
                 .cloned()
                 .collect::<BTreeSet<_>>();
-            for work_id in root_work_items {
+            for work_id in work {
                 if !roots.remove(work_id) {
                     return Err(Diagnostic::new(
                         DiagnosticCode::E1209LoopWorkMismatch,
@@ -141,7 +141,7 @@ fn mutated_root_set(
     }
 }
 
-fn ensure_work_items_field(field: &str) -> DiagnosticResult<()> {
+fn ensure_work_field(field: &str) -> DiagnosticResult<()> {
     if matches!(field, WORK_FIELD | WI_FIELD_ALIAS) {
         return Ok(());
     }

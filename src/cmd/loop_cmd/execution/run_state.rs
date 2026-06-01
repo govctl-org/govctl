@@ -19,7 +19,7 @@ fn validate_target_work_items(
 ) -> DiagnosticResult<()> {
     let loop_work_items = state
         .loop_meta
-        .work_items
+        .resolved
         .iter()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();

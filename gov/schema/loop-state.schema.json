@@ -7,7 +7,7 @@
   "properties": {
     "loop": {
       "type": "object",
-      "required": ["id", "state", "root_work_items", "work_items"],
+      "required": ["id", "state", "work", "resolved"],
       "properties": {
         "id": {
           "type": "string",
@@ -17,14 +17,14 @@
           "type": "string",
           "enum": ["pending", "active", "paused", "completed", "failed"]
         },
-        "root_work_items": {
+        "work": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/workItemId"
           },
           "uniqueItems": true
         },
-        "work_items": {
+        "resolved": {
           "type": "array",
           "items": {
             "$ref": "#/definitions/workItemId"

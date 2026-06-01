@@ -20,8 +20,8 @@ Each loop directory MUST contain `state.toml` as its authoritative state file. T
 [loop]
 id = "<loop-id>"
 state = "pending|active|paused|completed|failed"
-root_work_items = ["WI-YYYY-MM-DD-NNN"]
-work_items = ["WI-YYYY-MM-DD-NNN"]
+work = ["WI-YYYY-MM-DD-NNN"]
+resolved = ["WI-YYYY-MM-DD-NNN"]
 
 [dependencies]
 "WI-YYYY-MM-DD-NNN" = ["WI-YYYY-MM-DD-NNN"]
@@ -31,11 +31,11 @@ status = "pending|active|done|failed|blocked|cancelled"
 round_count = 0
 ```
 
-The `loop.id` value MUST match the `<loop-id>` directory name. The `loop.state` value MUST be one of the loop lifecycle states defined by [[RFC-0006:C-LOOP-LIFECYCLE]]. The `loop.root_work_items` array MUST preserve the current explicit work item root set for the loop. The `loop.work_items` array MUST contain the current resolved dependency closure and MUST include every `loop.root_work_items` entry. The `loop.root_work_items` and `loop.work_items` arrays MUST NOT contain duplicate Work Item IDs.
+The `loop.id` value MUST match the `<loop-id>` directory name. The `loop.state` value MUST be one of the loop lifecycle states defined by [[RFC-0006:C-LOOP-LIFECYCLE]]. The `loop.work` array MUST preserve the current explicit work item set for the loop. The `loop.resolved` array MUST contain the current resolved dependency closure and MUST include every `loop.work` entry. The `loop.work` and `loop.resolved` arrays MUST NOT contain duplicate Work Item IDs.
 
-The `[dependencies]` table MUST contain one entry for each work item in `loop.work_items`. Each dependency entry MUST be an array of Work Item IDs. Each dependency ID MUST also appear in `loop.work_items`. Dependency arrays MUST NOT contain duplicate Work Item IDs.
+The `[dependencies]` table MUST contain one entry for each work item in `loop.resolved`. Each dependency entry MUST be an array of Work Item IDs. Each dependency ID MUST also appear in `loop.resolved`. Dependency arrays MUST NOT contain duplicate Work Item IDs.
 
-The `[items.<WI-ID>]` table MUST contain one entry for each work item in `loop.work_items`. Each item `status` MUST be one of the loop-level work item statuses defined by [[RFC-0006:C-WORK-ITEM-INTERACTION]]. Each `round_count` MUST be a non-negative integer.
+The `[items.<WI-ID>]` table MUST contain one entry for each work item in `loop.resolved`. Each item `status` MUST be one of the loop-level work item statuses defined by [[RFC-0006:C-WORK-ITEM-INTERACTION]]. Each `round_count` MUST be a non-negative integer.
 
 Loop state storage MUST be keyed by loop ID, not by work item ID. A multi-work-item loop MUST have one shared loop state root so dependency planning, failure propagation, and resumption use the same authoritative state.
 

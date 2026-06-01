@@ -34,7 +34,7 @@ The canonical loop subcommands are:
 7. `loop add LOOP-ID work WI-ID`: add a Work Item ID to the loop's editable `work` field and replan.
 8. `loop remove LOOP-ID work WI-ID`: remove a Work Item ID from the loop's editable `work` field and replan.
 
-The `work` field is the only user-facing field name for the loop's explicit work set. Implementations MAY accept `wi` as an alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID`.
+The `work` field is the only canonical user-facing field name for the loop's explicit work set. Implementations MAY accept `wi` as an alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID` while documenting the alias.
 
 **Discovery semantics:**
 
@@ -46,7 +46,7 @@ The `work` field is the only user-facing field name for the loop's explicit work
 
 **Run selection semantics:**
 
-The `--work WI-ID` flag selects execution targets inside the loop identified by the positional `LOOP-ID`. Implementations MUST reject duplicate `--work` values. Implementations MUST reject any `--work` value that is not a Work Item ID in the current `loop.work_items` array. These validations MUST complete before writing loop state or transitioning work items.
+The `--work WI-ID` flag selects execution targets inside the loop identified by the positional `LOOP-ID`. Implementations MUST reject duplicate `--work` values. Implementations MUST reject any `--work` value that is not a Work Item ID in the current `loop.resolved` array. These validations MUST complete before writing loop state or transitioning work items.
 
 If no `--work` selector is provided, `loop run LOOP-ID` MUST consider every current work item in the loop's resolved dependency closure for execution according to dependency order.
 

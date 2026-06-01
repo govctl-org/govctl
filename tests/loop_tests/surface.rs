@@ -57,7 +57,8 @@ fn test_loop_start_show_and_resume_by_loop_id() -> common::TestResult {
         .join(format!(".govctl/loops/{loop_id}/state.toml"));
     let state_toml = fs::read_to_string(&state_path)?;
     assert!(state_toml.contains(&format!("id = \"{loop_id}\"")));
-    assert!(state_toml.contains(&format!("root_work_items = [\"{root_id}\"]")));
+    assert!(state_toml.contains(&format!("work = [\"{root_id}\"]")));
+    assert!(!state_toml.contains("root_work_items"));
     assert!(!state_toml.contains("journal"));
     Ok(())
 }
@@ -175,7 +176,7 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
     assert_eq!(loops[0]["id"], first_loop);
     assert_eq!(loops[0]["state"], "pending");
     assert_eq!(loops[0]["work"][0], first_root);
-    assert_eq!(loops[0]["resolved_work_items"], 1);
+    assert_eq!(loops[0]["items"], 1);
     assert_eq!(loops[0]["rounds"], 0);
     assert_eq!(loops[1]["id"], second_loop);
     Ok(())
@@ -378,8 +379,8 @@ fn test_loop_schemas_reject_invalid_calendar_dates() -> common::TestResult {
 [loop]
 id = "LOOP-2026-02-31-001"
 state = "pending"
-root_work_items = ["WI-2026-02-28-001"]
-work_items = ["WI-2026-02-28-001"]
+work = ["WI-2026-02-28-001"]
+resolved = ["WI-2026-02-28-001"]
 
 [dependencies]
 WI-2026-02-28-001 = []
@@ -400,6 +401,20 @@ work_status_after = "active"
 action = "evaluated acceptance criteria"
 outcome = "active"
 "#;
+    let legacy_state = r#"
+[loop]
+id = "LOOP-2026-02-28-001"
+state = "pending"
+root_work_items = ["WI-2026-02-28-001"]
+work_items = ["WI-2026-02-28-001"]
+
+[dependencies]
+WI-2026-02-28-001 = []
+
+[items.WI-2026-02-28-001]
+status = "pending"
+round_count = 0
+"#;
 
     assert_schema_rejects(
         temp_dir.path(),
@@ -412,6 +427,12 @@ outcome = "active"
         "loop-round.schema.json",
         invalid_round,
         "invalid loop round date should fail schema validation",
+    )?;
+    assert_schema_rejects(
+        temp_dir.path(),
+        "loop-state.schema.json",
+        legacy_state,
+        "legacy loop state keys should fail schema validation",
     )?;
     Ok(())
 }

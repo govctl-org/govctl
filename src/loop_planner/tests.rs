@@ -52,8 +52,8 @@ fn test_loop_plan_single_work_item() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     assert_eq!(plan.topological_order, ids(&[root]));
-    assert_eq!(plan.state.loop_meta.root_work_items, ids(&[root]));
-    assert_eq!(plan.state.loop_meta.work_items, ids(&[root]));
+    assert_eq!(plan.state.loop_meta.work, ids(&[root]));
+    assert_eq!(plan.state.loop_meta.resolved, ids(&[root]));
     assert_eq!(plan.state.dependencies[root], Vec::<String>::new());
     assert_eq!(plan.state.items[root].status, LoopWorkItemStatus::Pending);
     Ok(())
@@ -78,7 +78,7 @@ fn test_loop_plan_resolves_dependency_closure_and_order() -> Result<(), Box<dyn 
     )?;
 
     assert_eq!(
-        plan.state.loop_meta.work_items,
+        plan.state.loop_meta.resolved,
         ids(&[dependency_a, dependency_b, transitive, root])
     );
     assert_eq!(

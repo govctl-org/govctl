@@ -85,7 +85,7 @@ EXAMPLES:
 
 NOTES:
     - `work` is the editable loop work item field.
-    - `wi` is accepted as a field alias.
+    - `wi` is accepted as a shorthand field alias.
     - The resolved dependency closure is recomputed after changing work.
 ")]
     Add {
@@ -105,7 +105,7 @@ EXAMPLES:
 
 NOTES:
     - `work` is the editable loop work item field.
-    - `wi` is accepted as a field alias.
+    - `wi` is accepted as a shorthand field alias.
     - The resolved dependency closure is recomputed after changing work.
 ")]
     Remove {

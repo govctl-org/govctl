@@ -1,12 +1,13 @@
 use crate::common;
 use crate::common::loop_helpers::{
-    loop_id, loop_item_round_count, loop_item_status, loop_item_table, loop_roots, loop_work_items,
+    loop_id, loop_item_round_count, loop_item_status, loop_item_table, loop_resolved, loop_work,
 };
 use crate::common::{init_project, run_dynamic_commands};
 use std::fs;
 
 #[test]
-fn test_loop_add_remove_work_field_rejects_unknown_field() -> common::TestResult {
+fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() -> common::TestResult
+{
     let temp_dir = init_project()?;
     let date = common::today();
     let root_id = format!("WI-{date}-001");
@@ -29,7 +30,7 @@ fn test_loop_add_remove_work_field_rejects_unknown_field() -> common::TestResult
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
-    let output = run_dynamic_commands(
+    let work_items_output = run_dynamic_commands(
         temp_dir.path(),
         &[vec![
             "loop".into(),
@@ -40,17 +41,39 @@ fn test_loop_add_remove_work_field_rejects_unknown_field() -> common::TestResult
         ]],
     )?;
 
-    assert!(output.contains("error[E0803]"), "{output}");
     assert!(
-        output.contains("Unknown loop field: work_items"),
-        "{output}"
+        work_items_output.contains("error[E0803]"),
+        "{work_items_output}"
+    );
+    assert!(
+        work_items_output.contains("Unknown loop field: work_items"),
+        "{work_items_output}"
+    );
+
+    let wi_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "add".into(),
+            loop_id.clone(),
+            "wi".into(),
+            extra_id.clone(),
+        ]],
+    )?;
+
+    assert!(
+        wi_output.contains(&format!("Updated loop {loop_id}")),
+        "{wi_output}"
     );
     let state_toml = fs::read_to_string(
         temp_dir
             .path()
             .join(format!(".govctl/loops/{loop_id}/state.toml")),
     )?;
-    assert_eq!(loop_roots(&toml::from_str(&state_toml)?)?, vec![root_id]);
+    assert_eq!(
+        loop_work(&toml::from_str(&state_toml)?)?,
+        vec![root_id, extra_id]
+    );
     Ok(())
 }
 
@@ -153,11 +176,11 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
     assert_eq!(loop_item_status(&state_toml, &original_id)?, "active");
     let state: toml::Value = toml::from_str(&state_toml)?;
     assert_eq!(
-        loop_roots(&state)?,
+        loop_work(&state)?,
         vec![original_id.clone(), new_root_id.clone()]
     );
     assert_eq!(
-        loop_work_items(&state)?,
+        loop_resolved(&state)?,
         vec![
             original_id.clone(),
             new_dependency_id.clone(),
@@ -197,8 +220,8 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
             .join(format!(".govctl/loops/{loop_id}/state.toml")),
     )?;
     let state: toml::Value = toml::from_str(&state_toml)?;
-    assert_eq!(loop_roots(&state)?, vec![new_root_id.clone()]);
-    assert_eq!(loop_work_items(&state)?, vec![new_root_id.clone()]);
+    assert_eq!(loop_work(&state)?, vec![new_root_id.clone()]);
+    assert_eq!(loop_resolved(&state)?, vec![new_root_id.clone()]);
     assert!(
         loop_item_table(&state, &original_id).is_err(),
         "removed root should no longer have current item state: {state_toml}"

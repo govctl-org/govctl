@@ -21,37 +21,33 @@ pub(in crate::loop_state) fn validate_loop_state(
         ));
     }
 
+    ensure_no_duplicates(&state.loop_meta.work, "loop.work", &state.loop_meta.id)?;
     ensure_no_duplicates(
-        &state.loop_meta.root_work_items,
-        "loop.root_work_items",
-        &state.loop_meta.id,
-    )?;
-    ensure_no_duplicates(
-        &state.loop_meta.work_items,
-        "loop.work_items",
+        &state.loop_meta.resolved,
+        "loop.resolved",
         &state.loop_meta.id,
     )?;
 
     let work_items: BTreeSet<&str> = state
         .loop_meta
-        .work_items
+        .resolved
         .iter()
         .map(String::as_str)
         .collect();
-    for work_id in &state.loop_meta.work_items {
+    for work_id in &state.loop_meta.resolved {
         ensure_work_item_id(work_id, &state.loop_meta.id)?;
     }
-    for root in &state.loop_meta.root_work_items {
+    for root in &state.loop_meta.work {
         ensure_work_item_id(root, &state.loop_meta.id)?;
         if !work_items.contains(root.as_str()) {
             return Err(invalid_state(
                 &state.loop_meta.id,
-                format!("root work item '{root}' is missing from loop.work_items"),
+                format!("work item '{root}' is missing from loop.resolved"),
             ));
         }
     }
 
-    for work_id in &state.loop_meta.work_items {
+    for work_id in &state.loop_meta.resolved {
         if !state.dependencies.contains_key(work_id) {
             return Err(invalid_state(
                 &state.loop_meta.id,
@@ -70,7 +66,7 @@ pub(in crate::loop_state) fn validate_loop_state(
         if !work_items.contains(work_id.as_str()) {
             return Err(invalid_state(
                 &state.loop_meta.id,
-                format!("dependency entry '{work_id}' is not in loop.work_items"),
+                format!("dependency entry '{work_id}' is not in loop.resolved"),
             ));
         }
         ensure_no_duplicates(
@@ -84,7 +80,7 @@ pub(in crate::loop_state) fn validate_loop_state(
                 return Err(invalid_state(
                     &state.loop_meta.id,
                     format!(
-                        "dependency '{dependency}' for '{work_id}' is missing from loop.work_items"
+                        "dependency '{dependency}' for '{work_id}' is missing from loop.resolved"
                     ),
                 ));
             }
@@ -95,7 +91,7 @@ pub(in crate::loop_state) fn validate_loop_state(
         if !work_items.contains(work_id.as_str()) {
             return Err(invalid_state(
                 &state.loop_meta.id,
-                format!("item state '{work_id}' is not in loop.work_items"),
+                format!("item state '{work_id}' is not in loop.resolved"),
             ));
         }
     }

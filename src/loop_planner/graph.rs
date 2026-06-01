@@ -10,15 +10,22 @@ enum VisitState {
 
 pub(super) fn resolve_dependency_closure(
     loop_id: &str,
-    root_work_items: &[String],
+    work: &[String],
     by_id: &HashMap<&str, &WorkItemEntry>,
 ) -> DiagnosticResult<Vec<String>> {
     let mut visit = HashMap::new();
     let mut stack = Vec::new();
     let mut closure = BTreeSet::new();
 
-    for root in root_work_items {
-        visit_dependency_closure(root, loop_id, by_id, &mut visit, &mut stack, &mut closure)?;
+    for work_id in work {
+        visit_dependency_closure(
+            work_id,
+            loop_id,
+            by_id,
+            &mut visit,
+            &mut stack,
+            &mut closure,
+        )?;
     }
 
     Ok(closure.iter().cloned().collect())

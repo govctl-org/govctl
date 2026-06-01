@@ -120,12 +120,12 @@ pub fn loop_item_round_count(
         .ok_or_else(|| "missing loop item round_count".into())
 }
 
-pub fn loop_roots(value: &toml::Value) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    toml_string_array(value, &["loop", "root_work_items"])
+pub fn loop_work(value: &toml::Value) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    toml_string_array(value, &["loop", "work"])
 }
 
-pub fn loop_work_items(value: &toml::Value) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    toml_string_array(value, &["loop", "work_items"])
+pub fn loop_resolved(value: &toml::Value) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    toml_string_array(value, &["loop", "resolved"])
 }
 
 fn toml_string_array(

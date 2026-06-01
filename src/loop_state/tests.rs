@@ -62,6 +62,11 @@ fn test_loop_state_round_trips_state_toml() -> TestResult {
         .path()
         .join(".govctl/loops/LOOP-2026-05-31-001/state.toml");
     assert!(state_path.exists(), "state path: {}", state_path.display());
+    let state_toml = std::fs::read_to_string(&state_path)?;
+    assert!(state_toml.contains("work = ["));
+    assert!(state_toml.contains("resolved = ["));
+    assert!(!state_toml.contains("root_work_items"));
+    assert!(!state_toml.contains("work_items"));
     assert!(
         !temp_dir
             .path()
@@ -75,6 +80,42 @@ fn test_loop_state_round_trips_state_toml() -> TestResult {
     assert_eq!(loaded.loop_meta.state, LoopLifecycleState::Pending);
     assert_eq!(loaded.items[root].status, LoopWorkItemStatus::Pending);
     assert_eq!(loaded.items[root].round_count, 0);
+    Ok(())
+}
+
+#[test]
+fn test_loop_state_rejects_legacy_state_keys() -> TestResult {
+    let temp_dir = tempfile::TempDir::new()?;
+    let config = test_config(temp_dir.path());
+    let loop_id = "LOOP-2026-05-31-006";
+    let work_id = "WI-2026-05-31-001";
+    let state_dir = temp_dir.path().join(format!(".govctl/loops/{loop_id}"));
+    std::fs::create_dir_all(&state_dir)?;
+    std::fs::write(
+        state_dir.join("state.toml"),
+        format!(
+            r#"[loop]
+id = "{loop_id}"
+state = "pending"
+work = ["{work_id}"]
+resolved = ["{work_id}"]
+root_work_items = ["{work_id}"]
+
+[dependencies]
+"{work_id}" = []
+
+[items."{work_id}"]
+status = "pending"
+round_count = 0
+"#
+        ),
+    )?;
+
+    assert_err_contains(
+        load_loop_state(&config, loop_id),
+        "unknown field `root_work_items`",
+        "legacy explicit work key must be rejected",
+    )?;
     Ok(())
 }
 

@@ -17,17 +17,17 @@ use crate::loop_state::{
 };
 use crate::write::WriteOp;
 use output::{LoopListEntry, print_loop, print_loop_list};
-use state::{canonical_loop_ids, ensure_root_work_items, find_reusable_loop, generated_loop_id};
+use state::{canonical_loop_ids, ensure_work_values, find_reusable_loop, generated_loop_id};
 
 pub fn start(
     config: &Config,
     loop_id: Option<&str>,
-    root_work_items: &[String],
+    work: &[String],
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    ensure_root_work_items(root_work_items)?;
+    ensure_work_values(work)?;
 
-    if let Some(existing) = find_reusable_loop(config, loop_id, root_work_items)? {
+    if let Some(existing) = find_reusable_loop(config, loop_id, work)? {
         print_loop("Reused", &existing)?;
         return Ok(vec![]);
     }
@@ -38,7 +38,7 @@ pub fn start(
     };
     validate_loop_id(&loop_id)?;
 
-    let plan = build_loop_plan_from_config(config, &loop_id, root_work_items)?;
+    let plan = build_loop_plan_from_config(config, &loop_id, work)?;
     write_loop_state_with_op(config, &plan.state, op)?;
     let verb = if op.is_preview() {
         "Would start"
@@ -94,7 +94,7 @@ fn loop_list_filter_matches(state: &LoopState, filter: &str) -> bool {
             state.loop_meta.id.contains(filter)
                 || state
                     .loop_meta
-                    .root_work_items
+                    .work
                     .iter()
                     .any(|work_id| work_id.contains(filter))
         }
