@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-023"
+title = "Split loop execution tests by behavior"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Split the large loop execution integration test file into focused include files by behavior. Keep tests/loop_tests/execution.rs as the small entrypoint, preserve existing test names and assertions, and avoid changing loop command behavior."
+
+[[content.acceptance_criteria]]
+text = "loop execution tests are grouped into focused include files"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop command tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
