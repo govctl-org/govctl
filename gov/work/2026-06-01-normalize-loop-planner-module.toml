@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-091"
 title = "Normalize loop planner module"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Normalize `loop_planner` into a directory module and move its inline test module into a sibling test file. Preserve the public loop planner API and avoid leaving same-name file/directory coexistence."
 
 [[content.acceptance_criteria]]
 text = "`src/loop_planner.rs` is replaced by a `src/loop_planner/` module root without same-name coexistence"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop planner tests live outside the production module body"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop planner tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

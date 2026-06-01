@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-092"
 title = "Extract loop planner graph helpers"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 depends_on = ["WI-2026-06-01-091"]
 
 [content]
