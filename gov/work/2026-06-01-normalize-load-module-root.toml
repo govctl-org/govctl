@@ -3,19 +3,20 @@
 [govctl]
 id = "WI-2026-06-01-122"
 title = "Normalize load module root"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move src/load.rs into a directory-owned load module root so focused loader helpers can live under src/load/ without creating same-name file/directory coexistence. Preserve crate::load public function names and existing load behavior."
 
 [[content.acceptance_criteria]]
 text = "src/load.rs is moved to src/load/mod.rs with no same-name file/directory coexistence"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "existing crate::load imports and loader behavior remain unchanged"
-status = "pending"
+status = "done"
 category = "chore"
