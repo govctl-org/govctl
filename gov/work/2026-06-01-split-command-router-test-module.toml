@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-149"
 title = "Split command router test module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Replace the monolithic command_router test module with coherent child test modules grouped by clause edit planning, lock disposition, routing/target planning, and CLI help defaults. Preserve tested behavior and avoid introducing same-name file/directory coexistence."
 
 [[content.acceptance_criteria]]
 text = "command router tests are grouped into focused child modules"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "no src/command_router/tests.rs and src/command_router/tests/ coexistence remains"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "command_router tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

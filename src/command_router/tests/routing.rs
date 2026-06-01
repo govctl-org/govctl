@@ -1,0 +1,97 @@
+use super::*;
+
+#[test]
+fn test_self_update_routes_to_builtin_op() -> Result<(), Box<dyn std::error::Error>> {
+    let check_plan = CommandPlan::from_parsed(&Commands::SelfUpdate { check: true }, false)?;
+    assert!(matches!(check_plan.scope, Scope::Global));
+    assert!(matches!(
+        check_plan.op,
+        Op::Builtin(BuiltinOp::SelfUpdate { check: true })
+    ));
+
+    let update_plan = CommandPlan::from_parsed(&Commands::SelfUpdate { check: false }, false)?;
+    assert!(matches!(update_plan.scope, Scope::Global));
+    assert!(matches!(
+        update_plan.op,
+        Op::Builtin(BuiltinOp::SelfUpdate { check: false })
+    ));
+    Ok(())
+}
+
+#[test]
+fn test_target_resolves_get_and_edit_to_same_field_target() -> Result<(), Box<dyn std::error::Error>>
+{
+    let get = crate::AdrCommand::Get(crate::CommonGetArgs {
+        id: "ADR-0038".to_string(),
+        field: Some("alternatives[1].status".to_string()),
+    })
+    .to_plan()?;
+    let edit = crate::AdrCommand::Edit(crate::AdrEditArgs {
+        common: crate::CommonEditArgs {
+            id: "ADR-0038".to_string(),
+            path: "alternatives[1].status".to_string(),
+            action: EditActionArgs {
+                set: None,
+                add: None,
+                remove: None,
+                tick: Some(TickStatus::Accepted),
+                stdin: false,
+                at: None,
+                exact: false,
+                regex: false,
+                all: false,
+            },
+        },
+        pro: vec![],
+        con: vec![],
+        reject_reason: None,
+    })
+    .to_plan()?;
+
+    match ((&get.op, &get.scope), (&edit.op, &edit.scope)) {
+        (
+            (
+                Op::Get,
+                Scope::Target {
+                    artifact: get_artifact,
+                    id: get_id,
+                    target: get_target,
+                },
+            ),
+            (
+                Op::Edit(EditOp::Field { .. }),
+                Scope::Target {
+                    artifact: edit_artifact,
+                    id: edit_id,
+                    target: edit_target,
+                },
+            ),
+        ) => {
+            assert_eq!(get_artifact, edit_artifact);
+            assert_eq!(get_id, edit_id);
+            assert_eq!(get_target, edit_target);
+        }
+        other => return Err(format!("expected field targets, got {other:?}").into()),
+    }
+    Ok(())
+}
+
+#[test]
+fn test_work_tick_defaults_status_to_done() -> Result<(), Box<dyn std::error::Error>> {
+    let cli = crate::Cli::parse_from([
+        "govctl",
+        "work",
+        "tick",
+        "WI-2026-04-07-001",
+        "acceptance_criteria",
+        "Criterion 1",
+    ]);
+
+    match cli.command {
+        crate::Commands::Work {
+            command: crate::WorkCommand::Tick(crate::WorkTickArgs { status, .. }),
+        } => assert!(matches!(status, WorkTickStatus::Done)),
+        _ => return Err("expected work tick command".into()),
+    }
+    Ok(())
+}
