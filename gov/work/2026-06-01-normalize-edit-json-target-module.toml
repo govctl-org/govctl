@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-128"
+title = "Normalize edit JSON target module"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Normalize the edit JSON-target implementation from src/cmd/edit/json_target.rs into a directory module so helper extraction has a stable root without same-name file/directory coexistence. Preserve existing super::json_target caller imports and behavior for RFC and clause get/set/add/remove paths."
+
+[[content.acceptance_criteria]]
+text = "edit JSON-target code lives in src/cmd/edit/json_target/mod.rs with no same-name json_target.rs sibling"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "current json_target caller imports remain compatible"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused edit tests and govctl check pass"
+status = "pending"
+category = "chore"
