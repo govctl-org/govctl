@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-141"
 title = "Extract tag command helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0002"]
 depends_on = ["WI-2026-06-01-140"]
 
@@ -14,15 +15,15 @@ description = "Extract tag registry storage, cross-artifact tag usage counting, 
 
 [[content.acceptance_criteria]]
 text = "tag registry TOML helpers live in a focused child module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "tag usage counting and tag list output formatting are separated from command orchestration"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "tag integration tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

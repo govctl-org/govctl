@@ -97,6 +97,41 @@ fn test_tag_delete_referenced() -> TestResult {
     Ok(())
 }
 
+#[test]
+fn test_tag_list_plain_and_json_output() -> TestResult {
+    let temp_dir = init_project()?;
+    let date = today();
+
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["tag", "new", "caching"],
+            &["tag", "new", "security"],
+            &["adr", "new", "Tagged Decision"],
+            &["adr", "add", "ADR-0001", "tags", "caching"],
+        ],
+    )?;
+
+    let plain = normalize_output(
+        &run_commands(temp_dir.path(), &[&["tag", "list", "-o", "plain"]])?,
+        temp_dir.path(),
+        &date,
+    )?;
+    assert!(plain.contains("caching\t1"), "{plain}");
+    assert!(plain.contains("security\t0"), "{plain}");
+
+    let json = normalize_output(
+        &run_commands(temp_dir.path(), &[&["tag", "list", "-o", "json"]])?,
+        temp_dir.path(),
+        &date,
+    )?;
+    assert!(json.contains(r#""tag": "caching""#), "{json}");
+    assert!(json.contains(r#""usage": 1"#), "{json}");
+    assert!(json.contains(r#""tag": "security""#), "{json}");
+    assert!(json.contains(r#""usage": 0"#), "{json}");
+    Ok(())
+}
+
 // ============================================================================
 // Artifact tagging
 // ============================================================================
