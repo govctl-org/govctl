@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-164"
+title = "Share clause document adapter loading"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Extract the duplicated ClauseJsonAdapter and ClauseTomlAdapter load logic into a shared clause document loading helper, matching the existing RFC adapter pattern. Preserve clause lookup diagnostics, scoped paths, read/write behavior, and edit/get/set command behavior without splitting the adapter module further."
+
+[[content.acceptance_criteria]]
+text = "edit adapter regression tests pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "clause adapter missing-field diagnostics and scope paths remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "ClauseJsonAdapter and ClauseTomlAdapter share one clause document loading helper"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"
