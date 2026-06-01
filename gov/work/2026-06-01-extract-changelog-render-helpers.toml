@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-125"
+title = "Extract changelog render helpers"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+depends_on = ["WI-2026-06-01-124"]
+
+[content]
+description = "Extract reusable changelog section-generation and existing-release preservation helpers out of the changelog render module root. Keep the root focused on loading, mode selection, and write/preview orchestration while preserving force and incremental changelog behavior."
+
+[[content.acceptance_criteria]]
+text = "changelog item grouping and release-section rendering live in focused helper modules"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "existing release parsing, version matching, and newest-first ordering are isolated from render orchestration"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "changelog preservation tests, cargo test, and govctl check pass"
+status = "pending"
+category = "chore"
