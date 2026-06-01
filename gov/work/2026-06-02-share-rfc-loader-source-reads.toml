@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-013"
+title = "Share RFC loader source reads"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reduce duplication in RFC and clause loader source reads by sharing the filesystem read and LoadError::Io wrapping while preserving existing action labels and diagnostics."
+
+[[content.acceptance_criteria]]
+text = "RFC and clause loaders share source-file read error handling"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC and clause loader integration tests pass"
+status = "done"
+category = "chore"

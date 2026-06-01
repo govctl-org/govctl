@@ -41,11 +41,7 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
 
 /// Load a single RFC and its clauses
 pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError> {
-    let content = std::fs::read_to_string(rfc_path).map_err(|e| LoadError::Io {
-        file: rfc_path.display().to_string(),
-        action: "read RFC",
-        message: e.to_string(),
-    })?;
+    let content = read_source_file(rfc_path, "read RFC")?;
 
     let rfc: RfcSpec = match rfc_path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
@@ -119,11 +115,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
 
 /// Load a single clause
 pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
-    let content = std::fs::read_to_string(path).map_err(|e| LoadError::Io {
-        file: path.display().to_string(),
-        action: "read clause",
-        message: e.to_string(),
-    })?;
+    let content = read_source_file(path, "read clause")?;
 
     let spec = match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
@@ -185,46 +177,50 @@ pub fn find_rfc_toml(config: &Config, rfc_id: &str) -> Option<PathBuf> {
 
 /// Find a clause source file by full ID, preferring TOML over legacy JSON.
 pub fn find_clause_json(config: &Config, clause_id: &str) -> Option<PathBuf> {
-    let parts: Vec<&str> = clause_id.split(':').collect();
-    if parts.len() != 2 {
-        return None;
-    }
-
-    let rfc_id = parts[0];
-    let clause_name = parts[1];
-
-    let clause_path = config
-        .rfc_dir()
-        .join(rfc_id)
-        .join("clauses")
-        .join(format!("{clause_name}.toml"));
+    let (rfc_id, clause_name) = split_clause_id(clause_id)?;
+    let clause_path = clause_source_path(config, rfc_id, clause_name, "toml");
 
     if clause_path.exists() {
         Some(clause_path)
     } else {
-        let legacy_clause_path = config
-            .rfc_dir()
-            .join(rfc_id)
-            .join("clauses")
-            .join(format!("{clause_name}.json"));
+        let legacy_clause_path = clause_source_path(config, rfc_id, clause_name, "json");
         legacy_clause_path.exists().then_some(legacy_clause_path)
     }
 }
 
 pub fn find_clause_toml(config: &Config, clause_id: &str) -> Option<PathBuf> {
-    let parts: Vec<&str> = clause_id.split(':').collect();
-    if parts.len() != 2 {
-        return None;
-    }
+    let (rfc_id, clause_name) = split_clause_id(clause_id)?;
+    let clause_path = clause_source_path(config, rfc_id, clause_name, "toml");
+    clause_path.exists().then_some(clause_path)
+}
 
-    let rfc_id = parts[0];
-    let clause_name = parts[1];
-    let clause_path = config
+fn read_source_file(path: &Path, action: &'static str) -> Result<String, LoadError> {
+    std::fs::read_to_string(path).map_err(|e| LoadError::Io {
+        file: path.display().to_string(),
+        action,
+        message: e.to_string(),
+    })
+}
+
+fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {
+    let mut parts = clause_id.split(':');
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some(rfc_id), Some(clause_name), None) => Some((rfc_id, clause_name)),
+        _ => None,
+    }
+}
+
+fn clause_source_path(
+    config: &Config,
+    rfc_id: &str,
+    clause_name: &str,
+    extension: &str,
+) -> PathBuf {
+    config
         .rfc_dir()
         .join(rfc_id)
         .join("clauses")
-        .join(format!("{clause_name}.toml"));
-    clause_path.exists().then_some(clause_path)
+        .join(format!("{clause_name}.{extension}"))
 }
 
 fn find_rfc_in_dir(dir: &Path) -> Option<PathBuf> {
