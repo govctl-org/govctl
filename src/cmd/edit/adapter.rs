@@ -56,6 +56,31 @@ fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
         .unwrap_or_else(|| config.rfc_dir())
 }
 
+fn load_clause_with<F>(config: &Config, id: &str, finder: F) -> anyhow::Result<JsonDoc<ClauseSpec>>
+where
+    F: Fn(&Config, &str) -> Option<PathBuf>,
+{
+    let scope = display_scope_for_dir(config, clause_scope_path(config, id));
+    let path = finder(config, id).ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0202ClauseNotFound,
+            format!("Clause not found: {id}"),
+            &scope,
+        )
+    })?;
+    let data = read_clause(config, &path)?;
+    Ok(JsonDoc { path, data })
+}
+
+fn write_clause_doc(config: &Config, doc: &JsonDoc<ClauseSpec>, op: WriteOp) -> anyhow::Result<()> {
+    write_clause(
+        &doc.path,
+        &doc.data,
+        op,
+        Some(&config.display_path(&doc.path)),
+    )
+}
+
 /// Adapter contract for RFC/clause document-backed artifacts.
 pub trait DocAdapter {
     type Data;
@@ -108,25 +133,11 @@ impl DocAdapter for ClauseJsonAdapter {
     type Data = ClauseSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let scope = display_scope_for_dir(config, clause_scope_path(config, id));
-        let path = find_clause_json(config, id).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0202ClauseNotFound,
-                format!("Clause not found: {id}"),
-                &scope,
-            )
-        })?;
-        let data = read_clause(config, &path)?;
-        Ok(JsonDoc { path, data })
+        load_clause_with(config, id, find_clause_json)
     }
 
     fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
-        write_clause(
-            &doc.path,
-            &doc.data,
-            op,
-            Some(&config.display_path(&doc.path)),
-        )
+        write_clause_doc(config, doc, op)
     }
 }
 
@@ -136,25 +147,11 @@ impl DocAdapter for ClauseTomlAdapter {
     type Data = ClauseSpec;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
-        let scope = display_scope_for_dir(config, clause_scope_path(config, id));
-        let path = find_clause_toml(config, id).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0202ClauseNotFound,
-                format!("Clause not found: {id}"),
-                &scope,
-            )
-        })?;
-        let data = read_clause(config, &path)?;
-        Ok(JsonDoc { path, data })
+        load_clause_with(config, id, find_clause_toml)
     }
 
     fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
-        write_clause(
-            &doc.path,
-            &doc.data,
-            op,
-            Some(&config.display_path(&doc.path)),
-        )
+        write_clause_doc(config, doc, op)
     }
 }
 
