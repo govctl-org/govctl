@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::load::find_clause_json;
 use crate::model::ClauseStatus;
+use crate::validate::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
 use crate::write::read_clause;
 
 struct ValidationContext<'a> {
@@ -214,41 +215,13 @@ fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> anyhow::Resul
         .into());
     }
 
-    check_ref_hierarchy(ctx.artifact_id, ref_id, ctx.artifact_id).map_err(|e| e.into())
-}
-
-/// Enforce [[RFC-0000:C-REFERENCE-HIERARCHY]] for `refs` targets.
-pub(super) fn check_ref_hierarchy(
-    artifact_id: &str,
-    ref_id: &str,
-    diagnostic_path: &str,
-) -> Result<(), Diagnostic> {
-    let owner_is_rfc = artifact_id.starts_with("RFC-");
-    let owner_is_adr = artifact_id.starts_with("ADR-");
-    let owner_is_wi = artifact_id.starts_with("WI-");
-
-    if owner_is_wi {
-        return Ok(());
-    }
-    if owner_is_rfc && (ref_id.starts_with("ADR-") || ref_id.starts_with("WI-")) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0112RfcReferenceHierarchy,
-            format!(
-                "RFC '{artifact_id}' references {ref_id}, but RFCs are higher authority than ADRs and Work Items — remove this reference (the ADR or Work Item should reference the RFC, not the other way around)"
-            ),
-            diagnostic_path,
-        ));
-    }
-    if owner_is_adr && ref_id.starts_with("WI-") {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0306AdrReferenceHierarchy,
-            format!(
-                "ADR '{artifact_id}' references {ref_id}, but ADRs are higher authority than Work Items — remove this reference (the Work Item should reference the ADR, not the other way around)"
-            ),
-            diagnostic_path,
-        ));
-    }
-    Ok(())
+    check_ref_hierarchy(
+        ctx.artifact_id,
+        ref_id,
+        ctx.artifact_id,
+        ReferenceSurface::StructuredRef,
+    )
+    .map_err(|e| e.into())
 }
 
 #[cfg(test)]
@@ -289,38 +262,5 @@ mod tests {
             FieldValidation::for_field(ArtifactKind::Rfc, "unknown"),
             FieldValidation::None
         ));
-    }
-
-    // =========================================================================
-    // Reference hierarchy ([[RFC-0000:C-REFERENCE-HIERARCHY]])
-    // =========================================================================
-
-    #[test]
-    fn test_ref_hierarchy_rfc_rejects_adr_and_wi() {
-        assert!(check_ref_hierarchy("RFC-0001", "ADR-0001", "f").is_err());
-        assert!(check_ref_hierarchy("RFC-0001", "WI-2026-01-01-001", "f").is_err());
-    }
-
-    #[test]
-    fn test_ref_hierarchy_rfc_allows_rfc_and_clause() {
-        assert!(check_ref_hierarchy("RFC-0001", "RFC-0002", "f").is_ok());
-        assert!(check_ref_hierarchy("RFC-0001", "RFC-0002:C-FOO", "f").is_ok());
-    }
-
-    #[test]
-    fn test_ref_hierarchy_adr_rejects_wi() {
-        assert!(check_ref_hierarchy("ADR-0001", "WI-2026-01-01-001", "f").is_err());
-    }
-
-    #[test]
-    fn test_ref_hierarchy_adr_allows_rfc_adr() {
-        assert!(check_ref_hierarchy("ADR-0001", "RFC-0000:C-RFC-DEF", "f").is_ok());
-        assert!(check_ref_hierarchy("ADR-0001", "ADR-0002", "f").is_ok());
-    }
-
-    #[test]
-    fn test_ref_hierarchy_work_allows_any() {
-        assert!(check_ref_hierarchy("WI-2026-01-01-001", "WI-2026-01-01-002", "f").is_ok());
-        assert!(check_ref_hierarchy("WI-2026-01-01-001", "ADR-0001", "f").is_ok());
     }
 }

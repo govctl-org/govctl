@@ -13,6 +13,7 @@ mod artifact_refs;
 mod bracket_refs;
 mod fields;
 mod lifecycle;
+mod reference_hierarchy;
 mod releases;
 mod rfc;
 mod signatures;

@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-137"
 title = "Reuse hierarchy helper for bracket refs"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-136"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Route bracket-reference hierarchy checks through the shared refer
 
 [[content.acceptance_criteria]]
 text = "bracket refs use the shared reference hierarchy helper for RFC and ADR authority violations"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "bracket refs keep link-specific diagnostic wording and scan coverage"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "validate integration tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

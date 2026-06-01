@@ -1,4 +1,5 @@
-use super::{ValidationResult, fields::check_ref_hierarchy};
+use super::ValidationResult;
+use super::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::ProjectIndex;
@@ -46,7 +47,12 @@ pub(super) fn validate_artifact_refs(
                     ),
                     rfc_path_display.clone(),
                 ));
-            } else if let Err(d) = check_ref_hierarchy(&rfc.rfc.rfc_id, ref_id, &rfc_path_display) {
+            } else if let Err(d) = check_ref_hierarchy(
+                &rfc.rfc.rfc_id,
+                ref_id,
+                &rfc_path_display,
+                ReferenceSurface::StructuredRef,
+            ) {
                 result.diagnostics.push(d);
             }
         }
@@ -62,9 +68,12 @@ pub(super) fn validate_artifact_refs(
                     ),
                     rfc_path_display.clone(),
                 ));
-            } else if let Err(d) =
-                check_ref_hierarchy(&rfc.rfc.rfc_id, supersedes, &rfc_path_display)
-            {
+            } else if let Err(d) = check_ref_hierarchy(
+                &rfc.rfc.rfc_id,
+                supersedes,
+                &rfc_path_display,
+                ReferenceSurface::StructuredRef,
+            ) {
                 result.diagnostics.push(d);
             }
         }
@@ -84,7 +93,12 @@ pub(super) fn validate_artifact_refs(
                     ),
                     adr_path_display.clone(),
                 ));
-            } else if let Err(d) = check_ref_hierarchy(&adr.meta().id, ref_id, &adr_path_display) {
+            } else if let Err(d) = check_ref_hierarchy(
+                &adr.meta().id,
+                ref_id,
+                &adr_path_display,
+                ReferenceSurface::StructuredRef,
+            ) {
                 result.diagnostics.push(d);
             }
         }

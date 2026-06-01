@@ -1,4 +1,5 @@
 use super::ValidationResult;
+use super::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::ProjectIndex;
@@ -81,14 +82,10 @@ fn scan_rfc_bracket_refs(
             continue;
         };
         let target = m.as_str();
-        if target.starts_with("ADR-") || target.starts_with("WI-") {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0112RfcReferenceHierarchy,
-                format!(
-                    "RFC '{rfc_id}' links to [[{target}]], but RFCs are higher authority than ADRs and Work Items — remove this link (the ADR or Work Item should reference the RFC, not the other way around)"
-                ),
-                path,
-            ));
+        if let Err(diagnostic) =
+            check_ref_hierarchy(rfc_id, target, path, ReferenceSurface::BracketLink)
+        {
+            result.diagnostics.push(diagnostic);
         }
     }
 }
@@ -105,12 +102,10 @@ fn scan_adr_bracket_refs(
             continue;
         };
         let target = m.as_str();
-        if target.starts_with("WI-") {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0306AdrReferenceHierarchy,
-                format!("ADR '{adr_id}' links to [[{target}]], but ADRs are higher authority than Work Items — remove this link (the Work Item should reference the ADR, not the other way around)"),
-                path,
-            ));
+        if let Err(diagnostic) =
+            check_ref_hierarchy(adr_id, target, path, ReferenceSurface::BracketLink)
+        {
+            result.diagnostics.push(diagnostic);
         }
     }
 }
