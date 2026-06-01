@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-106"
 title = "Extract command builtin execution handlers"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "RFC-0002",
     "ADR-0017",
@@ -16,15 +18,15 @@ description = "Move built-in command execution dispatch out of the command route
 
 [[content.acceptance_criteria]]
 text = "built-in command execution dispatch lives in src/command_router/execute/builtin.rs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "command router execution root keeps semantic plan operation handlers without built-in dispatch bulk"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "command router tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
