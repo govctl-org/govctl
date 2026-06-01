@@ -4,7 +4,7 @@ mod catalog;
 mod context;
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde::Serialize;
 
 use catalog::{CommandInfo, WorkflowInfo, command_catalog, workflow_info};
@@ -48,7 +48,13 @@ pub fn describe(config: &Config, include_context: bool) -> anyhow::Result<Vec<Di
         output.suggested_actions = Some(context.suggested_actions);
     }
 
-    let json = serde_json::to_string_pretty(&output)?;
+    let json = serde_json::to_string_pretty(&output).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0903UnexpectedError,
+            format!("Failed to serialize command description: {err}"),
+            "describe",
+        )
+    })?;
     println!("{}", json);
 
     Ok(vec![])

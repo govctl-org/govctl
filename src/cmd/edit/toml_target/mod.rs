@@ -4,10 +4,10 @@ mod set;
 mod tick;
 mod work_dependencies;
 
-use super::ArtifactType;
 use super::adapter::TomlAdapter;
 use super::engine as edit_engine;
 use super::matching::MatchOptions;
+use super::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
 use crate::config::Config;
 use crate::model::{AdrEntry, AdrSpec, GuardEntry, GuardSpec, WorkItemEntry, WorkItemSpec};
 use crate::write::WriteOp;
@@ -67,9 +67,9 @@ where
     A::Entry: TomlEditableEntry,
 {
     let mut entry = A::load(config, id)?;
-    let mut doc = serde_json::to_value(entry.spec())?;
+    let mut doc = serialize_edit_doc(entry.spec(), id)?;
     let ticked_text = tick_target_in_doc(artifact, &mut doc, id, target, opts, status_str)?;
-    *entry.spec_mut() = serde_json::from_value(doc)?;
+    *entry.spec_mut() = deserialize_edit_doc(doc, id)?;
     A::write(config, &entry, op)?;
     Ok(ticked_text)
 }

@@ -15,9 +15,7 @@ pub fn show_rfc(
     id: &str,
     output: OutputFormat,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfcs = load_rfcs(config)
-        .map_err(Diagnostic::from)
-        .map_err(anyhow::Error::from)?;
+    let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
     let rfc = rfcs
         .into_iter()
@@ -33,7 +31,13 @@ pub fn show_rfc(
 
     match output {
         OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&rfc.rfc)?;
+            let json = serde_json::to_string_pretty(&rfc.rfc).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0101RfcSchemaInvalid,
+                    format!("Failed to serialize RFC JSON: {err}"),
+                    id,
+                )
+            })?;
             println!("{json}");
         }
         OutputFormat::Table | OutputFormat::Plain => {
@@ -70,7 +74,13 @@ pub fn show_adr(
 
     match output {
         OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&adr.spec)?;
+            let json = serde_json::to_string_pretty(&adr.spec).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0301AdrSchemaInvalid,
+                    format!("Failed to serialize ADR JSON: {err}"),
+                    id,
+                )
+            })?;
             println!("{json}");
         }
         OutputFormat::Table | OutputFormat::Plain => {
@@ -110,7 +120,13 @@ pub fn show_work(
 
     match output {
         OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&item.spec)?;
+            let json = serde_json::to_string_pretty(&item.spec).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0401WorkSchemaInvalid,
+                    format!("Failed to serialize work item JSON: {err}"),
+                    id,
+                )
+            })?;
             println!("{json}");
         }
         OutputFormat::Table | OutputFormat::Plain => {
@@ -143,9 +159,7 @@ pub fn show_clause(
     let rfc_id = parts[0];
     let clause_name = parts[1];
 
-    let rfcs = load_rfcs(config)
-        .map_err(Diagnostic::from)
-        .map_err(anyhow::Error::from)?;
+    let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
     let rfc = rfcs
         .into_iter()
@@ -177,7 +191,13 @@ pub fn show_clause(
 
     match output {
         OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&clause.spec)?;
+            let json = serde_json::to_string_pretty(&clause.spec).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0201ClauseSchemaInvalid,
+                    format!("Failed to serialize clause JSON: {err}"),
+                    id,
+                )
+            })?;
             println!("{json}");
         }
         OutputFormat::Table | OutputFormat::Plain => {

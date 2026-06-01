@@ -1,9 +1,9 @@
 use super::TomlEditableEntry;
 use super::work_dependencies::{is_work_dependency_target, validate_work_dependency_edit};
-use crate::cmd::edit::ArtifactType;
 use crate::cmd::edit::adapter::{TomlAdapter, WorkTomlAdapter};
 use crate::cmd::edit::engine as edit_engine;
 use crate::cmd::edit::runtime as edit_runtime;
+use crate::cmd::edit::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::WriteOp;
@@ -69,7 +69,7 @@ fn apply_toml_target_to_entry<E>(
 where
     E: TomlEditableEntry,
 {
-    let mut doc = serde_json::to_value(entry.spec())?;
+    let mut doc = serialize_edit_doc(entry.spec(), id)?;
     match target {
         edit_engine::ResolvedTarget::Node {
             path,
@@ -132,6 +132,6 @@ where
             .into());
         }
     }
-    *entry.spec_mut() = serde_json::from_value(doc)?;
+    *entry.spec_mut() = deserialize_edit_doc(doc, id)?;
     Ok(())
 }

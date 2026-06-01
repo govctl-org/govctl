@@ -1,9 +1,9 @@
 use super::super::{
     ArtifactType,
     adapter::DocAdapter,
-    engine as edit_engine,
+    deserialize_edit_doc, engine as edit_engine,
     matching::MatchOptions,
-    runtime as edit_runtime,
+    runtime as edit_runtime, serialize_edit_doc,
     target_doc::{cannot_add_to_field_error, notify_removed, remove_target_from_doc},
 };
 use super::require_simple_field;
@@ -37,11 +37,11 @@ where
     };
     let simple = require_simple_field(path, id, nested_error)?;
     let mut loaded = A::load(config, id)?;
-    let mut doc = serde_json::to_value(&loaded.data)?;
+    let mut doc = serialize_edit_doc(&loaded.data, id)?;
     if !edit_runtime::add_simple_list_value(artifact, &mut doc, simple, value, id)? {
         return Err(cannot_add_to_field_error(id, simple));
     }
-    loaded.data = serde_json::from_value(doc)?;
+    loaded.data = deserialize_edit_doc(doc, id)?;
     A::write(config, &loaded, op)?;
     Ok(())
 }
@@ -60,7 +60,7 @@ where
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
 {
     let mut loaded = A::load(config, id)?;
-    let mut doc = serde_json::to_value(&loaded.data)?;
+    let mut doc = serialize_edit_doc(&loaded.data, id)?;
     let (display_field, removed) = remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
     if !matches!(
         target,
@@ -76,7 +76,7 @@ where
             Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, nested_error, id).into(),
         );
     }
-    loaded.data = serde_json::from_value(doc)?;
+    loaded.data = deserialize_edit_doc(doc, id)?;
     A::write(config, &loaded, op)?;
     notify_removed(id, &display_field, &removed, op);
     Ok(())

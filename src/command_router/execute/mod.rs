@@ -4,7 +4,7 @@ mod scope;
 use super::{CommandPlan, CreateOp, EditOp, LifecycleOp, Op, Scope};
 use crate::cmd;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::WriteOp;
 use crate::{NewTarget, OutputFormat};
 use builtin::execute_builtin;
@@ -83,9 +83,12 @@ fn execute_get(plan: &CommandPlan, config: &Config) -> anyhow::Result<Vec<Diagno
             let path = target.display_path();
             cmd::edit::get_field(config, id, Some(path.as_str()))
         }
-        Scope::Global | Scope::Collection { .. } => {
-            Err(anyhow::anyhow!("get requires artifact scope"))
-        }
+        Scope::Global | Scope::Collection { .. } => Err(Diagnostic::new(
+            DiagnosticCode::E0821InvalidCommandScope,
+            "get requires artifact scope",
+            "command router",
+        )
+        .into()),
     }
 }
 
@@ -190,9 +193,12 @@ fn execute_delete(
         cmd::edit::ArtifactType::Clause => cmd::edit::delete_clause(config, id, force, op),
         cmd::edit::ArtifactType::WorkItem => cmd::edit::delete_work_item(config, id, force, op),
         cmd::edit::ArtifactType::Guard => cmd::guard::delete_guard(config, id, force, op),
-        cmd::edit::ArtifactType::Rfc | cmd::edit::ArtifactType::Adr => {
-            Err(anyhow::anyhow!("delete is not supported for this artifact"))
-        }
+        cmd::edit::ArtifactType::Rfc | cmd::edit::ArtifactType::Adr => Err(Diagnostic::new(
+            DiagnosticCode::E0822UnsupportedOperation,
+            "delete is not supported for this artifact",
+            id,
+        )
+        .into()),
     }
 }
 
@@ -208,9 +214,12 @@ fn execute_artifact_render(
         cmd::edit::ArtifactType::WorkItem => {
             cmd::render::render_work_items(config, Some(id), dry_run)
         }
-        cmd::edit::ArtifactType::Clause | cmd::edit::ArtifactType::Guard => {
-            Err(anyhow::anyhow!("render is not supported for this artifact"))
-        }
+        cmd::edit::ArtifactType::Clause | cmd::edit::ArtifactType::Guard => Err(Diagnostic::new(
+            DiagnosticCode::E0822UnsupportedOperation,
+            "render is not supported for this artifact",
+            id,
+        )
+        .into()),
     }
 }
 

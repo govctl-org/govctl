@@ -1,5 +1,6 @@
 use super::ops::FileOp;
 use crate::config::Config;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::schema::{ArtifactSchema, with_schema_header};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -90,7 +91,16 @@ pub(super) fn plan_toml_rewrites(
 
     let rfc_root = config.rfc_dir();
     if rfc_root.exists() {
-        for entry in fs::read_dir(&rfc_root)?.flatten() {
+        for entry in fs::read_dir(&rfc_root)
+            .map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    format!("Failed to read RFC directory for TOML rewrites: {err}"),
+                    config.display_path(&rfc_root).display().to_string(),
+                )
+            })?
+            .flatten()
+        {
             let dir = entry.path();
             if !dir.is_dir() {
                 continue;

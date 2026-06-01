@@ -56,10 +56,16 @@ pub(super) fn create(
         .join("clauses")
         .join(format!("{clause_name}.toml"));
 
-    let wire: ClauseWire = clause.into();
-    let body = toml::to_string_pretty(&wire)?;
-    let content = with_schema_header(ArtifactSchema::Clause, &body);
     let display_clause_path = config.display_path(&clause_path);
+    let wire: ClauseWire = clause.into();
+    let body = toml::to_string_pretty(&wire).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0201ClauseSchemaInvalid,
+            format!("Failed to serialize clause TOML: {err}"),
+            display_clause_path.display().to_string(),
+        )
+    })?;
+    let content = with_schema_header(ArtifactSchema::Clause, &body);
     write_file(&clause_path, &content, op, Some(&display_clause_path))?;
 
     let clause_rel_path = format!("clauses/{clause_name}.toml");
@@ -74,10 +80,16 @@ pub(super) fn create(
         });
     }
 
-    let wire: RfcWire = rfc.into();
-    let body = toml::to_string_pretty(&wire)?;
-    let rfc_content = with_schema_header(ArtifactSchema::Rfc, &body);
     let display_rfc_path = config.display_path(&rfc_path);
+    let wire: RfcWire = rfc.into();
+    let body = toml::to_string_pretty(&wire).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Failed to serialize RFC TOML: {err}"),
+            display_rfc_path.display().to_string(),
+        )
+    })?;
+    let rfc_content = with_schema_header(ArtifactSchema::Rfc, &body);
     write_file(&rfc_path, &rfc_content, op, Some(&display_rfc_path))?;
 
     if !op.is_preview() {

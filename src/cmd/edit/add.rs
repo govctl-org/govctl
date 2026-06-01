@@ -6,7 +6,10 @@ use super::json_target::add_json_simple_list_field;
 use super::rules as edit_rules;
 use super::target_doc::add_to_target_doc;
 use super::toml_target::{is_work_dependency_target, validate_work_dependency_edit};
-use super::{ArtifactType, plan_edit_with_field_for_verb, resolve_owned_value};
+use super::{
+    ArtifactType, deserialize_edit_doc, plan_edit_with_field_for_verb, resolve_owned_value,
+    serialize_edit_doc,
+};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{AdrEntry, ChangelogCategory, WorkItemEntry};
@@ -184,9 +187,9 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> anyhow::Result<Vec<Diagnost
                 };
                 adr_add_alternatives(&mut entry, value, &ctx)?;
             } else {
-                let mut doc = serde_json::to_value(&entry.spec)?;
+                let mut doc = serialize_edit_doc(&entry.spec, id)?;
                 add_to_target_doc(ArtifactType::Adr, &mut doc, target, value, id)?;
-                entry.spec = serde_json::from_value(doc)?;
+                entry.spec = deserialize_edit_doc(doc, id)?;
             }
             AdrTomlAdapter::write(config, &entry, op)?;
         }
@@ -196,9 +199,9 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> anyhow::Result<Vec<Diagnost
                 let ctx = WorkAddContext { category_override };
                 work_add_acceptance_criteria(&mut entry, value, &ctx)?;
             } else {
-                let mut doc = serde_json::to_value(&entry.spec)?;
+                let mut doc = serialize_edit_doc(&entry.spec, id)?;
                 add_to_target_doc(ArtifactType::WorkItem, &mut doc, target, value, id)?;
-                entry.spec = serde_json::from_value(doc)?;
+                entry.spec = deserialize_edit_doc(doc, id)?;
             }
             if is_work_dependency_target(target) {
                 validate_work_dependency_edit(config, &entry)?;
@@ -225,9 +228,9 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> anyhow::Result<Vec<Diagnost
         )?,
         ArtifactType::Guard => {
             let mut entry = GuardTomlAdapter::load(config, id)?;
-            let mut doc = serde_json::to_value(&entry.spec)?;
+            let mut doc = serialize_edit_doc(&entry.spec, id)?;
             add_to_target_doc(ArtifactType::Guard, &mut doc, target, value, id)?;
-            entry.spec = serde_json::from_value(doc)?;
+            entry.spec = deserialize_edit_doc(doc, id)?;
             GuardTomlAdapter::write(config, &entry, op)?;
         }
     }

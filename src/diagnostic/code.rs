@@ -132,10 +132,13 @@ pub enum DiagnosticCode {
     E0818PathIndexConflict,
     E0819UnknownArtifactType,
     E0820InvalidFieldValue,
+    E0821InvalidCommandScope,
+    E0822UnsupportedOperation,
 
     // General errors (E09xx)
     E0901IoError,
     E0902JsonParseError,
+    E0903UnexpectedError,
 
     // Warnings (W01xx)
     W0101RfcNoChangelog,
@@ -273,9 +276,12 @@ impl DiagnosticCode {
             Self::E0818PathIndexConflict => "E0818",
             Self::E0819UnknownArtifactType => "E0819",
             Self::E0820InvalidFieldValue => "E0820",
+            Self::E0821InvalidCommandScope => "E0821",
+            Self::E0822UnsupportedOperation => "E0822",
             // E09xx - General
             Self::E0901IoError => "E0901",
             Self::E0902JsonParseError => "E0902",
+            Self::E0903UnexpectedError => "E0903",
             // W01xx - Warnings
             Self::W0101RfcNoChangelog => "W0101",
             Self::W0102ClauseNoSince => "W0102",

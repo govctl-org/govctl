@@ -1,5 +1,6 @@
 use super::Config;
-use anyhow::{Context, Result};
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use anyhow::Result;
 use std::path::{Path, PathBuf};
 
 impl Config {
@@ -14,10 +15,20 @@ impl Config {
             .unwrap_or_else(|| PathBuf::from("gov/config.toml"));
 
         if config_path.exists() {
-            let content = std::fs::read_to_string(&config_path)
-                .with_context(|| format!("Failed to read config: {}", config_path.display()))?;
-            let mut config: Config = toml::from_str(&content)
-                .with_context(|| format!("Failed to parse config: {}", config_path.display()))?;
+            let content = std::fs::read_to_string(&config_path).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    format!("Failed to read config: {err}"),
+                    config_path.display().to_string(),
+                )
+            })?;
+            let mut config: Config = toml::from_str(&content).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0501ConfigInvalid,
+                    format!("Failed to parse config: {err}"),
+                    config_path.display().to_string(),
+                )
+            })?;
 
             // Resolve paths to absolute. gov_root is always <project_root>/gov.
             if let Some(project_root) = config_path.parent().and_then(|p| p.parent()) {

@@ -63,7 +63,14 @@ fn fill_pending_clause_versions(
         return Ok(());
     }
 
-    let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)?
+    let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)
+        .map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Failed to read clauses directory: {err}"),
+                clauses_dir.display().to_string(),
+            )
+        })?
         .filter_map(Result::ok)
         .map(|e| e.path())
         .filter(|p| p.extension().is_some_and(|e| e == "toml"))

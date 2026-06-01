@@ -1,4 +1,7 @@
-use super::super::{adapter::DocAdapter, engine as edit_engine, runtime as edit_runtime};
+use super::super::{
+    adapter::DocAdapter, deserialize_edit_doc, engine as edit_engine, runtime as edit_runtime,
+    serialize_edit_doc,
+};
 use super::{JsonTargetKind, SetJsonRequest, require_simple_field};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -70,7 +73,7 @@ where
     } = request;
 
     let mut loaded = A::load(config, id)?;
-    let mut doc = serde_json::to_value(&loaded.data)?;
+    let mut doc = serialize_edit_doc(&loaded.data, id)?;
     match target {
         edit_engine::ResolvedTarget::Node {
             path,
@@ -128,7 +131,7 @@ where
             .into());
         }
     }
-    loaded.data = serde_json::from_value(doc)?;
+    loaded.data = deserialize_edit_doc(doc, id)?;
     touch_loaded_data(&mut loaded.data)?;
     A::write(config, &loaded, op)?;
     Ok(())

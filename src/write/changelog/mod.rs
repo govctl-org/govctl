@@ -4,7 +4,7 @@
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ChangelogCategory, ChangelogEntry, RfcSpec};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use chrono::Local;
 use semver::Version;
 
@@ -79,8 +79,13 @@ pub enum BumpLevel {
 
 /// Bump RFC version and add changelog entry
 pub fn bump_rfc_version(rfc: &mut RfcSpec, level: BumpLevel, summary: &str) -> Result<String> {
-    let mut version = Version::parse(&rfc.version)
-        .with_context(|| format!("Invalid version: {}", rfc.version))?;
+    let mut version = Version::parse(&rfc.version).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Invalid RFC version '{}': {err}", rfc.version),
+            &rfc.rfc_id,
+        )
+    })?;
 
     match level {
         BumpLevel::Patch => version.patch += 1,

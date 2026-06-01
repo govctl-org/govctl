@@ -1,8 +1,8 @@
 use super::TomlEditableEntry;
-use crate::cmd::edit::ArtifactType;
 use crate::cmd::edit::adapter::TomlAdapter;
 use crate::cmd::edit::engine as edit_engine;
 use crate::cmd::edit::runtime as edit_runtime;
+use crate::cmd::edit::{ArtifactType, serialize_edit_doc};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 
@@ -18,10 +18,17 @@ where
 {
     let entry = A::load(config, id)?;
     if let Some(target) = target {
-        let doc = serde_json::to_value(entry.spec())?;
+        let doc = serialize_edit_doc(entry.spec(), id)?;
         println!("{}", render_resolved_target(artifact, &doc, target, id)?);
     } else {
-        println!("{}", toml::to_string_pretty(entry.spec())?);
+        let toml = toml::to_string_pretty(entry.spec()).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0903UnexpectedError,
+                format!("Failed to serialize editable document TOML: {err}"),
+                id,
+            )
+        })?;
+        println!("{toml}");
     }
     Ok(())
 }

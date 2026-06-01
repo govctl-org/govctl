@@ -33,13 +33,40 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::ChangelogCategory;
 use crate::ui;
 use crate::write::WriteOp;
-use anyhow::Context;
 pub use delete::{delete_clause, delete_work_item};
 pub use matching::{MatchOptions, MatchOptionsOwned};
 use std::io::Read;
 use std::path::Path;
 
 // Field normalization is centralized in edit_engine::plan_request.
+
+pub(super) fn serialize_edit_doc<T: serde::Serialize>(
+    value: &T,
+    id: &str,
+) -> anyhow::Result<serde_json::Value> {
+    serde_json::to_value(value).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0903UnexpectedError,
+            format!("Failed to serialize editable document: {err}"),
+            id,
+        )
+        .into()
+    })
+}
+
+pub(super) fn deserialize_edit_doc<T: serde::de::DeserializeOwned>(
+    value: serde_json::Value,
+    id: &str,
+) -> anyhow::Result<T> {
+    serde_json::from_value(value).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0820InvalidFieldValue,
+            format!("Edited document failed schema conversion: {err}"),
+            id,
+        )
+        .into()
+    })
+}
 
 #[derive(Debug, Clone)]
 pub enum OwnedEditAction {
@@ -76,7 +103,13 @@ fn read_stdin() -> anyhow::Result<String> {
     let mut buffer = String::new();
     std::io::stdin()
         .read_to_string(&mut buffer)
-        .context("Failed to read from stdin")?;
+        .map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Failed to read from stdin: {err}"),
+                "stdin",
+            )
+        })?;
     // Trim trailing newline that HEREDOC adds
     Ok(buffer.trim_end_matches('\n').to_string())
 }
@@ -137,8 +170,13 @@ pub fn edit_clause(
 
     let new_text = match (text, text_file, stdin) {
         (Some(t), None, false) => t.to_string(),
-        (None, Some(path), false) => std::fs::read_to_string(path)
-            .with_context(|| format!("Failed to read text file: {}", path.display()))?,
+        (None, Some(path), false) => std::fs::read_to_string(path).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Failed to read text file: {err}"),
+                path.display().to_string(),
+            )
+        })?,
         (None, None, true) => read_stdin()?,
         (None, None, false) => {
             return Err(Diagnostic::new(

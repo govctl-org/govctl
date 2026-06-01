@@ -3,8 +3,9 @@
 //! Implements [[ADR-0006]] global dry-run support for content-modifying commands.
 //! Implements [[ADR-0012]] prefix-based changelog category parsing.
 
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::ui;
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::path::Path;
 
 mod artifact;
@@ -61,7 +62,13 @@ pub fn write_file(
     let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
-            std::fs::write(path, content)?;
+            std::fs::write(path, content).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    format!("Failed to write file: {err}"),
+                    output_path.display().to_string(),
+                )
+            })?;
         }
         WriteOp::Preview => {
             ui::dry_run_file_preview(output_path, content);
@@ -78,7 +85,13 @@ pub fn create_dir_all(path: &Path, op: WriteOp, display_path: Option<&Path>) -> 
     let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
-            std::fs::create_dir_all(path)?;
+            std::fs::create_dir_all(path).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    format!("Failed to create directory: {err}"),
+                    output_path.display().to_string(),
+                )
+            })?;
         }
         WriteOp::Preview => {
             ui::dry_run_mkdir(output_path);
@@ -95,8 +108,13 @@ pub fn delete_file(path: &Path, op: WriteOp, display_path: Option<&Path>) -> Res
     let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
-            std::fs::remove_file(path)
-                .with_context(|| format!("Failed to delete file: {}", output_path.display()))?;
+            std::fs::remove_file(path).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    format!("Failed to delete file: {err}"),
+                    output_path.display().to_string(),
+                )
+            })?;
         }
         WriteOp::Preview => {
             ui::info(format!("[DRY RUN] Would delete: {}", output_path.display()));

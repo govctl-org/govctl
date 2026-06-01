@@ -11,12 +11,19 @@ pub(super) fn plan_release_upgrade(config: &Config) -> anyhow::Result<Option<Vec
         return Ok(None);
     }
 
-    let content = fs::read_to_string(&path)?;
+    let display_path = config.display_path(&path).display().to_string();
+    let content = fs::read_to_string(&path).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to read releases file: {err}"),
+            &display_path,
+        )
+    })?;
     let mut raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0704ReleaseSchemaInvalid,
             format!("Invalid releases.toml: {e}"),
-            config.display_path(&path).display().to_string(),
+            &display_path,
         )
     })?;
 
@@ -53,10 +60,16 @@ pub(super) fn plan_release_upgrade(config: &Config) -> anyhow::Result<Option<Vec
         Diagnostic::new(
             DiagnosticCode::E0704ReleaseSchemaInvalid,
             format!("Invalid releases structure: {e}"),
-            config.display_path(&path).display().to_string(),
+            &display_path,
         )
     })?;
-    let body = toml::to_string_pretty(&releases)?;
+    let body = toml::to_string_pretty(&releases).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0704ReleaseSchemaInvalid,
+            format!("Failed to serialize releases TOML: {err}"),
+            &display_path,
+        )
+    })?;
     Ok(Some(vec![FileOp::Write {
         path,
         content: with_schema_header(ArtifactSchema::Release, &body),

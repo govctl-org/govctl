@@ -70,12 +70,10 @@ fn main() -> ExitCode {
             }
         }
         Err(e) => {
-            // Try to extract Diagnostic for structured error output
-            if let Some(diag) = e.downcast_ref::<Diagnostic>() {
-                ui::diagnostic(diag);
-            } else {
-                ui::error(&e);
-            }
+            let diag = e.downcast_ref::<Diagnostic>().cloned().unwrap_or_else(|| {
+                Diagnostic::new(DiagnosticCode::E0903UnexpectedError, e.to_string(), "main")
+            });
+            ui::diagnostic(&diag);
             ExitCode::FAILURE
         }
     }

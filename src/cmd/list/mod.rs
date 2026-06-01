@@ -22,7 +22,7 @@ pub fn list(
     tags: &[String],
 ) -> anyhow::Result<Vec<Diagnostic>> {
     if target == ListTarget::Guard {
-        let result = load_guards_with_warnings(config).map_err(anyhow::Error::from)?;
+        let result = load_guards_with_warnings(config)?;
         list_guards(&result.items, filter, limit, output, tags);
         return Ok(result.warnings);
     }

@@ -23,9 +23,7 @@ pub fn render(
     rfc_id: Option<&str>,
     dry_run: bool,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let rfcs = load_rfcs(config)
-        .map_err(Diagnostic::from)
-        .map_err(anyhow::Error::from)?;
+    let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
     if rfcs.is_empty() {
         ui::not_found("RFC", &config.rfc_dir());

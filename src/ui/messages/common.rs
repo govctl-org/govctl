@@ -99,14 +99,6 @@ pub fn sub_info(msg: impl Display) {
     eprintln!("  {}", msg);
 }
 
-pub fn error(msg: impl Display) {
-    if use_colors() {
-        eprintln!("{}: {}", "Error".red().bold(), msg);
-    } else {
-        eprintln!("Error: {}", msg);
-    }
-}
-
 pub fn dry_run_preview(path: &Path) {
     if use_colors() {
         eprintln!("{}: {}", "Would write".yellow(), path.display().cyan());

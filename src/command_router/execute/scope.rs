@@ -1,6 +1,7 @@
 use super::super::Scope;
 use crate::ListTarget;
 use crate::cmd;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum ShowKind {
@@ -29,7 +30,12 @@ pub(super) fn extract_artifact_scope(
     match scope {
         Scope::Artifact { artifact, id } => Ok((*artifact, id.as_str())),
         Scope::Target { artifact, id, .. } => Ok((*artifact, id.as_str())),
-        Scope::Global | Scope::Collection { .. } => Err(anyhow::anyhow!("expected artifact scope")),
+        Scope::Global | Scope::Collection { .. } => Err(Diagnostic::new(
+            DiagnosticCode::E0821InvalidCommandScope,
+            "Expected artifact scope",
+            "command router",
+        )
+        .into()),
     }
 }
 
@@ -46,17 +52,23 @@ pub(super) fn extract_target_scope(
             id,
             target,
         } => Ok((*artifact, id.as_str(), target)),
-        Scope::Global | Scope::Collection { .. } | Scope::Artifact { .. } => {
-            Err(anyhow::anyhow!("expected target scope"))
-        }
+        Scope::Global | Scope::Collection { .. } | Scope::Artifact { .. } => Err(Diagnostic::new(
+            DiagnosticCode::E0821InvalidCommandScope,
+            "Expected target scope",
+            "command router",
+        )
+        .into()),
     }
 }
 
 pub(super) fn extract_collection_scope(scope: &Scope) -> anyhow::Result<ListTarget> {
     match scope {
         Scope::Collection { target } => Ok(*target),
-        Scope::Global | Scope::Artifact { .. } | Scope::Target { .. } => {
-            Err(anyhow::anyhow!("expected collection scope"))
-        }
+        Scope::Global | Scope::Artifact { .. } | Scope::Target { .. } => Err(Diagnostic::new(
+            DiagnosticCode::E0821InvalidCommandScope,
+            "Expected collection scope",
+            "command router",
+        )
+        .into()),
     }
 }

@@ -73,8 +73,10 @@ fn check_version(current: &str) -> anyhow::Result<Vec<Diagnostic>> {
     let releases = self_update::backends::github::ReleaseList::configure()
         .repo_owner(REPO_OWNER)
         .repo_name(REPO_NAME)
-        .build()?
-        .fetch()?;
+        .build()
+        .map_err(|err| self_update_error("configure GitHub release check", err))?
+        .fetch()
+        .map_err(|err| self_update_error("fetch GitHub releases", err))?;
 
     let latest = releases.first().ok_or_else(|| {
         Diagnostic::new(
@@ -115,8 +117,10 @@ fn perform_update(current: &str) -> anyhow::Result<Vec<Diagnostic>> {
         .bin_path_in_archive(SELF_UPDATE_BIN_PATH_IN_ARCHIVE)
         .show_download_progress(show_progress)
         .current_version(current)
-        .build()?
-        .update()?;
+        .build()
+        .map_err(|err| self_update_error("configure self-update", err))?
+        .update()
+        .map_err(|err| self_update_error("perform self-update", err))?;
 
     let new_version = status.version();
 
@@ -127,6 +131,14 @@ fn perform_update(current: &str) -> anyhow::Result<Vec<Diagnostic>> {
     }
 
     Ok(vec![])
+}
+
+fn self_update_error(action: &str, err: impl std::fmt::Display) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0901IoError,
+        format!("Failed to {action}: {err}"),
+        "self-update",
+    )
 }
 
 #[cfg(test)]

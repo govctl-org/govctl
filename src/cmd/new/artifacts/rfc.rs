@@ -105,9 +105,15 @@ pub(super) fn create(
 
     let rfc_toml = rfc_dir.join("rfc.toml");
     let wire: RfcWire = rfc.into();
-    let body = toml::to_string_pretty(&wire)?;
-    let content = with_schema_header(ArtifactSchema::Rfc, &body);
     let display_rfc_toml = config.display_path(&rfc_toml);
+    let body = toml::to_string_pretty(&wire).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Failed to serialize RFC TOML: {err}"),
+            display_rfc_toml.display().to_string(),
+        )
+    })?;
+    let content = with_schema_header(ArtifactSchema::Rfc, &body);
     write_file(&rfc_toml, &content, op, Some(&display_rfc_toml))?;
 
     if !op.is_preview() {

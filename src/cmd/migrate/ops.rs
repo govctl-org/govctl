@@ -2,6 +2,7 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::ui;
 use std::fs;
+use std::io;
 use std::path::{Path, PathBuf};
 
 /// A single file operation produced by a migration step.
@@ -51,8 +52,10 @@ pub(super) fn execute_ops(config: &Config, ops: &[FileOp]) -> anyhow::Result<()>
         .into());
     }
 
-    fs::create_dir_all(&stage_root)?;
-    fs::create_dir_all(&backup_root)?;
+    fs::create_dir_all(&stage_root)
+        .map_err(|err| io_error(&stage_root, "create migration stage directory", err))?;
+    fs::create_dir_all(&backup_root)
+        .map_err(|err| io_error(&backup_root, "create migration backup directory", err))?;
 
     // Stage: write all new content to staging area
     if let Err(err) = materialize_stage(&stage_root, ops) {
@@ -74,7 +77,8 @@ fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> anyhow::Result<()> {
     for (i, op) in ops.iter().enumerate() {
         if let FileOp::Write { content, .. } = op {
             let staged = stage_root.join(format!("{i}"));
-            fs::write(staged, content)?;
+            fs::write(&staged, content)
+                .map_err(|err| io_error(&staged, "write migration staged file", err))?;
         }
     }
     Ok(())
@@ -89,18 +93,24 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> anyhow::
             match op {
                 FileOp::Write { path, .. } => {
                     if path.exists() {
-                        fs::copy(path, &backup_path)?;
+                        fs::copy(path, &backup_path)
+                            .map_err(|err| io_error(path, "backup file before migration", err))?;
                     }
                     if let Some(parent) = path.parent() {
-                        fs::create_dir_all(parent)?;
+                        fs::create_dir_all(parent).map_err(|err| {
+                            io_error(parent, "create migration target directory", err)
+                        })?;
                     }
                     let staged = stage_root.join(format!("{i}"));
-                    fs::copy(&staged, path)?;
+                    fs::copy(&staged, path)
+                        .map_err(|err| io_error(path, "apply migrated file", err))?;
                 }
                 FileOp::Delete { path } => {
                     if path.exists() {
-                        fs::copy(path, &backup_path)?;
-                        fs::remove_file(path)?;
+                        fs::copy(path, &backup_path)
+                            .map_err(|err| io_error(path, "backup file before deletion", err))?;
+                        fs::remove_file(path)
+                            .map_err(|err| io_error(path, "delete migrated legacy file", err))?;
                     }
                 }
             }
@@ -124,4 +134,12 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> anyhow::
     }
 
     result
+}
+
+fn io_error(path: &Path, action: &str, err: io::Error) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0901IoError,
+        format!("Failed to {action}: {err}"),
+        path.display().to_string(),
+    )
 }

@@ -34,8 +34,20 @@ pub(super) fn plan_rfc_json_to_toml(
         return Ok(None);
     }
 
-    for entry in fs::read_dir(rfc_dir)? {
-        let entry = entry?;
+    for entry in fs::read_dir(rfc_dir).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to read RFC directory for migration: {err}"),
+            config.display_path(rfc_dir).display().to_string(),
+        )
+    })? {
+        let entry = entry.map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Failed to read RFC directory entry for migration: {err}"),
+                config.display_path(rfc_dir).display().to_string(),
+            )
+        })?;
         let file_name = entry.file_name();
         let file_name = file_name.to_string_lossy();
         if file_name == "rfc.json" || file_name == "clauses" {
@@ -58,8 +70,20 @@ pub(super) fn plan_rfc_json_to_toml(
     let mut ops = Vec::new();
 
     if clauses_dir.exists() {
-        for entry in fs::read_dir(&clauses_dir)? {
-            let entry = entry?;
+        for entry in fs::read_dir(&clauses_dir).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Failed to read clauses directory for migration: {err}"),
+                config.display_path(&clauses_dir).display().to_string(),
+            )
+        })? {
+            let entry = entry.map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    format!("Failed to read clause directory entry for migration: {err}"),
+                    config.display_path(&clauses_dir).display().to_string(),
+                )
+            })?;
             let path = entry.path();
             let name = entry.file_name().to_string_lossy().to_string();
             if path.extension().and_then(|ext| ext.to_str()) == Some("toml") {
@@ -128,35 +152,53 @@ pub(super) fn plan_rfc_json_to_toml(
 
     let rfc_id = rfc.rfc_id.clone();
     let rfc_wire: RfcWire = rfc.into();
-    let rfc_body = toml::to_string_pretty(&rfc_wire)?;
-    let rfc_raw: toml::Value = toml::from_str(&rfc_body)?;
-    validate_toml_value(
-        ArtifactSchema::Rfc,
-        config,
-        &rfc_dir.join("rfc.toml"),
-        &rfc_raw,
-    )?;
+    let rfc_toml_path = rfc_dir.join("rfc.toml");
+    let display_rfc_toml = config.display_path(&rfc_toml_path).display().to_string();
+    let rfc_body = toml::to_string_pretty(&rfc_wire).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Failed to serialize RFC TOML: {err}"),
+            &display_rfc_toml,
+        )
+    })?;
+    let rfc_raw: toml::Value = toml::from_str(&rfc_body).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Failed to parse generated RFC TOML: {err}"),
+            &display_rfc_toml,
+        )
+    })?;
+    validate_toml_value(ArtifactSchema::Rfc, config, &rfc_toml_path, &rfc_raw)?;
 
     ops.push(FileOp::Write {
-        path: rfc_dir.join("rfc.toml"),
+        path: rfc_toml_path,
         content: with_schema_header(ArtifactSchema::Rfc, &rfc_body),
     });
     ops.push(FileOp::Delete { path: rfc_json });
 
     for (file_name, clause) in clause_map {
         let toml_name = file_name.trim_end_matches(".json").to_string() + ".toml";
+        let clause_toml_path = clauses_dir.join(&toml_name);
+        let display_clause_toml = config.display_path(&clause_toml_path).display().to_string();
         let clause_wire: ClauseWire = clause.into();
-        let body = toml::to_string_pretty(&clause_wire)?;
-        let raw: toml::Value = toml::from_str(&body)?;
-        validate_toml_value(
-            ArtifactSchema::Clause,
-            config,
-            &clauses_dir.join(&toml_name),
-            &raw,
-        )?;
+        let body = toml::to_string_pretty(&clause_wire).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0201ClauseSchemaInvalid,
+                format!("Failed to serialize clause TOML: {err}"),
+                &display_clause_toml,
+            )
+        })?;
+        let raw: toml::Value = toml::from_str(&body).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0201ClauseSchemaInvalid,
+                format!("Failed to parse generated clause TOML: {err}"),
+                &display_clause_toml,
+            )
+        })?;
+        validate_toml_value(ArtifactSchema::Clause, config, &clause_toml_path, &raw)?;
 
         ops.push(FileOp::Write {
-            path: clauses_dir.join(&toml_name),
+            path: clause_toml_path,
             content: with_schema_header(ArtifactSchema::Clause, &body),
         });
         ops.push(FileOp::Delete {

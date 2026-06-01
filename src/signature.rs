@@ -8,6 +8,7 @@
 //!
 //! Hash is SHA-256 of canonicalized content with sorted keys.
 
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{AdrEntry, RfcIndex, WorkItemEntry};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -24,7 +25,7 @@ const SIGNATURE_VERSION: u32 = 1;
 ///
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
-pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, serde_json::Error> {
+pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
     let mut hasher = Sha256::new();
 
     // Version prefix for forward compatibility
@@ -32,7 +33,13 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, serde_json::Error
     hasher.update(b"type:rfc\n");
 
     // Canonical RFC metadata (excluding signature field to avoid circularity)
-    let mut rfc_json = serde_json::to_value(&rfc.rfc)?;
+    let mut rfc_json = serde_json::to_value(&rfc.rfc).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Failed to serialize RFC for signature: {err}"),
+            &rfc.rfc.rfc_id,
+        )
+    })?;
     if let Value::Object(ref mut map) = rfc_json {
         map.remove("signature"); // Exclude signature from hash computation
     }
@@ -46,7 +53,13 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, serde_json::Error
 
     // Canonical clause content
     for clause in clauses {
-        let clause_json = serde_json::to_value(&clause.spec)?;
+        let clause_json = serde_json::to_value(&clause.spec).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0201ClauseSchemaInvalid,
+                format!("Failed to serialize clause for signature: {err}"),
+                format!("{}:{}", rfc.rfc.rfc_id, clause.spec.clause_id),
+            )
+        })?;
         let canonical_clause = canonicalize_json(&clause_json);
         hasher.update(canonical_clause.as_bytes());
         hasher.update(b"\n");
@@ -61,14 +74,20 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, serde_json::Error
 ///
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
-pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, serde_json::Error> {
+pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, Diagnostic> {
     let mut hasher = Sha256::new();
 
     hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
     hasher.update(b"type:adr\n");
 
     // Serialize TOML to JSON Value for canonical representation
-    let adr_json = serde_json::to_value(&adr.spec)?;
+    let adr_json = serde_json::to_value(&adr.spec).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0301AdrSchemaInvalid,
+            format!("Failed to serialize ADR for signature: {err}"),
+            &adr.spec.govctl.id,
+        )
+    })?;
     let canonical = canonicalize_json(&adr_json);
     hasher.update(canonical.as_bytes());
     hasher.update(b"\n");
@@ -81,13 +100,19 @@ pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, serde_json::Error
 ///
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
-pub fn compute_work_item_signature(item: &WorkItemEntry) -> Result<String, serde_json::Error> {
+pub fn compute_work_item_signature(item: &WorkItemEntry) -> Result<String, Diagnostic> {
     let mut hasher = Sha256::new();
 
     hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
     hasher.update(b"type:work\n");
 
-    let item_json = serde_json::to_value(&item.spec)?;
+    let item_json = serde_json::to_value(&item.spec).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0401WorkSchemaInvalid,
+            format!("Failed to serialize work item for signature: {err}"),
+            &item.spec.govctl.id,
+        )
+    })?;
     let canonical = canonicalize_json(&item_json);
     hasher.update(canonical.as_bytes());
     hasher.update(b"\n");

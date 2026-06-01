@@ -20,16 +20,15 @@ pub fn cut_release(
 
     // Validate version is valid semver
     validate_version(version).map_err(|_| {
-        let diag = Diagnostic::new(
+        Diagnostic::new(
             DiagnosticCode::E0701ReleaseInvalidSemver,
             format!("Invalid semver version: {version}"),
             &releases_path_str,
-        );
-        anyhow::Error::from(diag)
+        )
     })?;
 
     // Load existing releases
-    let mut releases_file = load_releases(config).map_err(anyhow::Error::from)?;
+    let mut releases_file = load_releases(config)?;
 
     // Check for duplicate version
     if releases_file.releases.iter().any(|r| r.version == version) {
@@ -49,7 +48,7 @@ pub fn cut_release(
         .collect();
 
     // Load all done work items
-    let work_items = load_work_items(config).map_err(anyhow::Error::from)?;
+    let work_items = load_work_items(config)?;
     let unreleased: Vec<_> = work_items
         .iter()
         .filter(|w| w.spec.govctl.status == WorkItemStatus::Done)
@@ -83,7 +82,7 @@ pub fn cut_release(
     releases_file.releases.insert(0, release);
 
     // Write releases file
-    write_releases(config, &releases_file, op).map_err(anyhow::Error::from)?;
+    write_releases(config, &releases_file, op)?;
 
     if !op.is_preview() {
         ui::release_created(version, &release_date, refs.len());

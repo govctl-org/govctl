@@ -6,14 +6,14 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{GuardCheck, GuardMeta, GuardSpec};
 use crate::parse::{load_guards, write_guard};
 use crate::ui;
-use crate::write::WriteOp;
+use crate::write::{WriteOp, create_dir_all};
 use slug::slugify;
 
 /// Create a new verification guard.
 pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
     let guard_dir = config.guard_dir();
     if !guard_dir.exists() && !op.is_preview() {
-        std::fs::create_dir_all(&guard_dir)?;
+        create_dir_all(&guard_dir, op, Some(&config.display_path(&guard_dir)))?;
     }
 
     // Generate ID from title: slugify, uppercase, prefix with GUARD-
@@ -32,7 +32,7 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Ve
 
     // Check for duplicate
     if !op.is_preview() {
-        let existing = load_guards(config).map_err(anyhow::Error::from)?;
+        let existing = load_guards(config)?;
         if existing.iter().any(|g| g.spec.govctl.id == id) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1003GuardDuplicate,
@@ -77,7 +77,7 @@ pub fn delete_guard(
     _force: bool,
     op: WriteOp,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let guards = load_guards(config).map_err(anyhow::Error::from)?;
+    let guards = load_guards(config)?;
     let guard = guards
         .iter()
         .find(|g| g.spec.govctl.id == id)
@@ -146,7 +146,7 @@ pub fn show_guard(
     id: &str,
     output: OutputFormat,
 ) -> anyhow::Result<Vec<Diagnostic>> {
-    let guards = load_guards(config).map_err(anyhow::Error::from)?;
+    let guards = load_guards(config)?;
     let guard = guards
         .iter()
         .find(|g| g.spec.govctl.id == id)
@@ -160,11 +160,24 @@ pub fn show_guard(
 
     match output {
         OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&guard.spec)?;
+            let json = serde_json::to_string_pretty(&guard.spec).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E1001GuardSchemaInvalid,
+                    format!("Failed to serialize guard JSON: {err}"),
+                    id,
+                )
+            })?;
             println!("{json}");
         }
         OutputFormat::Table | OutputFormat::Plain => {
-            println!("{}", toml::to_string_pretty(&guard.spec)?);
+            let toml = toml::to_string_pretty(&guard.spec).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E1001GuardSchemaInvalid,
+                    format!("Failed to serialize guard TOML: {err}"),
+                    id,
+                )
+            })?;
+            println!("{toml}");
         }
     }
 

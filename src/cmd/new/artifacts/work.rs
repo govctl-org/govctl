@@ -1,5 +1,5 @@
 use crate::config::{Config, IdStrategy};
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
     WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
@@ -72,9 +72,15 @@ pub(super) fn create(
         verification: WorkItemVerification::default(),
     };
 
-    let body = toml::to_string_pretty(&spec)?;
-    let content = with_schema_header(ArtifactSchema::WorkItem, &body);
     let display_work_path = config.display_path(&work_path);
+    let body = toml::to_string_pretty(&spec).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0401WorkSchemaInvalid,
+            format!("Failed to serialize work item TOML: {err}"),
+            display_work_path.display().to_string(),
+        )
+    })?;
+    let content = with_schema_header(ArtifactSchema::WorkItem, &body);
     write_file(&work_path, &content, op, Some(&display_work_path))?;
 
     if !op.is_preview() {

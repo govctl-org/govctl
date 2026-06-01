@@ -2,34 +2,59 @@
 
 use super::{WriteOp, write_file};
 use crate::config::Config;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ClauseSpec, ClauseWire, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value, with_schema_header};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use std::path::Path;
 
 /// Read RFC from file and validate its normalized structure.
 /// Handles both legacy flat format and new `[govctl]` wire format (TOML and JSON).
 pub fn read_rfc(config: &Config, path: &Path) -> Result<RfcSpec> {
-    let content = std::fs::read_to_string(path)
-        .with_context(|| format!("Failed to read RFC: {}", path.display()))?;
+    let content = std::fs::read_to_string(path).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to read RFC: {err}"),
+            path.display().to_string(),
+        )
+    })?;
     let rfc = match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
-            let mut raw: toml::Value = toml::from_str(&content)
-                .with_context(|| format!("Failed to parse RFC TOML: {}", path.display()))?;
+            let mut raw: toml::Value = toml::from_str(&content).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0101RfcSchemaInvalid,
+                    format!("Failed to parse RFC TOML: {err}"),
+                    path.display().to_string(),
+                )
+            })?;
             normalize_rfc_value(&mut raw);
             validate_toml_value(ArtifactSchema::Rfc, config, path, &raw)?;
-            let wire: RfcWire = raw
-                .try_into()
-                .with_context(|| format!("Failed to deserialize RFC TOML: {}", path.display()))?;
+            let wire: RfcWire = raw.try_into().map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0101RfcSchemaInvalid,
+                    format!("Failed to deserialize RFC TOML: {err}"),
+                    path.display().to_string(),
+                )
+            })?;
             wire.into()
         }
         _ => {
-            let mut raw: serde_json::Value = serde_json::from_str(&content)
-                .with_context(|| format!("Failed to parse RFC JSON: {}", path.display()))?;
+            let mut raw: serde_json::Value = serde_json::from_str(&content).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0902JsonParseError,
+                    format!("Failed to parse RFC JSON: {err}"),
+                    path.display().to_string(),
+                )
+            })?;
             normalize_rfc_json(&mut raw);
             validate_json_value(ArtifactSchema::Rfc, config, path, &raw)?;
-            let wire: RfcWire = serde_json::from_value(raw)
-                .with_context(|| format!("Failed to deserialize RFC JSON: {}", path.display()))?;
+            let wire: RfcWire = serde_json::from_value(raw).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0101RfcSchemaInvalid,
+                    format!("Failed to deserialize RFC JSON: {err}"),
+                    path.display().to_string(),
+                )
+            })?;
             wire.into()
         }
     };
@@ -45,7 +70,14 @@ pub fn write_rfc(
     display_path: Option<&Path>,
 ) -> Result<()> {
     let wire: RfcWire = rfc.clone().into();
-    let body = toml::to_string_pretty(&wire)?;
+    let diagnostic_path = display_path.unwrap_or(path);
+    let body = toml::to_string_pretty(&wire).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            format!("Failed to serialize RFC TOML: {err}"),
+            diagnostic_path.display().to_string(),
+        )
+    })?;
     let content = with_schema_header(ArtifactSchema::Rfc, &body);
     write_file(path, &content, op, display_path)
 }
@@ -53,26 +85,49 @@ pub fn write_rfc(
 /// Read clause from file and validate its normalized structure.
 /// Handles both legacy flat format and new `[govctl]` + `[content]` wire format.
 pub fn read_clause(config: &Config, path: &Path) -> Result<ClauseSpec> {
-    let content = std::fs::read_to_string(path)
-        .with_context(|| format!("Failed to read clause: {}", path.display()))?;
+    let content = std::fs::read_to_string(path).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to read clause: {err}"),
+            path.display().to_string(),
+        )
+    })?;
     let clause = match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
-            let mut raw: toml::Value = toml::from_str(&content)
-                .with_context(|| format!("Failed to parse clause TOML: {}", path.display()))?;
+            let mut raw: toml::Value = toml::from_str(&content).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0201ClauseSchemaInvalid,
+                    format!("Failed to parse clause TOML: {err}"),
+                    path.display().to_string(),
+                )
+            })?;
             normalize_clause_value(&mut raw);
             validate_toml_value(ArtifactSchema::Clause, config, path, &raw)?;
-            let wire: ClauseWire = raw.try_into().with_context(|| {
-                format!("Failed to deserialize clause TOML: {}", path.display())
+            let wire: ClauseWire = raw.try_into().map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0201ClauseSchemaInvalid,
+                    format!("Failed to deserialize clause TOML: {err}"),
+                    path.display().to_string(),
+                )
             })?;
             wire.into()
         }
         _ => {
-            let mut raw: serde_json::Value = serde_json::from_str(&content)
-                .with_context(|| format!("Failed to parse clause JSON: {}", path.display()))?;
+            let mut raw: serde_json::Value = serde_json::from_str(&content).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0902JsonParseError,
+                    format!("Failed to parse clause JSON: {err}"),
+                    path.display().to_string(),
+                )
+            })?;
             normalize_clause_json(&mut raw);
             validate_json_value(ArtifactSchema::Clause, config, path, &raw)?;
-            let wire: ClauseWire = serde_json::from_value(raw).with_context(|| {
-                format!("Failed to deserialize clause JSON: {}", path.display())
+            let wire: ClauseWire = serde_json::from_value(raw).map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0201ClauseSchemaInvalid,
+                    format!("Failed to deserialize clause JSON: {err}"),
+                    path.display().to_string(),
+                )
             })?;
             wire.into()
         }
@@ -89,7 +144,14 @@ pub fn write_clause(
     display_path: Option<&Path>,
 ) -> Result<()> {
     let wire: ClauseWire = clause.clone().into();
-    let body = toml::to_string_pretty(&wire)?;
+    let diagnostic_path = display_path.unwrap_or(path);
+    let body = toml::to_string_pretty(&wire).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0201ClauseSchemaInvalid,
+            format!("Failed to serialize clause TOML: {err}"),
+            diagnostic_path.display().to_string(),
+        )
+    })?;
     let content = with_schema_header(ArtifactSchema::Clause, &body);
     write_file(path, &content, op, display_path)
 }

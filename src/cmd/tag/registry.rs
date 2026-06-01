@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use anyhow::{Context, Result};
+use anyhow::Result;
 use regex::Regex;
 use std::sync::LazyLock;
 
@@ -37,18 +37,40 @@ pub(super) fn validate_tag_format(tag: &str) -> Result<()> {
 /// Read config.toml as a raw TOML table for in-place modification.
 pub(super) fn read_config_table(config: &Config) -> Result<toml::Table> {
     let config_path = config.gov_root.join("config.toml");
-    let content = std::fs::read_to_string(&config_path)
-        .with_context(|| format!("Failed to read config: {}", config_path.display()))?;
-    toml::from_str::<toml::Table>(&content)
-        .with_context(|| format!("Failed to parse config: {}", config_path.display()))
+    let content = std::fs::read_to_string(&config_path).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to read config: {err}"),
+            config_path.display().to_string(),
+        )
+    })?;
+    toml::from_str::<toml::Table>(&content).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0501ConfigInvalid,
+            format!("Failed to parse config: {err}"),
+            config_path.display().to_string(),
+        )
+        .into()
+    })
 }
 
 /// Write a modified TOML table back to config.toml.
 pub(super) fn write_config_table(config: &Config, table: &toml::Table) -> Result<()> {
     let config_path = config.gov_root.join("config.toml");
-    let content = toml::to_string_pretty(table).with_context(|| "Failed to serialize config")?;
-    std::fs::write(&config_path, content)
-        .with_context(|| format!("Failed to write config: {}", config_path.display()))?;
+    let content = toml::to_string_pretty(table).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0501ConfigInvalid,
+            format!("Failed to serialize config: {err}"),
+            config_path.display().to_string(),
+        )
+    })?;
+    std::fs::write(&config_path, content).map_err(|err| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to write config: {err}"),
+            config_path.display().to_string(),
+        )
+    })?;
     Ok(())
 }
 

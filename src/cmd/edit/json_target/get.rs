@@ -1,5 +1,6 @@
 use super::super::{
     ArtifactType, adapter::DocAdapter, engine as edit_engine, runtime as edit_runtime,
+    serialize_edit_doc,
 };
 use super::require_simple_field;
 use crate::config::Config;
@@ -18,7 +19,7 @@ where
 {
     let loaded = A::load(config, id)?;
     if let Some(target) = target {
-        let doc = serde_json::to_value(&loaded.data)?;
+        let doc = serialize_edit_doc(&loaded.data, id)?;
         match target {
             edit_engine::ResolvedTarget::Node {
                 origin: edit_engine::TargetOrigin::Simple,
@@ -53,7 +54,14 @@ where
             }
         }
     } else {
-        println!("{}", serde_json::to_string_pretty(&loaded.data)?);
+        let json = serde_json::to_string_pretty(&loaded.data).map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0903UnexpectedError,
+                format!("Failed to serialize editable document JSON: {err}"),
+                id,
+            )
+        })?;
+        println!("{json}");
     }
     Ok(())
 }
