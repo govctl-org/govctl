@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-157"
 title = "Move edit matching tests out of production module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move the inline unit tests for edit match resolution out of the production matching module while keeping the matcher API and behavior unchanged. The production module should keep the matching implementation, and tests should live in a focused test module without reintroducing a same-name file and directory pair."
 
 [[content.acceptance_criteria]]
 text = "edit matching implementation lives in cmd/edit/matching/mod.rs with inline tests removed"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "edit matching unit coverage lives in cmd/edit/matching/tests.rs and still covers substring, prefix stripping, regex, index, and ambiguity behavior"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "cargo test matching-focused coverage, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
