@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-026"
+title = "Split RFC lifecycle tests by command area"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Split the large RFC lifecycle integration test file along its existing command-area boundaries. Preserve test names, snapshot assertions, and lifecycle behavior while keeping tests/lifecycle_tests/rfc.rs as the entrypoint for RFC lifecycle cases."
+
+[[content.acceptance_criteria]]
+text = "RFC lifecycle tests are grouped into command-area files"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "lifecycle integration tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
