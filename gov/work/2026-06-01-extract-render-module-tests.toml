@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-078"
 title = "Extract render module tests"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move the inline render module tests from `src/render/mod.rs` into `src/render/tests.rs` while keeping the production render facade, public exports, markdown output behavior, and existing render test coverage unchanged. This reduces root-module noise without splitting render implementation modules."
 
 [[content.acceptance_criteria]]
 text = "Inline render module tests are moved from `src/render/mod.rs` into `src/render/tests.rs`"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`src/render/mod.rs` keeps only the render facade, shared link helper functions, exports, and the `#[cfg(test)] mod tests;` declaration"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`cargo test render:: -- --nocapture`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, and `govctl check --deny-warnings` pass"
-status = "pending"
+status = "done"
 category = "chore"
