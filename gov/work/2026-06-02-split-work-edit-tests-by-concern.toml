@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-021"
+title = "Split work edit tests by concern"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Split the large work item edit integration test file into focused include files by concern. Keep tests/edit_tests/work.rs as the small entrypoint with work-specific helpers, preserve existing test names and snapshots, and avoid changing command behavior."
+
+[[content.acceptance_criteria]]
+text = "edit command tests pass without snapshot churn"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "work edit tests are grouped into focused include files"
+status = "done"
+category = "changed"
