@@ -9,7 +9,7 @@ use super::toml_target::{is_work_dependency_target, validate_work_dependency_edi
 use super::{ArtifactType, plan_edit_with_field_for_verb, resolve_owned_value};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{AdrEntry, WorkItemEntry};
+use crate::model::{AdrEntry, ChangelogCategory, WorkItemEntry};
 use crate::ui;
 use crate::write::WriteOp;
 
@@ -20,7 +20,20 @@ struct AdrAddContext {
 }
 
 struct WorkAddContext {
-    category_override: Option<crate::model::ChangelogCategory>,
+    category_override: Option<ChangelogCategory>,
+}
+
+pub struct AddFieldRequest<'a> {
+    pub config: &'a Config,
+    pub id: &'a str,
+    pub field: &'a str,
+    pub value: Option<&'a Option<String>>,
+    pub stdin: bool,
+    pub category_override: Option<ChangelogCategory>,
+    pub pros: Option<Vec<String>>,
+    pub cons: Option<Vec<String>>,
+    pub reject_reason: Option<String>,
+    pub op: WriteOp,
 }
 
 fn adr_add_alternatives(
@@ -99,20 +112,20 @@ fn work_add_acceptance_criteria(
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn add_to_field(
-    config: &Config,
-    id: &str,
-    field: &str,
-    value: Option<&Option<String>>,
-    stdin: bool,
-    category_override: Option<crate::model::ChangelogCategory>,
-    _scope_override: Option<&str>,
-    pros: Option<Vec<String>>,
-    cons: Option<Vec<String>>,
-    reject_reason: Option<String>,
-    op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn add_to_field(request: AddFieldRequest<'_>) -> anyhow::Result<Vec<Diagnostic>> {
+    let AddFieldRequest {
+        config,
+        id,
+        field,
+        value,
+        stdin,
+        category_override,
+        pros,
+        cons,
+        reject_reason,
+        op,
+    } = request;
+
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Add))?;
     let artifact = plan.artifact;
     let fp = plan.field_path.as_ref().ok_or_else(|| {

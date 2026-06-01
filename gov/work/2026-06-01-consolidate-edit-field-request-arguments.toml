@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-096"
 title = "Consolidate edit field request arguments"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = ["ADR-0031"]
 depends_on = ["WI-2026-06-01-095"]
 

@@ -20,7 +20,7 @@ mod tick;
 mod toml_target;
 
 use self::adapter::{ClauseTomlAdapter, DocAdapter};
-pub use self::add::add_to_field;
+pub use self::add::{AddFieldRequest, add_to_field};
 pub use self::artifact::ArtifactType;
 pub use self::get::get_field;
 pub use self::remove::remove_from_field;
@@ -154,7 +154,7 @@ pub fn edit_field(
     path: &str,
     action: &OwnedEditAction,
     category_override: Option<crate::model::ChangelogCategory>,
-    scope_override: Option<&str>,
+    _scope_override: Option<&str>,
     pros: Option<Vec<String>>,
     cons: Option<Vec<String>>,
     reject_reason: Option<String>,
@@ -181,19 +181,18 @@ pub fn edit_field(
         OwnedEditAction::Add { value, stdin } => {
             let value = resolve_owned_value(value.as_ref(), *stdin)?;
             let value = Some(Some(value));
-            add_to_field(
+            add_to_field(AddFieldRequest {
                 config,
                 id,
-                path,
-                value.as_ref(),
-                false,
+                field: path,
+                value: value.as_ref(),
+                stdin: false,
                 category_override,
-                scope_override,
                 pros,
                 cons,
                 reject_reason,
                 op,
-            )
+            })
         }
         OwnedEditAction::Remove { match_opts } => {
             remove_from_field(config, id, path, &match_opts.as_match_options(), op)
