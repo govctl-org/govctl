@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-105"
 title = "Normalize command execution module"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = [
     "RFC-0002",
     "ADR-0017",
