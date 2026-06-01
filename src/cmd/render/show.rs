@@ -34,23 +34,54 @@ where
     Ok(())
 }
 
+fn find_show_item<T, Id, NotFound>(
+    items: Vec<T>,
+    id: &str,
+    item_id: Id,
+    not_found: NotFound,
+) -> DiagnosticResult<T>
+where
+    Id: for<'a> Fn(&'a T) -> &'a str,
+    NotFound: FnOnce() -> Diagnostic,
+{
+    items
+        .into_iter()
+        .find(|item| item_id(item) == id)
+        .ok_or_else(not_found)
+}
+
+fn show_not_found(
+    config: &Config,
+    code: DiagnosticCode,
+    message: impl Into<String>,
+    scope_path: impl AsRef<std::path::Path>,
+) -> Diagnostic {
+    Diagnostic::new(
+        code,
+        message.into(),
+        display_path_string(config, scope_path),
+    )
+}
+
 /// Show RFC content to stdout (no file written).
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
 pub fn show_rfc(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
-    let rfc = rfcs
-        .into_iter()
-        .find(|r| r.rfc.rfc_id == id)
-        .ok_or_else(|| {
-            let scope = display_path_string(config, config.rfc_dir());
-            Diagnostic::new(
+    let rfc = find_show_item(
+        rfcs,
+        id,
+        |rfc| rfc.rfc.rfc_id.as_str(),
+        || {
+            show_not_found(
+                config,
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {id}"),
-                scope,
+                config.rfc_dir(),
             )
-        })?;
+        },
+    )?;
 
     print_show_output(
         config,
@@ -71,17 +102,19 @@ pub fn show_rfc(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
 pub fn show_adr(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
     let adrs = load_adrs(config)?;
 
-    let adr = adrs
-        .into_iter()
-        .find(|a| a.spec.govctl.id == id)
-        .ok_or_else(|| {
-            let scope = display_path_string(config, config.adr_dir());
-            Diagnostic::new(
+    let adr = find_show_item(
+        adrs,
+        id,
+        |adr| adr.spec.govctl.id.as_str(),
+        || {
+            show_not_found(
+                config,
                 DiagnosticCode::E0302AdrNotFound,
                 format!("ADR not found: {id}"),
-                scope,
+                config.adr_dir(),
             )
-        })?;
+        },
+    )?;
 
     print_show_output(
         config,
@@ -102,20 +135,19 @@ pub fn show_adr(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
 pub fn show_work(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
     let items = load_work_items(config)?;
 
-    let item = items
-        .into_iter()
-        .find(|w| w.spec.govctl.id == id)
-        .ok_or_else(|| {
-            let scope = config
-                .display_path(&config.work_dir())
-                .display()
-                .to_string();
-            Diagnostic::new(
+    let item = find_show_item(
+        items,
+        id,
+        |item| item.spec.govctl.id.as_str(),
+        || {
+            show_not_found(
+                config,
                 DiagnosticCode::E0402WorkNotFound,
                 format!("Work item not found: {id}"),
-                scope,
+                config.work_dir(),
             )
-        })?;
+        },
+    )?;
 
     print_show_output(
         config,
@@ -148,33 +180,33 @@ pub fn show_clause(
 
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
-    let rfc = rfcs
-        .into_iter()
-        .find(|r| r.rfc.rfc_id == rfc_id)
-        .ok_or_else(|| {
-            let scope = display_path_string(config, config.rfc_dir());
-            Diagnostic::new(
+    let rfc = find_show_item(
+        rfcs,
+        rfc_id,
+        |rfc| rfc.rfc.rfc_id.as_str(),
+        || {
+            show_not_found(
+                config,
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {rfc_id}"),
-                scope,
+                config.rfc_dir(),
             )
-        })?;
+        },
+    )?;
 
-    let clause = rfc
-        .clauses
-        .into_iter()
-        .find(|c| c.spec.clause_id == clause_name)
-        .ok_or_else(|| {
-            let scope = config
-                .display_path(&config.rfc_dir().join(rfc_id).join("clauses"))
-                .display()
-                .to_string();
-            Diagnostic::new(
+    let clause = find_show_item(
+        rfc.clauses,
+        clause_name,
+        |clause| clause.spec.clause_id.as_str(),
+        || {
+            show_not_found(
+                config,
                 DiagnosticCode::E0202ClauseNotFound,
                 format!("Clause not found: {id}"),
-                scope,
+                config.rfc_dir().join(rfc_id).join("clauses"),
             )
-        })?;
+        },
+    )?;
 
     print_show_output(
         config,

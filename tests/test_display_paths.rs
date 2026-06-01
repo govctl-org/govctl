@@ -7,6 +7,22 @@ mod common;
 
 use common::{init_project, normalize_output, run_commands, today};
 use std::fs;
+use std::path::Path;
+
+fn assert_show_missing_scope(output: &str, temp_dir: &Path, error: &str, scope: &str) {
+    assert!(output.contains(error), "{output}");
+    assert!(output.contains(scope), "{output}");
+    assert!(
+        !output.contains(&temp_dir.display().to_string()),
+        "show output should not contain absolute temp path: {output}"
+    );
+    if let Ok(canonical) = temp_dir.canonicalize() {
+        assert!(
+            !output.contains(&canonical.display().to_string()),
+            "show output should not contain canonical temp path: {output}"
+        );
+    }
+}
 
 /// Test: RFC render shows relative output path
 #[test]
@@ -164,6 +180,93 @@ fn test_render_work_missing_returns_scope_context() -> common::TestResult {
 
     let output = run_commands(temp_dir.path(), &[&["work", "render", "WI-9999-01-01-001"]])?;
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[test]
+fn test_show_rfc_missing_returns_scope_context() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(temp_dir.path(), &[&["rfc", "show", "RFC-9999"]])?;
+
+    assert_show_missing_scope(
+        &output,
+        temp_dir.path(),
+        "error[E0102]: RFC not found: RFC-9999",
+        "gov/rfc",
+    );
+    Ok(())
+}
+
+#[test]
+fn test_show_adr_missing_returns_scope_context() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(temp_dir.path(), &[&["adr", "show", "ADR-9999"]])?;
+
+    assert_show_missing_scope(
+        &output,
+        temp_dir.path(),
+        "error[E0302]: ADR not found: ADR-9999",
+        "gov/adr",
+    );
+    Ok(())
+}
+
+#[test]
+fn test_show_work_missing_returns_scope_context() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(temp_dir.path(), &[&["work", "show", "WI-9999-01-01-001"]])?;
+
+    assert_show_missing_scope(
+        &output,
+        temp_dir.path(),
+        "error[E0402]: Work item not found: WI-9999-01-01-001",
+        "gov/work",
+    );
+    Ok(())
+}
+
+#[test]
+fn test_show_clause_missing_returns_scope_context() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
+
+    fs::write(
+        rfc_dir.join("rfc.toml"),
+        r#"[govctl]
+id = "RFC-0001"
+title = "Test RFC"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = []
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial draft"
+"#,
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["clause", "show", "RFC-0001:C-MISSING"]],
+    )?;
+
+    assert_show_missing_scope(
+        &output,
+        temp_dir.path(),
+        "error[E0202]: Clause not found: RFC-0001:C-MISSING",
+        "gov/rfc/RFC-0001/clauses",
+    );
     Ok(())
 }
 
