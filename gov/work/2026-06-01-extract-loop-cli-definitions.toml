@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-093"
 title = "Extract loop CLI definitions"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0006"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move the loop CLI subcommand enum and its help text out of the ro
 
 [[content.acceptance_criteria]]
 text = "LoopCommand is defined in a focused src/cli child module and re-exported through the existing cli facade"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Root CLI module no longer carries loop subcommand variant bodies"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop CLI help snapshots pass"
-status = "pending"
+status = "done"
 category = "chore"

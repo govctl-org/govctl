@@ -1,6 +1,9 @@
 use super::{
-    diagnostic_code, ensure_root_work_items, ensure_same_root_set, find_matching_non_terminal_loop,
-    generated_loop_id, print_loop,
+    output::print_loop,
+    state::{
+        diagnostic_code, ensure_root_work_items, ensure_same_root_set,
+        find_matching_non_terminal_loop, generated_loop_id,
+    },
 };
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};

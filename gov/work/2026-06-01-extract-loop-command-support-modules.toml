@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-094"
 title = "Extract loop command support modules"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0006"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move reusable loop command support logic out of src/cmd/loop_cmd/
 
 [[content.acceptance_criteria]]
 text = "Loop command module root contains command entrypoints without list rendering or state discovery helper bodies"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Loop state discovery and generated ID helpers are reusable by start, resume, and run without importing through unrelated command entrypoints"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop command tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

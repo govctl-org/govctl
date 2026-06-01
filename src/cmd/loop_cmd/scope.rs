@@ -1,4 +1,4 @@
-use super::{ensure_root_work_items, print_loop};
+use super::{output::print_loop, state::ensure_root_work_items};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::loop_planner::replan_loop_state_from_config;
