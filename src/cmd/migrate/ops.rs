@@ -84,13 +84,14 @@ fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> DiagnosticResult<()> 
 }
 
 fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> DiagnosticResult<()> {
-    let mut applied: Vec<usize> = Vec::new();
+    let mut applied: Vec<AppliedOp> = Vec::new();
 
     let result = (|| -> DiagnosticResult<()> {
         for (i, op) in ops.iter().enumerate() {
             let backup_path = backup_root.join(format!("{i}"));
             match op {
                 FileOp::Write { path, .. } => {
+                    let existed = path.exists();
                     if path.exists() {
                         fs::copy(path, &backup_path)
                             .map_err(|err| io_error(path, "backup file before migration", err))?;
@@ -103,6 +104,14 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
                     let staged = stage_root.join(format!("{i}"));
                     fs::copy(&staged, path)
                         .map_err(|err| io_error(path, "apply migrated file", err))?;
+                    if existed {
+                        applied.push(AppliedOp::Restore {
+                            path: path.clone(),
+                            backup_path,
+                        });
+                    } else {
+                        applied.push(AppliedOp::RemoveCreated { path: path.clone() });
+                    }
                 }
                 FileOp::Delete { path } => {
                     if path.exists() {
@@ -110,23 +119,27 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
                             .map_err(|err| io_error(path, "backup file before deletion", err))?;
                         fs::remove_file(path)
                             .map_err(|err| io_error(path, "delete migrated legacy file", err))?;
+                        applied.push(AppliedOp::Restore {
+                            path: path.clone(),
+                            backup_path,
+                        });
                     }
                 }
             }
-            applied.push(i);
         }
         Ok(())
     })();
 
     if result.is_err() {
-        for &i in applied.iter().rev() {
-            let backup_path = backup_root.join(format!("{i}"));
-            if !backup_path.exists() {
-                continue;
-            }
-            match &ops[i] {
-                FileOp::Write { path, .. } | FileOp::Delete { path } => {
-                    let _ = fs::copy(&backup_path, path);
+        for op in applied.iter().rev() {
+            match op {
+                AppliedOp::Restore { path, backup_path } => {
+                    let _ = fs::copy(backup_path, path);
+                }
+                AppliedOp::RemoveCreated { path } => {
+                    if path.exists() {
+                        let _ = fs::remove_file(path);
+                    }
                 }
             }
         }
@@ -135,6 +148,94 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
     result
 }
 
+enum AppliedOp {
+    Restore { path: PathBuf, backup_path: PathBuf },
+    RemoveCreated { path: PathBuf },
+}
+
 fn io_error(path: &Path, action: &str, err: io::Error) -> Diagnostic {
     Diagnostic::io_error(action, err, path.display().to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::Config;
+
+    fn test_config(temp_dir: &tempfile::TempDir) -> Config {
+        let mut config = Config {
+            gov_root: temp_dir.path().join("gov"),
+            ..Config::default()
+        };
+        config.paths.docs_output = temp_dir.path().join("docs");
+        config
+    }
+
+    #[test]
+    fn execute_ops_removes_created_files_when_later_apply_fails()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = tempfile::tempdir()?;
+        let config = test_config(&temp_dir);
+        fs::create_dir_all(&config.gov_root)?;
+        let created = config.gov_root.join("created.txt");
+        let bad_target = config.gov_root.join("bad-target");
+        fs::create_dir_all(&bad_target)?;
+
+        let result = execute_ops(
+            &config,
+            &[
+                FileOp::Write {
+                    path: created.clone(),
+                    content: "created".to_string(),
+                },
+                FileOp::Write {
+                    path: bad_target,
+                    content: "cannot replace directory".to_string(),
+                },
+            ],
+        );
+
+        assert!(result.is_err());
+        assert!(
+            !created.exists(),
+            "created migration target should be removed on rollback"
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn execute_ops_restores_modified_and_deleted_files_when_later_apply_fails()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = tempfile::tempdir()?;
+        let config = test_config(&temp_dir);
+        fs::create_dir_all(&config.gov_root)?;
+        let modified = config.gov_root.join("modified.txt");
+        let deleted = config.gov_root.join("deleted.txt");
+        let bad_target = config.gov_root.join("bad-target");
+        fs::write(&modified, "old")?;
+        fs::write(&deleted, "gone")?;
+        fs::create_dir_all(&bad_target)?;
+
+        let result = execute_ops(
+            &config,
+            &[
+                FileOp::Write {
+                    path: modified.clone(),
+                    content: "new".to_string(),
+                },
+                FileOp::Delete {
+                    path: deleted.clone(),
+                },
+                FileOp::Write {
+                    path: bad_target,
+                    content: "cannot replace directory".to_string(),
+                },
+            ],
+        );
+
+        assert!(result.is_err());
+        assert_eq!(fs::read_to_string(modified)?, "old");
+        assert_eq!(fs::read_to_string(deleted)?, "gone");
+        Ok(())
+    }
 }

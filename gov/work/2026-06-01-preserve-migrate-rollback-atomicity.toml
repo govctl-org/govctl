@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-180"
+title = "Preserve migrate rollback atomicity"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+refs = ["RFC-0002"]
+
+[content]
+description = "Fix the migrate pipeline so repository changes are transactional across file rewrites and config version updates. If any migration step fails, newly created files are removed, modified/deleted files are restored, and the repository remains unchanged per RFC-0002."
+
+[[content.acceptance_criteria]]
+text = "migrate config version bump participates in the same transactional file operation set as artifact rewrites"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "migrate rollback removes newly created files and restores overwritten or deleted originals after apply failure"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "migrate regression tests, full tests, clippy, and govctl check pass"
+status = "done"
+category = "chore"

@@ -73,27 +73,19 @@ pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
         step_names.push(format!("v{} -> v{}: {}", step.from, step.to, step.name));
         all_ops.extend(ops);
     }
+    let config_path = config.gov_root.join("config.toml");
+    all_ops.push(plan_config_version_bump(config, CURRENT_SCHEMA_VERSION)?);
 
     if op.is_preview() {
-        if all_ops.is_empty() {
-            ui::info(format!(
-                "No file changes needed; version bump {} -> {CURRENT_SCHEMA_VERSION}",
-                current
-            ));
-        } else {
-            preview_ops(config, &all_ops);
-        }
+        preview_ops(config, &all_ops);
     } else {
-        if !all_ops.is_empty() {
-            execute_ops(config, &all_ops)?;
-        }
-        bump_config_version(config, CURRENT_SCHEMA_VERSION)?;
+        execute_ops(config, &all_ops)?;
         for name in &step_names {
             ui::sub_info(name);
         }
         let writes = all_ops
             .iter()
-            .filter(|o| matches!(o, FileOp::Write { .. }))
+            .filter(|o| matches!(o, FileOp::Write { path, .. } if path != &config_path))
             .count();
         let deletes = all_ops
             .iter()
@@ -136,8 +128,8 @@ fn sync_schemas(config: &Config, op: WriteOp) -> DiagnosticResult<usize> {
     Ok(count)
 }
 
-/// Bump `[schema] version` in config.toml preserving the rest of the file.
-fn bump_config_version(config: &Config, new_version: u32) -> DiagnosticResult<()> {
+/// Plan a `[schema] version` bump in config.toml preserving the rest of the file.
+fn plan_config_version_bump(config: &Config, new_version: u32) -> DiagnosticResult<FileOp> {
     let path = config.gov_root.join("config.toml");
     let display_path = config.display_path(&path).display().to_string();
     let content = fs::read_to_string(&path)
@@ -169,9 +161,10 @@ fn bump_config_version(config: &Config, new_version: u32) -> DiagnosticResult<()
     if !output.ends_with('\n') {
         output.push('\n');
     }
-    fs::write(&path, output)
-        .map_err(|err| Diagnostic::io_error("write migrated config", err, &display_path))?;
-    Ok(())
+    Ok(FileOp::Write {
+        path,
+        content: output,
+    })
 }
 
 // =============================================================================

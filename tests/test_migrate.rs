@@ -101,6 +101,7 @@ fn test_migrate_dry_run_preserves_legacy_files() -> TestResult {
     write_legacy_rfc_project(temp_dir.path())?;
 
     let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]])?;
+    assert!(output.contains("Would write: gov/config.toml"));
     assert!(output.contains("Would write: gov/rfc/RFC-0001/rfc.toml"));
     assert!(output.contains("Would delete: gov/rfc/RFC-0001/rfc.json"));
 
@@ -115,6 +116,28 @@ fn test_migrate_dry_run_preserves_legacy_files() -> TestResult {
         config.contains("version = 1"),
         "dry-run should not bump version: {}",
         config
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_migrate_dry_run_previews_config_version_bump_without_artifact_changes() -> TestResult {
+    let temp_dir = init_project_v1()?;
+
+    // Create artifacts using govctl (already in new format with headers).
+    run_commands(temp_dir.path(), &[&["rfc", "new", "New Format RFC"]])?;
+
+    let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]])?;
+    assert!(
+        output.contains("Would write: gov/config.toml"),
+        "dry-run should preview config version bump as a file op: {output}"
+    );
+
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
+    assert!(
+        config.contains("version = 1"),
+        "dry-run should not bump version: {config}"
     );
 
     Ok(())

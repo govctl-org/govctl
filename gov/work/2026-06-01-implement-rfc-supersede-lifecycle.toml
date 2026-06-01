@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-181"
+title = "Implement RFC supersede lifecycle"
+status = "queue"
+created = "2026-06-01"
+refs = ["RFC-0002"]
+
+[content]
+description = "Implement the RFC supersede lifecycle path that RFC-0002 exposes through govctl rfc supersede <id> --by <replacement-id>. Both RFCs must exist, the source RFC must transition to superseded, and tests must cover successful and invalid paths."
+
+[[content.acceptance_criteria]]
+text = "rfc supersede marks source RFC superseded and records the replacement RFC"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "rfc supersede rejects missing or invalid replacement RFCs with diagnostics"
+status = "pending"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "lifecycle tests and govctl check pass"
+status = "pending"
+category = "chore"
