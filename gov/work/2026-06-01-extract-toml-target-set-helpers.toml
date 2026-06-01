@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-133"
 title = "Extract TOML target set helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-132"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move TOML-target set/apply helpers out of src/cmd/edit/toml_targe
 
 [[content.acceptance_criteria]]
 text = "TOML-target set and apply helpers live in a focused helper module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "work item depends_on set validation remains unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit integration tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

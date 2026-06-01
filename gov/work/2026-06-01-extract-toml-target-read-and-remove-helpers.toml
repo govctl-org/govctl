@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-132"
 title = "Extract TOML target read and remove helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move TOML-target get/render and remove/write helpers out of src/cmd/edit/toml_target/mod.rs into focused operation modules while keeping current caller imports and edit behavior stable."
 
 [[content.acceptance_criteria]]
 text = "TOML-target get and resolved-target rendering live in a focused helper module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "TOML-target remove helpers live in a focused helper module with unchanged removal notifications"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "focused edit tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
