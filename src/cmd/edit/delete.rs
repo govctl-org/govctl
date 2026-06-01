@@ -68,16 +68,7 @@ pub fn delete_clause(
 
     let clause_rel_path = format!("clauses/{}", clause_file_name);
 
-    let mut removed = false;
-    for section in &mut rfc_loaded.data.sections {
-        if let Some(pos) = section.clauses.iter().position(|c| c == &clause_rel_path) {
-            section.clauses.remove(pos);
-            removed = true;
-            break;
-        }
-    }
-
-    if !removed {
+    if !unlink_clause_from_sections(&mut rfc_loaded.data, &clause_rel_path) {
         return Err(Diagnostic::new(
             DiagnosticCode::E0202ClauseNotFound,
             format!(
@@ -102,6 +93,21 @@ pub fn delete_clause(
     }
 
     Ok(vec![])
+}
+
+fn unlink_clause_from_sections(rfc: &mut crate::model::RfcSpec, clause_rel_path: &str) -> bool {
+    for section in &mut rfc.sections {
+        if let Some(pos) = section
+            .clauses
+            .iter()
+            .position(|clause| clause == clause_rel_path)
+        {
+            section.clauses.remove(pos);
+            return true;
+        }
+    }
+
+    false
 }
 
 fn ensure_clause_not_referenced(config: &Config, clause_id: &str) -> DiagnosticResult<()> {

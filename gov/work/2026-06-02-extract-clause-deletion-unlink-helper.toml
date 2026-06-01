@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-02-052"
 title = "Extract clause deletion unlink helper"
-status = "queue"
+status = "done"
 created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
 
 [content]
 description = "Extract the inline clause-removal-from-RFC-sections logic in clause deletion into a local helper. Preserve draft-only deletion safeguards, referrer checks, dry-run output, and not-found diagnostics."
 
 [[content.acceptance_criteria]]
 text = "clause deletion uses a local helper to unlink clause references from RFC sections"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "clause deletion diagnostics, safeguards, and dry-run output remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "targeted delete tests, clippy, full tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
