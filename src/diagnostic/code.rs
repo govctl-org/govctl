@@ -10,9 +10,6 @@ pub enum DiagnosticLevel {
 
 /// Diagnostic error codes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-// DiagnosticCode is a stable catalog for CLI output, docs, and future checks;
-// some assigned codes are intentionally not constructed on every build path.
-#[allow(dead_code)]
 pub enum DiagnosticCode {
     // RFC errors (E01xx)
     E0101RfcSchemaInvalid,
@@ -34,7 +31,6 @@ pub enum DiagnosticCode {
     E0202ClauseNotFound,
     E0203ClauseIdMismatch,
     E0204ClausePathInvalid,
-    E0205ClauseDuplicate,
     E0206ClauseSupersededByUnknown,
     E0207ClauseSupersededByNotActive,
     E0208ClauseAlreadyDeprecated,
@@ -140,21 +136,16 @@ pub enum DiagnosticCode {
     // General errors (E09xx)
     E0901IoError,
     E0902JsonParseError,
-    E0903YamlParseError,
 
     // Warnings (W01xx)
     W0101RfcNoChangelog,
     W0102ClauseNoSince,
     W0103AdrNoRefs,
-    W0104AdrParseSkipped,
-    W0105WorkParseSkipped,
     W0106RenderedReadError,
     W0107SourceRefOutdated,
     W0108WorkPlaceholderDescription,
     W0109WorkNoActive,
     W0110SchemaOutdated,
-    W0111AdrMigrationNeedsReview,
-    W0112AdrMigrationWarning,
 
     // Informational diagnostics (I04xx)
     I0401WorkLegacyInlineHistory,
@@ -166,15 +157,11 @@ impl DiagnosticCode {
             Self::W0101RfcNoChangelog
             | Self::W0102ClauseNoSince
             | Self::W0103AdrNoRefs
-            | Self::W0104AdrParseSkipped
-            | Self::W0105WorkParseSkipped
             | Self::W0106RenderedReadError
             | Self::W0107SourceRefOutdated
             | Self::W0108WorkPlaceholderDescription
             | Self::W0109WorkNoActive
-            | Self::W0110SchemaOutdated
-            | Self::W0111AdrMigrationNeedsReview
-            | Self::W0112AdrMigrationWarning => DiagnosticLevel::Warning,
+            | Self::W0110SchemaOutdated => DiagnosticLevel::Warning,
             Self::I0401WorkLegacyInlineHistory => DiagnosticLevel::Info,
             _ => DiagnosticLevel::Error,
         }
@@ -200,7 +187,6 @@ impl DiagnosticCode {
             Self::E0202ClauseNotFound => "E0202",
             Self::E0203ClauseIdMismatch => "E0203",
             Self::E0204ClausePathInvalid => "E0204",
-            Self::E0205ClauseDuplicate => "E0205",
             Self::E0206ClauseSupersededByUnknown => "E0206",
             Self::E0207ClauseSupersededByNotActive => "E0207",
             Self::E0208ClauseAlreadyDeprecated => "E0208",
@@ -290,20 +276,15 @@ impl DiagnosticCode {
             // E09xx - General
             Self::E0901IoError => "E0901",
             Self::E0902JsonParseError => "E0902",
-            Self::E0903YamlParseError => "E0903",
             // W01xx - Warnings
             Self::W0101RfcNoChangelog => "W0101",
             Self::W0102ClauseNoSince => "W0102",
             Self::W0103AdrNoRefs => "W0103",
-            Self::W0104AdrParseSkipped => "W0104",
-            Self::W0105WorkParseSkipped => "W0105",
             Self::W0106RenderedReadError => "W0106",
             Self::W0107SourceRefOutdated => "W0107",
             Self::W0108WorkPlaceholderDescription => "W0108",
             Self::W0109WorkNoActive => "W0109",
             Self::W0110SchemaOutdated => "W0110",
-            Self::W0111AdrMigrationNeedsReview => "W0111",
-            Self::W0112AdrMigrationWarning => "W0112",
             // I04xx - Work Item info
             Self::I0401WorkLegacyInlineHistory => "I0401",
         }
