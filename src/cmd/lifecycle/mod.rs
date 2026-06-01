@@ -6,11 +6,11 @@ use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::find_clause_toml;
-use crate::model::{AdrStatus, ClauseStatus};
+use crate::model::{AdrStatus, ClauseStatus, RfcStatus};
 use crate::parse::{load_adrs, write_adr};
 use crate::ui;
-use crate::validate::is_valid_adr_transition;
-use crate::write::{WriteOp, read_clause, write_clause};
+use crate::validate::{is_valid_adr_transition, is_valid_status_transition};
+use crate::write::{WriteOp, read_clause, read_rfc, today, write_clause, write_rfc};
 use std::path::PathBuf;
 
 mod adr;
@@ -173,6 +173,84 @@ pub fn supersede(
 
         if !op.is_preview() {
             ui::superseded("clause", id, by);
+        }
+    } else if id.starts_with("RFC-") {
+        if id == by {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0802ConflictingArgs,
+                "RFC cannot supersede itself",
+                id,
+            ));
+        }
+
+        let rfc_path = rfc::require_rfc_toml_path(config, id)?;
+        let replacement_path = rfc::require_rfc_toml_path(config, by).map_err(|err| {
+            if err.code == DiagnosticCode::E0102RfcNotFound {
+                Diagnostic::new(
+                    DiagnosticCode::E0102RfcNotFound,
+                    format!("Replacement RFC not found: {by}"),
+                    by,
+                )
+            } else {
+                err
+            }
+        })?;
+
+        let mut source = read_rfc(config, &rfc_path)?;
+        let mut replacement = read_rfc(config, &replacement_path)?;
+
+        if !is_valid_status_transition(source.status, RfcStatus::Deprecated) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0104RfcInvalidTransition,
+                format!(
+                    "Invalid RFC transition: {} -> deprecated",
+                    source.status.as_ref()
+                ),
+                id,
+            ));
+        }
+        if replacement.status == RfcStatus::Deprecated {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0104RfcInvalidTransition,
+                format!("Replacement RFC is deprecated: {by}"),
+                by,
+            ));
+        }
+        if replacement
+            .supersedes
+            .as_deref()
+            .is_some_and(|old| old != id)
+        {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0104RfcInvalidTransition,
+                format!(
+                    "Replacement RFC already supersedes {}",
+                    replacement.supersedes.as_deref().unwrap_or_default()
+                ),
+                by,
+            ));
+        }
+
+        let today = today();
+        source.status = RfcStatus::Deprecated;
+        source.updated = Some(today.clone());
+        replacement.supersedes = Some(id.to_string());
+        replacement.updated = Some(today);
+        write_rfc(
+            &rfc_path,
+            &source,
+            op,
+            Some(&config.display_path(&rfc_path)),
+        )?;
+        write_rfc(
+            &replacement_path,
+            &replacement,
+            op,
+            Some(&config.display_path(&replacement_path)),
+        )?;
+
+        if !op.is_preview() {
+            ui::superseded("RFC", id, by);
         }
     } else if id.starts_with("ADR-") {
         // Load all ADRs once and find both source and replacement

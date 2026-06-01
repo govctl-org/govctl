@@ -17,7 +17,7 @@ fn legacy_rfc_json_path(config: &Config, rfc_id: &str) -> Option<PathBuf> {
     path.exists().then_some(path)
 }
 
-fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> DiagnosticResult<PathBuf> {
+pub(super) fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> DiagnosticResult<PathBuf> {
     if let Some(path) = find_rfc_toml(config, rfc_id) {
         return Ok(path);
     }
