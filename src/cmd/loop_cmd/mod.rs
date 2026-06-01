@@ -12,7 +12,9 @@ use crate::OutputFormat;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::loop_planner::build_loop_plan_from_config;
-use crate::loop_state::{load_loop_state, validate_loop_id, write_loop_state_with_op};
+use crate::loop_state::{
+    LoopLifecycleState, LoopState, load_loop_state, validate_loop_id, write_loop_state_with_op,
+};
 use crate::write::WriteOp;
 use output::{LoopListEntry, print_loop, print_loop_list};
 use state::{
@@ -56,17 +58,50 @@ pub fn show(config: &Config, loop_id: &str) -> anyhow::Result<Vec<Diagnostic>> {
     Ok(vec![])
 }
 
-pub fn list(config: &Config, output: OutputFormat) -> anyhow::Result<Vec<Diagnostic>> {
-    let states = canonical_loop_ids(config)?
+pub fn list(
+    config: &Config,
+    filter: Option<&str>,
+    limit: Option<usize>,
+    output: OutputFormat,
+) -> anyhow::Result<Vec<Diagnostic>> {
+    let mut states = canonical_loop_ids(config)?
         .into_iter()
         .map(|loop_id| load_loop_state(config, &loop_id))
         .collect::<anyhow::Result<Vec<_>>>()?;
+    if let Some(filter) = filter {
+        states.retain(|state| loop_list_filter_matches(state, filter));
+    }
+    if let Some(limit) = limit {
+        states.truncate(limit);
+    }
     let entries = states
         .iter()
         .map(LoopListEntry::from_state)
         .collect::<Vec<_>>();
     print_loop_list(&entries, output);
     Ok(vec![])
+}
+
+fn loop_list_filter_matches(state: &LoopState, filter: &str) -> bool {
+    let normalized = filter.trim().to_ascii_lowercase();
+    match normalized.as_str() {
+        "" | "all" => true,
+        "open" | "resumable" | "non-terminal" | "nonterminal" => matches!(
+            state.loop_meta.state,
+            LoopLifecycleState::Pending | LoopLifecycleState::Active | LoopLifecycleState::Paused
+        ),
+        "pending" | "active" | "paused" | "completed" | "failed" => {
+            state.loop_meta.state.as_str() == normalized
+        }
+        _ => {
+            state.loop_meta.id.contains(filter)
+                || state
+                    .loop_meta
+                    .root_work_items
+                    .iter()
+                    .any(|work_id| work_id.contains(filter))
+        }
+    }
 }
 
 pub fn resume(

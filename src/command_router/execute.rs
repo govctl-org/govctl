@@ -128,7 +128,11 @@ fn execute_builtin(
             loop_id,
             work_items,
         } => cmd::loop_cmd::start(config, loop_id.as_deref(), work_items, op),
-        BuiltinOp::LoopList { output } => cmd::loop_cmd::list(config, *output),
+        BuiltinOp::LoopList {
+            filter,
+            limit,
+            output,
+        } => cmd::loop_cmd::list(config, filter.as_deref(), *limit, *output),
         BuiltinOp::LoopShow { loop_id } => cmd::loop_cmd::show(config, loop_id),
         BuiltinOp::LoopResume {
             loop_id,

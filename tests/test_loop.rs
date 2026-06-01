@@ -189,6 +189,144 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
 }
 
 #[test]
+fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let pending_root = format!("WI-{date}-001");
+    let paused_root = format!("WI-{date}-002");
+    let completed_root = format!("WI-{date}-003");
+    let pending_loop = loop_id(&date, 1);
+    let paused_loop = loop_id(&date, 2);
+    let completed_loop = loop_id(&date, 3);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec!["work".into(), "new".into(), "Pending".into()],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                pending_loop.clone(),
+                pending_root.clone(),
+            ],
+            vec!["work".into(), "new".into(), "Paused".into()],
+            vec![
+                "work".into(),
+                "add".into(),
+                paused_root.clone(),
+                "acceptance_criteria".into(),
+                "add: waiting".into(),
+            ],
+            vec![
+                "loop".into(),
+                "run".into(),
+                "--id".into(),
+                paused_loop.clone(),
+                "--max-rounds".into(),
+                "2".into(),
+                paused_root.clone(),
+            ],
+            vec!["work".into(), "new".into(), "Completed".into()],
+            vec![
+                "work".into(),
+                "add".into(),
+                completed_root.clone(),
+                "acceptance_criteria".into(),
+                "add: ready".into(),
+            ],
+            vec![
+                "work".into(),
+                "tick".into(),
+                completed_root.clone(),
+                "acceptance_criteria".into(),
+                "ready".into(),
+                "-s".into(),
+                "done".into(),
+            ],
+            vec![
+                "loop".into(),
+                "run".into(),
+                "--id".into(),
+                completed_loop.clone(),
+                completed_root.clone(),
+            ],
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+
+    let open_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "list".into(),
+            "open".into(),
+            "-o".into(),
+            "json".into(),
+        ]],
+    )?;
+    let json_start = open_output.find("[\n").ok_or("missing JSON list output")?;
+    let json_end = open_output[json_start..]
+        .find("\nexit:")
+        .ok_or("missing JSON command terminator")?
+        + json_start;
+    let loops: serde_json::Value = serde_json::from_str(&open_output[json_start..json_end])?;
+    let ids = loops
+        .as_array()
+        .ok_or("json output should be an array")?
+        .iter()
+        .map(|entry| {
+            entry["id"]
+                .as_str()
+                .ok_or("json loop entry should have string id")
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    assert_eq!(ids, vec![pending_loop.as_str(), paused_loop.as_str()]);
+    assert_eq!(loops[0]["state"], "pending");
+    assert_eq!(loops[1]["state"], "paused");
+
+    let paused_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "list".into(),
+            "paused".into(),
+            "-o".into(),
+            "plain".into(),
+        ]],
+    )?;
+    assert!(
+        paused_output.contains(&format!("{paused_loop}\tpaused\t{paused_root}\t1\t1")),
+        "{paused_output}"
+    );
+    assert!(!paused_output.contains(&pending_loop), "{paused_output}");
+    assert!(!paused_output.contains(&completed_loop), "{paused_output}");
+
+    let limited_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "list".into(),
+            "resumable".into(),
+            "-n".into(),
+            "1".into(),
+            "-o".into(),
+            "plain".into(),
+        ]],
+    )?;
+    assert!(
+        limited_output.contains(&format!("{pending_loop}\tpending\t{pending_root}\t1\t0")),
+        "{limited_output}"
+    );
+    assert!(!limited_output.contains(&paused_loop), "{limited_output}");
+    assert!(
+        !limited_output.contains(&completed_loop),
+        "{limited_output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_loop_list_reports_invalid_canonical_state() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = common::today();

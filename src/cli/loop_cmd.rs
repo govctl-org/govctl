@@ -6,14 +6,22 @@ pub(crate) enum LoopCommand {
     #[command(after_help = "\
 EXAMPLES:
     govctl loop list
+    govctl loop list open
+    govctl loop list paused -n 5
     govctl loop list -o plain
     govctl loop list -o json
 
 NOTES:
     - Reads local state from `.govctl/loops/<LOOP-ID>/state.toml`.
     - Lists loops by canonical loop ID in deterministic order.
+    - Filter may be a loop lifecycle state, `open`, `resumable`, loop ID, or root work item ID.
 ")]
     List {
+        /// Optional lifecycle state, alias, loop ID, or root work item ID filter
+        filter: Option<String>,
+        /// Limit number of results
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
         /// Output format
         #[arg(short = 'o', long, value_enum, default_value = "table")]
         output: crate::OutputFormat,

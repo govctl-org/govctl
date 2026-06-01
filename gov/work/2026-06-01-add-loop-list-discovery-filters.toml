@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-099"
 title = "Add loop list discovery filters"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0006"]
 
 [content]
@@ -13,20 +14,20 @@ description = "Add practical discovery filters to govctl loop list so agents and
 
 [[content.acceptance_criteria]]
 text = "loop list accepts a filter argument for lifecycle states plus a resumable/open alias covering non-terminal loop states"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "loop list supports -n/--limit after filtering while preserving deterministic loop ID ordering"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "loop list tests cover lifecycle filtering, resumable/open aliases, and limit behavior"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "govctl check and focused loop tests pass"
-status = "pending"
+status = "done"
 category = "chore"

@@ -86,6 +86,8 @@ pub enum BuiltinOp {
         work_items: Vec<String>,
     },
     LoopList {
+        filter: Option<String>,
+        limit: Option<usize>,
         output: crate::OutputFormat,
     },
     LoopShow {
