@@ -8,7 +8,7 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{ClauseStatus, ProjectIndex, RfcStatus};
-use globset::{Glob, GlobSetBuilder};
+use globset::{Glob, GlobSet, GlobSetBuilder};
 use regex::Regex;
 use std::fs;
 use walkdir::WalkDir;
@@ -45,60 +45,17 @@ pub fn scan_source_refs(config: &Config, index: &ProjectIndex) -> ScanResult {
         }
     };
 
-    // Build include glob set
-    let mut include_builder = GlobSetBuilder::new();
-    for pat in &config.source_scan.include {
-        match Glob::new(pat) {
-            Ok(g) => {
-                include_builder.add(g);
-            }
-            Err(e) => {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0501ConfigInvalid,
-                    format!("Invalid source_scan.include glob '{}': {}", pat, e),
-                    "gov/config.toml".to_string(),
-                ));
-                return result;
-            }
-        }
-    }
-    let include_set = match include_builder.build() {
-        Ok(s) => s,
-        Err(e) => {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0501ConfigInvalid,
-                format!("Failed to build include glob set: {}", e),
-                "gov/config.toml".to_string(),
-            ));
+    let include_set = match build_glob_set(&config.source_scan.include, "include") {
+        Ok(set) => set,
+        Err(diagnostic) => {
+            result.diagnostics.push(diagnostic);
             return result;
         }
     };
-
-    // Build exclude glob set
-    let mut exclude_builder = GlobSetBuilder::new();
-    for pat in &config.source_scan.exclude {
-        match Glob::new(pat) {
-            Ok(g) => {
-                exclude_builder.add(g);
-            }
-            Err(e) => {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0501ConfigInvalid,
-                    format!("Invalid source_scan.exclude glob '{}': {}", pat, e),
-                    "gov/config.toml".to_string(),
-                ));
-                return result;
-            }
-        }
-    }
-    let exclude_set = match exclude_builder.build() {
-        Ok(s) => s,
-        Err(e) => {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0501ConfigInvalid,
-                format!("Failed to build exclude glob set: {}", e),
-                "gov/config.toml".to_string(),
-            ));
+    let exclude_set = match build_glob_set(&config.source_scan.exclude, "exclude") {
+        Ok(set) => set,
+        Err(diagnostic) => {
+            result.diagnostics.push(diagnostic);
             return result;
         }
     };
@@ -162,6 +119,28 @@ pub fn scan_source_refs(config: &Config, index: &ProjectIndex) -> ScanResult {
     }
 
     result
+}
+
+fn build_glob_set(patterns: &[String], label: &str) -> Result<GlobSet, Diagnostic> {
+    let mut builder = GlobSetBuilder::new();
+    for pat in patterns {
+        let glob = Glob::new(pat).map_err(|e| {
+            Diagnostic::new(
+                DiagnosticCode::E0501ConfigInvalid,
+                format!("Invalid source_scan.{label} glob '{}': {}", pat, e),
+                "gov/config.toml".to_string(),
+            )
+        })?;
+        builder.add(glob);
+    }
+
+    builder.build().map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0501ConfigInvalid,
+            format!("Failed to build {label} glob set: {}", e),
+            "gov/config.toml".to_string(),
+        )
+    })
 }
 
 /// State of an artifact for reference validation

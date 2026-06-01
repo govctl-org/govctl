@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-209"
+title = "Share scan glob builders"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Reduce duplication in src/scan.rs by sharing include/exclude glob set construction while preserving source scan filtering behavior and existing config diagnostic messages."
+
+[[content.acceptance_criteria]]
+text = "Source scan include and exclude glob construction share private helper code"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Source scan matching and invalid pattern diagnostics remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Source scan tests, cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"

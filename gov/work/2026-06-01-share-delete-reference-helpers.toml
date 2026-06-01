@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-208"
+title = "Share delete reference helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Reduce duplication in src/cmd/edit/delete.rs by sharing project reference collection for clause and work item deletion guards while preserving deletion safeguards, confirmation behavior, and diagnostic text."
+
+[[content.acceptance_criteria]]
+text = "Clause and work item deletion guards share private project reference collection helper code"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Delete command safeguards, confirmation prompts, and diagnostics remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Delete tests, cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"

@@ -2,9 +2,9 @@ use super::adapter::{DocAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter};
 use crate::cmd::confirmation::confirm_destructive_action;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::model::ProjectIndex;
 use crate::ui;
 use crate::write::{WriteOp, delete_file};
-use std::collections::BTreeSet;
 use std::path::Path;
 
 pub fn delete_clause(
@@ -119,38 +119,23 @@ fn ensure_clause_not_referenced(config: &Config, clause_id: &str) -> DiagnosticR
             )
         })
     })?;
-    let mut referenced_by = BTreeSet::new();
-
-    for rfc in &load_result.index.rfcs {
-        if rfc.rfc.refs.iter().any(|ref_id| ref_id == clause_id) {
-            referenced_by.insert(rfc.rfc.rfc_id.clone());
-        }
-    }
-
-    for adr in &load_result.index.adrs {
-        if adr.meta().refs.iter().any(|ref_id| ref_id == clause_id) {
-            referenced_by.insert(adr.meta().id.clone());
-        }
-    }
-
-    for work in &load_result.index.work_items {
-        if work.meta().refs.iter().any(|ref_id| ref_id == clause_id) {
-            referenced_by.insert(work.meta().id.clone());
-        }
-    }
-
-    for guard in crate::parse::load_guards(config)? {
-        if guard.meta().refs.iter().any(|ref_id| ref_id == clause_id) {
-            referenced_by.insert(guard.meta().id.clone());
-        }
-    }
+    let mut referenced_by = project_referrers(
+        &load_result.index,
+        clause_id,
+        ProjectReferrers {
+            skip_work_id: None,
+            include_work_dependencies: false,
+        },
+    );
+    referenced_by.extend(guard_referrers(config, clause_id)?);
+    let referenced_by = sorted_unique_referrers(referenced_by);
 
     if !referenced_by.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0211ClauseStillReferenced,
             format!(
                 "Cannot delete clause: {clause_id} is referenced by: {}. Remove references first.",
-                referenced_by.into_iter().collect::<Vec<_>>().join(", ")
+                referenced_by.join(", ")
             ),
             clause_id,
         ));
@@ -192,28 +177,14 @@ pub fn delete_work_item(
     };
 
     let index = &load_result.index;
-    let mut referenced_by = Vec::new();
-
-    for rfc in &index.rfcs {
-        if rfc.rfc.refs.contains(&wi.govctl.id) {
-            referenced_by.push(rfc.rfc.rfc_id.clone());
-        }
-    }
-
-    for adr in &index.adrs {
-        if adr.spec.govctl.refs.contains(&wi.govctl.id) {
-            referenced_by.push(adr.spec.govctl.id.clone());
-        }
-    }
-
-    for other_wi in &index.work_items {
-        if other_wi.spec.govctl.id != wi.govctl.id
-            && (other_wi.spec.govctl.refs.contains(&wi.govctl.id)
-                || other_wi.spec.govctl.depends_on.contains(&wi.govctl.id))
-        {
-            referenced_by.push(other_wi.spec.govctl.id.clone());
-        }
-    }
+    let referenced_by = project_referrers(
+        index,
+        &wi.govctl.id,
+        ProjectReferrers {
+            skip_work_id: Some(&wi.govctl.id),
+            include_work_dependencies: true,
+        },
+    );
 
     if !referenced_by.is_empty() {
         return Err(Diagnostic::new(
@@ -228,6 +199,75 @@ pub fn delete_work_item(
     }
 
     proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op)
+}
+
+struct ProjectReferrers<'a> {
+    skip_work_id: Option<&'a str>,
+    include_work_dependencies: bool,
+}
+
+fn project_referrers(
+    index: &ProjectIndex,
+    target_id: &str,
+    options: ProjectReferrers<'_>,
+) -> Vec<String> {
+    let mut referenced_by = Vec::new();
+
+    for rfc in &index.rfcs {
+        if rfc.rfc.refs.iter().any(|ref_id| ref_id == target_id) {
+            referenced_by.push(rfc.rfc.rfc_id.clone());
+        }
+    }
+
+    for adr in &index.adrs {
+        if adr
+            .spec
+            .govctl
+            .refs
+            .iter()
+            .any(|ref_id| ref_id == target_id)
+        {
+            referenced_by.push(adr.spec.govctl.id.clone());
+        }
+    }
+
+    for work in &index.work_items {
+        if options.skip_work_id == Some(work.spec.govctl.id.as_str()) {
+            continue;
+        }
+        let has_ref = work
+            .spec
+            .govctl
+            .refs
+            .iter()
+            .any(|ref_id| ref_id == target_id);
+        let has_dependency = options.include_work_dependencies
+            && work
+                .spec
+                .govctl
+                .depends_on
+                .iter()
+                .any(|dep_id| dep_id == target_id);
+        if has_ref || has_dependency {
+            referenced_by.push(work.spec.govctl.id.clone());
+        }
+    }
+
+    referenced_by
+}
+
+fn guard_referrers(config: &Config, target_id: &str) -> DiagnosticResult<Vec<String>> {
+    Ok(crate::parse::load_guards(config)?
+        .into_iter()
+        .filter(|guard| guard.meta().refs.iter().any(|ref_id| ref_id == target_id))
+        .map(|guard| guard.meta().id.clone())
+        .collect())
+}
+
+fn sorted_unique_referrers(mut referrers: Vec<String>) -> Vec<String> {
+    referrers.sort();
+    referrers.dedup();
+    referrers
 }
 
 fn proceed_with_deletion(
