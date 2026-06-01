@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-020"
+title = "Split delete tests by artifact"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Split the monolithic delete command integration test file into artifact-focused include files for clause deletion and work-item deletion. Preserve existing test names, snapshots, and behavior while keeping tests/test_delete.rs as the small suite entrypoint."
+
+[[content.acceptance_criteria]]
+text = "clause and work-item delete tests live in focused include files"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "delete command tests pass without snapshot churn"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
