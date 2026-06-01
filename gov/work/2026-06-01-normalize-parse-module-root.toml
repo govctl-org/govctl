@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-087"
+title = "Normalize parse module root"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Mechanically move the current src/parse.rs module root to src/parse/mod.rs so future parse helpers can live under a directory-owned module without leaving a same-name file/directory pair. Preserve every public crate::parse API and behavior; do not split artifact-specific logic in this slice."
+
+[[content.acceptance_criteria]]
+text = "src/parse.rs is replaced by src/parse/mod.rs with no same-name file/directory coexistence"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "public crate::parse imports continue to compile unchanged"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo check or cargo test and govctl check pass"
+status = "pending"
+category = "chore"
