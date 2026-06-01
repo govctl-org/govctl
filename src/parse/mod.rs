@@ -1,4 +1,4 @@
-//! TOML parsing for ADR, Work Item, and Release files.
+//! TOML parsing for ADR, Work Item, Guard, and Release files.
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
