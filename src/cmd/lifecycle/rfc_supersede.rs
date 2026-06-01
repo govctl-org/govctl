@@ -1,4 +1,4 @@
-use super::paths::require_rfc_toml_path;
+use super::paths::{require_replacement_rfc_toml_path, require_rfc_toml_path};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::RfcStatus;
@@ -21,7 +21,7 @@ pub(super) fn supersede_rfc(
     }
 
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
-    let replacement_path = require_replacement_rfc_path(config, by)?;
+    let replacement_path = require_replacement_rfc_toml_path(config, by)?;
     let mut source = read_rfc(config, &rfc_path)?;
     let mut replacement = read_rfc(config, &replacement_path)?;
 
@@ -50,20 +50,6 @@ pub(super) fn supersede_rfc(
         ui::superseded("RFC", rfc_id, by);
     }
     Ok(vec![])
-}
-
-fn require_replacement_rfc_path(config: &Config, by: &str) -> DiagnosticResult<std::path::PathBuf> {
-    require_rfc_toml_path(config, by).map_err(|err| {
-        if err.code == DiagnosticCode::E0102RfcNotFound {
-            Diagnostic::new(
-                DiagnosticCode::E0102RfcNotFound,
-                format!("Replacement RFC not found: {by}"),
-                by,
-            )
-        } else {
-            err
-        }
-    })
 }
 
 fn validate_supersede_transition(

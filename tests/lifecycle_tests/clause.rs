@@ -76,6 +76,40 @@ fn test_supersede_clause() -> common::TestResult {
 }
 
 #[test]
+fn test_supersede_clause_rejects_missing_replacement() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-OLD",
+                "Old Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "supersede",
+                "RFC-0001:C-OLD",
+                "--by",
+                "RFC-0001:C-MISSING",
+                "--force",
+            ],
+        ],
+    )?;
+    assert!(output.contains(
+        "error[E0202]: Replacement clause not found: RFC-0001:C-MISSING"
+    ));
+    Ok(())
+}
+
+#[test]
 fn test_deprecate_clause_force() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = today();

@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-051"
+title = "Extract lifecycle replacement path helpers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract the repeated lifecycle replacement-artifact path lookup and not-found diagnostic remapping used by RFC and clause supersede paths into shared lifecycle path helpers. Preserve migration-required errors, replacement not-found diagnostics, and supersede behavior."
+
+[[content.acceptance_criteria]]
+text = "RFC and clause supersede paths share lifecycle replacement path lookup helpers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "lifecycle migration-required errors and replacement not-found diagnostics remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted lifecycle supersede tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"

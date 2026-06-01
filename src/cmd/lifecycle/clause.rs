@@ -1,4 +1,4 @@
-use super::paths::require_clause_toml_path;
+use super::paths::{require_clause_toml_path, require_replacement_clause_toml_path};
 use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
@@ -43,16 +43,7 @@ pub(super) fn supersede_clause(
     by: &str,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    if let Err(err) = require_clause_toml_path(config, by) {
-        if err.code == DiagnosticCode::E0202ClauseNotFound {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0202ClauseNotFound,
-                format!("Replacement clause not found: {by}"),
-                by,
-            ));
-        }
-        return Err(err);
-    }
+    require_replacement_clause_toml_path(config, by)?;
 
     let clause_path = require_clause_toml_path(config, clause_id)?;
     let mut clause = read_clause(config, &clause_path)?;

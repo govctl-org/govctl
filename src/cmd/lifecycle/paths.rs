@@ -38,6 +38,23 @@ pub(super) fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> Diagnostic
     ))
 }
 
+pub(super) fn require_replacement_rfc_toml_path(
+    config: &Config,
+    rfc_id: &str,
+) -> DiagnosticResult<PathBuf> {
+    require_replacement_path(
+        || require_rfc_toml_path(config, rfc_id),
+        DiagnosticCode::E0102RfcNotFound,
+        || {
+            Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("Replacement RFC not found: {rfc_id}"),
+                rfc_id,
+            )
+        },
+    )
+}
+
 pub(super) fn require_clause_toml_path(
     config: &Config,
     clause_id: &str,
@@ -59,4 +76,39 @@ pub(super) fn require_clause_toml_path(
         format!("Clause not found: {clause_id}"),
         clause_id,
     ))
+}
+
+pub(super) fn require_replacement_clause_toml_path(
+    config: &Config,
+    clause_id: &str,
+) -> DiagnosticResult<PathBuf> {
+    require_replacement_path(
+        || require_clause_toml_path(config, clause_id),
+        DiagnosticCode::E0202ClauseNotFound,
+        || {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Replacement clause not found: {clause_id}"),
+                clause_id,
+            )
+        },
+    )
+}
+
+fn require_replacement_path<F, NotFound>(
+    lookup: F,
+    not_found_code: DiagnosticCode,
+    not_found: NotFound,
+) -> DiagnosticResult<PathBuf>
+where
+    F: FnOnce() -> DiagnosticResult<PathBuf>,
+    NotFound: FnOnce() -> Diagnostic,
+{
+    lookup().map_err(|err| {
+        if err.code == not_found_code {
+            not_found()
+        } else {
+            err
+        }
+    })
 }
