@@ -5,8 +5,6 @@
 //!
 //! Implements [[ADR-0005]] color scheme.
 
-#![allow(dead_code)] // Variants/functions are used across feature-gated modules
-
 /// Semantic color intent, independent of rendering backend.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SemanticColor {
@@ -19,6 +17,7 @@ pub enum SemanticColor {
     /// Informational accents: IDs, paths, test phase
     Info,
     /// Secondary accent: impl phase
+    #[cfg(feature = "tui")]
     Accent,
     /// Default text, no special coloring
     Neutral,
@@ -35,6 +34,7 @@ pub fn status_semantic(status: &str) -> SemanticColor {
 }
 
 /// Map an RFC phase string to its semantic color.
+#[cfg(feature = "tui")]
 pub fn phase_semantic(phase: &str) -> SemanticColor {
     match phase {
         "stable" => SemanticColor::Success,
@@ -46,6 +46,7 @@ pub fn phase_semantic(phase: &str) -> SemanticColor {
 }
 
 /// Unicode status icon for display.
+#[cfg(feature = "tui")]
 pub fn status_icon(status: &str) -> &'static str {
     match status {
         "normative" | "accepted" | "done" => "●",
@@ -66,6 +67,7 @@ impl SemanticColor {
             Self::Warning => owo_colors::AnsiColors::Yellow,
             Self::Muted => owo_colors::AnsiColors::BrightBlack,
             Self::Info => owo_colors::AnsiColors::Cyan,
+            #[cfg(feature = "tui")]
             Self::Accent => owo_colors::AnsiColors::Blue,
             Self::Neutral => owo_colors::AnsiColors::Default,
         }
@@ -78,6 +80,7 @@ impl SemanticColor {
             Self::Warning => comfy_table::Color::Yellow,
             Self::Muted => comfy_table::Color::DarkGrey,
             Self::Info => comfy_table::Color::Cyan,
+            #[cfg(feature = "tui")]
             Self::Accent => comfy_table::Color::Blue,
             Self::Neutral => comfy_table::Color::White,
         }
@@ -91,6 +94,7 @@ impl SemanticColor {
             Self::Warning => ratatui::style::Color::Yellow,
             Self::Muted => ratatui::style::Color::DarkGray,
             Self::Info => ratatui::style::Color::Cyan,
+            #[cfg(feature = "tui")]
             Self::Accent => ratatui::style::Color::Blue,
             Self::Neutral => ratatui::style::Color::Reset,
         }
