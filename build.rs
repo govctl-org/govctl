@@ -2,119 +2,16 @@
 
 #[path = "build_support/agent_templates.rs"]
 mod agent_templates;
+#[path = "build_support/edit_ops_spec.rs"]
+mod edit_ops_spec;
 
 use agent_templates::generate_codex_agent_templates;
-use serde::Deserialize;
-use serde_json::Value;
-use std::collections::HashSet;
+use edit_ops_spec::{
+    EditOpsSpec, NestedNodeRule, RuntimeGetRule, RuntimeSetMode, RuntimeSetRule, load_edit_ops_spec,
+};
 use std::error::Error;
 use std::fs;
 use std::path::Path;
-
-#[derive(Debug, Deserialize)]
-struct EditOpsSpec {
-    version: u32,
-    aliases: Vec<AliasRule>,
-    legacy_prefixes: Vec<LegacyPrefixRule>,
-    simple_rules: Vec<SimpleFieldRule>,
-    runtime_fields: Vec<RuntimeFieldRule>,
-    nested_rules: Vec<NestedRootRule>,
-    validation_rules: Vec<FieldValidationRule>,
-}
-
-#[derive(Debug, Deserialize)]
-struct AliasRule {
-    alias: String,
-    canonical: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct LegacyPrefixRule {
-    prefix: String,
-    allowed_fields: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct NestedRootRule {
-    artifact: String,
-    root: String,
-    content_path: Vec<String>,
-    node: NestedNodeRule,
-}
-
-#[derive(Debug, Deserialize)]
-struct NestedFieldRule {
-    name: String,
-    node: NestedNodeRule,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-enum NestedNodeRule {
-    Scalar {
-        verbs: Vec<String>,
-        set_mode: Option<RuntimeSetMode>,
-    },
-    Object {
-        verbs: Vec<String>,
-        fields: Vec<NestedFieldRule>,
-    },
-    List {
-        verbs: Vec<String>,
-        text_key: Option<String>,
-        item: Box<NestedNodeRule>,
-    },
-}
-
-#[derive(Debug, Deserialize)]
-struct SimpleFieldRule {
-    artifact: String,
-    name: String,
-    kind: String,
-    verbs: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RuntimeFieldRule {
-    artifact: String,
-    name: String,
-    get: Option<RuntimeGetRule>,
-    set: Option<RuntimeSetRule>,
-    list_path: Option<Vec<String>>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RuntimeGetRule {
-    path: Vec<String>,
-    render: String,
-    status_key: Option<String>,
-    text_key: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RuntimeSetRule {
-    path: Vec<String>,
-    mode: RuntimeSetMode,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum RuntimeSetMode {
-    String,
-    Integer,
-    Enum {
-        allowed: Vec<String>,
-        invalid_msg: String,
-        code: Option<String>,
-    },
-}
-
-#[derive(Debug, Deserialize)]
-struct FieldValidationRule {
-    artifact: String,
-    field: String,
-    rule: String,
-}
 
 fn main() {
     // Recompile if any embedded .claude/ assets change
@@ -147,14 +44,7 @@ fn main() {
 fn generate_edit_rules() -> Result<(), Box<dyn Error>> {
     let spec_path = Path::new("gov/schema/edit-ops.json");
     let schema_path = Path::new("gov/schema/edit-ops.schema.json");
-    let spec_text = fs::read_to_string(spec_path)?;
-    let schema_text = fs::read_to_string(schema_path)?;
-    let spec_value: Value = serde_json::from_str(&spec_text)?;
-    let schema_value: Value = serde_json::from_str(&schema_text)?;
-
-    validate_spec_against_schema(&schema_value, &spec_value)?;
-    let spec: EditOpsSpec = serde_json::from_value(spec_value)?;
-    validate_runtime_fields(&spec)?;
+    let spec = load_edit_ops_spec(spec_path, schema_path)?;
     let rendered = render_edit_rules(&spec)?;
     let rendered_runtime = render_edit_runtime(&spec)?;
     let out_dir = std::env::var("OUT_DIR")?;
@@ -162,64 +52,6 @@ fn generate_edit_rules() -> Result<(), Box<dyn Error>> {
     let out_runtime_path = Path::new(&out_dir).join("edit_runtime_generated.rs");
     fs::write(out_path, rendered)?;
     fs::write(out_runtime_path, rendered_runtime)?;
-    Ok(())
-}
-
-fn validate_spec_against_schema(schema: &Value, instance: &Value) -> Result<(), Box<dyn Error>> {
-    let compiled = jsonschema::validator_for(schema)
-        .map_err(|err| format!("invalid edit-ops schema: {err}"))?;
-    let mut diagnostics: Vec<String> = compiled
-        .iter_errors(instance)
-        .map(|err| err.to_string())
-        .collect();
-    if !diagnostics.is_empty() {
-        diagnostics.sort();
-        diagnostics.dedup();
-        let body = diagnostics
-            .into_iter()
-            .map(|d| format!("  - {d}"))
-            .collect::<Vec<_>>()
-            .join("\n");
-        return Err(format!("edit-ops.json failed schema validation:\n{body}").into());
-    }
-    Ok(())
-}
-
-fn validate_runtime_fields(spec: &EditOpsSpec) -> Result<(), Box<dyn Error>> {
-    let mut seen = HashSet::new();
-    for field in &spec.runtime_fields {
-        let key = format!("{}:{}", field.artifact, field.name);
-        if !seen.insert(key.clone()) {
-            return Err(format!("duplicate runtime_fields entry in SSOT: {key}").into());
-        }
-        let simple = spec
-            .simple_rules
-            .iter()
-            .find(|rule| rule.artifact == field.artifact && rule.name == field.name)
-            .ok_or_else(|| format!("runtime_fields entry missing matching simple_rule: {}", key))?;
-
-        if field.get.is_some() && !simple.verbs.iter().any(|v| v == "get") {
-            return Err(format!(
-                "runtime_fields {} defines get but simple_rules does not allow get",
-                key
-            )
-            .into());
-        }
-        if field.set.is_some() && !simple.verbs.iter().any(|v| v == "set") {
-            return Err(format!(
-                "runtime_fields {} defines set but simple_rules does not allow set",
-                key
-            )
-            .into());
-        }
-        if field.list_path.is_some() && !simple.verbs.iter().any(|v| v == "add" || v == "remove") {
-            return Err(format!(
-                "runtime_fields {} defines list_path but simple_rules has no add/remove verb",
-                key
-            )
-            .into());
-        }
-    }
     Ok(())
 }
 
