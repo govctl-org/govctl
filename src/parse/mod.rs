@@ -1,12 +1,13 @@
 //! TOML parsing for ADR, Work Item, Guard, and Release files.
 
+mod toml_io;
+
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
     AdrEntry, AdrSpec, GuardEntry, GuardSpec, ReleasesFile, WorkItemEntry, WorkItemSpec,
 };
-use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
-use crate::ui;
+use crate::schema::ArtifactSchema;
 use crate::write::WriteOp;
 use std::path::Path;
 
@@ -24,67 +25,24 @@ pub fn load_adrs(config: &Config) -> Result<Vec<AdrEntry>, Diagnostic> {
 /// Load all ADRs, returning both items and parse warnings
 pub fn load_adrs_with_warnings(config: &Config) -> Result<LoadResult<AdrEntry>, Diagnostic> {
     let adr_dir = config.adr_dir();
-    if !adr_dir.exists() {
-        return Ok(LoadResult {
-            items: vec![],
-            warnings: vec![],
-        });
-    }
-
-    let mut adrs = Vec::new();
-    let mut warnings = Vec::new();
-    let entries = std::fs::read_dir(&adr_dir).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            adr_dir.display().to_string(),
-        )
-    })?;
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().is_some_and(|ext| ext == "toml") {
-            match load_adr(config, &path) {
-                Ok(adr) => adrs.push(adr),
-                Err(e) => warnings.push(e),
-            }
-        }
-    }
-
-    // Sort by ID for deterministic output
-    adrs.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id));
-
-    Ok(LoadResult {
-        items: adrs,
-        warnings,
-    })
+    toml_io::load_toml_dir(
+        &adr_dir,
+        |path| load_adr(config, path),
+        |adrs| adrs.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id)),
+    )
 }
 
 /// Load a single ADR from TOML file
 pub fn load_adr(config: &Config, path: &Path) -> Result<AdrEntry, Diagnostic> {
-    let content = std::fs::read_to_string(path).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
-
-    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0301AdrSchemaInvalid,
-            format!("Invalid TOML: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    validate_toml_value(ArtifactSchema::Adr, config, path, &raw)?;
-    let spec: AdrSpec = raw.try_into().map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0301AdrSchemaInvalid,
-            format!("Invalid ADR structure: {e}"),
-            path.display().to_string(),
-        )
-    })?;
+    let spec = toml_io::load_toml_spec(
+        config,
+        path,
+        ArtifactSchema::Adr,
+        DiagnosticCode::E0301AdrSchemaInvalid,
+        "Invalid TOML",
+        "Invalid ADR structure",
+        |_| {},
+    )?;
 
     Ok(AdrEntry {
         spec,
@@ -99,32 +57,14 @@ pub fn write_adr(
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    let body = toml::to_string_pretty(spec).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to serialize TOML: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::Adr, &body);
-
-    match op {
-        WriteOp::Execute => {
-            std::fs::write(path, &content).map_err(|e| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    e.to_string(),
-                    path.display().to_string(),
-                )
-            })?;
-        }
-        WriteOp::Preview => {
-            let output_path = display_path.unwrap_or(path);
-            ui::dry_run_file_preview(output_path, &content);
-        }
-    }
-
-    Ok(())
+    toml_io::write_toml_spec(
+        path,
+        ArtifactSchema::Adr,
+        spec,
+        op,
+        display_path,
+        "Failed to serialize TOML",
+    )
 }
 
 /// Load all work items from the work directory
@@ -137,37 +77,11 @@ pub fn load_work_items_with_warnings(
     config: &Config,
 ) -> Result<LoadResult<WorkItemEntry>, Diagnostic> {
     let work_dir = config.work_dir();
-    if !work_dir.exists() {
-        return Ok(LoadResult {
-            items: vec![],
-            warnings: vec![],
-        });
-    }
-
-    let mut items = Vec::new();
-    let mut warnings = Vec::new();
-    let entries = std::fs::read_dir(&work_dir).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            work_dir.display().to_string(),
-        )
-    })?;
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().is_some_and(|ext| ext == "toml") {
-            match load_work_item(config, &path) {
-                Ok(item) => items.push(item),
-                Err(e) => warnings.push(e),
-            }
-        }
-    }
-
-    // Sort by ID for deterministic output
-    items.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id));
-
-    Ok(LoadResult { items, warnings })
+    toml_io::load_toml_dir(
+        &work_dir,
+        |path| load_work_item(config, path),
+        |items| items.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id)),
+    )
 }
 
 /// Load all verification guards from the guard directory.
@@ -178,63 +92,24 @@ pub fn load_guards(config: &Config) -> Result<Vec<GuardEntry>, Diagnostic> {
 /// Load all verification guards, returning both items and parse warnings.
 pub fn load_guards_with_warnings(config: &Config) -> Result<LoadResult<GuardEntry>, Diagnostic> {
     let guard_dir = config.guard_dir();
-    if !guard_dir.exists() {
-        return Ok(LoadResult {
-            items: vec![],
-            warnings: vec![],
-        });
-    }
-
-    let mut items = Vec::new();
-    let mut warnings = Vec::new();
-    let entries = std::fs::read_dir(&guard_dir).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            guard_dir.display().to_string(),
-        )
-    })?;
-
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.extension().is_some_and(|ext| ext == "toml") {
-            match load_guard(config, &path) {
-                Ok(item) => items.push(item),
-                Err(e) => warnings.push(e),
-            }
-        }
-    }
-
-    items.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id));
-
-    Ok(LoadResult { items, warnings })
+    toml_io::load_toml_dir(
+        &guard_dir,
+        |path| load_guard(config, path),
+        |items| items.sort_by(|a, b| a.spec.govctl.id.cmp(&b.spec.govctl.id)),
+    )
 }
 
 /// Load a single verification guard from TOML file.
 pub fn load_guard(config: &Config, path: &Path) -> Result<GuardEntry, Diagnostic> {
-    let content = std::fs::read_to_string(path).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
-
-    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E1001GuardSchemaInvalid,
-            format!("Invalid TOML: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    validate_toml_value(ArtifactSchema::Guard, config, path, &raw)?;
-    let spec: GuardSpec = raw.try_into().map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E1001GuardSchemaInvalid,
-            format!("Invalid verification guard structure: {e}"),
-            path.display().to_string(),
-        )
-    })?;
+    let spec = toml_io::load_toml_spec(
+        config,
+        path,
+        ArtifactSchema::Guard,
+        DiagnosticCode::E1001GuardSchemaInvalid,
+        "Invalid TOML",
+        "Invalid verification guard structure",
+        |_| {},
+    )?;
 
     Ok(GuardEntry {
         spec,
@@ -244,31 +119,15 @@ pub fn load_guard(config: &Config, path: &Path) -> Result<GuardEntry, Diagnostic
 
 /// Load a single work item from TOML file
 pub fn load_work_item(config: &Config, path: &Path) -> Result<WorkItemEntry, Diagnostic> {
-    let content = std::fs::read_to_string(path).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
-
-    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0401WorkSchemaInvalid,
-            format!("Invalid TOML: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    let mut schema_raw = raw.clone();
-    strip_legacy_inline_history_for_schema(&mut schema_raw);
-    validate_toml_value(ArtifactSchema::WorkItem, config, path, &schema_raw)?;
-    let spec: WorkItemSpec = raw.try_into().map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0401WorkSchemaInvalid,
-            format!("Invalid work item structure: {e}"),
-            path.display().to_string(),
-        )
-    })?;
+    let spec = toml_io::load_toml_spec(
+        config,
+        path,
+        ArtifactSchema::WorkItem,
+        DiagnosticCode::E0401WorkSchemaInvalid,
+        "Invalid TOML",
+        "Invalid work item structure",
+        strip_legacy_inline_history_for_schema,
+    )?;
 
     Ok(WorkItemEntry {
         spec,
@@ -294,32 +153,14 @@ pub fn write_work_item(
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    let body = toml::to_string_pretty(spec).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to serialize TOML: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::WorkItem, &body);
-
-    match op {
-        WriteOp::Execute => {
-            std::fs::write(path, &content).map_err(|e| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    e.to_string(),
-                    path.display().to_string(),
-                )
-            })?;
-        }
-        WriteOp::Preview => {
-            let output_path = display_path.unwrap_or(path);
-            ui::dry_run_file_preview(output_path, &content);
-        }
-    }
-
-    Ok(())
+    toml_io::write_toml_spec(
+        path,
+        ArtifactSchema::WorkItem,
+        spec,
+        op,
+        display_path,
+        "Failed to serialize TOML",
+    )
 }
 
 /// Write a verification guard to TOML file.
@@ -329,32 +170,14 @@ pub fn write_guard(
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    let body = toml::to_string_pretty(spec).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to serialize TOML: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::Guard, &body);
-
-    match op {
-        WriteOp::Execute => {
-            std::fs::write(path, &content).map_err(|e| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    e.to_string(),
-                    path.display().to_string(),
-                )
-            })?;
-        }
-        WriteOp::Preview => {
-            let output_path = display_path.unwrap_or(path);
-            ui::dry_run_file_preview(output_path, &content);
-        }
-    }
-
-    Ok(())
+    toml_io::write_toml_spec(
+        path,
+        ArtifactSchema::Guard,
+        spec,
+        op,
+        display_path,
+        "Failed to serialize TOML",
+    )
 }
 
 /// Load releases from gov/releases.toml
@@ -366,29 +189,15 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
         return Ok(ReleasesFile::default());
     }
 
-    let content = std::fs::read_to_string(&path).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
-
-    let raw: toml::Value = toml::from_str(&content).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0704ReleaseSchemaInvalid,
-            format!("Invalid releases.toml: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    validate_toml_value(ArtifactSchema::Release, config, &path, &raw)?;
-    let releases: ReleasesFile = raw.try_into().map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0704ReleaseSchemaInvalid,
-            format!("Invalid release structure: {e}"),
-            path.display().to_string(),
-        )
-    })?;
+    let releases: ReleasesFile = toml_io::load_toml_spec(
+        config,
+        &path,
+        ArtifactSchema::Release,
+        DiagnosticCode::E0704ReleaseSchemaInvalid,
+        "Invalid releases.toml",
+        "Invalid release structure",
+        |_| {},
+    )?;
 
     // Validate all versions are valid semver
     for release in &releases.releases {
@@ -417,29 +226,12 @@ pub fn write_releases(
 ) -> Result<(), Diagnostic> {
     let path = config.releases_path();
     let path_display = config.display_path(&path);
-    let body = toml::to_string_pretty(releases).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to serialize releases: {e}"),
-            path_display.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::Release, &body);
-
-    match op {
-        WriteOp::Execute => {
-            std::fs::write(&path, &content).map_err(|e| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    e.to_string(),
-                    path_display.display().to_string(),
-                )
-            })?;
-        }
-        WriteOp::Preview => {
-            ui::dry_run_file_preview(&path_display, &content);
-        }
-    }
-
-    Ok(())
+    toml_io::write_toml_spec(
+        &path,
+        ArtifactSchema::Release,
+        releases,
+        op,
+        Some(&path_display),
+        "Failed to serialize releases",
+    )
 }

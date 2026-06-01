@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-088"
 title = "Extract parse TOML IO helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-087"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Extract reusable parse module helpers for repeated TOML file read
 
 [[content.acceptance_criteria]]
 text = "repeated TOML read, validate, and deserialize logic is shared by ADR, guard, work item, and release loaders"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "repeated schema-header write and dry-run preview logic is shared by ADR, guard, work item, and release writers"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "parse-related tests or cargo test and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
