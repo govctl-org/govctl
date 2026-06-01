@@ -1,3 +1,4 @@
+use super::changelog::ChangelogEntry;
 use clap::ValueEnum;
 use serde::{Deserialize, Serialize};
 use strum::AsRefStr;
@@ -35,25 +36,6 @@ pub struct SectionSpec {
     pub title: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub clauses: Vec<String>,
-}
-
-/// Individual clause specification (C-*.json)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ClauseSpec {
-    pub clause_id: String,
-    pub title: String,
-    pub kind: ClauseKind,
-    #[serde(default)]
-    pub status: ClauseStatus,
-    pub text: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub anchors: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub superseded_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub since: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
 }
 
 /// RFC TOML wire format: `[govctl]` metadata + top-level `[[sections]]` / `[[changelog]]`.
@@ -136,102 +118,6 @@ impl From<RfcWire> for RfcSpec {
     }
 }
 
-/// Clause TOML wire format: `[govctl]` metadata + `[content]`.
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ClauseWire {
-    pub govctl: ClauseMeta,
-    pub content: ClauseContent,
-}
-
-/// Clause metadata section `[govctl]`
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ClauseMeta {
-    #[serde(default, rename = "schema", skip_serializing)]
-    _schema: u32,
-    pub id: String,
-    pub title: String,
-    pub kind: ClauseKind,
-    #[serde(default)]
-    pub status: ClauseStatus,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub anchors: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub superseded_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub since: Option<String>,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub tags: Vec<String>,
-}
-
-/// Clause content section `[content]`
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ClauseContent {
-    pub text: String,
-}
-
-impl From<ClauseSpec> for ClauseWire {
-    fn from(s: ClauseSpec) -> Self {
-        Self {
-            govctl: ClauseMeta {
-                _schema: 1,
-                id: s.clause_id,
-                title: s.title,
-                kind: s.kind,
-                status: s.status,
-                anchors: s.anchors,
-                superseded_by: s.superseded_by,
-                since: s.since,
-                tags: s.tags,
-            },
-            content: ClauseContent { text: s.text },
-        }
-    }
-}
-
-impl From<ClauseWire> for ClauseSpec {
-    fn from(w: ClauseWire) -> Self {
-        Self {
-            clause_id: w.govctl.id,
-            title: w.govctl.title,
-            kind: w.govctl.kind,
-            status: w.govctl.status,
-            text: w.content.text,
-            anchors: w.govctl.anchors,
-            superseded_by: w.govctl.superseded_by,
-            since: w.govctl.since,
-            tags: w.govctl.tags,
-        }
-    }
-}
-
-/// Changelog entry for RFC versioning (Keep a Changelog format)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct ChangelogEntry {
-    pub version: String,
-    pub date: String,
-    /// Optional freeform notes for this release
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub notes: Option<String>,
-    /// New features added
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub added: Vec<String>,
-    /// Changes to existing functionality
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub changed: Vec<String>,
-    /// Features marked for removal in upcoming releases
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub deprecated: Vec<String>,
-    /// Features removed in this release
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub removed: Vec<String>,
-    /// Bug fixes
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub fixed: Vec<String>,
-    /// Security-related changes
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub security: Vec<String>,
-}
-
 /// RFC status lifecycle
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, AsRefStr, ValueEnum)]
 #[serde(rename_all = "lowercase")]
@@ -251,24 +137,4 @@ pub enum RfcPhase {
     Impl,
     Test,
     Stable,
-}
-
-/// Clause kind
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, AsRefStr, ValueEnum)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum ClauseKind {
-    Normative,
-    Informative,
-}
-
-/// Clause status lifecycle
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize, AsRefStr)]
-#[serde(rename_all = "lowercase")]
-#[strum(serialize_all = "lowercase")]
-pub enum ClauseStatus {
-    #[default]
-    Active,
-    Deprecated,
-    Superseded,
 }

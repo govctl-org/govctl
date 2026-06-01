@@ -8,6 +8,8 @@
 //! Lifecycle state machines per [[RFC-0001]].
 
 mod adr;
+mod changelog;
+mod clause;
 mod guard;
 mod index;
 mod release;
@@ -17,16 +19,15 @@ mod tests;
 mod work;
 
 pub use adr::{AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus};
+pub use changelog::{ChangelogCategory, ChangelogEntry};
+pub use clause::{ClauseKind, ClauseSpec, ClauseStatus, ClauseWire};
 pub use guard::{GuardCheck, GuardMeta, GuardSpec};
 pub use index::{AdrEntry, ClauseEntry, GuardEntry, ProjectIndex, RfcIndex, WorkItemEntry};
 pub use release::{Release, ReleasesFile};
-pub use rfc::{
-    ChangelogEntry, ClauseKind, ClauseSpec, ClauseStatus, ClauseWire, RfcPhase, RfcSpec, RfcStatus,
-    RfcWire, SectionSpec,
-};
+pub use rfc::{RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec};
 #[cfg(test)]
 pub use work::JournalEntry;
 pub use work::{
-    ChangelogCategory, ChecklistItem, ChecklistStatus, WorkItemContent, WorkItemMeta, WorkItemSpec,
-    WorkItemStatus, WorkItemVerification,
+    ChecklistItem, ChecklistStatus, WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus,
+    WorkItemVerification,
 };

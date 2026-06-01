@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-188"
+title = "Extract clause model types"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move clause-specific model and wire types from src/model/rfc.rs into a flat src/model/clause.rs module while preserving the public crate::model exports used by existing callers."
+
+[[content.acceptance_criteria]]
+text = "ClauseSpec, ClauseWire, ClauseKind, and ClauseStatus live in src/model/clause.rs"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing crate::model clause type imports continue to compile through model re-exports"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Model and edit tests pass"
+status = "done"
+category = "chore"
