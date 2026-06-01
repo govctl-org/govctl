@@ -19,6 +19,7 @@ include = [
     "gov/templates/*",
     "src/**/*",
     "tests/**/*",
+    "build_support/**/*",
     "build.rs",
     "Cargo.toml",
     "Cargo.lock",
