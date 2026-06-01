@@ -1,7 +1,7 @@
-use super::super::ArtifactType;
 use super::super::engine as edit_engine;
 use super::super::matching::{MatchOptions, MatchUse, resolve_match_indices};
 use super::super::runtime as edit_runtime;
+use super::super::{ArtifactType, unexpected_edit_state};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 
 const TICK_NESTED_PATH_ERROR: &str =
@@ -32,13 +32,9 @@ pub(super) fn tick_target_in_doc(
             }
             match origin {
                 edit_engine::TargetOrigin::Simple => {
-                    let simple = path.as_simple().ok_or_else(|| {
-                        Diagnostic::new(
-                            DiagnosticCode::E0901IoError,
-                            "simple list target expected",
-                            id,
-                        )
-                    })?;
+                    let simple = path
+                        .as_simple()
+                        .ok_or_else(|| unexpected_edit_state(id, "simple list target expected"))?;
                     edit_runtime::tick_simple_status_list_item_with_matcher(
                         artifact,
                         doc,
@@ -98,11 +94,7 @@ pub(super) fn tick_target_in_doc(
             match origin {
                 edit_engine::TargetOrigin::Simple => {
                     let simple = container_path.as_simple().ok_or_else(|| {
-                        Diagnostic::new(
-                            DiagnosticCode::E0901IoError,
-                            "simple indexed container expected",
-                            id,
-                        )
+                        unexpected_edit_state(id, "simple indexed container expected")
                     })?;
                     edit_runtime::tick_simple_status_list_item_with_matcher(
                         artifact,

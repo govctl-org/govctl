@@ -8,7 +8,7 @@ use super::target_doc::add_to_target_doc;
 use super::toml_target::{is_work_dependency_target, validate_work_dependency_edit};
 use super::{
     ArtifactType, deserialize_edit_doc, plan_edit_with_field_for_verb, resolve_owned_value,
-    serialize_edit_doc,
+    serialize_edit_doc, unexpected_edit_state,
 };
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -131,20 +131,14 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> anyhow::Result<Vec<Diagnost
 
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Add))?;
     let artifact = plan.artifact;
-    let fp = plan.field_path.as_ref().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            "validated above: field path must be present",
-            id,
-        )
-    })?;
-    let target = plan.target.as_ref().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            "mutation planning should produce target",
-            id,
-        )
-    })?;
+    let fp = plan
+        .field_path
+        .as_ref()
+        .ok_or_else(|| unexpected_edit_state(id, "validated above: field path must be present"))?;
+    let target = plan
+        .target
+        .as_ref()
+        .ok_or_else(|| unexpected_edit_state(id, "mutation planning should produce target"))?;
     let value = resolve_owned_value(value, stdin)?;
     let value = value.as_str();
 

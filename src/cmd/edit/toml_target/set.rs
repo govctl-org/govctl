@@ -3,7 +3,9 @@ use super::work_dependencies::{is_work_dependency_target, validate_work_dependen
 use crate::cmd::edit::adapter::{TomlAdapter, WorkTomlAdapter};
 use crate::cmd::edit::engine as edit_engine;
 use crate::cmd::edit::runtime as edit_runtime;
-use crate::cmd::edit::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
+use crate::cmd::edit::{
+    ArtifactType, deserialize_edit_doc, serialize_edit_doc, unexpected_edit_state,
+};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::WriteOp;
@@ -78,13 +80,9 @@ where
             ..
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
-                let simple = path.as_simple().ok_or_else(|| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0901IoError,
-                        "simple target path expected",
-                        id,
-                    )
-                })?;
+                let simple = path
+                    .as_simple()
+                    .ok_or_else(|| unexpected_edit_state(id, "simple target path expected"))?;
                 if allow_forced_simple_set {
                     edit_runtime::set_simple_field_forced(artifact, &mut doc, simple, value, id)?;
                 } else {
@@ -104,11 +102,7 @@ where
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
                 let simple = container_path.as_simple().ok_or_else(|| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0901IoError,
-                        "simple indexed container expected",
-                        id,
-                    )
+                    unexpected_edit_state(id, "simple indexed container expected")
                 })?;
                 edit_runtime::set_simple_list_item(artifact, &mut doc, simple, *index, value, id)?;
             }

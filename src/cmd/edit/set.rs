@@ -4,7 +4,7 @@ use super::json_target::{set_clause_field, set_rfc_field};
 use super::path::FieldPath;
 use super::rules as edit_rules;
 use super::toml_target::{set_toml_field, set_work_toml_field};
-use super::{ArtifactType, plan_edit_with_field_for_verb};
+use super::{ArtifactType, plan_edit_with_field_for_verb, unexpected_edit_state};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::write::WriteOp;
@@ -17,13 +17,10 @@ pub(crate) fn set_field_direct(
     op: WriteOp,
 ) -> anyhow::Result<()> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
-    let target = plan.target.as_ref().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            "mutation planning should produce target",
-            id,
-        )
-    })?;
+    let target = plan
+        .target
+        .as_ref()
+        .ok_or_else(|| unexpected_edit_state(id, "mutation planning should produce target"))?;
     apply_set_field(config, id, target, plan.artifact, value, op, false)
 }
 

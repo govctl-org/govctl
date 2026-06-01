@@ -2,7 +2,7 @@ use super::TomlEditableEntry;
 use crate::cmd::edit::adapter::TomlAdapter;
 use crate::cmd::edit::engine as edit_engine;
 use crate::cmd::edit::runtime as edit_runtime;
-use crate::cmd::edit::{ArtifactType, serialize_edit_doc};
+use crate::cmd::edit::{ArtifactType, serialize_edit_doc, unexpected_edit_state};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 
@@ -46,11 +46,7 @@ fn render_resolved_target(
             ..
         } => {
             let simple = path.as_simple().ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    "simple node target should use a simple path",
-                    id,
-                )
+                unexpected_edit_state(id, "simple node target should use a simple path")
             })?;
             edit_runtime::get_simple_field(artifact, doc, simple, id)
         }
@@ -61,10 +57,9 @@ fn render_resolved_target(
             ..
         } => {
             let simple = container_path.as_simple().ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    "simple indexed target should use a simple container path",
+                unexpected_edit_state(
                     id,
+                    "simple indexed target should use a simple container path",
                 )
             })?;
             edit_runtime::get_simple_list_item(artifact, doc, simple, *index, id)

@@ -2,6 +2,7 @@ use super::ArtifactType;
 use super::engine as edit_engine;
 use super::matching::{MatchOptions, MatchUse, resolve_match_indices};
 use super::runtime as edit_runtime;
+use super::unexpected_edit_state;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::ui;
 use crate::write::WriteOp;
@@ -54,13 +55,9 @@ pub(super) fn add_to_target_doc(
 
     match origin {
         edit_engine::TargetOrigin::Simple => {
-            let simple = path.as_simple().ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    "simple list target expected",
-                    id,
-                )
-            })?;
+            let simple = path
+                .as_simple()
+                .ok_or_else(|| unexpected_edit_state(id, "simple list target expected"))?;
             if !edit_runtime::add_simple_list_value(artifact, doc, simple, value, id)? {
                 return Err(cannot_add_to_field_error(id, simple));
             }
@@ -96,13 +93,9 @@ pub(super) fn remove_target_from_doc(
             ..
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
-                let simple = path.as_simple().ok_or_else(|| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0901IoError,
-                        "simple list target expected",
-                        id,
-                    )
-                })?;
+                let simple = path
+                    .as_simple()
+                    .ok_or_else(|| unexpected_edit_state(id, "simple list target expected"))?;
                 let removed = remove_simple_values_from_doc(artifact, doc, simple, id, opts)?
                     .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
                 Ok((simple.to_string(), removed))
@@ -124,11 +117,7 @@ pub(super) fn remove_target_from_doc(
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
                 let simple = container_path.as_simple().ok_or_else(|| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0901IoError,
-                        "simple indexed container expected",
-                        id,
-                    )
+                    unexpected_edit_state(id, "simple indexed container expected")
                 })?;
                 let exact = MatchOptions {
                     pattern: None,

@@ -3,25 +3,29 @@
 [govctl]
 id = "WI-2026-06-01-168"
 title = "Normalize edit invariant diagnostics"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Clean the edit command's internal invariant diagnostics so non-I/O planner and target-shape assertions use a shared unexpected-state helper instead of repeated E0901 I/O diagnostics. Preserve user-facing validation diagnostics and command behavior, and avoid adding new module splits."
-notes = ["Keep this cleanup local to existing edit modules. Do not split cmd/edit further; the target is duplicate diagnostic construction and incorrect E0901 use for internal invariants."]
+notes = [
+    "Keep this cleanup local to existing edit modules. Do not split cmd/edit further; the target is duplicate diagnostic construction and incorrect E0901 use for internal invariants.",
+    "Subagent review found no blocking, medium, or low findings. It confirmed the helper emits E0903, replaced call sites are internal edit planner/path invariants, real edit I/O still uses Diagnostic::io_error, and no direct E0901IoError constructions remain under src/cmd/edit.",
+]
 
 [[content.acceptance_criteria]]
 text = "edit command internal invariant failures use E0903 unexpected-error diagnostics instead of E0901 I/O diagnostics"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "repeated edit target-shape diagnostic construction is centralized without adding a new module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "cargo fmt, edit-focused tests, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

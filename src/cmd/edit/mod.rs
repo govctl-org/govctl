@@ -68,6 +68,10 @@ pub(super) fn deserialize_edit_doc<T: serde::de::DeserializeOwned>(
     })
 }
 
+pub(super) fn unexpected_edit_state(id: &str, message: impl Into<String>) -> anyhow::Error {
+    Diagnostic::new(DiagnosticCode::E0903UnexpectedError, message, id).into()
+}
+
 #[derive(Debug, Clone)]
 pub enum OwnedEditAction {
     Set {
@@ -207,11 +211,7 @@ pub fn edit_field(request: EditFieldRequest<'_>) -> anyhow::Result<Vec<Diagnosti
             let plan = plan_edit_with_field_for_verb(id, path, Some(edit_rules::Verb::Set))?;
             let artifact = plan.artifact;
             let target = plan.target.as_ref().ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    "mutation planning should produce target",
-                    id,
-                )
+                unexpected_edit_state(id, "mutation planning should produce target")
             })?;
             apply_set_field(config, id, target, artifact, value.as_str(), op, true)?;
             if !op.is_preview() {

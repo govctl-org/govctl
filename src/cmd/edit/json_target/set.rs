@@ -1,6 +1,6 @@
 use super::super::{
     adapter::DocAdapter, deserialize_edit_doc, engine as edit_engine, runtime as edit_runtime,
-    serialize_edit_doc,
+    serialize_edit_doc, unexpected_edit_state,
 };
 use super::{JsonTargetKind, SetJsonRequest, require_simple_field};
 use crate::config::Config;
@@ -106,13 +106,9 @@ where
             item_kind: edit_engine::TargetKind::Scalar,
             ..
         } => {
-            let simple = container_path.as_simple().ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    "simple indexed container expected",
-                    id,
-                )
-            })?;
+            let simple = container_path
+                .as_simple()
+                .ok_or_else(|| unexpected_edit_state(id, "simple indexed container expected"))?;
             edit_runtime::set_simple_list_item(
                 kind.artifact(),
                 &mut doc,
