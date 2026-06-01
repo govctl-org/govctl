@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-177"
+title = "Migrate lifecycle and creation errors to diagnostics"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Migrate lifecycle, creation, and initialization command implementations from anyhow::Result to DiagnosticResult where errors are already diagnostics or can be locally mapped. Preserve lifecycle validation semantics and generated project contents."
+
+[[content.acceptance_criteria]]
+text = "lifecycle and creation commands return DiagnosticResult for diagnostic errors"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "command router calls migrated lifecycle and creation paths without legacy anyhow downcast"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "lifecycle/init tests, full tests, clippy, and govctl check pass"
+status = "pending"
+category = "chore"

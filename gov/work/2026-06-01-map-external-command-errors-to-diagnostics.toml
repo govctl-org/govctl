@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-178"
+title = "Map external command errors to diagnostics"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Map remaining external or mixed error sources, including migrate, self-update, confirmation, and TUI paths, into Diagnostic/DiagnosticResult. Remove production command-router reliance on Diagnostic::from_anyhow when all command paths have Diagnostic errors."
+
+[[content.acceptance_criteria]]
+text = "external command paths map IO, network, archive, terminal, and parser failures to Diagnostic"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "production source no longer needs Diagnostic::from_anyhow for command execution"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "migrate/self-update/TUI tests, full tests, clippy, and govctl check pass"
+status = "pending"
+category = "chore"

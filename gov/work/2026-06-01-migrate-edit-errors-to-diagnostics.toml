@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-176"
+title = "Migrate edit errors to diagnostics"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Migrate the edit command implementation and edit runtime helpers from anyhow::Result/anyhow::Error to DiagnosticResult/Diagnostic. Preserve existing CLI behavior and error codes, and keep the edit subsystem structure unchanged in this slice."
+
+[[content.acceptance_criteria]]
+text = "edit command modules use DiagnosticResult and Diagnostic instead of anyhow for diagnostic errors"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "command router calls migrated edit paths without legacy anyhow downcast"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit-focused tests, full tests, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
