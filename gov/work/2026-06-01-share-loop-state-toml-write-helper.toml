@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-148"
+title = "Share loop state TOML write helper"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Extract the duplicated TOML write sequence in loop state storage into a private helper that preserves validation, path layout, dry-run/write-op behavior, and current E1201 diagnostics for state and round-record writes."
+
+[[content.acceptance_criteria]]
+text = "loop state and round-record writes share one private TOML persistence helper"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop state file paths, round file paths, dry-run output, and diagnostics remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop tests, cargo test, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
