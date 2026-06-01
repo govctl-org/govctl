@@ -1,8 +1,9 @@
 use super::super::{
-    ArtifactType, adapter::DocAdapter, engine as edit_engine, runtime as edit_runtime,
-    serialize_edit_doc,
+    ArtifactType,
+    adapter::DocAdapter,
+    engine as edit_engine, serialize_edit_doc,
+    target_doc::{NestedGetMode, render_target_from_doc},
 };
-use super::require_simple_field;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
@@ -20,38 +21,16 @@ where
     let loaded = A::load(config, id)?;
     if let Some(target) = target {
         let doc = serialize_edit_doc(&loaded.data, id)?;
-        match target {
-            edit_engine::ResolvedTarget::Node {
-                origin: edit_engine::TargetOrigin::Simple,
-                path,
-                ..
-            } => {
-                let simple = require_simple_field(path, id, nested_error)?;
-                println!(
-                    "{}",
-                    edit_runtime::get_simple_field(artifact, &doc, simple, id)?
-                );
-            }
-            edit_engine::ResolvedTarget::IndexedItem {
-                origin: edit_engine::TargetOrigin::Simple,
-                container_path,
-                index,
-                ..
-            } => {
-                let simple = require_simple_field(container_path, id, nested_error)?;
-                println!(
-                    "{}",
-                    edit_runtime::get_simple_list_item(artifact, &doc, simple, *index, id)?
-                );
-            }
-            _ => {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    nested_error,
-                    id,
-                ));
-            }
-        }
+        println!(
+            "{}",
+            render_target_from_doc(
+                artifact,
+                &doc,
+                target,
+                id,
+                NestedGetMode::Reject(nested_error)
+            )?
+        );
     } else {
         let json = serde_json::to_string_pretty(&loaded.data).map_err(|err| {
             Diagnostic::new(
