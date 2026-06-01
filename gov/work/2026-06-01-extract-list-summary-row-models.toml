@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-108"
+title = "Extract list summary row models"
+status = "queue"
+created = "2026-06-01"
+refs = ["RFC-0002"]
+depends_on = ["WI-2026-06-01-107"]
+
+[content]
+description = "Move serializable list summary structs and row conversion helpers out of list resource handlers. Keep resource handlers focused on selecting, filtering, sorting, and limiting artifacts while preserving table, JSON, and plain list output shapes."
+
+[[content.acceptance_criteria]]
+text = "list summary row models live in src/cmd/list/summaries.rs"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "list resource handlers use summary row helpers without duplicating row conversion closures"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "list-related tests and govctl check pass"
+status = "pending"
+category = "chore"

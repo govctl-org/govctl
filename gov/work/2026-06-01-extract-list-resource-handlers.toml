@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-107"
+title = "Extract list resource handlers"
+status = "queue"
+created = "2026-06-01"
+refs = ["RFC-0002"]
+
+[content]
+description = "Move RFC, clause, ADR, work item, and guard list handlers out of src/cmd/list/mod.rs into a focused resource-handler module. Keep the command root responsible for loading, dispatch, warnings, and public API only while preserving list filters, tags, sorting, limits, and output behavior."
+
+[[content.acceptance_criteria]]
+text = "list resource handlers live in src/cmd/list/resources.rs"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "src/cmd/list/mod.rs remains a small dispatcher without per-resource filtering bulk"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "list-related tests and govctl check pass"
+status = "pending"
+category = "chore"
