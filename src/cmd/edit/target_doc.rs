@@ -116,13 +116,7 @@ pub(super) fn remove_target_from_doc(
                 let simple = container_path.as_simple().ok_or_else(|| {
                     unexpected_edit_state(id, "simple indexed container expected")
                 })?;
-                let exact = MatchOptions {
-                    pattern: None,
-                    at: Some(*index),
-                    exact: false,
-                    regex: false,
-                    all: false,
-                };
+                let exact = MatchOptions::at_index(*index);
                 let removed = remove_simple_values_from_doc(artifact, doc, simple, id, &exact)?
                     .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
                 Ok((simple.to_string(), removed))

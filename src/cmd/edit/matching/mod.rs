@@ -32,6 +32,18 @@ impl MatchOptionsOwned {
     }
 }
 
+impl<'a> MatchOptions<'a> {
+    pub(super) fn at_index(index: i32) -> Self {
+        Self {
+            pattern: None,
+            at: Some(index),
+            exact: false,
+            regex: false,
+            all: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum MatchUse {
     Remove,

@@ -34,36 +34,11 @@ pub(super) fn tick_target_in_doc(
                     let simple = path
                         .as_simple()
                         .ok_or_else(|| unexpected_edit_state(id, "simple list target expected"))?;
-                    edit_runtime::tick_simple_status_list_item_with_matcher(
-                        artifact,
-                        doc,
-                        simple,
-                        id,
-                        status_str,
-                        |items| {
-                            resolve_match_indices(id, simple, items, opts, MatchUse::TickSingle)
-                        },
-                    )?
-                    .ok_or_else(|| {
-                        Diagnostic::new(
-                            DiagnosticCode::E0803UnknownField,
-                            format!("Unknown field for tick: {simple}"),
-                            id,
-                        )
-                    })
+                    tick_simple_target(artifact, doc, id, simple, opts, status_str)
                 }
                 edit_engine::TargetOrigin::Nested => {
                     let display = path.to_string();
-                    edit_runtime::tick_nested_list_item_with_matcher(
-                        artifact,
-                        doc,
-                        path,
-                        id,
-                        status_str,
-                        |items| {
-                            resolve_match_indices(id, &display, items, opts, MatchUse::TickSingle)
-                        },
-                    )
+                    tick_nested_target(artifact, doc, id, path, &display, opts, status_str)
                 }
             }
         }
@@ -81,52 +56,24 @@ pub(super) fn tick_target_in_doc(
                     id,
                 ));
             }
-            let exact = MatchOptions {
-                pattern: None,
-                at: Some(*index),
-                exact: false,
-                regex: false,
-                all: false,
-            };
+            let exact = MatchOptions::at_index(*index);
             match origin {
                 edit_engine::TargetOrigin::Simple => {
                     let simple = container_path.as_simple().ok_or_else(|| {
                         unexpected_edit_state(id, "simple indexed container expected")
                     })?;
-                    edit_runtime::tick_simple_status_list_item_with_matcher(
-                        artifact,
-                        doc,
-                        simple,
-                        id,
-                        status_str,
-                        |items| {
-                            resolve_match_indices(id, simple, items, &exact, MatchUse::TickSingle)
-                        },
-                    )?
-                    .ok_or_else(|| {
-                        Diagnostic::new(
-                            DiagnosticCode::E0803UnknownField,
-                            format!("Unknown field for tick: {simple}"),
-                            id,
-                        )
-                    })
+                    tick_simple_target(artifact, doc, id, simple, &exact, status_str)
                 }
                 edit_engine::TargetOrigin::Nested => {
-                    edit_runtime::tick_nested_list_item_with_matcher(
+                    let display = container_path.to_string();
+                    tick_nested_target(
                         artifact,
                         doc,
-                        container_path,
                         id,
+                        container_path,
+                        &display,
+                        &exact,
                         status_str,
-                        |items| {
-                            resolve_match_indices(
-                                id,
-                                &container_path.to_string(),
-                                items,
-                                &exact,
-                                MatchUse::TickSingle,
-                            )
-                        },
                     )
                 }
             }
@@ -137,4 +84,43 @@ pub(super) fn tick_target_in_doc(
             id,
         )),
     }
+}
+
+fn tick_simple_target(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    id: &str,
+    field: &str,
+    opts: &MatchOptions,
+    status_str: &str,
+) -> DiagnosticResult<String> {
+    edit_runtime::tick_simple_status_list_item_with_matcher(
+        artifact,
+        doc,
+        field,
+        id,
+        status_str,
+        |items| resolve_match_indices(id, field, items, opts, MatchUse::TickSingle),
+    )?
+    .ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E0803UnknownField,
+            format!("Unknown field for tick: {field}"),
+            id,
+        )
+    })
+}
+
+fn tick_nested_target(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    id: &str,
+    path: &crate::cmd::edit::path::FieldPath,
+    display: &str,
+    opts: &MatchOptions,
+    status_str: &str,
+) -> DiagnosticResult<String> {
+    edit_runtime::tick_nested_list_item_with_matcher(artifact, doc, path, id, status_str, |items| {
+        resolve_match_indices(id, display, items, opts, MatchUse::TickSingle)
+    })
 }
