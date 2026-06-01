@@ -2,7 +2,7 @@ use super::display_path_string;
 use crate::OutputFormat;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::load::load_rfcs;
+use crate::load::{load_rfcs, split_clause_id};
 use crate::parse::{load_adrs, load_work_items};
 use crate::render::{expand_inline_refs, render_adr, render_clause, render_rfc, render_work_item};
 use crate::terminal_md::render_terminal_md;
@@ -140,16 +140,13 @@ pub fn show_clause(
     id: &str,
     output: OutputFormat,
 ) -> DiagnosticResult<Diagnostics> {
-    let parts: Vec<&str> = id.split(':').collect();
-    if parts.len() != 2 {
-        return Err(Diagnostic::new(
+    let (rfc_id, clause_name) = split_clause_id(id).ok_or_else(|| {
+        Diagnostic::new(
             DiagnosticCode::E0202ClauseNotFound,
             format!("Invalid clause ID format: {id} (expected RFC-NNNN:C-NAME)"),
             id,
-        ));
-    }
-    let rfc_id = parts[0];
-    let clause_name = parts[1];
+        )
+    })?;
 
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 

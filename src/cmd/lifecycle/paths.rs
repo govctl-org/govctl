@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::load::{find_clause_toml, find_rfc_toml};
+use crate::load::{find_clause_toml, find_rfc_toml, split_clause_id};
 use std::path::PathBuf;
 
 fn legacy_rfc_json_path(config: &Config, rfc_id: &str) -> Option<PathBuf> {
@@ -9,7 +9,7 @@ fn legacy_rfc_json_path(config: &Config, rfc_id: &str) -> Option<PathBuf> {
 }
 
 fn legacy_clause_json_path(config: &Config, clause_id: &str) -> Option<PathBuf> {
-    let (rfc_id, clause_name) = clause_id.split_once(':')?;
+    let (rfc_id, clause_name) = split_clause_id(clause_id)?;
     let path = config
         .rfc_dir()
         .join(rfc_id)

@@ -202,7 +202,7 @@ fn read_source_file(path: &Path, action: &'static str) -> Result<String, LoadErr
     })
 }
 
-fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {
+pub(crate) fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {
     let mut parts = clause_id.split(':');
     match (parts.next(), parts.next(), parts.next()) {
         (Some(rfc_id), Some(clause_name), None) => Some((rfc_id, clause_name)),

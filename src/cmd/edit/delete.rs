@@ -2,7 +2,8 @@ use super::adapter::{DocAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter};
 use crate::cmd::confirmation::confirm_destructive_action;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::model::ProjectIndex;
+use crate::load::split_clause_id;
+use crate::model::{ProjectIndex, RfcStatus};
 use crate::ui;
 use crate::write::{WriteOp, delete_file};
 use std::path::Path;
@@ -13,21 +14,15 @@ pub fn delete_clause(
     force: bool,
     op: WriteOp,
 ) -> DiagnosticResult<Vec<Diagnostic>> {
-    use crate::model::RfcStatus;
-
-    let parts: Vec<&str> = clause_id.split(':').collect();
-    if parts.len() != 2 {
-        return Err(Diagnostic::new(
+    let (rfc_id, clause_name) = split_clause_id(clause_id).ok_or_else(|| {
+        Diagnostic::new(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
             "Invalid clause ID format. Expected RFC-NNNN:C-NAME",
             clause_id,
-        ));
-    }
+        )
+    })?;
 
-    let rfc_id = parts[0];
-    let clause_name = parts[1];
-
-    let rfc_loaded = RfcTomlAdapter::load(config, rfc_id)?;
+    let mut rfc_loaded = RfcTomlAdapter::load(config, rfc_id)?;
     if rfc_loaded.data.status != RfcStatus::Draft {
         return Err(Diagnostic::new(
             DiagnosticCode::E0110RfcInvalidId,
@@ -70,11 +65,10 @@ pub fn delete_clause(
         return Ok(vec![]);
     }
 
-    let mut rfc = rfc_loaded.data.clone();
     let clause_rel_path = format!("clauses/{}", clause_file_name);
 
     let mut removed = false;
-    for section in &mut rfc.sections {
+    for section in &mut rfc_loaded.data.sections {
         if let Some(pos) = section.clauses.iter().position(|c| c == &clause_rel_path) {
             section.clauses.remove(pos);
             removed = true;
@@ -95,7 +89,7 @@ pub fn delete_clause(
 
     crate::write::write_rfc(
         &rfc_loaded.path,
-        &rfc,
+        &rfc_loaded.data,
         op,
         Some(&config.display_path(&rfc_loaded.path)),
     )?;

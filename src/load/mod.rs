@@ -6,6 +6,7 @@ mod project;
 mod rfc;
 
 pub use project::{load_project, load_project_with_warnings};
+pub(crate) use rfc::split_clause_id;
 pub use rfc::{
     find_clause_json, find_clause_toml, find_rfc_json, find_rfc_toml, load_rfc, load_rfcs,
 };
