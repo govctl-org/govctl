@@ -1,6 +1,7 @@
 use super::super::ArtifactType;
 use super::super::path::PathSegment;
 use super::*;
+use crate::diagnostic::DiagnosticCode;
 
 #[test]
 fn test_plan_simple_path() -> Result<(), Box<dyn std::error::Error>> {
@@ -52,27 +53,26 @@ fn test_plan_without_field() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[test]
-fn test_plan_unknown_artifact_fails() {
-    let err = plan_request("UNKNOWN", Some("title"));
-    assert!(err.is_err());
-    assert!(
-        err.err()
-            .map(|e| e.to_string())
-            .unwrap_or_default()
-            .contains("Unknown artifact type")
-    );
+fn test_plan_unknown_artifact_fails() -> Result<(), Box<dyn std::error::Error>> {
+    let diag = match plan_request("UNKNOWN", Some("title")) {
+        Ok(plan) => return Err(format!("unknown artifact should fail, got {plan:?}").into()),
+        Err(diag) => diag,
+    };
+    assert_eq!(diag.code, DiagnosticCode::E0819UnknownArtifactType);
+    assert!(diag.message.contains("Unknown artifact type"));
+    Ok(())
 }
 
 #[test]
-fn test_scope_aware_alias_only_applies_when_valid_for_artifact() {
-    let err = plan_request("ADR-0001", Some("desc"));
-    assert!(err.is_err());
-    assert!(
-        err.err()
-            .map(|e| e.to_string())
-            .unwrap_or_default()
-            .contains("Unknown ADR field")
-    );
+fn test_scope_aware_alias_only_applies_when_valid_for_artifact()
+-> Result<(), Box<dyn std::error::Error>> {
+    let diag = match plan_request("ADR-0001", Some("desc")) {
+        Ok(plan) => return Err(format!("unknown ADR field should fail, got {plan:?}").into()),
+        Err(diag) => diag,
+    };
+    assert_eq!(diag.code, DiagnosticCode::E0803UnknownField);
+    assert!(diag.message.contains("Unknown ADR field"));
+    Ok(())
 }
 
 #[test]
@@ -92,15 +92,16 @@ fn test_scope_aware_alias_under_legacy_prefix() -> Result<(), Box<dyn std::error
 }
 
 #[test]
-fn test_unknown_alias_in_scope_is_not_rewritten() {
-    let err = plan_request("WI-2026-01-01-001", Some("alt[0].pro[0]"));
-    assert!(err.is_err());
-    assert!(
-        err.err()
-            .map(|e| e.to_string())
-            .unwrap_or_default()
-            .contains("Unknown work item field")
-    );
+fn test_unknown_alias_in_scope_is_not_rewritten() -> Result<(), Box<dyn std::error::Error>> {
+    let diag = match plan_request("WI-2026-01-01-001", Some("alt[0].pro[0]")) {
+        Ok(plan) => {
+            return Err(format!("unknown work item field should fail, got {plan:?}").into());
+        }
+        Err(diag) => diag,
+    };
+    assert_eq!(diag.code, DiagnosticCode::E0803UnknownField);
+    assert!(diag.message.contains("Unknown work item field"));
+    Ok(())
 }
 
 #[test]

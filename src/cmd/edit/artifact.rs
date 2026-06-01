@@ -26,13 +26,12 @@ impl ArtifactType {
         }
     }
 
-    pub fn unknown_error(id: &str) -> anyhow::Error {
+    pub fn unknown_error(id: &str) -> Diagnostic {
         Diagnostic::new(
             DiagnosticCode::E0819UnknownArtifactType,
             format!("Unknown artifact type: {id}"),
             id,
         )
-        .into()
     }
 
     pub fn rule_key(self) -> &'static str {

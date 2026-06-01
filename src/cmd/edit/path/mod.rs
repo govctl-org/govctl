@@ -4,7 +4,7 @@
 //! for nested access into ADR alternatives, work item acceptance criteria, etc.
 
 use super::rules as edit_rules;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use winnow::Parser;
 use winnow::ascii::digit1;
 use winnow::combinator::{delimited, eof, opt, separated, terminated};
@@ -102,19 +102,18 @@ fn normalize_segment_name(name: &str) -> String {
 /// Grammar: `segment ('.' segment | '[' index ']')*`
 /// where `segment` is `[a-z_][a-z0-9_]*` and `index` is `-?[0-9]+`.
 #[cfg(test)]
-pub fn parse_field_path(input: &str) -> anyhow::Result<FieldPath> {
+pub fn parse_field_path(input: &str) -> DiagnosticResult<FieldPath> {
     parse_raw_field_path(input).map(FieldPath::normalize_aliases)
 }
 
 /// Parse a field path string into raw segments, without alias normalization.
-pub fn parse_raw_field_path(input: &str) -> anyhow::Result<FieldPath> {
+pub fn parse_raw_field_path(input: &str) -> DiagnosticResult<FieldPath> {
     if input.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0814InvalidPath,
             "Field path cannot be empty",
             "path",
-        )
-        .into());
+        ));
     }
 
     let raw_segments = terminated(path_segments_parser, eof)
@@ -185,7 +184,7 @@ fn is_name_char(c: char) -> bool {
 }
 
 /// Resolve an index (0-based, negative from end) against an array length.
-pub fn resolve_index(idx: i32, len: usize) -> anyhow::Result<usize> {
+pub fn resolve_index(idx: i32, len: usize) -> DiagnosticResult<usize> {
     let len_i = len as i32;
     let actual = if idx < 0 { len_i + idx } else { idx };
     if actual < 0 || actual >= len_i {
@@ -193,8 +192,7 @@ pub fn resolve_index(idx: i32, len: usize) -> anyhow::Result<usize> {
             DiagnosticCode::E0816PathIndexOutOfBounds,
             format!("Index {idx} out of range (array has {len} items)"),
             "path",
-        )
-        .into());
+        ));
     }
     Ok(actual as usize)
 }

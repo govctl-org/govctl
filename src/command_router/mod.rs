@@ -10,7 +10,7 @@ mod parsed;
 mod plan;
 
 use crate::cmd;
-use crate::diagnostic::{Diagnostic, DiagnosticResult};
+use crate::diagnostic::DiagnosticResult;
 use crate::{ListTarget, OutputFormat};
 
 pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
@@ -31,8 +31,7 @@ fn artifact_scope(artifact: cmd::edit::ArtifactType, id: &str) -> Scope {
 }
 
 fn resolve_scope(id: &str, field: Option<&str>) -> DiagnosticResult<Scope> {
-    let plan = cmd::edit::engine::plan_request(id, field)
-        .map_err(|err| Diagnostic::from_anyhow(err, id))?;
+    let plan = cmd::edit::engine::plan_request(id, field)?;
     Ok(match plan.target {
         Some(target) => Scope::Target {
             artifact: plan.artifact,

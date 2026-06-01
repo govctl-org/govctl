@@ -11,6 +11,7 @@ use self::resolve::resolve_target;
 use super::ArtifactType;
 use super::path::{self, FieldPath};
 use super::rules::{self as edit_rules, Verb};
+use crate::diagnostic::DiagnosticResult;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TargetKind {
@@ -69,7 +70,7 @@ pub struct TargetPlan {
 pub fn parse_and_canonicalize_field(
     artifact: ArtifactType,
     field: &str,
-) -> anyhow::Result<FieldPath> {
+) -> DiagnosticResult<FieldPath> {
     path::parse_raw_field_path(field).map(|fp| canonicalize_field_path(artifact, fp))
 }
 
@@ -77,11 +78,11 @@ pub fn parse_and_canonicalize_field(
 ///
 /// This function intentionally does not enforce verb/field capability checks;
 /// those remain in the command-specific execution path.
-pub fn plan_request(id: &str, field: Option<&str>) -> anyhow::Result<TargetPlan> {
+pub fn plan_request(id: &str, field: Option<&str>) -> DiagnosticResult<TargetPlan> {
     plan_request_with_verb(id, field, None)
 }
 
-pub fn plan_mutation_request(id: &str, field: &str, verb: Verb) -> anyhow::Result<TargetPlan> {
+pub fn plan_mutation_request(id: &str, field: &str, verb: Verb) -> DiagnosticResult<TargetPlan> {
     plan_request_with_verb(id, Some(field), Some(verb))
 }
 
@@ -89,7 +90,7 @@ fn plan_request_with_verb(
     id: &str,
     field: Option<&str>,
     verb: Option<Verb>,
-) -> anyhow::Result<TargetPlan> {
+) -> DiagnosticResult<TargetPlan> {
     let artifact = resolve_artifact(id)?;
     let field_path = field
         .map(|path| parse_and_canonicalize_field(artifact, path))
@@ -106,7 +107,7 @@ fn plan_request_with_verb(
     })
 }
 
-fn resolve_artifact(id: &str) -> anyhow::Result<ArtifactType> {
+fn resolve_artifact(id: &str) -> DiagnosticResult<ArtifactType> {
     ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))
 }
 

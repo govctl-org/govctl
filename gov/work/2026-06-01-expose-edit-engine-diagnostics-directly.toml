@@ -3,24 +3,26 @@
 [govctl]
 id = "WI-2026-06-01-171"
 title = "Expose edit engine diagnostics directly"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Convert edit-engine planning and target-resolution errors to DiagnosticResult so command routing no longer needs an anyhow bridge for field/path planning. Keep this slice limited to edit engine planning and directly required tests; do not migrate full edit execution internals here."
+notes = ["Edit planning and path parsing now return DiagnosticResult directly. Remaining edit execution internals may still type-erase through anyhow and should be migrated in a later slice."]
 
 [[content.acceptance_criteria]]
 text = "edit engine planning APIs return DiagnosticResult instead of anyhow::Result"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "command_router resolves edit scope without Diagnostic::from_anyhow"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit engine tests, command router tests, full tests, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

@@ -4,13 +4,13 @@ use crate::cmd::edit::path::{FieldPath, PathSegment};
 use crate::cmd::edit::rules::{
     self as edit_rules, FieldKind, NestedNodeKind, NestedNodeRule, Verb,
 };
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
 pub(super) fn resolve_target(
     artifact: ArtifactType,
     fp: &FieldPath,
     id: &str,
-) -> anyhow::Result<ResolvedTarget> {
+) -> DiagnosticResult<ResolvedTarget> {
     let root = &fp.segments[0].name;
     if let Some(rule) = edit_rules::nested_root_rule(artifact.rule_key(), root) {
         return resolve_nested_target(rule.node, fp, id);
@@ -73,7 +73,7 @@ fn resolve_nested_target(
     mut current_node: &'static NestedNodeRule,
     fp: &FieldPath,
     id: &str,
-) -> anyhow::Result<ResolvedTarget> {
+) -> DiagnosticResult<ResolvedTarget> {
     let mut container_segments = Vec::with_capacity(fp.segments.len());
 
     for (idx, seg) in fp.segments.iter().enumerate() {
@@ -111,7 +111,7 @@ fn resolve_nested_target(
             if is_last {
                 let item_node = current_node
                     .item
-                    .ok_or_else(|| path_type_error(id, "List node missing item rule".into()))?;
+                    .ok_or_else(|| path_type_error(id, "List node missing item rule"))?;
                 return Ok(ResolvedTarget::IndexedItem {
                     origin: TargetOrigin::Nested,
                     path: fp.clone(),
@@ -125,7 +125,7 @@ fn resolve_nested_target(
             }
             current_node = current_node
                 .item
-                .ok_or_else(|| path_type_error(id, "List node missing item rule".into()))?;
+                .ok_or_else(|| path_type_error(id, "List node missing item rule"))?;
             if let Some(last) = container_segments.last_mut() {
                 last.index = Some(index);
             }
@@ -169,20 +169,19 @@ fn nested_list_supports_tick(node: &'static NestedNodeRule) -> bool {
         .any(|field| field.name == "status" && field.node.kind == NestedNodeKind::Scalar)
 }
 
-fn path_type_error(id: &str, message: String) -> anyhow::Error {
-    Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id).into()
+fn path_type_error(id: &str, message: impl Into<String>) -> Diagnostic {
+    Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id)
 }
 
-fn path_field_not_found(id: &str, field: &str) -> anyhow::Error {
+fn path_field_not_found(id: &str, field: &str) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0815PathFieldNotFound,
         format!("Unknown nested field '{field}'"),
         id,
     )
-    .into()
 }
 
-fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str) -> anyhow::Error {
+fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str) -> Diagnostic {
     let (code, msg, source) = match artifact {
         ArtifactType::Rfc => (
             DiagnosticCode::E0101RfcSchemaInvalid,
@@ -210,5 +209,5 @@ fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str) -> anyhow:
             id,
         ),
     };
-    Diagnostic::new(code, msg, source).into()
+    Diagnostic::new(code, msg, source)
 }
