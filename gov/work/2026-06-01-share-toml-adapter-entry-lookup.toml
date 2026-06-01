@@ -3,29 +3,30 @@
 [govctl]
 id = "WI-2026-06-01-165"
 title = "Share TOML adapter entry lookup"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract the duplicated TOML adapter load-and-find flow for ADR, work item, and guard adapters into one private helper inside src/cmd/edit/adapter.rs. Preserve each adapter's loader, match predicate, diagnostic code/message, scope path, write behavior, and existing edit/get command behavior."
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "edit adapter regression tests pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "ADR, work item, and guard TOML adapters share one load-and-find helper"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "adapter-specific match predicates and not-found diagnostics remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"

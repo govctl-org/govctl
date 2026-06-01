@@ -81,6 +81,34 @@ fn write_clause_doc(config: &Config, doc: &JsonDoc<ClauseSpec>, op: WriteOp) -> 
     )
 }
 
+fn load_toml_entry<T, Load, LoadError, Matches>(
+    config: &Config,
+    id: &str,
+    scope_dir: PathBuf,
+    load: Load,
+    matches: Matches,
+    missing_code: DiagnosticCode,
+    missing_kind: &str,
+) -> Result<T, Diagnostic>
+where
+    Load: FnOnce(&Config) -> Result<Vec<T>, LoadError>,
+    LoadError: Into<Diagnostic>,
+    Matches: Fn(&T, &str) -> bool,
+{
+    let scope = display_scope_for_dir(config, scope_dir);
+    load(config)
+        .map_err(Into::into)?
+        .into_iter()
+        .find(|entry| matches(entry, id))
+        .ok_or_else(|| {
+            Diagnostic::new(
+                missing_code,
+                format!("{missing_kind} not found: {id}"),
+                &scope,
+            )
+        })
+}
+
 /// Adapter contract for RFC/clause document-backed artifacts.
 pub trait DocAdapter {
     type Data;
@@ -162,17 +190,15 @@ impl TomlAdapter for AdrTomlAdapter {
     type Entry = AdrEntry;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        let scope = config.display_path(&config.adr_dir()).display().to_string();
-        Ok(load_adrs(config)?
-            .into_iter()
-            .find(|a| a.spec.govctl.id == id)
-            .ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0302AdrNotFound,
-                    format!("ADR not found: {id}"),
-                    &scope,
-                )
-            })?)
+        Ok(load_toml_entry(
+            config,
+            id,
+            config.adr_dir(),
+            load_adrs,
+            |entry, id| entry.spec.govctl.id == id,
+            DiagnosticCode::E0302AdrNotFound,
+            "ADR",
+        )?)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
@@ -193,20 +219,15 @@ impl TomlAdapter for WorkTomlAdapter {
     type Entry = WorkItemEntry;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        let scope = config
-            .display_path(&config.work_dir())
-            .display()
-            .to_string();
-        Ok(load_work_items(config)?
-            .into_iter()
-            .find(|w| w.spec.govctl.id == id || w.path.to_string_lossy().contains(id))
-            .ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E0402WorkNotFound,
-                    format!("Work item not found: {id}"),
-                    &scope,
-                )
-            })?)
+        Ok(load_toml_entry(
+            config,
+            id,
+            config.work_dir(),
+            load_work_items,
+            |entry, id| entry.spec.govctl.id == id || entry.path.to_string_lossy().contains(id),
+            DiagnosticCode::E0402WorkNotFound,
+            "Work item",
+        )?)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
@@ -227,21 +248,15 @@ impl TomlAdapter for GuardTomlAdapter {
     type Entry = GuardEntry;
 
     fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        let scope = config
-            .display_path(&config.guard_dir())
-            .display()
-            .to_string();
-        Ok(load_guards(config)
-            .map_err(anyhow::Error::from)?
-            .into_iter()
-            .find(|g| g.spec.govctl.id == id)
-            .ok_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E1002GuardNotFound,
-                    format!("Guard not found: {id}"),
-                    &scope,
-                )
-            })?)
+        Ok(load_toml_entry(
+            config,
+            id,
+            config.guard_dir(),
+            load_guards,
+            |entry, id| entry.spec.govctl.id == id,
+            DiagnosticCode::E1002GuardNotFound,
+            "Guard",
+        )?)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
