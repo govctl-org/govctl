@@ -1,4 +1,4 @@
-use super::super::{status_list_text, type_mismatch};
+use super::super::{remove_indices_preserving_order, status_list_text, type_mismatch};
 use super::resolve_nested_root;
 use super::traverse::{default_value_for_node, descend_mut, ensure_node_path_mut};
 use crate::cmd::edit::ArtifactType;
@@ -157,25 +157,18 @@ where
     };
 
     let indices = resolve(&texts)?;
-    let mut sorted = indices;
-    sorted.sort_unstable_by(|a, b| b.cmp(a));
-
-    let mut removed = Vec::with_capacity(sorted.len());
-    for idx in sorted {
-        let val = list.remove(idx);
-        let text = match item_rule.kind {
+    let removed = remove_indices_preserving_order(list, indices, |val| {
+        Ok(match item_rule.kind {
             NestedNodeKind::Scalar => val.as_str().unwrap_or_default().to_string(),
             NestedNodeKind::Object => {
                 let text_key = node
                     .text_key
                     .ok_or_else(|| type_mismatch("Expected text_key for object list", id))?;
-                status_list_text(&val, text_key, id)?.to_string()
+                status_list_text(val, text_key, id)?.to_string()
             }
             NestedNodeKind::List => unreachable!("guarded above"),
-        };
-        removed.push(text);
-    }
-    removed.reverse();
+        })
+    })?;
     Ok(removed)
 }
 

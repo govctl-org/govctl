@@ -176,6 +176,26 @@ fn status_list_text<'a>(item: &'a Value, text_key: &str, id: &str) -> Result<&'a
         })
 }
 
+fn remove_indices_preserving_order<F>(
+    items: &mut Vec<Value>,
+    indices: Vec<usize>,
+    mut removed_text: F,
+) -> anyhow::Result<Vec<String>>
+where
+    F: FnMut(&Value) -> anyhow::Result<String>,
+{
+    let mut sorted = indices;
+    sorted.sort_unstable_by(|a, b| b.cmp(a));
+
+    let mut removed = Vec::with_capacity(sorted.len());
+    for idx in sorted {
+        let item = items.remove(idx);
+        removed.push(removed_text(&item)?);
+    }
+    removed.reverse();
+    Ok(removed)
+}
+
 fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str) -> Diagnostic {
     let msg = match artifact {
         ArtifactType::Rfc => format!("Unknown RFC field: {field}"),

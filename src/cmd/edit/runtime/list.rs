@@ -1,8 +1,8 @@
 use super::super::{ArtifactType, path};
 use super::mutate::{array_items_mut, ensure_array_path_mut};
 use super::{
-    simple_runtime_list_path, simple_status_list_spec, status_list_text, type_mismatch,
-    unknown_field_error, value_at_path,
+    remove_indices_preserving_order, simple_runtime_list_path, simple_status_list_spec,
+    status_list_text, type_mismatch, unknown_field_error, value_at_path,
 };
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde_json::Value;
@@ -138,22 +138,18 @@ where
         })
         .collect::<Result<Vec<_>, _>>()?;
     let indices = resolve(&texts)?;
-    let mut sorted = indices;
-    sorted.sort_unstable_by(|a, b| b.cmp(a));
-
-    let mut removed = Vec::with_capacity(sorted.len());
-    for idx in sorted {
-        let item = items.remove(idx);
-        let text = item.as_str().ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                "Expected string entries in array",
-                id,
-            )
-        })?;
-        removed.push(text.to_string());
-    }
-    removed.reverse();
+    let removed = remove_indices_preserving_order(items, indices, |item| {
+        Ok(item
+            .as_str()
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0817PathTypeMismatch,
+                    "Expected string entries in array",
+                    id,
+                )
+            })?
+            .to_string())
+    })?;
     Ok(Some(removed))
 }
 
@@ -177,15 +173,9 @@ where
         .map(|item| status_list_text(item, spec.text_key, id))
         .collect::<Result<Vec<_>, _>>()?;
     let indices = resolve(&texts)?;
-    let mut sorted = indices;
-    sorted.sort_unstable_by(|a, b| b.cmp(a));
-
-    let mut removed = Vec::with_capacity(sorted.len());
-    for idx in sorted {
-        let item = items.remove(idx);
-        removed.push(status_list_text(&item, spec.text_key, id)?.to_string());
-    }
-    removed.reverse();
+    let removed = remove_indices_preserving_order(items, indices, |item| {
+        Ok(status_list_text(item, spec.text_key, id)?.to_string())
+    })?;
     Ok(Some(removed))
 }
 
