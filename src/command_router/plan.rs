@@ -116,6 +116,26 @@ pub enum BuiltinOp {
     },
 }
 
+impl BuiltinOp {
+    fn is_lock_free(&self) -> bool {
+        match self {
+            Self::Check { .. }
+            | Self::Status
+            | Self::Verify { .. }
+            | Self::Describe { .. }
+            | Self::Completions { .. }
+            | Self::SelfUpdate { .. }
+            | Self::TagList { .. }
+            | Self::LoopList { .. }
+            | Self::LoopShow { .. }
+            | Self::LoopResume { .. } => true,
+            #[cfg(feature = "tui")]
+            Self::Tui => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub enum CreateOp {
     Rfc {
@@ -208,6 +228,16 @@ pub enum Op {
     },
 }
 
+impl Op {
+    fn is_lock_free(&self) -> bool {
+        match self {
+            Self::Builtin(builtin) => builtin.is_lock_free(),
+            Self::Get | Self::List { .. } | Self::Show { .. } => true,
+            _ => false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LockDisposition {
     None,
@@ -226,23 +256,10 @@ impl CommandPlan {
     }
 
     pub fn lock_disposition(&self) -> LockDisposition {
-        match &self.op {
-            Op::Builtin(BuiltinOp::Check { .. })
-            | Op::Builtin(BuiltinOp::Status)
-            | Op::Builtin(BuiltinOp::Verify { .. })
-            | Op::Builtin(BuiltinOp::Describe { .. })
-            | Op::Builtin(BuiltinOp::Completions { .. })
-            | Op::Builtin(BuiltinOp::SelfUpdate { .. })
-            | Op::Builtin(BuiltinOp::TagList { .. })
-            | Op::Builtin(BuiltinOp::LoopList { .. })
-            | Op::Builtin(BuiltinOp::LoopShow { .. })
-            | Op::Builtin(BuiltinOp::LoopResume { .. })
-            | Op::Get
-            | Op::List { .. }
-            | Op::Show { .. } => LockDisposition::None,
-            #[cfg(feature = "tui")]
-            Op::Builtin(BuiltinOp::Tui) => LockDisposition::None,
-            _ => LockDisposition::GovRootExclusive,
+        if self.op.is_lock_free() {
+            LockDisposition::None
+        } else {
+            LockDisposition::GovRootExclusive
         }
     }
 

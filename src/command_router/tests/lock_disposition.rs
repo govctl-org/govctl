@@ -72,6 +72,27 @@ fn test_lock_disposition_is_lock_free_for_inspect_commands()
         LockDisposition::None
     );
     assert_eq!(
+        global(Op::Builtin(BuiltinOp::LoopShow {
+            loop_id: "LOOP-2026-04-07-001".to_string(),
+        }))
+        .lock_disposition(),
+        LockDisposition::None
+    );
+    assert_eq!(
+        global(Op::Builtin(BuiltinOp::LoopResume {
+            loop_id: "LOOP-2026-04-07-001".to_string(),
+        }))
+        .lock_disposition(),
+        LockDisposition::None
+    );
+    assert_eq!(
+        global(Op::Builtin(BuiltinOp::TagList {
+            output: OutputFormat::Table,
+        }))
+        .lock_disposition(),
+        LockDisposition::None
+    );
+    assert_eq!(
         plan_get("RFC-0001", Some("title"))?.lock_disposition(),
         LockDisposition::None
     );
@@ -92,6 +113,22 @@ fn test_lock_disposition_requires_lock_for_mutating_commands()
 -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
         global(Op::Builtin(BuiltinOp::Init { force: false })).lock_disposition(),
+        LockDisposition::GovRootExclusive
+    );
+    assert_eq!(
+        global(Op::Builtin(BuiltinOp::LoopRun {
+            loop_id: "LOOP-2026-04-07-001".to_string(),
+            target_work_ids: vec![],
+            max_rounds: 1,
+        }))
+        .lock_disposition(),
+        LockDisposition::GovRootExclusive
+    );
+    assert_eq!(
+        global(Op::Builtin(BuiltinOp::LoopReplan {
+            loop_id: "LOOP-2026-04-07-001".to_string(),
+        }))
+        .lock_disposition(),
         LockDisposition::GovRootExclusive
     );
     assert_eq!(
