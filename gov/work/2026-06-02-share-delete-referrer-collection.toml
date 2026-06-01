@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-010"
+title = "Share delete referrer collection"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reduce duplication in delete safeguards by sharing the collection and sorting of artifact referrers used before deleting clauses and queued work items while preserving existing delete errors, reference checks, and dry-run/delete behavior."
+
+[[content.acceptance_criteria]]
+text = "clause and work-item delete safeguards share referrer collection and sorting"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "delete safeguard error codes, messages, and deletion behavior remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted delete tests, cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"

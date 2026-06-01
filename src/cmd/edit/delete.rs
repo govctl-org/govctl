@@ -119,16 +119,17 @@ fn ensure_clause_not_referenced(config: &Config, clause_id: &str) -> DiagnosticR
             )
         })
     })?;
-    let mut referenced_by = project_referrers(
+    let referenced_by = deletion_referrers(
+        config,
         &load_result.index,
         clause_id,
-        ProjectReferrers {
+        ReferrerOptions {
             skip_work_id: None,
             include_work_dependencies: false,
+            include_guards: true,
+            sort_unique: true,
         },
-    );
-    referenced_by.extend(guard_referrers(config, clause_id)?);
-    let referenced_by = sorted_unique_referrers(referenced_by);
+    )?;
 
     if !referenced_by.is_empty() {
         return Err(Diagnostic::new(
@@ -177,14 +178,17 @@ pub fn delete_work_item(
     };
 
     let index = &load_result.index;
-    let referenced_by = project_referrers(
+    let referenced_by = deletion_referrers(
+        config,
         index,
         &wi.govctl.id,
-        ProjectReferrers {
+        ReferrerOptions {
             skip_work_id: Some(&wi.govctl.id),
             include_work_dependencies: true,
+            include_guards: false,
+            sort_unique: false,
         },
-    );
+    )?;
 
     if !referenced_by.is_empty() {
         return Err(Diagnostic::new(
@@ -201,15 +205,35 @@ pub fn delete_work_item(
     proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op)
 }
 
-struct ProjectReferrers<'a> {
+#[derive(Clone, Copy)]
+struct ReferrerOptions<'a> {
     skip_work_id: Option<&'a str>,
     include_work_dependencies: bool,
+    include_guards: bool,
+    sort_unique: bool,
+}
+
+fn deletion_referrers(
+    config: &Config,
+    index: &ProjectIndex,
+    target_id: &str,
+    options: ReferrerOptions<'_>,
+) -> DiagnosticResult<Vec<String>> {
+    let mut referrers = project_referrers(index, target_id, options);
+    if options.include_guards {
+        referrers.extend(guard_referrers(config, target_id)?);
+    }
+    if options.sort_unique {
+        referrers.sort();
+        referrers.dedup();
+    }
+    Ok(referrers)
 }
 
 fn project_referrers(
     index: &ProjectIndex,
     target_id: &str,
-    options: ProjectReferrers<'_>,
+    options: ReferrerOptions<'_>,
 ) -> Vec<String> {
     let mut referenced_by = Vec::new();
 
@@ -262,12 +286,6 @@ fn guard_referrers(config: &Config, target_id: &str) -> DiagnosticResult<Vec<Str
         .filter(|guard| guard.meta().refs.iter().any(|ref_id| ref_id == target_id))
         .map(|guard| guard.meta().id.clone())
         .collect())
-}
-
-fn sorted_unique_referrers(mut referrers: Vec<String>) -> Vec<String> {
-    referrers.sort();
-    referrers.dedup();
-    referrers
 }
 
 fn proceed_with_deletion(
