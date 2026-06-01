@@ -420,6 +420,22 @@ EXAMPLES:
 
 #[derive(Subcommand, Clone, Debug)]
 pub(crate) enum LoopCommand {
+    /// List persisted local loop states
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop list
+    govctl loop list -o plain
+    govctl loop list -o json
+
+NOTES:
+    - Reads local state from `.govctl/loops/<LOOP-ID>/state.toml`.
+    - Lists loops by canonical loop ID in deterministic order.
+")]
+    List {
+        /// Output format
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: crate::OutputFormat,
+    },
     /// Start a loop for one or more explicit work items
     #[command(after_help = "\
 EXAMPLES:

@@ -112,6 +112,98 @@ fn test_loop_start_generates_canonical_daily_sequence_ids() -> common::TestResul
 }
 
 #[test]
+fn test_loop_list_empty_state() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[vec!["loop".into(), "list".into()]])?;
+
+    assert!(output.contains("│ ID"), "{output}");
+    assert!(output.contains("State"), "{output}");
+    assert!(!output.contains("LOOP-"), "{output}");
+    assert!(output.contains("exit: 0"), "{output}");
+    Ok(())
+}
+
+#[test]
+fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let first_root = format!("WI-{date}-001");
+    let second_root = format!("WI-{date}-002");
+    let first_loop = loop_id(&date, 1);
+    let second_loop = loop_id(&date, 2);
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec!["work".into(), "new".into(), "First".into()],
+            vec!["work".into(), "new".into(), "Second".into()],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                second_loop.clone(),
+                second_root.clone(),
+            ],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                first_loop.clone(),
+                first_root.clone(),
+            ],
+            vec!["loop".into(), "list".into(), "-o".into(), "plain".into()],
+            vec!["loop".into(), "list".into(), "-o".into(), "json".into()],
+        ],
+    )?;
+
+    let first_plain = format!("{first_loop}\tpending\t{first_root}\t1\t0");
+    let second_plain = format!("{second_loop}\tpending\t{second_root}\t1\t0");
+    assert!(output.contains(&first_plain), "{output}");
+    assert!(output.contains(&second_plain), "{output}");
+    assert!(
+        output.find(&first_plain) < output.find(&second_plain),
+        "{output}"
+    );
+
+    let json_start = output.find("[\n").ok_or("missing JSON list output")?;
+    let json_end = output[json_start..]
+        .find("\nexit:")
+        .ok_or("missing JSON command terminator")?
+        + json_start;
+    let loops: serde_json::Value = serde_json::from_str(&output[json_start..json_end])?;
+    assert_eq!(
+        loops
+            .as_array()
+            .ok_or("json output should be an array")?
+            .len(),
+        2
+    );
+    assert_eq!(loops[0]["id"], first_loop);
+    assert_eq!(loops[0]["state"], "pending");
+    assert_eq!(loops[0]["root_work_items"][0], first_root);
+    assert_eq!(loops[0]["resolved_work_items"], 1);
+    assert_eq!(loops[0]["rounds"], 0);
+    assert_eq!(loops[1]["id"], second_loop);
+    Ok(())
+}
+
+#[test]
+fn test_loop_list_reports_invalid_canonical_state() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let loop_id = loop_id(&date, 1);
+    fs::create_dir_all(temp_dir.path().join(format!(".govctl/loops/{loop_id}")))?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[vec!["loop".into(), "list".into()]])?;
+
+    assert!(output.contains("error[E1202]"), "{output}");
+    assert!(output.contains("Failed to read loop state"), "{output}");
+    assert!(output.contains(&loop_id), "{output}");
+    Ok(())
+}
+
+#[test]
 fn test_loop_start_rejects_plain_text_loop_id() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = common::today();

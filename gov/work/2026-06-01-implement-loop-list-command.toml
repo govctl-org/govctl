@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-090"
 title = "Implement loop list command"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0006"]
 depends_on = ["WI-2026-06-01-089"]
 
@@ -14,20 +15,20 @@ description = "Implement `govctl loop list` as the discovery entrypoint for pers
 
 [[content.acceptance_criteria]]
 text = "`govctl loop list` lists persisted loop states without requiring a loop ID"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "loop list supports table, plain, and json output with stable ordering"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "loop list tests cover empty state, multi-loop output, and invalid canonical state handling"
-status = "pending"
+status = "done"
 category = "added"
 
 [[content.acceptance_criteria]]
 text = "loop tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

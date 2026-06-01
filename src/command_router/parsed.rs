@@ -49,6 +49,9 @@ impl CommandPlan {
             Commands::Work { command } => command.to_plan(),
             Commands::Guard { command } => command.to_plan(),
             Commands::Loop { command } => match command {
+                crate::LoopCommand::List { output } => {
+                    Ok(global(Op::Builtin(BuiltinOp::LoopList { output: *output })))
+                }
                 crate::LoopCommand::Start { id, work_items } => {
                     Ok(global(Op::Builtin(BuiltinOp::LoopStart {
                         loop_id: id.clone(),

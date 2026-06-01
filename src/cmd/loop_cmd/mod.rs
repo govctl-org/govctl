@@ -6,6 +6,7 @@ mod scope;
 pub use execution::run;
 pub use scope::{add_roots, remove_roots, replan};
 
+use crate::OutputFormat;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::loop_planner::{build_loop_plan_from_config, topological_order_for_state};
@@ -14,6 +15,8 @@ use crate::loop_state::{
     validate_loop_id, write_loop_state_with_op,
 };
 use crate::write::WriteOp;
+use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
+use serde::Serialize;
 use std::collections::BTreeSet;
 
 pub fn start(
@@ -49,6 +52,19 @@ pub fn start(
 pub fn show(config: &Config, loop_id: &str) -> anyhow::Result<Vec<Diagnostic>> {
     let state = load_loop_state(config, loop_id)?;
     print_loop("Loop", &state)?;
+    Ok(vec![])
+}
+
+pub fn list(config: &Config, output: OutputFormat) -> anyhow::Result<Vec<Diagnostic>> {
+    let states = canonical_loop_ids(config)?
+        .into_iter()
+        .map(|loop_id| load_loop_state(config, &loop_id))
+        .collect::<anyhow::Result<Vec<_>>>()?;
+    let entries = states
+        .iter()
+        .map(LoopListEntry::from_state)
+        .collect::<Vec<_>>();
+    print_loop_list(&entries, output);
     Ok(vec![])
 }
 
@@ -104,35 +120,8 @@ pub(super) fn find_matching_non_terminal_loop(
     config: &Config,
     root_work_items: &[String],
 ) -> anyhow::Result<Option<LoopState>> {
-    let root = loop_state_root(config);
-    if !root.exists() {
-        return Ok(None);
-    }
-
     let mut matches = Vec::new();
-    for entry in std::fs::read_dir(&root).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read loop state directory: {e}"),
-            root.display().to_string(),
-        )
-    })? {
-        let entry = entry.map_err(|e| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read loop state entry: {e}"),
-                root.display().to_string(),
-            )
-        })?;
-        if !entry.path().is_dir() {
-            continue;
-        }
-        let Some(loop_id) = entry.file_name().to_str().map(str::to_string) else {
-            continue;
-        };
-        if validate_loop_id(&loop_id).is_err() {
-            continue;
-        }
+    for loop_id in canonical_loop_ids(config)? {
         let state_path = loop_state_path(config, &loop_id)?;
         if !state_path.exists() {
             continue;
@@ -161,6 +150,112 @@ pub(super) fn find_matching_non_terminal_loop(
             root_work_items.join(", "),
         )
         .into()),
+    }
+}
+
+fn canonical_loop_ids(config: &Config) -> anyhow::Result<Vec<String>> {
+    let root = loop_state_root(config);
+    if !root.exists() {
+        return Ok(vec![]);
+    }
+
+    let mut loop_ids = Vec::new();
+    for entry in std::fs::read_dir(&root).map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to read loop state directory: {e}"),
+            root.display().to_string(),
+        )
+    })? {
+        let entry = entry.map_err(|e| {
+            Diagnostic::new(
+                DiagnosticCode::E0901IoError,
+                format!("Failed to read loop state entry: {e}"),
+                root.display().to_string(),
+            )
+        })?;
+        if !entry.path().is_dir() {
+            continue;
+        }
+        let Some(loop_id) = entry.file_name().to_str().map(str::to_string) else {
+            continue;
+        };
+        if validate_loop_id(&loop_id).is_ok() {
+            loop_ids.push(loop_id);
+        }
+    }
+    loop_ids.sort();
+    Ok(loop_ids)
+}
+
+#[derive(Debug, Serialize)]
+struct LoopListEntry {
+    id: String,
+    state: String,
+    root_work_items: Vec<String>,
+    resolved_work_items: usize,
+    rounds: u32,
+}
+
+impl LoopListEntry {
+    fn from_state(state: &LoopState) -> Self {
+        Self {
+            id: state.loop_meta.id.clone(),
+            state: state.loop_meta.state.as_str().to_string(),
+            root_work_items: state.loop_meta.root_work_items.clone(),
+            resolved_work_items: state.loop_meta.work_items.len(),
+            rounds: state.items.values().map(|item| item.round_count).sum(),
+        }
+    }
+
+    fn roots_display(&self) -> String {
+        self.root_work_items.join(",")
+    }
+}
+
+fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
+    match output {
+        OutputFormat::Json => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(entries).unwrap_or_else(|_| "[]".to_string())
+            );
+        }
+        OutputFormat::Plain => {
+            for entry in entries {
+                println!(
+                    "{}\t{}\t{}\t{}\t{}",
+                    entry.id,
+                    entry.state,
+                    entry.roots_display(),
+                    entry.resolved_work_items,
+                    entry.rounds
+                );
+            }
+        }
+        OutputFormat::Table => {
+            let mut table = Table::new();
+            table
+                .load_preset(UTF8_FULL)
+                .set_content_arrangement(ContentArrangement::Dynamic)
+                .set_header(vec![
+                    Cell::new("ID").add_attribute(Attribute::Bold),
+                    Cell::new("State").add_attribute(Attribute::Bold),
+                    Cell::new("Roots").add_attribute(Attribute::Bold),
+                    Cell::new("Items").add_attribute(Attribute::Bold),
+                    Cell::new("Rounds").add_attribute(Attribute::Bold),
+                ]);
+            for entry in entries {
+                table.add_row(vec![
+                    Cell::new(&entry.id),
+                    Cell::new(&entry.state),
+                    Cell::new(entry.roots_display()),
+                    Cell::new(entry.resolved_work_items.to_string()),
+                    Cell::new(entry.rounds.to_string()),
+                ]);
+            }
+            println!("{table}");
+        }
     }
 }
 

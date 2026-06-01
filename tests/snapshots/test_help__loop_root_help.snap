@@ -9,6 +9,7 @@ Loop execution-state commands
 Usage: govctl loop [OPTIONS] <COMMAND>
 
 Commands:
+  list    List persisted local loop states
   start   Start a loop for one or more explicit work items
   show    Show persisted loop state
   resume  Resume or inspect an existing non-terminal loop
