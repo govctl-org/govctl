@@ -1,6 +1,6 @@
 use super::ops::FileOp;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::schema::{ArtifactSchema, with_schema_header};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -79,7 +79,7 @@ pub(super) fn plan_toml_rewrites(
     config: &Config,
     skip_rfc_ids: &[String],
     skip_releases: bool,
-) -> anyhow::Result<Vec<FileOp>> {
+) -> DiagnosticResult<Vec<FileOp>> {
     let mut ops = Vec::new();
 
     ops.extend(collect_rewrites(&config.adr_dir(), ArtifactSchema::Adr));

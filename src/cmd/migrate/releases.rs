@@ -1,11 +1,11 @@
 use super::ops::FileOp;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::ReleasesFile;
 use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
 use std::fs;
 
-pub(super) fn plan_release_upgrade(config: &Config) -> anyhow::Result<Option<Vec<FileOp>>> {
+pub(super) fn plan_release_upgrade(config: &Config) -> DiagnosticResult<Option<Vec<FileOp>>> {
     let path = config.releases_path();
     if !path.exists() {
         return Ok(None);

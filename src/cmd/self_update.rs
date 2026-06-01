@@ -4,7 +4,7 @@
 
 use std::io::IsTerminal;
 
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::ui;
 
 const REPO_OWNER: &str = "govctl-org";
@@ -22,7 +22,7 @@ pub(crate) enum VersionCheck {
 }
 
 /// Compare two semver version strings. Returns whether an update is available.
-pub(crate) fn compare_versions(current: &str, latest_raw: &str) -> anyhow::Result<VersionCheck> {
+pub(crate) fn compare_versions(current: &str, latest_raw: &str) -> DiagnosticResult<VersionCheck> {
     let latest = latest_raw.trim_start_matches('v');
 
     let current_semver = semver::Version::parse(current).map_err(|e| {
@@ -59,7 +59,7 @@ fn render_bin_path_in_archive(version: &str, target: &str, bin: &str) -> String 
 }
 
 /// Check for the latest version and optionally update the binary.
-pub fn self_update(check_only: bool) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn self_update(check_only: bool) -> DiagnosticResult<Diagnostics> {
     let current = env!("CARGO_PKG_VERSION");
 
     if check_only {
@@ -69,7 +69,7 @@ pub fn self_update(check_only: bool) -> anyhow::Result<Vec<Diagnostic>> {
     }
 }
 
-fn check_version(current: &str) -> anyhow::Result<Vec<Diagnostic>> {
+fn check_version(current: &str) -> DiagnosticResult<Diagnostics> {
     let releases = self_update::backends::github::ReleaseList::configure()
         .repo_owner(REPO_OWNER)
         .repo_name(REPO_NAME)
@@ -107,7 +107,7 @@ fn check_version(current: &str) -> anyhow::Result<Vec<Diagnostic>> {
     }
 }
 
-fn perform_update(current: &str) -> anyhow::Result<Vec<Diagnostic>> {
+fn perform_update(current: &str) -> DiagnosticResult<Diagnostics> {
     let show_progress = std::io::stdout().is_terminal();
 
     let status = self_update::backends::github::Update::configure()

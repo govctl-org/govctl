@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::ui;
 use std::fs;
 use std::io;
@@ -28,7 +28,7 @@ pub(super) fn preview_ops(config: &Config, ops: &[FileOp]) {
     }
 }
 
-pub(super) fn execute_ops(config: &Config, ops: &[FileOp]) -> anyhow::Result<()> {
+pub(super) fn execute_ops(config: &Config, ops: &[FileOp]) -> DiagnosticResult<()> {
     let gov_root = &config.gov_root;
     let stage_root = gov_root.join(".migrate-stage");
     let backup_root = gov_root.join(".migrate-backup");
@@ -48,8 +48,7 @@ pub(super) fn execute_ops(config: &Config, ops: &[FileOp]) -> anyhow::Result<()>
                 conflicts.join(", ")
             ),
             config.display_path(gov_root).display().to_string(),
-        )
-        .into());
+        ));
     }
 
     fs::create_dir_all(&stage_root)
@@ -73,7 +72,7 @@ pub(super) fn execute_ops(config: &Config, ops: &[FileOp]) -> anyhow::Result<()>
     result
 }
 
-fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> anyhow::Result<()> {
+fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> DiagnosticResult<()> {
     for (i, op) in ops.iter().enumerate() {
         if let FileOp::Write { content, .. } = op {
             let staged = stage_root.join(format!("{i}"));
@@ -84,10 +83,10 @@ fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> anyhow::Result<()> {
+fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> DiagnosticResult<()> {
     let mut applied: Vec<usize> = Vec::new();
 
-    let result = (|| -> anyhow::Result<()> {
+    let result = (|| -> DiagnosticResult<()> {
         for (i, op) in ops.iter().enumerate() {
             let backup_path = backup_root.join(format!("{i}"));
             match op {

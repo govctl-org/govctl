@@ -4,7 +4,7 @@
 //! The current version is tracked in `gov/config.toml` under `[schema] version`.
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult, Diagnostics};
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
 use crate::write::{WriteOp, write_file};
@@ -28,7 +28,7 @@ struct MigrationStep {
     from: u32,
     to: u32,
     name: &'static str,
-    plan_fn: fn(&Config) -> anyhow::Result<Vec<FileOp>>,
+    plan_fn: fn(&Config) -> DiagnosticResult<Vec<FileOp>>,
 }
 
 /// All registered migrations, ordered by version.
@@ -43,7 +43,7 @@ const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
 // Public API
 // =============================================================================
 
-pub fn migrate(config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
     let schemas_synced = sync_schemas(config, op)?;
 
@@ -115,7 +115,7 @@ pub fn migrate(config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> 
 
 /// Overwrite bundled JSON Schema files into `gov/schema/`. [[ADR-0035]]
 /// Returns the number of schema files that were created or updated.
-fn sync_schemas(config: &Config, op: WriteOp) -> anyhow::Result<usize> {
+fn sync_schemas(config: &Config, op: WriteOp) -> DiagnosticResult<usize> {
     let schema_dir = config.schema_dir();
     if !schema_dir.exists() {
         crate::write::create_dir_all(&schema_dir, op, Some(&config.display_path(&schema_dir)))?;
@@ -137,7 +137,7 @@ fn sync_schemas(config: &Config, op: WriteOp) -> anyhow::Result<usize> {
 }
 
 /// Bump `[schema] version` in config.toml preserving the rest of the file.
-fn bump_config_version(config: &Config, new_version: u32) -> anyhow::Result<()> {
+fn bump_config_version(config: &Config, new_version: u32) -> DiagnosticResult<()> {
     let path = config.gov_root.join("config.toml");
     let display_path = config.display_path(&path).display().to_string();
     let content = fs::read_to_string(&path)
@@ -178,7 +178,7 @@ fn bump_config_version(config: &Config, new_version: u32) -> anyhow::Result<()> 
 // v1 -> v2: structured wire format + schema headers
 // =============================================================================
 
-fn plan_v1_to_v2(config: &Config) -> anyhow::Result<Vec<FileOp>> {
+fn plan_v1_to_v2(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
     let mut ops = Vec::new();
 
     // 1. JSON RFC/clause -> TOML wire format

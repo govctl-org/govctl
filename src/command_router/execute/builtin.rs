@@ -1,10 +1,9 @@
 use super::super::BuiltinOp;
 use crate::cmd;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
 use crate::write::WriteOp;
 
-use super::{CommandResult, legacy_command, render_global_target};
+use super::{CommandResult, render_global_target};
 
 pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp) -> CommandResult {
     match builtin {
@@ -20,14 +19,12 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             dry_run,
             force,
         } => render_global_target(config, *target, *dry_run, *force),
-        BuiltinOp::Migrate => legacy_command(cmd::migrate::migrate(config, op), "migrate"),
+        BuiltinOp::Migrate => cmd::migrate::migrate(config, op),
         BuiltinOp::Verify { guard_ids, work } => {
             cmd::verify::verify(config, guard_ids, work.as_deref())
         }
         BuiltinOp::Describe { context } => cmd::describe::describe(config, *context),
-        BuiltinOp::SelfUpdate { check } => {
-            legacy_command(cmd::self_update::self_update(*check), "self-update")
-        }
+        BuiltinOp::SelfUpdate { check } => cmd::self_update::self_update(*check),
         BuiltinOp::Completions { shell } => {
             use crate::Cli;
             use clap::CommandFactory;
@@ -36,10 +33,7 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             Ok(vec![])
         }
         #[cfg(feature = "tui")]
-        BuiltinOp::Tui => {
-            crate::tui::run(config).map_err(|err| Diagnostic::from_anyhow(err, "tui"))?;
-            Ok(vec![])
-        }
+        BuiltinOp::Tui => crate::tui::run(config).map(|()| vec![]),
         BuiltinOp::ReleaseCut { version, date } => {
             cmd::lifecycle::cut_release(config, version, date.as_deref(), op)
         }

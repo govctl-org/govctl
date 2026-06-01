@@ -12,10 +12,6 @@ use scope::{ShowKind, extract_artifact_scope, extract_collection_scope, extract_
 
 type CommandResult = DiagnosticResult<Diagnostics>;
 
-fn legacy_command(result: anyhow::Result<Diagnostics>, context: &str) -> CommandResult {
-    result.map_err(|err| Diagnostic::from_anyhow(err, context))
-}
-
 fn render_rfc(config: &Config, id: Option<&str>, dry_run: bool) -> CommandResult {
     cmd::render::render(config, id, dry_run)
 }
@@ -193,9 +189,7 @@ fn execute_lifecycle(
         } => cmd::lifecycle::bump(config, id, *level, summary.as_deref(), changes, op),
         LifecycleOp::Finalize { status } => cmd::lifecycle::finalize(config, id, *status, op),
         LifecycleOp::Advance { phase } => cmd::lifecycle::advance(config, id, *phase, op),
-        LifecycleOp::Deprecate { force } => {
-            cmd::lifecycle::deprecate(config, id, *force, op)
-        }
+        LifecycleOp::Deprecate { force } => cmd::lifecycle::deprecate(config, id, *force, op),
         LifecycleOp::Supersede { by, force } => {
             cmd::lifecycle::supersede(config, id, by, *force, op)
         }

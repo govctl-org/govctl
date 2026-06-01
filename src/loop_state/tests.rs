@@ -3,6 +3,8 @@ use crate::config::{Config, PathsConfig};
 use crate::diagnostic::Diagnostic;
 use std::collections::BTreeMap;
 
+type TestResult = Result<(), Box<dyn std::error::Error>>;
+
 fn test_config(root: &std::path::Path) -> Config {
     Config {
         gov_root: root.join("gov"),
@@ -30,18 +32,18 @@ fn assert_err_contains<T>(
     result: Result<T, Diagnostic>,
     needle: &str,
     context: &str,
-) -> anyhow::Result<()> {
+) -> TestResult {
     let Err(err) = result else {
-        anyhow::bail!("{context}: expected error containing '{needle}'");
+        return Err(format!("{context}: expected error containing '{needle}'").into());
     };
     if !err.to_string().contains(needle) {
-        anyhow::bail!("error should contain '{needle}', got: {err}");
+        return Err(format!("error should contain '{needle}', got: {err}").into());
     }
     Ok(())
 }
 
 #[test]
-fn test_loop_state_round_trips_state_toml() -> anyhow::Result<()> {
+fn test_loop_state_round_trips_state_toml() -> TestResult {
     let temp_dir = tempfile::TempDir::new()?;
     let config = test_config(temp_dir.path());
     let root = "WI-2026-05-31-001";
@@ -77,7 +79,7 @@ fn test_loop_state_round_trips_state_toml() -> anyhow::Result<()> {
 }
 
 #[test]
-fn test_loop_state_updates_lifecycle_item_status_and_round_count() -> anyhow::Result<()> {
+fn test_loop_state_updates_lifecycle_item_status_and_round_count() -> TestResult {
     let temp_dir = tempfile::TempDir::new()?;
     let config = test_config(temp_dir.path());
     let work_id = "WI-2026-05-31-001";
@@ -101,7 +103,7 @@ fn test_loop_state_updates_lifecycle_item_status_and_round_count() -> anyhow::Re
 }
 
 #[test]
-fn test_loop_state_rejects_invalid_lifecycle_transition() -> anyhow::Result<()> {
+fn test_loop_state_rejects_invalid_lifecycle_transition() -> TestResult {
     let work_id = "WI-2026-05-31-001";
     let mut state = LoopState::new(
         "LOOP-2026-05-31-003",
@@ -129,7 +131,7 @@ fn test_loop_state_rejects_invalid_lifecycle_transition() -> anyhow::Result<()> 
 }
 
 #[test]
-fn test_loop_state_rejects_invalid_ids_and_contract_violations() -> anyhow::Result<()> {
+fn test_loop_state_rejects_invalid_ids_and_contract_violations() -> TestResult {
     let work_id = "WI-2026-05-31-001";
 
     validate_loop_id("LOOP-2026-05-31-001")?;

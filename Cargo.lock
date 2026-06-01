@@ -1133,7 +1133,6 @@ name = "govctl"
 version = "0.8.5"
 dependencies = [
  "ansi-to-tui",
- "anyhow",
  "chrono",
  "clap",
  "clap_complete",

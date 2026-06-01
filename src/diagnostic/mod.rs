@@ -39,17 +39,6 @@ impl Diagnostic {
             file,
         )
     }
-
-    pub fn unexpected(message: impl Into<String>, file: impl Into<String>) -> Self {
-        Self::new(DiagnosticCode::E0903UnexpectedError, message, file)
-    }
-
-    pub fn from_anyhow(err: anyhow::Error, file: impl Into<String>) -> Self {
-        match err.downcast::<Diagnostic>() {
-            Ok(diagnostic) => diagnostic,
-            Err(err) => Self::unexpected(err.to_string(), file),
-        }
-    }
 }
 
 impl fmt::Display for Diagnostic {

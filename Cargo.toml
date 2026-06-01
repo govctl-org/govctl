@@ -50,7 +50,6 @@ jsonschema = "0.45"
 semver = { version = "1", features = ["serde"] }
 
 # Error handling
-anyhow = "1"
 thiserror = "2"
 
 # Date/time

@@ -1,6 +1,6 @@
 use super::ops::FileOp;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{ClauseSpec, ClauseWire, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
 use crate::write::{read_clause, read_rfc};
@@ -11,7 +11,7 @@ use std::path::Path;
 pub(super) fn plan_rfc_json_to_toml(
     config: &Config,
     rfc_dir: &Path,
-) -> anyhow::Result<Option<(Vec<FileOp>, String)>> {
+) -> DiagnosticResult<Option<(Vec<FileOp>, String)>> {
     let rfc_json = rfc_dir.join("rfc.json");
     let rfc_toml = rfc_dir.join("rfc.toml");
 
@@ -24,8 +24,7 @@ pub(super) fn plan_rfc_json_to_toml(
                     config.display_path(rfc_dir).display()
                 ),
                 config.display_path(rfc_dir).display().to_string(),
-            )
-            .into());
+            ));
         }
         return Ok(None);
     }
@@ -60,8 +59,7 @@ pub(super) fn plan_rfc_json_to_toml(
                 file_name
             ),
             config.display_path(&entry.path()).display().to_string(),
-        )
-        .into());
+        ));
     }
 
     let mut rfc: RfcSpec = read_rfc(config, &rfc_json)?;
@@ -94,16 +92,14 @@ pub(super) fn plan_rfc_json_to_toml(
                         config.display_path(&clauses_dir).display()
                     ),
                     config.display_path(&path).display().to_string(),
-                )
-                .into());
+                ));
             }
             if path.extension().and_then(|ext| ext.to_str()) != Some("json") {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0201ClauseSchemaInvalid,
                     format!("Unexpected file in clauses directory: {name}"),
                     config.display_path(&path).display().to_string(),
-                )
-                .into());
+                ));
             }
             let clause = read_clause(config, &path)?;
             clause_map.insert(name, clause);
@@ -117,16 +113,14 @@ pub(super) fn plan_rfc_json_to_toml(
                     DiagnosticCode::E0204ClausePathInvalid,
                     format!("Invalid clause path: {clause_path}"),
                     config.display_path(&rfc_json).display().to_string(),
-                )
-                .into());
+                ));
             }
             if !clause_path.ends_with(".json") {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0204ClausePathInvalid,
                     format!("Mixed clause path formats not supported: {clause_path}"),
                     config.display_path(&rfc_json).display().to_string(),
-                )
-                .into());
+                ));
             }
             let file_name = Path::new(clause_path)
                 .file_name()
@@ -143,8 +137,7 @@ pub(super) fn plan_rfc_json_to_toml(
                     DiagnosticCode::E0202ClauseNotFound,
                     format!("Referenced clause missing: {clause_path}"),
                     config.display_path(&rfc_json).display().to_string(),
-                )
-                .into());
+                ));
             }
             *clause_path = clause_path.trim_end_matches(".json").to_string() + ".toml";
         }
