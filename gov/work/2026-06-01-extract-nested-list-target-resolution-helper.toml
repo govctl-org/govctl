@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-162"
 title = "Extract nested list target resolution helper"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract the repeated nested-list mutation target resolution in the edit runtime into a focused private helper. The change should keep add, remove, tick, and set behavior unchanged while reducing duplicated root resolution, descent, list-kind validation, item-rule lookup, and array access code in nested list mutation."
 
 [[content.acceptance_criteria]]
 text = "nested list mutation shares one private helper for root resolution, descent, item-rule lookup, and array access"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "nested add, remove, tick, and set behavior and diagnostics remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "nested edit runtime tests, edit integration tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

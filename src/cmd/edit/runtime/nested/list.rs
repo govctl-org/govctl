@@ -3,9 +3,15 @@ use super::resolve_nested_root;
 use super::traverse::{default_value_for_node, descend_mut, ensure_node_path_mut};
 use crate::cmd::edit::ArtifactType;
 use crate::cmd::edit::path::{self, FieldPath};
-use crate::cmd::edit::rules::{NestedNodeKind, Verb};
+use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb};
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use serde_json::Value;
+
+struct NestedListTarget<'a> {
+    node: &'static NestedNodeRule,
+    item_rule: &'static NestedNodeRule,
+    list: &'a mut Vec<Value>,
+}
 
 pub fn add_nested_list_value(
     artifact: ArtifactType,
@@ -14,8 +20,6 @@ pub fn add_nested_list_value(
     value: &str,
     id: &str,
 ) -> anyhow::Result<()> {
-    let root_name = &fp.segments[0].name;
-    let rule = resolve_nested_root(artifact, root_name, id)?;
     if fp.has_terminal_index() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
@@ -27,29 +31,19 @@ pub fn add_nested_list_value(
         )
         .into());
     }
-    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
-    let (node, slot) = descend_mut(
-        rule.node,
-        root_value,
-        &fp.segments[0],
-        &fp.segments[1..],
+
+    let NestedListTarget {
+        node,
+        item_rule,
+        list,
+    } = nested_list_target_mut(
+        artifact,
+        doc,
+        fp,
         Verb::Add,
         id,
+        Some(format!("Field '{}' is not a list; cannot add to it", fp)),
     )?;
-    if node.kind != NestedNodeKind::List {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!("Field '{}' is not a list; cannot add to it", fp),
-            id,
-        )
-        .into());
-    }
-    let item_rule = node
-        .item
-        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
-    let list = slot
-        .as_array_mut()
-        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
 
     match item_rule.kind {
         NestedNodeKind::Scalar => {
@@ -109,26 +103,11 @@ pub fn remove_nested_list_values<F>(
 where
     F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
 {
-    let root_name = &fp.segments[0].name;
-    let rule = resolve_nested_root(artifact, root_name, id)?;
-    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
-    let (node, slot) = descend_mut(
-        rule.node,
-        root_value,
-        &fp.segments[0],
-        &fp.segments[1..],
-        Verb::Remove,
-        id,
-    )?;
-    if node.kind != NestedNodeKind::List {
-        return Err(type_mismatch("Expected array for list field", id).into());
-    }
-    let item_rule = node
-        .item
-        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
-    let list = slot
-        .as_array_mut()
-        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+    let NestedListTarget {
+        node,
+        item_rule,
+        list,
+    } = nested_list_target_mut(artifact, doc, fp, Verb::Remove, id, None)?;
 
     let texts: Vec<&str> = match item_rule.kind {
         NestedNodeKind::Scalar => list
@@ -183,29 +162,14 @@ pub fn tick_nested_list_item_with_matcher<F>(
 where
     F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
 {
-    let root_name = &fp.segments[0].name;
-    let rule = resolve_nested_root(artifact, root_name, id)?;
-    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
-    let (node, slot) = descend_mut(
-        rule.node,
-        root_value,
-        &fp.segments[0],
-        &fp.segments[1..],
-        Verb::Tick,
-        id,
-    )?;
-    if node.kind != NestedNodeKind::List {
-        return Err(type_mismatch("Expected array for list field", id).into());
-    }
-    let item_rule = node
-        .item
-        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    let NestedListTarget {
+        node,
+        item_rule,
+        list,
+    } = nested_list_target_mut(artifact, doc, fp, Verb::Tick, id, None)?;
     if item_rule.kind != NestedNodeKind::Object {
         return Err(type_mismatch("Expected object entries in tickable list", id).into());
     }
-    let list = slot
-        .as_array_mut()
-        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
     let text_key = node
         .text_key
         .ok_or_else(|| type_mismatch("Expected text_key for tickable list", id))?;
@@ -239,26 +203,9 @@ pub fn set_nested_list_item(
     value: &str,
     id: &str,
 ) -> anyhow::Result<()> {
-    let root_name = &fp.segments[0].name;
-    let rule = resolve_nested_root(artifact, root_name, id)?;
-    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
-    let (node, slot) = descend_mut(
-        rule.node,
-        root_value,
-        &fp.segments[0],
-        &fp.segments[1..],
-        Verb::Set,
-        id,
-    )?;
-    if node.kind != NestedNodeKind::List {
-        return Err(type_mismatch("Expected array for list field", id).into());
-    }
-    let item_rule = node
-        .item
-        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
-    let list = slot
-        .as_array_mut()
-        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+    let NestedListTarget {
+        item_rule, list, ..
+    } = nested_list_target_mut(artifact, doc, fp, Verb::Set, id, None)?;
     let resolved = path::resolve_index(index, list.len())?;
     match item_rule.kind {
         NestedNodeKind::Scalar => {
@@ -273,4 +220,41 @@ pub fn set_nested_list_item(
         .into()),
         NestedNodeKind::List => Err(type_mismatch("Expected scalar list item", id).into()),
     }
+}
+
+fn nested_list_target_mut<'a>(
+    artifact: ArtifactType,
+    doc: &'a mut Value,
+    fp: &FieldPath,
+    verb: Verb,
+    id: &str,
+    not_list_message: Option<String>,
+) -> anyhow::Result<NestedListTarget<'a>> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
+    let (node, slot) = descend_mut(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        verb,
+        id,
+    )?;
+    if node.kind != NestedNodeKind::List {
+        let message =
+            not_list_message.unwrap_or_else(|| "Expected array for list field".to_string());
+        return Err(type_mismatch(&message, id).into());
+    }
+    let item_rule = node
+        .item
+        .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
+    let list = slot
+        .as_array_mut()
+        .ok_or_else(|| type_mismatch("Expected array for list field", id))?;
+    Ok(NestedListTarget {
+        node,
+        item_rule,
+        list,
+    })
 }
