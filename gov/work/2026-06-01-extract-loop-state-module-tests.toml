@@ -3,23 +3,30 @@
 [govctl]
 id = "WI-2026-06-01-079"
 title = "Extract loop state module tests"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move the inline loop state tests from `src/loop_state/mod.rs` into `src/loop_state/tests.rs` while keeping the loop state schema, lifecycle helpers, storage facade functions, validation facade, and persisted loop-state behavior unchanged. This reduces root-module noise without splitting the coherent loop state schema/API."
 
 [[content.acceptance_criteria]]
 text = "Inline loop state tests are moved from `src/loop_state/mod.rs` into `src/loop_state/tests.rs`"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`src/loop_state/mod.rs` keeps the loop state schema/API, lifecycle string helpers, storage facade functions, validation facade export, and the `#[cfg(test)] mod tests;` declaration"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "`cargo test loop_state:: -- --nocapture`, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, and `govctl check --deny-warnings` pass"
-status = "pending"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "rustfmt --edition 2024 --check src/loop_state/tests.rs passes"
+status = "done"
 category = "chore"
