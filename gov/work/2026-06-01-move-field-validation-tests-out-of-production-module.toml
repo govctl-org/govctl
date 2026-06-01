@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-160"
 title = "Move field validation tests out of production module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move field-validation rule unit tests out of the production validation fields module while preserving validate_field behavior and ArtifactKind exports. The production implementation should remain a coherent fields directory module, with tests isolated in a sibling test module and no same-name file/directory pair."
 
 [[content.acceptance_criteria]]
 text = "field-validation implementation lives in validate/fields/mod.rs with inline tests removed"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "field-validation unit coverage lives in validate/fields/tests.rs and still covers semver, superseded_by, RFC version, and unknown-field validation kinds"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "cargo test field validation coverage, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
