@@ -27,6 +27,7 @@ clauses = [
     "clauses/C-LOOP-STATE-STORAGE.toml",
     "clauses/C-LOOP-SCOPE-MUTATION.toml",
     "clauses/C-LOOP-LISTING.toml",
+    "clauses/C-LOOP-COMMAND-SURFACE.toml",
 ]
 
 [[sections]]

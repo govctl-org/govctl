@@ -60,23 +60,22 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             output,
         } => cmd::loop_cmd::list(config, filter.as_deref(), *limit, *output),
         BuiltinOp::LoopShow { loop_id } => cmd::loop_cmd::show(config, loop_id),
-        BuiltinOp::LoopResume {
-            loop_id,
-            work_items,
-        } => cmd::loop_cmd::resume(config, loop_id.as_deref(), work_items),
+        BuiltinOp::LoopResume { loop_id } => cmd::loop_cmd::resume(config, loop_id),
         BuiltinOp::LoopReplan { loop_id } => cmd::loop_cmd::replan(config, loop_id, op),
         BuiltinOp::LoopAdd {
             loop_id,
-            work_items,
-        } => cmd::loop_cmd::add_roots(config, loop_id, work_items, op),
+            field,
+            value,
+        } => cmd::loop_cmd::add_work_item(config, loop_id, field, value, op),
         BuiltinOp::LoopRemove {
             loop_id,
-            work_items,
-        } => cmd::loop_cmd::remove_roots(config, loop_id, work_items, op),
+            field,
+            value,
+        } => cmd::loop_cmd::remove_work_item(config, loop_id, field, value, op),
         BuiltinOp::LoopRun {
             loop_id,
-            work_items,
+            target_work_items,
             max_rounds,
-        } => cmd::loop_cmd::run(config, loop_id.as_deref(), work_items, *max_rounds, op),
+        } => cmd::loop_cmd::run(config, loop_id, target_work_items, *max_rounds, op),
     }
 }

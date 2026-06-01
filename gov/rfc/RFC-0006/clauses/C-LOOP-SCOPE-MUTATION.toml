@@ -9,20 +9,21 @@ since = "0.2.0"
 
 [content]
 text = """
-A loop implementation MAY support explicit scope mutation for a non-terminal loop. A scope mutation changes or refreshes the loop's current explicit root set and recomputes the resolved dependency closure without creating a new loop ID.
+A loop implementation MAY support explicit scope mutation for a non-terminal loop. A scope mutation changes or refreshes the loop's current editable `work` field and recomputes the resolved dependency closure without creating a new loop ID.
 
-A scope mutation operation MUST be one of:
+Scope mutation MUST support these operations:
+1. **Replan**: keep the current editable `work` field and recompute its dependency closure from the current work item files.
+2. **Add work**: add one Work Item ID to the current editable `work` field, then recompute the dependency closure.
+3. **Remove work**: remove one Work Item ID from the current editable `work` field, then recompute the dependency closure.
 
-1. **Replan**: keep the current explicit root set and recompute its dependency closure from the current work item files.
-2. **Add roots**: add one or more Work Item IDs to the current explicit root set, then recompute the dependency closure.
-3. **Remove roots**: remove one or more Work Item IDs from the current explicit root set, then recompute the dependency closure.
+Implementations MUST reject scope mutation for terminal loops. Implementations MUST reject scope mutation that would leave the editable `work` field empty. Implementations MUST validate added or removed `work` values as Work Item IDs. Implementations MUST store the explicit work set without duplicates.
 
-Implementations MUST reject scope mutation for terminal loops. Implementations MUST reject scope mutation that would leave the explicit root set empty. Implementations MUST validate all added or removed root IDs as Work Item IDs. Implementations MUST store the root set without duplicates.
-
-A scope mutation MUST build a candidate loop state before replacing the stored state. The candidate state MUST use the current explicit root set after the requested add/remove/replan operation. The candidate state MUST resolve dependencies using the rules in [[RFC-0006:C-DEPENDENCY-SEMANTICS]]. If dependency resolution fails, the implementation MUST leave the previously stored loop state unchanged.
+A scope mutation MUST build a candidate loop state before replacing the stored state. The candidate state MUST use the current explicit work set after the requested add/remove/replan operation. The candidate state MUST resolve dependencies using the rules in [[RFC-0006:C-DEPENDENCY-SEMANTICS]]. If dependency resolution fails, the implementation MUST leave the previously stored loop state unchanged.
 
 For work items that remain in the resolved dependency closure, scope mutation MUST preserve `round_count`. Scope mutation MUST preserve explicit terminal execution outcomes `done`, `failed`, and `cancelled`. Scope mutation MUST recompute `blocked` outcomes from the current dependency graph and current terminal dependency outcomes; a previously blocked work item MAY return to `pending` when its current dependencies no longer require blocking. Non-terminal work items MUST NOT be selected for a new round until their current dependencies satisfy [[RFC-0006:C-DEPENDENCY-SEMANTICS]].
 
 For newly introduced work items, scope mutation MUST initialize loop-level item state using the same Work Item status mapping used at loop start. For work items that no longer appear in the resolved dependency closure, scope mutation MUST remove their entries from `loop.work_items`, `[dependencies]`, and `[items]` in `state.toml`. Removing a work item from current loop state MUST NOT undo any Work Item lifecycle transitions that already happened through `govctl work` commands. Optional historical round artifacts for removed work items MAY remain under the loop directory, but they MUST NOT be treated as part of the current loop state.
 
-Rationale: Long-running cleanup and implementation loops often discover that the original batch is missing work, contains unnecessary work, or needs dependency files re-read after edits. Scope mutation keeps one execution session identity while making the current root set and dependency closure explicit, validated, and recoverable."""
+**Rationale:**
+
+Long-running cleanup and implementation loops often discover that the original batch is missing work, contains unnecessary work, or needs dependency files re-read after edits. Scope mutation keeps one execution session identity while making the current `work` field and dependency closure explicit, validated, and recoverable. Modeling this as a field mutation keeps loop commands aligned with the existing edit model while preserving loop-specific replanning behavior."""

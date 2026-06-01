@@ -11,7 +11,7 @@ use common::{init_project, run_dynamic_commands};
 use std::fs;
 
 #[test]
-fn test_loop_start_show_and_resume_by_root_set() -> common::TestResult {
+fn test_loop_start_show_and_resume_by_loop_id() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = common::today();
     let dependency_id = format!("WI-{date}-001");
@@ -38,7 +38,7 @@ fn test_loop_start_show_and_resume_by_root_set() -> common::TestResult {
                 root_id.clone(),
             ],
             vec!["loop".into(), "show".into(), loop_id.clone()],
-            vec!["loop".into(), "resume".into(), root_id.clone()],
+            vec!["loop".into(), "resume".into(), loop_id.clone()],
         ],
     )?;
 
@@ -47,7 +47,7 @@ fn test_loop_start_show_and_resume_by_root_set() -> common::TestResult {
         "{output}"
     );
     assert!(output.contains(&format!("Loop {loop_id}")), "{output}");
-    assert!(output.contains(&format!("Roots: {root_id}")), "{output}");
+    assert!(output.contains(&format!("Work: {root_id}")), "{output}");
     assert!(output.contains(&format!("1. {dependency_id}")), "{output}");
     assert!(output.contains(&format!("2. {root_id}")), "{output}");
     assert!(
@@ -181,7 +181,7 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
     );
     assert_eq!(loops[0]["id"], first_loop);
     assert_eq!(loops[0]["state"], "pending");
-    assert_eq!(loops[0]["root_work_items"][0], first_root);
+    assert_eq!(loops[0]["work"][0], first_root);
     assert_eq!(loops[0]["resolved_work_items"], 1);
     assert_eq!(loops[0]["rounds"], 0);
     assert_eq!(loops[1]["id"], second_loop);
@@ -220,12 +220,17 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
             ],
             vec![
                 "loop".into(),
-                "run".into(),
+                "start".into(),
                 "--id".into(),
+                paused_loop.clone(),
+                paused_root.clone(),
+            ],
+            vec![
+                "loop".into(),
+                "run".into(),
                 paused_loop.clone(),
                 "--max-rounds".into(),
                 "2".into(),
-                paused_root.clone(),
             ],
             vec!["work".into(), "new".into(), "Completed".into()],
             vec![
@@ -246,11 +251,12 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
             ],
             vec![
                 "loop".into(),
-                "run".into(),
+                "start".into(),
                 "--id".into(),
                 completed_loop.clone(),
                 completed_root.clone(),
             ],
+            vec!["loop".into(), "run".into(), completed_loop.clone()],
         ],
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
@@ -500,24 +506,18 @@ fn test_loop_start_dry_run_previews_state_without_writing() -> common::TestResul
 }
 
 #[test]
-fn test_loop_resume_missing_root_set_reports_diagnostic() -> common::TestResult {
+fn test_loop_resume_missing_loop_id_reports_diagnostic() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = common::today();
-    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
 
     let output = run_dynamic_commands(
         temp_dir.path(),
-        &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec!["loop".into(), "resume".into(), root_id.clone()],
-        ],
+        &[vec!["loop".into(), "resume".into(), loop_id.clone()]],
     )?;
 
-    assert!(output.contains("error[E1207]"), "{output}");
-    assert!(
-        output.contains("No matching non-terminal loop state"),
-        "{output}"
-    );
+    assert!(output.contains("error[E1202]"), "{output}");
+    assert!(output.contains("Failed to read loop state"), "{output}");
     Ok(())
 }
 
@@ -550,11 +550,12 @@ fn test_loop_run_completes_ready_work_item() -> common::TestResult {
             ],
             vec![
                 "loop".into(),
-                "run".into(),
+                "start".into(),
                 "--id".into(),
                 loop_id.clone(),
                 root_id.clone(),
             ],
+            vec!["loop".into(), "run".into(), loop_id.clone()],
         ],
     )?;
 
@@ -647,11 +648,12 @@ fn test_loop_run_marks_failed_and_blocks_dependents() -> common::TestResult {
             ],
             vec![
                 "loop".into(),
-                "run".into(),
+                "start".into(),
                 "--id".into(),
                 loop_id.clone(),
                 root_id.clone(),
             ],
+            vec!["loop".into(), "run".into(), loop_id.clone()],
         ],
     )?;
 
@@ -739,11 +741,17 @@ fn test_loop_run_records_guard_failure_without_completing_work_item() -> common:
         temp_dir.path(),
         &[vec![
             "loop".into(),
-            "run".into(),
+            "start".into(),
             "--id".into(),
             loop_id.clone(),
             root_id.clone(),
         ]],
+    )?;
+    assert!(output.contains("exit: 0"), "{output}");
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec!["loop".into(), "run".into(), loop_id.clone()]],
     )?;
 
     assert!(output.contains("FAIL GUARD-FAIL"), "{output}");
@@ -801,12 +809,22 @@ fn test_loop_run_guard_failure_can_pause_until_max_rounds() -> common::TestResul
         temp_dir.path(),
         &[vec![
             "loop".into(),
-            "run".into(),
+            "start".into(),
             "--id".into(),
+            loop_id.clone(),
+            root_id.clone(),
+        ]],
+    )?;
+    assert!(output.contains("exit: 0"), "{output}");
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "run".into(),
             loop_id.clone(),
             "--max-rounds".into(),
             "2".into(),
-            root_id.clone(),
         ]],
     )?;
 
@@ -838,7 +856,6 @@ fn test_loop_run_guard_failure_can_pause_until_max_rounds() -> common::TestResul
         &[vec![
             "loop".into(),
             "run".into(),
-            "--id".into(),
             loop_id.clone(),
             "--max-rounds".into(),
             "2".into(),
@@ -914,12 +931,17 @@ fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::
             ],
             vec![
                 "loop".into(),
-                "run".into(),
+                "start".into(),
                 "--id".into(),
+                loop_id.clone(),
+                root_id.clone(),
+            ],
+            vec![
+                "loop".into(),
+                "run".into(),
                 loop_id.clone(),
                 "--max-rounds".into(),
                 "2".into(),
-                root_id.clone(),
             ],
         ],
     )?;
@@ -951,9 +973,9 @@ fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::
             vec![
                 "loop".into(),
                 "run".into(),
+                loop_id.clone(),
                 "--max-rounds".into(),
                 "2".into(),
-                root_id.clone(),
             ],
         ],
     )?;
@@ -974,6 +996,367 @@ fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::
         "{state_toml}"
     );
     assert!(state_toml.contains("round_count = 2"), "{state_toml}");
+    Ok(())
+}
+
+#[test]
+fn test_loop_run_targets_work_item_without_executing_unrelated_work() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let first_id = format!("WI-{date}-001");
+    let second_id = format!("WI-{date}-002");
+    let loop_id = loop_id(&date, 1);
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec!["work".into(), "new".into(), "First".into()],
+            vec![
+                "work".into(),
+                "add".into(),
+                first_id.clone(),
+                "acceptance_criteria".into(),
+                "add: first ready".into(),
+            ],
+            vec![
+                "work".into(),
+                "tick".into(),
+                first_id.clone(),
+                "acceptance_criteria".into(),
+                "first ready".into(),
+                "-s".into(),
+                "done".into(),
+            ],
+            vec!["work".into(), "new".into(), "Second".into()],
+            vec![
+                "work".into(),
+                "add".into(),
+                second_id.clone(),
+                "acceptance_criteria".into(),
+                "add: second pending".into(),
+            ],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                loop_id.clone(),
+                first_id.clone(),
+                second_id.clone(),
+            ],
+            vec![
+                "loop".into(),
+                "run".into(),
+                loop_id.clone(),
+                "--work".into(),
+                first_id.clone(),
+            ],
+        ],
+    )?;
+
+    assert!(output.contains(&format!("Targets: {first_id}")), "{output}");
+    assert!(
+        output.contains(&format!("Paused loop {loop_id}")),
+        "{output}"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert_eq!(loop_item_status(&state_toml, &first_id)?, "done");
+    assert_eq!(loop_item_round_count(&state_toml, &first_id)?, 1);
+    assert_eq!(loop_item_status(&state_toml, &second_id)?, "pending");
+    assert_eq!(loop_item_round_count(&state_toml, &second_id)?, 0);
+    assert!(
+        !temp_dir
+            .path()
+            .join(format!(
+                ".govctl/loops/{loop_id}/rounds/{second_id}/round-001.toml"
+            ))
+            .exists(),
+        "unrelated work item should not execute a targeted round"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_loop_run_target_includes_transitive_dependencies() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let dependency_id = format!("WI-{date}-001");
+    let root_id = format!("WI-{date}-002");
+    let loop_id = loop_id(&date, 1);
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec!["work".into(), "new".into(), "Dependency".into()],
+            vec![
+                "work".into(),
+                "add".into(),
+                dependency_id.clone(),
+                "acceptance_criteria".into(),
+                "add: dependency ready".into(),
+            ],
+            vec![
+                "work".into(),
+                "tick".into(),
+                dependency_id.clone(),
+                "acceptance_criteria".into(),
+                "dependency ready".into(),
+                "-s".into(),
+                "done".into(),
+            ],
+            vec!["work".into(), "new".into(), "Root".into()],
+            vec![
+                "work".into(),
+                "add".into(),
+                root_id.clone(),
+                "acceptance_criteria".into(),
+                "add: root ready".into(),
+            ],
+            vec![
+                "work".into(),
+                "tick".into(),
+                root_id.clone(),
+                "acceptance_criteria".into(),
+                "root ready".into(),
+                "-s".into(),
+                "done".into(),
+            ],
+            vec![
+                "work".into(),
+                "add".into(),
+                root_id.clone(),
+                "depends_on".into(),
+                dependency_id.clone(),
+            ],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                loop_id.clone(),
+                root_id.clone(),
+            ],
+            vec![
+                "loop".into(),
+                "run".into(),
+                loop_id.clone(),
+                "--work".into(),
+                root_id.clone(),
+            ],
+        ],
+    )?;
+
+    assert!(output.contains(&format!("Targets: {root_id}")), "{output}");
+    assert!(
+        output.contains(&format!("Completed loop {loop_id}")),
+        "{output}"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert_eq!(loop_item_status(&state_toml, &dependency_id)?, "done");
+    assert_eq!(loop_item_round_count(&state_toml, &dependency_id)?, 1);
+    assert_eq!(loop_item_status(&state_toml, &root_id)?, "done");
+    assert_eq!(loop_item_round_count(&state_toml, &root_id)?, 1);
+    read_round_record(temp_dir.path(), &loop_id, &dependency_id, 1)?;
+    read_round_record(temp_dir.path(), &loop_id, &root_id, 1)?;
+    Ok(())
+}
+
+#[test]
+fn test_loop_run_rejects_target_outside_loop() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let root_id = format!("WI-{date}-001");
+    let outside_id = format!("WI-{date}-002");
+    let loop_id = loop_id(&date, 1);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec!["work".into(), "new".into(), "Root".into()],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                loop_id.clone(),
+                root_id.clone(),
+            ],
+            vec!["work".into(), "new".into(), "Outside".into()],
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "run".into(),
+            loop_id.clone(),
+            "--work".into(),
+            outside_id.clone(),
+        ]],
+    )?;
+
+    assert!(output.contains("error[E1201]"), "{output}");
+    assert!(
+        output.contains(&format!(
+            "Loop run target '{outside_id}' is not part of loop '{loop_id}'"
+        )),
+        "{output}"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("state = \"pending\""), "{state_toml}");
+    assert_eq!(loop_item_round_count(&state_toml, &root_id)?, 0);
+    assert!(
+        !temp_dir
+            .path()
+            .join(format!(
+                ".govctl/loops/{loop_id}/rounds/{root_id}/round-001.toml"
+            ))
+            .exists(),
+        "invalid targeted run should not execute any round"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_loop_run_rejects_duplicate_targets_before_state_change() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec!["work".into(), "new".into(), "Root".into()],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                loop_id.clone(),
+                root_id.clone(),
+            ],
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "run".into(),
+            loop_id.clone(),
+            "--work".into(),
+            root_id.clone(),
+            "--work".into(),
+            root_id.clone(),
+        ]],
+    )?;
+
+    assert!(output.contains("error[E1201]"), "{output}");
+    assert!(
+        output.contains(&format!("duplicate loop run target work item: {root_id}")),
+        "{output}"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("state = \"pending\""), "{state_toml}");
+    assert_eq!(loop_item_round_count(&state_toml, &root_id)?, 0);
+    Ok(())
+}
+
+#[test]
+fn test_loop_add_remove_work_field_rejects_unknown_field() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let root_id = format!("WI-{date}-001");
+    let extra_id = format!("WI-{date}-002");
+    let loop_id = loop_id(&date, 1);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec!["work".into(), "new".into(), "Root".into()],
+            vec![
+                "loop".into(),
+                "start".into(),
+                "--id".into(),
+                loop_id.clone(),
+                root_id.clone(),
+            ],
+            vec!["work".into(), "new".into(), "Extra".into()],
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "add".into(),
+            loop_id.clone(),
+            "work_items".into(),
+            extra_id.clone(),
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0803]"), "{output}");
+    assert!(
+        output.contains("Unknown loop field: work_items"),
+        "{output}"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert_eq!(loop_roots(&toml::from_str(&state_toml)?)?, vec![root_id]);
+    Ok(())
+}
+
+#[test]
+fn test_loop_root_aliases_are_not_supported() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let date = common::today();
+    let loop_id = loop_id(&date, 1);
+    let work_id = format!("WI-{date}-001");
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec![
+                "loop".into(),
+                "add-root".into(),
+                loop_id.clone(),
+                "work".into(),
+                work_id.clone(),
+            ],
+            vec![
+                "loop".into(),
+                "remove-root".into(),
+                loop_id,
+                "work".into(),
+                work_id,
+            ],
+        ],
+    )?;
+
+    assert!(output.contains("unrecognized subcommand"), "{output}");
+    assert!(output.contains("add-root"), "{output}");
+    assert!(output.contains("remove-root"), "{output}");
     Ok(())
 }
 
@@ -1007,7 +1390,6 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
             vec![
                 "loop".into(),
                 "run".into(),
-                "--id".into(),
                 loop_id.clone(),
                 "--max-rounds".into(),
                 "2".into(),
@@ -1024,8 +1406,8 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
             vec![
                 "loop".into(),
                 "add".into(),
-                "--id".into(),
                 loop_id.clone(),
+                "work".into(),
                 new_root_id.clone(),
             ],
         ],
@@ -1062,8 +1444,8 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
             vec![
                 "loop".into(),
                 "remove".into(),
-                "--id".into(),
                 loop_id.clone(),
+                "wi".into(),
                 original_id.clone(),
             ],
             vec![
@@ -1073,12 +1455,7 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
                 "depends_on".into(),
                 new_dependency_id.clone(),
             ],
-            vec![
-                "loop".into(),
-                "replan".into(),
-                "--id".into(),
-                loop_id.clone(),
-            ],
+            vec!["loop".into(), "replan".into(), loop_id.clone()],
         ],
     )?;
 

@@ -6,7 +6,7 @@ mod scope;
 mod state;
 
 pub use execution::run;
-pub use scope::{add_roots, remove_roots, replan};
+pub use scope::{add_work_item, remove_work_item, replan};
 
 use crate::OutputFormat;
 use crate::config::Config;
@@ -17,10 +17,7 @@ use crate::loop_state::{
 };
 use crate::write::WriteOp;
 use output::{LoopListEntry, print_loop, print_loop_list};
-use state::{
-    canonical_loop_ids, ensure_root_work_items, ensure_same_root_set,
-    find_matching_non_terminal_loop, find_reusable_loop, generated_loop_id,
-};
+use state::{canonical_loop_ids, ensure_root_work_items, find_reusable_loop, generated_loop_id};
 
 pub fn start(
     config: &Config,
@@ -104,28 +101,22 @@ fn loop_list_filter_matches(state: &LoopState, filter: &str) -> bool {
     }
 }
 
-pub fn resume(
-    config: &Config,
-    loop_id: Option<&str>,
-    root_work_items: &[String],
-) -> DiagnosticResult<Diagnostics> {
-    let state = if let Some(loop_id) = loop_id {
-        let state = load_loop_state(config, loop_id)?;
-        if !root_work_items.is_empty() {
-            ensure_root_work_items(root_work_items)?;
-            ensure_same_root_set(&state, root_work_items)?;
-        }
-        state
-    } else {
-        ensure_root_work_items(root_work_items)?;
-        find_matching_non_terminal_loop(config, root_work_items)?.ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1207LoopResumeNotFound,
-                "No matching non-terminal loop state found; start a new loop or pass --id",
-                root_work_items.join(", "),
-            )
-        })?
-    };
+pub fn resume(config: &Config, loop_id: &str) -> DiagnosticResult<Diagnostics> {
+    let state = load_loop_state(config, loop_id)?;
+    if matches!(
+        state.loop_meta.state,
+        LoopLifecycleState::Completed | LoopLifecycleState::Failed
+    ) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1210LoopExecutionFailed,
+            format!(
+                "Cannot resume terminal loop '{}' in {} state",
+                state.loop_meta.id,
+                state.loop_meta.state.as_str()
+            ),
+            state.loop_meta.id.clone(),
+        ));
+    }
 
     print_loop("Resumed", &state)?;
     Ok(vec![])

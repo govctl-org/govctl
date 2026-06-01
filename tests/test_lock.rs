@@ -105,6 +105,11 @@ fn test_read_commands_no_lock() -> common::TestResult {
         !lock_path.exists(),
         "Read commands should not create lock file"
     );
+
+    run_commands(temp_dir.path(), &[&["loop", "list"]])?;
+
+    // Loop list is local state inspection and must remain lock-free.
+    assert!(!lock_path.exists(), "Loop list should not create lock file");
     Ok(())
 }
 

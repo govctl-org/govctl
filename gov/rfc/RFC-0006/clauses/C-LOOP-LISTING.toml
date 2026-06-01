@@ -9,12 +9,10 @@ since = "0.3.0"
 
 [content]
 text = """
-Implementations MAY provide a user-facing loop listing command for local loop discovery.
+If provided, the listing command MUST enumerate persisted loop state from `.govctl/loops/*/state.toml` without requiring a caller to know a loop ID or work item set first. The command MUST validate each canonical loop state it lists using the storage contract in [[RFC-0006:C-LOOP-STATE-STORAGE]].
 
-If provided, the listing command MUST enumerate persisted loop state from `.govctl/loops/*/state.toml` without requiring a caller to know a loop ID or root work item set first. The command MUST validate each canonical loop state it lists using the storage contract in [[RFC-0006:C-LOOP-STATE-STORAGE]].
+The listing command MUST produce deterministic output ordered by loop ID. Each listed loop MUST include at least the loop ID, lifecycle state, editable `work` field values, resolved work item count, and aggregate round count across current loop items. Machine-readable output, when supported, MUST expose the same user-facing fields.
 
-The listing command MUST ignore directories whose names are not canonical loop IDs. If a directory name is a canonical loop ID but its `state.toml` is missing, malformed, or fails loop state validation, the command MUST report an error instead of silently omitting that loop.
+The listing command MAY support filters by lifecycle state, loop ID substring, or work item ID substring. Filtering MUST NOT mutate loop state and MUST NOT select a loop for execution by itself.
 
-The listing command MUST produce deterministic output ordered by loop ID. Each listed loop MUST include at least the loop ID, lifecycle state, explicit root work item IDs, resolved work item count, and aggregate round count across current loop items. Machine-readable output, when supported, MUST expose the same fields.
-
-Rationale: Root-set resume is useful only after the caller remembers the root set. A listing command gives agents and humans a stable discovery entrypoint for interrupted or long-running batch loops while preserving the rule that loop state remains local execution state rather than a governed artifact."""
+Rationale: Work-set discovery is useful only after the caller has a stable loop identity. A listing command gives agents and humans a stable discovery entrypoint for interrupted or long-running batch loops while preserving the rule that loop state remains local execution state rather than a governed artifact. The caller can then pass the listed loop ID as the positional object to commands such as `loop run`, `loop show`, or `loop resume`."""

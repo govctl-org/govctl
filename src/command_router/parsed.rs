@@ -68,10 +68,9 @@ impl CommandPlan {
                 crate::LoopCommand::Show { id } => Ok(global(Op::Builtin(BuiltinOp::LoopShow {
                     loop_id: id.clone(),
                 }))),
-                crate::LoopCommand::Resume { id, work_items } => {
+                crate::LoopCommand::Resume { id } => {
                     Ok(global(Op::Builtin(BuiltinOp::LoopResume {
                         loop_id: id.clone(),
-                        work_items: work_items.clone(),
                     })))
                 }
                 crate::LoopCommand::Replan { id } => {
@@ -79,25 +78,27 @@ impl CommandPlan {
                         loop_id: id.clone(),
                     })))
                 }
-                crate::LoopCommand::Add { id, work_items } => {
+                crate::LoopCommand::Add { id, field, value } => {
                     Ok(global(Op::Builtin(BuiltinOp::LoopAdd {
                         loop_id: id.clone(),
-                        work_items: work_items.clone(),
+                        field: field.clone(),
+                        value: value.clone(),
                     })))
                 }
-                crate::LoopCommand::Remove { id, work_items } => {
+                crate::LoopCommand::Remove { id, field, value } => {
                     Ok(global(Op::Builtin(BuiltinOp::LoopRemove {
                         loop_id: id.clone(),
-                        work_items: work_items.clone(),
+                        field: field.clone(),
+                        value: value.clone(),
                     })))
                 }
                 crate::LoopCommand::Run {
                     id,
-                    work_items,
+                    target_work_items,
                     max_rounds,
                 } => Ok(global(Op::Builtin(BuiltinOp::LoopRun {
                     loop_id: id.clone(),
-                    work_items: work_items.clone(),
+                    target_work_items: target_work_items.clone(),
                     max_rounds: *max_rounds,
                 }))),
             },

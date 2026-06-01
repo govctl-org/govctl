@@ -6,26 +6,35 @@ use crate::loop_state::{LoopLifecycleState, LoopState, load_loop_state, write_lo
 use crate::write::WriteOp;
 use std::collections::BTreeSet;
 
+const WORK_FIELD: &str = "work";
+const WI_FIELD_ALIAS: &str = "wi";
+
 pub fn replan(config: &Config, loop_id: &str, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     mutate_scope(config, loop_id, ScopeMutation::Replan, &[], op)
 }
 
-pub fn add_roots(
+pub fn add_work_item(
     config: &Config,
     loop_id: &str,
-    root_work_items: &[String],
+    field: &str,
+    work_item: &str,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    mutate_scope(config, loop_id, ScopeMutation::Add, root_work_items, op)
+    ensure_work_items_field(field)?;
+    let work_items = [work_item.to_string()];
+    mutate_scope(config, loop_id, ScopeMutation::Add, &work_items, op)
 }
 
-pub fn remove_roots(
+pub fn remove_work_item(
     config: &Config,
     loop_id: &str,
-    root_work_items: &[String],
+    field: &str,
+    work_item: &str,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    mutate_scope(config, loop_id, ScopeMutation::Remove, root_work_items, op)
+    ensure_work_items_field(field)?;
+    let work_items = [work_item.to_string()];
+    mutate_scope(config, loop_id, ScopeMutation::Remove, &work_items, op)
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -114,10 +123,8 @@ fn mutated_root_set(
             for work_id in root_work_items {
                 if !roots.remove(work_id) {
                     return Err(Diagnostic::new(
-                        DiagnosticCode::E1209LoopRootMismatch,
-                        format!(
-                            "Loop root work item set does not contain root to remove: {work_id}"
-                        ),
+                        DiagnosticCode::E1209LoopWorkMismatch,
+                        format!("Loop work field does not contain item to remove: {work_id}"),
                         state.loop_meta.id.clone(),
                     ));
                 }
@@ -125,11 +132,22 @@ fn mutated_root_set(
             if roots.is_empty() {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0801MissingRequiredArg,
-                    "Loop root work item set must not be empty after scope mutation",
+                    "Loop work field must not be empty after remove",
                     state.loop_meta.id.clone(),
                 ));
             }
             Ok(roots.into_iter().collect())
         }
     }
+}
+
+fn ensure_work_items_field(field: &str) -> DiagnosticResult<()> {
+    if matches!(field, WORK_FIELD | WI_FIELD_ALIAS) {
+        return Ok(());
+    }
+    Err(Diagnostic::new(
+        DiagnosticCode::E0803UnknownField,
+        format!("Unknown loop field: {field}"),
+        "loop",
+    ))
 }

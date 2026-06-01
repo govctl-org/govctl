@@ -1,45 +1,56 @@
-use super::super::state::{
-    diagnostic_code, ensure_root_work_items, ensure_same_root_set, find_matching_non_terminal_loop,
-    generated_loop_id,
-};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::loop_planner::build_loop_plan_from_config;
 use crate::loop_state::{LoopLifecycleState, LoopState, load_loop_state};
+use std::collections::BTreeSet;
 
 pub(super) fn state_for_run(
     config: &Config,
-    loop_id: Option<&str>,
-    root_work_items: &[String],
+    loop_id: &str,
+    target_work_items: &[String],
 ) -> DiagnosticResult<LoopState> {
-    if let Some(loop_id) = loop_id {
-        match load_loop_state(config, loop_id) {
-            Ok(state) => {
-                if !root_work_items.is_empty() {
-                    ensure_root_work_items(root_work_items)?;
-                    ensure_same_root_set(&state, root_work_items)?;
-                }
-                return Ok(state);
-            }
-            Err(err) if diagnostic_code(&err) == DiagnosticCode::E1202LoopStateNotFound => {
-                if root_work_items.is_empty() {
-                    return Err(err);
-                }
-            }
-            Err(err) => return Err(err),
+    let state = load_loop_state(config, loop_id)?;
+    validate_target_work_items(&state, target_work_items)?;
+    Ok(state)
+}
+
+fn validate_target_work_items(
+    state: &LoopState,
+    target_work_items: &[String],
+) -> DiagnosticResult<()> {
+    let loop_work_items = state
+        .loop_meta
+        .work_items
+        .iter()
+        .map(String::as_str)
+        .collect::<BTreeSet<_>>();
+    let mut seen = BTreeSet::new();
+    for work_id in target_work_items {
+        if !crate::validate::is_work_item_id(work_id) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0409WorkDependencyInvalid,
+                format!("Loop run target '{work_id}' must be a work item ID"),
+                state.loop_meta.id.clone(),
+            ));
         }
-
-        ensure_root_work_items(root_work_items)?;
-        return Ok(build_loop_plan_from_config(config, loop_id, root_work_items)?.state);
+        if !seen.insert(work_id.as_str()) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E1201LoopStateInvalid,
+                format!("duplicate loop run target work item: {work_id}"),
+                state.loop_meta.id.clone(),
+            ));
+        }
+        if !loop_work_items.contains(work_id.as_str()) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E1201LoopStateInvalid,
+                format!(
+                    "Loop run target '{work_id}' is not part of loop '{}'",
+                    state.loop_meta.id
+                ),
+                state.loop_meta.id.clone(),
+            ));
+        }
     }
-
-    ensure_root_work_items(root_work_items)?;
-    if let Some(state) = find_matching_non_terminal_loop(config, root_work_items)? {
-        Ok(state)
-    } else {
-        let loop_id = generated_loop_id(config)?;
-        Ok(build_loop_plan_from_config(config, &loop_id, root_work_items)?.state)
-    }
+    Ok(())
 }
 
 pub(super) fn ensure_loop_can_run(state: &LoopState) -> DiagnosticResult<()> {

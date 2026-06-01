@@ -10,7 +10,7 @@ tags = ["cli"]
 
 [content]
 text = """
-The following commands operate across all resources and MUST remain at the global namespace level:
+The following commands operate at the project or CLI level and MUST remain at the global namespace level rather than under an artifact resource namespace:
 
 **1. `govctl init`**
 
@@ -181,6 +181,19 @@ Behavior:
 - With `--check`: prints version comparison without downloading
 - Full specification in [[RFC-0002:C-SELF-UPDATE]]
 
+**12. `govctl loop`**
+
+Manages project-local loop execution state for driving work items through iterative rounds.
+
+Syntax: `govctl loop <subcommand> [arguments] [flags]`
+
+Behavior:
+- Operates on local execution state under `.govctl/loops/`, not on a governed artifact resource
+- Coordinates work items, verification guards, and local loop state according to [[RFC-0006]]
+- MUST NOT expose universal CRUD field-editing verbs for loop state
+- MUST keep work item lifecycle transitions routed through `govctl work` semantics
+- MUST use stable subcommand and argument semantics defined by [[RFC-0006:C-LOOP-COMMAND-SURFACE]]
+
 **Rationale:**
 
 These commands are global because they:
@@ -188,6 +201,7 @@ These commands are global because they:
 2. Don't fit the `<resource> <verb>` pattern semantically
 3. Are project-level operations, not resource-level
 4. Match user mental model of "project commands" vs "resource commands"
+5. May manage local execution state that coordinates governed resources without becoming a governed resource itself
 
 `govctl migrate` qualifies because it operates across the governance repository as a whole and changes multiple resource types in one coordinated step.
 
@@ -199,9 +213,12 @@ These commands are global because they:
 
 `govctl self-update` qualifies because it provides meta-information about the CLI itself and performs binary lifecycle management (criterion 3).
 
+`govctl loop` qualifies because it manages local execution state that coordinates work items and verification guards without making loop state a governed resource (criterion 5).
+
 **Future Additions:**
 
 New global commands MAY be added via RFC amendment. They MUST meet at least one criterion:
 1. Operate on multiple resource types
 2. Perform project-level initialization or cleanup
-3. Provide meta-information about the CLI itself"""
+3. Provide meta-information about the CLI itself
+4. Manage local execution state that coordinates governed resources without becoming a governed resource itself"""

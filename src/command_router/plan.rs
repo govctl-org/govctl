@@ -94,23 +94,24 @@ pub enum BuiltinOp {
         loop_id: String,
     },
     LoopResume {
-        loop_id: Option<String>,
-        work_items: Vec<String>,
+        loop_id: String,
     },
     LoopReplan {
         loop_id: String,
     },
     LoopAdd {
         loop_id: String,
-        work_items: Vec<String>,
+        field: String,
+        value: String,
     },
     LoopRemove {
         loop_id: String,
-        work_items: Vec<String>,
+        field: String,
+        value: String,
     },
     LoopRun {
-        loop_id: Option<String>,
-        work_items: Vec<String>,
+        loop_id: String,
+        target_work_items: Vec<String>,
         max_rounds: u32,
     },
 }
@@ -233,6 +234,7 @@ impl CommandPlan {
             | Op::Builtin(BuiltinOp::Completions { .. })
             | Op::Builtin(BuiltinOp::SelfUpdate { .. })
             | Op::Builtin(BuiltinOp::TagList { .. })
+            | Op::Builtin(BuiltinOp::LoopList { .. })
             | Op::Builtin(BuiltinOp::LoopShow { .. })
             | Op::Builtin(BuiltinOp::LoopResume { .. })
             | Op::Get

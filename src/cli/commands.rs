@@ -147,14 +147,15 @@ NOTES:
 COMMON WORKFLOW:
     1. `govctl loop list open` to discover existing non-terminal loops
     2. `govctl loop start WI-2026-04-06-001` to create local loop state
-    3. `govctl loop run --id <LOOP-ID>` to execute one round for ready work
+    3. `govctl loop run <LOOP-ID>` to execute one round for ready work
     4. `govctl loop show <LOOP-ID>` to inspect persisted state
-    5. `govctl loop resume --id <LOOP-ID>` to resume discovered loop state
-    6. `govctl loop add --id <LOOP-ID> WI-2026-04-06-002` to expand scope
+    5. `govctl loop resume <LOOP-ID>` to resume discovered loop state
+    6. `govctl loop add <LOOP-ID> work WI-2026-04-06-002` to expand scope
 
 NOTES:
     - Loop state is local under `.govctl/loops/<LOOP-ID>/state.toml`.
-    - Use `loop list open` before guessing a loop ID or root set after interruption.
+    - Use `loop list open` before guessing a loop ID or work set after interruption.
+    - Use `loop run <LOOP-ID> --work <WI-ID>` to target work inside a loop.
     - `loop run` uses work-item lifecycle commands for status transitions.
 ")]
     Loop {

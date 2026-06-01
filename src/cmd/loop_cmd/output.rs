@@ -9,7 +9,7 @@ use serde::Serialize;
 pub(super) struct LoopListEntry {
     id: String,
     state: String,
-    root_work_items: Vec<String>,
+    work: Vec<String>,
     resolved_work_items: usize,
     rounds: u32,
 }
@@ -19,14 +19,14 @@ impl LoopListEntry {
         Self {
             id: state.loop_meta.id.clone(),
             state: state.loop_meta.state.as_str().to_string(),
-            root_work_items: state.loop_meta.root_work_items.clone(),
+            work: state.loop_meta.root_work_items.clone(),
             resolved_work_items: state.loop_meta.work_items.len(),
             rounds: state.items.values().map(|item| item.round_count).sum(),
         }
     }
 
-    fn roots_display(&self) -> String {
-        self.root_work_items.join(",")
+    fn work_display(&self) -> String {
+        self.work.join(",")
     }
 }
 
@@ -44,7 +44,7 @@ pub(super) fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
                     "{}\t{}\t{}\t{}\t{}",
                     entry.id,
                     entry.state,
-                    entry.roots_display(),
+                    entry.work_display(),
                     entry.resolved_work_items,
                     entry.rounds
                 );
@@ -58,7 +58,7 @@ pub(super) fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
                 .set_header(vec![
                     Cell::new("ID").add_attribute(Attribute::Bold),
                     Cell::new("State").add_attribute(Attribute::Bold),
-                    Cell::new("Roots").add_attribute(Attribute::Bold),
+                    Cell::new("Work").add_attribute(Attribute::Bold),
                     Cell::new("Items").add_attribute(Attribute::Bold),
                     Cell::new("Rounds").add_attribute(Attribute::Bold),
                 ]);
@@ -66,7 +66,7 @@ pub(super) fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
                 table.add_row(vec![
                     Cell::new(&entry.id),
                     Cell::new(&entry.state),
-                    Cell::new(entry.roots_display()),
+                    Cell::new(entry.work_display()),
                     Cell::new(entry.resolved_work_items.to_string()),
                     Cell::new(entry.rounds.to_string()),
                 ]);
@@ -83,7 +83,7 @@ pub(super) fn print_loop(verb: &str, state: &LoopState) -> DiagnosticResult<()> 
         println!("{} loop {}", verb, state.loop_meta.id);
     }
     println!("State: {}", state.loop_meta.state.as_str());
-    println!("Roots: {}", state.loop_meta.root_work_items.join(", "));
+    println!("Work: {}", state.loop_meta.root_work_items.join(", "));
     println!(
         "Resolved: {} work item(s)",
         state.loop_meta.work_items.len()

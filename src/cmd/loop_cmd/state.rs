@@ -94,7 +94,7 @@ pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> DiagnosticRe
     if root_work_items.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
-            "At least one root work item ID is required",
+            "At least one loop work item ID is required",
             "loop",
         ));
     }
@@ -103,14 +103,14 @@ pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> DiagnosticRe
         if !crate::validate::is_work_item_id(work_id) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0409WorkDependencyInvalid,
-                format!("Loop root '{work_id}' must be a work item ID"),
+                format!("Loop work field value '{work_id}' must be a work item ID"),
                 "loop",
             ));
         }
         if !seen.insert(work_id.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1201LoopStateInvalid,
-                format!("duplicate loop root work item: {work_id}"),
+                format!("duplicate loop work item: {work_id}"),
                 "loop",
             ));
         }
@@ -126,9 +126,9 @@ pub(super) fn ensure_same_root_set(
         Ok(())
     } else {
         Err(Diagnostic::new(
-            DiagnosticCode::E1209LoopRootMismatch,
+            DiagnosticCode::E1209LoopWorkMismatch,
             format!(
-                "Loop root work item set does not match existing loop state: stored [{}], requested [{}]",
+                "Loop work field does not match existing loop state: stored [{}], requested [{}]",
                 state.loop_meta.root_work_items.join(", "),
                 root_work_items.join(", ")
             ),
