@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-077"
+title = "Extract TUI detail renderers"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Extract the RFC, ADR, work item, and clause detail-view rendering functions from `src/tui/ui/mod.rs` into a focused TUI detail child module. Keep header/footer/help overlay, dashboard rendering, list rendering, navigation, scroll behavior, and visible TUI output unchanged."
+
+[[content.acceptance_criteria]]
+text = "TUI renderer tests, `cargo fmt --check`, `cargo clippy --all-targets -- -D warnings`, `cargo test`, and `govctl check --deny-warnings` pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`src/tui/ui/mod.rs` keeps orchestration/header/footer/help concerns without changing navigation or scroll behavior"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "TUI RFC, ADR, work item, and clause detail renderers live in a focused child module"
+status = "pending"
+category = "chore"
