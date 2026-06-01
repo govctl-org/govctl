@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-126"
+title = "Normalize verification runner module"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Normalize the verification guard runner from src/verification/runner.rs into a directory module so helper extraction has a stable root without same-name file/directory coexistence. Preserve the crate::verification::run_guard public API and current guard execution behavior."
+
+[[content.acceptance_criteria]]
+text = "verification runner lives in src/verification/runner/mod.rs with no same-name runner.rs sibling"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "crate::verification::run_guard remains the public runner entrypoint"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "verification-focused tests and govctl check pass"
+status = "pending"
+category = "chore"
