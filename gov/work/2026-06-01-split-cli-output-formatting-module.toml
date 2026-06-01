@@ -1,0 +1,30 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-114"
+title = "Split CLI output formatting module"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = [
+    "ADR-0005",
+    "ADR-0017",
+]
+
+[content]
+description = "Split the CLI output formatting module into focused submodules for color capability detection, user-facing message helpers, and diagnostic formatting. Preserve the existing crate::ui public function surface and CLI output behavior while removing src/ui.rs as a large flat module."
+
+[[content.acceptance_criteria]]
+text = "CLI output formatting is split into focused ui submodules without changing crate::ui call sites"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo fmt, cargo check, focused output/help tests, and govctl check pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "color capability detection and diagnostic formatting remain reusable through crate::ui"
+status = "pending"
+category = "changed"
