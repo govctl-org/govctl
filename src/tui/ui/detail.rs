@@ -109,16 +109,7 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
         .unwrap_or_default();
 
     let title = format!("📝 {}", adr.meta().id);
-    let block = rounded_block(&title).border_style(Style::default().fg(Color::Green));
-    let inner_width = block.inner(area).width;
-    let total_lines = wrapped_line_count(&text.lines, inner_width);
-    let content = Paragraph::new(text)
-        .wrap(Wrap { trim: false })
-        .scroll((app.scroll, 0))
-        .block(block);
-
-    frame.render_widget(content, area);
-    total_lines
+    draw_markdown_panel(frame, area, app.scroll, &title, Color::Green, text)
 }
 
 pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> usize {
@@ -131,16 +122,7 @@ pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect, idx: usize
         .unwrap_or_default();
 
     let title = format!("📌 {}", item.meta().id);
-    let block = rounded_block(&title).border_style(Style::default().fg(Color::Yellow));
-    let inner_width = block.inner(area).width;
-    let total_lines = wrapped_line_count(&text.lines, inner_width);
-    let content = Paragraph::new(text)
-        .wrap(Wrap { trim: false })
-        .scroll((app.scroll, 0))
-        .block(block);
-
-    frame.render_widget(content, area);
-    total_lines
+    draw_markdown_panel(frame, area, app.scroll, &title, Color::Yellow, text)
 }
 
 pub(super) fn draw_clause(
@@ -163,12 +145,23 @@ pub(super) fn draw_clause(
     let text = crate::terminal_md::render_to_tui_text(&raw);
 
     let title = format!("📜 {}", clause.spec.clause_id);
-    let block = rounded_block(&title).border_style(Style::default().fg(Color::Magenta));
+    draw_markdown_panel(frame, area, app.scroll, &title, Color::Magenta, text)
+}
+
+fn draw_markdown_panel(
+    frame: &mut Frame,
+    area: Rect,
+    scroll: u16,
+    title: &str,
+    border_color: Color,
+    text: Text<'_>,
+) -> usize {
+    let block = rounded_block(title).border_style(Style::default().fg(border_color));
     let inner_width = block.inner(area).width;
     let total_lines = wrapped_line_count(&text.lines, inner_width);
     let content = Paragraph::new(text)
         .wrap(Wrap { trim: false })
-        .scroll((app.scroll, 0))
+        .scroll((scroll, 0))
         .block(block);
 
     frame.render_widget(content, area);
