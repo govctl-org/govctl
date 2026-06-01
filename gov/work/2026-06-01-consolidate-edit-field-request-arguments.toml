@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-096"
+title = "Consolidate edit field request arguments"
+status = "queue"
+created = "2026-06-01"
+refs = ["ADR-0031"]
+depends_on = ["WI-2026-06-01-095"]
+
+[content]
+description = "Replace the long edit field dispatch argument list with a cohesive request struct and remove inert internal scope_override plumbing so src/cmd/edit/mod.rs no longer needs a clippy too_many_arguments suppression while preserving CLI compatibility."
+
+[[content.acceptance_criteria]]
+text = "edit command tests and govctl check pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "clippy too_many_arguments suppression is removed from src/cmd/edit/mod.rs"
+status = "pending"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "edit field dispatch uses a request struct instead of a long positional parameter list"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "inert internal scope_override argument plumbing is removed while the hidden CLI compatibility flag remains accepted"
+status = "pending"
+category = "removed"

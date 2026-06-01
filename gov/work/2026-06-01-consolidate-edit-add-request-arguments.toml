@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-095"
+title = "Consolidate edit add request arguments"
+status = "queue"
+created = "2026-06-01"
+refs = ["ADR-0031"]
+
+[content]
+description = "Replace the long edit add helper argument list with a cohesive request struct so add-specific options travel together and the clippy too_many_arguments suppression in src/cmd/edit/add.rs can be removed without changing edit behavior."
+
+[[content.acceptance_criteria]]
+text = "edit command tests covering add behavior pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "clippy too_many_arguments suppression is removed from src/cmd/edit/add.rs"
+status = "pending"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "edit add dispatch uses a request struct instead of a long positional parameter list"
+status = "pending"
+category = "changed"
