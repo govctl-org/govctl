@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-008"
+title = "Share status rendering helpers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reduce repeated status command rendering branches by centralizing color-aware headers, totals, phase breakdown, and active-work output in a local helper while preserving the existing plain and colorized command output."
+
+[[content.acceptance_criteria]]
+text = "status command header, total, phase, and active-work rendering share a local color-aware helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "status command plain output and snapshot-visible formatting remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted status snapshots, cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"
