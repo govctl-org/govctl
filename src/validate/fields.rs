@@ -16,12 +16,6 @@ struct ValidationContext<'a> {
 pub enum ArtifactKind {
     Rfc,
     Clause,
-    // Reserved for the path edit validation surface; current callers validate
-    // ADR and Work Item edits through shared rule data before this dispatch.
-    #[allow(dead_code)]
-    Adr,
-    #[allow(dead_code)]
-    WorkItem,
 }
 
 impl ArtifactKind {
@@ -29,8 +23,6 @@ impl ArtifactKind {
         match self {
             Self::Rfc => "rfc",
             Self::Clause => "clause",
-            Self::Adr => "adr",
-            Self::WorkItem => "work",
         }
     }
 }

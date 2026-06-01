@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-109"
 title = "Prune unused field validation variants"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0002"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Remove the unused ADR and Work Item branches from the field-valid
 
 [[content.acceptance_criteria]]
 text = "unused field-validation ArtifactKind variants are deleted"
-status = "pending"
+status = "done"
 category = "removed"
 
 [[content.acceptance_criteria]]
 text = "RFC and clause field validation behavior remains unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "targeted edit validation tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
