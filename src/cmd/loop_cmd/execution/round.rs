@@ -11,16 +11,16 @@ use std::collections::BTreeSet;
 pub(super) fn execute_run_round(
     config: &Config,
     state: &mut LoopState,
-    target_work_items: &[String],
+    target_work_ids: &[String],
     max_rounds: u32,
     op: WriteOp,
     failures: &mut Vec<String>,
 ) -> DiagnosticResult<()> {
-    let selected_work_items = selected_execution_set(state, target_work_items)?;
+    let selected_work_ids = selected_execution_set(state, target_work_ids)?;
 
     for work_id in topological_order_for_state(state)? {
         propagate_blocked_outcomes(state)?;
-        if !selected_work_items.is_empty() && !selected_work_items.contains(work_id.as_str()) {
+        if !selected_work_ids.is_empty() && !selected_work_ids.contains(work_id.as_str()) {
             continue;
         }
         if is_terminal_item(state, &work_id) {
@@ -46,10 +46,10 @@ pub(super) fn execute_run_round(
 
 fn selected_execution_set(
     state: &LoopState,
-    target_work_items: &[String],
+    target_work_ids: &[String],
 ) -> DiagnosticResult<BTreeSet<String>> {
     let mut selected = BTreeSet::new();
-    for work_id in target_work_items {
+    for work_id in target_work_ids {
         collect_target_with_dependencies(state, work_id, &mut selected)?;
     }
     Ok(selected)

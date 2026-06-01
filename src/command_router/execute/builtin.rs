@@ -40,10 +40,9 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::TagNew { tag } => cmd::tag::tag_new(config, tag, op),
         BuiltinOp::TagDelete { tag } => cmd::tag::tag_delete(config, tag, op),
         BuiltinOp::TagList { output } => cmd::tag::tag_list(config, *output),
-        BuiltinOp::LoopStart {
-            loop_id,
-            work_items,
-        } => cmd::loop_cmd::start(config, loop_id.as_deref(), work_items, op),
+        BuiltinOp::LoopStart { loop_id, work_ids } => {
+            cmd::loop_cmd::start(config, loop_id.as_deref(), work_ids, op)
+        }
         BuiltinOp::LoopList {
             filter,
             limit,
@@ -64,8 +63,8 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         } => cmd::loop_cmd::remove_work_item(config, loop_id, field, value, op),
         BuiltinOp::LoopRun {
             loop_id,
-            target_work_items,
+            target_work_ids,
             max_rounds,
-        } => cmd::loop_cmd::run(config, loop_id, target_work_items, *max_rounds, op),
+        } => cmd::loop_cmd::run(config, loop_id, target_work_ids, *max_rounds, op),
     }
 }

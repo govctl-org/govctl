@@ -50,6 +50,26 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
         "{work_items_output}"
     );
 
+    let root_work_items_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "add".into(),
+            loop_id.clone(),
+            "root_work_items".into(),
+            extra_id.clone(),
+        ]],
+    )?;
+
+    assert!(
+        root_work_items_output.contains("error[E0803]"),
+        "{root_work_items_output}"
+    );
+    assert!(
+        root_work_items_output.contains("Unknown loop field: root_work_items"),
+        "{root_work_items_output}"
+    );
+
     let wi_output = run_dynamic_commands(
         temp_dir.path(),
         &[vec![
@@ -72,8 +92,30 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
     )?;
     assert_eq!(
         loop_work(&toml::from_str(&state_toml)?)?,
-        vec![root_id, extra_id]
+        vec![root_id.clone(), extra_id.clone()]
     );
+
+    let wi_remove_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[vec![
+            "loop".into(),
+            "remove".into(),
+            loop_id.clone(),
+            "wi".into(),
+            extra_id,
+        ]],
+    )?;
+
+    assert!(
+        wi_remove_output.contains(&format!("Updated loop {loop_id}")),
+        "{wi_remove_output}"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert_eq!(loop_work(&toml::from_str(&state_toml)?)?, vec![root_id]);
     Ok(())
 }
 

@@ -42,7 +42,7 @@ NOTES:
         id: Option<String>,
         /// Explicit loop work item IDs
         #[arg(required = true, value_name = "WI-ID")]
-        work_items: Vec<String>,
+        work_ids: Vec<String>,
     },
     /// Show persisted loop state
     #[command(after_help = "\
@@ -137,6 +137,6 @@ NOTES:
         max_rounds: u32,
         /// Work item IDs to target inside an existing explicit loop
         #[arg(long = "work", value_name = "WI-ID")]
-        target_work_items: Vec<String>,
+        target_work_ids: Vec<String>,
     },
 }

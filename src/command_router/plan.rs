@@ -83,7 +83,7 @@ pub enum BuiltinOp {
     },
     LoopStart {
         loop_id: Option<String>,
-        work_items: Vec<String>,
+        work_ids: Vec<String>,
     },
     LoopList {
         filter: Option<String>,
@@ -111,7 +111,7 @@ pub enum BuiltinOp {
     },
     LoopRun {
         loop_id: String,
-        target_work_items: Vec<String>,
+        target_work_ids: Vec<String>,
         max_rounds: u32,
     },
 }

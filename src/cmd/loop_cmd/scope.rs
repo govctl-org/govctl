@@ -21,8 +21,8 @@ pub fn add_work_item(
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     ensure_work_field(field)?;
-    let work_items = [work_item.to_string()];
-    mutate_scope(config, loop_id, ScopeMutation::Add, &work_items, op)
+    let work_ids = [work_item.to_string()];
+    mutate_scope(config, loop_id, ScopeMutation::Add, &work_ids, op)
 }
 
 pub fn remove_work_item(
@@ -33,8 +33,8 @@ pub fn remove_work_item(
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     ensure_work_field(field)?;
-    let work_items = [work_item.to_string()];
-    mutate_scope(config, loop_id, ScopeMutation::Remove, &work_items, op)
+    let work_ids = [work_item.to_string()];
+    mutate_scope(config, loop_id, ScopeMutation::Remove, &work_ids, op)
 }
 
 #[derive(Debug, Clone, Copy)]

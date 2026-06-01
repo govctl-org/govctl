@@ -18,8 +18,8 @@ pub fn build_loop_plan_from_config(
     loop_id: &str,
     work: &[String],
 ) -> DiagnosticResult<LoopPlan> {
-    let work_items = crate::parse::load_work_items(config)?;
-    build_loop_plan(loop_id, work, &work_items)
+    let all_work_items = crate::parse::load_work_items(config)?;
+    build_loop_plan(loop_id, work, &all_work_items)
 }
 
 pub fn replan_loop_state_from_config(
@@ -27,14 +27,14 @@ pub fn replan_loop_state_from_config(
     existing: &LoopState,
     work: &[String],
 ) -> DiagnosticResult<LoopPlan> {
-    let work_items = crate::parse::load_work_items(config)?;
-    replan_loop_state(existing, work, &work_items)
+    let all_work_items = crate::parse::load_work_items(config)?;
+    replan_loop_state(existing, work, &all_work_items)
 }
 
 pub fn build_loop_plan(
     loop_id: &str,
     work: &[String],
-    work_items: &[WorkItemEntry],
+    all_work_items: &[WorkItemEntry],
 ) -> DiagnosticResult<LoopPlan> {
     if work.is_empty() {
         return Err(Diagnostic::new(
@@ -44,21 +44,21 @@ pub fn build_loop_plan(
         ));
     }
 
-    let by_id = work_items
+    let by_id = all_work_items
         .iter()
         .map(|entry| (entry.meta().id.as_str(), entry))
         .collect::<HashMap<_, _>>();
-    let resolved_work_items = resolve_dependency_closure(loop_id, work, &by_id)?;
-    let dependencies = dependency_table(&resolved_work_items, &by_id);
+    let resolved_work_ids = resolve_dependency_closure(loop_id, work, &by_id)?;
+    let dependencies = dependency_table(&resolved_work_ids, &by_id);
     let topological_order = deterministic_execution_order(loop_id, &dependencies)?;
 
     let mut state = LoopState::new(
         loop_id,
         work.to_vec(),
-        resolved_work_items.clone(),
+        resolved_work_ids.clone(),
         dependencies,
     )?;
-    for work_id in &resolved_work_items {
+    for work_id in &resolved_work_ids {
         let entry = by_id.get(work_id.as_str()).ok_or_else(|| {
             Diagnostic::new(
                 DiagnosticCode::E1205LoopDependencyNotFound,
@@ -107,8 +107,8 @@ fn propagate_blocked_outcomes_inner(
 
     loop {
         let mut changed = false;
-        let work_items = state.loop_meta.resolved.clone();
-        for work_id in work_items {
+        let resolved_work_ids = state.loop_meta.resolved.clone();
+        for work_id in resolved_work_ids {
             if matches!(
                 state.items[work_id.as_str()].status,
                 LoopWorkItemStatus::Failed
@@ -154,9 +154,9 @@ fn propagate_blocked_outcomes_inner(
 pub fn replan_loop_state(
     existing: &LoopState,
     work: &[String],
-    work_items: &[WorkItemEntry],
+    all_work_items: &[WorkItemEntry],
 ) -> DiagnosticResult<LoopPlan> {
-    let mut plan = build_loop_plan(&existing.loop_meta.id, work, work_items)?;
+    let mut plan = build_loop_plan(&existing.loop_meta.id, work, all_work_items)?;
     plan.state.loop_meta.state = existing.loop_meta.state;
 
     for (work_id, item) in &mut plan.state.items {

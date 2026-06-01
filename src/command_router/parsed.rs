@@ -59,10 +59,10 @@ impl CommandPlan {
                     limit: *limit,
                     output: *output,
                 }))),
-                crate::LoopCommand::Start { id, work_items } => {
+                crate::LoopCommand::Start { id, work_ids } => {
                     Ok(global(Op::Builtin(BuiltinOp::LoopStart {
                         loop_id: id.clone(),
-                        work_items: work_items.clone(),
+                        work_ids: work_ids.clone(),
                     })))
                 }
                 crate::LoopCommand::Show { id } => Ok(global(Op::Builtin(BuiltinOp::LoopShow {
@@ -94,11 +94,11 @@ impl CommandPlan {
                 }
                 crate::LoopCommand::Run {
                     id,
-                    target_work_items,
+                    target_work_ids,
                     max_rounds,
                 } => Ok(global(Op::Builtin(BuiltinOp::LoopRun {
                     loop_id: id.clone(),
-                    target_work_items: target_work_items.clone(),
+                    target_work_ids: target_work_ids.clone(),
                     max_rounds: *max_rounds,
                 }))),
             },

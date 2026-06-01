@@ -6,25 +6,22 @@ use std::collections::BTreeSet;
 pub(super) fn state_for_run(
     config: &Config,
     loop_id: &str,
-    target_work_items: &[String],
+    target_work_ids: &[String],
 ) -> DiagnosticResult<LoopState> {
     let state = load_loop_state(config, loop_id)?;
-    validate_target_work_items(&state, target_work_items)?;
+    validate_target_work_ids(&state, target_work_ids)?;
     Ok(state)
 }
 
-fn validate_target_work_items(
-    state: &LoopState,
-    target_work_items: &[String],
-) -> DiagnosticResult<()> {
-    let loop_work_items = state
+fn validate_target_work_ids(state: &LoopState, target_work_ids: &[String]) -> DiagnosticResult<()> {
+    let loop_work_ids = state
         .loop_meta
         .resolved
         .iter()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();
     let mut seen = BTreeSet::new();
-    for work_id in target_work_items {
+    for work_id in target_work_ids {
         if !crate::validate::is_work_item_id(work_id) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0409WorkDependencyInvalid,
@@ -39,7 +36,7 @@ fn validate_target_work_items(
                 state.loop_meta.id.clone(),
             ));
         }
-        if !loop_work_items.contains(work_id.as_str()) {
+        if !loop_work_ids.contains(work_id.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1201LoopStateInvalid,
                 format!(

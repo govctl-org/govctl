@@ -28,7 +28,7 @@ pub(in crate::loop_state) fn validate_loop_state(
         &state.loop_meta.id,
     )?;
 
-    let work_items: BTreeSet<&str> = state
+    let resolved_work_ids: BTreeSet<&str> = state
         .loop_meta
         .resolved
         .iter()
@@ -39,7 +39,7 @@ pub(in crate::loop_state) fn validate_loop_state(
     }
     for root in &state.loop_meta.work {
         ensure_work_item_id(root, &state.loop_meta.id)?;
-        if !work_items.contains(root.as_str()) {
+        if !resolved_work_ids.contains(root.as_str()) {
             return Err(invalid_state(
                 &state.loop_meta.id,
                 format!("work item '{root}' is missing from loop.resolved"),
@@ -63,7 +63,7 @@ pub(in crate::loop_state) fn validate_loop_state(
     }
 
     for (work_id, dependencies) in &state.dependencies {
-        if !work_items.contains(work_id.as_str()) {
+        if !resolved_work_ids.contains(work_id.as_str()) {
             return Err(invalid_state(
                 &state.loop_meta.id,
                 format!("dependency entry '{work_id}' is not in loop.resolved"),
@@ -76,7 +76,7 @@ pub(in crate::loop_state) fn validate_loop_state(
         )?;
         for dependency in dependencies {
             ensure_work_item_id(dependency, &state.loop_meta.id)?;
-            if !work_items.contains(dependency.as_str()) {
+            if !resolved_work_ids.contains(dependency.as_str()) {
                 return Err(invalid_state(
                     &state.loop_meta.id,
                     format!(
@@ -88,7 +88,7 @@ pub(in crate::loop_state) fn validate_loop_state(
     }
 
     for work_id in state.items.keys() {
-        if !work_items.contains(work_id.as_str()) {
+        if !resolved_work_ids.contains(work_id.as_str()) {
             return Err(invalid_state(
                 &state.loop_meta.id,
                 format!("item state '{work_id}' is not in loop.resolved"),

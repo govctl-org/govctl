@@ -13,7 +13,7 @@ use run_state::{ensure_loop_can_run, enter_active_state, state_for_run};
 pub fn run(
     config: &Config,
     loop_id: &str,
-    target_work_items: &[String],
+    target_work_ids: &[String],
     max_rounds: u32,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
@@ -25,13 +25,13 @@ pub fn run(
         ));
     }
 
-    let mut state = state_for_run(config, loop_id, target_work_items)?;
+    let mut state = state_for_run(config, loop_id, target_work_ids)?;
     ensure_loop_can_run(&state)?;
 
     println!("Running loop {}", state.loop_meta.id);
     println!("Max rounds: {max_rounds}");
-    if !target_work_items.is_empty() {
-        println!("Targets: {}", target_work_items.join(", "));
+    if !target_work_ids.is_empty() {
+        println!("Targets: {}", target_work_ids.join(", "));
     }
 
     enter_active_state(&mut state)?;
@@ -41,7 +41,7 @@ pub fn run(
     execute_run_round(
         config,
         &mut state,
-        target_work_items,
+        target_work_ids,
         max_rounds,
         op,
         &mut failures,

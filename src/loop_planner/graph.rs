@@ -81,10 +81,10 @@ fn cycle_error(loop_id: &str, work_id: &str, stack: &[String]) -> Diagnostic {
 }
 
 pub(super) fn dependency_table(
-    resolved_work_items: &[String],
+    resolved_work_ids: &[String],
     by_id: &HashMap<&str, &WorkItemEntry>,
 ) -> BTreeMap<String, Vec<String>> {
-    resolved_work_items
+    resolved_work_ids
         .iter()
         .map(|work_id| {
             let mut dependencies = by_id
