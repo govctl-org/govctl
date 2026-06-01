@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-190"
+title = "Extract artifact IO helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move the generic RFC/clause artifact read and TOML write pipeline out of src/write/artifact.rs into a flat private write module while preserving the public read_rfc/read_clause/write_rfc/write_clause APIs."
+
+[[content.acceptance_criteria]]
+text = "Generic artifact read/write pipeline lives outside src/write/artifact.rs"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Public RFC/clause read and write functions keep their existing crate::write exports"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC/clause wire format tests pass"
+status = "done"
+category = "chore"

@@ -8,12 +8,13 @@ use crate::ui;
 use std::path::Path;
 
 mod artifact;
+mod artifact_io;
+mod artifact_normalize;
 mod changelog;
 
-pub(crate) use artifact::{normalize_clause_json, normalize_rfc_json};
-pub use artifact::{
-    normalize_clause_value, normalize_rfc_value, read_clause, read_rfc, write_clause, write_rfc,
-};
+pub use artifact::{read_clause, read_rfc, write_clause, write_rfc};
+pub(crate) use artifact_normalize::{normalize_clause_json, normalize_rfc_json};
+pub use artifact_normalize::{normalize_clause_value, normalize_rfc_value};
 pub use changelog::{BumpLevel, ParsedChange, add_changelog_change, bump_rfc_version, today};
 
 pub fn parse_changelog_change(change: &str) -> DiagnosticResult<ParsedChange> {
