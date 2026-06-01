@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-098"
 title = "Extract edit TOML target tick helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["ADR-0031"]
 depends_on = ["WI-2026-06-01-097"]
 
@@ -14,15 +15,15 @@ description = "Move TOML-target tick path matching and status-list mutation logi
 
 [[content.acceptance_criteria]]
 text = "TOML target tick path matching and status-list mutation logic lives in a focused child module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "TOML target module root keeps tick load/write orchestration without detailed matcher branches"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit command tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
