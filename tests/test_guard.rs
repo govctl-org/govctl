@@ -248,6 +248,22 @@ fn test_guard_delete_blocked_by_work_item() -> common::TestResult {
 }
 
 #[test]
+fn test_guard_delete_blocked_by_work_item_waiver() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_guard(temp_dir.path(), "GUARD-WAIVED", "true")?;
+    write_work_item_with_guard_waiver(temp_dir.path(), "GUARD-WAIVED")?;
+
+    let output = run_commands(temp_dir.path(), &[&["guard", "delete", "GUARD-WAIVED"]])?;
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    assert!(
+        output.contains("Waiver in work item WI-2026-01-01-001"),
+        "should mention waiver blocker: {}",
+        output
+    );
+    Ok(())
+}
+
+#[test]
 fn test_guard_delete_force_does_not_bypass_reference_checks() -> common::TestResult {
     let temp_dir = init_project()?;
     write_guard(temp_dir.path(), "GUARD-FORCED", "true")?;
@@ -386,6 +402,18 @@ fn write_work_item_with_guard(
     let path = dir.join("gov/work/2026-01-01-guarded-item.toml");
     let content = format!(
         "#:schema ../schema/work.schema.json\n\n[govctl]\nid = \"WI-2026-01-01-001\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]\n"
+    );
+    fs::write(path, content)?;
+    Ok(())
+}
+
+fn write_work_item_with_guard_waiver(
+    dir: &Path,
+    guard_id: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = dir.join("gov/work/2026-01-01-guarded-item.toml");
+    let content = format!(
+        "#:schema ../schema/work.schema.json\n\n[govctl]\nid = \"WI-2026-01-01-001\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]\n\n[[verification.waivers]]\nguard = \"{guard_id}\"\nreason = \"covered elsewhere\"\n"
     );
     fs::write(path, content)?;
     Ok(())

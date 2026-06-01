@@ -1,5 +1,6 @@
 //! Guard resource commands per [[RFC-0002:C-RESOURCES]].
 
+use super::guard_refs::{guard_reference_blockers, load_guard_by_id};
 use crate::OutputFormat;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
@@ -75,41 +76,9 @@ pub fn delete_guard(
     _force: bool,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    let guards = load_guards(config)?;
-    let guard = guards
-        .iter()
-        .find(|g| g.spec.govctl.id == id)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1002GuardNotFound,
-                format!("Guard not found: {id}"),
-                id,
-            )
-        })?;
-
+    let guard = load_guard_by_id(config, id)?;
     // Safety checks always run — --force only skips confirmation, not reference checks
-    let mut blockers = Vec::new();
-
-    if config.verification.default_guards.contains(&id.to_string()) {
-        blockers.push("Listed in verification.default_guards in gov/config.toml".to_string());
-    }
-
-    let work_items = crate::parse::load_work_items(config)?;
-    for wi in &work_items {
-        if wi
-            .spec
-            .verification
-            .required_guards
-            .contains(&id.to_string())
-        {
-            blockers.push(format!("Referenced by work item {}", wi.spec.govctl.id));
-        }
-        for waiver in &wi.spec.verification.waivers {
-            if waiver.guard == id {
-                blockers.push(format!("Waiver in work item {}", wi.spec.govctl.id));
-            }
-        }
-    }
+    let blockers = guard_reference_blockers(config, id)?;
 
     if !blockers.is_empty() {
         return Err(Diagnostic::new(
@@ -143,17 +112,7 @@ pub fn show_guard(
     id: &str,
     output: OutputFormat,
 ) -> DiagnosticResult<Diagnostics> {
-    let guards = load_guards(config)?;
-    let guard = guards
-        .iter()
-        .find(|g| g.spec.govctl.id == id)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1002GuardNotFound,
-                format!("Guard not found: {id}"),
-                id,
-            )
-        })?;
+    let guard = load_guard_by_id(config, id)?;
 
     match output {
         OutputFormat::Json => {

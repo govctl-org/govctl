@@ -5,6 +5,7 @@ pub(crate) mod confirmation;
 pub mod describe;
 pub mod edit;
 pub mod guard;
+pub(crate) mod guard_refs;
 pub mod lifecycle;
 pub mod list;
 pub mod loop_cmd;
