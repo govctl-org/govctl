@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-044"
+title = "Extract migrate ops tests"
+status = "queue"
+created = "2026-06-02"
+
+[content]
+description = "Move migration file-operation rollback tests out of src/cmd/migrate/ops.rs into a sibling test-only module. Preserve rollback coverage and keep migration production code cohesive without introducing same-name module directories."
+
+[[content.acceptance_criteria]]
+text = "migrate ops rollback tests live in a sibling test module without same-name directory shape"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "migration file-operation rollback behavior remains covered"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "migrate ops tests, clippy, full tests, and govctl check pass"
+status = "pending"
+category = "chore"
