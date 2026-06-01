@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-150"
+title = "Share edit runtime list removal helper"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Extract the duplicated matched-index removal loop shared by simple edit-runtime lists, simple status lists, and nested lists into one focused runtime helper. Preserve descending removal order, returned text order, matcher semantics, diagnostics, and public edit behavior without changing path planning or list traversal."
+
+[[content.acceptance_criteria]]
+text = "simple and nested edit-runtime list removals share one matched-index removal helper"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "removal order, returned text order, matcher errors, and edit behavior remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit tests, cargo test, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
