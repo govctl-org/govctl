@@ -1,7 +1,7 @@
 use crate::model::{
-    AdrContent, AdrEntry, AdrMeta, AdrSpec, AdrStatus, ProjectIndex, RfcIndex, RfcPhase, RfcSpec,
-    RfcStatus, WorkItemContent, WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus,
-    WorkItemVerification,
+    AdrContent, AdrEntry, AdrMeta, AdrSpec, AdrStatus, ClauseEntry, ClauseKind, ClauseSpec,
+    ClauseStatus, ProjectIndex, RfcIndex, RfcPhase, RfcSpec, RfcStatus, WorkItemContent,
+    WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
 use ratatui::buffer::Buffer;
 use std::path::PathBuf;
@@ -59,6 +59,23 @@ pub(super) fn rfc(
         },
         clauses: vec![],
         path: PathBuf::from(format!("gov/rfc/{id}.toml")),
+    }
+}
+
+pub(super) fn clause(id: &str, title: &str, text: &str) -> ClauseEntry {
+    ClauseEntry {
+        spec: ClauseSpec {
+            clause_id: id.to_string(),
+            title: title.to_string(),
+            kind: ClauseKind::Normative,
+            status: ClauseStatus::Active,
+            text: text.to_string(),
+            anchors: vec![],
+            superseded_by: None,
+            since: None,
+            tags: vec![],
+        },
+        path: PathBuf::from(format!("gov/rfc/clauses/{id}.toml")),
     }
 }
 
