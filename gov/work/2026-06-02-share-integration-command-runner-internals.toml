@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-061"
+title = "Share integration command runner internals"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Remove duplicated command execution and output transcript formatting inside integration test helpers. Keep the public `run_commands` and `run_dynamic_commands` APIs and exact transcript formatting stable; this slice only centralizes their shared internals in `tests/common/mod.rs`."
+
+[[content.acceptance_criteria]]
+text = "Shared helper internals remove duplicate command execution and transcript formatting"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Public run_commands and run_dynamic_commands behavior remains stable under integration tests"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "fmt, clippy, cargo test, and govctl check pass"
+status = "done"
+category = "chore"
