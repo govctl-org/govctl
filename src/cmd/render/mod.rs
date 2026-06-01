@@ -17,6 +17,57 @@ fn display_path_string(config: &Config, path: impl AsRef<Path>) -> String {
     config.display_path(path.as_ref()).display().to_string()
 }
 
+struct RenderSelection<'a> {
+    id: Option<&'a str>,
+    dry_run: bool,
+    summary_label: &'a str,
+}
+
+fn render_selected<T, Empty, NotFound, Id, Write>(
+    items: Vec<T>,
+    selection: RenderSelection<'_>,
+    empty: Empty,
+    not_found: NotFound,
+    item_id: Id,
+    mut write: Write,
+) -> DiagnosticResult<Diagnostics>
+where
+    Empty: FnOnce(),
+    NotFound: FnOnce(&str) -> Diagnostic,
+    Id: for<'a> Fn(&'a T) -> &'a str,
+    Write: FnMut(&T) -> DiagnosticResult<()>,
+{
+    if items.is_empty() {
+        empty();
+        return Ok(vec![]);
+    }
+
+    let items_to_render: Vec<_> = if let Some(id) = selection.id {
+        items
+            .into_iter()
+            .filter(|item| item_id(item) == id)
+            .collect()
+    } else {
+        items
+    };
+
+    if items_to_render.is_empty()
+        && let Some(id) = selection.id
+    {
+        return Err(not_found(id));
+    }
+
+    for item in &items_to_render {
+        write(item)?;
+    }
+
+    if !selection.dry_run {
+        ui::render_summary(items_to_render.len(), selection.summary_label);
+    }
+
+    Ok(vec![])
+}
+
 /// Render RFC markdown from JSON source
 pub fn render(
     config: &Config,
@@ -25,38 +76,25 @@ pub fn render(
 ) -> DiagnosticResult<Diagnostics> {
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
-    if rfcs.is_empty() {
-        ui::not_found("RFC", &config.rfc_dir());
-        return Ok(vec![]);
-    }
-
-    // Filter to specific RFC if provided
-    let rfcs_to_render: Vec<_> = if let Some(id) = rfc_id {
-        rfcs.into_iter().filter(|r| r.rfc.rfc_id == id).collect()
-    } else {
-        rfcs
-    };
-
-    if rfcs_to_render.is_empty()
-        && let Some(id) = rfc_id
-    {
-        let scope = display_path_string(config, config.rfc_dir());
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0102RfcNotFound,
-            format!("RFC not found: {id}"),
-            scope,
-        ));
-    }
-
-    for rfc in &rfcs_to_render {
-        write_rfc(config, rfc, dry_run)?;
-    }
-
-    if !dry_run {
-        ui::render_summary(rfcs_to_render.len(), "RFC");
-    }
-
-    Ok(vec![])
+    render_selected(
+        rfcs,
+        RenderSelection {
+            id: rfc_id,
+            dry_run,
+            summary_label: "RFC",
+        },
+        || ui::not_found("RFC", &config.rfc_dir()),
+        |id| {
+            let scope = display_path_string(config, config.rfc_dir());
+            Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("RFC not found: {id}"),
+                scope,
+            )
+        },
+        |rfc| rfc.rfc.rfc_id.as_str(),
+        |rfc| write_rfc(config, rfc, dry_run),
+    )
 }
 
 /// Render ADRs to markdown
@@ -69,40 +107,25 @@ pub fn render_adrs(
 ) -> DiagnosticResult<Diagnostics> {
     let adrs = load_adrs(config)?;
 
-    if adrs.is_empty() {
-        ui::info("No ADRs found");
-        return Ok(vec![]);
-    }
-
-    // Filter to specific ADR if provided
-    let adrs_to_render: Vec<_> = if let Some(id) = adr_id {
-        adrs.into_iter()
-            .filter(|a| a.spec.govctl.id == id)
-            .collect()
-    } else {
-        adrs
-    };
-
-    if adrs_to_render.is_empty()
-        && let Some(id) = adr_id
-    {
-        let scope = display_path_string(config, config.adr_dir());
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0302AdrNotFound,
-            format!("ADR not found: {id}"),
-            scope,
-        ));
-    }
-
-    for adr in &adrs_to_render {
-        write_adr_md(config, adr, dry_run)?;
-    }
-
-    if !dry_run {
-        ui::render_summary(adrs_to_render.len(), "ADR");
-    }
-
-    Ok(vec![])
+    render_selected(
+        adrs,
+        RenderSelection {
+            id: adr_id,
+            dry_run,
+            summary_label: "ADR",
+        },
+        || ui::info("No ADRs found"),
+        |id| {
+            let scope = display_path_string(config, config.adr_dir());
+            Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("ADR not found: {id}"),
+                scope,
+            )
+        },
+        |adr| adr.spec.govctl.id.as_str(),
+        |adr| write_adr_md(config, adr, dry_run),
+    )
 }
 
 /// Render Work Items to markdown
@@ -115,42 +138,26 @@ pub fn render_work_items(
 ) -> DiagnosticResult<Diagnostics> {
     let items = load_work_items(config)?;
 
-    if items.is_empty() {
-        ui::info("No work items found");
-        return Ok(vec![]);
-    }
-
-    // Filter to specific work item if provided
-    let items_to_render: Vec<_> = if let Some(id) = work_id {
-        items
-            .into_iter()
-            .filter(|w| w.spec.govctl.id == id)
-            .collect()
-    } else {
-        items
-    };
-
-    if items_to_render.is_empty()
-        && let Some(id) = work_id
-    {
-        let scope = config
-            .display_path(&config.work_dir())
-            .display()
-            .to_string();
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0402WorkNotFound,
-            format!("Work item not found: {id}"),
-            scope,
-        ));
-    }
-
-    for item in &items_to_render {
-        write_work_item_md(config, item, dry_run)?;
-    }
-
-    if !dry_run {
-        ui::render_summary(items_to_render.len(), "work item");
-    }
-
-    Ok(vec![])
+    render_selected(
+        items,
+        RenderSelection {
+            id: work_id,
+            dry_run,
+            summary_label: "work item",
+        },
+        || ui::info("No work items found"),
+        |id| {
+            let scope = config
+                .display_path(&config.work_dir())
+                .display()
+                .to_string();
+            Diagnostic::new(
+                DiagnosticCode::E0402WorkNotFound,
+                format!("Work item not found: {id}"),
+                scope,
+            )
+        },
+        |item| item.spec.govctl.id.as_str(),
+        |item| write_work_item_md(config, item, dry_run),
+    )
 }
