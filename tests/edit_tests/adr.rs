@@ -1,3 +1,5 @@
+use super::*;
+
 // ============================================================================
 // ADR Field Edit Tests
 // ============================================================================
@@ -233,4 +235,3 @@ fn test_adr_get_nonexistent() -> common::TestResult {
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
-

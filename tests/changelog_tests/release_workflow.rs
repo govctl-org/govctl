@@ -1,3 +1,5 @@
+use super::*;
+
 /// Test the full changelog/release workflow:
 /// 1. Initialize project
 /// 2. Create work items with various categories

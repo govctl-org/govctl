@@ -1,3 +1,5 @@
+use super::*;
+
 // ============================================================================
 // Clause Legacy Format Tests
 // ============================================================================
@@ -103,9 +105,7 @@ fn test_supersede_clause_rejects_missing_replacement() -> common::TestResult {
             ],
         ],
     )?;
-    assert!(output.contains(
-        "error[E0202]: Replacement clause not found: RFC-0001:C-MISSING"
-    ));
+    assert!(output.contains("error[E0202]: Replacement clause not found: RFC-0001:C-MISSING"));
     Ok(())
 }
 

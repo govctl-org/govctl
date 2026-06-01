@@ -1,3 +1,5 @@
+use super::*;
+
 /// Test: Delete clause - safeguard prevents deleting from normative RFC
 #[test]
 fn test_delete_clause_safeguard_normative() -> TestResult {

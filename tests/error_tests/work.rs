@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_work_legacy_inline_history_reports_info_and_passes_check() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -148,4 +150,3 @@ description = "Work description"
     );
     Ok(())
 }
-

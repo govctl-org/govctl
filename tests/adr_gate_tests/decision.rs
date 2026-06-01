@@ -1,3 +1,5 @@
+use super::*;
+
 // ============================================================================
 // Decision Gate Tests (adr set decision)
 // ============================================================================
@@ -150,13 +152,7 @@ fn test_set_decision_blocked_without_accepted() -> common::TestResult {
 fn test_set_decision_blocked_via_legacy_dotted_path() -> common::TestResult {
     let normalized = run_gate_commands(&[
         &["adr", "new", "Test ADR"],
-        &[
-            "adr",
-            "set",
-            "ADR-0001",
-            "content.decision",
-            "We chose X.",
-        ],
+        &["adr", "set", "ADR-0001", "content.decision", "We chose X."],
     ])?;
 
     assert_gate_error(&normalized, "dotted decision path");

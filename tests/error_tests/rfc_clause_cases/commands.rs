@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_clause_commands_reject_invalid_clause_id_format() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -30,9 +32,8 @@ fn test_clause_commands_reject_invalid_clause_id_format() -> common::TestResult 
         "new/delete invalid-ID diagnostics should stay stable: {output}"
     );
     assert!(
-        output.contains(
-            "Invalid clause ID format: RFC-0001:C-ONE:EXTRA (expected RFC-NNNN:C-NAME)"
-        ),
+        output
+            .contains("Invalid clause ID format: RFC-0001:C-ONE:EXTRA (expected RFC-NNNN:C-NAME)"),
         "show invalid-ID diagnostic should stay stable: {output}"
     );
     assert!(

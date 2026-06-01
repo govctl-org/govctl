@@ -1,3 +1,5 @@
+use super::*;
+
 /// Test: RFC files fail check when they contain unknown fields rejected by schema
 #[test]
 fn test_invalid_rfc_schema_check() -> common::TestResult {

@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_adr_get_nested_path() -> common::TestResult {
     let temp_dir = init_project()?;

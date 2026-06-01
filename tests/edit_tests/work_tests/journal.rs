@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_work_journal_field_surface_is_unavailable() -> common::TestResult {
     let temp_dir = init_project()?;

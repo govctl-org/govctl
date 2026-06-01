@@ -1,3 +1,5 @@
+use super::*;
+
 // ============================================================================
 // RFC Field Edit Tests
 // ============================================================================
@@ -247,4 +249,3 @@ fn test_rfc_get_nonexistent() -> common::TestResult {
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
-

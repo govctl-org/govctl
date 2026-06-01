@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_work_get_field() -> common::TestResult {
     let temp_dir = init_project()?;

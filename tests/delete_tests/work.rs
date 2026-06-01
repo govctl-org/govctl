@@ -1,3 +1,5 @@
+use super::*;
+
 /// Test: Delete work item - safeguard prevents deleting active work item
 #[test]
 fn test_delete_work_safeguard_active() -> TestResult {

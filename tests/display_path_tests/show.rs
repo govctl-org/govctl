@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_show_rfc_missing_returns_scope_context() -> common::TestResult {
     let temp_dir = init_project()?;

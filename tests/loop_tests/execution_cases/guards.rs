@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_loop_run_records_guard_failure_without_completing_work_item() -> common::TestResult {
     let temp_dir = init_project()?;

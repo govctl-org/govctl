@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_delete_work_dry_run_display_path() -> common::TestResult {
     let temp_dir = init_project()?;

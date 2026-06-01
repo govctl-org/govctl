@@ -1,10 +1,12 @@
-// ============================================================================
-// Work Item Field Edit Tests
-// ============================================================================
+use super::*;
 
-fn read_work_ids(
-    project_dir: &std::path::Path,
-) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+mod adr;
+mod clause;
+mod path_cases;
+mod rfc;
+mod work_tests;
+
+fn read_work_ids(project_dir: &std::path::Path) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let mut ids = Vec::new();
     for entry in std::fs::read_dir(project_dir.join("gov").join("work"))? {
         let path = entry?.path();
@@ -35,9 +37,3 @@ fn set_work_item_id_strategy(project_dir: &std::path::Path, strategy: &str) -> c
     std::fs::write(config_path, content)?;
     Ok(())
 }
-
-include!("work_tests/fields.rs");
-include!("work_tests/acceptance.rs");
-include!("work_tests/journal.rs");
-include!("work_tests/identity.rs");
-include!("work_tests/references.rs");

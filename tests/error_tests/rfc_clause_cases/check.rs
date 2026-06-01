@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_broken_superseded_check() -> common::TestResult {
     let temp_dir = init_project()?;

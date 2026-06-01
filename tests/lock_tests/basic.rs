@@ -1,3 +1,5 @@
+use super::*;
+
 /// Test: Write command creates and releases lock
 #[test]
 fn test_write_command_creates_lock_file() -> common::TestResult {

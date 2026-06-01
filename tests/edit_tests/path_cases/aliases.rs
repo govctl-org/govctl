@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_field_alias_ac() -> common::TestResult {
     // 'ac' should resolve to 'acceptance_criteria'

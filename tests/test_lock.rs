@@ -52,5 +52,4 @@ lock_timeout_secs = {}
     Ok(())
 }
 
-include!("lock_tests/basic.rs");
-include!("lock_tests/concurrency.rs");
+mod lock_tests;

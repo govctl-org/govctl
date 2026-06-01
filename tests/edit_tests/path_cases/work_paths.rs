@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_work_get_nested_scalar_rejects_index() -> common::TestResult {
     let temp_dir = init_project()?;

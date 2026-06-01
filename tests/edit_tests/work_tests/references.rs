@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_work_add_ref() -> common::TestResult {
     let temp_dir = init_project()?;

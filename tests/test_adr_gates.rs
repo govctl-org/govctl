@@ -30,13 +30,17 @@ fn assert_no_gate_error(normalized: &str, context: &str) {
 macro_rules! assert_adr_gate_snapshot {
     ($value:expr) => {{
         let snapshot = $value;
+        let function_name = insta::_function_name!();
+        let test_name = function_name.rsplit("::").next().unwrap_or(function_name);
+        let snapshot_case = test_name.strip_prefix("test_").unwrap_or(test_name);
+        let snapshot_name = format!("test_adr_gates__{snapshot_case}");
         insta::with_settings!({
-            snapshot_path => std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots")
+            snapshot_path => std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots"),
+            prepend_module_to_snapshot => false
         }, {
-            insta::assert_snapshot!(snapshot);
+            insta::assert_snapshot!(snapshot_name, snapshot);
         });
     }};
 }
 
-include!("adr_gate_tests/decision.rs");
-include!("adr_gate_tests/accept.rs");
+mod adr_gate_tests;

@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_tick_rejects_nested_path() -> common::TestResult {
     let temp_dir = init_project()?;

@@ -1,3 +1,5 @@
+use super::*;
+
 // ============================================================================
 // Accept Gate Tests (adr accept)
 // ============================================================================
@@ -5,10 +7,8 @@
 /// Accepting an ADR with no alternatives at all must fail.
 #[test]
 fn test_accept_blocked_without_alternatives() -> common::TestResult {
-    let normalized = run_gate_commands(&[
-        &["adr", "new", "Test ADR"],
-        &["adr", "accept", "ADR-0001"],
-    ])?;
+    let normalized =
+        run_gate_commands(&[&["adr", "new", "Test ADR"], &["adr", "accept", "ADR-0001"]])?;
 
     assert_gate_error(&normalized, "accept without alternatives");
     assert_adr_gate_snapshot!(normalized);

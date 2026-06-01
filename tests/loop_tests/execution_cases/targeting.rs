@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_loop_run_targets_work_item_without_executing_unrelated_work() -> common::TestResult {
     let temp_dir = init_project()?;

@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_loop_start_rejects_plain_text_loop_id() -> common::TestResult {
     let temp_dir = init_project()?;

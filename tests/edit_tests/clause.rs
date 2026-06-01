@@ -1,3 +1,5 @@
+use super::*;
+
 // ============================================================================
 // Clause Edit Tests
 // ============================================================================
@@ -319,4 +321,3 @@ fn test_clause_edit_nonexistent() -> common::TestResult {
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
-

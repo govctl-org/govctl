@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_work_new_same_title_uses_filename_suffix() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -100,10 +102,7 @@ fn test_work_new_random_id_strategy_uses_random_suffix() -> common::TestResult {
 
     let ids = read_work_ids(temp_dir.path())?;
     assert_eq!(ids.len(), 1);
-    let id_pattern = regex::Regex::new(&format!(
-        r"^WI-{}-[0-9a-f]{{4}}$",
-        regex::escape(&date)
-    ))?;
+    let id_pattern = regex::Regex::new(&format!(r"^WI-{}-[0-9a-f]{{4}}$", regex::escape(&date)))?;
     assert!(
         id_pattern.is_match(&ids[0]),
         "unexpected random work item id: {}",

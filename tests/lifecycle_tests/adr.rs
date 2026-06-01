@@ -1,3 +1,5 @@
+use super::*;
+
 // ============================================================================
 // ADR Accept/Reject Tests
 // ============================================================================
@@ -181,4 +183,3 @@ fn test_accept_nonexistent_adr() -> common::TestResult {
     assert_lifecycle_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
-

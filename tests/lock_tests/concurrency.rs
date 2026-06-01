@@ -1,3 +1,5 @@
+use super::*;
+
 /// Test: Concurrent write is blocked by lock (cross-process)
 ///
 /// Uses govctl itself as the lock holder - spawns a write command that

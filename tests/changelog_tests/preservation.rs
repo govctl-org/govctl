@@ -1,3 +1,5 @@
+use super::*;
+
 /// Integration test: changelog preservation across the full adoption lifecycle.
 ///
 /// Phase 1 — Brownfield: legacy CHANGELOG pre-dates govctl. First govctl

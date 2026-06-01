@@ -1,3 +1,5 @@
+use super::*;
+
 #[test]
 fn test_loop_run_completes_ready_work_item() -> common::TestResult {
     let temp_dir = init_project()?;
