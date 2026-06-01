@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-02-046"
 title = "Extract command utility inline tests"
-status = "queue"
+status = "done"
 created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
 
 [content]
 description = "Move small command utility inline test modules into sibling test-only modules where the production files are otherwise focused helpers. Preserve command utility behavior and avoid changing CLI aliases or edit semantics."
 
 [[content.acceptance_criteria]]
 text = "command utility inline tests live in sibling test modules without changing production APIs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "CLI aliases and edit field semantics remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "targeted command utility tests, clippy, full tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
