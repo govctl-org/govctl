@@ -2,6 +2,7 @@ use super::output::output_list;
 use super::summaries::{AdrSummary, ClauseSummary, GuardSummary, RfcSummary, WorkItemSummary};
 use crate::OutputFormat;
 use crate::model::{GuardEntry, ProjectIndex, WorkItemStatus};
+use serde::Serialize;
 
 pub(super) fn list_rfcs(
     index: &ProjectIndex,
@@ -21,17 +22,13 @@ pub(super) fn list_rfcs(
     retain_by_tags(&mut rfcs, tags, |r| r.rfc.tags.as_slice());
 
     rfcs.sort_by(|a, b| a.rfc.rfc_id.cmp(&b.rfc.rfc_id));
-    apply_limit(&mut rfcs, limit);
 
-    let summaries = rfcs
-        .iter()
-        .map(|rfc| RfcSummary::from_entry(rfc))
-        .collect::<Vec<_>>();
-
-    output_list(
-        &summaries,
+    output_resource_list(
+        &mut rfcs,
+        limit,
         &["RFC", "Version", "Status", "Phase", "Title"],
         output,
+        |rfc| RfcSummary::from_entry(rfc),
         RfcSummary::row,
     );
 }
@@ -60,17 +57,13 @@ pub(super) fn list_clauses(
         a.0.cmp(&b.0)
             .then_with(|| a.1.spec.clause_id.cmp(&b.1.spec.clause_id))
     });
-    apply_limit(&mut clauses, limit);
 
-    let summaries = clauses
-        .iter()
-        .map(|(rfc_id, clause)| ClauseSummary::from_entry(rfc_id, clause))
-        .collect::<Vec<_>>();
-
-    output_list(
-        &summaries,
+    output_resource_list(
+        &mut clauses,
+        limit,
         &["Clause", "RFC", "Kind", "Status", "Title"],
         output,
+        |(rfc_id, clause)| ClauseSummary::from_entry(rfc_id, clause),
         ClauseSummary::row,
     );
 }
@@ -91,17 +84,13 @@ pub(super) fn list_adrs(
     retain_by_tags(&mut adrs, tags, |a| a.meta().tags.as_slice());
 
     adrs.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
-    apply_limit(&mut adrs, limit);
 
-    let summaries = adrs
-        .iter()
-        .map(|adr| AdrSummary::from_entry(adr))
-        .collect::<Vec<_>>();
-
-    output_list(
-        &summaries,
+    output_resource_list(
+        &mut adrs,
+        limit,
         &["ADR", "Status", "Date", "Title"],
         output,
+        |adr| AdrSummary::from_entry(adr),
         AdrSummary::row,
     );
 }
@@ -122,17 +111,13 @@ pub(super) fn list_guards(
     retain_by_tags(&mut items, tags, |g| g.meta().tags.as_slice());
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
-    apply_limit(&mut items, limit);
 
-    let summaries = items
-        .iter()
-        .map(|guard| GuardSummary::from_entry(guard))
-        .collect::<Vec<_>>();
-
-    output_list(
-        &summaries,
+    output_resource_list(
+        &mut items,
+        limit,
         &["Guard", "Title", "Command"],
         output,
+        |guard| GuardSummary::from_entry(guard),
         GuardSummary::row,
     );
 }
@@ -168,19 +153,30 @@ pub(super) fn list_work_items(
     retain_by_tags(&mut items, tags, |i| i.meta().tags.as_slice());
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
-    apply_limit(&mut items, limit);
 
-    let summaries = items
-        .iter()
-        .map(|item| WorkItemSummary::from_entry(item))
-        .collect::<Vec<_>>();
-
-    output_list(
-        &summaries,
+    output_resource_list(
+        &mut items,
+        limit,
         &["ID", "Status", "Title"],
         output,
+        |item| WorkItemSummary::from_entry(item),
         WorkItemSummary::row,
     );
+}
+
+fn output_resource_list<T, S>(
+    items: &mut Vec<T>,
+    limit: Option<usize>,
+    headers: &[&str],
+    output: OutputFormat,
+    to_summary: impl Fn(&T) -> S,
+    to_row: impl Fn(&S) -> Vec<String>,
+) where
+    S: Serialize,
+{
+    apply_limit(items, limit);
+    let summaries = items.iter().map(to_summary).collect::<Vec<_>>();
+    output_list(&summaries, headers, output, to_row);
 }
 
 fn apply_limit<T>(items: &mut Vec<T>, limit: Option<usize>) {
