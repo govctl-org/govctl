@@ -1,0 +1,29 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-097"
+title = "Normalize edit TOML target module"
+status = "queue"
+created = "2026-06-01"
+refs = [
+    "ADR-0045",
+    "ADR-0031",
+]
+
+[content]
+description = "Replace the single src/cmd/edit/toml_target.rs file with a directory module and move work-item dependency edit detection and validation into a focused TOML-target child module while preserving existing add/set behavior."
+
+[[content.acceptance_criteria]]
+text = "src/cmd/edit/toml_target.rs is replaced by src/cmd/edit/toml_target/mod.rs without same-name file and directory coexistence"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "work dependency edit detection and validation live in a focused TOML target child module and remain used by add and set flows"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit command tests and govctl check pass"
+status = "pending"
+category = "chore"

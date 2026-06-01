@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-098"
+title = "Extract edit TOML target tick helpers"
+status = "queue"
+created = "2026-06-01"
+refs = ["ADR-0031"]
+depends_on = ["WI-2026-06-01-097"]
+
+[content]
+description = "Move TOML-target tick path matching and status-list mutation logic into a focused child module so the TOML target module root keeps artifact load/write orchestration instead of detailed tick matcher branches."
+
+[[content.acceptance_criteria]]
+text = "TOML target tick path matching and status-list mutation logic lives in a focused child module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TOML target module root keeps tick load/write orchestration without detailed matcher branches"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit command tests and govctl check pass"
+status = "pending"
+category = "chore"
