@@ -1,5 +1,6 @@
 use super::ValidationResult;
 use super::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
+use crate::artifact_index::artifact_ref_ids;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::ProjectIndex;
@@ -11,114 +12,121 @@ pub(super) fn validate_artifact_refs(
     config: &Config,
     result: &mut ValidationResult,
 ) {
-    // Build a set of all known artifact IDs (including clause references)
-    let mut known_ids: HashSet<String> = HashSet::new();
-
-    // Add RFC IDs and clause references
-    for rfc in &index.rfcs {
-        known_ids.insert(rfc.rfc.rfc_id.clone());
-        // Add clause references in format RFC-ID:CLAUSE-ID
-        for clause in &rfc.clauses {
-            known_ids.insert(format!("{}:{}", rfc.rfc.rfc_id, clause.spec.clause_id));
-        }
-    }
-
-    // Add ADR IDs
-    for adr in &index.adrs {
-        known_ids.insert(adr.meta().id.clone());
-    }
-
-    // Add Work Item IDs
-    for work in &index.work_items {
-        known_ids.insert(work.meta().id.clone());
-    }
+    let known_ids = artifact_ref_ids(index);
 
     // Validate RFC refs and supersedes
     for rfc in &index.rfcs {
         let rfc_path_display = config.display_path(&rfc.path).display().to_string();
-        // Validate refs field
-        for ref_id in &rfc.rfc.refs {
-            if !known_ids.contains(ref_id) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0105RfcRefNotFound,
-                    format!(
-                        "RFC '{}' references unknown artifact: {}",
-                        rfc.rfc.rfc_id, ref_id
-                    ),
-                    rfc_path_display.clone(),
-                ));
-            } else if let Err(d) = check_ref_hierarchy(
-                &rfc.rfc.rfc_id,
-                ref_id,
-                &rfc_path_display,
-                ReferenceSurface::StructuredRef,
-            ) {
-                result.diagnostics.push(d);
-            }
-        }
+        let rfc_ref_check = RefCheck {
+            known_ids: &known_ids,
+            owner_id: &rfc.rfc.rfc_id,
+            path_display: &rfc_path_display,
+            unknown_code: DiagnosticCode::E0105RfcRefNotFound,
+            check_hierarchy: true,
+        };
+        validate_refs(result, rfc_ref_check, &rfc.rfc.refs, |ref_id| {
+            format!(
+                "RFC '{}' references unknown artifact: {}",
+                rfc.rfc.rfc_id, ref_id
+            )
+        });
 
         // Validate supersedes field
         if let Some(ref supersedes) = rfc.rfc.supersedes {
-            if !known_ids.contains(supersedes) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0106RfcSupersedesNotFound,
+            let supersedes_check = RefCheck {
+                known_ids: &known_ids,
+                owner_id: &rfc.rfc.rfc_id,
+                path_display: &rfc_path_display,
+                unknown_code: DiagnosticCode::E0106RfcSupersedesNotFound,
+                check_hierarchy: true,
+            };
+            validate_refs(
+                result,
+                supersedes_check,
+                std::slice::from_ref(supersedes),
+                |ref_id| {
                     format!(
                         "RFC '{}' supersedes unknown RFC: {}",
-                        rfc.rfc.rfc_id, supersedes
-                    ),
-                    rfc_path_display.clone(),
-                ));
-            } else if let Err(d) = check_ref_hierarchy(
-                &rfc.rfc.rfc_id,
-                supersedes,
-                &rfc_path_display,
-                ReferenceSurface::StructuredRef,
-            ) {
-                result.diagnostics.push(d);
-            }
+                        rfc.rfc.rfc_id, ref_id
+                    )
+                },
+            );
         }
     }
 
     // Validate ADR refs
     for adr in &index.adrs {
         let adr_path_display = config.display_path(&adr.path).display().to_string();
-        for ref_id in &adr.meta().refs {
-            if !known_ids.contains(ref_id) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0304AdrRefNotFound,
-                    format!(
-                        "ADR '{}' references unknown artifact: {}",
-                        adr.meta().id,
-                        ref_id
-                    ),
-                    adr_path_display.clone(),
-                ));
-            } else if let Err(d) = check_ref_hierarchy(
-                &adr.meta().id,
-                ref_id,
-                &adr_path_display,
-                ReferenceSurface::StructuredRef,
-            ) {
-                result.diagnostics.push(d);
-            }
-        }
+        let adr_ref_check = RefCheck {
+            known_ids: &known_ids,
+            owner_id: &adr.meta().id,
+            path_display: &adr_path_display,
+            unknown_code: DiagnosticCode::E0304AdrRefNotFound,
+            check_hierarchy: true,
+        };
+        validate_refs(result, adr_ref_check, &adr.meta().refs, |ref_id| {
+            format!(
+                "ADR '{}' references unknown artifact: {}",
+                adr.meta().id,
+                ref_id
+            )
+        });
     }
 
     // Validate Work Item refs
     for work in &index.work_items {
         let work_path_display = config.display_path(&work.path).display().to_string();
-        for ref_id in &work.meta().refs {
-            if !known_ids.contains(ref_id) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0404WorkRefNotFound,
-                    format!(
-                        "Work item '{}' references unknown artifact: {}",
-                        work.meta().id,
-                        ref_id
-                    ),
-                    work_path_display.clone(),
-                ));
-            }
+        let work_ref_check = RefCheck {
+            known_ids: &known_ids,
+            owner_id: &work.meta().id,
+            path_display: &work_path_display,
+            unknown_code: DiagnosticCode::E0404WorkRefNotFound,
+            check_hierarchy: false,
+        };
+        validate_refs(result, work_ref_check, &work.meta().refs, |ref_id| {
+            format!(
+                "Work item '{}' references unknown artifact: {}",
+                work.meta().id,
+                ref_id
+            )
+        });
+    }
+}
+
+#[derive(Clone, Copy)]
+struct RefCheck<'a> {
+    known_ids: &'a HashSet<String>,
+    owner_id: &'a str,
+    path_display: &'a str,
+    unknown_code: DiagnosticCode,
+    check_hierarchy: bool,
+}
+
+fn validate_refs<'a, I, F>(
+    result: &mut ValidationResult,
+    check: RefCheck<'_>,
+    refs: I,
+    unknown_message: F,
+) where
+    I: IntoIterator<Item = &'a String>,
+    F: Fn(&str) -> String,
+{
+    for ref_id in refs {
+        if !check.known_ids.contains(ref_id) {
+            result.diagnostics.push(Diagnostic::new(
+                check.unknown_code,
+                unknown_message(ref_id),
+                check.path_display.to_string(),
+            ));
+        } else if check.check_hierarchy
+            && let Err(diagnostic) = check_ref_hierarchy(
+                check.owner_id,
+                ref_id,
+                check.path_display,
+                ReferenceSurface::StructuredRef,
+            )
+        {
+            result.diagnostics.push(diagnostic);
         }
     }
 }

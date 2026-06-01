@@ -3,6 +3,7 @@
 use clap::Parser;
 use std::process::ExitCode;
 
+mod artifact_index;
 mod cli;
 mod cmd;
 mod command_router;
