@@ -1,0 +1,29 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-101"
+title = "Normalize edit path parser module"
+status = "queue"
+created = "2026-06-01"
+refs = [
+    "ADR-0030",
+    "ADR-0029",
+]
+
+[content]
+description = "Normalize the edit path parser into a directory module and move inline parser tests out of the production module body. This preserves the public path parser API and avoids same-name file/directory coexistence while reducing god-file noise in the edit subsystem."
+
+[[content.acceptance_criteria]]
+text = "src/cmd/edit/path.rs is replaced by src/cmd/edit/path/mod.rs without same-name file and directory coexistence"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit path parser tests live in src/cmd/edit/path/tests.rs outside the production module body"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused edit path tests and govctl check pass"
+status = "pending"
+category = "chore"
