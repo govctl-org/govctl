@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-129"
 title = "Extract edit JSON target operations"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-128"]
 
 [content]
@@ -13,20 +14,20 @@ description = "Extract edit JSON-target get, set, and simple-list mutation opera
 
 [[content.acceptance_criteria]]
 text = "JSON-target get and full-document display logic lives in a focused helper module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "JSON-target set operations share a focused helper module with unchanged validation and touch behavior"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "JSON-target simple-list add/remove operations live in a focused helper module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit integration tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
