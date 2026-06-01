@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-111"
+title = "Extract TUI app filter helpers"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["RFC-0003"]
+
+[content]
+description = "Move TUI list filtering and cached-index maintenance out of the App module root into a focused app filter helper module. Preserve list filtering behavior, selection bounds, and current public App methods used by event and rendering code."
+
+[[content.acceptance_criteria]]
+text = "TUI list filter cache logic lives in a focused app filter helper module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "list filter behavior and selection bounds remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused TUI tests and govctl check pass"
+status = "pending"
+category = "chore"
