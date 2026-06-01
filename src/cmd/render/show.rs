@@ -6,6 +6,35 @@ use crate::load::load_rfcs;
 use crate::parse::{load_adrs, load_work_items};
 use crate::render::{expand_inline_refs, render_adr, render_clause, render_rfc, render_work_item};
 use crate::terminal_md::render_terminal_md;
+use serde::Serialize;
+
+fn print_show_output<T>(
+    config: &Config,
+    output: OutputFormat,
+    json_value: &T,
+    json_error_code: DiagnosticCode,
+    json_error_message: &str,
+    id: &str,
+    render_markdown: impl FnOnce() -> DiagnosticResult<String>,
+) -> DiagnosticResult<()>
+where
+    T: Serialize,
+{
+    match output {
+        OutputFormat::Json => {
+            let json = serde_json::to_string_pretty(json_value).map_err(|err| {
+                Diagnostic::new(json_error_code, format!("{json_error_message}: {err}"), id)
+            })?;
+            println!("{json}");
+        }
+        OutputFormat::Table | OutputFormat::Plain => {
+            let raw = render_markdown()?;
+            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
+            print!("{}", render_terminal_md(&expanded));
+        }
+    }
+    Ok(())
+}
 
 /// Show RFC content to stdout (no file written).
 ///
@@ -25,23 +54,15 @@ pub fn show_rfc(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
             )
         })?;
 
-    match output {
-        OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&rfc.rfc).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0101RfcSchemaInvalid,
-                    format!("Failed to serialize RFC JSON: {err}"),
-                    id,
-                )
-            })?;
-            println!("{json}");
-        }
-        OutputFormat::Table | OutputFormat::Plain => {
-            let raw = render_rfc(&rfc)?;
-            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-            print!("{}", render_terminal_md(&expanded));
-        }
-    }
+    print_show_output(
+        config,
+        output,
+        &rfc.rfc,
+        DiagnosticCode::E0101RfcSchemaInvalid,
+        "Failed to serialize RFC JSON",
+        id,
+        || render_rfc(&rfc),
+    )?;
 
     Ok(vec![])
 }
@@ -64,23 +85,15 @@ pub fn show_adr(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
             )
         })?;
 
-    match output {
-        OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&adr.spec).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0301AdrSchemaInvalid,
-                    format!("Failed to serialize ADR JSON: {err}"),
-                    id,
-                )
-            })?;
-            println!("{json}");
-        }
-        OutputFormat::Table | OutputFormat::Plain => {
-            let raw = render_adr(&adr)?;
-            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-            print!("{}", render_terminal_md(&expanded));
-        }
-    }
+    print_show_output(
+        config,
+        output,
+        &adr.spec,
+        DiagnosticCode::E0301AdrSchemaInvalid,
+        "Failed to serialize ADR JSON",
+        id,
+        || render_adr(&adr),
+    )?;
 
     Ok(vec![])
 }
@@ -106,23 +119,15 @@ pub fn show_work(config: &Config, id: &str, output: OutputFormat) -> DiagnosticR
             )
         })?;
 
-    match output {
-        OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&item.spec).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0401WorkSchemaInvalid,
-                    format!("Failed to serialize work item JSON: {err}"),
-                    id,
-                )
-            })?;
-            println!("{json}");
-        }
-        OutputFormat::Table | OutputFormat::Plain => {
-            let raw = render_work_item(&item)?;
-            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-            print!("{}", render_terminal_md(&expanded));
-        }
-    }
+    print_show_output(
+        config,
+        output,
+        &item.spec,
+        DiagnosticCode::E0401WorkSchemaInvalid,
+        "Failed to serialize work item JSON",
+        id,
+        || render_work_item(&item),
+    )?;
 
     Ok(vec![])
 }
@@ -176,24 +181,19 @@ pub fn show_clause(
             )
         })?;
 
-    match output {
-        OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&clause.spec).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0201ClauseSchemaInvalid,
-                    format!("Failed to serialize clause JSON: {err}"),
-                    id,
-                )
-            })?;
-            println!("{json}");
-        }
-        OutputFormat::Table | OutputFormat::Plain => {
+    print_show_output(
+        config,
+        output,
+        &clause.spec,
+        DiagnosticCode::E0201ClauseSchemaInvalid,
+        "Failed to serialize clause JSON",
+        id,
+        || {
             let mut raw = String::new();
             render_clause(&mut raw, rfc_id, &clause);
-            let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-            print!("{}", render_terminal_md(&expanded));
-        }
-    }
+            Ok(raw)
+        },
+    )?;
 
     Ok(vec![])
 }
