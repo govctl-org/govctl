@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-153"
 title = "Share changelog category display metadata"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Centralize changelog category display metadata that is currently duplicated across edit matching and changelog rendering. Preserve rendered headings, status-list category matching behavior, parser prefix behavior, and public CLI behavior while giving category prefix/label logic one owned home."
 
 [[content.acceptance_criteria]]
 text = "changelog category rendered labels and rendered-prefix matching are owned by ChangelogCategory"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit matching keeps stripping only existing rendered category prefixes for non-regex patterns"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "category metadata tests, edit tests, changelog render tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

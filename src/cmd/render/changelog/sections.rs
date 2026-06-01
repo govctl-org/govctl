@@ -68,16 +68,7 @@ fn render_changelog_section(output: &mut String, items: &[&WorkItemEntry]) {
         }
     }
 
-    let categories = [
-        (ChangelogCategory::Added, "Added"),
-        (ChangelogCategory::Changed, "Changed"),
-        (ChangelogCategory::Deprecated, "Deprecated"),
-        (ChangelogCategory::Removed, "Removed"),
-        (ChangelogCategory::Fixed, "Fixed"),
-        (ChangelogCategory::Security, "Security"),
-    ];
-
-    for (category, label) in categories {
+    for &(category, label) in ChangelogCategory::RELEASE_CHANGELOG_SECTIONS {
         if let Some(entries) = by_category.get(&category) {
             output.push_str(&format!("### {}\n\n", label));
             for (text, work_id) in entries {

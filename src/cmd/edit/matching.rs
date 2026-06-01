@@ -1,4 +1,5 @@
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::model::ChangelogCategory;
 use regex::Regex;
 
 #[derive(Debug, Clone, Default)]
@@ -37,28 +38,8 @@ pub(super) enum MatchUse {
     TickSingle,
 }
 
-/// Known category prefixes that appear in rendered status list output.
-/// Stripping these from user-supplied patterns allows matching against
-/// the text-only stored value (e.g., "fixed: some text" matches "some text").
-const CATEGORY_PREFIXES: &[&str] = &[
-    "added:",
-    "changed:",
-    "deprecated:",
-    "removed:",
-    "fixed:",
-    "security:",
-    "chore:",
-];
-
 fn strip_category_prefix(pattern: &str) -> &str {
-    let lower = pattern.to_ascii_lowercase();
-    for prefix in CATEGORY_PREFIXES {
-        if let Some(rest) = lower.strip_prefix(prefix) {
-            let start = pattern.len() - rest.len();
-            return pattern[start..].trim_start();
-        }
-    }
-    pattern
+    ChangelogCategory::strip_rendered_prefix(pattern).unwrap_or(pattern)
 }
 
 pub(super) fn resolve_match_indices(
@@ -221,6 +202,28 @@ mod tests {
 
         assert_eq!(indices, vec![0]);
         Ok(())
+    }
+
+    #[test]
+    fn does_not_strip_non_rendered_category_aliases() {
+        let items = ["some text"];
+        let opts = MatchOptions {
+            pattern: Some("fix: some text"),
+            ..Default::default()
+        };
+
+        let result = resolve_match_indices(
+            "WI-1",
+            "acceptance_criteria",
+            &items,
+            &opts,
+            MatchUse::Remove,
+        );
+
+        assert!(
+            result.is_err(),
+            "fix: is a parser alias, not a rendered prefix"
+        );
     }
 
     #[test]

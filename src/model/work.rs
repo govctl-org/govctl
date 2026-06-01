@@ -185,6 +185,15 @@ impl ChangelogCategory {
         "chore",
     ];
 
+    pub const RELEASE_CHANGELOG_SECTIONS: &'static [(Self, &'static str)] = &[
+        (Self::Added, "Added"),
+        (Self::Changed, "Changed"),
+        (Self::Deprecated, "Deprecated"),
+        (Self::Removed, "Removed"),
+        (Self::Fixed, "Fixed"),
+        (Self::Security, "Security"),
+    ];
+
     /// Parse a prefix string into a category.
     ///
     /// Accepts canonical Keep-a-Changelog names, verb forms, and
@@ -210,5 +219,23 @@ impl ChangelogCategory {
             }
             _ => None,
         }
+    }
+
+    pub fn from_rendered_prefix(prefix: &str) -> Option<Self> {
+        match prefix.to_lowercase().as_str() {
+            "added" => Some(Self::Added),
+            "changed" => Some(Self::Changed),
+            "deprecated" => Some(Self::Deprecated),
+            "removed" => Some(Self::Removed),
+            "fixed" => Some(Self::Fixed),
+            "security" => Some(Self::Security),
+            "chore" => Some(Self::Chore),
+            _ => None,
+        }
+    }
+
+    pub fn strip_rendered_prefix(text: &str) -> Option<&str> {
+        let (prefix, rest) = text.split_once(':')?;
+        Self::from_rendered_prefix(prefix).map(|_| rest.trim_start())
     }
 }

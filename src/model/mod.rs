@@ -116,6 +116,33 @@ mod tests {
     }
 
     #[test]
+    fn test_changelog_category_rendered_prefix_helpers() {
+        assert_eq!(
+            ChangelogCategory::from_rendered_prefix("fixed"),
+            Some(ChangelogCategory::Fixed)
+        );
+        assert_eq!(
+            ChangelogCategory::strip_rendered_prefix("fixed: sample"),
+            Some("sample")
+        );
+        assert_eq!(
+            ChangelogCategory::strip_rendered_prefix("fix: sample"),
+            None
+        );
+        assert_eq!(
+            ChangelogCategory::RELEASE_CHANGELOG_SECTIONS,
+            &[
+                (ChangelogCategory::Added, "Added"),
+                (ChangelogCategory::Changed, "Changed"),
+                (ChangelogCategory::Deprecated, "Deprecated"),
+                (ChangelogCategory::Removed, "Removed"),
+                (ChangelogCategory::Fixed, "Fixed"),
+                (ChangelogCategory::Security, "Security"),
+            ]
+        );
+    }
+
+    #[test]
     fn test_adr_status_as_ref() {
         assert_eq!(AdrStatus::Proposed.as_ref(), "proposed");
         assert_eq!(AdrStatus::Accepted.as_ref(), "accepted");
