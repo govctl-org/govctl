@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-107"
 title = "Extract list resource handlers"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = ["RFC-0002"]
 
 [content]
