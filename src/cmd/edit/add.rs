@@ -11,7 +11,7 @@ use super::{
     serialize_edit_doc, unexpected_edit_state,
 };
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{AdrEntry, ChangelogCategory, WorkItemEntry};
 use crate::ui;
 use crate::write::WriteOp;
@@ -43,7 +43,7 @@ fn adr_add_alternatives(
     entry: &mut AdrEntry,
     value: &str,
     ctx: &AdrAddContext,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     use crate::model::{Alternative, AlternativeStatus};
     if entry
         .spec
@@ -75,7 +75,7 @@ fn work_add_acceptance_criteria(
     entry: &mut WorkItemEntry,
     value: &str,
     ctx: &WorkAddContext,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     use crate::model::ChecklistItem;
     use crate::write::parse_changelog_change;
     let parsed = parse_changelog_change(value)?;
@@ -92,8 +92,7 @@ fn work_add_acceptance_criteria(
                 parsed.message
             ),
             &entry.spec.govctl.id,
-        )
-        .into());
+        ));
     };
 
     if !entry
@@ -115,7 +114,7 @@ fn work_add_acceptance_criteria(
     Ok(())
 }
 
-pub fn add_to_field(request: AddFieldRequest<'_>) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnostic>> {
     let AddFieldRequest {
         config,
         id,
@@ -156,17 +155,17 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> anyhow::Result<Vec<Diagnost
                 DiagnosticCode::E1101TagInvalidFormat,
                 format!("Invalid tag format '{value}': must match ^[a-z][a-z0-9-]*$"),
                 id,
-            )
-            .into());
+            ));
         }
         let allowed = &config.tags.allowed;
         if !allowed.iter().any(|t| t == value) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1105TagUnknown,
-                format!("Tag '{value}' is not in config.toml [tags] allowed. Register it first with: govctl tag new {value}"),
+                format!(
+                    "Tag '{value}' is not in config.toml [tags] allowed. Register it first with: govctl tag new {value}"
+                ),
                 id,
-            )
-            .into());
+            ));
         }
     }
 

@@ -4,14 +4,14 @@ use crate::cmd::edit::engine as edit_engine;
 use crate::cmd::edit::runtime as edit_runtime;
 use crate::cmd::edit::{ArtifactType, serialize_edit_doc, unexpected_edit_state};
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
 pub(in crate::cmd::edit) fn get_toml_field<A>(
     config: &Config,
     id: &str,
     target: Option<&edit_engine::ResolvedTarget>,
     artifact: ArtifactType,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,
@@ -38,7 +38,7 @@ fn render_resolved_target(
     doc: &serde_json::Value,
     target: &edit_engine::ResolvedTarget,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     match target {
         edit_engine::ResolvedTarget::Node {
             origin: edit_engine::TargetOrigin::Simple,

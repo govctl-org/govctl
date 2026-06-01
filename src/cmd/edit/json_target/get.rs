@@ -4,7 +4,7 @@ use super::super::{
 };
 use super::require_simple_field;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
 pub(in crate::cmd::edit) fn get_json_field<A>(
     config: &Config,
@@ -12,7 +12,7 @@ pub(in crate::cmd::edit) fn get_json_field<A>(
     target: Option<&edit_engine::ResolvedTarget>,
     artifact: ArtifactType,
     nested_error: &str,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
@@ -49,8 +49,7 @@ where
                     DiagnosticCode::E0817PathTypeMismatch,
                     nested_error,
                     id,
-                )
-                .into());
+                ));
             }
         }
     } else {

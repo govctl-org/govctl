@@ -1,7 +1,7 @@
 use super::ArtifactType;
 use super::engine as edit_engine;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 
 mod get;
@@ -77,7 +77,7 @@ fn require_simple_field<'a>(
     fp: &'a super::path::FieldPath,
     id: &str,
     message: &str,
-) -> anyhow::Result<&'a str> {
+) -> DiagnosticResult<&'a str> {
     fp.as_simple()
-        .ok_or_else(|| Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id).into())
+        .ok_or_else(|| Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id))
 }

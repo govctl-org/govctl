@@ -1,13 +1,14 @@
 use super::super::render::{render_scalar, render_status_lines};
 use super::super::type_mismatch;
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule};
+use crate::diagnostic::DiagnosticResult;
 use serde_json::Value;
 
 pub(super) fn render_nested_node(
     node: &'static NestedNodeRule,
     value: Option<&Value>,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     match node.kind {
         NestedNodeKind::Scalar => Ok(render_scalar(value)),
         NestedNodeKind::List => render_nested_list(node, value, id),
@@ -19,7 +20,7 @@ fn render_nested_list(
     node: &'static NestedNodeRule,
     value: Option<&Value>,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     let Some(value) = value else {
         return Ok(String::new());
     };
@@ -50,7 +51,7 @@ fn render_nested_object(
     node: &'static NestedNodeRule,
     value: Option<&Value>,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     let Some(value) = value else {
         return Ok(String::new());
     };

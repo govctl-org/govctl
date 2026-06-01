@@ -4,7 +4,7 @@ use super::{
     remove_indices_preserving_order, simple_runtime_list_path, simple_status_list_spec,
     status_list_text, type_mismatch, unknown_field_error, value_at_path,
 };
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
 pub fn get_simple_list_item(
@@ -13,15 +13,14 @@ pub fn get_simple_list_item(
     field: &str,
     index: i32,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     if let Some(path) = simple_runtime_list_path(artifact, field) {
         let Some(items) = value_at_path(doc, path).and_then(Value::as_array) else {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0817PathTypeMismatch,
                 "Expected an array value",
                 id,
-            )
-            .into());
+            ));
         };
         let resolved = path::resolve_index(index, items.len())?;
         let item = &items[resolved];
@@ -38,8 +37,7 @@ pub fn get_simple_list_item(
                 DiagnosticCode::E0817PathTypeMismatch,
                 "Expected an array value",
                 id,
-            )
-            .into());
+            ));
         };
         let resolved = path::resolve_index(index, items.len())?;
         let item = &items[resolved];
@@ -48,8 +46,7 @@ pub fn get_simple_list_item(
                 DiagnosticCode::E0817PathTypeMismatch,
                 "Expected object entries in array",
                 id,
-            )
-            .into());
+            ));
         };
         let status = obj
             .get(spec.status_key)
@@ -62,7 +59,7 @@ pub fn get_simple_list_item(
         return Ok(format!("[{status}] {text}"));
     }
 
-    Err(unknown_field_error(artifact, field, id).into())
+    Err(unknown_field_error(artifact, field, id))
 }
 
 pub fn add_simple_list_value(
@@ -71,7 +68,7 @@ pub fn add_simple_list_value(
     field: &str,
     value: &str,
     id: &str,
-) -> anyhow::Result<bool> {
+) -> DiagnosticResult<bool> {
     let Some(path) = simple_runtime_list_path(artifact, field) else {
         return Ok(false);
     };
@@ -96,15 +93,15 @@ pub fn set_simple_list_item(
     index: i32,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let Some(path) = simple_runtime_list_path(artifact, field) else {
-        return Err(unknown_field_error(artifact, field, id).into());
+        return Err(unknown_field_error(artifact, field, id));
     };
     let items = array_items_mut(doc, path, id)?;
     let resolved = path::resolve_index(index, items.len())?;
     let slot = &mut items[resolved];
     if !slot.is_string() && !slot.is_null() {
-        return Err(type_mismatch("Expected string item in list", id).into());
+        return Err(type_mismatch("Expected string item in list", id));
     }
     *slot = Value::String(value.to_string());
     Ok(())
@@ -116,9 +113,9 @@ pub fn remove_simple_list_values_with_matcher<F>(
     field: &str,
     id: &str,
     resolve: F,
-) -> anyhow::Result<Option<Vec<String>>>
+) -> DiagnosticResult<Option<Vec<String>>>
 where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
+    F: FnOnce(&[&str]) -> DiagnosticResult<Vec<usize>>,
 {
     let Some(path) = simple_runtime_list_path(artifact, field) else {
         return Ok(None);
@@ -159,9 +156,9 @@ pub fn remove_simple_status_list_values_with_matcher<F>(
     field: &str,
     id: &str,
     resolve: F,
-) -> anyhow::Result<Option<Vec<String>>>
+) -> DiagnosticResult<Option<Vec<String>>>
 where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
+    F: FnOnce(&[&str]) -> DiagnosticResult<Vec<usize>>,
 {
     let Some(spec) = simple_status_list_spec(artifact, field) else {
         return Ok(None);
@@ -186,9 +183,9 @@ pub fn tick_simple_status_list_item_with_matcher<F>(
     id: &str,
     new_status: &str,
     resolve: F,
-) -> anyhow::Result<Option<String>>
+) -> DiagnosticResult<Option<String>>
 where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
+    F: FnOnce(&[&str]) -> DiagnosticResult<Vec<usize>>,
 {
     let Some(spec) = simple_status_list_spec(artifact, field) else {
         return Ok(None);

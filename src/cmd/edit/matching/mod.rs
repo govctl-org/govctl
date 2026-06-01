@@ -1,4 +1,4 @@
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::ChangelogCategory;
 use regex::Regex;
 
@@ -48,14 +48,13 @@ pub(super) fn resolve_match_indices(
     items: &[&str],
     opts: &MatchOptions,
     use_case: MatchUse,
-) -> anyhow::Result<Vec<usize>> {
+) -> DiagnosticResult<Vec<usize>> {
     if items.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0812FieldEmpty,
             format!("Field {}.{} is empty", id, field),
             id,
-        )
-        .into());
+        ));
     }
 
     if opts.pattern.is_none() && opts.at.is_none() {
@@ -66,8 +65,7 @@ pub(super) fn resolve_match_indices(
                 id, field
             ),
             id,
-        )
-        .into());
+        ));
     }
 
     let indices: Vec<usize> = if let Some(idx) = opts.at {
@@ -82,8 +80,7 @@ pub(super) fn resolve_match_indices(
                     items.len()
                 ),
                 "array",
-            )
-            .into());
+            ));
         }
         vec![actual_idx as usize]
     } else {
@@ -129,8 +126,7 @@ pub(super) fn resolve_match_indices(
                 DiagnosticCode::E0806InvalidPattern,
                 format!("No items match '{}' in {}.{}", raw_pattern, id, field),
                 id,
-            )
-            .into());
+            ));
         }
         matches
     };
@@ -157,7 +153,11 @@ pub(super) fn resolve_match_indices(
     }
     msg.push('\n');
     msg.push_str(hint);
-    Err(Diagnostic::new(DiagnosticCode::E0807AmbiguousMatch, msg, id).into())
+    Err(Diagnostic::new(
+        DiagnosticCode::E0807AmbiguousMatch,
+        msg,
+        id,
+    ))
 }
 
 #[cfg(test)]

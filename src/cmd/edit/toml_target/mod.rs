@@ -9,6 +9,7 @@ use super::engine as edit_engine;
 use super::matching::MatchOptions;
 use super::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
 use crate::config::Config;
+use crate::diagnostic::DiagnosticResult;
 use crate::model::{AdrEntry, AdrSpec, GuardEntry, GuardSpec, WorkItemEntry, WorkItemSpec};
 use crate::write::WriteOp;
 pub(super) use get::get_toml_field;
@@ -61,7 +62,7 @@ pub(super) fn tick_toml_field<A>(
     op: WriteOp,
     artifact: ArtifactType,
     status_str: &str,
-) -> anyhow::Result<String>
+) -> DiagnosticResult<String>
 where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,

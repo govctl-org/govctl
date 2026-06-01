@@ -1,6 +1,7 @@
 use super::super::engine as edit_engine;
 use super::super::path::FieldPath;
 use crate::config::Config;
+use crate::diagnostic::DiagnosticResult;
 use crate::model::{ProjectIndex, WorkItemEntry};
 
 pub(in crate::cmd::edit) fn is_work_dependency_target(
@@ -17,7 +18,7 @@ pub(in crate::cmd::edit) fn is_work_dependency_target(
 pub(in crate::cmd::edit) fn validate_work_dependency_edit(
     config: &Config,
     entry: &WorkItemEntry,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let mut index = ProjectIndex {
         work_items: crate::parse::load_work_items(config)?,
         ..Default::default()
@@ -39,7 +40,7 @@ pub(in crate::cmd::edit) fn validate_work_dependency_edit(
         .into_iter()
         .next()
     {
-        return Err(diagnostic.into());
+        return Err(diagnostic);
     }
 
     Ok(())

@@ -31,7 +31,7 @@ pub(crate) use self::set::set_field_direct;
 pub use self::tick::tick_item;
 use self::{engine as edit_engine, rules as edit_rules};
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::ui;
 use crate::write::WriteOp;
 pub use delete::{delete_clause, delete_work_item};
@@ -45,40 +45,38 @@ use self::request::{read_stdin, resolve_owned_value};
 pub(super) fn serialize_edit_doc<T: serde::Serialize>(
     value: &T,
     id: &str,
-) -> anyhow::Result<serde_json::Value> {
+) -> DiagnosticResult<serde_json::Value> {
     serde_json::to_value(value).map_err(|err| {
         Diagnostic::new(
             DiagnosticCode::E0903UnexpectedError,
             format!("Failed to serialize editable document: {err}"),
             id,
         )
-        .into()
     })
 }
 
 pub(super) fn deserialize_edit_doc<T: serde::de::DeserializeOwned>(
     value: serde_json::Value,
     id: &str,
-) -> anyhow::Result<T> {
+) -> DiagnosticResult<T> {
     serde_json::from_value(value).map_err(|err| {
         Diagnostic::new(
             DiagnosticCode::E0820InvalidFieldValue,
             format!("Edited document failed schema conversion: {err}"),
             id,
         )
-        .into()
     })
 }
 
-pub(super) fn unexpected_edit_state(id: &str, message: impl Into<String>) -> anyhow::Error {
-    Diagnostic::new(DiagnosticCode::E0903UnexpectedError, message, id).into()
+pub(super) fn unexpected_edit_state(id: &str, message: impl Into<String>) -> Diagnostic {
+    Diagnostic::new(DiagnosticCode::E0903UnexpectedError, message, id)
 }
 
 fn plan_edit_with_field_for_verb(
     id: &str,
     field: &str,
     verb: Option<edit_rules::Verb>,
-) -> anyhow::Result<edit_engine::TargetPlan> {
+) -> DiagnosticResult<edit_engine::TargetPlan> {
     let plan = match verb {
         Some(verb) => edit_engine::plan_mutation_request(id, field, verb)?,
         None => edit_engine::plan_request(id, Some(field))?,
@@ -100,7 +98,7 @@ pub fn edit_clause(
     text_file: Option<&Path>,
     stdin: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Vec<Diagnostic>> {
     let mut clause_doc = ClauseTomlAdapter::load(config, clause_id)?;
 
     let new_text = match (text, text_file, stdin) {
@@ -114,8 +112,7 @@ pub fn edit_clause(
                 DiagnosticCode::E0801MissingRequiredArg,
                 "Provide --text, --text-file, or --stdin",
                 "input",
-            )
-            .into());
+            ));
         }
         _ => unreachable!("clap arg group ensures mutual exclusivity"),
     };
@@ -129,7 +126,7 @@ pub fn edit_clause(
     Ok(vec![])
 }
 
-pub fn edit_field(request: EditFieldRequest<'_>) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn edit_field(request: EditFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnostic>> {
     let EditFieldRequest {
         config,
         id,
@@ -190,7 +187,7 @@ fn reject_match_flags_for_indexed_target(
     id: &str,
     target: &edit_engine::ResolvedTarget,
     opts: &MatchOptions,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let pattern_provided = opts.pattern.is_some_and(|pattern| !pattern.is_empty());
     let edit_engine::ResolvedTarget::IndexedItem { index, .. } = target else {
         return Ok(());
@@ -200,8 +197,7 @@ fn reject_match_flags_for_indexed_target(
             DiagnosticCode::E0818PathIndexConflict,
             "Cannot combine indexed path (e.g., alt[0].cons[1]) with match flags (--at, --exact, --regex, --all, or pattern)",
             id,
-        )
-        .into());
+        ));
     }
     if let Some(existing_at) = opts.at
         && existing_at != *index
@@ -210,8 +206,7 @@ fn reject_match_flags_for_indexed_target(
             DiagnosticCode::E0818PathIndexConflict,
             "Cannot combine indexed path with a different --at value",
             id,
-        )
-        .into());
+        ));
     }
     Ok(())
 }

@@ -3,26 +3,24 @@ use super::engine as edit_engine;
 use super::matching::{MatchOptions, MatchUse, resolve_match_indices};
 use super::runtime as edit_runtime;
 use super::unexpected_edit_state;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::ui;
 use crate::write::WriteOp;
 
-pub(super) fn cannot_add_to_field_error(id: &str, field: &str) -> anyhow::Error {
+pub(super) fn cannot_add_to_field_error(id: &str, field: &str) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0810CannotAddToField,
         format!("Cannot add to field: {field} (not an array or unsupported)"),
         id,
     )
-    .into()
 }
 
-fn cannot_remove_from_field_error(id: &str, field: &str) -> anyhow::Error {
+fn cannot_remove_from_field_error(id: &str, field: &str) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0811CannotRemoveFromField,
         format!("Cannot remove from field: {field}"),
         id,
     )
-    .into()
 }
 
 pub(super) fn add_to_target_doc(
@@ -31,7 +29,7 @@ pub(super) fn add_to_target_doc(
     target: &edit_engine::ResolvedTarget,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let edit_engine::ResolvedTarget::Node {
         path,
         kind: edit_engine::TargetKind::List,
@@ -47,8 +45,7 @@ pub(super) fn add_to_target_doc(
                     target.display_path()
                 ),
                 id,
-            )
-            .into()),
+            )),
             _ => Err(cannot_add_to_field_error(id, &target.display_path())),
         };
     };
@@ -84,7 +81,7 @@ pub(super) fn remove_target_from_doc(
     id: &str,
     target: &edit_engine::ResolvedTarget,
     opts: &MatchOptions,
-) -> anyhow::Result<(String, Vec<String>)> {
+) -> DiagnosticResult<(String, Vec<String>)> {
     match target {
         edit_engine::ResolvedTarget::Node {
             path,
@@ -155,7 +152,7 @@ fn remove_simple_values_from_doc(
     field: &str,
     id: &str,
     opts: &MatchOptions,
-) -> anyhow::Result<Option<Vec<String>>> {
+) -> DiagnosticResult<Option<Vec<String>>> {
     if let Some(removed) =
         edit_runtime::remove_simple_list_values_with_matcher(artifact, doc, field, id, |items| {
             resolve_match_indices(id, field, items, opts, MatchUse::Remove)

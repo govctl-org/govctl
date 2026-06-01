@@ -1,6 +1,6 @@
 use crate::cmd::edit;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{AdrStatus, AlternativeStatus};
 use crate::parse::load_adrs;
 use crate::ui;
@@ -10,7 +10,7 @@ use crate::write::WriteOp;
 /// Validate ADR alternatives completeness per [[ADR-0042]].
 ///
 /// Requires at least 2 alternatives, with at least 1 accepted and 1 rejected.
-pub fn validate_adr_completeness(config: &Config, adr_id: &str) -> anyhow::Result<()> {
+pub fn validate_adr_completeness(config: &Config, adr_id: &str) -> DiagnosticResult<()> {
     let entry = load_adrs(config)?
         .into_iter()
         .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
@@ -47,8 +47,7 @@ pub fn validate_adr_completeness(config: &Config, adr_id: &str) -> anyhow::Resul
                 missing.join("; ")
             ),
             adr_id,
-        )
-        .into());
+        ));
     }
     Ok(())
 }

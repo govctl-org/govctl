@@ -8,7 +8,7 @@ use super::super::{
 };
 use super::require_simple_field;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 
 pub(in crate::cmd::edit) fn add_json_simple_list_field<A>(
@@ -19,7 +19,7 @@ pub(in crate::cmd::edit) fn add_json_simple_list_field<A>(
     op: WriteOp,
     artifact: ArtifactType,
     nested_error: &str,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
@@ -31,9 +31,11 @@ where
         ..
     } = target
     else {
-        return Err(
-            Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, nested_error, id).into(),
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            nested_error,
+            id,
+        ));
     };
     let simple = require_simple_field(path, id, nested_error)?;
     let mut loaded = A::load(config, id)?;
@@ -54,7 +56,7 @@ pub(in crate::cmd::edit) fn remove_json_simple_list_field<A>(
     op: WriteOp,
     artifact: ArtifactType,
     nested_error: &str,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
@@ -72,9 +74,11 @@ where
             ..
         }
     ) {
-        return Err(
-            Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, nested_error, id).into(),
-        );
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            nested_error,
+            id,
+        ));
     }
     loaded.data = deserialize_edit_doc(doc, id)?;
     A::write(config, &loaded, op)?;

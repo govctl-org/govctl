@@ -2,7 +2,7 @@ use super::super::engine as edit_engine;
 use super::super::matching::{MatchOptions, MatchUse, resolve_match_indices};
 use super::super::runtime as edit_runtime;
 use super::super::{ArtifactType, unexpected_edit_state};
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
 const TICK_NESTED_PATH_ERROR: &str =
     "tick only supports checklist root paths or indexed checklist items";
@@ -14,7 +14,7 @@ pub(super) fn tick_target_in_doc(
     target: &edit_engine::ResolvedTarget,
     opts: &MatchOptions,
     status_str: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     match target {
         edit_engine::ResolvedTarget::Node {
             path,
@@ -27,8 +27,7 @@ pub(super) fn tick_target_in_doc(
                     DiagnosticCode::E0817PathTypeMismatch,
                     TICK_NESTED_PATH_ERROR,
                     id,
-                )
-                .into());
+                ));
             }
             match origin {
                 edit_engine::TargetOrigin::Simple => {
@@ -51,7 +50,6 @@ pub(super) fn tick_target_in_doc(
                             format!("Unknown field for tick: {simple}"),
                             id,
                         )
-                        .into()
                     })
                 }
                 edit_engine::TargetOrigin::Nested => {
@@ -81,8 +79,7 @@ pub(super) fn tick_target_in_doc(
                     DiagnosticCode::E0817PathTypeMismatch,
                     TICK_NESTED_PATH_ERROR,
                     id,
-                )
-                .into());
+                ));
             }
             let exact = MatchOptions {
                 pattern: None,
@@ -112,7 +109,6 @@ pub(super) fn tick_target_in_doc(
                             format!("Unknown field for tick: {simple}"),
                             id,
                         )
-                        .into()
                     })
                 }
                 edit_engine::TargetOrigin::Nested => {
@@ -139,7 +135,6 @@ pub(super) fn tick_target_in_doc(
             DiagnosticCode::E0817PathTypeMismatch,
             TICK_NESTED_PATH_ERROR,
             id,
-        )
-        .into()),
+        )),
     }
 }

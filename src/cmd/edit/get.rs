@@ -6,13 +6,13 @@ use super::engine as edit_engine;
 use super::json_target::get_json_field;
 use super::toml_target::get_toml_field;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 
 pub fn get_field(
     config: &Config,
     id: &str,
     field: Option<&str>,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Vec<Diagnostic>> {
     let plan = edit_engine::plan_request(id, field)?;
     match plan.artifact {
         ArtifactType::Adr => {

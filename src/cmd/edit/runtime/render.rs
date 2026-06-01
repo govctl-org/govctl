@@ -1,7 +1,12 @@
 use super::{RenderMode, SimpleFieldSpec, type_mismatch, value_at_path};
+use crate::diagnostic::DiagnosticResult;
 use serde_json::Value;
 
-pub(super) fn render_field(doc: &Value, spec: SimpleFieldSpec, id: &str) -> anyhow::Result<String> {
+pub(super) fn render_field(
+    doc: &Value,
+    spec: SimpleFieldSpec,
+    id: &str,
+) -> DiagnosticResult<String> {
     let v = value_at_path(doc, spec.path);
     match spec.render {
         RenderMode::Scalar => Ok(render_scalar(v)),
@@ -27,12 +32,12 @@ pub(super) fn render_scalar(v: Option<&Value>) -> String {
     }
 }
 
-fn render_string_array(v: Option<&Value>, sep: &str, id: &str) -> anyhow::Result<String> {
+fn render_string_array(v: Option<&Value>, sep: &str, id: &str) -> DiagnosticResult<String> {
     let Some(v) = v else {
         return Ok(String::new());
     };
     let Some(items) = v.as_array() else {
-        return Err(type_mismatch("Expected an array value", id).into());
+        return Err(type_mismatch("Expected an array value", id));
     };
 
     let rendered: Vec<String> = items
@@ -51,18 +56,18 @@ pub(super) fn render_status_lines(
     status_key: &str,
     text_key: &str,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     let Some(v) = v else {
         return Ok(String::new());
     };
     let Some(items) = v.as_array() else {
-        return Err(type_mismatch("Expected an array value", id).into());
+        return Err(type_mismatch("Expected an array value", id));
     };
 
     let mut out = Vec::with_capacity(items.len());
     for item in items {
         let Some(obj) = item.as_object() else {
-            return Err(type_mismatch("Expected object entries in array", id).into());
+            return Err(type_mismatch("Expected object entries in array", id));
         };
         let status = obj
             .get(status_key)

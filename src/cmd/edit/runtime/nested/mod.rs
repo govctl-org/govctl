@@ -14,21 +14,20 @@ use crate::cmd::edit::path::FieldPath;
 use crate::cmd::edit::rules::{
     self as edit_rules, NestedNodeKind, NestedRootRule, NestedScalarMode, Verb,
 };
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
 fn resolve_nested_root(
     artifact: ArtifactType,
     root: &str,
     id: &str,
-) -> anyhow::Result<&'static NestedRootRule> {
+) -> DiagnosticResult<&'static NestedRootRule> {
     edit_rules::nested_root_rule(artifact.rule_key(), root).ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0815PathFieldNotFound,
             format!("Unknown nested root '{}' for {}", root, artifact.rule_key()),
             id,
         )
-        .into()
     })
 }
 
@@ -37,7 +36,7 @@ pub fn get_nested_field(
     doc: &Value,
     fp: &FieldPath,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
     let root_value = value_at_path(doc, rule.content_path);
@@ -58,7 +57,7 @@ pub fn set_nested_field(
     fp: &FieldPath,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
     let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
@@ -79,14 +78,12 @@ pub fn set_nested_field(
                 fp
             ),
             id,
-        )
-        .into()),
+        )),
         NestedNodeKind::Object => Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
             format!("Cannot set object path '{}' directly", fp),
             id,
-        )
-        .into()),
+        )),
     }?;
     Ok(())
 }
@@ -96,7 +93,7 @@ fn apply_nested_scalar_set(
     mode: Option<NestedScalarMode>,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     match mode.unwrap_or(NestedScalarMode::String) {
         NestedScalarMode::String => *slot = Value::String(value.to_string()),
         NestedScalarMode::Integer => {
@@ -116,14 +113,13 @@ fn apply_nested_scalar_set(
         } => {
             if !allowed.contains(&value) {
                 if let Some(code) = code {
-                    return Err(Diagnostic::new(code, format!("{invalid_msg}: {value}"), id).into());
+                    return Err(Diagnostic::new(code, format!("{invalid_msg}: {value}"), id));
                 }
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0820InvalidFieldValue,
                     format!("{invalid_msg}: {value}"),
                     id,
-                )
-                .into());
+                ));
             }
             *slot = Value::String(value.to_string());
         }

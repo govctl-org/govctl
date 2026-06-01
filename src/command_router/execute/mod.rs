@@ -129,10 +129,10 @@ fn execute_list(
 
 fn execute_get(plan: &CommandPlan, config: &Config) -> CommandResult {
     match &plan.scope {
-        Scope::Artifact { id, .. } => legacy_command(cmd::edit::get_field(config, id, None), "get"),
+        Scope::Artifact { id, .. } => cmd::edit::get_field(config, id, None),
         Scope::Target { id, target, .. } => {
             let path = target.display_path();
-            legacy_command(cmd::edit::get_field(config, id, Some(path.as_str())), "get")
+            cmd::edit::get_field(config, id, Some(path.as_str()))
         }
         Scope::Global | Scope::Collection { .. } => Err(Diagnostic::new(
             DiagnosticCode::E0821InvalidCommandScope,
@@ -160,20 +160,17 @@ fn execute_edit(plan: &CommandPlan, config: &Config, edit: &EditOp, op: WriteOp)
             let path = target.display_path();
             let pros = (!extras.pros.is_empty()).then(|| extras.pros.clone());
             let cons = (!extras.cons.is_empty()).then(|| extras.cons.clone());
-            legacy_command(
-                cmd::edit::edit_field(cmd::edit::EditFieldRequest {
-                    config,
-                    id,
-                    path: &path,
-                    action,
-                    category_override: extras.category,
-                    pros,
-                    cons,
-                    reject_reason: extras.reject_reason.clone(),
-                    op,
-                }),
-                "edit field",
-            )
+            cmd::edit::edit_field(cmd::edit::EditFieldRequest {
+                config,
+                id,
+                path: &path,
+                action,
+                category_override: extras.category,
+                pros,
+                cons,
+                reject_reason: extras.reject_reason.clone(),
+                op,
+            })
         }
         EditOp::ClauseLegacy {
             text,
@@ -181,16 +178,13 @@ fn execute_edit(plan: &CommandPlan, config: &Config, edit: &EditOp, op: WriteOp)
             stdin,
         } => {
             let (_, id) = extract_artifact_scope(&plan.scope)?;
-            legacy_command(
-                cmd::edit::edit_clause(
-                    config,
-                    id,
-                    text.as_deref(),
-                    text_file.as_deref(),
-                    *stdin,
-                    op,
-                ),
-                "edit clause",
+            cmd::edit::edit_clause(
+                config,
+                id,
+                text.as_deref(),
+                text_file.as_deref(),
+                *stdin,
+                op,
             )
         }
     }
@@ -248,14 +242,8 @@ fn execute_lifecycle(
 fn execute_delete(plan: &CommandPlan, config: &Config, force: bool, op: WriteOp) -> CommandResult {
     let (artifact, id) = extract_artifact_scope(&plan.scope)?;
     match artifact {
-        cmd::edit::ArtifactType::Clause => legacy_command(
-            cmd::edit::delete_clause(config, id, force, op),
-            "delete clause",
-        ),
-        cmd::edit::ArtifactType::WorkItem => legacy_command(
-            cmd::edit::delete_work_item(config, id, force, op),
-            "delete work",
-        ),
+        cmd::edit::ArtifactType::Clause => cmd::edit::delete_clause(config, id, force, op),
+        cmd::edit::ArtifactType::WorkItem => cmd::edit::delete_work_item(config, id, force, op),
         cmd::edit::ArtifactType::Guard => cmd::guard::delete_guard(config, id, force, op),
         cmd::edit::ArtifactType::Rfc | cmd::edit::ArtifactType::Adr => Err(Diagnostic::new(
             DiagnosticCode::E0822UnsupportedOperation,

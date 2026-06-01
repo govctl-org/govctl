@@ -59,10 +59,7 @@ fn test_set_nested_field_rejects_list_path_without_index() -> Result<(), Box<dyn
     );
     assert!(result.is_err());
     let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
-    assert_eq!(diag.code, DiagnosticCode::E0817PathTypeMismatch);
+    assert_eq!(err.code, DiagnosticCode::E0817PathTypeMismatch);
     Ok(())
 }
 

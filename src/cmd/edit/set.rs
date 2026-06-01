@@ -6,7 +6,7 @@ use super::rules as edit_rules;
 use super::toml_target::{set_toml_field, set_work_toml_field};
 use super::{ArtifactType, plan_edit_with_field_for_verb, unexpected_edit_state};
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 
 pub(crate) fn set_field_direct(
@@ -15,7 +15,7 @@ pub(crate) fn set_field_direct(
     field: &str,
     value: &str,
     op: WriteOp,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Set))?;
     let target = plan
         .target
@@ -32,7 +32,7 @@ pub(super) fn apply_set_field(
     value: &str,
     op: WriteOp,
     enforce_verb_ownership: bool,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let fp = target.path();
     if enforce_verb_ownership {
         reject_verb_owned_set(artifact, fp, id)?;
@@ -57,8 +57,7 @@ pub(super) fn apply_set_field(
                     DiagnosticCode::E0804FieldNotEditable,
                     "Use 'add' to append notes and 'remove' to delete them",
                     id,
-                )
-                .into());
+                ));
             }
             set_work_toml_field(config, id, target, value, op, !enforce_verb_ownership)?
         }
@@ -86,7 +85,7 @@ pub(super) fn apply_set_field(
     Ok(())
 }
 
-fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> anyhow::Result<()> {
+fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> DiagnosticResult<()> {
     let path = fp.to_string();
     let msg = match artifact {
         ArtifactType::Rfc => match fp.as_simple() {
@@ -145,8 +144,7 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> an
             DiagnosticCode::E0804FieldNotEditable,
             format!("{message} (field: `{path}`)"),
             id,
-        )
-        .into());
+        ));
     }
 
     Ok(())

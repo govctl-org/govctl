@@ -16,7 +16,7 @@ pub use nested::{
 use self::mutate::{apply_set, ensure_value_path_mut};
 use self::render::render_field;
 use super::ArtifactType;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
 #[derive(Clone, Copy)]
@@ -83,9 +83,9 @@ pub fn get_simple_field(
     doc: &Value,
     field: &str,
     id: &str,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     let Some(spec) = simple_field_spec(artifact, field) else {
-        return Err(unknown_field_error(artifact, field, id).into());
+        return Err(unknown_field_error(artifact, field, id));
     };
     render_field(doc, spec, id)
 }
@@ -97,9 +97,9 @@ pub fn set_simple_field(
     field: &str,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let Some(spec) = simple_set_spec(artifact, field) else {
-        return Err(unknown_field_error(artifact, field, id).into());
+        return Err(unknown_field_error(artifact, field, id));
     };
     apply_set(doc, spec, value, id)
 }
@@ -114,13 +114,13 @@ pub fn set_simple_field_forced(
     field: &str,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     if let Some(spec) = simple_set_spec(artifact, field) {
         return apply_set(doc, spec, value, id);
     }
 
     let Some(spec) = simple_field_spec(artifact, field) else {
-        return Err(unknown_field_error(artifact, field, id).into());
+        return Err(unknown_field_error(artifact, field, id));
     };
     let slot = ensure_value_path_mut(doc, spec.path, id)?;
     *slot = Value::String(value.to_string());
@@ -180,9 +180,9 @@ fn remove_indices_preserving_order<F>(
     items: &mut Vec<Value>,
     indices: Vec<usize>,
     mut removed_text: F,
-) -> anyhow::Result<Vec<String>>
+) -> DiagnosticResult<Vec<String>>
 where
-    F: FnMut(&Value) -> anyhow::Result<String>,
+    F: FnMut(&Value) -> DiagnosticResult<String>,
 {
     let mut sorted = indices;
     sorted.sort_unstable_by(|a, b| b.cmp(a));

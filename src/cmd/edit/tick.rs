@@ -7,7 +7,7 @@ use super::{
     unexpected_edit_state,
 };
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 
 const TICK_UNSUPPORTED_ARTIFACT_ERROR: &str = "Tick only works for work items and ADRs: {id}";
@@ -23,7 +23,7 @@ pub fn tick_item(
     opts: &MatchOptions,
     status: crate::TickStatus,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Vec<Diagnostic>> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Tick))?;
     let artifact = plan.artifact;
     let target = plan
@@ -41,8 +41,7 @@ pub fn tick_item(
                 DiagnosticCode::E0820InvalidFieldValue,
                 ADR_TICK_STATUS_ERROR,
                 id,
-            )
-            .into());
+            ));
         }
         (ArtifactType::WorkItem, crate::TickStatus::Done) => "done",
         (ArtifactType::WorkItem, crate::TickStatus::Pending) => "pending",
@@ -52,16 +51,14 @@ pub fn tick_item(
                 DiagnosticCode::E0820InvalidFieldValue,
                 WORK_TICK_STATUS_ERROR,
                 id,
-            )
-            .into());
+            ));
         }
         (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard, _) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0813SupersedeNotSupported,
                 TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
                 id,
-            )
-            .into());
+            ));
         }
     };
     let ticked_text = match artifact {

@@ -4,7 +4,7 @@ use super::traverse::{default_value_for_node, descend_mut, ensure_node_path_mut}
 use crate::cmd::edit::ArtifactType;
 use crate::cmd::edit::path::{self, FieldPath};
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb};
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
 struct NestedListTarget<'a> {
@@ -19,7 +19,7 @@ pub fn add_nested_list_value(
     fp: &FieldPath,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     if fp.has_terminal_index() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0817PathTypeMismatch,
@@ -28,8 +28,7 @@ pub fn add_nested_list_value(
                 fp
             ),
             id,
-        )
-        .into());
+        ));
     }
 
     let NestedListTarget {
@@ -60,8 +59,7 @@ pub fn add_nested_list_value(
                         fp
                     ),
                     id,
-                )
-                .into());
+                ));
             };
             let duplicate = list.iter().any(|item| {
                 item.as_object()
@@ -86,8 +84,7 @@ pub fn add_nested_list_value(
                     fp
                 ),
                 id,
-            )
-            .into());
+            ));
         }
     }
     Ok(())
@@ -99,9 +96,9 @@ pub fn remove_nested_list_values<F>(
     fp: &FieldPath,
     id: &str,
     resolve: F,
-) -> anyhow::Result<Vec<String>>
+) -> DiagnosticResult<Vec<String>>
 where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
+    F: FnOnce(&[&str]) -> DiagnosticResult<Vec<usize>>,
 {
     let NestedListTarget {
         node,
@@ -131,7 +128,7 @@ where
                 .collect::<Result<Vec<_>, _>>()?
         }
         NestedNodeKind::List => {
-            return Err(type_mismatch("Expected scalar or object items in list", id).into());
+            return Err(type_mismatch("Expected scalar or object items in list", id));
         }
     };
 
@@ -158,9 +155,9 @@ pub fn tick_nested_list_item_with_matcher<F>(
     id: &str,
     new_status: &str,
     resolve: F,
-) -> anyhow::Result<String>
+) -> DiagnosticResult<String>
 where
-    F: FnOnce(&[&str]) -> anyhow::Result<Vec<usize>>,
+    F: FnOnce(&[&str]) -> DiagnosticResult<Vec<usize>>,
 {
     let NestedListTarget {
         node,
@@ -168,7 +165,10 @@ where
         list,
     } = nested_list_target_mut(artifact, doc, fp, Verb::Tick, id, None)?;
     if item_rule.kind != NestedNodeKind::Object {
-        return Err(type_mismatch("Expected object entries in tickable list", id).into());
+        return Err(type_mismatch(
+            "Expected object entries in tickable list",
+            id,
+        ));
     }
     let text_key = node
         .text_key
@@ -202,7 +202,7 @@ pub fn set_nested_list_item(
     index: i32,
     value: &str,
     id: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let NestedListTarget {
         item_rule, list, ..
     } = nested_list_target_mut(artifact, doc, fp, Verb::Set, id, None)?;
@@ -216,9 +216,8 @@ pub fn set_nested_list_item(
             DiagnosticCode::E0817PathTypeMismatch,
             format!("Cannot set object path '{}[{}]' directly", fp, index),
             id,
-        )
-        .into()),
-        NestedNodeKind::List => Err(type_mismatch("Expected scalar list item", id).into()),
+        )),
+        NestedNodeKind::List => Err(type_mismatch("Expected scalar list item", id)),
     }
 }
 
@@ -229,7 +228,7 @@ fn nested_list_target_mut<'a>(
     verb: Verb,
     id: &str,
     not_list_message: Option<String>,
-) -> anyhow::Result<NestedListTarget<'a>> {
+) -> DiagnosticResult<NestedListTarget<'a>> {
     let root_name = &fp.segments[0].name;
     let rule = resolve_nested_root(artifact, root_name, id)?;
     let root_value = ensure_node_path_mut(doc, rule.content_path, rule.node, id)?;
@@ -244,7 +243,7 @@ fn nested_list_target_mut<'a>(
     if node.kind != NestedNodeKind::List {
         let message =
             not_list_message.unwrap_or_else(|| "Expected array for list field".to_string());
-        return Err(type_mismatch(&message, id).into());
+        return Err(type_mismatch(&message, id));
     }
     let item_rule = node
         .item

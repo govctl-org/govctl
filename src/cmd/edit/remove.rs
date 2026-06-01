@@ -10,7 +10,7 @@ use super::{
     unexpected_edit_state,
 };
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::write::WriteOp;
 
 pub fn remove_from_field(
@@ -19,7 +19,7 @@ pub fn remove_from_field(
     field: &str,
     opts: &MatchOptions,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Vec<Diagnostic>> {
     let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Remove))?;
     let artifact = plan.artifact;
     let target = plan

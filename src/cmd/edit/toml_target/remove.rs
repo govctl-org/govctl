@@ -5,6 +5,7 @@ use crate::cmd::edit::matching::MatchOptions;
 use crate::cmd::edit::target_doc::{notify_removed, remove_target_from_doc};
 use crate::cmd::edit::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
 use crate::config::Config;
+use crate::diagnostic::DiagnosticResult;
 use crate::write::WriteOp;
 
 pub(in crate::cmd::edit) fn remove_toml_field<A>(
@@ -14,7 +15,7 @@ pub(in crate::cmd::edit) fn remove_toml_field<A>(
     opts: &MatchOptions,
     op: WriteOp,
     artifact: ArtifactType,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,

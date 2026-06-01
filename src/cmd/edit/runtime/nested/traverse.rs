@@ -1,7 +1,7 @@
 use super::super::type_mismatch;
 use crate::cmd::edit::path::{self, PathSegment};
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb};
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
 pub(super) fn descend_get<'a>(
@@ -11,7 +11,7 @@ pub(super) fn descend_get<'a>(
     rest: &[PathSegment],
     verb: Verb,
     id: &str,
-) -> anyhow::Result<(&'static NestedNodeRule, Option<&'a Value>)> {
+) -> DiagnosticResult<(&'static NestedNodeRule, Option<&'a Value>)> {
     let root_path = format_segment(root_segment);
     let (node, value) = apply_optional_index(
         node,
@@ -31,15 +31,14 @@ fn descend_get_rest<'a>(
     verb: Verb,
     id: &str,
     current_path: &str,
-) -> anyhow::Result<(&'static NestedNodeRule, Option<&'a Value>)> {
+) -> DiagnosticResult<(&'static NestedNodeRule, Option<&'a Value>)> {
     if rest.is_empty() {
         if !node.verbs.contains(&verb.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0817PathTypeMismatch,
                 format!("Path does not support verb '{}'", verb.as_str()),
                 id,
-            )
-            .into());
+            ));
         }
         return Ok((node, value));
     }
@@ -51,8 +50,7 @@ fn descend_get_rest<'a>(
                 append_segment(current_path, seg)
             ),
             id,
-        )
-        .into());
+        ));
     }
     let child = node
         .fields
@@ -85,7 +83,7 @@ fn apply_optional_index<'a>(
     id: &str,
     path: &str,
     field_name: &str,
-) -> anyhow::Result<(&'static NestedNodeRule, Option<&'a Value>)> {
+) -> DiagnosticResult<(&'static NestedNodeRule, Option<&'a Value>)> {
     let Some(index) = index else {
         return Ok((node, value));
     };
@@ -93,8 +91,7 @@ fn apply_optional_index<'a>(
         return Err(type_mismatch(
             &format!("Cannot index into non-list field '{field_name}' at '{path}'"),
             id,
-        )
-        .into());
+        ));
     }
     let item = node
         .item
@@ -113,7 +110,7 @@ pub(super) fn descend_mut<'a>(
     rest: &[PathSegment],
     verb: Verb,
     id: &str,
-) -> anyhow::Result<(&'static NestedNodeRule, &'a mut Value)> {
+) -> DiagnosticResult<(&'static NestedNodeRule, &'a mut Value)> {
     let root_path = format_segment(root_segment);
     let (node, value) = apply_optional_index_mut(
         node,
@@ -133,15 +130,14 @@ fn descend_mut_rest<'a>(
     verb: Verb,
     id: &str,
     current_path: &str,
-) -> anyhow::Result<(&'static NestedNodeRule, &'a mut Value)> {
+) -> DiagnosticResult<(&'static NestedNodeRule, &'a mut Value)> {
     if rest.is_empty() {
         if !node.verbs.contains(&verb.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0817PathTypeMismatch,
                 format!("Path does not support verb '{}'", verb.as_str()),
                 id,
-            )
-            .into());
+            ));
         }
         return Ok((node, value));
     }
@@ -153,8 +149,7 @@ fn descend_mut_rest<'a>(
                 append_segment(current_path, seg)
             ),
             id,
-        )
-        .into());
+        ));
     }
     let child = node
         .fields
@@ -192,7 +187,7 @@ fn apply_optional_index_mut<'a>(
     id: &str,
     path: &str,
     field_name: &str,
-) -> anyhow::Result<(&'static NestedNodeRule, &'a mut Value)> {
+) -> DiagnosticResult<(&'static NestedNodeRule, &'a mut Value)> {
     let Some(index) = index else {
         return Ok((node, value));
     };
@@ -200,8 +195,7 @@ fn apply_optional_index_mut<'a>(
         return Err(type_mismatch(
             &format!("Cannot index into non-list field '{field_name}' at '{path}'"),
             id,
-        )
-        .into());
+        ));
     }
     let arr = value
         .as_array_mut()
@@ -218,7 +212,7 @@ pub(super) fn ensure_node_path_mut<'a>(
     path: &[&str],
     node: &'static NestedNodeRule,
     id: &str,
-) -> anyhow::Result<&'a mut Value> {
+) -> DiagnosticResult<&'a mut Value> {
     let mut cur = doc;
     for (idx, key) in path.iter().enumerate() {
         let is_leaf = idx + 1 == path.len();

@@ -4,7 +4,7 @@ use super::super::{
 };
 use super::{JsonTargetKind, SetJsonRequest, require_simple_field};
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::{WriteOp, today};
 
 pub(in crate::cmd::edit) fn set_rfc_field<A>(
@@ -14,7 +14,7 @@ pub(in crate::cmd::edit) fn set_rfc_field<A>(
     value: &str,
     op: WriteOp,
     allow_forced_simple_set: bool,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: DocAdapter<Data = crate::model::RfcSpec>,
 {
@@ -40,7 +40,7 @@ pub(in crate::cmd::edit) fn set_clause_field<A>(
     value: &str,
     op: WriteOp,
     allow_forced_simple_set: bool,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: DocAdapter<Data = crate::model::ClauseSpec>,
 {
@@ -56,11 +56,11 @@ where
     set_json_field::<A, _>(request, |_| Ok(()))
 }
 
-fn set_json_field<A, F>(request: SetJsonRequest<'_>, touch_loaded_data: F) -> anyhow::Result<()>
+fn set_json_field<A, F>(request: SetJsonRequest<'_>, touch_loaded_data: F) -> DiagnosticResult<()>
 where
     A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
-    F: FnOnce(&mut A::Data) -> anyhow::Result<()>,
+    F: FnOnce(&mut A::Data) -> DiagnosticResult<()>,
 {
     let SetJsonRequest {
         config,
@@ -84,7 +84,7 @@ where
             if !allow_forced_simple_set
                 && !edit_runtime::supports_simple_set_field(kind.artifact(), simple)
             {
-                return Err(kind.unknown_field_error(simple).into());
+                return Err(kind.unknown_field_error(simple));
             }
             crate::validate::validate_field(config, id, kind.validate_kind(), simple, value)?;
             if allow_forced_simple_set {
@@ -123,8 +123,7 @@ where
                 DiagnosticCode::E0817PathTypeMismatch,
                 kind.unsupported_set_path_error(),
                 id,
-            )
-            .into());
+            ));
         }
     }
     loaded.data = deserialize_edit_doc(doc, id)?;

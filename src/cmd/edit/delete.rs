@@ -1,7 +1,7 @@
 use super::adapter::{DocAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter};
 use crate::cmd::confirmation::confirm_destructive_action;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::ui;
 use crate::write::{WriteOp, delete_file};
 use std::path::Path;
@@ -11,7 +11,7 @@ pub fn delete_clause(
     clause_id: &str,
     force: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Vec<Diagnostic>> {
     use crate::model::RfcStatus;
 
     let parts: Vec<&str> = clause_id.split(':').collect();
@@ -20,8 +20,7 @@ pub fn delete_clause(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
             "Invalid clause ID format. Expected RFC-NNNN:C-NAME",
             clause_id,
-        )
-        .into());
+        ));
     }
 
     let rfc_id = parts[0];
@@ -37,8 +36,7 @@ pub fn delete_clause(
                 rfc_loaded.data.status.as_ref()
             ),
             clause_id,
-        )
-        .into());
+        ));
     }
 
     let clause_path = crate::load::find_clause_toml(config, clause_id).ok_or_else(|| {
@@ -89,8 +87,7 @@ pub fn delete_clause(
                 clause_name, rfc_id
             ),
             clause_id,
-        )
-        .into());
+        ));
     }
 
     crate::write::write_rfc(
@@ -114,7 +111,7 @@ pub fn delete_work_item(
     id: &str,
     force: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Vec<Diagnostic>> {
     use crate::load::load_project_with_warnings;
     use crate::model::WorkItemStatus;
 
@@ -131,8 +128,7 @@ pub fn delete_work_item(
                 wi.govctl.id
             ),
             id,
-        )
-        .into());
+        ));
     }
 
     let load_result = match load_project_with_warnings(config) {
@@ -175,8 +171,7 @@ pub fn delete_work_item(
                 referenced_by.join(", ")
             ),
             id,
-        )
-        .into());
+        ));
     }
 
     proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op)
@@ -188,7 +183,7 @@ fn proceed_with_deletion(
     id: &str,
     force: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Vec<Diagnostic>> {
     if !confirm_destructive_action(
         force,
         op,

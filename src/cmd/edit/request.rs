@@ -1,6 +1,6 @@
 use super::matching::MatchOptionsOwned;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::ChangelogCategory;
 use crate::write::WriteOp;
 use std::io::Read;
@@ -36,7 +36,7 @@ pub struct EditFieldRequest<'a> {
     pub op: WriteOp,
 }
 
-pub(super) fn read_stdin() -> anyhow::Result<String> {
+pub(super) fn read_stdin() -> DiagnosticResult<String> {
     let mut buffer = String::new();
     std::io::stdin()
         .read_to_string(&mut buffer)
@@ -47,7 +47,7 @@ pub(super) fn read_stdin() -> anyhow::Result<String> {
 pub(super) fn resolve_owned_value(
     value: Option<&Option<String>>,
     stdin: bool,
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     match (value, stdin) {
         (Some(Some(v)), false) => Ok(v.clone()),
         (Some(None), true) => read_stdin(),
@@ -55,19 +55,16 @@ pub(super) fn resolve_owned_value(
             DiagnosticCode::E0801MissingRequiredArg,
             "Provide a value or use --stdin",
             "input",
-        )
-        .into()),
+        )),
         (Some(Some(_)), true) => Err(Diagnostic::new(
             DiagnosticCode::E0802ConflictingArgs,
             "Cannot use both value and --stdin",
             "input",
-        )
-        .into()),
+        )),
         (None, _) => Err(Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             "Provide a value or use --stdin",
             "input",
-        )
-        .into()),
+        )),
     }
 }

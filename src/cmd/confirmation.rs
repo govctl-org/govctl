@@ -1,4 +1,4 @@
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::ui;
 use crate::write::WriteOp;
 use std::io::{self, Write};
@@ -8,7 +8,7 @@ pub(crate) fn confirm_destructive_action(
     op: WriteOp,
     prompt: &str,
     cancellation_message: &str,
-) -> anyhow::Result<bool> {
+) -> DiagnosticResult<bool> {
     if force || op.is_preview() {
         return Ok(true);
     }

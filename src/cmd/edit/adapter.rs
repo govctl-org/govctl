@@ -4,7 +4,7 @@
 //! artifacts used by the command-specific edit execution path.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::load::{find_clause_json, find_clause_toml, find_rfc_json, find_rfc_toml};
 use crate::model::{AdrEntry, ClauseSpec, GuardEntry, RfcSpec, WorkItemEntry};
 use crate::parse::{
@@ -24,7 +24,7 @@ fn display_scope_for_dir(config: &Config, path: PathBuf) -> String {
     config.display_path(&path).display().to_string()
 }
 
-fn load_rfc_with<F>(config: &Config, id: &str, finder: F) -> anyhow::Result<JsonDoc<RfcSpec>>
+fn load_rfc_with<F>(config: &Config, id: &str, finder: F) -> DiagnosticResult<JsonDoc<RfcSpec>>
 where
     F: Fn(&Config, &str) -> Option<PathBuf>,
 {
@@ -40,13 +40,13 @@ where
     Ok(JsonDoc { path, data })
 }
 
-fn write_rfc_doc(config: &Config, doc: &JsonDoc<RfcSpec>, op: WriteOp) -> anyhow::Result<()> {
-    Ok(write_rfc(
+fn write_rfc_doc(config: &Config, doc: &JsonDoc<RfcSpec>, op: WriteOp) -> DiagnosticResult<()> {
+    write_rfc(
         &doc.path,
         &doc.data,
         op,
         Some(&config.display_path(&doc.path)),
-    )?)
+    )
 }
 
 fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
@@ -56,7 +56,11 @@ fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
         .unwrap_or_else(|| config.rfc_dir())
 }
 
-fn load_clause_with<F>(config: &Config, id: &str, finder: F) -> anyhow::Result<JsonDoc<ClauseSpec>>
+fn load_clause_with<F>(
+    config: &Config,
+    id: &str,
+    finder: F,
+) -> DiagnosticResult<JsonDoc<ClauseSpec>>
 where
     F: Fn(&Config, &str) -> Option<PathBuf>,
 {
@@ -72,13 +76,17 @@ where
     Ok(JsonDoc { path, data })
 }
 
-fn write_clause_doc(config: &Config, doc: &JsonDoc<ClauseSpec>, op: WriteOp) -> anyhow::Result<()> {
-    Ok(write_clause(
+fn write_clause_doc(
+    config: &Config,
+    doc: &JsonDoc<ClauseSpec>,
+    op: WriteOp,
+) -> DiagnosticResult<()> {
+    write_clause(
         &doc.path,
         &doc.data,
         op,
         Some(&config.display_path(&doc.path)),
-    )?)
+    )
 }
 
 fn load_toml_entry<T, Load, LoadError, Matches>(
@@ -113,16 +121,16 @@ where
 pub trait DocAdapter {
     type Data;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>>;
-    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()>;
+    fn load(config: &Config, id: &str) -> DiagnosticResult<JsonDoc<Self::Data>>;
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> DiagnosticResult<()>;
 }
 
 /// Adapter contract for TOML-backed artifacts.
 pub trait TomlAdapter {
     type Entry;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry>;
-    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()>;
+    fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry>;
+    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()>;
 }
 
 /// RFC JSON adapter.
@@ -131,11 +139,11 @@ pub struct RfcJsonAdapter;
 impl DocAdapter for RfcJsonAdapter {
     type Data = RfcSpec;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+    fn load(config: &Config, id: &str) -> DiagnosticResult<JsonDoc<Self::Data>> {
         load_rfc_with(config, id, find_rfc_json)
     }
 
-    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> DiagnosticResult<()> {
         write_rfc_doc(config, doc, op)
     }
 }
@@ -145,11 +153,11 @@ pub struct RfcTomlAdapter;
 impl DocAdapter for RfcTomlAdapter {
     type Data = RfcSpec;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+    fn load(config: &Config, id: &str) -> DiagnosticResult<JsonDoc<Self::Data>> {
         load_rfc_with(config, id, find_rfc_toml)
     }
 
-    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> DiagnosticResult<()> {
         write_rfc_doc(config, doc, op)
     }
 }
@@ -160,11 +168,11 @@ pub struct ClauseJsonAdapter;
 impl DocAdapter for ClauseJsonAdapter {
     type Data = ClauseSpec;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+    fn load(config: &Config, id: &str) -> DiagnosticResult<JsonDoc<Self::Data>> {
         load_clause_with(config, id, find_clause_json)
     }
 
-    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> DiagnosticResult<()> {
         write_clause_doc(config, doc, op)
     }
 }
@@ -174,11 +182,11 @@ pub struct ClauseTomlAdapter;
 impl DocAdapter for ClauseTomlAdapter {
     type Data = ClauseSpec;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<JsonDoc<Self::Data>> {
+    fn load(config: &Config, id: &str) -> DiagnosticResult<JsonDoc<Self::Data>> {
         load_clause_with(config, id, find_clause_toml)
     }
 
-    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> anyhow::Result<()> {
+    fn write(config: &Config, doc: &JsonDoc<Self::Data>, op: WriteOp) -> DiagnosticResult<()> {
         write_clause_doc(config, doc, op)
     }
 }
@@ -189,8 +197,8 @@ pub struct AdrTomlAdapter;
 impl TomlAdapter for AdrTomlAdapter {
     type Entry = AdrEntry;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        Ok(load_toml_entry(
+    fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry> {
+        load_toml_entry(
             config,
             id,
             config.adr_dir(),
@@ -198,17 +206,16 @@ impl TomlAdapter for AdrTomlAdapter {
             |entry, id| entry.spec.govctl.id == id,
             DiagnosticCode::E0302AdrNotFound,
             "ADR",
-        )?)
+        )
     }
 
-    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
+    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()> {
         write_adr(
             &entry.path,
             &entry.spec,
             op,
             Some(&config.display_path(&entry.path)),
         )
-        .map_err(Into::into)
     }
 }
 
@@ -218,8 +225,8 @@ pub struct WorkTomlAdapter;
 impl TomlAdapter for WorkTomlAdapter {
     type Entry = WorkItemEntry;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        Ok(load_toml_entry(
+    fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry> {
+        load_toml_entry(
             config,
             id,
             config.work_dir(),
@@ -227,17 +234,16 @@ impl TomlAdapter for WorkTomlAdapter {
             |entry, id| entry.spec.govctl.id == id || entry.path.to_string_lossy().contains(id),
             DiagnosticCode::E0402WorkNotFound,
             "Work item",
-        )?)
+        )
     }
 
-    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
+    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()> {
         write_work_item(
             &entry.path,
             &entry.spec,
             op,
             Some(&config.display_path(&entry.path)),
         )
-        .map_err(Into::into)
     }
 }
 
@@ -247,8 +253,8 @@ pub struct GuardTomlAdapter;
 impl TomlAdapter for GuardTomlAdapter {
     type Entry = GuardEntry;
 
-    fn load(config: &Config, id: &str) -> anyhow::Result<Self::Entry> {
-        Ok(load_toml_entry(
+    fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry> {
+        load_toml_entry(
             config,
             id,
             config.guard_dir(),
@@ -256,16 +262,15 @@ impl TomlAdapter for GuardTomlAdapter {
             |entry, id| entry.spec.govctl.id == id,
             DiagnosticCode::E1002GuardNotFound,
             "Guard",
-        )?)
+        )
     }
 
-    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> anyhow::Result<()> {
+    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()> {
         write_guard(
             &entry.path,
             &entry.spec,
             op,
             Some(&config.display_path(&entry.path)),
         )
-        .map_err(Into::into)
     }
 }

@@ -7,7 +7,7 @@ use crate::cmd::edit::{
     ArtifactType, deserialize_edit_doc, serialize_edit_doc, unexpected_edit_state,
 };
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 
 pub(in crate::cmd::edit) fn set_toml_field<A>(
@@ -18,7 +18,7 @@ pub(in crate::cmd::edit) fn set_toml_field<A>(
     op: WriteOp,
     artifact: ArtifactType,
     allow_forced_simple_set: bool,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,
@@ -43,7 +43,7 @@ pub(in crate::cmd::edit) fn set_work_toml_field(
     value: &str,
     op: WriteOp,
     allow_forced_simple_set: bool,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let mut entry = WorkTomlAdapter::load(config, id)?;
     apply_toml_target_to_entry(
         &mut entry,
@@ -67,7 +67,7 @@ fn apply_toml_target_to_entry<E>(
     artifact: ArtifactType,
     allow_forced_simple_set: bool,
     id: &str,
-) -> anyhow::Result<()>
+) -> DiagnosticResult<()>
 where
     E: TomlEditableEntry,
 {
@@ -122,8 +122,7 @@ where
                 DiagnosticCode::E0817PathTypeMismatch,
                 "set requires a scalar field or indexed scalar list item",
                 id,
-            )
-            .into());
+            ));
         }
     }
     *entry.spec_mut() = deserialize_edit_doc(doc, id)?;
