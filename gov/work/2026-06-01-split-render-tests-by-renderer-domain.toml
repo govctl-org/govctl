@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-151"
+title = "Split render tests by renderer domain"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Move the monolithic render test module into domain-focused test files for link expansion, ADR rendering, and work item rendering. Keep render behavior, fixture construction, and legacy inline history rendering assertions unchanged while reducing single-file test bulk."
+
+[[content.acceptance_criteria]]
+text = "render tests are split into domain-focused modules without a same-name file and directory coexisting"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "link, ADR, work item, and legacy inline history rendering assertions remain covered"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "render tests, cargo test, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
