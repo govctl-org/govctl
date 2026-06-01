@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-152"
 title = "Move edit action tests into router test module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move edit action unit tests out of the production command-router edit action module and into the existing command-router test tree. Preserve action parsing behavior, selector validation coverage, and explicit empty-string cases while reducing production module test bulk."
 
 [[content.acceptance_criteria]]
 text = "edit action tests live in the existing command_router test module instead of the production edit_action module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "action count, stdin inference, selector rejection, tick, remove, and explicit empty-string coverage remains unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "command router tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

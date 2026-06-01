@@ -6,6 +6,7 @@ use crate::{ClauseCommand, Commands, EditActionArgs, TickStatus, WorkTickStatus}
 use clap::{Parser, error::ErrorKind};
 
 mod clause_edit;
+mod edit_action;
 mod help;
 mod lock_disposition;
 mod routing;
