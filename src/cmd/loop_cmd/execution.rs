@@ -97,7 +97,7 @@ fn state_for_run(
     if let Some(state) = find_matching_non_terminal_loop(config, root_work_items)? {
         Ok(state)
     } else {
-        let loop_id = generated_loop_id(root_work_items);
+        let loop_id = generated_loop_id(config)?;
         Ok(build_loop_plan_from_config(config, &loop_id, root_work_items)?.state)
     }
 }

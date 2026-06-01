@@ -64,6 +64,23 @@ impl CommandPlan {
                         work_items: work_items.clone(),
                     })))
                 }
+                crate::LoopCommand::Replan { id } => {
+                    Ok(global(Op::Builtin(BuiltinOp::LoopReplan {
+                        loop_id: id.clone(),
+                    })))
+                }
+                crate::LoopCommand::Add { id, work_items } => {
+                    Ok(global(Op::Builtin(BuiltinOp::LoopAdd {
+                        loop_id: id.clone(),
+                        work_items: work_items.clone(),
+                    })))
+                }
+                crate::LoopCommand::Remove { id, work_items } => {
+                    Ok(global(Op::Builtin(BuiltinOp::LoopRemove {
+                        loop_id: id.clone(),
+                        work_items: work_items.clone(),
+                    })))
+                }
                 crate::LoopCommand::Run {
                     id,
                     work_items,

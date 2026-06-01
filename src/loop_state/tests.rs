@@ -47,7 +47,7 @@ fn test_loop_state_round_trips_state_toml() -> anyhow::Result<()> {
     let dependency = "WI-2026-05-31-002";
 
     let state = LoopState::new(
-        "loop-1",
+        "LOOP-2026-05-31-001",
         vec![root.to_string()],
         vec![root.to_string(), dependency.to_string()],
         deps(&[(root, &[dependency]), (dependency, &[])]),
@@ -55,17 +55,19 @@ fn test_loop_state_round_trips_state_toml() -> anyhow::Result<()> {
 
     write_loop_state_with_op(&config, &state, WriteOp::Execute)?;
 
-    let state_path = temp_dir.path().join(".govctl/loops/loop-1/state.toml");
+    let state_path = temp_dir
+        .path()
+        .join(".govctl/loops/LOOP-2026-05-31-001/state.toml");
     assert!(state_path.exists(), "state path: {}", state_path.display());
     assert!(
         !temp_dir
             .path()
-            .join("gov/.govctl/loops/loop-1/state.toml")
+            .join("gov/.govctl/loops/LOOP-2026-05-31-001/state.toml")
             .exists(),
         "loop state must be outside governed artifacts"
     );
 
-    let loaded = load_loop_state(&config, "loop-1")?;
+    let loaded = load_loop_state(&config, "LOOP-2026-05-31-001")?;
     assert_eq!(loaded, state);
     assert_eq!(loaded.loop_meta.state, LoopLifecycleState::Pending);
     assert_eq!(loaded.items[root].status, LoopWorkItemStatus::Pending);
@@ -79,7 +81,7 @@ fn test_loop_state_updates_lifecycle_item_status_and_round_count() -> anyhow::Re
     let config = test_config(temp_dir.path());
     let work_id = "WI-2026-05-31-001";
     let mut state = LoopState::new(
-        "loop-2",
+        "LOOP-2026-05-31-002",
         vec![work_id.to_string()],
         vec![work_id.to_string()],
         deps(&[(work_id, &[])]),
@@ -90,7 +92,7 @@ fn test_loop_state_updates_lifecycle_item_status_and_round_count() -> anyhow::Re
     assert_eq!(state.increment_round_count(work_id)?, 1);
     write_loop_state_with_op(&config, &state, WriteOp::Execute)?;
 
-    let loaded = load_loop_state(&config, "loop-2")?;
+    let loaded = load_loop_state(&config, "LOOP-2026-05-31-002")?;
     assert_eq!(loaded.loop_meta.state, LoopLifecycleState::Active);
     assert_eq!(loaded.items[work_id].status, LoopWorkItemStatus::Active);
     assert_eq!(loaded.items[work_id].round_count, 1);
@@ -101,7 +103,7 @@ fn test_loop_state_updates_lifecycle_item_status_and_round_count() -> anyhow::Re
 fn test_loop_state_rejects_invalid_lifecycle_transition() -> anyhow::Result<()> {
     let work_id = "WI-2026-05-31-001";
     let mut state = LoopState::new(
-        "loop-3",
+        "LOOP-2026-05-31-003",
         vec![work_id.to_string()],
         vec![work_id.to_string()],
         deps(&[(work_id, &[])]),
@@ -129,6 +131,14 @@ fn test_loop_state_rejects_invalid_lifecycle_transition() -> anyhow::Result<()> 
 fn test_loop_state_rejects_invalid_ids_and_contract_violations() -> anyhow::Result<()> {
     let work_id = "WI-2026-05-31-001";
 
+    validate_loop_id("LOOP-2026-05-31-001")?;
+
+    assert_err_contains(
+        validate_loop_id("loop-plain-text"),
+        "LOOP-YYYY-MM-DD-NNN",
+        "plain-text loop IDs must be rejected",
+    )?;
+
     assert_err_contains(
         LoopState::new(
             "../bad",
@@ -142,7 +152,7 @@ fn test_loop_state_rejects_invalid_ids_and_contract_violations() -> anyhow::Resu
 
     assert_err_contains(
         LoopState::new(
-            "loop-4",
+            "LOOP-2026-05-31-004",
             vec![work_id.to_string()],
             vec![work_id.to_string()],
             BTreeMap::new(),
@@ -153,7 +163,7 @@ fn test_loop_state_rejects_invalid_ids_and_contract_violations() -> anyhow::Resu
 
     assert_err_contains(
         LoopState::new(
-            "loop-5",
+            "LOOP-2026-05-31-005",
             vec![work_id.to_string()],
             vec![work_id.to_string(), work_id.to_string()],
             deps(&[(work_id, &[])]),

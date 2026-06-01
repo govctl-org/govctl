@@ -25,6 +25,15 @@ pub fn build_loop_plan_from_config(
     build_loop_plan(loop_id, root_work_items, &work_items)
 }
 
+pub fn replan_loop_state_from_config(
+    config: &Config,
+    existing: &LoopState,
+    root_work_items: &[String],
+) -> anyhow::Result<LoopPlan> {
+    let work_items = crate::parse::load_work_items(config)?;
+    replan_loop_state(existing, root_work_items, &work_items)
+}
+
 pub fn build_loop_plan(
     loop_id: &str,
     root_work_items: &[String],
@@ -87,6 +96,24 @@ pub fn build_loop_plan(
 }
 
 pub fn propagate_blocked_outcomes(state: &mut LoopState) -> anyhow::Result<Vec<String>> {
+    propagate_blocked_outcomes_inner(state, false)
+}
+
+pub fn recompute_scope_mutation_blocked_outcomes(
+    state: &mut LoopState,
+) -> anyhow::Result<Vec<String>> {
+    for item in state.items.values_mut() {
+        if item.status == LoopWorkItemStatus::Blocked {
+            item.status = LoopWorkItemStatus::Pending;
+        }
+    }
+    propagate_blocked_outcomes_inner(state, true)
+}
+
+fn propagate_blocked_outcomes_inner(
+    state: &mut LoopState,
+    preserve_done: bool,
+) -> anyhow::Result<Vec<String>> {
     state.validate(Some(&state.loop_meta.id))?;
     let mut blocked = Vec::new();
 
@@ -100,6 +127,9 @@ pub fn propagate_blocked_outcomes(state: &mut LoopState) -> anyhow::Result<Vec<S
                     | LoopWorkItemStatus::Blocked
                     | LoopWorkItemStatus::Cancelled
             ) {
+                continue;
+            }
+            if preserve_done && state.items[work_id.as_str()].status == LoopWorkItemStatus::Done {
                 continue;
             }
 
@@ -131,6 +161,45 @@ pub fn propagate_blocked_outcomes(state: &mut LoopState) -> anyhow::Result<Vec<S
     }
 
     Ok(blocked)
+}
+
+pub fn replan_loop_state(
+    existing: &LoopState,
+    root_work_items: &[String],
+    work_items: &[WorkItemEntry],
+) -> anyhow::Result<LoopPlan> {
+    let mut plan = build_loop_plan(&existing.loop_meta.id, root_work_items, work_items)?;
+    plan.state.loop_meta.state = existing.loop_meta.state;
+
+    for (work_id, item) in &mut plan.state.items {
+        let Some(previous) = existing.items.get(work_id) else {
+            continue;
+        };
+        item.round_count = previous.round_count;
+        item.status = preserved_replan_status(previous.status, item.status);
+    }
+
+    recompute_scope_mutation_blocked_outcomes(&mut plan.state)?;
+    Ok(plan)
+}
+
+fn preserved_replan_status(
+    previous: LoopWorkItemStatus,
+    current: LoopWorkItemStatus,
+) -> LoopWorkItemStatus {
+    match (previous, current) {
+        (LoopWorkItemStatus::Done, _) => LoopWorkItemStatus::Done,
+        (LoopWorkItemStatus::Failed, _) => LoopWorkItemStatus::Failed,
+        (LoopWorkItemStatus::Cancelled, _) => LoopWorkItemStatus::Cancelled,
+        (_, LoopWorkItemStatus::Cancelled) => LoopWorkItemStatus::Cancelled,
+        (_, LoopWorkItemStatus::Done) => LoopWorkItemStatus::Done,
+        (LoopWorkItemStatus::Blocked, _) => LoopWorkItemStatus::Pending,
+        (LoopWorkItemStatus::Active, LoopWorkItemStatus::Pending) => LoopWorkItemStatus::Active,
+        (LoopWorkItemStatus::Pending, LoopWorkItemStatus::Pending) => LoopWorkItemStatus::Pending,
+        (_, LoopWorkItemStatus::Blocked) => LoopWorkItemStatus::Blocked,
+        (_, LoopWorkItemStatus::Active) => current,
+        (_, LoopWorkItemStatus::Failed) => current,
+    }
 }
 
 pub fn topological_order_for_state(state: &LoopState) -> anyhow::Result<Vec<String>> {
@@ -314,7 +383,7 @@ mod tests {
     fn test_loop_plan_single_work_item() -> Result<(), Box<dyn std::error::Error>> {
         let root = "WI-2026-05-31-010";
         let plan = build_loop_plan(
-            "loop-single",
+            "LOOP-2026-05-31-010",
             &ids(&[root]),
             &[work_item(root, WorkItemStatus::Queue, &[])],
         )?;
@@ -335,7 +404,7 @@ mod tests {
         let dependency_b = "WI-2026-05-31-012";
         let transitive = "WI-2026-05-31-013";
         let plan = build_loop_plan(
-            "loop-multi",
+            "LOOP-2026-05-31-014",
             &ids(&[root]),
             &[
                 work_item(root, WorkItemStatus::Queue, &[dependency_a, dependency_b]),
@@ -368,7 +437,7 @@ mod tests {
 
         assert_diagnostic_code(
             build_loop_plan(
-                "loop-missing",
+                "LOOP-2026-05-31-020",
                 &ids(&[root]),
                 &[work_item(root, WorkItemStatus::Queue, &[missing])],
             ),
@@ -384,7 +453,7 @@ mod tests {
 
         assert_diagnostic_code(
             build_loop_plan(
-                "loop-cycle",
+                "LOOP-2026-05-31-030",
                 &ids(&[first]),
                 &[
                     work_item(first, WorkItemStatus::Queue, &[second]),
@@ -402,7 +471,7 @@ mod tests {
         let middle = "WI-2026-05-31-042";
         let failed = "WI-2026-05-31-041";
         let mut plan = build_loop_plan(
-            "loop-blocked",
+            "LOOP-2026-05-31-043",
             &ids(&[root]),
             &[
                 work_item(root, WorkItemStatus::Queue, &[middle]),
@@ -428,7 +497,7 @@ mod tests {
         let done_middle = "WI-2026-05-31-051";
         let cancelled = "WI-2026-05-31-050";
         let plan = build_loop_plan(
-            "loop-cancelled",
+            "LOOP-2026-05-31-052",
             &ids(&[root]),
             &[
                 work_item(root, WorkItemStatus::Queue, &[done_middle]),
@@ -447,6 +516,74 @@ mod tests {
         );
         assert_eq!(plan.state.items[root].status, LoopWorkItemStatus::Blocked);
         assert_eq!(plan.topological_order, ids(&[cancelled, done_middle, root]));
+        Ok(())
+    }
+
+    #[test]
+    fn test_replan_uses_current_cancelled_work_status_over_previous_pending_loop_state()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let root = "WI-2026-05-31-062";
+        let dependency = "WI-2026-05-31-061";
+        let plan = build_loop_plan(
+            "LOOP-2026-05-31-062",
+            &ids(&[root]),
+            &[
+                work_item(root, WorkItemStatus::Queue, &[dependency]),
+                work_item(dependency, WorkItemStatus::Queue, &[]),
+            ],
+        )?;
+
+        let replanned = replan_loop_state(
+            &plan.state,
+            &ids(&[root]),
+            &[
+                work_item(root, WorkItemStatus::Queue, &[dependency]),
+                work_item(dependency, WorkItemStatus::Cancelled, &[]),
+            ],
+        )?;
+
+        assert_eq!(
+            replanned.state.items[dependency].status,
+            LoopWorkItemStatus::Cancelled
+        );
+        assert_eq!(
+            replanned.state.items[root].status,
+            LoopWorkItemStatus::Blocked
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn test_replan_preserves_previous_terminal_loop_state_over_current_work_status()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let root = "WI-2026-05-31-072";
+        let failed_dependency = "WI-2026-05-31-071";
+        let mut plan = build_loop_plan(
+            "LOOP-2026-05-31-072",
+            &ids(&[root]),
+            &[
+                work_item(root, WorkItemStatus::Queue, &[failed_dependency]),
+                work_item(failed_dependency, WorkItemStatus::Queue, &[]),
+            ],
+        )?;
+        plan.state
+            .set_item_status(failed_dependency, LoopWorkItemStatus::Failed)?;
+        plan.state.set_item_status(root, LoopWorkItemStatus::Done)?;
+
+        let replanned = replan_loop_state(
+            &plan.state,
+            &ids(&[root]),
+            &[
+                work_item(root, WorkItemStatus::Cancelled, &[failed_dependency]),
+                work_item(failed_dependency, WorkItemStatus::Done, &[]),
+            ],
+        )?;
+
+        assert_eq!(
+            replanned.state.items[failed_dependency].status,
+            LoopWorkItemStatus::Failed
+        );
+        assert_eq!(replanned.state.items[root].status, LoopWorkItemStatus::Done);
         Ok(())
     }
 }

@@ -306,7 +306,7 @@ Loop execution state is local runtime data under `.govctl/loops/<loop-id>/`, not
 
 ```toml
 [loop]
-id = "loop-example"
+id = "LOOP-2026-01-17-001"
 state = "active"
 root_work_items = ["WI-2026-01-17-002"]
 work_items = ["WI-2026-01-17-001", "WI-2026-01-17-002"]
@@ -325,7 +325,7 @@ round_count = 1
 ```
 
 ```toml
-loop_id = "loop-example"
+loop_id = "LOOP-2026-01-17-001"
 work_item_id = "WI-2026-01-17-002"
 round_number = 1
 max_rounds = 2

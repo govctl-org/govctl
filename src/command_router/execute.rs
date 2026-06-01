@@ -133,6 +133,15 @@ fn execute_builtin(
             loop_id,
             work_items,
         } => cmd::loop_cmd::resume(config, loop_id.as_deref(), work_items),
+        BuiltinOp::LoopReplan { loop_id } => cmd::loop_cmd::replan(config, loop_id, op),
+        BuiltinOp::LoopAdd {
+            loop_id,
+            work_items,
+        } => cmd::loop_cmd::add_roots(config, loop_id, work_items, op),
+        BuiltinOp::LoopRemove {
+            loop_id,
+            work_items,
+        } => cmd::loop_cmd::remove_roots(config, loop_id, work_items, op),
         BuiltinOp::LoopRun {
             loop_id,
             work_items,

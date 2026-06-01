@@ -180,6 +180,7 @@ COMMON WORKFLOW:
     2. `govctl loop run WI-2026-04-06-001` to execute one round for ready work
     3. `govctl loop show <LOOP-ID>` to inspect persisted state
     4. `govctl loop resume WI-2026-04-06-001` to find matching non-terminal state
+    5. `govctl loop add --id <LOOP-ID> WI-2026-04-06-002` to expand scope
 
 NOTES:
     - Loop state is local under `.govctl/loops/<LOOP-ID>/state.toml`.
@@ -423,7 +424,7 @@ pub(crate) enum LoopCommand {
     #[command(after_help = "\
 EXAMPLES:
     govctl loop start WI-2026-04-06-001
-    govctl loop start --id loop-demo WI-2026-04-06-001 WI-2026-04-06-002
+    govctl loop start --id LOOP-2026-04-06-001 WI-2026-04-06-001 WI-2026-04-06-002
 
 NOTES:
     - Resolves transitive `depends_on` dependencies before writing state.
@@ -440,7 +441,7 @@ NOTES:
     /// Show persisted loop state
     #[command(after_help = "\
 EXAMPLES:
-    govctl loop show loop-demo
+    govctl loop show LOOP-2026-04-06-001
 ")]
     Show {
         /// Loop ID
@@ -449,7 +450,7 @@ EXAMPLES:
     /// Resume or inspect an existing non-terminal loop
     #[command(after_help = "\
 EXAMPLES:
-    govctl loop resume --id loop-demo
+    govctl loop resume --id LOOP-2026-04-06-001
     govctl loop resume WI-2026-04-06-001
 
 NOTES:
@@ -464,12 +465,59 @@ NOTES:
         #[arg(value_name = "WI-ID")]
         work_items: Vec<String>,
     },
+    /// Recompute dependency closure for the current root set
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop replan --id LOOP-2026-04-06-001
+
+NOTES:
+    - Re-reads current work item files and preserves applicable loop item state.
+")]
+    Replan {
+        /// Explicit loop ID
+        #[arg(long)]
+        id: String,
+    },
+    /// Add root work items to an existing loop and replan
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop add --id LOOP-2026-04-06-001 WI-2026-04-06-002
+
+NOTES:
+    - Added roots become part of loop.root_work_items.
+    - The resolved dependency closure is recomputed after adding roots.
+")]
+    Add {
+        /// Explicit loop ID
+        #[arg(long)]
+        id: String,
+        /// Root work item IDs to add
+        #[arg(required = true, value_name = "WI-ID")]
+        work_items: Vec<String>,
+    },
+    /// Remove root work items from an existing loop and replan
+    #[command(after_help = "\
+EXAMPLES:
+    govctl loop remove --id LOOP-2026-04-06-001 WI-2026-04-06-002
+
+NOTES:
+    - Removed roots leave current loop state when no other root depends on them.
+    - The resolved dependency closure is recomputed after removing roots.
+")]
+    Remove {
+        /// Explicit loop ID
+        #[arg(long)]
+        id: String,
+        /// Root work item IDs to remove
+        #[arg(required = true, value_name = "WI-ID")]
+        work_items: Vec<String>,
+    },
     /// Run one execution round for each currently executable work item
     #[command(after_help = "\
 EXAMPLES:
     govctl loop run WI-2026-04-06-001
-    govctl loop run --id loop-demo
-    govctl loop run --id loop-demo --max-rounds 2 WI-2026-04-06-001
+    govctl loop run --id LOOP-2026-04-06-001
+    govctl loop run --id LOOP-2026-04-06-001 --max-rounds 2 WI-2026-04-06-001
 
 NOTES:
     - Starts a new loop when no matching non-terminal loop exists.

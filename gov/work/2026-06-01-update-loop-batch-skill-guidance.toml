@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-083"
 title = "Update loop batch skill guidance"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = [
     "RFC-0006",
     "ADR-0044",

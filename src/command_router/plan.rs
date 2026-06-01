@@ -92,6 +92,17 @@ pub enum BuiltinOp {
         loop_id: Option<String>,
         work_items: Vec<String>,
     },
+    LoopReplan {
+        loop_id: String,
+    },
+    LoopAdd {
+        loop_id: String,
+        work_items: Vec<String>,
+    },
+    LoopRemove {
+        loop_id: String,
+        work_items: Vec<String>,
+    },
     LoopRun {
         loop_id: Option<String>,
         work_items: Vec<String>,
