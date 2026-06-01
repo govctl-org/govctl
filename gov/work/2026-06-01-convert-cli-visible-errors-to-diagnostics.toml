@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-166"
+title = "Convert CLI-visible errors to diagnostics"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Audit and migrate CLI-visible error paths so expected user-facing failures are represented as structured Diagnostic values with stable codes and scope context. Keep the work focused on error boundaries and helpers; do not redesign command behavior or broaden unrelated refactors."
+notes = ["Audit found non-Diagnostic CLI-visible exits in command_router/execute scope helpers, write/render filesystem helpers, config/tag config parsing, guard creation/show output, changelog write/read paths, and several serialization conversions. Treat anyhow::Result as a temporary transport boundary only; expected user-facing failures should originate as Diagnostic."]
+
+[[content.acceptance_criteria]]
+text = "direct command-router invariant failures return Diagnostic errors instead of uncoded anyhow messages"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "file I/O and serialization helpers used by CLI commands map failures to Diagnostic values"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "remaining intentional anyhow boundaries are documented as transport or test-only, not user-facing errors"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test and govctl check pass after the diagnostic error cleanup"
+status = "pending"
+category = "chore"
