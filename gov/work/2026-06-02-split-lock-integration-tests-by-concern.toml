@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-028"
+title = "Split lock integration tests by concern"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Split the large lock integration test file into basic lock behavior and concurrent write behavior files. Preserve test names, helper behavior, and lock semantics while keeping shared setup helpers in tests/test_lock.rs."
+
+[[content.acceptance_criteria]]
+text = "lock integration tests are grouped into basic and concurrency files"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "lock integration tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
