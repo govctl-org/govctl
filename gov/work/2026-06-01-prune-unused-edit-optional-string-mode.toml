@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-113"
+title = "Prune unused edit optional-string mode"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["ADR-0031"]
+
+[content]
+description = "Remove unused optional_string edit set-mode support from the internal edit-ops SSOT schema, generator, and runtime enums. Keep current edit behavior unchanged because no gov/schema/edit-ops.json rule instantiates this mode."
+
+[[content.acceptance_criteria]]
+text = "edit command tests, cargo clippy, and govctl check pass"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "unused optional_string set-mode schema, generator, and runtime branches are removed"
+status = "pending"
+category = "removed"
