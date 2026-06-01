@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-02-042"
 title = "Share command TOML diagnostic printer"
-status = "queue"
+status = "done"
 created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
 
 [content]
 description = "Extract command-facing TOML pretty-printing with Diagnostic mapping into the existing cmd::output helper for guard show and editable TOML get output. Preserve stdout TOML plus diagnostic codes, messages, and scopes without moving command-specific rendering ownership."
 
 [[content.acceptance_criteria]]
 text = "command TOML output paths use one shared diagnostic pretty-printer helper"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "TOML serialization diagnostics and stdout output remain stable"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "guard/edit TOML tests, clippy, full tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
