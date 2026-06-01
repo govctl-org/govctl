@@ -164,21 +164,18 @@ pub(super) fn remove_target_from_doc(
             origin,
             ..
         } => match origin {
-            edit_engine::TargetOrigin::Simple => {
-                let simple = path
-                    .as_simple()
-                    .ok_or_else(|| unexpected_edit_state(id, "simple list target expected"))?;
-                let removed = remove_simple_values_from_doc(artifact, doc, simple, id, opts)?
-                    .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
-                Ok((simple.to_string(), removed))
-            }
+            edit_engine::TargetOrigin::Simple => remove_simple_target_values(
+                artifact,
+                doc,
+                id,
+                path,
+                opts,
+                "simple list target expected",
+            ),
             edit_engine::TargetOrigin::Nested => {
-                let display = path.to_string();
-                let removed =
-                    edit_runtime::remove_nested_list_values(artifact, doc, path, id, |items| {
-                        resolve_match_indices(id, &display, items, opts, MatchUse::Remove)
-                    })?;
-                Ok((display, removed))
+                remove_nested_target_values(artifact, doc, id, path, |display, items| {
+                    resolve_match_indices(id, display, items, opts, MatchUse::Remove)
+                })
             }
         },
         edit_engine::ResolvedTarget::IndexedItem {
@@ -188,31 +185,58 @@ pub(super) fn remove_target_from_doc(
             ..
         } => match origin {
             edit_engine::TargetOrigin::Simple => {
-                let simple = container_path.as_simple().ok_or_else(|| {
-                    unexpected_edit_state(id, "simple indexed container expected")
-                })?;
                 let exact = MatchOptions::at_index(*index);
-                let removed = remove_simple_values_from_doc(artifact, doc, simple, id, &exact)?
-                    .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
-                Ok((simple.to_string(), removed))
-            }
-            edit_engine::TargetOrigin::Nested => {
-                let display = container_path.to_string();
-                let removed = edit_runtime::remove_nested_list_values(
+                remove_simple_target_values(
                     artifact,
                     doc,
-                    container_path,
                     id,
-                    |items| {
-                        let resolved = super::path::resolve_index(*index, items.len())?;
-                        Ok(vec![resolved])
-                    },
-                )?;
-                Ok((display, removed))
+                    container_path,
+                    &exact,
+                    "simple indexed container expected",
+                )
+            }
+            edit_engine::TargetOrigin::Nested => {
+                remove_nested_target_values(artifact, doc, id, container_path, |_display, items| {
+                    let resolved = super::path::resolve_index(*index, items.len())?;
+                    Ok(vec![resolved])
+                })
             }
         },
         _ => Err(cannot_remove_from_field_error(id, &target.display_path())),
     }
+}
+
+fn remove_simple_target_values(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    id: &str,
+    path: &super::path::FieldPath,
+    opts: &MatchOptions,
+    unexpected_message: &str,
+) -> DiagnosticResult<(String, Vec<String>)> {
+    let simple = path
+        .as_simple()
+        .ok_or_else(|| unexpected_edit_state(id, unexpected_message))?;
+    let removed = remove_simple_values_from_doc(artifact, doc, simple, id, opts)?
+        .ok_or_else(|| cannot_remove_from_field_error(id, simple))?;
+    Ok((simple.to_string(), removed))
+}
+
+fn remove_nested_target_values<F>(
+    artifact: ArtifactType,
+    doc: &mut serde_json::Value,
+    id: &str,
+    path: &super::path::FieldPath,
+    resolve: F,
+) -> DiagnosticResult<(String, Vec<String>)>
+where
+    F: FnOnce(&str, &[&str]) -> DiagnosticResult<Vec<usize>>,
+{
+    let display = path.to_string();
+    let removed = edit_runtime::remove_nested_list_values(artifact, doc, path, id, |items| {
+        resolve(&display, items)
+    })?;
+    Ok((display, removed))
 }
 
 fn remove_simple_values_from_doc(
