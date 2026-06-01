@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-034"
+title = "Clarify loop internal work ID naming"
+status = "active"
+created = "2026-06-02"
+started = "2026-06-02"
+
+[content]
+description = "Normalize loop implementation variable and field names so internal code distinguishes canonical loop work scope from the unsupported work_items field alias. Preserve the user-facing work field, the wi shorthand alias, persisted loop schema, and command behavior."
+
+[[content.acceptance_criteria]]
+text = "loop command routing and execution internals use work_id/work_ids naming instead of work_items field-style names"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop work scope mutation still documents and accepts work plus wi while rejecting work_items/root_work_items"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted loop tests, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
