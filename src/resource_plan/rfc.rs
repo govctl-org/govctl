@@ -7,11 +7,12 @@ use crate::cmd;
 use crate::command_router::{
     CommandPlan, CreateOp, EditExtras, LifecycleOp, plan_create, plan_lifecycle,
 };
+use crate::diagnostic::DiagnosticResult;
 use crate::write::BumpLevel;
 use crate::{ListTarget, RfcCommand};
 
 impl ToPlan for RfcCommand {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan> {
+    fn to_plan(&self) -> DiagnosticResult<CommandPlan> {
         match self {
             RfcCommand::List(args) => Ok(compile_common_list(ListTarget::Rfc, args)),
             RfcCommand::Get(args) => compile_common_get(args),

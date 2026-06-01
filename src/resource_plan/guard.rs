@@ -6,10 +6,11 @@ use crate::cmd;
 use crate::command_router::{
     CommandPlan, CreateOp, EditExtras, add_action, plan_create, plan_edit,
 };
+use crate::diagnostic::DiagnosticResult;
 use crate::{GuardAddArgs, GuardCommand, ListTarget};
 
 impl ToPlan for GuardCommand {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan> {
+    fn to_plan(&self) -> DiagnosticResult<CommandPlan> {
         match self {
             GuardCommand::List(args) => Ok(compile_common_list(ListTarget::Guard, args)),
             GuardCommand::Get(args) => compile_common_get(args),

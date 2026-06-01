@@ -14,10 +14,7 @@ fn test_owned_edit_action_requires_exactly_one_action() -> Result<(), Box<dyn st
         all: false,
     });
     assert!(result.is_err(), "missing action should fail");
-    let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
+    let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0801MissingRequiredArg);
     Ok(())
 }
@@ -61,10 +58,7 @@ fn test_owned_edit_action_rejects_tick_all_combination() -> Result<(), Box<dyn s
         all: true,
     });
     assert!(result.is_err(), "tick with --all should fail");
-    let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
+    let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
     Ok(())
 }
@@ -83,10 +77,7 @@ fn test_owned_edit_action_rejects_multiple_actions() -> Result<(), Box<dyn std::
         all: false,
     });
     assert!(result.is_err(), "multiple actions should fail");
-    let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
+    let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
     Ok(())
 }
@@ -167,10 +158,7 @@ fn test_owned_edit_action_rejects_selector_flags_for_set() -> Result<(), Box<dyn
         all: false,
     });
     assert!(result.is_err(), "set with --at should fail");
-    let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
+    let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
     Ok(())
 }
@@ -189,10 +177,7 @@ fn test_owned_edit_action_rejects_stdin_for_remove() -> Result<(), Box<dyn std::
         all: false,
     });
     assert!(result.is_err(), "remove with --stdin should fail");
-    let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
+    let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
     Ok(())
 }

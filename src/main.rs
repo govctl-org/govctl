@@ -33,7 +33,7 @@ mod tui;
 pub(crate) use cli::*;
 
 use config::Config;
-use diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel};
+use diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticResult, Diagnostics};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -69,17 +69,14 @@ fn main() -> ExitCode {
                 ExitCode::SUCCESS
             }
         }
-        Err(e) => {
-            let diag = e.downcast_ref::<Diagnostic>().cloned().unwrap_or_else(|| {
-                Diagnostic::new(DiagnosticCode::E0903UnexpectedError, e.to_string(), "main")
-            });
+        Err(diag) => {
             ui::diagnostic(&diag);
             ExitCode::FAILURE
         }
     }
 }
 
-fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
+fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
     let config = Config::load(cli.config.as_deref())?;
     let op = write::WriteOp::from_dry_run(cli.dry_run);
 

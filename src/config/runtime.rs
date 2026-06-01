@@ -1,6 +1,5 @@
 use super::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use anyhow::Result;
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use std::path::{Path, PathBuf};
 
 impl Config {
@@ -8,7 +7,7 @@ impl Config {
     ///
     /// All relative paths in the config are resolved relative to the project root
     /// (the parent of gov/config.toml), not the current working directory.
-    pub fn load(path: Option<&Path>) -> Result<Self> {
+    pub fn load(path: Option<&Path>) -> DiagnosticResult<Self> {
         let config_path = path
             .map(PathBuf::from)
             .or_else(Self::find_config)

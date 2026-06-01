@@ -5,8 +5,7 @@
 //! (e.g. on process exit or when the command finishes).
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use anyhow::Result;
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use fs2::FileExt;
 use std::fs::OpenOptions;
 use std::io;
@@ -28,7 +27,7 @@ pub struct GovLockGuard {
 /// Returns a guard that releases the lock when dropped.
 ///
 /// Fails with an actionable error if the lock cannot be acquired within the timeout.
-pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
+pub fn acquire_gov_lock(config: &Config) -> DiagnosticResult<GovLockGuard> {
     let gov_root = config.gov_root.as_path();
     let lock_path = gov_root.join(LOCK_FILE_NAME);
     let timeout_secs = config.concurrency.lock_timeout_secs;
@@ -42,8 +41,7 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
                 gov_root.display()
             ),
             gov_root.display().to_string(),
-        )
-        .into());
+        ));
     }
 
     let file = OpenOptions::new()
@@ -71,8 +69,7 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
                             timeout_secs
                         ),
                         lock_path.display().to_string(),
-                    )
-                    .into());
+                    ));
                 }
                 thread::sleep(poll);
             }
@@ -81,8 +78,7 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
                     "acquire lock",
                     e,
                     lock_path.display().to_string(),
-                )
-                .into());
+                ));
             }
         }
     }

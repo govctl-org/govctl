@@ -1,20 +1,19 @@
 use super::{OwnedEditAction, OwnedMatchOptions};
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::{EditActionArgs, TickStatus};
 
-fn conflicting_edit_flag_error(action: &str, flag: &str) -> anyhow::Error {
+fn conflicting_edit_flag_error(action: &str, flag: &str) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0802ConflictingArgs,
         format!("Cannot use {flag} with --{action}"),
         "edit action",
     )
-    .into()
 }
 
 fn reject_selector_flags_for_value_action(
     action: &str,
     args: &EditActionArgs,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     if args.at.is_some() {
         return Err(conflicting_edit_flag_error(action, "--at"));
     }
@@ -30,7 +29,7 @@ fn reject_selector_flags_for_value_action(
     Ok(())
 }
 
-pub(crate) fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEditAction> {
+pub(crate) fn owned_edit_action(args: &EditActionArgs) -> DiagnosticResult<OwnedEditAction> {
     let action_count = usize::from(args.set.is_some())
         + usize::from(args.add.is_some())
         + usize::from(args.tick.is_some())
@@ -49,8 +48,7 @@ pub(crate) fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEd
             DiagnosticCode::E0801MissingRequiredArg,
             "exactly one edit action is required",
             "edit action",
-        )
-        .into());
+        ));
     }
 
     if action_count > 1 {
@@ -58,8 +56,7 @@ pub(crate) fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEd
             DiagnosticCode::E0802ConflictingArgs,
             "Cannot use multiple edit actions at once",
             "edit action",
-        )
-        .into());
+        ));
     }
 
     if let Some(value) = &args.set {
@@ -85,8 +82,7 @@ pub(crate) fn owned_edit_action(args: &EditActionArgs) -> anyhow::Result<OwnedEd
                 DiagnosticCode::E0802ConflictingArgs,
                 "Cannot use --all with --tick; tick requires a single target",
                 "edit action",
-            )
-            .into());
+            ));
         }
         return Ok(OwnedEditAction::Tick {
             match_opts: OwnedMatchOptions {

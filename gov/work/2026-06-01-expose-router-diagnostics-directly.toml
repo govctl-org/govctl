@@ -3,25 +3,29 @@
 [govctl]
 id = "WI-2026-06-01-170"
 title = "Expose router diagnostics directly"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Convert the command routing and process entry boundary toward explicit Diagnostic/Diagnostics propagation so command planning and selected router execution adapters no longer type-erase diagnostics through anyhow. Keep this slice focused on router/main-facing boundaries; do not rewrite unrelated command internals."
-notes = ["Scope guard: this slice targets router/main-facing type erasure. If converting all command internals becomes large, record remaining DiagnosticResult migrations as follow-up rather than broadening this commit uncontrollably."]
+notes = [
+    "Scope guard: this slice targets router/main-facing type erasure. If converting all command internals becomes large, record remaining DiagnosticResult migrations as follow-up rather than broadening this commit uncontrollably.",
+    "Implemented DiagnosticResult at the main/router/resource-plan boundary; only router-level legacy_command still accepts anyhow::Result so unconverted command internals can be migrated in later focused slices.",
+]
 
 [[content.acceptance_criteria]]
 text = "command planning and router entry functions use DiagnosticResult where their error values are Diagnostics"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "main error handling no longer depends on downcasting anyhow errors for converted router paths"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "router, CLI, loop, move, verify, full tests, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

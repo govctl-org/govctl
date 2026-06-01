@@ -1,7 +1,7 @@
 use super::{OwnedEditAction, execute};
 use crate::cmd;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
 use crate::{FinalizeStatus, ListTarget, OutputFormat, RenderTarget};
@@ -244,7 +244,7 @@ impl CommandPlan {
         }
     }
 
-    pub fn execute(&self, config: &Config, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+    pub fn execute(&self, config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
         execute::execute_plan(self, config, op)
     }
 }

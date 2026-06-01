@@ -1,8 +1,9 @@
 use super::{BuiltinOp, CommandPlan, Op, global};
 use crate::Commands;
+use crate::diagnostic::DiagnosticResult;
 
 impl CommandPlan {
-    pub fn from_parsed(cmd: &Commands, global_dry_run: bool) -> anyhow::Result<Self> {
+    pub fn from_parsed(cmd: &Commands, global_dry_run: bool) -> DiagnosticResult<Self> {
         use crate::resource_plan::ToPlan;
 
         match cmd {

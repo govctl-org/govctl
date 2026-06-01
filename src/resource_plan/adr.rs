@@ -7,10 +7,11 @@ use crate::cmd;
 use crate::command_router::{
     CommandPlan, CreateOp, EditExtras, LifecycleOp, plan_create, plan_lifecycle,
 };
+use crate::diagnostic::DiagnosticResult;
 use crate::{AdrAddArgs, AdrCommand, AdrEditArgs, AdrTickArgs, CommonIdArgs, ListTarget};
 
 impl ToPlan for AdrCommand {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan> {
+    fn to_plan(&self) -> DiagnosticResult<CommandPlan> {
         match self {
             AdrCommand::List(args) => Ok(compile_common_list(ListTarget::Adr, args)),
             AdrCommand::Get(args) => compile_common_get(args),

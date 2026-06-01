@@ -61,10 +61,7 @@ fn test_from_clause_command_requires_path_for_canonical_flags()
 
     let result = cmd.to_plan();
     assert!(result.is_err(), "missing path should fail");
-    let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
+    let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0801MissingRequiredArg);
     Ok(())
 }
@@ -132,10 +129,7 @@ fn test_from_clause_command_rejects_mixed_canonical_and_legacy_edit_flags()
 
     let result = cmd.to_plan();
     assert!(result.is_err(), "mixed modes should fail");
-    let err = result.err().ok_or("expected Err")?;
-    let diag = err
-        .downcast_ref::<Diagnostic>()
-        .ok_or("expected Diagnostic")?;
+    let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
     Ok(())
 }

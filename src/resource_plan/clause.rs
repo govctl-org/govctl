@@ -6,11 +6,11 @@ use crate::cmd;
 use crate::command_router::{
     EditExtras, EditOp, Op, artifact, owned_edit_action, plan_create, plan_edit,
 };
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::{ClauseCommand, EditActionArgs, ListTarget};
 
 impl ToPlan for ClauseCommand {
-    fn to_plan(&self) -> anyhow::Result<crate::command_router::CommandPlan> {
+    fn to_plan(&self) -> DiagnosticResult<crate::command_router::CommandPlan> {
         match self {
             ClauseCommand::List(args) => Ok(compile_common_list(ListTarget::Clause, args)),
             ClauseCommand::Get(args) => compile_common_get(args),
@@ -57,16 +57,14 @@ impl ToPlan for ClauseCommand {
                         DiagnosticCode::E0802ConflictingArgs,
                         "Cannot mix canonical clause edit flags with legacy clause edit flags",
                         id,
-                    )
-                    .into());
+                    ));
                 }
                 if !uses_canonical && (at.is_some() || *exact || *regex || *all || path.is_some()) {
                     return Err(Diagnostic::new(
                         DiagnosticCode::E0802ConflictingArgs,
                         "Legacy clause edit does not support canonical path or matcher flags",
                         id,
-                    )
-                    .into());
+                    ));
                 }
                 if uses_canonical {
                     let path = path.clone().ok_or_else(|| {

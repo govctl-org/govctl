@@ -4,6 +4,7 @@ use crate::command_router::{
     plan_artifact_render, plan_delete, plan_edit, plan_get, plan_lifecycle, plan_list, plan_show,
     remove_action, set_action, tick_action,
 };
+use crate::diagnostic::DiagnosticResult;
 use crate::{
     CommonAddArgs, CommonDeleteArgs, CommonDeprecateArgs, CommonEditArgs, CommonGetArgs,
     CommonListArgs, CommonRemoveArgs, CommonRenderArgs, CommonSetArgs, CommonShowArgs,
@@ -17,7 +18,7 @@ mod rfc;
 mod work;
 
 pub(crate) trait ToPlan {
-    fn to_plan(&self) -> anyhow::Result<CommandPlan>;
+    fn to_plan(&self) -> DiagnosticResult<CommandPlan>;
 }
 
 fn compile_common_list(target: ListTarget, args: &CommonListArgs) -> CommandPlan {
@@ -35,7 +36,7 @@ fn compile_common_list(target: ListTarget, args: &CommonListArgs) -> CommandPlan
     plan_list(target, args.filter.clone(), args.limit, args.output, tags)
 }
 
-fn compile_common_get(args: &CommonGetArgs) -> anyhow::Result<CommandPlan> {
+fn compile_common_get(args: &CommonGetArgs) -> DiagnosticResult<CommandPlan> {
     plan_get(&args.id, args.field.as_deref())
 }
 
@@ -43,7 +44,7 @@ fn compile_common_show(artifact: cmd::edit::ArtifactType, args: &CommonShowArgs)
     plan_show(artifact, &args.id, args.output)
 }
 
-fn compile_common_edit(args: &CommonEditArgs, extras: EditExtras) -> anyhow::Result<CommandPlan> {
+fn compile_common_edit(args: &CommonEditArgs, extras: EditExtras) -> DiagnosticResult<CommandPlan> {
     plan_edit(
         &args.id,
         &args.path,
@@ -52,7 +53,7 @@ fn compile_common_edit(args: &CommonEditArgs, extras: EditExtras) -> anyhow::Res
     )
 }
 
-fn compile_common_set(args: &CommonSetArgs) -> anyhow::Result<CommandPlan> {
+fn compile_common_set(args: &CommonSetArgs) -> DiagnosticResult<CommandPlan> {
     plan_edit(
         &args.id,
         &args.field,
@@ -61,7 +62,7 @@ fn compile_common_set(args: &CommonSetArgs) -> anyhow::Result<CommandPlan> {
     )
 }
 
-fn compile_common_add(args: &CommonAddArgs, extras: EditExtras) -> anyhow::Result<CommandPlan> {
+fn compile_common_add(args: &CommonAddArgs, extras: EditExtras) -> DiagnosticResult<CommandPlan> {
     plan_edit(
         &args.id,
         &args.field,
@@ -70,7 +71,7 @@ fn compile_common_add(args: &CommonAddArgs, extras: EditExtras) -> anyhow::Resul
     )
 }
 
-fn compile_common_remove(args: &CommonRemoveArgs) -> anyhow::Result<CommandPlan> {
+fn compile_common_remove(args: &CommonRemoveArgs) -> DiagnosticResult<CommandPlan> {
     plan_edit(
         &args.id,
         &args.field,
@@ -88,7 +89,7 @@ fn compile_common_remove(args: &CommonRemoveArgs) -> anyhow::Result<CommandPlan>
 fn compile_common_tick(
     args: &CommonTickSelectorArgs,
     status: TickStatus,
-) -> anyhow::Result<CommandPlan> {
+) -> DiagnosticResult<CommandPlan> {
     plan_edit(
         &args.id,
         &args.field,
@@ -109,21 +110,21 @@ fn compile_common_tick(
 fn compile_common_render(
     artifact: cmd::edit::ArtifactType,
     args: &CommonRenderArgs,
-) -> anyhow::Result<CommandPlan> {
+) -> DiagnosticResult<CommandPlan> {
     Ok(plan_artifact_render(artifact, &args.id, args.dry_run))
 }
 
 fn compile_common_delete(
     artifact: cmd::edit::ArtifactType,
     args: &CommonDeleteArgs,
-) -> anyhow::Result<CommandPlan> {
+) -> DiagnosticResult<CommandPlan> {
     Ok(plan_delete(artifact, &args.id, args.force))
 }
 
 fn compile_common_deprecate(
     artifact: cmd::edit::ArtifactType,
     args: &CommonDeprecateArgs,
-) -> anyhow::Result<CommandPlan> {
+) -> DiagnosticResult<CommandPlan> {
     Ok(plan_lifecycle(
         artifact,
         &args.id,
@@ -134,7 +135,7 @@ fn compile_common_deprecate(
 fn compile_common_supersede(
     artifact: cmd::edit::ArtifactType,
     args: &CommonSupersedeArgs,
-) -> anyhow::Result<CommandPlan> {
+) -> DiagnosticResult<CommandPlan> {
     Ok(plan_lifecycle(
         artifact,
         &args.id,

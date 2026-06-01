@@ -10,6 +10,7 @@ mod parsed;
 mod plan;
 
 use crate::cmd;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::{ListTarget, OutputFormat};
 
 pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
@@ -29,8 +30,9 @@ fn artifact_scope(artifact: cmd::edit::ArtifactType, id: &str) -> Scope {
     }
 }
 
-fn resolve_scope(id: &str, field: Option<&str>) -> anyhow::Result<Scope> {
-    let plan = cmd::edit::engine::plan_request(id, field)?;
+fn resolve_scope(id: &str, field: Option<&str>) -> DiagnosticResult<Scope> {
+    let plan = cmd::edit::engine::plan_request(id, field)
+        .map_err(|err| Diagnostic::from_anyhow(err, id))?;
     Ok(match plan.target {
         Some(target) => Scope::Target {
             artifact: plan.artifact,
@@ -53,7 +55,7 @@ pub(crate) fn artifact(artifact: cmd::edit::ArtifactType, id: &str, op: Op) -> C
     CommandPlan::new(artifact_scope(artifact, id), op)
 }
 
-fn target(id: &str, field: Option<&str>, op: Op) -> anyhow::Result<CommandPlan> {
+fn target(id: &str, field: Option<&str>, op: Op) -> DiagnosticResult<CommandPlan> {
     Ok(CommandPlan::new(resolve_scope(id, field)?, op))
 }
 
@@ -83,7 +85,7 @@ pub(crate) fn plan_list(
     )
 }
 
-pub(crate) fn plan_get(id: &str, field: Option<&str>) -> anyhow::Result<CommandPlan> {
+pub(crate) fn plan_get(id: &str, field: Option<&str>) -> DiagnosticResult<CommandPlan> {
     target(id, field, Op::Get)
 }
 
@@ -100,7 +102,7 @@ pub(crate) fn plan_edit(
     field: &str,
     action: OwnedEditAction,
     extras: EditExtras,
-) -> anyhow::Result<CommandPlan> {
+) -> DiagnosticResult<CommandPlan> {
     target(id, Some(field), edit_op_with_extras(action, extras))
 }
 

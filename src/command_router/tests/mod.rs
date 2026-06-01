@@ -1,5 +1,5 @@
 use super::*;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::DiagnosticCode;
 use crate::model::WorkItemStatus;
 use crate::resource_plan::ToPlan;
 use crate::{ClauseCommand, Commands, EditActionArgs, TickStatus, WorkTickStatus};
