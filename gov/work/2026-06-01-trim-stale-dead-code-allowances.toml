@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-086"
+title = "Trim stale dead-code allowances"
+status = "queue"
+created = "2026-06-01"
+depends_on = ["WI-2026-06-01-085"]
+
+[content]
+description = "Review source-level #[allow(dead_code)] annotations and stale compatibility comments in modules touched by recent cleanup. Remove or narrow suppressions when current code and tests prove they are unnecessary; keep compatibility comments that still explain live legacy behavior."
+
+[[content.acceptance_criteria]]
+text = "Unnecessary dead-code suppressions or stale cleanup comments are removed or narrowed"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Retained compatibility comments name the current behavior they protect"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo clippy --all-targets -- -D warnings and govctl check pass"
+status = "pending"
+category = "chore"

@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-084"
+title = "Extract loop integration test helpers"
+status = "queue"
+created = "2026-06-01"
+
+[content]
+description = "Reduce tests/test_loop.rs fixture noise by moving reusable temp project, work item, schema, and command helpers into a common loop test helper module. Keep test cases and CLI behavior unchanged; do not split assertions into many tiny files unless the helper extraction reveals a clear boundary."
+
+[[content.acceptance_criteria]]
+text = "Reusable loop integration test setup, command, schema, and work item helpers live outside tests/test_loop.rs"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "tests/test_loop.rs remains behavior-focused with no duplicated temp project helper logic"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "loop integration tests and govctl check pass"
+status = "pending"
+category = "chore"

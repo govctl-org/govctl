@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-085"
+title = "Extract loop scope command helpers"
+status = "queue"
+created = "2026-06-01"
+refs = ["RFC-0006"]
+
+[content]
+description = "Reduce src/cmd/loop_cmd/mod.rs size by moving replan/add/remove scope mutation handling into a focused loop command helper module. Preserve start/show/resume/run behavior, command routing, diagnostics, and help output; avoid adding additional fine-grained loop command modules."
+
+[[content.acceptance_criteria]]
+text = "Loop replan/add/remove handling lives in one cohesive helper module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Loop start/show/resume/run behavior, command routing, diagnostics, and help snapshots remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop command tests and govctl check pass"
+status = "pending"
+category = "chore"
