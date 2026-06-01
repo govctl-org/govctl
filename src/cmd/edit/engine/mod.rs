@@ -2,7 +2,8 @@
 //!
 //! This module introduces a single entry point for edit request planning:
 //! `parse -> canonicalize -> resolve -> classify`.
-//! Execution is still delegated to legacy handlers during migration.
+//! Execution remains in the command-specific handlers; this module owns the
+//! shared canonical planning step.
 
 mod resolve;
 
@@ -72,10 +73,10 @@ pub fn parse_and_canonicalize_field(
     path::parse_raw_field_path(field).map(|fp| canonicalize_field_path(artifact, fp))
 }
 
-/// Build a migration-safe V2 plan from command inputs.
+/// Build a command-handler-safe plan from command inputs.
 ///
-/// During migration this function intentionally does not enforce verb/field
-/// capability checks; those remain in the existing execution path.
+/// This function intentionally does not enforce verb/field capability checks;
+/// those remain in the command-specific execution path.
 pub fn plan_request(id: &str, field: Option<&str>) -> anyhow::Result<TargetPlan> {
     plan_request_with_verb(id, field, None)
 }

@@ -13,11 +13,14 @@ struct ValidationContext<'a> {
 
 /// Artifact kinds for validation dispatch.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)] // Adr and WorkItem will be used as validation expands.
 pub enum ArtifactKind {
     Rfc,
     Clause,
+    // Reserved for the path edit validation surface; current callers validate
+    // ADR and Work Item edits through shared rule data before this dispatch.
+    #[allow(dead_code)]
     Adr,
+    #[allow(dead_code)]
     WorkItem,
 }
 

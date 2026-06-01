@@ -8,7 +8,6 @@ use std::path::{Path, PathBuf};
 
 /// Load error types
 #[derive(Debug)]
-#[allow(dead_code)]
 pub enum LoadError {
     Io { file: String, message: String },
     Json { file: String, message: String },

@@ -171,7 +171,6 @@ pub fn load_work_items_with_warnings(
 }
 
 /// Load all verification guards from the guard directory.
-#[allow(dead_code)]
 pub fn load_guards(config: &Config) -> Result<Vec<GuardEntry>, Diagnostic> {
     load_guards_with_warnings(config).map(|r| r.items)
 }

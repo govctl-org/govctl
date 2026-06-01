@@ -1,7 +1,7 @@
 //! Format adapters for artifact edit operations (ADR-0031).
 //!
 //! These adapters provide a stable read/write boundary for JSON and TOML
-//! artifacts while execution is migrated from legacy dispatch to V2 engine.
+//! artifacts used by the command-specific edit execution path.
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};

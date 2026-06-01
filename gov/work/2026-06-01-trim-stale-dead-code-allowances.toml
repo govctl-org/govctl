@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-086"
 title = "Trim stale dead-code allowances"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-085"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Review source-level #[allow(dead_code)] annotations and stale com
 
 [[content.acceptance_criteria]]
 text = "Unnecessary dead-code suppressions or stale cleanup comments are removed or narrowed"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Retained compatibility comments name the current behavior they protect"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "cargo clippy --all-targets -- -D warnings and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

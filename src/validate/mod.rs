@@ -42,15 +42,6 @@ pub struct ValidationResult {
     pub work_count: usize,
 }
 
-impl ValidationResult {
-    #[allow(dead_code)]
-    pub fn has_errors(&self) -> bool {
-        self.diagnostics
-            .iter()
-            .any(|d| d.level == crate::diagnostic::DiagnosticLevel::Error)
-    }
-}
-
 /// Validate the entire project
 pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResult {
     let mut result = ValidationResult {

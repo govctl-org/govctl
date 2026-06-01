@@ -12,6 +12,8 @@ pub enum DiagnosticLevel {
 
 /// Diagnostic error codes
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+// DiagnosticCode is a stable catalog for CLI output, docs, and future checks;
+// some assigned codes are intentionally not constructed on every build path.
 #[allow(dead_code)]
 pub enum DiagnosticCode {
     // RFC errors (E01xx)
