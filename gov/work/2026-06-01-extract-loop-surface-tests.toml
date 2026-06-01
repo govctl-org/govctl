@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-194"
+title = "Extract loop surface tests"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move loop command surface, list, start, resume, and schema integration tests out of tests/test_loop.rs into a loop test submodule while keeping the integration test entrypoint stable."
+
+[[content.acceptance_criteria]]
+text = "Loop start/list/resume/schema tests live outside tests/test_loop.rs"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "tests/test_loop.rs remains a small integration-test entrypoint"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop surface tests pass"
+status = "done"
+category = "chore"

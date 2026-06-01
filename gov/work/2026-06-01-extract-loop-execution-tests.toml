@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-195"
+title = "Extract loop execution tests"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move loop run, target, guard-failure, and scope mutation integration tests out of tests/test_loop.rs into loop test submodules that share the existing common helpers."
+
+[[content.acceptance_criteria]]
+text = "Loop run and target tests live outside tests/test_loop.rs"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Loop scope add/remove/replan tests live outside tests/test_loop.rs"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"
