@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-101"
 title = "Normalize edit path parser module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "ADR-0030",
     "ADR-0029",
@@ -16,15 +17,15 @@ description = "Normalize the edit path parser into a directory module and move i
 
 [[content.acceptance_criteria]]
 text = "src/cmd/edit/path.rs is replaced by src/cmd/edit/path/mod.rs without same-name file and directory coexistence"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit path parser tests live in src/cmd/edit/path/tests.rs outside the production module body"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "focused edit path tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-102"
 title = "Extract edit engine planning tests"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["ADR-0031"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move edit engine planning tests from the engine module root into 
 
 [[content.acceptance_criteria]]
 text = "edit engine planning tests live in src/cmd/edit/engine/tests.rs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit engine module root keeps production planning logic without inline test bulk"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "focused edit engine tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
