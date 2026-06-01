@@ -106,44 +106,10 @@ where
         list,
     } = nested_list_target_mut(artifact, doc, fp, Verb::Remove, id, None)?;
 
-    let texts: Vec<&str> = match item_rule.kind {
-        NestedNodeKind::Scalar => list
-            .iter()
-            .map(|v| {
-                v.as_str().ok_or_else(|| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0817PathTypeMismatch,
-                        "Expected string items in list",
-                        id,
-                    )
-                })
-            })
-            .collect::<Result<Vec<_>, _>>()?,
-        NestedNodeKind::Object => {
-            let text_key = node
-                .text_key
-                .ok_or_else(|| type_mismatch("Expected text_key for object list", id))?;
-            list.iter()
-                .map(|v| status_list_text(v, text_key, id))
-                .collect::<Result<Vec<_>, _>>()?
-        }
-        NestedNodeKind::List => {
-            return Err(type_mismatch("Expected scalar or object items in list", id));
-        }
-    };
-
+    let texts = list_item_texts(node, item_rule, list, id)?;
     let indices = resolve(&texts)?;
     let removed = remove_indices_preserving_order(list, indices, |val| {
-        Ok(match item_rule.kind {
-            NestedNodeKind::Scalar => val.as_str().unwrap_or_default().to_string(),
-            NestedNodeKind::Object => {
-                let text_key = node
-                    .text_key
-                    .ok_or_else(|| type_mismatch("Expected text_key for object list", id))?;
-                status_list_text(val, text_key, id)?.to_string()
-            }
-            NestedNodeKind::List => unreachable!("guarded above"),
-        })
+        Ok(list_item_text(node, item_rule, val, id)?.to_string())
     })?;
     Ok(removed)
 }
@@ -170,13 +136,10 @@ where
             id,
         ));
     }
-    let text_key = node
+    let _text_key = node
         .text_key
         .ok_or_else(|| type_mismatch("Expected text_key for tickable list", id))?;
-    let texts: Vec<&str> = list
-        .iter()
-        .map(|item| status_list_text(item, text_key, id))
-        .collect::<Result<Vec<_>, _>>()?;
+    let texts = list_item_texts(node, item_rule, list, id)?;
     let idx = resolve(&texts)?[0];
     let text = texts[idx].to_string();
     let status_key = item_rule
@@ -193,6 +156,41 @@ where
         Value::String(new_status.to_string()),
     );
     Ok(text)
+}
+
+fn list_item_texts<'a>(
+    node: &NestedNodeRule,
+    item_rule: &NestedNodeRule,
+    list: &'a [Value],
+    id: &str,
+) -> DiagnosticResult<Vec<&'a str>> {
+    list.iter()
+        .map(|item| list_item_text(node, item_rule, item, id))
+        .collect()
+}
+
+fn list_item_text<'a>(
+    node: &NestedNodeRule,
+    item_rule: &NestedNodeRule,
+    item: &'a Value,
+    id: &str,
+) -> DiagnosticResult<&'a str> {
+    match item_rule.kind {
+        NestedNodeKind::Scalar => item.as_str().ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                "Expected string items in list",
+                id,
+            )
+        }),
+        NestedNodeKind::Object => {
+            let text_key = node
+                .text_key
+                .ok_or_else(|| type_mismatch("Expected text_key for object list", id))?;
+            status_list_text(item, text_key, id)
+        }
+        NestedNodeKind::List => Err(type_mismatch("Expected scalar or object items in list", id)),
+    }
 }
 
 pub fn set_nested_list_item(

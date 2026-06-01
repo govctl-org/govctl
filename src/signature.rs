@@ -10,6 +10,7 @@
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{AdrEntry, RfcIndex, WorkItemEntry};
+use serde::Serialize;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 
@@ -26,26 +27,19 @@ const SIGNATURE_VERSION: u32 = 1;
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
 pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
-    let mut hasher = Sha256::new();
-
-    // Version prefix for forward compatibility
-    hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
-    hasher.update(b"type:rfc\n");
+    let mut hasher = signature_hasher("rfc");
 
     // Canonical RFC metadata (excluding signature field to avoid circularity)
-    let mut rfc_json = serde_json::to_value(&rfc.rfc).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0101RfcSchemaInvalid,
-            format!("Failed to serialize RFC for signature: {err}"),
-            &rfc.rfc.rfc_id,
-        )
-    })?;
+    let mut rfc_json = signature_value(
+        &rfc.rfc,
+        DiagnosticCode::E0101RfcSchemaInvalid,
+        "RFC",
+        &rfc.rfc.rfc_id,
+    )?;
     if let Value::Object(ref mut map) = rfc_json {
         map.remove("signature"); // Exclude signature from hash computation
     }
-    let canonical_rfc = canonicalize_json(&rfc_json);
-    hasher.update(canonical_rfc.as_bytes());
-    hasher.update(b"\n");
+    update_canonical_json(&mut hasher, &rfc_json);
 
     // Sort clauses by clause_id for determinism
     let mut clauses: Vec<_> = rfc.clauses.iter().collect();
@@ -53,21 +47,16 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
 
     // Canonical clause content
     for clause in clauses {
-        let clause_json = serde_json::to_value(&clause.spec).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0201ClauseSchemaInvalid,
-                format!("Failed to serialize clause for signature: {err}"),
-                format!("{}:{}", rfc.rfc.rfc_id, clause.spec.clause_id),
-            )
-        })?;
-        let canonical_clause = canonicalize_json(&clause_json);
-        hasher.update(canonical_clause.as_bytes());
-        hasher.update(b"\n");
+        let clause_json = signature_value(
+            &clause.spec,
+            DiagnosticCode::E0201ClauseSchemaInvalid,
+            "clause",
+            format!("{}:{}", rfc.rfc.rfc_id, clause.spec.clause_id),
+        )?;
+        update_canonical_json(&mut hasher, &clause_json);
     }
 
-    // Produce hex string
-    let digest = hasher.finalize();
-    Ok(hex_encode(&digest))
+    Ok(finalize_signature(hasher))
 }
 
 /// Compute SHA-256 signature for an ADR.
@@ -75,25 +64,16 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
 pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, Diagnostic> {
-    let mut hasher = Sha256::new();
+    let mut hasher = signature_hasher("adr");
+    let adr_json = signature_value(
+        &adr.spec,
+        DiagnosticCode::E0301AdrSchemaInvalid,
+        "ADR",
+        &adr.spec.govctl.id,
+    )?;
+    update_canonical_json(&mut hasher, &adr_json);
 
-    hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
-    hasher.update(b"type:adr\n");
-
-    // Serialize TOML to JSON Value for canonical representation
-    let adr_json = serde_json::to_value(&adr.spec).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0301AdrSchemaInvalid,
-            format!("Failed to serialize ADR for signature: {err}"),
-            &adr.spec.govctl.id,
-        )
-    })?;
-    let canonical = canonicalize_json(&adr_json);
-    hasher.update(canonical.as_bytes());
-    hasher.update(b"\n");
-
-    let digest = hasher.finalize();
-    Ok(hex_encode(&digest))
+    Ok(finalize_signature(hasher))
 }
 
 /// Compute SHA-256 signature for a Work Item.
@@ -101,24 +81,49 @@ pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, Diagnostic> {
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
 pub fn compute_work_item_signature(item: &WorkItemEntry) -> Result<String, Diagnostic> {
+    let mut hasher = signature_hasher("work");
+    let item_json = signature_value(
+        &item.spec,
+        DiagnosticCode::E0401WorkSchemaInvalid,
+        "work item",
+        &item.spec.govctl.id,
+    )?;
+    update_canonical_json(&mut hasher, &item_json);
+
+    Ok(finalize_signature(hasher))
+}
+
+fn signature_hasher(kind: &str) -> Sha256 {
     let mut hasher = Sha256::new();
-
     hasher.update(format!("govctl-signature-v{SIGNATURE_VERSION}\n").as_bytes());
-    hasher.update(b"type:work\n");
+    hasher.update(format!("type:{kind}\n").as_bytes());
+    hasher
+}
 
-    let item_json = serde_json::to_value(&item.spec).map_err(|err| {
+fn signature_value<T: Serialize>(
+    value: &T,
+    code: DiagnosticCode,
+    artifact: &str,
+    id: impl Into<String>,
+) -> Result<Value, Diagnostic> {
+    serde_json::to_value(value).map_err(|err| {
         Diagnostic::new(
-            DiagnosticCode::E0401WorkSchemaInvalid,
-            format!("Failed to serialize work item for signature: {err}"),
-            &item.spec.govctl.id,
+            code,
+            format!("Failed to serialize {artifact} for signature: {err}"),
+            id,
         )
-    })?;
-    let canonical = canonicalize_json(&item_json);
+    })
+}
+
+fn update_canonical_json(hasher: &mut Sha256, value: &Value) {
+    let canonical = canonicalize_json(value);
     hasher.update(canonical.as_bytes());
     hasher.update(b"\n");
+}
 
+fn finalize_signature(hasher: Sha256) -> String {
     let digest = hasher.finalize();
-    Ok(hex_encode(&digest))
+    hex_encode(&digest)
 }
 
 /// Extract signature from rendered markdown content.
