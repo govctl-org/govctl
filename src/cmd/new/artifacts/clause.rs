@@ -1,10 +1,11 @@
+use super::write_new_artifact_toml;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::split_clause_id;
 use crate::model::{ClauseKind, ClauseSpec, ClauseStatus, ClauseWire, RfcWire, SectionSpec};
-use crate::schema::{ArtifactSchema, with_schema_header};
+use crate::schema::ArtifactSchema;
 use crate::ui;
-use crate::write::{WriteOp, write_file};
+use crate::write::WriteOp;
 
 pub(super) fn create(
     config: &Config,
@@ -51,17 +52,16 @@ pub(super) fn create(
         .join("clauses")
         .join(format!("{clause_name}.toml"));
 
-    let display_clause_path = config.display_path(&clause_path);
     let wire: ClauseWire = clause.into();
-    let body = toml::to_string_pretty(&wire).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0201ClauseSchemaInvalid,
-            format!("Failed to serialize clause TOML: {err}"),
-            display_clause_path.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::Clause, &body);
-    write_file(&clause_path, &content, op, Some(&display_clause_path))?;
+    write_new_artifact_toml(
+        config,
+        &clause_path,
+        &wire,
+        ArtifactSchema::Clause,
+        DiagnosticCode::E0201ClauseSchemaInvalid,
+        "clause",
+        op,
+    )?;
 
     let clause_rel_path = format!("clauses/{clause_name}.toml");
     if let Some(sec) = rfc.sections.iter_mut().find(|s| s.title == section) {
@@ -75,17 +75,16 @@ pub(super) fn create(
         });
     }
 
-    let display_rfc_path = config.display_path(&rfc_path);
     let wire: RfcWire = rfc.into();
-    let body = toml::to_string_pretty(&wire).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0101RfcSchemaInvalid,
-            format!("Failed to serialize RFC TOML: {err}"),
-            display_rfc_path.display().to_string(),
-        )
-    })?;
-    let rfc_content = with_schema_header(ArtifactSchema::Rfc, &body);
-    write_file(&rfc_path, &rfc_content, op, Some(&display_rfc_path))?;
+    write_new_artifact_toml(
+        config,
+        &rfc_path,
+        &wire,
+        ArtifactSchema::Rfc,
+        DiagnosticCode::E0101RfcSchemaInvalid,
+        "RFC",
+        op,
+    )?;
 
     if !op.is_preview() {
         ui::created("clause", &config.display_path(&clause_path));

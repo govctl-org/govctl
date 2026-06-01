@@ -1,11 +1,12 @@
+use super::write_new_artifact_toml;
 use crate::config::{Config, IdStrategy};
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
+use crate::diagnostic::{DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{
     WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
-use crate::schema::{ArtifactSchema, with_schema_header};
+use crate::schema::ArtifactSchema;
 use crate::ui;
-use crate::write::{WriteOp, create_dir_all, today, write_file};
+use crate::write::{WriteOp, create_dir_all, today};
 use slug::slugify;
 use std::path::Path;
 
@@ -72,16 +73,15 @@ pub(super) fn create(
         verification: WorkItemVerification::default(),
     };
 
-    let display_work_path = config.display_path(&work_path);
-    let body = toml::to_string_pretty(&spec).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0401WorkSchemaInvalid,
-            format!("Failed to serialize work item TOML: {err}"),
-            display_work_path.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::WorkItem, &body);
-    write_file(&work_path, &content, op, Some(&display_work_path))?;
+    write_new_artifact_toml(
+        config,
+        &work_path,
+        &spec,
+        ArtifactSchema::WorkItem,
+        DiagnosticCode::E0401WorkSchemaInvalid,
+        "work item",
+        op,
+    )?;
 
     if !op.is_preview() {
         let display_path = config.display_path(&work_path);

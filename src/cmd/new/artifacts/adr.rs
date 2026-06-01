@@ -1,9 +1,10 @@
+use super::write_new_artifact_toml;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
+use crate::diagnostic::{DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{AdrContent, AdrMeta, AdrSpec, AdrStatus};
-use crate::schema::{ArtifactSchema, with_schema_header};
+use crate::schema::ArtifactSchema;
 use crate::ui;
-use crate::write::{WriteOp, create_dir_all, today, write_file};
+use crate::write::{WriteOp, create_dir_all, today};
 use slug::slugify;
 
 pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<Diagnostics> {
@@ -43,16 +44,15 @@ pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> DiagnosticRes
         },
     };
 
-    let display_adr_path = config.display_path(&adr_path);
-    let body = toml::to_string_pretty(&spec).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0301AdrSchemaInvalid,
-            format!("Failed to serialize ADR TOML: {err}"),
-            display_adr_path.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::Adr, &body);
-    write_file(&adr_path, &content, op, Some(&display_adr_path))?;
+    write_new_artifact_toml(
+        config,
+        &adr_path,
+        &spec,
+        ArtifactSchema::Adr,
+        DiagnosticCode::E0301AdrSchemaInvalid,
+        "ADR",
+        op,
+    )?;
 
     if !op.is_preview() {
         ui::created("ADR", &config.display_path(&adr_path));

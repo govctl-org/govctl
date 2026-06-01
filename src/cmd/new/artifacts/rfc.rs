@@ -1,9 +1,10 @@
+use super::write_new_artifact_toml;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{ChangelogEntry, RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec};
-use crate::schema::{ArtifactSchema, with_schema_header};
+use crate::schema::ArtifactSchema;
 use crate::ui;
-use crate::write::{WriteOp, create_dir_all, today, write_file};
+use crate::write::{WriteOp, create_dir_all, today};
 
 pub(super) fn create(
     config: &Config,
@@ -102,16 +103,15 @@ pub(super) fn create(
 
     let rfc_toml = rfc_dir.join("rfc.toml");
     let wire: RfcWire = rfc.into();
-    let display_rfc_toml = config.display_path(&rfc_toml);
-    let body = toml::to_string_pretty(&wire).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0101RfcSchemaInvalid,
-            format!("Failed to serialize RFC TOML: {err}"),
-            display_rfc_toml.display().to_string(),
-        )
-    })?;
-    let content = with_schema_header(ArtifactSchema::Rfc, &body);
-    write_file(&rfc_toml, &content, op, Some(&display_rfc_toml))?;
+    write_new_artifact_toml(
+        config,
+        &rfc_toml,
+        &wire,
+        ArtifactSchema::Rfc,
+        DiagnosticCode::E0101RfcSchemaInvalid,
+        "RFC",
+        op,
+    )?;
 
     if !op.is_preview() {
         ui::created("RFC", &config.display_path(&rfc_toml));
