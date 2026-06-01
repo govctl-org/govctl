@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-087"
 title = "Normalize parse module root"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 
 [content]
 description = "Mechanically move the current src/parse.rs module root to src/parse/mod.rs so future parse helpers can live under a directory-owned module without leaving a same-name file/directory pair. Preserve every public crate::parse API and behavior; do not split artifact-specific logic in this slice."
