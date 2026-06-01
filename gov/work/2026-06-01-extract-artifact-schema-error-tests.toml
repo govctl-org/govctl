@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-199"
+title = "Extract artifact schema error tests"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move invalid artifact schema check tests out of tests/test_errors.rs into an error test include file while preserving existing test names and check diagnostics."
+
+[[content.acceptance_criteria]]
+text = "tests/test_errors.rs remains a small error-test entrypoint"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "error integration tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Invalid artifact schema error tests live outside tests/test_errors.rs"
+status = "done"
+category = "changed"
