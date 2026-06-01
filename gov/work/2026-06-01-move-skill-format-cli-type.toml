@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-145"
 title = "Move skill format CLI type"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0002:C-GLOBAL-COMMANDS"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move the init-skills SkillFormat value enum out of src/cli/mod.rs
 
 [[content.acceptance_criteria]]
 text = "SkillFormat lives in the cli common module and remains available through the existing cli re-export"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "init-skills command parsing and skill installation callers remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "agent-dir/help tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

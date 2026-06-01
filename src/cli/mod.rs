@@ -8,18 +8,8 @@ pub(crate) use common::*;
 pub(crate) use loop_cmd::LoopCommand;
 pub(crate) use resources::*;
 
-use clap::{Parser, Subcommand, ValueEnum};
+use clap::{Parser, Subcommand};
 use std::path::PathBuf;
-
-/// Output format for agent definitions in `init-skills`.
-#[derive(Clone, Debug, Default, ValueEnum)]
-pub enum SkillFormat {
-    /// Claude Code / Cursor / Windsurf (agents as .md with YAML frontmatter)
-    #[default]
-    Claude,
-    /// Codex CLI (agents as .toml with developer_instructions)
-    Codex,
-}
 
 #[derive(Parser)]
 #[command(name = "govctl")]
@@ -381,43 +371,5 @@ NOTES:
     Tag {
         #[command(subcommand)]
         command: TagCommand,
-    },
-}
-
-/// Tag management subcommands
-#[derive(Subcommand, Clone, Debug)]
-pub(crate) enum TagCommand {
-    /// Add a new allowed tag to config.toml
-    #[command(after_help = "\
-EXAMPLES:
-    govctl tag new caching
-    govctl tag new breaking-change
-")]
-    New {
-        /// Tag name (must match ^[a-z][a-z0-9-]*$)
-        tag: String,
-    },
-    /// Remove an allowed tag from config.toml (fails if any artifact uses it)
-    #[command(after_help = "\
-EXAMPLES:
-    govctl tag delete caching
-")]
-    Delete {
-        /// Tag name to remove
-        tag: String,
-    },
-    /// List all allowed tags and their usage counts
-    #[command(
-        visible_alias = "ls",
-        after_help = "\
-EXAMPLES:
-    govctl tag list
-    govctl tag list -o json
-"
-    )]
-    List {
-        /// Output format
-        #[arg(short = 'o', long, value_enum, default_value = "table")]
-        output: crate::OutputFormat,
     },
 }
