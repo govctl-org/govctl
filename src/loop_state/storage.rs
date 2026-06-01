@@ -46,25 +46,14 @@ pub fn write_loop_state_with_op(
 ) -> anyhow::Result<()> {
     state.validate(Some(&state.loop_meta.id))?;
     let path = loop_state_path(config, &state.loop_meta.id)?;
-    let parent = path.parent().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E1201LoopStateInvalid,
-            "Loop state path has no parent directory",
-            path.display().to_string(),
-        )
-    })?;
-    let body = toml::to_string_pretty(state).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E1201LoopStateInvalid,
-            format!("Failed to serialize loop state: {e}"),
-            path.display().to_string(),
-        )
-    })?;
-    let display_parent = config.display_path(parent);
-    let display_path = config.display_path(&path);
-    crate::write::create_dir_all(parent, op, Some(&display_parent))?;
-    crate::write::write_file(&path, &body, op, Some(&display_path))?;
-    Ok(())
+    write_loop_toml(
+        config,
+        &path,
+        state,
+        op,
+        "Loop state path has no parent directory",
+        "Failed to serialize loop state",
+    )
 }
 
 pub fn load_loop_state(config: &Config, loop_id: &str) -> anyhow::Result<LoopState> {
@@ -99,24 +88,42 @@ pub fn write_loop_round_record(
         &record.work_item_id,
         record.round_number,
     )?;
+    write_loop_toml(
+        config,
+        &path,
+        record,
+        op,
+        "Loop round path has no parent directory",
+        "Failed to serialize loop round record",
+    )
+}
+
+fn write_loop_toml<T: serde::Serialize + ?Sized>(
+    config: &Config,
+    path: &Path,
+    value: &T,
+    op: WriteOp,
+    missing_parent_message: &str,
+    serialize_message: &str,
+) -> anyhow::Result<()> {
     let parent = path.parent().ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E1201LoopStateInvalid,
-            "Loop round path has no parent directory",
+            missing_parent_message,
             path.display().to_string(),
         )
     })?;
-    let body = toml::to_string_pretty(record).map_err(|e| {
+    let body = toml::to_string_pretty(value).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E1201LoopStateInvalid,
-            format!("Failed to serialize loop round record: {e}"),
+            format!("{serialize_message}: {e}"),
             path.display().to_string(),
         )
     })?;
     let display_parent = config.display_path(parent);
-    let display_path = config.display_path(&path);
+    let display_path = config.display_path(path);
     crate::write::create_dir_all(parent, op, Some(&display_parent))?;
-    crate::write::write_file(&path, &body, op, Some(&display_path))?;
+    crate::write::write_file(path, &body, op, Some(&display_path))?;
     Ok(())
 }
 
