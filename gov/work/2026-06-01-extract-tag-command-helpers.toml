@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-141"
+title = "Extract tag command helpers"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["RFC-0002"]
+depends_on = ["WI-2026-06-01-140"]
+
+[content]
+description = "Extract tag registry storage, cross-artifact tag usage counting, and list output formatting from the tag command root into focused child modules. Keep tag new/delete/list behavior, diagnostics, output formats, dry-run messages, and validation regex behavior unchanged."
+
+[[content.acceptance_criteria]]
+text = "tag registry TOML helpers live in a focused child module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "tag usage counting and tag list output formatting are separated from command orchestration"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "tag integration tests, cargo test, clippy, and govctl check pass"
+status = "pending"
+category = "chore"

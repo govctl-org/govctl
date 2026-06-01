@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-140"
+title = "Normalize tag command module"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["RFC-0002"]
+
+[content]
+description = "Normalize the tag command implementation from src/cmd/tag.rs into a directory module root so helper extraction can proceed without same-name file and directory coexistence. Preserve the public cmd::tag API used by command routing, validation, edit paths, and tag integration tests."
+
+[[content.acceptance_criteria]]
+text = "tag command is normalized to a directory module without same-name file and directory coexistence"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cmd::tag public functions and tag regex access remain compatible for current callers"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "tag tests and govctl check pass"
+status = "pending"
+category = "chore"
