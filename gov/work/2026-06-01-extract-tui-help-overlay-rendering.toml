@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-139"
+title = "Extract TUI help overlay rendering"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["RFC-0003"]
+
+[content]
+description = "Move TUI help overlay rendering and popup geometry from src/tui/ui/mod.rs into a focused help child module. Preserve view-specific help content, overlay sizing, and shared block styling without splitting dashboard/list/detail modules."
+
+[[content.acceptance_criteria]]
+text = "TUI help overlay and centered popup geometry live in a focused help child module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "view-specific help content and overlay rendering stay unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI tests, cargo test, and govctl check pass"
+status = "pending"
+category = "chore"

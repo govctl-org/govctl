@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-138"
+title = "Extract TUI chrome rendering"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["RFC-0003"]
+
+[content]
+description = "Extract TUI header/footer chrome, breadcrumb, header status, and keybinding-line rendering from src/tui/ui/mod.rs into a focused chrome child module. Preserve main draw behavior, RFC-0003 navigation references, footer bindings, and TUI list/detail rendering."
+
+[[content.acceptance_criteria]]
+text = "TUI header footer breadcrumb and keybinding rendering live in a focused chrome child module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "main TUI draw keeps view dispatch and public rendering behavior unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI tests, cargo test, and govctl check pass"
+status = "pending"
+category = "chore"
