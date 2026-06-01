@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-097"
 title = "Normalize edit TOML target module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "ADR-0045",
     "ADR-0031",
@@ -16,15 +17,15 @@ description = "Replace the single src/cmd/edit/toml_target.rs file with a direct
 
 [[content.acceptance_criteria]]
 text = "src/cmd/edit/toml_target.rs is replaced by src/cmd/edit/toml_target/mod.rs without same-name file and directory coexistence"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "work dependency edit detection and validation live in a focused TOML target child module and remain used by add and set flows"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "edit command tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

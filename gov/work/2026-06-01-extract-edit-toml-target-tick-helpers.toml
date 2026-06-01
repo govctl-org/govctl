@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-098"
 title = "Extract edit TOML target tick helpers"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = ["ADR-0031"]
 depends_on = ["WI-2026-06-01-097"]
 
