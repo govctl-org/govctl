@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-115"
 title = "Gate generated edit rules version to tests"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["ADR-0031"]
 
 [content]
@@ -13,10 +14,10 @@ description = "Remove the generated edit-rules dead_code suppression by emitting
 
 [[content.acceptance_criteria]]
 text = "edit rule tests, cargo clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "generated EDIT_RULES_VERSION is test-only without dead_code suppression"
-status = "pending"
+status = "done"
 category = "changed"
