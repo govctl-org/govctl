@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-130"
 title = "Extract validate RFC helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move RFC, clause, and status/phase validation helpers out of src/validate/mod.rs into a focused validate::rfc module while keeping validate_project behavior and diagnostics stable. Root module remains the project-level orchestrator."
 
 [[content.acceptance_criteria]]
 text = "RFC status phase and clause reference validation helpers live in a focused validate::rfc module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "validate_project keeps current validation order and diagnostics"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "focused validate tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

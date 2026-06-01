@@ -7,13 +7,14 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{ClauseStatus, ProjectIndex, ReleasesFile, RfcIndex, RfcPhase, RfcStatus};
-use std::collections::HashSet;
+use crate::model::ProjectIndex;
 
 mod artifact_refs;
 mod bracket_refs;
 mod fields;
 mod lifecycle;
+mod releases;
+mod rfc;
 mod signatures;
 mod tags;
 mod work_dependencies;
@@ -21,6 +22,7 @@ mod work_items;
 
 use artifact_refs::validate_artifact_refs;
 use bracket_refs::validate_bracket_reference_hierarchy;
+use rfc::{validate_clause_references, validate_rfc};
 use signatures::validate_rfc_signatures;
 use tags::validate_artifact_tags;
 use work_items::{validate_work_item_descriptions, validate_work_item_legacy_inline_history};
@@ -30,6 +32,7 @@ pub use lifecycle::{
     is_valid_adr_transition, is_valid_phase_transition, is_valid_status_transition,
     is_valid_work_transition,
 };
+pub use releases::validate_releases;
 pub use work_dependencies::{is_work_item_id, validate_work_dependencies};
 
 /// Validation result with diagnostics
@@ -111,202 +114,4 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
     validate_artifact_tags(index, config, &mut result);
 
     result
-}
-
-/// Validate a single RFC
-fn validate_rfc(rfc: &RfcIndex, config: &Config, result: &mut ValidationResult) {
-    let rfc_path_display = config.display_path(&rfc.path).display().to_string();
-
-    // Check RFC ID matches directory
-    let dir_name = rfc
-        .path
-        .parent()
-        .and_then(|p| p.file_name())
-        .and_then(|n| n.to_str());
-
-    if let Some(name) = dir_name
-        && name != rfc.rfc.rfc_id
-    {
-        result.diagnostics.push(Diagnostic::new(
-            DiagnosticCode::E0103RfcIdMismatch,
-            format!(
-                "RFC ID '{}' doesn't match directory '{}'",
-                rfc.rfc.rfc_id, name
-            ),
-            rfc_path_display.clone(),
-        ));
-    }
-
-    // Check changelog exists
-    if rfc.rfc.changelog.is_empty() {
-        result.diagnostics.push(Diagnostic::new(
-            DiagnosticCode::W0101RfcNoChangelog,
-            "RFC has no changelog entries (hint: run `govctl rfc bump`)",
-            rfc_path_display.clone(),
-        ));
-    }
-
-    // Validate status/phase constraints
-    validate_status_phase_constraints(rfc, config, result);
-
-    // Validate clauses
-    for clause in &rfc.clauses {
-        let clause_path_display = config.display_path(&clause.path).display().to_string();
-        // Check clause has 'since' field
-        if clause.spec.since.is_none() {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::W0102ClauseNoSince,
-                format!(
-                    "Clause '{}' has no 'since' version (hint: it will be set automatically by `govctl rfc bump` or `govctl rfc finalize`)",
-                    clause.spec.clause_id
-                ),
-                clause_path_display.clone(),
-            ));
-        }
-
-        // Check clause ID matches filename
-        let file_name = clause
-            .path
-            .file_stem()
-            .and_then(|n| n.to_str())
-            .unwrap_or("");
-
-        if file_name != clause.spec.clause_id {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0203ClauseIdMismatch,
-                format!(
-                    "Clause ID '{}' doesn't match filename '{}'",
-                    clause.spec.clause_id, file_name
-                ),
-                clause_path_display,
-            ));
-        }
-    }
-}
-
-/// Validate status/phase constraints per RFC-0000
-fn validate_status_phase_constraints(
-    rfc: &RfcIndex,
-    config: &Config,
-    result: &mut ValidationResult,
-) {
-    let status = rfc.rfc.status;
-    let phase = rfc.rfc.phase;
-    let path_display = config.display_path(&rfc.path).display().to_string();
-
-    // draft + stable is forbidden
-    if status == RfcStatus::Draft && phase == RfcPhase::Stable {
-        result.diagnostics.push(Diagnostic::new(
-            DiagnosticCode::E0104RfcInvalidTransition,
-            "Cannot have status=draft with phase=stable",
-            path_display.clone(),
-        ));
-    }
-
-    // deprecated + impl/test is forbidden
-    if status == RfcStatus::Deprecated && (phase == RfcPhase::Impl || phase == RfcPhase::Test) {
-        result.diagnostics.push(Diagnostic::new(
-            DiagnosticCode::E0104RfcInvalidTransition,
-            format!(
-                "Cannot have status=deprecated with phase={}",
-                phase.as_ref()
-            ),
-            path_display,
-        ));
-    }
-}
-
-/// Validate clause cross-references (superseded_by)
-fn validate_clause_references(
-    index: &ProjectIndex,
-    config: &Config,
-    result: &mut ValidationResult,
-) {
-    // Collect all active clause IDs
-    let active_clauses: HashSet<String> = index
-        .iter_clauses()
-        .filter(|(_, c)| c.spec.status == ClauseStatus::Active)
-        .map(|(rfc, c)| format!("{}:{}", rfc.rfc.rfc_id, c.spec.clause_id))
-        .collect();
-
-    // Check superseded_by references
-    for (rfc, clause) in index.iter_clauses() {
-        if let Some(ref superseded_by) = clause.spec.superseded_by {
-            let clause_path_display = config.display_path(&clause.path).display().to_string();
-            // If superseded, status should be Superseded
-            if clause.spec.status != ClauseStatus::Superseded {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0206ClauseSupersededByUnknown,
-                    format!(
-                        "Clause has superseded_by but status is not 'superseded': {}",
-                        clause.spec.clause_id
-                    ),
-                    clause_path_display.clone(),
-                ));
-            }
-
-            // Build full reference
-            let full_ref = if superseded_by.contains(':') {
-                superseded_by.clone()
-            } else {
-                format!("{}:{}", rfc.rfc.rfc_id, superseded_by)
-            };
-
-            // Check reference exists and is active
-            if !active_clauses.contains(&full_ref) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0207ClauseSupersededByNotActive,
-                    format!(
-                        "Clause '{}' superseded by '{}' which is not active",
-                        clause.spec.clause_id, superseded_by
-                    ),
-                    clause_path_display,
-                ));
-            }
-        }
-    }
-}
-
-/// Validate release metadata and work item references.
-pub fn validate_releases(
-    releases: &ReleasesFile,
-    index: &ProjectIndex,
-    config: &Config,
-) -> Vec<Diagnostic> {
-    let mut diagnostics = Vec::new();
-    let mut seen_versions = HashSet::new();
-    let known_work_ids: HashSet<&str> = index
-        .work_items
-        .iter()
-        .map(|work| work.meta().id.as_str())
-        .collect();
-    let releases_display = config
-        .display_path(&config.releases_path())
-        .display()
-        .to_string();
-
-    for release in &releases.releases {
-        if !seen_versions.insert(release.version.as_str()) {
-            diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0702ReleaseDuplicate,
-                format!("Duplicate release version: {}", release.version),
-                releases_display.clone(),
-            ));
-        }
-
-        for work_id in &release.refs {
-            if !known_work_ids.contains(work_id.as_str()) {
-                diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E0705ReleaseRefNotFound,
-                    format!(
-                        "Release '{}' references unknown work item: {}",
-                        release.version, work_id
-                    ),
-                    releases_display.clone(),
-                ));
-            }
-        }
-    }
-
-    diagnostics
 }
