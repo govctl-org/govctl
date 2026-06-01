@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-081"
 title = "Define loop ID and dynamic scope semantics"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "RFC-0006",
     "ADR-0044",
@@ -16,21 +18,21 @@ refs = [
 description = "Amend RFC-0006 so loop execution sessions use artifact-style canonical IDs and loop scope can be safely recalculated after start. This defines generated LOOP ID format, strict explicit ID validation, replan/add/remove semantics, dependency closure updates, state preservation, and removed-item handling before implementation changes."
 
 [[content.acceptance_criteria]]
-text = "RFC-0006 specifies canonical loop IDs as LOOP-YYYY-MM-DD-HHMMSS-NNN and rejects plain-text loop IDs"
-status = "pending"
-category = "changed"
-
-[[content.acceptance_criteria]]
 text = "RFC-0006 defines dynamic root-scope replan/add/remove semantics with dependency closure recomputation"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "RFC-0006 defines how existing loop item state is preserved or removed during scope mutation"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "govctl check passes"
-status = "pending"
+status = "done"
 category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 specifies canonical loop IDs as LOOP-YYYY-MM-DD-NNN and rejects plain-text loop IDs"
+status = "done"
+category = "changed"

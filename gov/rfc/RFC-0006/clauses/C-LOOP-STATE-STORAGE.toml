@@ -12,7 +12,7 @@ tags = ["core"]
 text = '''
 Loop execution state MUST be stored under `.govctl/loops/<loop-id>/`.
 
-A loop ID MUST be a non-empty path segment matching `^[A-Za-z0-9][A-Za-z0-9._-]*$`. A loop ID MUST NOT contain `/`, `\`, or `..` path traversal segments.
+A loop ID is local execution-state identity, not a governed resource ID. A generated loop ID MUST match `^LOOP-\d{4}-\d{2}-\d{2}-\d{3}$`. The date component MUST use ISO 8601 calendar date format `YYYY-MM-DD` for the local date when the ID is generated. The sequence component MUST be a three-digit positive sequence starting at `001` for each date. Implementations MUST choose the first available sequence for the date that does not collide with an existing `.govctl/loops/<loop-id>/` directory. Implementations MUST generate a loop ID when one is omitted. Implementations MUST reject explicit loop IDs that do not match the canonical loop ID pattern. A loop ID MUST NOT contain `/`, `\`, or `..` path traversal segments.
 
 Each loop directory MUST contain `state.toml` as its authoritative state file. The `state.toml` file MUST use the following top-level shape:
 
@@ -31,7 +31,7 @@ status = "pending|active|done|failed|blocked|cancelled"
 round_count = 0
 ```
 
-The `loop.id` value MUST match the `<loop-id>` directory name. The `loop.state` value MUST be one of the loop lifecycle states defined by [[RFC-0006:C-LOOP-LIFECYCLE]]. The `loop.root_work_items` array MUST preserve the explicit work item set requested at loop start. The `loop.work_items` array MUST contain the resolved dependency closure and MUST include every `loop.root_work_items` entry. The `loop.root_work_items` and `loop.work_items` arrays MUST NOT contain duplicate Work Item IDs.
+The `loop.id` value MUST match the `<loop-id>` directory name. The `loop.state` value MUST be one of the loop lifecycle states defined by [[RFC-0006:C-LOOP-LIFECYCLE]]. The `loop.root_work_items` array MUST preserve the current explicit work item root set for the loop. The `loop.work_items` array MUST contain the current resolved dependency closure and MUST include every `loop.root_work_items` entry. The `loop.root_work_items` and `loop.work_items` arrays MUST NOT contain duplicate Work Item IDs.
 
 The `[dependencies]` table MUST contain one entry for each work item in `loop.work_items`. Each dependency entry MUST be an array of Work Item IDs. Each dependency ID MUST also appear in `loop.work_items`. Dependency arrays MUST NOT contain duplicate Work Item IDs.
 
@@ -43,4 +43,4 @@ Implementations MAY store detailed per-round artifacts under `.govctl/loops/<loo
 
 Loop state is local execution state, not a governed artifact. Deleting `.govctl/loops/` MUST NOT invalidate RFCs, ADRs, Work Items, Guards, or rendered governance projections, but MAY remove resumability and local execution trace.
 
-Rationale: A loop can drive multiple work items, so a per-work-item state root cannot represent the loop lifecycle, dependency graph, or aggregate outcome. A single loop directory keeps execution state separate from work item files while preserving enough state for resumption.'''
+Rationale: A loop can drive multiple work items, so a per-work-item state root cannot represent the loop lifecycle, dependency graph, or aggregate outcome. A single loop directory keeps execution state separate from work item files while preserving enough state for resumption. Canonical generated loop IDs follow the existing artifact style of a type prefix, date, and sequence while avoiding collision-prone plain-text IDs.'''

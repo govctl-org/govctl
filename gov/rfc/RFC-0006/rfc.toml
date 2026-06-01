@@ -3,12 +3,13 @@
 [govctl]
 id = "RFC-0006"
 title = "Loop Execution Model"
-version = "0.1.0"
+version = "0.2.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-05-31"
-updated = "2026-05-31"
+updated = "2026-06-01"
+signature = "5b3f810e3c9279809638f4aff60a9e57a5483c0e114de1cf155e4c9fcbe0feaf"
 
 [[sections]]
 title = "Summary"
@@ -24,6 +25,7 @@ clauses = [
     "clauses/C-WORK-ITEM-INTERACTION.toml",
     "clauses/C-LOOP-RESUMPTION.toml",
     "clauses/C-LOOP-STATE-STORAGE.toml",
+    "clauses/C-LOOP-SCOPE-MUTATION.toml",
 ]
 
 [[sections]]
@@ -33,6 +35,13 @@ clauses = [
     "clauses/C-EXECUTION-STATE-SEPARATION.toml",
     "clauses/C-DEPENDENCY-SEPARATION.toml",
 ]
+
+[[changelog]]
+version = "0.2.0"
+date = "2026-06-01"
+notes = "Define loop scope mutation and canonical loop IDs"
+added = ["Loop scope mutation supports replan add roots and remove roots"]
+changed = ["Loop IDs use LOOP-YYYY-MM-DD-NNN canonical format"]
 
 [[changelog]]
 version = "0.1.0"

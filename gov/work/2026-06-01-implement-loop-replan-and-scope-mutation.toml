@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-082"
 title = "Implement loop replan and scope mutation"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = [
     "RFC-0006",
     "ADR-0044",
@@ -15,11 +16,6 @@ depends_on = ["WI-2026-06-01-081"]
 
 [content]
 description = "Implement the RFC-0006 dynamic loop scope behavior in the loop command surface and state planner. Add canonical LOOP ID generation and validation, CLI support for replanning and explicit scope mutation, and state updates that preserve completed round counts without relying on broad manual loop IDs."
-
-[[content.acceptance_criteria]]
-text = "Loop start and run generate LOOP-YYYY-MM-DD-HHMMSS-NNN IDs and reject non-canonical explicit IDs"
-status = "pending"
-category = "added"
 
 [[content.acceptance_criteria]]
 text = "Loop commands can replan an existing loop after adding or removing root work items"
@@ -40,3 +36,8 @@ category = "chore"
 text = "cargo test and govctl check pass"
 status = "pending"
 category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Loop start and run generate LOOP-YYYY-MM-DD-NNN IDs and reject non-canonical explicit IDs"
+status = "pending"
+category = "added"
