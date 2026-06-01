@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-175"
+title = "Unify command errors as diagnostics"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Systematically tighten production error handling so command and rendering boundaries return Diagnostic/DiagnosticResult instead of wrapping diagnostics in anyhow. Start with the narrowest coherent boundary cleanup found by audit, preserve CLI output semantics, and document remaining non-Diagnostic error surfaces if they require follow-up work."
+
+[[content.acceptance_criteria]]
+text = "production command or rendering boundary returns DiagnosticResult instead of anyhow where errors are diagnostics"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "CLI error reporting no longer needs to downcast anyhow for the cleaned boundary"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted tests, full tests, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
