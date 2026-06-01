@@ -10,7 +10,7 @@ pub use scope::{add_roots, remove_roots, replan};
 
 use crate::OutputFormat;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::loop_planner::build_loop_plan_from_config;
 use crate::loop_state::{
     LoopLifecycleState, LoopState, load_loop_state, validate_loop_id, write_loop_state_with_op,
@@ -27,7 +27,7 @@ pub fn start(
     loop_id: Option<&str>,
     root_work_items: &[String],
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     ensure_root_work_items(root_work_items)?;
 
     if let Some(existing) = find_reusable_loop(config, loop_id, root_work_items)? {
@@ -52,7 +52,7 @@ pub fn start(
     Ok(vec![])
 }
 
-pub fn show(config: &Config, loop_id: &str) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn show(config: &Config, loop_id: &str) -> DiagnosticResult<Diagnostics> {
     let state = load_loop_state(config, loop_id)?;
     print_loop("Loop", &state)?;
     Ok(vec![])
@@ -63,11 +63,11 @@ pub fn list(
     filter: Option<&str>,
     limit: Option<usize>,
     output: OutputFormat,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let mut states = canonical_loop_ids(config)?
         .into_iter()
         .map(|loop_id| load_loop_state(config, &loop_id))
-        .collect::<anyhow::Result<Vec<_>>>()?;
+        .collect::<DiagnosticResult<Vec<_>>>()?;
     if let Some(filter) = filter {
         states.retain(|state| loop_list_filter_matches(state, filter));
     }
@@ -108,7 +108,7 @@ pub fn resume(
     config: &Config,
     loop_id: Option<&str>,
     root_work_items: &[String],
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let state = if let Some(loop_id) = loop_id {
         let state = load_loop_state(config, loop_id)?;
         if !root_work_items.is_empty() {

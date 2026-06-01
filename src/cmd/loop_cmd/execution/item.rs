@@ -1,6 +1,6 @@
 use crate::cmd::work_lookup::load_work_item_by_id;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_state::{LoopRoundRecord, LoopState, LoopWorkItemStatus, write_loop_round_record};
 use crate::model::{ChecklistStatus, WorkItemEntry, WorkItemStatus};
 use crate::write::WriteOp;
@@ -12,7 +12,7 @@ pub(super) fn execute_work_item_round(
     work_id: &str,
     max_rounds: u32,
     op: WriteOp,
-) -> anyhow::Result<Option<String>> {
+) -> DiagnosticResult<Option<String>> {
     let item_status_before = loop_item_status_string(state, work_id)?;
     let mut entry = load_work_item_by_id(config, work_id)?;
     let work_status_before = work_item_status_string(entry.spec.govctl.status);
@@ -149,7 +149,7 @@ fn acceptance_criteria_satisfied(entry: &WorkItemEntry) -> bool {
             .all(|criterion| criterion.status != ChecklistStatus::Pending)
 }
 
-fn loop_item_status_string(state: &LoopState, work_id: &str) -> anyhow::Result<String> {
+fn loop_item_status_string(state: &LoopState, work_id: &str) -> DiagnosticResult<String> {
     state
         .items
         .get(work_id)
@@ -160,7 +160,6 @@ fn loop_item_status_string(state: &LoopState, work_id: &str) -> anyhow::Result<S
                 format!("missing item state for work item: {work_id}"),
                 state.loop_meta.id.clone(),
             )
-            .into()
         })
 }
 
@@ -174,12 +173,8 @@ fn work_item_status_string(status: WorkItemStatus) -> String {
     .to_string()
 }
 
-fn error_summary(err: &anyhow::Error) -> String {
-    if let Some(diagnostic) = err.downcast_ref::<Diagnostic>() {
-        diagnostic.message.clone()
-    } else {
-        err.to_string()
-    }
+fn error_summary(err: &Diagnostic) -> String {
+    err.message.clone()
 }
 
 fn is_retryable_guard_assertion_failure(summary: &str) -> bool {

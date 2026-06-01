@@ -45,7 +45,7 @@ pub(super) fn execute_builtin(
         }
         BuiltinOp::Migrate => cmd::migrate::migrate(config, op),
         BuiltinOp::Verify { guard_ids, work } => {
-            cmd::verify::verify(config, guard_ids, work.as_deref())
+            Ok(cmd::verify::verify(config, guard_ids, work.as_deref())?)
         }
         BuiltinOp::Describe { context } => cmd::describe::describe(config, *context),
         BuiltinOp::SelfUpdate { check } => cmd::self_update::self_update(*check),
@@ -70,30 +70,52 @@ pub(super) fn execute_builtin(
         BuiltinOp::LoopStart {
             loop_id,
             work_items,
-        } => cmd::loop_cmd::start(config, loop_id.as_deref(), work_items, op),
+        } => Ok(cmd::loop_cmd::start(
+            config,
+            loop_id.as_deref(),
+            work_items,
+            op,
+        )?),
         BuiltinOp::LoopList {
             filter,
             limit,
             output,
-        } => cmd::loop_cmd::list(config, filter.as_deref(), *limit, *output),
-        BuiltinOp::LoopShow { loop_id } => cmd::loop_cmd::show(config, loop_id),
+        } => Ok(cmd::loop_cmd::list(
+            config,
+            filter.as_deref(),
+            *limit,
+            *output,
+        )?),
+        BuiltinOp::LoopShow { loop_id } => Ok(cmd::loop_cmd::show(config, loop_id)?),
         BuiltinOp::LoopResume {
             loop_id,
             work_items,
-        } => cmd::loop_cmd::resume(config, loop_id.as_deref(), work_items),
-        BuiltinOp::LoopReplan { loop_id } => cmd::loop_cmd::replan(config, loop_id, op),
+        } => Ok(cmd::loop_cmd::resume(
+            config,
+            loop_id.as_deref(),
+            work_items,
+        )?),
+        BuiltinOp::LoopReplan { loop_id } => Ok(cmd::loop_cmd::replan(config, loop_id, op)?),
         BuiltinOp::LoopAdd {
             loop_id,
             work_items,
-        } => cmd::loop_cmd::add_roots(config, loop_id, work_items, op),
+        } => Ok(cmd::loop_cmd::add_roots(config, loop_id, work_items, op)?),
         BuiltinOp::LoopRemove {
             loop_id,
             work_items,
-        } => cmd::loop_cmd::remove_roots(config, loop_id, work_items, op),
+        } => Ok(cmd::loop_cmd::remove_roots(
+            config, loop_id, work_items, op,
+        )?),
         BuiltinOp::LoopRun {
             loop_id,
             work_items,
             max_rounds,
-        } => cmd::loop_cmd::run(config, loop_id.as_deref(), work_items, *max_rounds, op),
+        } => Ok(cmd::loop_cmd::run(
+            config,
+            loop_id.as_deref(),
+            work_items,
+            *max_rounds,
+            op,
+        )?),
     }
 }

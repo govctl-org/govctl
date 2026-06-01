@@ -2,7 +2,7 @@
 
 use crate::cmd::verify;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{ChecklistStatus, WorkItemStatus};
 use crate::parse::{load_work_item, write_work_item};
 use crate::ui;
@@ -16,7 +16,7 @@ pub fn move_item(
     file: &Path,
     status: WorkItemStatus,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     // Find the work item file
     let work_path = if file.is_absolute() || file.exists() {
         file.to_path_buf()
@@ -43,8 +43,7 @@ pub fn move_item(
                 status.as_ref()
             ),
             work_id,
-        )
-        .into());
+        ));
     }
 
     // Validate acceptance criteria before marking done
@@ -59,8 +58,7 @@ pub fn move_item(
                     work_id
                 ),
                 work_id,
-            )
-            .into());
+            ));
         }
 
         // All criteria must be done or cancelled (no pending)
@@ -87,8 +85,7 @@ pub fn move_item(
                     list
                 ),
                 work_id,
-            )
-            .into());
+            ));
         }
 
         verify::enforce_work_item_guards(config, &entry)?;
@@ -128,7 +125,7 @@ pub fn move_item(
 }
 
 /// Find work item by partial name or ID
-fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::path::PathBuf> {
+fn find_work_item_by_name(config: &Config, name: &str) -> DiagnosticResult<std::path::PathBuf> {
     use crate::parse::load_work_items;
 
     // First try: load all work items and match by ID
@@ -147,8 +144,7 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
             DiagnosticCode::E0405WorkDirNotFound,
             format!("Work directory not found: {}", work_dir.display()),
             work_dir.display().to_string(),
-        )
-        .into());
+        ));
     }
 
     let entries: Vec<_> = std::fs::read_dir(work_dir)
@@ -170,8 +166,7 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
             DiagnosticCode::E0402WorkNotFound,
             format!("No work item found matching: {name}"),
             name,
-        )
-        .into()),
+        )),
         1 => Ok(entries[0].path()),
         _ => {
             let names: Vec<_> = entries
@@ -182,8 +177,7 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
                 DiagnosticCode::E0406WorkAmbiguousMatch,
                 format!("Multiple work items match '{}': {}", name, names.join(", ")),
                 name,
-            )
-            .into())
+            ))
         }
     }
 }

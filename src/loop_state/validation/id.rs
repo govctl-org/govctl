@@ -1,16 +1,15 @@
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use chrono::NaiveDate;
 
 const LOOP_ID_FORMAT: &str = "LOOP-YYYY-MM-DD-NNN";
 
-pub fn validate_loop_id(loop_id: &str) -> anyhow::Result<()> {
+pub fn validate_loop_id(loop_id: &str) -> DiagnosticResult<()> {
     if !is_canonical_loop_id(loop_id) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1204LoopInvalidId,
             format!("Invalid loop ID '{loop_id}': must use canonical format {LOOP_ID_FORMAT}"),
             loop_id,
-        )
-        .into());
+        ));
     }
     Ok(())
 }

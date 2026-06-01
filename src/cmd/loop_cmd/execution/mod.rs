@@ -4,7 +4,7 @@ mod run_state;
 
 use super::output::print_loop;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::loop_state::{LoopLifecycleState, write_loop_state_with_op};
 use crate::write::WriteOp;
 use round::{execute_run_round, finalize_run_state, loop_failure_message};
@@ -16,14 +16,13 @@ pub fn run(
     root_work_items: &[String],
     max_rounds: u32,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     if max_rounds == 0 {
         return Err(Diagnostic::new(
             DiagnosticCode::E1211LoopInvalidMaxRounds,
             "Loop max rounds must be at least 1",
             "loop",
-        )
-        .into());
+        ));
     }
 
     let mut state = state_for_run(config, loop_id, root_work_items)?;
@@ -55,8 +54,7 @@ pub fn run(
                 DiagnosticCode::E1210LoopExecutionFailed,
                 loop_failure_message(&state, &failures),
                 state.loop_meta.id.clone(),
-            )
-            .into())
+            ))
         }
         LoopLifecycleState::Pending | LoopLifecycleState::Active => Ok(vec![]),
     }

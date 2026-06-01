@@ -1,11 +1,11 @@
 use super::validation::{ensure_work_item_id, invalid_state, validate_loop_id};
 use super::{LoopRoundRecord, LoopState};
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 use std::path::{Path, PathBuf};
 
-pub fn loop_state_path(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf> {
+pub fn loop_state_path(config: &Config, loop_id: &str) -> DiagnosticResult<PathBuf> {
     validate_loop_id(loop_id)?;
     Ok(loop_state_dir(config, loop_id)?.join("state.toml"))
 }
@@ -15,7 +15,7 @@ fn loop_round_path(
     loop_id: &str,
     work_id: &str,
     round_number: u32,
-) -> anyhow::Result<PathBuf> {
+) -> DiagnosticResult<PathBuf> {
     validate_loop_id(loop_id)?;
     ensure_work_item_id(work_id, loop_id)?;
     if round_number == 0 {
@@ -30,7 +30,7 @@ fn loop_round_path(
         .join(format!("round-{round_number:03}.toml")))
 }
 
-fn loop_state_dir(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf> {
+fn loop_state_dir(config: &Config, loop_id: &str) -> DiagnosticResult<PathBuf> {
     validate_loop_id(loop_id)?;
     Ok(loop_state_root(config).join(loop_id))
 }
@@ -43,7 +43,7 @@ pub fn write_loop_state_with_op(
     config: &Config,
     state: &LoopState,
     op: WriteOp,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     state.validate(Some(&state.loop_meta.id))?;
     let path = loop_state_path(config, &state.loop_meta.id)?;
     write_loop_toml(
@@ -56,7 +56,7 @@ pub fn write_loop_state_with_op(
     )
 }
 
-pub fn load_loop_state(config: &Config, loop_id: &str) -> anyhow::Result<LoopState> {
+pub fn load_loop_state(config: &Config, loop_id: &str) -> DiagnosticResult<LoopState> {
     let path = loop_state_path(config, loop_id)?;
     let body = std::fs::read_to_string(&path).map_err(|e| {
         Diagnostic::new(
@@ -80,7 +80,7 @@ pub fn write_loop_round_record(
     config: &Config,
     record: &LoopRoundRecord,
     op: WriteOp,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     record.validate()?;
     let path = loop_round_path(
         config,
@@ -105,7 +105,7 @@ fn write_loop_toml<T: serde::Serialize + ?Sized>(
     op: WriteOp,
     missing_parent_message: &str,
     serialize_message: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let parent = path.parent().ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E1201LoopStateInvalid,

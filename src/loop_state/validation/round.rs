@@ -1,10 +1,11 @@
 use super::common::{ensure_work_item_id, invalid_state};
 use super::id::validate_loop_id;
+use crate::diagnostic::DiagnosticResult;
 use crate::loop_state::LoopRoundRecord;
 
 pub(in crate::loop_state) fn validate_loop_round_record(
     record: &LoopRoundRecord,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     validate_loop_id(&record.loop_id)?;
     ensure_work_item_id(&record.work_item_id, &record.loop_id)?;
     if record.round_number == 0 {
@@ -56,7 +57,7 @@ pub(in crate::loop_state) fn validate_loop_round_record(
     Ok(())
 }
 
-fn ensure_loop_item_status(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
+fn ensure_loop_item_status(value: &str, field: &str, loop_id: &str) -> DiagnosticResult<()> {
     if matches!(
         value,
         "pending" | "active" | "done" | "failed" | "blocked" | "cancelled"
@@ -70,7 +71,7 @@ fn ensure_loop_item_status(value: &str, field: &str, loop_id: &str) -> anyhow::R
     }
 }
 
-fn ensure_work_status(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
+fn ensure_work_status(value: &str, field: &str, loop_id: &str) -> DiagnosticResult<()> {
     if matches!(value, "queue" | "active" | "done" | "cancelled") {
         Ok(())
     } else {
@@ -81,7 +82,7 @@ fn ensure_work_status(value: &str, field: &str, loop_id: &str) -> anyhow::Result
     }
 }
 
-fn ensure_non_empty(value: &str, field: &str, loop_id: &str) -> anyhow::Result<()> {
+fn ensure_non_empty(value: &str, field: &str, loop_id: &str) -> DiagnosticResult<()> {
     if value.trim().is_empty() {
         Err(invalid_state(
             loop_id,

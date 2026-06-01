@@ -1,7 +1,9 @@
 //! Verification guard command and work-item enforcement.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel};
+use crate::diagnostic::{
+    Diagnostic, DiagnosticCode, DiagnosticLevel, DiagnosticResult, Diagnostics,
+};
 use crate::parse::load_guards_with_warnings;
 use crate::ui;
 use crate::verification;
@@ -13,7 +15,7 @@ pub fn verify(
     config: &Config,
     guard_ids: &[String],
     work_id: Option<&str>,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let (guards_by_id, mut diagnostics) = load_guard_context(config)?;
     let work_item = if let Some(work_id) = work_id {
         Some(load_work_item_by_id(config, work_id)?)
@@ -65,7 +67,7 @@ pub fn verify(
 pub fn enforce_work_item_guards(
     config: &Config,
     work_item: &crate::model::WorkItemEntry,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let (guards_by_id, mut diagnostics) = load_guard_context(config)?;
     diagnostics.extend(verification::validate_work_item_verification(
         config,
@@ -110,14 +112,13 @@ pub fn enforce_work_item_guards(
                     .join("\n")
             ),
             &work_item.spec.govctl.id,
-        )
-        .into())
+        ))
     }
 }
 
 fn load_guard_context(
     config: &Config,
-) -> anyhow::Result<(HashMap<String, crate::model::GuardEntry>, Vec<Diagnostic>)> {
+) -> DiagnosticResult<(HashMap<String, crate::model::GuardEntry>, Diagnostics)> {
     let guard_result = load_guards_with_warnings(config)?;
     let mut diagnostics = guard_result.warnings;
     let (guards_by_id, guard_diags) = verification::build_guard_index(guard_result.items);
@@ -135,7 +136,7 @@ fn run_selected_guards(
     guards_by_id: &std::collections::HashMap<String, crate::model::GuardEntry>,
     selected_guard_ids: &[String],
     location: &str,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let mut diagnostics = Vec::new();
 
     for guard_id in selected_guard_ids {

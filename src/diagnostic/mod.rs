@@ -15,6 +15,9 @@ pub struct Diagnostic {
     pub level: DiagnosticLevel,
 }
 
+pub type Diagnostics = Vec<Diagnostic>;
+pub type DiagnosticResult<T> = Result<T, Diagnostic>;
+
 impl Diagnostic {
     pub fn new(code: DiagnosticCode, message: impl Into<String>, file: impl Into<String>) -> Self {
         Self {

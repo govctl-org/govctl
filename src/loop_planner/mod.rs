@@ -1,7 +1,7 @@
 mod graph;
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_state::{LoopState, LoopWorkItemStatus};
 use crate::model::{WorkItemEntry, WorkItemStatus};
 use graph::{dependency_table, deterministic_execution_order, resolve_dependency_closure};
@@ -17,7 +17,7 @@ pub fn build_loop_plan_from_config(
     config: &Config,
     loop_id: &str,
     root_work_items: &[String],
-) -> anyhow::Result<LoopPlan> {
+) -> DiagnosticResult<LoopPlan> {
     let work_items = crate::parse::load_work_items(config)?;
     build_loop_plan(loop_id, root_work_items, &work_items)
 }
@@ -26,7 +26,7 @@ pub fn replan_loop_state_from_config(
     config: &Config,
     existing: &LoopState,
     root_work_items: &[String],
-) -> anyhow::Result<LoopPlan> {
+) -> DiagnosticResult<LoopPlan> {
     let work_items = crate::parse::load_work_items(config)?;
     replan_loop_state(existing, root_work_items, &work_items)
 }
@@ -35,14 +35,13 @@ pub fn build_loop_plan(
     loop_id: &str,
     root_work_items: &[String],
     work_items: &[WorkItemEntry],
-) -> anyhow::Result<LoopPlan> {
+) -> DiagnosticResult<LoopPlan> {
     if root_work_items.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E1201LoopStateInvalid,
             "Loop root work item set must not be empty",
             loop_id,
-        )
-        .into());
+        ));
     }
 
     let by_id = work_items
@@ -84,13 +83,13 @@ pub fn build_loop_plan(
     })
 }
 
-pub fn propagate_blocked_outcomes(state: &mut LoopState) -> anyhow::Result<Vec<String>> {
+pub fn propagate_blocked_outcomes(state: &mut LoopState) -> DiagnosticResult<Vec<String>> {
     propagate_blocked_outcomes_inner(state, false)
 }
 
 pub fn recompute_scope_mutation_blocked_outcomes(
     state: &mut LoopState,
-) -> anyhow::Result<Vec<String>> {
+) -> DiagnosticResult<Vec<String>> {
     for item in state.items.values_mut() {
         if item.status == LoopWorkItemStatus::Blocked {
             item.status = LoopWorkItemStatus::Pending;
@@ -102,7 +101,7 @@ pub fn recompute_scope_mutation_blocked_outcomes(
 fn propagate_blocked_outcomes_inner(
     state: &mut LoopState,
     preserve_done: bool,
-) -> anyhow::Result<Vec<String>> {
+) -> DiagnosticResult<Vec<String>> {
     state.validate(Some(&state.loop_meta.id))?;
     let mut blocked = Vec::new();
 
@@ -156,7 +155,7 @@ pub fn replan_loop_state(
     existing: &LoopState,
     root_work_items: &[String],
     work_items: &[WorkItemEntry],
-) -> anyhow::Result<LoopPlan> {
+) -> DiagnosticResult<LoopPlan> {
     let mut plan = build_loop_plan(&existing.loop_meta.id, root_work_items, work_items)?;
     plan.state.loop_meta.state = existing.loop_meta.state;
 
@@ -191,7 +190,7 @@ fn preserved_replan_status(
     }
 }
 
-pub fn topological_order_for_state(state: &LoopState) -> anyhow::Result<Vec<String>> {
+pub fn topological_order_for_state(state: &LoopState) -> DiagnosticResult<Vec<String>> {
     deterministic_execution_order(&state.loop_meta.id, &state.dependencies)
 }
 

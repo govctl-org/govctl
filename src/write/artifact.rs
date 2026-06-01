@@ -2,15 +2,14 @@
 
 use super::{WriteOp, write_file};
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{ClauseSpec, ClauseWire, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value, with_schema_header};
-use anyhow::Result;
 use std::path::Path;
 
 /// Read RFC from file and validate its normalized structure.
 /// Handles both legacy flat format and new `[govctl]` wire format (TOML and JSON).
-pub fn read_rfc(config: &Config, path: &Path) -> Result<RfcSpec> {
+pub fn read_rfc(config: &Config, path: &Path) -> DiagnosticResult<RfcSpec> {
     let content = std::fs::read_to_string(path)
         .map_err(|err| Diagnostic::io_error("read RFC", err, path.display().to_string()))?;
     let rfc = match path.extension().and_then(|ext| ext.to_str()) {
@@ -63,7 +62,7 @@ pub fn write_rfc(
     rfc: &RfcSpec,
     op: WriteOp,
     display_path: Option<&Path>,
-) -> Result<()> {
+) -> DiagnosticResult<()> {
     let wire: RfcWire = rfc.clone().into();
     let diagnostic_path = display_path.unwrap_or(path);
     let body = toml::to_string_pretty(&wire).map_err(|err| {
@@ -79,7 +78,7 @@ pub fn write_rfc(
 
 /// Read clause from file and validate its normalized structure.
 /// Handles both legacy flat format and new `[govctl]` + `[content]` wire format.
-pub fn read_clause(config: &Config, path: &Path) -> Result<ClauseSpec> {
+pub fn read_clause(config: &Config, path: &Path) -> DiagnosticResult<ClauseSpec> {
     let content = std::fs::read_to_string(path)
         .map_err(|err| Diagnostic::io_error("read clause", err, path.display().to_string()))?;
     let clause = match path.extension().and_then(|ext| ext.to_str()) {
@@ -132,7 +131,7 @@ pub fn write_clause(
     clause: &ClauseSpec,
     op: WriteOp,
     display_path: Option<&Path>,
-) -> Result<()> {
+) -> DiagnosticResult<()> {
     let wire: ClauseWire = clause.clone().into();
     let diagnostic_path = display_path.unwrap_or(path);
     let body = toml::to_string_pretty(&wire).map_err(|err| {

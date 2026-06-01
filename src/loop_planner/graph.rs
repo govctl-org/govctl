@@ -1,4 +1,4 @@
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::WorkItemEntry;
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 
@@ -12,7 +12,7 @@ pub(super) fn resolve_dependency_closure(
     loop_id: &str,
     root_work_items: &[String],
     by_id: &HashMap<&str, &WorkItemEntry>,
-) -> anyhow::Result<Vec<String>> {
+) -> DiagnosticResult<Vec<String>> {
     let mut visit = HashMap::new();
     let mut stack = Vec::new();
     let mut closure = BTreeSet::new();
@@ -31,7 +31,7 @@ fn visit_dependency_closure(
     visit: &mut HashMap<String, VisitState>,
     stack: &mut Vec<String>,
     closure: &mut BTreeSet<String>,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     if visit.get(work_id) == Some(&VisitState::Visiting) {
         return Err(cycle_error(loop_id, work_id, stack));
     }
@@ -62,7 +62,7 @@ fn visit_dependency_closure(
     Ok(())
 }
 
-fn cycle_error(loop_id: &str, work_id: &str, stack: &[String]) -> anyhow::Error {
+fn cycle_error(loop_id: &str, work_id: &str, stack: &[String]) -> Diagnostic {
     let start = stack.iter().position(|id| id == work_id).unwrap_or(0);
     let mut cycle = stack[start..].to_vec();
     cycle.push(work_id.to_string());
@@ -71,7 +71,6 @@ fn cycle_error(loop_id: &str, work_id: &str, stack: &[String]) -> anyhow::Error 
         format!("cyclic loop dependency detected: {}", cycle.join(" -> ")),
         loop_id,
     )
-    .into()
 }
 
 pub(super) fn dependency_table(
@@ -94,7 +93,7 @@ pub(super) fn dependency_table(
 pub(super) fn deterministic_execution_order(
     loop_id: &str,
     dependencies: &BTreeMap<String, Vec<String>>,
-) -> anyhow::Result<Vec<String>> {
+) -> DiagnosticResult<Vec<String>> {
     let mut remaining = dependencies
         .iter()
         .map(|(work_id, deps)| {
@@ -141,8 +140,7 @@ pub(super) fn deterministic_execution_order(
             DiagnosticCode::E1206LoopDependencyCycle,
             "cyclic loop dependency detected while ordering work items",
             loop_id,
-        )
-        .into());
+        ));
     }
 
     Ok(order)

@@ -1,12 +1,12 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::WorkItemEntry;
 use crate::parse::load_work_items;
 
 pub(crate) fn load_work_item_by_id(
     config: &Config,
     work_id: &str,
-) -> anyhow::Result<WorkItemEntry> {
+) -> DiagnosticResult<WorkItemEntry> {
     load_work_items(config)?
         .into_iter()
         .find(|item| item.spec.govctl.id == work_id)
@@ -16,6 +16,5 @@ pub(crate) fn load_work_item_by_id(
                 format!("Work item not found: {work_id}"),
                 work_id,
             )
-            .into()
         })
 }

@@ -3,25 +3,31 @@
 [govctl]
 id = "WI-2026-06-01-169"
 title = "Audit diagnostic error surfaces"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Systematically audit executable error-handling surfaces and convert focused non-diagnostic error paths to Diagnostic/Diagnostics where the existing command boundary expects governed diagnostics. Keep the slice limited to error representation and propagation; avoid unrelated module splitting or behavior changes."
-notes = ["Scope guard: this slice is about executable error representation and propagation. Do not combine it with module splitting, RFC behavior changes, or legacy journal-field work."]
+notes = [
+    "Scope guard: this slice is about executable error representation and propagation. Do not combine it with module splitting, RFC behavior changes, or legacy journal-field work.",
+    "Audit finding: production code has no anyhow::bail!/ensure!/context() usage; the remaining issue is mostly type erasure via anyhow::Result/anyhow::Error around values that are already Diagnostic. First implementation slice will make the loop state/planner core return explicit DiagnosticResult and leave broader command-module conversion for follow-up slices.",
+    "Implementation scope expanded only within the same error path: loop state/planner/command execution, work move, verify guard enforcement, and shared write artifact helpers now expose DiagnosticResult where their errors are Diagnostic. Command router still adapts these DiagnosticResults into its broader anyhow boundary until the router/remaining commands are converted in later slices.",
+    "Read-only subagent review found no issues in this diff. Residual risk remains at the command_router/main boundary, which still uses anyhow and downcasts Diagnostic; convert that in a follow-up slice instead of hiding it inside this loop-core change.",
+]
 
 [[content.acceptance_criteria]]
 text = "scan command and core execution paths for non-Diagnostic error propagation and classify remaining intentional boundaries"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "convert in-scope anyhow/String/std error returns to Diagnostic or Diagnostics without changing CLI behavior"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "cargo fmt, targeted tests, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

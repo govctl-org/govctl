@@ -41,12 +41,12 @@ where
 }
 
 fn write_rfc_doc(config: &Config, doc: &JsonDoc<RfcSpec>, op: WriteOp) -> anyhow::Result<()> {
-    write_rfc(
+    Ok(write_rfc(
         &doc.path,
         &doc.data,
         op,
         Some(&config.display_path(&doc.path)),
-    )
+    )?)
 }
 
 fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
@@ -73,12 +73,12 @@ where
 }
 
 fn write_clause_doc(config: &Config, doc: &JsonDoc<ClauseSpec>, op: WriteOp) -> anyhow::Result<()> {
-    write_clause(
+    Ok(write_clause(
         &doc.path,
         &doc.data,
         op,
         Some(&config.display_path(&doc.path)),
-    )
+    )?)
 }
 
 fn load_toml_entry<T, Load, LoadError, Matches>(

@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -79,7 +79,7 @@ impl LoopState {
         root_work_items: Vec<String>,
         work_items: Vec<String>,
         dependencies: BTreeMap<String, Vec<String>>,
-    ) -> anyhow::Result<Self> {
+    ) -> DiagnosticResult<Self> {
         let items = work_items
             .iter()
             .map(|work_id| {
@@ -107,7 +107,7 @@ impl LoopState {
         Ok(state)
     }
 
-    pub fn transition_to(&mut self, next: LoopLifecycleState) -> anyhow::Result<()> {
+    pub fn transition_to(&mut self, next: LoopLifecycleState) -> DiagnosticResult<()> {
         let current = self.loop_meta.state;
         validation::validate_loop_transition(&self.loop_meta.id, current, next)?;
         self.loop_meta.state = next;
@@ -118,27 +118,25 @@ impl LoopState {
         &mut self,
         work_id: &str,
         status: LoopWorkItemStatus,
-    ) -> anyhow::Result<()> {
+    ) -> DiagnosticResult<()> {
         let Some(item) = self.items.get_mut(work_id) else {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1201LoopStateInvalid,
                 format!("Loop state has no item entry for work item: {work_id}"),
                 self.loop_meta.id.clone(),
-            )
-            .into());
+            ));
         };
         item.status = status;
         Ok(())
     }
 
-    pub fn increment_round_count(&mut self, work_id: &str) -> anyhow::Result<u32> {
+    pub fn increment_round_count(&mut self, work_id: &str) -> DiagnosticResult<u32> {
         let Some(item) = self.items.get_mut(work_id) else {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1201LoopStateInvalid,
                 format!("Loop state has no item entry for work item: {work_id}"),
                 self.loop_meta.id.clone(),
-            )
-            .into());
+            ));
         };
         item.round_count = item.round_count.checked_add(1).ok_or_else(|| {
             Diagnostic::new(
@@ -150,13 +148,13 @@ impl LoopState {
         Ok(item.round_count)
     }
 
-    pub fn validate(&self, expected_loop_id: Option<&str>) -> anyhow::Result<()> {
+    pub fn validate(&self, expected_loop_id: Option<&str>) -> DiagnosticResult<()> {
         validation::validate_loop_state(self, expected_loop_id)
     }
 }
 
 impl LoopRoundRecord {
-    pub fn validate(&self) -> anyhow::Result<()> {
+    pub fn validate(&self) -> DiagnosticResult<()> {
         validation::validate_loop_round_record(self)
     }
 }
@@ -186,7 +184,7 @@ impl LoopWorkItemStatus {
     }
 }
 
-pub fn loop_state_path(config: &Config, loop_id: &str) -> anyhow::Result<PathBuf> {
+pub fn loop_state_path(config: &Config, loop_id: &str) -> DiagnosticResult<PathBuf> {
     storage::loop_state_path(config, loop_id)
 }
 
@@ -198,11 +196,11 @@ pub fn write_loop_state_with_op(
     config: &Config,
     state: &LoopState,
     op: WriteOp,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     storage::write_loop_state_with_op(config, state, op)
 }
 
-pub fn load_loop_state(config: &Config, loop_id: &str) -> anyhow::Result<LoopState> {
+pub fn load_loop_state(config: &Config, loop_id: &str) -> DiagnosticResult<LoopState> {
     storage::load_loop_state(config, loop_id)
 }
 
@@ -210,6 +208,6 @@ pub fn write_loop_round_record(
     config: &Config,
     record: &LoopRoundRecord,
     op: WriteOp,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     storage::write_loop_round_record(config, record, op)
 }

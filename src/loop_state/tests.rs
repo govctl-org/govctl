@@ -1,5 +1,6 @@
 use super::*;
 use crate::config::{Config, PathsConfig};
+use crate::diagnostic::Diagnostic;
 use std::collections::BTreeMap;
 
 fn test_config(root: &std::path::Path) -> Config {
@@ -26,7 +27,7 @@ fn deps(entries: &[(&str, &[&str])]) -> BTreeMap<String, Vec<String>> {
 }
 
 fn assert_err_contains<T>(
-    result: anyhow::Result<T>,
+    result: Result<T, Diagnostic>,
     needle: &str,
     context: &str,
 ) -> anyhow::Result<()> {

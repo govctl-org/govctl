@@ -3,7 +3,7 @@ use super::super::state::{
     generated_loop_id,
 };
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_planner::build_loop_plan_from_config;
 use crate::loop_state::{LoopLifecycleState, LoopState, load_loop_state};
 
@@ -11,7 +11,7 @@ pub(super) fn state_for_run(
     config: &Config,
     loop_id: Option<&str>,
     root_work_items: &[String],
-) -> anyhow::Result<LoopState> {
+) -> DiagnosticResult<LoopState> {
     if let Some(loop_id) = loop_id {
         match load_loop_state(config, loop_id) {
             Ok(state) => {
@@ -21,7 +21,7 @@ pub(super) fn state_for_run(
                 }
                 return Ok(state);
             }
-            Err(err) if diagnostic_code(&err) == Some(DiagnosticCode::E1202LoopStateNotFound) => {
+            Err(err) if diagnostic_code(&err) == DiagnosticCode::E1202LoopStateNotFound => {
                 if root_work_items.is_empty() {
                     return Err(err);
                 }
@@ -42,7 +42,7 @@ pub(super) fn state_for_run(
     }
 }
 
-pub(super) fn ensure_loop_can_run(state: &LoopState) -> anyhow::Result<()> {
+pub(super) fn ensure_loop_can_run(state: &LoopState) -> DiagnosticResult<()> {
     if matches!(
         state.loop_meta.state,
         LoopLifecycleState::Completed | LoopLifecycleState::Failed
@@ -55,13 +55,12 @@ pub(super) fn ensure_loop_can_run(state: &LoopState) -> anyhow::Result<()> {
                 state.loop_meta.state.as_str()
             ),
             state.loop_meta.id.clone(),
-        )
-        .into());
+        ));
     }
     Ok(())
 }
 
-pub(super) fn enter_active_state(state: &mut LoopState) -> anyhow::Result<()> {
+pub(super) fn enter_active_state(state: &mut LoopState) -> DiagnosticResult<()> {
     match state.loop_meta.state {
         LoopLifecycleState::Pending | LoopLifecycleState::Paused => {
             state.transition_to(LoopLifecycleState::Active)

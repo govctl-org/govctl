@@ -1,6 +1,6 @@
 use super::item::execute_work_item_round;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_planner::{propagate_blocked_outcomes, topological_order_for_state};
 use crate::loop_state::{
     LoopLifecycleState, LoopState, LoopWorkItemStatus, write_loop_state_with_op,
@@ -13,7 +13,7 @@ pub(super) fn execute_run_round(
     max_rounds: u32,
     op: WriteOp,
     failures: &mut Vec<String>,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     for work_id in topological_order_for_state(state)? {
         propagate_blocked_outcomes(state)?;
         if is_terminal_item(state, &work_id) {
@@ -37,7 +37,7 @@ pub(super) fn execute_run_round(
     Ok(())
 }
 
-pub(super) fn finalize_run_state(state: &mut LoopState) -> anyhow::Result<()> {
+pub(super) fn finalize_run_state(state: &mut LoopState) -> DiagnosticResult<()> {
     propagate_blocked_outcomes(state)?;
     let has_failed = state.items.values().any(|item| {
         matches!(
@@ -71,7 +71,7 @@ enum DependencyReadiness {
     Blocked,
 }
 
-fn dependency_readiness(state: &LoopState, work_id: &str) -> anyhow::Result<DependencyReadiness> {
+fn dependency_readiness(state: &LoopState, work_id: &str) -> DiagnosticResult<DependencyReadiness> {
     let dependencies = state.dependencies.get(work_id).ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E1201LoopStateInvalid,

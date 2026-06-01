@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_state::{
     LoopLifecycleState, LoopState, load_loop_state, loop_state_path, loop_state_root,
     validate_loop_id,
@@ -10,14 +10,14 @@ pub(super) fn find_reusable_loop(
     config: &Config,
     loop_id: Option<&str>,
     root_work_items: &[String],
-) -> anyhow::Result<Option<LoopState>> {
+) -> DiagnosticResult<Option<LoopState>> {
     if let Some(loop_id) = loop_id {
         match load_loop_state(config, loop_id) {
             Ok(state) => {
                 ensure_same_root_set(&state, root_work_items)?;
                 return Ok(Some(state));
             }
-            Err(err) if diagnostic_code(&err) == Some(DiagnosticCode::E1202LoopStateNotFound) => {
+            Err(err) if diagnostic_code(&err) == DiagnosticCode::E1202LoopStateNotFound => {
                 return Ok(None);
             }
             Err(err) => return Err(err),
@@ -30,7 +30,7 @@ pub(super) fn find_reusable_loop(
 pub(super) fn find_matching_non_terminal_loop(
     config: &Config,
     root_work_items: &[String],
-) -> anyhow::Result<Option<LoopState>> {
+) -> DiagnosticResult<Option<LoopState>> {
     let mut matches = Vec::new();
     for loop_id in canonical_loop_ids(config)? {
         let state_path = loop_state_path(config, &loop_id)?;
@@ -59,12 +59,11 @@ pub(super) fn find_matching_non_terminal_loop(
                     .join(", ")
             ),
             root_work_items.join(", "),
-        )
-        .into()),
+        )),
     }
 }
 
-pub(super) fn canonical_loop_ids(config: &Config) -> anyhow::Result<Vec<String>> {
+pub(super) fn canonical_loop_ids(config: &Config) -> DiagnosticResult<Vec<String>> {
     let root = loop_state_root(config);
     if !root.exists() {
         return Ok(vec![]);
@@ -91,14 +90,13 @@ pub(super) fn canonical_loop_ids(config: &Config) -> anyhow::Result<Vec<String>>
     Ok(loop_ids)
 }
 
-pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> anyhow::Result<()> {
+pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> DiagnosticResult<()> {
     if root_work_items.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             "At least one root work item ID is required",
             "loop",
-        )
-        .into());
+        ));
     }
     let mut seen = BTreeSet::new();
     for work_id in root_work_items {
@@ -107,16 +105,14 @@ pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> anyhow::Resu
                 DiagnosticCode::E0409WorkDependencyInvalid,
                 format!("Loop root '{work_id}' must be a work item ID"),
                 "loop",
-            )
-            .into());
+            ));
         }
         if !seen.insert(work_id.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1201LoopStateInvalid,
                 format!("duplicate loop root work item: {work_id}"),
                 "loop",
-            )
-            .into());
+            ));
         }
     }
     Ok(())
@@ -125,7 +121,7 @@ pub(super) fn ensure_root_work_items(root_work_items: &[String]) -> anyhow::Resu
 pub(super) fn ensure_same_root_set(
     state: &LoopState,
     root_work_items: &[String],
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     if same_root_set(&state.loop_meta.root_work_items, root_work_items) {
         Ok(())
     } else {
@@ -137,19 +133,17 @@ pub(super) fn ensure_same_root_set(
                 root_work_items.join(", ")
             ),
             state.loop_meta.id.clone(),
-        )
-        .into())
+        ))
     }
 }
 
-pub(super) fn generated_loop_id(config: &Config) -> anyhow::Result<String> {
+pub(super) fn generated_loop_id(config: &Config) -> DiagnosticResult<String> {
     let date = chrono::Local::now().format("%Y-%m-%d").to_string();
     generated_loop_id_for_date(config, &date)
 }
 
-pub(super) fn diagnostic_code(err: &anyhow::Error) -> Option<DiagnosticCode> {
-    err.downcast_ref::<Diagnostic>()
-        .map(|diagnostic| diagnostic.code)
+pub(super) fn diagnostic_code(err: &Diagnostic) -> DiagnosticCode {
+    err.code
 }
 
 fn same_root_set(left: &[String], right: &[String]) -> bool {
@@ -163,7 +157,7 @@ fn is_non_terminal(state: LoopLifecycleState) -> bool {
     )
 }
 
-fn generated_loop_id_for_date(config: &Config, date: &str) -> anyhow::Result<String> {
+fn generated_loop_id_for_date(config: &Config, date: &str) -> DiagnosticResult<String> {
     for sequence in 1..=999 {
         let loop_id = format!("LOOP-{date}-{sequence:03}");
         validate_loop_id(&loop_id)?;
@@ -175,6 +169,5 @@ fn generated_loop_id_for_date(config: &Config, date: &str) -> anyhow::Result<Str
         DiagnosticCode::E1204LoopInvalidId,
         format!("No available loop ID sequence for date {date}"),
         date,
-    )
-    .into())
+    ))
 }

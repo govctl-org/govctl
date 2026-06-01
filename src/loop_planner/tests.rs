@@ -1,5 +1,5 @@
 use super::*;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{DiagnosticCode, DiagnosticResult};
 use crate::loop_state::LoopWorkItemStatus;
 use crate::model::{
     WorkItemContent, WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus,
@@ -26,15 +26,12 @@ fn ids(values: &[&str]) -> Vec<String> {
 }
 
 fn assert_diagnostic_code<T>(
-    result: anyhow::Result<T>,
+    result: DiagnosticResult<T>,
     code: DiagnosticCode,
     text: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let Err(err) = result else {
+    let Err(diagnostic) = result else {
         return Err(format!("expected diagnostic {}", code.code()).into());
-    };
-    let Some(diagnostic) = err.downcast_ref::<Diagnostic>() else {
-        return Err(format!("expected Diagnostic error, got: {err}").into());
     };
     assert_eq!(diagnostic.code, code);
     assert!(

@@ -1,11 +1,11 @@
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_state::LoopLifecycleState;
 
 pub(in crate::loop_state) fn validate_loop_transition(
     loop_id: &str,
     from: LoopLifecycleState,
     to: LoopLifecycleState,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     if is_valid_loop_transition(from, to) {
         Ok(())
     } else {
@@ -13,8 +13,7 @@ pub(in crate::loop_state) fn validate_loop_transition(
             DiagnosticCode::E1203LoopInvalidTransition,
             format!("Invalid loop transition: {from:?} -> {to:?}"),
             loop_id,
-        )
-        .into())
+        ))
     }
 }
 

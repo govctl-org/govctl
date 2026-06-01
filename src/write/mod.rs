@@ -3,9 +3,8 @@
 //! Implements [[ADR-0006]] global dry-run support for content-modifying commands.
 //! Implements [[ADR-0012]] prefix-based changelog category parsing.
 
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::ui;
-use anyhow::Result;
 use std::path::Path;
 
 mod artifact;
@@ -17,7 +16,7 @@ pub use artifact::{
 };
 pub use changelog::{BumpLevel, ParsedChange, add_changelog_change, bump_rfc_version, today};
 
-pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
+pub fn parse_changelog_change(change: &str) -> anyhow::Result<ParsedChange> {
     changelog::parse_changelog_change(change)
 }
 
@@ -58,7 +57,7 @@ pub fn write_file(
     content: &str,
     op: WriteOp,
     display_path: Option<&Path>,
-) -> Result<()> {
+) -> DiagnosticResult<()> {
     let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
@@ -77,7 +76,11 @@ pub fn write_file(
 ///
 /// In Preview mode, shows what directory would be created.
 /// If `display_path` is provided, it's used for the preview output instead of `path`.
-pub fn create_dir_all(path: &Path, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+pub fn create_dir_all(
+    path: &Path,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> DiagnosticResult<()> {
     let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {
@@ -96,7 +99,7 @@ pub fn create_dir_all(path: &Path, op: WriteOp, display_path: Option<&Path>) -> 
 ///
 /// In Preview mode, shows what would be deleted instead of deleting.
 /// If `display_path` is provided, it's used for error messages and preview output.
-pub fn delete_file(path: &Path, op: WriteOp, display_path: Option<&Path>) -> Result<()> {
+pub fn delete_file(path: &Path, op: WriteOp, display_path: Option<&Path>) -> DiagnosticResult<()> {
     let output_path = display_path.unwrap_or(path);
     match op {
         WriteOp::Execute => {

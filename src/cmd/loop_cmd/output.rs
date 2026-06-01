@@ -1,5 +1,5 @@
 use crate::OutputFormat;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_planner::topological_order_for_state;
 use crate::loop_state::LoopState;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
@@ -76,7 +76,7 @@ pub(super) fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
     }
 }
 
-pub(super) fn print_loop(verb: &str, state: &LoopState) -> anyhow::Result<()> {
+pub(super) fn print_loop(verb: &str, state: &LoopState) -> DiagnosticResult<()> {
     if verb == "Loop" {
         println!("Loop {}", state.loop_meta.id);
     } else {

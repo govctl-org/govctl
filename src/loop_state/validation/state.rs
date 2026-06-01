@@ -1,12 +1,13 @@
 use super::common::{ensure_no_duplicates, ensure_work_item_id, invalid_state};
 use super::id::validate_loop_id;
+use crate::diagnostic::DiagnosticResult;
 use crate::loop_state::LoopState;
 use std::collections::BTreeSet;
 
 pub(in crate::loop_state) fn validate_loop_state(
     state: &LoopState,
     expected_loop_id: Option<&str>,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     validate_loop_id(&state.loop_meta.id)?;
     if let Some(expected) = expected_loop_id
         && state.loop_meta.id != expected

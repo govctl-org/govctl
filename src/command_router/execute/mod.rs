@@ -177,7 +177,7 @@ fn execute_lifecycle(
             cmd::lifecycle::reject_adr(config, id, op)
         }
         LifecycleOp::MoveWork { file_or_id, status } => {
-            cmd::move_::move_item(config, file_or_id, *status, op)
+            Ok(cmd::move_::move_item(config, file_or_id, *status, op)?)
         }
     }
 }
