@@ -1,5 +1,6 @@
 use super::{expand_inline_refs, render_refs, write_rendered_md};
 use crate::config::Config;
+use crate::diagnostic::DiagnosticResult;
 use crate::model::{AdrEntry, AlternativeStatus};
 use crate::signature::{compute_adr_signature, format_signature_header};
 use std::fmt::Write as FmtWrite;
@@ -8,7 +9,7 @@ use std::fmt::Write as FmtWrite;
 ///
 /// # Errors
 /// Returns an error if signature computation fails.
-pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
+pub fn render_adr(adr: &AdrEntry) -> DiagnosticResult<String> {
     let meta = adr.meta();
     let content = &adr.spec.content;
     let mut out = String::new();
@@ -103,7 +104,7 @@ pub fn render_adr(adr: &AdrEntry) -> anyhow::Result<String> {
 }
 
 /// Write rendered ADR to file
-pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> anyhow::Result<()> {
+pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> DiagnosticResult<()> {
     let meta = adr.meta();
     let output_path = config.adr_output().join(format!("{}.md", meta.id));
 

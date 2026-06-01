@@ -2,7 +2,7 @@
 
 use crate::OutputFormat;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{GuardCheck, GuardMeta, GuardSpec};
 use crate::parse::{load_guards, write_guard};
 use crate::ui;
@@ -10,7 +10,7 @@ use crate::write::{WriteOp, create_dir_all};
 use slug::slugify;
 
 /// Create a new verification guard.
-pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     let guard_dir = config.guard_dir();
     if !guard_dir.exists() && !op.is_preview() {
         create_dir_all(&guard_dir, op, Some(&config.display_path(&guard_dir)))?;
@@ -25,8 +25,7 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Ve
                 "Invalid guard title: must produce a slug starting with a letter (got \"{title}\")"
             ),
             title,
-        )
-        .into());
+        ));
     }
     let id = format!("GUARD-{slug}");
 
@@ -38,8 +37,7 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Ve
                 DiagnosticCode::E1003GuardDuplicate,
                 format!("Guard already exists: {id}"),
                 &id,
-            )
-            .into());
+            ));
         }
     }
 
@@ -76,7 +74,7 @@ pub fn delete_guard(
     id: &str,
     _force: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let guards = load_guards(config)?;
     let guard = guards
         .iter()
@@ -126,8 +124,7 @@ pub fn delete_guard(
                     .join("\n")
             ),
             id,
-        )
-        .into());
+        ));
     }
 
     let path = guard.path.clone();
@@ -145,7 +142,7 @@ pub fn show_guard(
     config: &Config,
     id: &str,
     output: OutputFormat,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let guards = load_guards(config)?;
     let guard = guards
         .iter()

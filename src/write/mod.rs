@@ -16,7 +16,7 @@ pub use artifact::{
 };
 pub use changelog::{BumpLevel, ParsedChange, add_changelog_change, bump_rfc_version, today};
 
-pub fn parse_changelog_change(change: &str) -> anyhow::Result<ParsedChange> {
+pub fn parse_changelog_change(change: &str) -> DiagnosticResult<ParsedChange> {
     changelog::parse_changelog_change(change)
 }
 

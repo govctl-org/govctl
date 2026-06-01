@@ -7,7 +7,7 @@ mod summaries;
 use crate::ListTarget;
 use crate::OutputFormat;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::load::load_project;
 use crate::parse::load_guards_with_warnings;
 use resources::{list_adrs, list_clauses, list_guards, list_rfcs, list_work_items};
@@ -20,7 +20,7 @@ pub fn list(
     limit: Option<usize>,
     output: OutputFormat,
     tags: &[String],
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     if target == ListTarget::Guard {
         let result = load_guards_with_warnings(config)?;
         list_guards(&result.items, filter, limit, output, tags);

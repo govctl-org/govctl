@@ -1,5 +1,6 @@
 use super::{expand_inline_refs, render_refs, write_rendered_md};
 use crate::config::Config;
+use crate::diagnostic::DiagnosticResult;
 use crate::model::{ChecklistStatus, WorkItemEntry};
 use crate::signature::{compute_work_item_signature, format_signature_header};
 use std::fmt::Write as FmtWrite;
@@ -24,7 +25,7 @@ fn indent_continuation(text: &str) -> String {
 ///
 /// # Errors
 /// Returns an error if signature computation fails.
-pub fn render_work_item(item: &WorkItemEntry) -> anyhow::Result<String> {
+pub fn render_work_item(item: &WorkItemEntry) -> DiagnosticResult<String> {
     let meta = item.meta();
     let content = &item.spec.content;
     let mut out = String::new();
@@ -138,7 +139,7 @@ pub fn write_work_item_md(
     config: &Config,
     item: &WorkItemEntry,
     dry_run: bool,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let meta = item.meta();
     let output_path = config.work_output().join(format!("{}.md", meta.id));
 

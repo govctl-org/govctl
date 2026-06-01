@@ -4,7 +4,7 @@ mod catalog;
 mod context;
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use serde::Serialize;
 
 use catalog::{CommandInfo, WorkflowInfo, command_catalog, workflow_info};
@@ -25,7 +25,7 @@ struct DescribeOutput {
 }
 
 /// Execute describe command
-pub fn describe(config: &Config, include_context: bool) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn describe(config: &Config, include_context: bool) -> DiagnosticResult<Diagnostics> {
     let version = env!("CARGO_PKG_VERSION").to_string();
 
     let mut output = DescribeOutput {

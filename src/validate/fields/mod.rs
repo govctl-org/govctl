@@ -1,6 +1,6 @@
 use crate::cmd::edit::rules as edit_rules;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::load::find_clause_json;
 use crate::model::ClauseStatus;
 use crate::validate::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
@@ -55,7 +55,7 @@ impl FieldValidation {
     }
 
     /// Validate a value.
-    fn validate(&self, ctx: &ValidationContext, value: &str) -> anyhow::Result<()> {
+    fn validate(&self, ctx: &ValidationContext, value: &str) -> DiagnosticResult<()> {
         match self {
             Self::None => Ok(()),
             Self::EnumValue => Ok(()),
@@ -73,7 +73,7 @@ pub fn validate_field(
     kind: ArtifactKind,
     field: &str,
     value: &str,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let ctx = ValidationContext {
         config,
         artifact_id,
@@ -82,7 +82,7 @@ pub fn validate_field(
     validation.validate(&ctx, value)
 }
 
-fn validate_semver(value: &str) -> anyhow::Result<()> {
+fn validate_semver(value: &str) -> DiagnosticResult<()> {
     semver::Version::parse(value).map_err(|_| {
         Diagnostic::new(
             DiagnosticCode::E0820InvalidFieldValue,
@@ -93,7 +93,7 @@ fn validate_semver(value: &str) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyhow::Result<()> {
+fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> DiagnosticResult<()> {
     if target.is_empty() {
         return Ok(());
     }
@@ -110,8 +110,7 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
             DiagnosticCode::E0210ClauseInvalidIdFormat,
             format!("Invalid clause ID format: {}", ctx.artifact_id),
             ctx.artifact_id,
-        )
-        .into());
+        ));
     }
 
     let full_target = if target.contains(':') {
@@ -132,8 +131,7 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
             DiagnosticCode::E0210ClauseInvalidIdFormat,
             format!("Invalid target clause ID: {target}"),
             target,
-        )
-        .into());
+        ));
     }
 
     if target_rfc != source_rfc {
@@ -143,8 +141,7 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
                 "superseded_by must reference a clause in the same RFC (got {target_rfc}, expected {source_rfc})"
             ),
             target,
-        )
-        .into());
+        ));
     }
 
     let target_path = find_clause_json(ctx.config, &full_target).ok_or_else(|| {
@@ -162,18 +159,16 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> anyho
             DiagnosticCode::E0207ClauseSupersededByNotActive,
             format!("Cannot supersede by a superseded clause: {full_target}"),
             &full_target,
-        )
-        .into()),
+        )),
         ClauseStatus::Deprecated => Err(Diagnostic::new(
             DiagnosticCode::E0207ClauseSupersededByNotActive,
             format!("Cannot supersede by a deprecated clause: {full_target}"),
             &full_target,
-        )
-        .into()),
+        )),
     }
 }
 
-fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> anyhow::Result<()> {
+fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> DiagnosticResult<()> {
     use crate::load::find_rfc_json;
     use crate::parse::{load_adrs, load_work_items};
 
@@ -183,8 +178,7 @@ fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> anyhow::Resul
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {ref_id}"),
                 ref_id,
-            )
-            .into());
+            ));
         }
     } else if ref_id.starts_with("ADR-") {
         let adrs = load_adrs(ctx.config)?;
@@ -193,8 +187,7 @@ fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> anyhow::Resul
                 DiagnosticCode::E0302AdrNotFound,
                 format!("ADR not found: {ref_id}"),
                 ref_id,
-            )
-            .into());
+            ));
         }
     } else if ref_id.starts_with("WI-") {
         let items = load_work_items(ctx.config)?;
@@ -203,16 +196,14 @@ fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> anyhow::Resul
                 DiagnosticCode::E0402WorkNotFound,
                 format!("Work item not found: {ref_id}"),
                 ref_id,
-            )
-            .into());
+            ));
         }
     } else {
         return Err(Diagnostic::new(
             DiagnosticCode::E0813SupersedeNotSupported,
             format!("Unknown artifact type: {ref_id}"),
             ref_id,
-        )
-        .into());
+        ));
     }
 
     check_ref_hierarchy(
@@ -221,7 +212,6 @@ fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> anyhow::Resul
         ctx.artifact_id,
         ReferenceSurface::StructuredRef,
     )
-    .map_err(|e| e.into())
 }
 
 #[cfg(test)]

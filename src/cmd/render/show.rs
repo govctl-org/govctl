@@ -1,7 +1,7 @@
 use super::display_path_string;
 use crate::OutputFormat;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::load_rfcs;
 use crate::parse::{load_adrs, load_work_items};
 use crate::render::{expand_inline_refs, render_adr, render_clause, render_rfc, render_work_item};
@@ -10,11 +10,7 @@ use crate::terminal_md::render_terminal_md;
 /// Show RFC content to stdout (no file written).
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
-pub fn show_rfc(
-    config: &Config,
-    id: &str,
-    output: OutputFormat,
-) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn show_rfc(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
     let rfc = rfcs
@@ -53,11 +49,7 @@ pub fn show_rfc(
 /// Show ADR content to stdout (no file written).
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
-pub fn show_adr(
-    config: &Config,
-    id: &str,
-    output: OutputFormat,
-) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn show_adr(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
     let adrs = load_adrs(config)?;
 
     let adr = adrs
@@ -96,11 +88,7 @@ pub fn show_adr(
 /// Show work item content to stdout (no file written).
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
-pub fn show_work(
-    config: &Config,
-    id: &str,
-    output: OutputFormat,
-) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn show_work(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
     let items = load_work_items(config)?;
 
     let item = items
@@ -146,15 +134,14 @@ pub fn show_clause(
     config: &Config,
     id: &str,
     output: OutputFormat,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let parts: Vec<&str> = id.split(':').collect();
     if parts.len() != 2 {
         return Err(Diagnostic::new(
             DiagnosticCode::E0202ClauseNotFound,
             format!("Invalid clause ID format: {id} (expected RFC-NNNN:C-NAME)"),
             id,
-        )
-        .into());
+        ));
     }
     let rfc_id = parts[0];
     let clause_name = parts[1];

@@ -15,13 +15,9 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             cmd::new::sync_skills(config, *force, format, dir.as_deref(), op),
             "init skills",
         ),
-        BuiltinOp::Check { has_active: true } => {
-            legacy_command(cmd::check::check_has_active(config), "check active")
-        }
-        BuiltinOp::Check { has_active: false } => {
-            legacy_command(cmd::check::check_all(config), "check")
-        }
-        BuiltinOp::Status => legacy_command(cmd::status::show_status(config), "status"),
+        BuiltinOp::Check { has_active: true } => cmd::check::check_has_active(config),
+        BuiltinOp::Check { has_active: false } => cmd::check::check_all(config),
+        BuiltinOp::Status => cmd::status::show_status(config),
         BuiltinOp::RenderGlobal {
             target,
             dry_run,
@@ -31,9 +27,7 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::Verify { guard_ids, work } => {
             cmd::verify::verify(config, guard_ids, work.as_deref())
         }
-        BuiltinOp::Describe { context } => {
-            legacy_command(cmd::describe::describe(config, *context), "describe")
-        }
+        BuiltinOp::Describe { context } => cmd::describe::describe(config, *context),
         BuiltinOp::SelfUpdate { check } => {
             legacy_command(cmd::self_update::self_update(*check), "self-update")
         }
@@ -53,13 +47,9 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             cmd::lifecycle::cut_release(config, version, date.as_deref(), op),
             "release cut",
         ),
-        BuiltinOp::TagNew { tag } => legacy_command(cmd::tag::tag_new(config, tag, op), "tag new"),
-        BuiltinOp::TagDelete { tag } => {
-            legacy_command(cmd::tag::tag_delete(config, tag, op), "tag delete")
-        }
-        BuiltinOp::TagList { output } => {
-            legacy_command(cmd::tag::tag_list(config, *output), "tag list")
-        }
+        BuiltinOp::TagNew { tag } => cmd::tag::tag_new(config, tag, op),
+        BuiltinOp::TagDelete { tag } => cmd::tag::tag_delete(config, tag, op),
+        BuiltinOp::TagList { output } => cmd::tag::tag_list(config, *output),
         BuiltinOp::LoopStart {
             loop_id,
             work_items,

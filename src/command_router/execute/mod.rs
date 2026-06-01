@@ -17,25 +17,19 @@ fn legacy_command(result: anyhow::Result<Diagnostics>, context: &str) -> Command
 }
 
 fn render_rfc(config: &Config, id: Option<&str>, dry_run: bool) -> CommandResult {
-    legacy_command(cmd::render::render(config, id, dry_run), "render rfc")
+    cmd::render::render(config, id, dry_run)
 }
 
 fn render_adr(config: &Config, id: Option<&str>, dry_run: bool) -> CommandResult {
-    legacy_command(cmd::render::render_adrs(config, id, dry_run), "render adr")
+    cmd::render::render_adrs(config, id, dry_run)
 }
 
 fn render_work(config: &Config, id: Option<&str>, dry_run: bool) -> CommandResult {
-    legacy_command(
-        cmd::render::render_work_items(config, id, dry_run),
-        "render work",
-    )
+    cmd::render::render_work_items(config, id, dry_run)
 }
 
 fn render_changelog(config: &Config, dry_run: bool, force: bool) -> CommandResult {
-    legacy_command(
-        cmd::render::render_changelog(config, dry_run, force),
-        "render changelog",
-    )
+    cmd::render::render_changelog(config, dry_run, force)
 }
 
 fn render_global_target(
@@ -111,9 +105,7 @@ fn execute_create(config: &Config, create: &CreateOp, op: WriteOp) -> CommandRes
             ),
             "create work",
         ),
-        CreateOp::Guard { title } => {
-            legacy_command(cmd::guard::new_guard(config, title, op), "create guard")
-        }
+        CreateOp::Guard { title } => cmd::guard::new_guard(config, title, op),
     }
 }
 
@@ -125,16 +117,13 @@ fn execute_list(
     output: OutputFormat,
     tags: &[String],
 ) -> CommandResult {
-    legacy_command(
-        cmd::list::list(
-            config,
-            extract_collection_scope(&plan.scope)?,
-            filter,
-            limit,
-            output,
-            tags,
-        ),
-        "list",
+    cmd::list::list(
+        config,
+        extract_collection_scope(&plan.scope)?,
+        filter,
+        limit,
+        output,
+        tags,
     )
 }
 
@@ -156,13 +145,11 @@ fn execute_get(plan: &CommandPlan, config: &Config) -> CommandResult {
 fn execute_show(plan: &CommandPlan, config: &Config, output: OutputFormat) -> CommandResult {
     let (artifact, id) = extract_artifact_scope(&plan.scope)?;
     match ShowKind::from_artifact(artifact) {
-        ShowKind::Rfc => legacy_command(cmd::render::show_rfc(config, id, output), "show rfc"),
-        ShowKind::Clause => {
-            legacy_command(cmd::render::show_clause(config, id, output), "show clause")
-        }
-        ShowKind::Adr => legacy_command(cmd::render::show_adr(config, id, output), "show adr"),
-        ShowKind::Work => legacy_command(cmd::render::show_work(config, id, output), "show work"),
-        ShowKind::Guard => legacy_command(cmd::guard::show_guard(config, id, output), "show guard"),
+        ShowKind::Rfc => cmd::render::show_rfc(config, id, output),
+        ShowKind::Clause => cmd::render::show_clause(config, id, output),
+        ShowKind::Adr => cmd::render::show_adr(config, id, output),
+        ShowKind::Work => cmd::render::show_work(config, id, output),
+        ShowKind::Guard => cmd::guard::show_guard(config, id, output),
     }
 }
 
@@ -269,10 +256,7 @@ fn execute_delete(plan: &CommandPlan, config: &Config, force: bool, op: WriteOp)
             cmd::edit::delete_work_item(config, id, force, op),
             "delete work",
         ),
-        cmd::edit::ArtifactType::Guard => legacy_command(
-            cmd::guard::delete_guard(config, id, force, op),
-            "delete guard",
-        ),
+        cmd::edit::ArtifactType::Guard => cmd::guard::delete_guard(config, id, force, op),
         cmd::edit::ArtifactType::Rfc | cmd::edit::ArtifactType::Adr => Err(Diagnostic::new(
             DiagnosticCode::E0822UnsupportedOperation,
             "delete is not supported for this artifact",

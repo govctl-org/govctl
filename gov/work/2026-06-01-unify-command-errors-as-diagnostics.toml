@@ -3,24 +3,26 @@
 [govctl]
 id = "WI-2026-06-01-175"
 title = "Unify command errors as diagnostics"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Systematically tighten production error handling so command and rendering boundaries return Diagnostic/DiagnosticResult instead of wrapping diagnostics in anyhow. Start with the narrowest coherent boundary cleanup found by audit, preserve CLI output semantics, and document remaining non-Diagnostic error surfaces if they require follow-up work."
+notes = ["Converted straightforward production boundaries to DiagnosticResult for render/show/changelog, check/status/list/describe, guard, tag, field validation, and changelog parsing; router now calls those paths directly instead of downcasting anyhow. Remaining larger clusters are edit/runtime, lifecycle/new/migrate, self-update, confirmation, and TUI/external-error mapping."]
 
 [[content.acceptance_criteria]]
 text = "production command or rendering boundary returns DiagnosticResult instead of anyhow where errors are diagnostics"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "CLI error reporting no longer needs to downcast anyhow for the cleaned boundary"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "targeted tests, full tests, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

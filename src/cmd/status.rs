@@ -1,7 +1,7 @@
 //! Status command implementation.
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::load::load_project;
 use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus, WorkItemStatus};
 use crate::theme::status_semantic;
@@ -48,7 +48,7 @@ fn total_line(count: usize) {
 }
 
 /// Show summary status
-pub fn show_status(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     let index = match load_project(config) {
         Ok(idx) => idx,
         Err(diags) => return Ok(diags),

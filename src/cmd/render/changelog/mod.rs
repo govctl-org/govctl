@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult, Diagnostics};
 use crate::model::{ReleasesFile, WorkItemEntry, WorkItemStatus};
 use crate::parse::{load_releases, load_work_items};
 use crate::ui;
@@ -18,7 +18,7 @@ pub fn render_changelog(
     config: &Config,
     dry_run: bool,
     force: bool,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let releases_file = load_releases(config)?;
     let work_items = load_work_items(config)?;
 
@@ -76,7 +76,7 @@ fn render_changelog_full(
     releases_file: &ReleasesFile,
     work_items: &[WorkItemEntry],
     unreleased: &[&WorkItemEntry],
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     let work_item_map = sections::work_item_map(work_items);
 
     let mut output = String::new();
@@ -107,7 +107,7 @@ fn render_changelog_incremental(
     releases_file: &ReleasesFile,
     work_items: &[WorkItemEntry],
     unreleased: &[&WorkItemEntry],
-) -> anyhow::Result<String> {
+) -> DiagnosticResult<String> {
     let existing = if changelog_path.exists() {
         std::fs::read_to_string(changelog_path).map_err(|err| {
             Diagnostic::io_error("read changelog", err, changelog_path.display().to_string())

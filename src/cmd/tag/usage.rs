@@ -1,12 +1,11 @@
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::load::load_rfcs;
 use crate::parse::{load_adrs, load_guards_with_warnings, load_work_items};
-use anyhow::Result;
 use std::collections::HashMap;
 
 /// Build a tag -> usage count map by loading all artifacts once.
-pub(super) fn build_tag_usage_map(config: &Config) -> Result<HashMap<String, usize>> {
+pub(super) fn build_tag_usage_map(config: &Config) -> DiagnosticResult<HashMap<String, usize>> {
     let mut usage: HashMap<String, usize> = HashMap::new();
 
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;

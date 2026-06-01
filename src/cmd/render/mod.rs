@@ -1,7 +1,7 @@
 //! Render command implementation.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::load_rfcs;
 use crate::parse::{load_adrs, load_work_items};
 use crate::render::{write_adr_md, write_rfc, write_work_item_md};
@@ -22,7 +22,7 @@ pub fn render(
     config: &Config,
     rfc_id: Option<&str>,
     dry_run: bool,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
 
     if rfcs.is_empty() {
@@ -45,8 +45,7 @@ pub fn render(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {id}"),
             scope,
-        )
-        .into());
+        ));
     }
 
     for rfc in &rfcs_to_render {
@@ -67,7 +66,7 @@ pub fn render_adrs(
     config: &Config,
     adr_id: Option<&str>,
     dry_run: bool,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let adrs = load_adrs(config)?;
 
     if adrs.is_empty() {
@@ -92,8 +91,7 @@ pub fn render_adrs(
             DiagnosticCode::E0302AdrNotFound,
             format!("ADR not found: {id}"),
             scope,
-        )
-        .into());
+        ));
     }
 
     for adr in &adrs_to_render {
@@ -114,7 +112,7 @@ pub fn render_work_items(
     config: &Config,
     work_id: Option<&str>,
     dry_run: bool,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let items = load_work_items(config)?;
 
     if items.is_empty() {
@@ -143,8 +141,7 @@ pub fn render_work_items(
             DiagnosticCode::E0402WorkNotFound,
             format!("Work item not found: {id}"),
             scope,
-        )
-        .into());
+        ));
     }
 
     for item in &items_to_render {

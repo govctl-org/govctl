@@ -2,9 +2,8 @@
 //!
 //! Implements [[ADR-0012]] prefix-based changelog category parsing.
 
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{ChangelogCategory, ChangelogEntry, RfcSpec};
-use anyhow::Result;
 use chrono::Local;
 use semver::Version;
 
@@ -28,7 +27,7 @@ pub struct ParsedChange {
 /// - `just a change` -> Added category (default), "just a change"
 ///
 /// Returns error if prefix is present but invalid.
-pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
+pub fn parse_changelog_change(change: &str) -> DiagnosticResult<ParsedChange> {
     if let Some(colon_pos) = change.find(':') {
         let prefix = change[..colon_pos].trim();
         let message = change[colon_pos + 1..].trim();
@@ -40,8 +39,7 @@ pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
                         DiagnosticCode::E0805EmptyValue,
                         format!("Empty message after prefix '{prefix}:'"),
                         "changelog",
-                    )
-                    .into());
+                    ));
                 }
                 return Ok(ParsedChange {
                     category,
@@ -56,8 +54,7 @@ pub fn parse_changelog_change(change: &str) -> Result<ParsedChange> {
                         ChangelogCategory::VALID_PREFIXES.join(", ")
                     ),
                     "changelog",
-                )
-                .into());
+                ));
             }
         }
     }
@@ -78,7 +75,11 @@ pub enum BumpLevel {
 }
 
 /// Bump RFC version and add changelog entry
-pub fn bump_rfc_version(rfc: &mut RfcSpec, level: BumpLevel, summary: &str) -> Result<String> {
+pub fn bump_rfc_version(
+    rfc: &mut RfcSpec,
+    level: BumpLevel,
+    summary: &str,
+) -> DiagnosticResult<String> {
     let mut version = Version::parse(&rfc.version).map_err(|err| {
         Diagnostic::new(
             DiagnosticCode::E0101RfcSchemaInvalid,
@@ -128,7 +129,7 @@ pub fn bump_rfc_version(rfc: &mut RfcSpec, level: BumpLevel, summary: &str) -> R
 /// - `fix: message` -> fixed category
 /// - `security: message` -> security category
 /// - `message` (no prefix) -> added category
-pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
+pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> DiagnosticResult<()> {
     let parsed = parse_changelog_change(change)?;
 
     if let Some(entry) = rfc.changelog.first_mut() {
@@ -144,8 +145,7 @@ pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
                     DiagnosticCode::E0809ChoreNotAllowed,
                     "'chore:' category is not valid for RFC changelogs (use for work items only)",
                     "changelog",
-                )
-                .into());
+                ));
             }
         }
     } else {
@@ -153,8 +153,7 @@ pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> Result<()> {
             DiagnosticCode::E0111RfcNoChangelog,
             "No changelog entry exists. Bump version first.",
             "rfc",
-        )
-        .into());
+        ));
     }
     Ok(())
 }

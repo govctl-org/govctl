@@ -1,5 +1,6 @@
 use super::{expand_inline_refs, render_refs, write_rendered_md};
 use crate::config::Config;
+use crate::diagnostic::DiagnosticResult;
 use crate::model::{ClauseEntry, ClauseKind, ClauseStatus, RfcIndex};
 use crate::signature::{compute_rfc_signature, format_signature_header};
 use std::fmt::Write as FmtWrite;
@@ -8,7 +9,7 @@ use std::fmt::Write as FmtWrite;
 ///
 /// # Errors
 /// Returns an error if signature computation fails.
-pub fn render_rfc(rfc: &RfcIndex) -> anyhow::Result<String> {
+pub fn render_rfc(rfc: &RfcIndex) -> DiagnosticResult<String> {
     let mut out = String::new();
 
     // Compute signature from source content (per ADR-0003)
@@ -158,7 +159,7 @@ pub fn render_clause(out: &mut String, rfc_id: &str, clause: &ClauseEntry) {
 }
 
 /// Write rendered RFC to file
-pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> anyhow::Result<()> {
+pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> DiagnosticResult<()> {
     let output_path = config.rfc_output().join(format!("{}.md", rfc.rfc.rfc_id));
 
     // Render and expand inline references (per ADR-0011)

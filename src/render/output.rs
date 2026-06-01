@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::ui;
 use std::io::Write;
 
@@ -13,7 +13,7 @@ pub(super) fn write_rendered_md(
     content: &str,
     dry_run: bool,
     preview_lines: usize,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let content = format!("{}\n", content.trim_end());
     let display_path = config.display_path(output_path);
 

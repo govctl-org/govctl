@@ -1,6 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use anyhow::Result;
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use regex::Regex;
 use std::sync::LazyLock;
 
@@ -13,7 +12,7 @@ pub fn tag_re() -> Result<&'static Regex, regex::Error> {
     TAG_RE_RESULT.as_ref().map_err(|e| e.clone())
 }
 
-pub(super) fn validate_tag_format(tag: &str) -> Result<()> {
+pub(super) fn validate_tag_format(tag: &str) -> DiagnosticResult<()> {
     let re = tag_re().map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0806InvalidPattern,
@@ -28,14 +27,13 @@ pub(super) fn validate_tag_format(tag: &str) -> Result<()> {
                 "Invalid tag format '{tag}': tags must match ^[a-z][a-z0-9-]*$ (lowercase letters, digits, hyphens; start with a letter)"
             ),
             tag,
-        )
-        .into());
+        ));
     }
     Ok(())
 }
 
 /// Read config.toml as a raw TOML table for in-place modification.
-pub(super) fn read_config_table(config: &Config) -> Result<toml::Table> {
+pub(super) fn read_config_table(config: &Config) -> DiagnosticResult<toml::Table> {
     let config_path = config.gov_root.join("config.toml");
     let content = std::fs::read_to_string(&config_path).map_err(|err| {
         Diagnostic::io_error("read config", err, config_path.display().to_string())
@@ -46,12 +44,11 @@ pub(super) fn read_config_table(config: &Config) -> Result<toml::Table> {
             format!("Failed to parse config: {err}"),
             config_path.display().to_string(),
         )
-        .into()
     })
 }
 
 /// Write a modified TOML table back to config.toml.
-pub(super) fn write_config_table(config: &Config, table: &toml::Table) -> Result<()> {
+pub(super) fn write_config_table(config: &Config, table: &toml::Table) -> DiagnosticResult<()> {
     let config_path = config.gov_root.join("config.toml");
     let content = toml::to_string_pretty(table).map_err(|err| {
         Diagnostic::new(
@@ -67,7 +64,7 @@ pub(super) fn write_config_table(config: &Config, table: &toml::Table) -> Result
 }
 
 /// Get the current allowed tags array from a TOML table.
-pub(super) fn get_allowed_tags(table: &toml::Table) -> Result<Vec<String>> {
+pub(super) fn get_allowed_tags(table: &toml::Table) -> DiagnosticResult<Vec<String>> {
     let Some(tags_val) = table.get("tags") else {
         return Ok(vec![]);
     };
@@ -103,7 +100,7 @@ pub(super) fn get_allowed_tags(table: &toml::Table) -> Result<Vec<String>> {
 }
 
 /// Set the allowed tags array in a TOML table.
-pub(super) fn set_allowed_tags(table: &mut toml::Table, tags: Vec<String>) -> Result<()> {
+pub(super) fn set_allowed_tags(table: &mut toml::Table, tags: Vec<String>) -> DiagnosticResult<()> {
     let arr: toml::value::Array = tags.into_iter().map(toml::Value::String).collect();
 
     let tags_table = table
