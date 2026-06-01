@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-207"
+title = "Share simple list runtime helpers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Reduce duplication in src/cmd/edit/runtime/list.rs by sharing immutable array lookup and list-item text extraction for simple list get/remove/tick operations while preserving edit behavior and diagnostics."
+
+[[content.acceptance_criteria]]
+text = "Simple runtime list get/remove/tick paths share private helpers for immutable array lookup and item text extraction"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Simple list add/remove/tick/set/get behavior and diagnostics remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Edit runtime tests, cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"

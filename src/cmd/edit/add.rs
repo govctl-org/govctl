@@ -2,6 +2,7 @@ use super::adapter::{
     AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, TomlAdapter,
     WorkTomlAdapter,
 };
+use super::engine as edit_engine;
 use super::json_target::add_json_simple_list_field;
 use super::rules as edit_rules;
 use super::target_doc::add_to_target_doc;
@@ -114,6 +115,50 @@ fn work_add_acceptance_criteria(
     Ok(())
 }
 
+fn add_to_serialized_doc<T>(
+    spec: &mut T,
+    artifact: ArtifactType,
+    target: &edit_engine::ResolvedTarget,
+    value: &str,
+    id: &str,
+) -> DiagnosticResult<()>
+where
+    T: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let mut doc = serialize_edit_doc(spec, id)?;
+    add_to_target_doc(artifact, &mut doc, target, value, id)?;
+    *spec = deserialize_edit_doc(doc, id)?;
+    Ok(())
+}
+
+fn validate_tag_add(config: &Config, id: &str, value: &str) -> DiagnosticResult<()> {
+    let tag_re = crate::cmd::tag::tag_re().map_err(|e| {
+        Diagnostic::new(
+            DiagnosticCode::E0806InvalidPattern,
+            format!("Failed to compile tag regex: {e}"),
+            id,
+        )
+    })?;
+    if !tag_re.is_match(value) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1101TagInvalidFormat,
+            format!("Invalid tag format '{value}': must match ^[a-z][a-z0-9-]*$"),
+            id,
+        ));
+    }
+    let allowed = &config.tags.allowed;
+    if !allowed.iter().any(|t| t == value) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1105TagUnknown,
+            format!(
+                "Tag '{value}' is not in config.toml [tags] allowed. Register it first with: govctl tag new {value}"
+            ),
+            id,
+        ));
+    }
+    Ok(())
+}
+
 pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnostic>> {
     let AddFieldRequest {
         config,
@@ -143,30 +188,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
 
     // Validate tags against controlled vocabulary at add time — [[RFC-0002:C-RESOURCES]]
     if fp.as_simple() == Some("tags") {
-        let tag_re = crate::cmd::tag::tag_re().map_err(|e| {
-            Diagnostic::new(
-                DiagnosticCode::E0806InvalidPattern,
-                format!("Failed to compile tag regex: {e}"),
-                id,
-            )
-        })?;
-        if !tag_re.is_match(value) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E1101TagInvalidFormat,
-                format!("Invalid tag format '{value}': must match ^[a-z][a-z0-9-]*$"),
-                id,
-            ));
-        }
-        let allowed = &config.tags.allowed;
-        if !allowed.iter().any(|t| t == value) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E1105TagUnknown,
-                format!(
-                    "Tag '{value}' is not in config.toml [tags] allowed. Register it first with: govctl tag new {value}"
-                ),
-                id,
-            ));
-        }
+        validate_tag_add(config, id, value)?;
     }
 
     match artifact {
@@ -180,9 +202,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
                 };
                 adr_add_alternatives(&mut entry, value, &ctx)?;
             } else {
-                let mut doc = serialize_edit_doc(&entry.spec, id)?;
-                add_to_target_doc(ArtifactType::Adr, &mut doc, target, value, id)?;
-                entry.spec = deserialize_edit_doc(doc, id)?;
+                add_to_serialized_doc(&mut entry.spec, ArtifactType::Adr, target, value, id)?;
             }
             AdrTomlAdapter::write(config, &entry, op)?;
         }
@@ -192,9 +212,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
                 let ctx = WorkAddContext { category_override };
                 work_add_acceptance_criteria(&mut entry, value, &ctx)?;
             } else {
-                let mut doc = serialize_edit_doc(&entry.spec, id)?;
-                add_to_target_doc(ArtifactType::WorkItem, &mut doc, target, value, id)?;
-                entry.spec = deserialize_edit_doc(doc, id)?;
+                add_to_serialized_doc(&mut entry.spec, ArtifactType::WorkItem, target, value, id)?;
             }
             if is_work_dependency_target(target) {
                 validate_work_dependency_edit(config, &entry)?;
@@ -221,9 +239,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
         )?,
         ArtifactType::Guard => {
             let mut entry = GuardTomlAdapter::load(config, id)?;
-            let mut doc = serialize_edit_doc(&entry.spec, id)?;
-            add_to_target_doc(ArtifactType::Guard, &mut doc, target, value, id)?;
-            entry.spec = deserialize_edit_doc(doc, id)?;
+            add_to_serialized_doc(&mut entry.spec, ArtifactType::Guard, target, value, id)?;
             GuardTomlAdapter::write(config, &entry, op)?;
         }
     }
