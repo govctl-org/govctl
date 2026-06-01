@@ -51,27 +51,38 @@ fn total_line(total: usize) -> Line<'static> {
     ])
 }
 
-fn rfc_stats(app: &App) -> Paragraph<'static> {
-    let mut draft = 0;
-    let mut normative = 0;
-    let mut deprecated = 0;
-
-    for rfc in &app.index.rfcs {
-        match rfc.rfc.status.as_ref() {
-            "draft" => draft += 1,
-            "normative" => normative += 1,
-            "deprecated" => deprecated += 1,
-            _ => {}
+fn count_statuses<T, F, const N: usize>(
+    items: &[T],
+    statuses: [&str; N],
+    mut status_for: F,
+) -> [usize; N]
+where
+    F: for<'a> FnMut(&'a T) -> &'a str,
+{
+    let mut counts = [0; N];
+    for item in items {
+        let status = status_for(item);
+        if let Some(idx) = statuses.iter().position(|expected| *expected == status) {
+            counts[idx] += 1;
         }
     }
+    counts
+}
+
+fn rfc_stats(app: &App) -> Paragraph<'static> {
+    let counts = count_statuses(
+        &app.index.rfcs,
+        ["draft", "normative", "deprecated"],
+        |rfc| rfc.rfc.status.as_ref(),
+    );
 
     summary_block(
         "📋 RFCs",
         Color::Blue,
         vec![
-            summary_line("○", Color::Yellow, "Draft:      ", draft),
-            summary_line("●", Color::Green, "Normative:  ", normative),
-            summary_line("✗", Color::Red, "Deprecated: ", deprecated),
+            summary_line("○", Color::Yellow, "Draft:      ", counts[0]),
+            summary_line("●", Color::Green, "Normative:  ", counts[1]),
+            summary_line("✗", Color::Red, "Deprecated: ", counts[2]),
             Line::from(""),
             total_line(app.index.rfcs.len()),
         ],
@@ -79,26 +90,19 @@ fn rfc_stats(app: &App) -> Paragraph<'static> {
 }
 
 fn adr_stats(app: &App) -> Paragraph<'static> {
-    let mut proposed = 0;
-    let mut accepted = 0;
-    let mut superseded = 0;
-
-    for adr in &app.index.adrs {
-        match adr.meta().status.as_ref() {
-            "proposed" => proposed += 1,
-            "accepted" => accepted += 1,
-            "superseded" => superseded += 1,
-            _ => {}
-        }
-    }
+    let counts = count_statuses(
+        &app.index.adrs,
+        ["proposed", "accepted", "superseded"],
+        |adr| adr.meta().status.as_ref(),
+    );
 
     summary_block(
         "📝 ADRs",
         Color::Green,
         vec![
-            summary_line("○", Color::Yellow, "Proposed:   ", proposed),
-            summary_line("●", Color::Green, "Accepted:   ", accepted),
-            summary_line("✗", Color::Red, "Superseded: ", superseded),
+            summary_line("○", Color::Yellow, "Proposed:   ", counts[0]),
+            summary_line("●", Color::Green, "Accepted:   ", counts[1]),
+            summary_line("✗", Color::Red, "Superseded: ", counts[2]),
             Line::from(""),
             total_line(app.index.adrs.len()),
         ],
@@ -106,26 +110,17 @@ fn adr_stats(app: &App) -> Paragraph<'static> {
 }
 
 fn work_stats(app: &App) -> Paragraph<'static> {
-    let mut queue = 0;
-    let mut active = 0;
-    let mut done = 0;
-
-    for item in &app.index.work_items {
-        match item.meta().status.as_ref() {
-            "queue" => queue += 1,
-            "active" => active += 1,
-            "done" => done += 1,
-            _ => {}
-        }
-    }
+    let counts = count_statuses(&app.index.work_items, ["queue", "active", "done"], |item| {
+        item.meta().status.as_ref()
+    });
 
     summary_block(
         "📌 Work Items",
         Color::Yellow,
         vec![
-            summary_line("○", Color::Yellow, "Queue:  ", queue),
-            summary_line("◉", Color::Green, "Active: ", active),
-            summary_line("●", Color::Green, "Done:   ", done),
+            summary_line("○", Color::Yellow, "Queue:  ", counts[0]),
+            summary_line("◉", Color::Green, "Active: ", counts[1]),
+            summary_line("●", Color::Green, "Done:   ", counts[2]),
             Line::from(""),
             total_line(app.index.work_items.len()),
         ],
