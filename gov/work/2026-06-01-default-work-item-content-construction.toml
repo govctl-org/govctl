@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-116"
 title = "Default work item content construction"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["ADR-0047"]
 
 [content]
@@ -13,10 +14,10 @@ description = "Clean the work item creation path so new work item content uses d
 
 [[content.acceptance_criteria]]
 text = "new work item creation initializes content without explicitly constructing an empty legacy inline history field"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "work creation regression tests, cargo clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
