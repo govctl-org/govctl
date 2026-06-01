@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-050"
+title = "Split display path tests by command area"
+status = "queue"
+created = "2026-06-02"
+
+[content]
+description = "Split the oversized display path integration test file into command-area case files using the repo's existing include-based test organization. Preserve snapshot names, helper behavior, and test coverage while avoiding same-name file/directory module shapes."
+
+[[content.acceptance_criteria]]
+text = "display path tests are split into focused command-area case files following existing include-based test organization"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "display path test snapshots, helper assertions, and covered command cases remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted display path tests, clippy, full tests, and govctl check pass"
+status = "pending"
+category = "chore"

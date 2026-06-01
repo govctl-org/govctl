@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-049"
+title = "Extract ADR lifecycle lookup helper"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract the repeated ADR lifecycle load/find/not-found scaffolding in accept, reject, completeness validation, and supersede into local helpers. Preserve ADR lifecycle transition checks, replacement lookup diagnostics, and write behavior."
+
+[[content.acceptance_criteria]]
+text = "ADR lifecycle lookup and not-found scaffolding is shared across completeness, accept, reject, and supersede paths"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "ADR lifecycle diagnostics and transition/write behavior remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted ADR lifecycle tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"

@@ -1,27 +1,61 @@
 use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::model::{AdrStatus, AlternativeStatus};
+use crate::model::{AdrEntry, AdrStatus, AlternativeStatus};
 use crate::parse::load_adrs;
 use crate::parse::write_adr;
 use crate::ui;
 use crate::validate::is_valid_adr_transition;
 use crate::write::WriteOp;
 
+fn adr_not_found(adr_id: &str) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0302AdrNotFound,
+        format!("ADR not found: {adr_id}"),
+        adr_id,
+    )
+}
+
+fn replacement_adr_not_found(by: &str) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0302AdrNotFound,
+        format!("Replacement ADR not found: {by}"),
+        by,
+    )
+}
+
+fn adr_matches_lifecycle_lookup(entry: &AdrEntry, adr_id: &str) -> bool {
+    entry.spec.govctl.id == adr_id || entry.path.to_string_lossy().contains(adr_id)
+}
+
+fn load_lifecycle_adr(config: &Config, adr_id: &str) -> DiagnosticResult<AdrEntry> {
+    load_adrs(config)?
+        .into_iter()
+        .find(|entry| adr_matches_lifecycle_lookup(entry, adr_id))
+        .ok_or_else(|| adr_not_found(adr_id))
+}
+
+fn exact_adr<'a>(adrs: &'a [AdrEntry], adr_id: &str) -> Option<&'a AdrEntry> {
+    adrs.iter().find(|entry| entry.spec.govctl.id == adr_id)
+}
+
+fn require_replacement_adr(adrs: &[AdrEntry], by: &str) -> DiagnosticResult<()> {
+    exact_adr(adrs, by)
+        .map(|_| ())
+        .ok_or_else(|| replacement_adr_not_found(by))
+}
+
+fn take_exact_adr(adrs: Vec<AdrEntry>, adr_id: &str) -> DiagnosticResult<AdrEntry> {
+    adrs.into_iter()
+        .find(|entry| entry.spec.govctl.id == adr_id)
+        .ok_or_else(|| adr_not_found(adr_id))
+}
+
 /// Validate ADR alternatives completeness per [[ADR-0042]].
 ///
 /// Requires at least 2 alternatives, with at least 1 accepted and 1 rejected.
 pub fn validate_adr_completeness(config: &Config, adr_id: &str) -> DiagnosticResult<()> {
-    let entry = load_adrs(config)?
-        .into_iter()
-        .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0302AdrNotFound,
-                format!("ADR not found: {adr_id}"),
-                adr_id,
-            )
-        })?;
+    let entry = load_lifecycle_adr(config, adr_id)?;
 
     let alts = &entry.spec.content.alternatives;
     let has_accepted = alts.iter().any(|a| a.status == AlternativeStatus::Accepted);
@@ -62,16 +96,7 @@ pub fn accept_adr(
     force: bool,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    let entry = load_adrs(config)?
-        .into_iter()
-        .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0302AdrNotFound,
-                format!("ADR not found: {adr_id}"),
-                adr_id,
-            )
-        })?;
+    let entry = load_lifecycle_adr(config, adr_id)?;
 
     if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Accepted) {
         return Err(Diagnostic::new(
@@ -99,16 +124,7 @@ pub fn accept_adr(
 
 /// Reject an ADR
 pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> DiagnosticResult<Diagnostics> {
-    let entry = load_adrs(config)?
-        .into_iter()
-        .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0302AdrNotFound,
-                format!("ADR not found: {adr_id}"),
-                adr_id,
-            )
-        })?;
+    let entry = load_lifecycle_adr(config, adr_id)?;
 
     if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Rejected) {
         return Err(Diagnostic::new(
@@ -137,26 +153,9 @@ pub(super) fn supersede_adr(
 ) -> DiagnosticResult<Diagnostics> {
     let adrs = load_adrs(config)?;
 
-    adrs.iter()
-        .find(|a| a.spec.govctl.id == by)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0302AdrNotFound,
-                format!("Replacement ADR not found: {by}"),
-                by,
-            )
-        })?;
+    require_replacement_adr(&adrs, by)?;
 
-    let mut entry = adrs
-        .into_iter()
-        .find(|a| a.spec.govctl.id == adr_id)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0302AdrNotFound,
-                format!("ADR not found: {adr_id}"),
-                adr_id,
-            )
-        })?;
+    let mut entry = take_exact_adr(adrs, adr_id)?;
 
     if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Superseded) {
         return Err(Diagnostic::new(
