@@ -33,7 +33,7 @@ pub use self::request::{EditFieldRequest, OwnedEditAction};
 use self::set::apply_set_field;
 pub(crate) use self::set::set_field_direct;
 pub use self::tick::tick_item;
-use self::{engine as edit_engine, rules as edit_rules};
+use self::{engine as edit_engine, path::FieldPath, rules as edit_rules};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::ui;
@@ -76,23 +76,33 @@ pub(super) fn unexpected_edit_state(id: &str, message: impl Into<String>) -> Dia
     Diagnostic::new(DiagnosticCode::E0903UnexpectedError, message, id)
 }
 
-fn plan_edit_with_field_for_verb(
+pub(super) struct PlannedMutation {
+    pub(super) artifact: ArtifactType,
+    pub(super) field_path: FieldPath,
+    pub(super) target: edit_engine::ResolvedTarget,
+}
+
+pub(super) fn plan_mutation_target(
     id: &str,
     field: &str,
-    verb: Option<edit_rules::Verb>,
-) -> DiagnosticResult<edit_engine::TargetPlan> {
-    let plan = match verb {
-        Some(verb) => edit_engine::plan_mutation_request(id, field, verb)?,
-        None => edit_engine::plan_request(id, Some(field))?,
-    };
-    plan.field_path.as_ref().ok_or_else(|| {
+    verb: edit_rules::Verb,
+) -> DiagnosticResult<PlannedMutation> {
+    let plan = edit_engine::plan_mutation_request(id, field, verb)?;
+    let field_path = plan.field_path.ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             "Field path required",
             id,
         )
     })?;
-    Ok(plan)
+    let target = plan
+        .target
+        .ok_or_else(|| unexpected_edit_state(id, "mutation planning should produce target"))?;
+    Ok(PlannedMutation {
+        artifact: plan.artifact,
+        field_path,
+        target,
+    })
 }
 
 pub fn edit_clause(
@@ -146,14 +156,18 @@ pub fn edit_field(request: EditFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnos
     match action {
         OwnedEditAction::Set { value, stdin } => {
             let value = resolve_owned_value(value.as_ref(), *stdin)?;
-            let plan = plan_edit_with_field_for_verb(id, path, Some(edit_rules::Verb::Set))?;
-            let artifact = plan.artifact;
-            let target = plan.target.as_ref().ok_or_else(|| {
-                unexpected_edit_state(id, "mutation planning should produce target")
-            })?;
-            apply_set_field(config, id, target, artifact, value.as_str(), op, true)?;
+            let plan = plan_mutation_target(id, path, edit_rules::Verb::Set)?;
+            apply_set_field(
+                config,
+                id,
+                &plan.target,
+                plan.artifact,
+                value.as_str(),
+                op,
+                true,
+            )?;
             if !op.is_preview() {
-                ui::field_set(id, &target.display_path(), value.as_str());
+                ui::field_set(id, &plan.target.display_path(), value.as_str());
             }
             Ok(vec![])
         }

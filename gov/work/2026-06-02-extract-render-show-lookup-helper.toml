@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-048"
+title = "Extract render show lookup helper"
+status = "queue"
+created = "2026-06-02"
+
+[content]
+description = "Extract shared lookup and not-found diagnostic scaffolding from render show commands. Preserve markdown/JSON output behavior and existing relative path diagnostics."
+
+[[content.acceptance_criteria]]
+text = "render show commands use shared lookup/not-found helper where behavior is identical"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "render show markdown/JSON output and relative-path diagnostics remain unchanged"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted render tests, clippy, full tests, and govctl check pass"
+status = "pending"
+category = "chore"

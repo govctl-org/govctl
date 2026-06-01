@@ -2,10 +2,7 @@ use super::adapter::{AdrTomlAdapter, WorkTomlAdapter};
 use super::matching::MatchOptions;
 use super::rules as edit_rules;
 use super::toml_target::tick_toml_field;
-use super::{
-    ArtifactType, plan_edit_with_field_for_verb, reject_match_flags_for_indexed_target,
-    unexpected_edit_state,
-};
+use super::{ArtifactType, plan_mutation_target, reject_match_flags_for_indexed_target};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
@@ -24,12 +21,9 @@ pub fn tick_item(
     status: crate::TickStatus,
     op: WriteOp,
 ) -> DiagnosticResult<Vec<Diagnostic>> {
-    let plan = plan_edit_with_field_for_verb(id, field, Some(edit_rules::Verb::Tick))?;
+    let plan = plan_mutation_target(id, field, edit_rules::Verb::Tick)?;
     let artifact = plan.artifact;
-    let target = plan
-        .target
-        .as_ref()
-        .ok_or_else(|| unexpected_edit_state(id, "mutation planning should produce target"))?;
+    let target = &plan.target;
     reject_match_flags_for_indexed_target(id, target, opts)?;
 
     let status_str = match (artifact, status) {
