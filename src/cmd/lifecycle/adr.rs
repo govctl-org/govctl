@@ -3,6 +3,7 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{AdrStatus, AlternativeStatus};
 use crate::parse::load_adrs;
+use crate::parse::write_adr;
 use crate::ui;
 use crate::validate::is_valid_adr_transition;
 use crate::write::WriteOp;
@@ -124,6 +125,61 @@ pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> DiagnosticResul
 
     if !op.is_preview() {
         ui::rejected("ADR", adr_id);
+    }
+    Ok(vec![])
+}
+
+pub(super) fn supersede_adr(
+    config: &Config,
+    adr_id: &str,
+    by: &str,
+    op: WriteOp,
+) -> DiagnosticResult<Diagnostics> {
+    let adrs = load_adrs(config)?;
+
+    adrs.iter()
+        .find(|a| a.spec.govctl.id == by)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("Replacement ADR not found: {by}"),
+                by,
+            )
+        })?;
+
+    let mut entry = adrs
+        .into_iter()
+        .find(|a| a.spec.govctl.id == adr_id)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0302AdrNotFound,
+                format!("ADR not found: {adr_id}"),
+                adr_id,
+            )
+        })?;
+
+    if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Superseded) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0303AdrInvalidTransition,
+            format!(
+                "Invalid ADR transition: {} -> superseded",
+                entry.spec.govctl.status.as_ref()
+            ),
+            adr_id,
+        ));
+    }
+
+    entry.spec.govctl.status = AdrStatus::Superseded;
+    entry.spec.govctl.superseded_by = Some(by.to_string());
+    write_adr(
+        &entry.path,
+        &entry.spec,
+        op,
+        Some(&config.display_path(&entry.path)),
+    )?;
+
+    if !op.is_preview() {
+        ui::superseded("ADR", adr_id, by);
     }
     Ok(vec![])
 }

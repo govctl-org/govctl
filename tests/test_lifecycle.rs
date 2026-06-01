@@ -540,6 +540,61 @@ fn test_accept_already_accepted_fails() -> common::TestResult {
 }
 
 #[test]
+fn test_supersede_adr() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Old Decision"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
+            &["adr", "add", "ADR-0001", "alternatives", "Option B"],
+            &[
+                "adr",
+                "tick",
+                "ADR-0001",
+                "alternatives",
+                "--at",
+                "0",
+                "-s",
+                "accepted",
+            ],
+            &[
+                "adr",
+                "tick",
+                "ADR-0001",
+                "alternatives",
+                "--at",
+                "1",
+                "-s",
+                "rejected",
+            ],
+            &["adr", "accept", "ADR-0001"],
+            &["adr", "new", "New Decision"],
+            &[
+                "adr",
+                "supersede",
+                "ADR-0001",
+                "--by",
+                "ADR-0002",
+                "--force",
+            ],
+            &["adr", "get", "ADR-0001", "status"],
+            &["adr", "get", "ADR-0001", "superseded_by"],
+        ],
+    )?;
+
+    assert!(
+        output.contains("Superseded ADR: ADR-0001"),
+        "output: {output}"
+    );
+    assert!(output.contains("Replaced by: ADR-0002"), "output: {output}");
+    assert!(output.contains("$ govctl adr get ADR-0001 status\nsuperseded"));
+    assert!(output.contains("$ govctl adr get ADR-0001 superseded_by\nADR-0002"));
+    Ok(())
+}
+
+#[test]
 fn test_accept_rejected_adr_fails() -> common::TestResult {
     let temp_dir = init_project()?;
     let date = today();

@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-184"
+title = "Split lifecycle artifact handlers"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+refs = [
+    "RFC-0002",
+    "RFC-0001",
+]
+
+[content]
+description = "Refactor lifecycle command internals so artifact-specific deprecate and supersede behavior lives in the matching lifecycle module instead of the lifecycle dispatcher. Keep src/cmd/lifecycle/mod.rs as routing glue, preserve existing RFC/ADR/clause lifecycle semantics, and avoid introducing extra module splits beyond the coherent artifact boundary."
+
+[[content.acceptance_criteria]]
+text = "lifecycle dispatcher delegates clause RFC and ADR supersede/deprecate logic to artifact modules"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo clippy and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "lifecycle regression tests pass without behavior changes"
+status = "done"
+category = "chore"
