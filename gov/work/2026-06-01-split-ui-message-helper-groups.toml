@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-135"
+title = "Split UI message helper groups"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+depends_on = ["WI-2026-06-01-134"]
+
+[content]
+description = "Split the UI message formatting module into coherent helper groups for common/file output and governance artifact lifecycle or field messages. Keep function names, output strings, color behavior, and caller imports stable."
+
+[[content.acceptance_criteria]]
+text = "common file render check and dry-run output helpers live in a focused messages helper module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "artifact field lifecycle changelog and release message helpers live in a focused messages helper module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "format clippy tests and govctl check pass"
+status = "pending"
+category = "chore"

@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-134"
+title = "Normalize UI messages module"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Normalize src/ui/messages.rs into a directory module without same-name file and directory coexistence. Preserve the crate::ui public re-export surface and all existing message formatting behavior."
+
+[[content.acceptance_criteria]]
+text = "UI messages live under src/ui/messages/mod.rs with no same-name messages.rs sibling"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "existing crate::ui message function imports remain compatible"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo check and govctl check pass"
+status = "pending"
+category = "chore"
