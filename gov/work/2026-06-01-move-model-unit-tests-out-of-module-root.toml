@@ -3,24 +3,25 @@
 [govctl]
 id = "WI-2026-06-01-156"
 title = "Move model unit tests out of module root"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Move model unit tests out of model/mod.rs into a sibling model/tests.rs module. Preserve the model re-export surface, test coverage for constructors, defaults, AsRef mappings, category helpers, and entry accessors, while keeping model/mod.rs focused on module declarations and exports."
 
 [[content.acceptance_criteria]]
 text = "model/mod.rs keeps declarations and exports while model tests live in model/tests.rs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "existing model constructor, default, AsRef, category helper, and entry accessor tests remain covered"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "model tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
