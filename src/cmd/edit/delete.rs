@@ -4,6 +4,7 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::ui;
 use crate::write::{WriteOp, delete_file};
+use std::collections::BTreeSet;
 use std::path::Path;
 
 pub fn delete_clause(
@@ -58,6 +59,8 @@ pub fn delete_clause(
             )
         })?;
 
+    ensure_clause_not_referenced(config, clause_id)?;
+
     if !confirm_destructive_action(
         force,
         op,
@@ -104,6 +107,56 @@ pub fn delete_clause(
     }
 
     Ok(vec![])
+}
+
+fn ensure_clause_not_referenced(config: &Config, clause_id: &str) -> DiagnosticResult<()> {
+    let load_result = crate::load::load_project_with_warnings(config).map_err(|diagnostics| {
+        diagnostics.into_iter().next().unwrap_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0903UnexpectedError,
+                "Failed to load project before clause deletion",
+                clause_id,
+            )
+        })
+    })?;
+    let mut referenced_by = BTreeSet::new();
+
+    for rfc in &load_result.index.rfcs {
+        if rfc.rfc.refs.iter().any(|ref_id| ref_id == clause_id) {
+            referenced_by.insert(rfc.rfc.rfc_id.clone());
+        }
+    }
+
+    for adr in &load_result.index.adrs {
+        if adr.meta().refs.iter().any(|ref_id| ref_id == clause_id) {
+            referenced_by.insert(adr.meta().id.clone());
+        }
+    }
+
+    for work in &load_result.index.work_items {
+        if work.meta().refs.iter().any(|ref_id| ref_id == clause_id) {
+            referenced_by.insert(work.meta().id.clone());
+        }
+    }
+
+    for guard in crate::parse::load_guards(config)? {
+        if guard.meta().refs.iter().any(|ref_id| ref_id == clause_id) {
+            referenced_by.insert(guard.meta().id.clone());
+        }
+    }
+
+    if !referenced_by.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0211ClauseStillReferenced,
+            format!(
+                "Cannot delete clause: {clause_id} is referenced by: {}. Remove references first.",
+                referenced_by.into_iter().collect::<Vec<_>>().join(", ")
+            ),
+            clause_id,
+        ));
+    }
+
+    Ok(())
 }
 
 pub fn delete_work_item(

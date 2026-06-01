@@ -36,6 +36,7 @@ pub enum DiagnosticCode {
     E0208ClauseAlreadyDeprecated,
     E0209ClauseAlreadySuperseded,
     E0210ClauseInvalidIdFormat,
+    E0211ClauseStillReferenced,
 
     // ADR errors (E03xx)
     E0301AdrSchemaInvalid,
@@ -194,6 +195,7 @@ impl DiagnosticCode {
             Self::E0208ClauseAlreadyDeprecated => "E0208",
             Self::E0209ClauseAlreadySuperseded => "E0209",
             Self::E0210ClauseInvalidIdFormat => "E0210",
+            Self::E0211ClauseStillReferenced => "E0211",
             // E03xx - ADR
             Self::E0301AdrSchemaInvalid => "E0301",
             Self::E0302AdrNotFound => "E0302",
