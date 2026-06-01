@@ -3,23 +3,25 @@
 [govctl]
 id = "WI-2026-06-02-054"
 title = "Extract edit runtime support helpers"
-status = "queue"
+status = "done"
 created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
 
 [content]
 description = "Move shared edit runtime support helpers out of the runtime facade into a focused local support module after the spec extraction. Keep simple and nested edit runtime behavior, diagnostics, and field rendering unchanged."
 
 [[content.acceptance_criteria]]
 text = "shared edit runtime support helpers live in a focused support module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "simple and nested edit runtime diagnostics and rendering remain unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "targeted edit tests, clippy, full tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

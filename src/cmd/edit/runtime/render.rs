@@ -1,5 +1,5 @@
 use super::spec::{RenderMode, SimpleFieldSpec};
-use super::{scalar_list_item_text, status_list_entry_line, type_mismatch, value_at_path};
+use super::support::{scalar_list_item_text, status_list_entry_line, type_mismatch, value_at_path};
 use crate::diagnostic::DiagnosticResult;
 use serde_json::Value;
 

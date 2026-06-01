@@ -1,5 +1,5 @@
 use super::spec::{SetMode, SimpleSetSpec};
-use super::type_mismatch;
+use super::support::type_mismatch;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 

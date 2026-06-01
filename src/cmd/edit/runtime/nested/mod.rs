@@ -8,7 +8,7 @@ pub use self::list::{
 };
 use self::render::render_nested_node;
 use self::traverse::{descend_get, descend_mut, ensure_node_path_mut};
-use super::value_at_path;
+use super::support::value_at_path;
 use crate::cmd::edit::ArtifactType;
 use crate::cmd::edit::path::FieldPath;
 use crate::cmd::edit::rules::{

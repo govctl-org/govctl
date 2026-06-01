@@ -1,4 +1,4 @@
-use super::super::{remove_indices_preserving_order, status_list_text, type_mismatch};
+use super::super::support::{remove_indices_preserving_order, status_list_text, type_mismatch};
 use super::resolve_nested_root;
 use super::traverse::{default_value_for_node, descend_mut, ensure_node_path_mut};
 use crate::cmd::edit::ArtifactType;

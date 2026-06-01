@@ -1,4 +1,4 @@
-use super::super::type_mismatch;
+use super::super::support::type_mismatch;
 use crate::cmd::edit::path::{self, PathSegment};
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};

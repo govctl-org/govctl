@@ -1,10 +1,10 @@
 use super::super::{ArtifactType, path};
 use super::mutate::{array_items_mut, ensure_array_path_mut};
-use super::{
-    remove_indices_preserving_order, scalar_list_item_text, simple_runtime_list_path,
-    simple_status_list_spec, status_list_entry_line, status_list_text, type_mismatch,
-    unknown_field_error, value_at_path,
+use super::support::{
+    remove_indices_preserving_order, scalar_list_item_text, status_list_entry_line,
+    status_list_text, type_mismatch, unknown_field_error, value_at_path,
 };
+use super::{simple_runtime_list_path, simple_status_list_spec};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
