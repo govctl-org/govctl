@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-138"
 title = "Extract TUI chrome rendering"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0003"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Extract TUI header/footer chrome, breadcrumb, header status, and 
 
 [[content.acceptance_criteria]]
 text = "TUI header footer breadcrumb and keybinding rendering live in a focused chrome child module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "main TUI draw keeps view dispatch and public rendering behavior unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "TUI tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

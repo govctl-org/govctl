@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-139"
 title = "Extract TUI help overlay rendering"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0003"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Move TUI help overlay rendering and popup geometry from src/tui/u
 
 [[content.acceptance_criteria]]
 text = "TUI help overlay and centered popup geometry live in a focused help child module"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "view-specific help content and overlay rendering stay unchanged"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "TUI tests, cargo test, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
