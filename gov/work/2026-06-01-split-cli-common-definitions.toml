@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-119"
+title = "Split CLI common definitions"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Split src/cli/common.rs into a directory-owned CLI common module with focused child modules for edit action/status types, target/output enums, and reusable argument structs. Preserve the existing crate-level CLI type exports and clap behavior while removing the grab-bag common.rs file without creating same-name file/directory coexistence."
+
+[[content.acceptance_criteria]]
+text = "no src/cli/common.rs and src/cli/common/ same-name coexistence remains"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "existing crate-level CLI type exports and clap command behavior remain unchanged"
+status = "pending"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "CLI common action/status, target/output, and reusable argument definitions live in focused child modules"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "CLI help/router tests, cargo clippy, and govctl check pass"
+status = "pending"
+category = "chore"
