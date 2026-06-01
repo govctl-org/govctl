@@ -1,0 +1,29 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-105"
+title = "Normalize command execution module"
+status = "queue"
+created = "2026-06-01"
+refs = [
+    "RFC-0002",
+    "ADR-0017",
+]
+
+[content]
+description = "Normalize command router execution from src/command_router/execute.rs into a directory module and extract scope-classification helpers. Preserve CommandPlan execution behavior, lock/write semantics, diagnostics, and avoid same-name file/directory coexistence."
+
+[[content.acceptance_criteria]]
+text = "src/command_router/execute.rs is replaced by src/command_router/execute/mod.rs without same-name file and directory coexistence"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "command execution scope extraction helpers live in src/command_router/execute/scope.rs"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "command router tests and govctl check pass"
+status = "pending"
+category = "chore"
