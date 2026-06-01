@@ -1,4 +1,5 @@
 use crate::OutputFormat;
+use crate::cmd::output::print_json_array;
 use crate::theme::{SemanticColor, status_semantic};
 use crate::ui::stdout_supports_color;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
@@ -55,10 +56,7 @@ pub(super) fn output_list<T: Serialize>(
 ) {
     match format {
         OutputFormat::Json => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(items).unwrap_or_else(|_| "[]".to_string())
-            );
+            print_json_array(items);
         }
         OutputFormat::Plain => {
             for item in items {

@@ -1,4 +1,5 @@
 use crate::OutputFormat;
+use crate::cmd::output::print_json_array;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use serde::Serialize;
 
@@ -11,10 +12,7 @@ pub(super) struct TagEntry {
 pub(super) fn print_tag_entries(entries: &[TagEntry], output: OutputFormat) {
     match output {
         OutputFormat::Json => {
-            println!(
-                "{}",
-                serde_json::to_string_pretty(entries).unwrap_or_else(|_| "[]".to_string())
-            );
+            print_json_array(entries);
         }
         OutputFormat::Plain => {
             for entry in entries {

@@ -3,18 +3,20 @@
 [govctl]
 id = "WI-2026-06-02-040"
 title = "Share JSON list output fallback"
-status = "queue"
+status = "done"
 created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
 
 [content]
 description = "Reduce duplicated JSON-array output fallback printing across list-like command output modules. Preserve existing JSON formatting and fallback behavior while keeping table/plain rendering owned by each command-specific output module."
 
 [[content.acceptance_criteria]]
 text = "list-like JSON array output uses one shared pretty-print fallback helper"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "list/tag/loop output tests, clippy, full tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

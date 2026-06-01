@@ -13,6 +13,7 @@ pub mod migrate;
 #[path = "move_.rs"]
 pub mod move_;
 pub mod new;
+pub(crate) mod output;
 pub mod render;
 pub mod self_update;
 pub mod status;
