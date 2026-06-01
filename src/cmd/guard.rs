@@ -2,6 +2,7 @@
 
 use super::guard_refs::{guard_reference_blockers, load_guard_by_id};
 use crate::OutputFormat;
+use crate::cmd::output::print_json;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{GuardCheck, GuardMeta, GuardSpec};
@@ -116,14 +117,12 @@ pub fn show_guard(
 
     match output {
         OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(&guard.spec).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E1001GuardSchemaInvalid,
-                    format!("Failed to serialize guard JSON: {err}"),
-                    id,
-                )
-            })?;
-            println!("{json}");
+            print_json(
+                &guard.spec,
+                DiagnosticCode::E1001GuardSchemaInvalid,
+                "Failed to serialize guard JSON",
+                id,
+            )?;
         }
         OutputFormat::Table | OutputFormat::Plain => {
             let toml = toml::to_string_pretty(&guard.spec).map_err(|err| {

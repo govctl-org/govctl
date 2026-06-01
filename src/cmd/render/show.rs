@@ -1,5 +1,6 @@
 use super::display_path_string;
 use crate::OutputFormat;
+use crate::cmd::output::print_json;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::{load_rfcs, split_clause_id};
@@ -22,10 +23,7 @@ where
 {
     match output {
         OutputFormat::Json => {
-            let json = serde_json::to_string_pretty(json_value).map_err(|err| {
-                Diagnostic::new(json_error_code, format!("{json_error_message}: {err}"), id)
-            })?;
-            println!("{json}");
+            print_json(json_value, json_error_code, json_error_message, id)?;
         }
         OutputFormat::Table | OutputFormat::Plain => {
             let raw = render_markdown()?;

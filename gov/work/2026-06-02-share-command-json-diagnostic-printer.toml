@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-041"
+title = "Share command JSON diagnostic printer"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract command-facing JSON pretty-printing with Diagnostic mapping into the existing cmd::output helper. Use it for describe output, render/show JSON output, guard show JSON output, and editable JSON get output while preserving stdout JSON, diagnostic codes, messages, and scopes."
+
+[[content.acceptance_criteria]]
+text = "command JSON output paths use one shared diagnostic pretty-printer helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "JSON serialization diagnostics and stdout output remain stable"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "describe/render/edit/guard JSON tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"
