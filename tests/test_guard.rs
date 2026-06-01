@@ -2,9 +2,10 @@
 
 mod common;
 
-use common::{init_project, run_commands};
+use common::{
+    append_verification_config, init_project, run_commands, write_guard, write_guarded_work_item,
+};
 use std::fs;
-use std::path::Path;
 
 #[test]
 fn test_guard_new_scaffolds_file() -> common::TestResult {
@@ -235,7 +236,7 @@ fn test_guard_delete_blocked_by_config() -> common::TestResult {
 fn test_guard_delete_blocked_by_work_item() -> common::TestResult {
     let temp_dir = init_project()?;
     write_guard(temp_dir.path(), "GUARD-REQUIRED", "true")?;
-    write_work_item_with_guard(temp_dir.path(), "GUARD-REQUIRED")?;
+    write_guarded_work_item(temp_dir.path(), "WI-2026-01-01-001", "GUARD-REQUIRED", None)?;
 
     let output = run_commands(temp_dir.path(), &[&["guard", "delete", "GUARD-REQUIRED"]])?;
     assert!(output.contains("exit: 1"), "output: {}", output);
@@ -251,7 +252,12 @@ fn test_guard_delete_blocked_by_work_item() -> common::TestResult {
 fn test_guard_delete_blocked_by_work_item_waiver() -> common::TestResult {
     let temp_dir = init_project()?;
     write_guard(temp_dir.path(), "GUARD-WAIVED", "true")?;
-    write_work_item_with_guard_waiver(temp_dir.path(), "GUARD-WAIVED")?;
+    write_guarded_work_item(
+        temp_dir.path(),
+        "WI-2026-01-01-001",
+        "GUARD-WAIVED",
+        Some("covered elsewhere"),
+    )?;
 
     let output = run_commands(temp_dir.path(), &[&["guard", "delete", "GUARD-WAIVED"]])?;
     assert!(output.contains("exit: 1"), "output: {}", output);
@@ -356,65 +362,5 @@ fn test_guard_nested_object_root_edit_paths() -> common::TestResult {
         "output: {}",
         output
     );
-    Ok(())
-}
-
-// --- Helpers ---
-
-fn write_guard(
-    dir: &Path,
-    guard_id: &str,
-    command: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let path = dir
-        .join("gov/guard")
-        .join(format!("{}.toml", guard_id.to_lowercase()));
-    let content = format!(
-        "#:schema ../schema/guard.schema.json\n\n[govctl]\nid = \"{guard_id}\"\ntitle = \"{guard_id}\"\n\n[check]\ncommand = \"{command}\"\n"
-    );
-    fs::write(path, content)?;
-    Ok(())
-}
-
-fn append_verification_config(
-    dir: &Path,
-    enabled: bool,
-    guard_ids: &[&str],
-) -> Result<(), Box<dyn std::error::Error>> {
-    let config_path = dir.join("gov/config.toml");
-    let existing = fs::read_to_string(&config_path)?;
-    let default_guards = guard_ids
-        .iter()
-        .map(|id| format!("\"{id}\""))
-        .collect::<Vec<_>>()
-        .join(", ");
-    let appended = format!(
-        "{existing}\n[verification]\nenabled = {enabled}\ndefault_guards = [{default_guards}]\n"
-    );
-    fs::write(config_path, appended)?;
-    Ok(())
-}
-
-fn write_work_item_with_guard(
-    dir: &Path,
-    guard_id: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let path = dir.join("gov/work/2026-01-01-guarded-item.toml");
-    let content = format!(
-        "#:schema ../schema/work.schema.json\n\n[govctl]\nid = \"WI-2026-01-01-001\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]\n"
-    );
-    fs::write(path, content)?;
-    Ok(())
-}
-
-fn write_work_item_with_guard_waiver(
-    dir: &Path,
-    guard_id: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let path = dir.join("gov/work/2026-01-01-guarded-item.toml");
-    let content = format!(
-        "#:schema ../schema/work.schema.json\n\n[govctl]\nid = \"WI-2026-01-01-001\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]\n\n[[verification.waivers]]\nguard = \"{guard_id}\"\nreason = \"covered elsewhere\"\n"
-    );
-    fs::write(path, content)?;
     Ok(())
 }
