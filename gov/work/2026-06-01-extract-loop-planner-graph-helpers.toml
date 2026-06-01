@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-092"
 title = "Extract loop planner graph helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-091"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Extract loop planner dependency-closure, dependency-table, and de
 
 [[content.acceptance_criteria]]
 text = "dependency closure and cycle detection helpers are isolated from loop state preservation logic"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "deterministic loop execution ordering is provided through a reusable graph helper"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop planner tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
