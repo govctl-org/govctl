@@ -3,8 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-104"
 title = "Extract loop execution round helpers"
-status = "queue"
+status = "done"
 created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "RFC-0006",
     "ADR-0044",
@@ -16,15 +18,15 @@ description = "Move per-work-item loop round execution, readiness, status-string
 
 [[content.acceptance_criteria]]
 text = "per-work-item loop round execution helpers live in src/cmd/loop_cmd/execution/round.rs"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop execution module root keeps high-level run orchestration without round-helper bulk"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop command tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

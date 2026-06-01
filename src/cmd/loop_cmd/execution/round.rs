@@ -1,140 +1,15 @@
-use super::{
-    output::print_loop,
-    state::{
-        diagnostic_code, ensure_root_work_items, ensure_same_root_set,
-        find_matching_non_terminal_loop, generated_loop_id,
-    },
-};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::loop_planner::{
-    build_loop_plan_from_config, propagate_blocked_outcomes, topological_order_for_state,
-};
+use crate::loop_planner::{propagate_blocked_outcomes, topological_order_for_state};
 use crate::loop_state::{
-    LoopLifecycleState, LoopRoundRecord, LoopState, LoopWorkItemStatus, load_loop_state,
-    write_loop_round_record, write_loop_state_with_op,
+    LoopLifecycleState, LoopRoundRecord, LoopState, LoopWorkItemStatus, write_loop_round_record,
+    write_loop_state_with_op,
 };
 use crate::model::{ChecklistStatus, WorkItemEntry, WorkItemStatus};
 use crate::write::WriteOp;
 use std::path::Path;
 
-pub fn run(
-    config: &Config,
-    loop_id: Option<&str>,
-    root_work_items: &[String],
-    max_rounds: u32,
-    op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
-    if max_rounds == 0 {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1211LoopInvalidMaxRounds,
-            "Loop max rounds must be at least 1",
-            "loop",
-        )
-        .into());
-    }
-
-    let mut state = state_for_run(config, loop_id, root_work_items)?;
-    ensure_loop_can_run(&state)?;
-
-    println!("Running loop {}", state.loop_meta.id);
-    println!("Max rounds: {max_rounds}");
-
-    enter_active_state(&mut state)?;
-    write_loop_state_with_op(config, &state, op)?;
-
-    let mut failures = Vec::new();
-    execute_run_round(config, &mut state, max_rounds, op, &mut failures)?;
-    finalize_run_state(&mut state)?;
-    write_loop_state_with_op(config, &state, op)?;
-
-    match state.loop_meta.state {
-        LoopLifecycleState::Completed => {
-            print_loop("Completed", &state)?;
-            Ok(vec![])
-        }
-        LoopLifecycleState::Paused => {
-            print_loop("Paused", &state)?;
-            Ok(vec![])
-        }
-        LoopLifecycleState::Failed => {
-            print_loop("Failed", &state)?;
-            Err(Diagnostic::new(
-                DiagnosticCode::E1210LoopExecutionFailed,
-                loop_failure_message(&state, &failures),
-                state.loop_meta.id.clone(),
-            )
-            .into())
-        }
-        LoopLifecycleState::Pending | LoopLifecycleState::Active => Ok(vec![]),
-    }
-}
-
-fn state_for_run(
-    config: &Config,
-    loop_id: Option<&str>,
-    root_work_items: &[String],
-) -> anyhow::Result<LoopState> {
-    if let Some(loop_id) = loop_id {
-        match load_loop_state(config, loop_id) {
-            Ok(state) => {
-                if !root_work_items.is_empty() {
-                    ensure_root_work_items(root_work_items)?;
-                    ensure_same_root_set(&state, root_work_items)?;
-                }
-                return Ok(state);
-            }
-            Err(err) if diagnostic_code(&err) == Some(DiagnosticCode::E1202LoopStateNotFound) => {
-                if root_work_items.is_empty() {
-                    return Err(err);
-                }
-            }
-            Err(err) => return Err(err),
-        }
-
-        ensure_root_work_items(root_work_items)?;
-        return Ok(build_loop_plan_from_config(config, loop_id, root_work_items)?.state);
-    }
-
-    ensure_root_work_items(root_work_items)?;
-    if let Some(state) = find_matching_non_terminal_loop(config, root_work_items)? {
-        Ok(state)
-    } else {
-        let loop_id = generated_loop_id(config)?;
-        Ok(build_loop_plan_from_config(config, &loop_id, root_work_items)?.state)
-    }
-}
-
-fn ensure_loop_can_run(state: &LoopState) -> anyhow::Result<()> {
-    if matches!(
-        state.loop_meta.state,
-        LoopLifecycleState::Completed | LoopLifecycleState::Failed
-    ) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1210LoopExecutionFailed,
-            format!(
-                "Cannot run terminal loop '{}' in {} state",
-                state.loop_meta.id,
-                state.loop_meta.state.as_str()
-            ),
-            state.loop_meta.id.clone(),
-        )
-        .into());
-    }
-    Ok(())
-}
-
-fn enter_active_state(state: &mut LoopState) -> anyhow::Result<()> {
-    match state.loop_meta.state {
-        LoopLifecycleState::Pending | LoopLifecycleState::Paused => {
-            state.transition_to(LoopLifecycleState::Active)
-        }
-        LoopLifecycleState::Active => Ok(()),
-        LoopLifecycleState::Completed | LoopLifecycleState::Failed => ensure_loop_can_run(state),
-    }
-}
-
-fn execute_run_round(
+pub(super) fn execute_run_round(
     config: &Config,
     state: &mut LoopState,
     max_rounds: u32,
@@ -297,7 +172,7 @@ fn execute_work_item_round(
     Ok(failure)
 }
 
-fn finalize_run_state(state: &mut LoopState) -> anyhow::Result<()> {
+pub(super) fn finalize_run_state(state: &mut LoopState) -> anyhow::Result<()> {
     propagate_blocked_outcomes(state)?;
     let has_failed = state.items.values().any(|item| {
         matches!(
@@ -418,7 +293,7 @@ fn load_work_item_by_id(config: &Config, work_id: &str) -> anyhow::Result<WorkIt
         })
 }
 
-fn loop_failure_message(state: &LoopState, failures: &[String]) -> String {
+pub(super) fn loop_failure_message(state: &LoopState, failures: &[String]) -> String {
     if failures.is_empty() {
         format!("Loop '{}' failed", state.loop_meta.id)
     } else {
