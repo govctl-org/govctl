@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-143"
 title = "Extract loop validation contracts"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0006"]
 depends_on = ["WI-2026-06-01-142"]
 
@@ -14,15 +15,15 @@ description = "Extract loop validation subcontracts from the validation module r
 
 [[content.acceptance_criteria]]
 text = "canonical loop ID and lifecycle transition validation live in focused child modules"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop state and round record contract validation are separated from shared diagnostic helpers"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop tests, cargo test, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

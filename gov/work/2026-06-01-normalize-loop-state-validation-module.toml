@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-142"
 title = "Normalize loop state validation module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["RFC-0006"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Normalize src/loop_state/validation.rs into a validation director
 
 [[content.acceptance_criteria]]
 text = "loop state validation is normalized to a directory module without same-name file and directory coexistence"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "validation public and storage-facing helper access remains compatible"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "loop tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
