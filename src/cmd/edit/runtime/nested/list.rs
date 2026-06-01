@@ -52,14 +52,7 @@ pub fn add_nested_list_value(
         }
         NestedNodeKind::Object => {
             let Some(text_key) = node.text_key else {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0817PathTypeMismatch,
-                    format!(
-                        "Field '{}' requires structured list items and cannot be appended with a plain string",
-                        fp
-                    ),
-                    id,
-                ));
+                return Err(plain_string_for_structured_list(fp, id));
             };
             let duplicate = list.iter().any(|item| {
                 item.as_object()
@@ -77,17 +70,20 @@ pub fn add_nested_list_value(
             }
         }
         NestedNodeKind::List => {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!(
-                    "Field '{}' requires structured list items and cannot be appended with a plain string",
-                    fp
-                ),
-                id,
-            ));
+            return Err(plain_string_for_structured_list(fp, id));
         }
     }
     Ok(())
+}
+
+fn plain_string_for_structured_list(fp: &FieldPath, id: &str) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0817PathTypeMismatch,
+        format!(
+            "Field '{fp}' requires structured list items and cannot be appended with a plain string"
+        ),
+        id,
+    )
 }
 
 pub fn remove_nested_list_values<F>(

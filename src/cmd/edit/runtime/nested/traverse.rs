@@ -33,40 +33,15 @@ fn descend_get_rest<'a>(
     current_path: &str,
 ) -> DiagnosticResult<(&'static NestedNodeRule, Option<&'a Value>)> {
     if rest.is_empty() {
-        if !node.verbs.contains(&verb.as_str()) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!("Path does not support verb '{}'", verb.as_str()),
-                id,
-            ));
-        }
+        ensure_verb_supported(node, verb, id)?;
         return Ok((node, value));
     }
     let seg = &rest[0];
-    if node.kind != NestedNodeKind::Object {
-        return Err(type_mismatch(
-            &format!(
-                "Cannot descend into non-object path '{}'",
-                append_segment(current_path, seg)
-            ),
-            id,
-        ));
-    }
-    let child = node
-        .fields
-        .iter()
-        .find(|field| field.name == seg.name)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0815PathFieldNotFound,
-                format!("Unknown nested field '{}'", seg.name),
-                id,
-            )
-        })?;
+    let child_node = resolve_child_node(node, seg, current_path, id)?;
     let child_value = value.and_then(|value| value.get(seg.name.as_str()));
     let next_path = append_segment(current_path, seg);
     let (child_node, child_value) = apply_optional_index(
-        child.node,
+        child_node,
         child_value,
         seg.index,
         id,
@@ -87,12 +62,7 @@ fn apply_optional_index<'a>(
     let Some(index) = index else {
         return Ok((node, value));
     };
-    if node.kind != NestedNodeKind::List {
-        return Err(type_mismatch(
-            &format!("Cannot index into non-list field '{field_name}' at '{path}'"),
-            id,
-        ));
-    }
+    ensure_indexable_list(node, id, path, field_name)?;
     let item = node
         .item
         .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
@@ -132,45 +102,20 @@ fn descend_mut_rest<'a>(
     current_path: &str,
 ) -> DiagnosticResult<(&'static NestedNodeRule, &'a mut Value)> {
     if rest.is_empty() {
-        if !node.verbs.contains(&verb.as_str()) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!("Path does not support verb '{}'", verb.as_str()),
-                id,
-            ));
-        }
+        ensure_verb_supported(node, verb, id)?;
         return Ok((node, value));
     }
     let seg = &rest[0];
-    if node.kind != NestedNodeKind::Object {
-        return Err(type_mismatch(
-            &format!(
-                "Cannot descend into non-object path '{}'",
-                append_segment(current_path, seg)
-            ),
-            id,
-        ));
-    }
-    let child = node
-        .fields
-        .iter()
-        .find(|field| field.name == seg.name)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0815PathFieldNotFound,
-                format!("Unknown nested field '{}'", seg.name),
-                id,
-            )
-        })?;
+    let child_node = resolve_child_node(node, seg, current_path, id)?;
     let obj = value
         .as_object_mut()
         .ok_or_else(|| type_mismatch("Expected object value", id))?;
     let child_value = obj
         .entry(seg.name.clone())
-        .or_insert_with(|| default_value_for_node(child.node));
+        .or_insert_with(|| default_value_for_node(child_node));
     let next_path = append_segment(current_path, seg);
     let (child_node, child_value) = apply_optional_index_mut(
-        child.node,
+        child_node,
         child_value,
         seg.index,
         id,
@@ -191,12 +136,7 @@ fn apply_optional_index_mut<'a>(
     let Some(index) = index else {
         return Ok((node, value));
     };
-    if node.kind != NestedNodeKind::List {
-        return Err(type_mismatch(
-            &format!("Cannot index into non-list field '{field_name}' at '{path}'"),
-            id,
-        ));
-    }
+    ensure_indexable_list(node, id, path, field_name)?;
     let arr = value
         .as_array_mut()
         .ok_or_else(|| type_mismatch("Expected array value", id))?;
@@ -205,6 +145,60 @@ fn apply_optional_index_mut<'a>(
         .item
         .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
     Ok((item, &mut arr[resolved]))
+}
+
+fn ensure_verb_supported(node: &NestedNodeRule, verb: Verb, id: &str) -> DiagnosticResult<()> {
+    if node.verbs.contains(&verb.as_str()) {
+        return Ok(());
+    }
+    Err(Diagnostic::new(
+        DiagnosticCode::E0817PathTypeMismatch,
+        format!("Path does not support verb '{}'", verb.as_str()),
+        id,
+    ))
+}
+
+fn resolve_child_node(
+    node: &'static NestedNodeRule,
+    seg: &PathSegment,
+    current_path: &str,
+    id: &str,
+) -> DiagnosticResult<&'static NestedNodeRule> {
+    if node.kind != NestedNodeKind::Object {
+        return Err(type_mismatch(
+            &format!(
+                "Cannot descend into non-object path '{}'",
+                append_segment(current_path, seg)
+            ),
+            id,
+        ));
+    }
+    node.fields
+        .iter()
+        .find(|field| field.name == seg.name)
+        .map(|field| field.node)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0815PathFieldNotFound,
+                format!("Unknown nested field '{}'", seg.name),
+                id,
+            )
+        })
+}
+
+fn ensure_indexable_list(
+    node: &NestedNodeRule,
+    id: &str,
+    path: &str,
+    field_name: &str,
+) -> DiagnosticResult<()> {
+    if node.kind == NestedNodeKind::List {
+        return Ok(());
+    }
+    Err(type_mismatch(
+        &format!("Cannot index into non-list field '{field_name}' at '{path}'"),
+        id,
+    ))
 }
 
 pub(super) fn ensure_node_path_mut<'a>(

@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-016"
+title = "Consolidate nested edit runtime diagnostics"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+refs = [
+    "ADR-0031",
+    "ADR-0029",
+]
+
+[content]
+description = "Consolidate duplicate diagnostic construction and structured-list error paths inside the nested edit runtime while keeping the existing module boundary and edit behavior unchanged."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Nested edit runtime shares repeated path traversal and structured-list diagnostic helpers without adding new modules"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Targeted nested edit tests pass"
+status = "done"
+category = "chore"
