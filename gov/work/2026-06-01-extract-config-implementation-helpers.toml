@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-121"
 title = "Extract config implementation helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 depends_on = ["WI-2026-06-01-120"]
 
 [content]
@@ -13,15 +14,15 @@ description = "Extract focused config implementation helpers from the config mod
 
 [[content.acceptance_criteria]]
 text = "IdStrategy behavior lives in a focused config child module and remains re-exported through crate::config"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "Config load/path helpers and default TOML rendering are separated from config data type definitions"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "cargo fmt, cargo check, cargo clippy, focused config tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
