@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-197"
+title = "Extract RFC lifecycle tests"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move RFC finalize, advance, bump, deprecate, and supersede integration tests out of tests/test_lifecycle.rs into a lifecycle test include file while preserving existing test names, snapshot names, and command behavior."
+
+[[content.acceptance_criteria]]
+text = "lifecycle integration tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC lifecycle tests live outside tests/test_lifecycle.rs without snapshot renames"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "tests/test_lifecycle.rs remains a small lifecycle integration-test entrypoint"
+status = "done"
+category = "changed"

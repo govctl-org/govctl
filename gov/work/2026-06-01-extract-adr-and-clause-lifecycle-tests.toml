@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-198"
+title = "Extract ADR and clause lifecycle tests"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move ADR accept/reject/supersede and clause deprecate/supersede integration tests out of tests/test_lifecycle.rs into lifecycle test include files while preserving existing test names, snapshots, and command behavior."
+
+[[content.acceptance_criteria]]
+text = "Clause lifecycle tests live outside tests/test_lifecycle.rs without snapshot renames"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR lifecycle tests live outside tests/test_lifecycle.rs without snapshot renames"
+status = "done"
+category = "changed"
