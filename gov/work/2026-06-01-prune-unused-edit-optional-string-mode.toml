@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-113"
 title = "Prune unused edit optional-string mode"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["ADR-0031"]
 
 [content]
@@ -13,10 +14,10 @@ description = "Remove unused optional_string edit set-mode support from the inte
 
 [[content.acceptance_criteria]]
 text = "edit command tests, cargo clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "unused optional_string set-mode schema, generator, and runtime branches are removed"
-status = "pending"
+status = "done"
 category = "removed"

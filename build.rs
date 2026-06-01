@@ -99,9 +99,6 @@ struct RuntimeSetRule {
 enum RuntimeSetMode {
     String,
     Integer,
-    OptionalString {
-        empty_as_null: bool,
-    },
     Enum {
         allowed: Vec<String>,
         invalid_msg: String,
@@ -424,10 +421,6 @@ fn render_nested_scalar_mode_expr(mode: Option<&RuntimeSetMode>) -> Result<Strin
         None => Ok("None".to_string()),
         Some(RuntimeSetMode::String) => Ok("Some(NestedScalarMode::String)".to_string()),
         Some(RuntimeSetMode::Integer) => Ok("Some(NestedScalarMode::Integer)".to_string()),
-        Some(RuntimeSetMode::OptionalString { empty_as_null }) => Ok(format!(
-            "Some(NestedScalarMode::OptionalString {{ empty_as_null: {} }})",
-            empty_as_null
-        )),
         Some(RuntimeSetMode::Enum {
             allowed,
             invalid_msg,
@@ -644,10 +637,6 @@ fn runtime_set_expr(set: Option<&RuntimeSetRule>) -> Result<String, Box<dyn Erro
     let mode = match &set.mode {
         RuntimeSetMode::String => "SetMode::String".to_string(),
         RuntimeSetMode::Integer => "SetMode::Integer".to_string(),
-        RuntimeSetMode::OptionalString { empty_as_null } => format!(
-            "SetMode::OptionalString {{ empty_as_null: {} }}",
-            empty_as_null
-        ),
         RuntimeSetMode::Enum {
             allowed,
             invalid_msg,

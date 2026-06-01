@@ -99,13 +99,6 @@ fn apply_nested_scalar_set(
 ) -> anyhow::Result<()> {
     match mode.unwrap_or(NestedScalarMode::String) {
         NestedScalarMode::String => *slot = Value::String(value.to_string()),
-        NestedScalarMode::OptionalString { empty_as_null } => {
-            if empty_as_null && value.is_empty() {
-                *slot = Value::Null;
-            } else {
-                *slot = Value::String(value.to_string());
-            }
-        }
         NestedScalarMode::Integer => {
             let n: i64 = value.parse().map_err(|_| {
                 Diagnostic::new(

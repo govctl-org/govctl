@@ -18,12 +18,6 @@ pub enum NestedNodeKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NestedScalarMode {
     String,
-    // Supported by the edit-ops schema/generator, but not instantiated by the
-    // current rule data.
-    #[allow(dead_code)]
-    OptionalString {
-        empty_as_null: bool,
-    },
     Integer,
     Enum {
         allowed: &'static [&'static str],

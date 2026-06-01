@@ -326,15 +326,6 @@
         },
         {
           "type": "object",
-          "required": ["type", "empty_as_null"],
-          "properties": {
-            "type": { "type": "string", "enum": ["optional_string"] },
-            "empty_as_null": { "type": "boolean" }
-          },
-          "additionalProperties": false
-        },
-        {
-          "type": "object",
           "required": ["type", "allowed", "invalid_msg", "code"],
           "properties": {
             "type": { "type": "string", "enum": ["enum"] },

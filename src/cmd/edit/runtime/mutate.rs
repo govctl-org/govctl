@@ -22,13 +22,6 @@ pub(super) fn apply_set(
             })?;
             *slot = Value::Number(serde_json::Number::from(n));
         }
-        SetMode::OptionalString { empty_as_null } => {
-            if empty_as_null && value.is_empty() {
-                *slot = Value::Null;
-            } else {
-                *slot = Value::String(value.to_string());
-            }
-        }
         SetMode::Enum {
             allowed,
             invalid_msg,
