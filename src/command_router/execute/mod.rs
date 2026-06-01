@@ -6,7 +6,7 @@ use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::write::WriteOp;
-use crate::{NewTarget, OutputFormat};
+use crate::{NewTarget, OutputFormat, RenderTarget};
 use builtin::execute_builtin;
 use scope::{ShowKind, extract_artifact_scope, extract_collection_scope, extract_target_scope};
 
@@ -14,6 +14,49 @@ type CommandResult = DiagnosticResult<Diagnostics>;
 
 fn legacy_command(result: anyhow::Result<Diagnostics>, context: &str) -> CommandResult {
     result.map_err(|err| Diagnostic::from_anyhow(err, context))
+}
+
+fn render_rfc(config: &Config, id: Option<&str>, dry_run: bool) -> CommandResult {
+    legacy_command(cmd::render::render(config, id, dry_run), "render rfc")
+}
+
+fn render_adr(config: &Config, id: Option<&str>, dry_run: bool) -> CommandResult {
+    legacy_command(cmd::render::render_adrs(config, id, dry_run), "render adr")
+}
+
+fn render_work(config: &Config, id: Option<&str>, dry_run: bool) -> CommandResult {
+    legacy_command(
+        cmd::render::render_work_items(config, id, dry_run),
+        "render work",
+    )
+}
+
+fn render_changelog(config: &Config, dry_run: bool, force: bool) -> CommandResult {
+    legacy_command(
+        cmd::render::render_changelog(config, dry_run, force),
+        "render changelog",
+    )
+}
+
+fn render_global_target(
+    config: &Config,
+    target: RenderTarget,
+    dry_run: bool,
+    force: bool,
+) -> CommandResult {
+    let mut all_diags = vec![];
+    match target {
+        RenderTarget::Rfc => all_diags.extend(render_rfc(config, None, dry_run)?),
+        RenderTarget::Adr => all_diags.extend(render_adr(config, None, dry_run)?),
+        RenderTarget::Work => all_diags.extend(render_work(config, None, dry_run)?),
+        RenderTarget::Changelog => all_diags.extend(render_changelog(config, dry_run, force)?),
+        RenderTarget::All => {
+            all_diags.extend(render_rfc(config, None, dry_run)?);
+            all_diags.extend(render_adr(config, None, dry_run)?);
+            all_diags.extend(render_work(config, None, dry_run)?);
+        }
+    }
+    Ok(all_diags)
 }
 
 fn execute_create(config: &Config, create: &CreateOp, op: WriteOp) -> CommandResult {
@@ -241,17 +284,9 @@ fn execute_delete(plan: &CommandPlan, config: &Config, force: bool, op: WriteOp)
 fn execute_artifact_render(plan: &CommandPlan, config: &Config, dry_run: bool) -> CommandResult {
     let (artifact, id) = extract_artifact_scope(&plan.scope)?;
     match artifact {
-        cmd::edit::ArtifactType::Rfc => {
-            legacy_command(cmd::render::render(config, Some(id), dry_run), "render rfc")
-        }
-        cmd::edit::ArtifactType::Adr => legacy_command(
-            cmd::render::render_adrs(config, Some(id), dry_run),
-            "render adr",
-        ),
-        cmd::edit::ArtifactType::WorkItem => legacy_command(
-            cmd::render::render_work_items(config, Some(id), dry_run),
-            "render work",
-        ),
+        cmd::edit::ArtifactType::Rfc => render_rfc(config, Some(id), dry_run),
+        cmd::edit::ArtifactType::Adr => render_adr(config, Some(id), dry_run),
+        cmd::edit::ArtifactType::WorkItem => render_work(config, Some(id), dry_run),
         cmd::edit::ArtifactType::Clause | cmd::edit::ArtifactType::Guard => Err(Diagnostic::new(
             DiagnosticCode::E0822UnsupportedOperation,
             "render is not supported for this artifact",

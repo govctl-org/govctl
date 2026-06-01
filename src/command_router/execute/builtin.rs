@@ -1,11 +1,10 @@
 use super::super::BuiltinOp;
-use crate::RenderTarget;
 use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::Diagnostic;
 use crate::write::WriteOp;
 
-use super::{CommandResult, legacy_command};
+use super::{CommandResult, legacy_command, render_global_target};
 
 pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp) -> CommandResult {
     match builtin {
@@ -27,42 +26,7 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             target,
             dry_run,
             force,
-        } => {
-            let mut all_diags = vec![];
-            match target {
-                RenderTarget::Rfc => all_diags.extend(legacy_command(
-                    cmd::render::render(config, None, *dry_run),
-                    "render rfc",
-                )?),
-                RenderTarget::Adr => all_diags.extend(legacy_command(
-                    cmd::render::render_adrs(config, None, *dry_run),
-                    "render adr",
-                )?),
-                RenderTarget::Work => all_diags.extend(legacy_command(
-                    cmd::render::render_work_items(config, None, *dry_run),
-                    "render work",
-                )?),
-                RenderTarget::Changelog => all_diags.extend(legacy_command(
-                    cmd::render::render_changelog(config, *dry_run, *force),
-                    "render changelog",
-                )?),
-                RenderTarget::All => {
-                    all_diags.extend(legacy_command(
-                        cmd::render::render(config, None, *dry_run),
-                        "render rfc",
-                    )?);
-                    all_diags.extend(legacy_command(
-                        cmd::render::render_adrs(config, None, *dry_run),
-                        "render adr",
-                    )?);
-                    all_diags.extend(legacy_command(
-                        cmd::render::render_work_items(config, None, *dry_run),
-                        "render work",
-                    )?);
-                }
-            }
-            Ok(all_diags)
-        }
+        } => render_global_target(config, *target, *dry_run, *force),
         BuiltinOp::Migrate => legacy_command(cmd::migrate::migrate(config, op), "migrate"),
         BuiltinOp::Verify { guard_ids, work } => {
             cmd::verify::verify(config, guard_ids, work.as_deref())

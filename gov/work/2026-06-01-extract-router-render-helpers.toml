@@ -3,24 +3,26 @@
 [govctl]
 id = "WI-2026-06-01-173"
 title = "Extract router render helpers"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract shared command-router render helper functions inside the existing execute module so global render and artifact render paths reuse the same legacy command wrappers. Preserve command behavior, diagnostics, and module boundaries; do not create new execute submodules in this slice."
+notes = ["Render execution now uses private helpers in command_router::execute without adding new files. Render internals still return anyhow::Result and remain a later diagnostics migration candidate."]
 
 [[content.acceptance_criteria]]
 text = "global render and artifact render execution reuse shared render helper functions"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "command-router execute module avoids new file splits while reducing repeated render legacy_command calls"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "render tests, command router tests, full tests, clippy, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
