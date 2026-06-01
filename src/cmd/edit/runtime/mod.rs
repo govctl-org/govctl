@@ -2,6 +2,7 @@ mod list;
 mod mutate;
 mod nested;
 mod render;
+mod spec;
 
 pub use self::list::{
     add_simple_list_value, get_simple_list_item, remove_simple_list_values_with_matcher,
@@ -15,59 +16,12 @@ pub use nested::{
 
 use self::mutate::{apply_set, ensure_value_path_mut};
 use self::render::render_field;
+use self::spec::{
+    RenderMode, RuntimeFieldEntry, SetMode, SimpleFieldSpec, SimpleSetSpec, StatusListSpec,
+};
 use super::ArtifactType;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
-
-#[derive(Clone, Copy)]
-enum RenderMode {
-    Scalar,
-    CsvStrings,
-    LineStrings,
-    StatusLines {
-        status_key: &'static str,
-        text_key: &'static str,
-    },
-}
-
-#[derive(Clone, Copy)]
-struct SimpleFieldSpec {
-    path: &'static [&'static str],
-    render: RenderMode,
-}
-
-#[derive(Clone, Copy)]
-enum SetMode {
-    String,
-    Integer,
-    Enum {
-        allowed: &'static [&'static str],
-        invalid_msg: &'static str,
-        code: Option<DiagnosticCode>,
-    },
-}
-
-#[derive(Clone, Copy)]
-struct SimpleSetSpec {
-    path: &'static [&'static str],
-    mode: SetMode,
-}
-
-#[derive(Clone, Copy)]
-struct StatusListSpec {
-    path: &'static [&'static str],
-    status_key: &'static str,
-    text_key: &'static str,
-}
-
-#[derive(Clone, Copy)]
-struct RuntimeFieldEntry {
-    artifact: ArtifactType,
-    field: &'static str,
-    get: Option<SimpleFieldSpec>,
-    set: Option<SimpleSetSpec>,
-    list_path: Option<&'static [&'static str]>,
-}
 
 include!(concat!(env!("OUT_DIR"), "/edit_runtime_generated.rs"));
 
