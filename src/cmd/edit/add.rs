@@ -131,34 +131,6 @@ where
     Ok(())
 }
 
-fn validate_tag_add(config: &Config, id: &str, value: &str) -> DiagnosticResult<()> {
-    let tag_re = crate::cmd::tag::tag_re().map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0806InvalidPattern,
-            format!("Failed to compile tag regex: {e}"),
-            id,
-        )
-    })?;
-    if !tag_re.is_match(value) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1101TagInvalidFormat,
-            format!("Invalid tag format '{value}': must match ^[a-z][a-z0-9-]*$"),
-            id,
-        ));
-    }
-    let allowed = &config.tags.allowed;
-    if !allowed.iter().any(|t| t == value) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1105TagUnknown,
-            format!(
-                "Tag '{value}' is not in config.toml [tags] allowed. Register it first with: govctl tag new {value}"
-            ),
-            id,
-        ));
-    }
-    Ok(())
-}
-
 pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnostic>> {
     let AddFieldRequest {
         config,
@@ -188,7 +160,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
 
     // Validate tags against controlled vocabulary at add time — [[RFC-0002:C-RESOURCES]]
     if fp.as_simple() == Some("tags") {
-        validate_tag_add(config, id, value)?;
+        crate::cmd::tag::validate_registered_tag(config, value, id)?;
     }
 
     match artifact {

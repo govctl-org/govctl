@@ -1,6 +1,5 @@
 use super::ValidationResult;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::ProjectIndex;
 
 /// Validate that all artifact tags are in the allowed set and well-formed.
@@ -13,41 +12,12 @@ pub(super) fn validate_artifact_tags(
     config: &Config,
     result: &mut ValidationResult,
 ) {
-    let allowed = &config.tags.allowed;
-
     let mut check_tags = |tags: &[String], artifact_id: &str, path_display: &str| {
         for tag in tags {
-            // Validate format
-            let tag_re = match crate::cmd::tag::tag_re() {
-                Ok(r) => r,
-                Err(e) => {
-                    result.diagnostics.push(Diagnostic::new(
-                        DiagnosticCode::E0806InvalidPattern,
-                        format!("Failed to compile tag regex: {e}"),
-                        path_display,
-                    ));
-                    continue;
-                }
-            };
-            if !tag_re.is_match(tag) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E1101TagInvalidFormat,
-                    format!(
-                        "Artifact '{artifact_id}' has invalid tag format '{tag}': must match ^[a-z][a-z0-9-]*$"
-                    ),
-                    path_display,
-                ));
-                continue;
-            }
-            // Validate against allowed set (deny-all when empty)
-            if !allowed.contains(tag) {
-                result.diagnostics.push(Diagnostic::new(
-                    DiagnosticCode::E1105TagUnknown,
-                    format!(
-                        "Artifact '{artifact_id}' uses unknown tag '{tag}' (not in config.toml [tags] allowed)"
-                    ),
-                    path_display,
-                ));
+            if let Err(diagnostic) =
+                crate::cmd::tag::validate_artifact_tag(config, artifact_id, tag, path_display)
+            {
+                result.diagnostics.push(diagnostic);
             }
         }
     };

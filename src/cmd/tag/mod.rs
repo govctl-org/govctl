@@ -11,10 +11,10 @@ use crate::OutputFormat;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use output::{TagEntry, print_tag_entries};
-pub use registry::tag_re;
 use registry::{
     get_allowed_tags, read_config_table, set_allowed_tags, validate_tag_format, write_config_table,
 };
+pub(crate) use registry::{validate_artifact_tag, validate_registered_tag};
 use usage::build_tag_usage_map;
 
 /// Add a new allowed tag to config.toml [tags] allowed.

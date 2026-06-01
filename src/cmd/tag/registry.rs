@@ -8,18 +8,22 @@ static TAG_RE_RESULT: LazyLock<Result<Regex, regex::Error>> =
     LazyLock::new(|| Regex::new(r"^[a-z][a-z0-9-]*$"));
 
 /// Return a reference to the compiled tag format regex.
-pub fn tag_re() -> Result<&'static Regex, regex::Error> {
+fn tag_re() -> Result<&'static Regex, regex::Error> {
     TAG_RE_RESULT.as_ref().map_err(|e| e.clone())
 }
 
-pub(super) fn validate_tag_format(tag: &str) -> DiagnosticResult<()> {
-    let re = tag_re().map_err(|e| {
+fn tag_re_diagnostic(file: impl Into<String>) -> DiagnosticResult<&'static Regex> {
+    tag_re().map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0806InvalidPattern,
             format!("Failed to compile tag regex: {e}"),
-            "",
+            file,
         )
-    })?;
+    })
+}
+
+pub(super) fn validate_tag_format(tag: &str) -> DiagnosticResult<()> {
+    let re = tag_re_diagnostic("")?;
     if !re.is_match(tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1101TagInvalidFormat,
@@ -27,6 +31,59 @@ pub(super) fn validate_tag_format(tag: &str) -> DiagnosticResult<()> {
                 "Invalid tag format '{tag}': tags must match ^[a-z][a-z0-9-]*$ (lowercase letters, digits, hyphens; start with a letter)"
             ),
             tag,
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_registered_tag(
+    config: &Config,
+    tag: &str,
+    file: &str,
+) -> DiagnosticResult<()> {
+    let re = tag_re_diagnostic(file)?;
+    if !re.is_match(tag) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1101TagInvalidFormat,
+            format!("Invalid tag format '{tag}': must match ^[a-z][a-z0-9-]*$"),
+            file,
+        ));
+    }
+    if !config.tags.allowed.iter().any(|allowed| allowed == tag) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1105TagUnknown,
+            format!(
+                "Tag '{tag}' is not in config.toml [tags] allowed. Register it first with: govctl tag new {tag}"
+            ),
+            file,
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_artifact_tag(
+    config: &Config,
+    artifact_id: &str,
+    tag: &str,
+    file: &str,
+) -> DiagnosticResult<()> {
+    let re = tag_re_diagnostic(file)?;
+    if !re.is_match(tag) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1101TagInvalidFormat,
+            format!(
+                "Artifact '{artifact_id}' has invalid tag format '{tag}': must match ^[a-z][a-z0-9-]*$"
+            ),
+            file,
+        ));
+    }
+    if !config.tags.allowed.iter().any(|allowed| allowed == tag) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1105TagUnknown,
+            format!(
+                "Artifact '{artifact_id}' uses unknown tag '{tag}' (not in config.toml [tags] allowed)"
+            ),
+            file,
         ));
     }
     Ok(())
