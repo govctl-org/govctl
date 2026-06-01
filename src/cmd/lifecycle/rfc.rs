@@ -4,12 +4,11 @@ use crate::FinalizeStatus;
 use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::model::{RfcPhase, RfcStatus};
+use crate::model::{RfcPhase, RfcSpec, RfcStatus};
 use crate::ui;
 use crate::validate::{is_valid_phase_transition, is_valid_status_transition};
-use crate::write::{
-    BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_rfc, today, write_rfc,
-};
+use crate::write::{BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_rfc, today};
+use std::path::Path;
 
 /// Bump RFC version
 pub fn bump(
@@ -38,21 +37,10 @@ pub fn bump(
                 }
             }
 
-            // Write the RFC first
-            write_rfc(&rfc_path, &rfc, op, Some(&config.display_path(&rfc_path)))?;
+            write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
 
-            // Update pending clauses (since: null) with new version
             fill_pending_clause_versions(config, &rfc_path, &new_version, op)?;
-
-            // Then recompute and store signature after version bump per [[ADR-0016]]
-            // Load full RFC with clauses to compute accurate signature
-            if let Ok(rfc_index) = crate::load::load_rfc(config, &rfc_path)
-                && let Ok(sig) = crate::signature::compute_rfc_signature(&rfc_index)
-            {
-                rfc.signature = Some(sig);
-                // Write again with updated signature
-                write_rfc(&rfc_path, &rfc, op, Some(&config.display_path(&rfc_path)))?;
-            }
+            refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
 
             return Ok(vec![]);
         }
@@ -87,7 +75,7 @@ pub fn bump(
         }
     }
 
-    write_rfc(&rfc_path, &rfc, op, Some(&config.display_path(&rfc_path)))?;
+    write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
     Ok(vec![])
 }
 
@@ -121,8 +109,6 @@ pub fn finalize(
 
     edit::set_field_direct(config, rfc_id, "status", target_status.as_ref(), op)?;
 
-    // Update pending clauses (since: null) with current version
-    // When an RFC is finalized, all clauses should have proper since values
     fill_pending_clause_versions(config, &rfc_path, &rfc.version, op)?;
 
     if !op.is_preview() {
@@ -241,21 +227,35 @@ pub(super) fn supersede_rfc(
     source.updated = Some(today.clone());
     replacement.supersedes = Some(rfc_id.to_string());
     replacement.updated = Some(today);
-    write_rfc(
-        &rfc_path,
-        &source,
-        op,
-        Some(&config.display_path(&rfc_path)),
-    )?;
-    write_rfc(
-        &replacement_path,
-        &replacement,
-        op,
-        Some(&config.display_path(&replacement_path)),
-    )?;
+    write_lifecycle_rfc(config, &rfc_path, &source, op)?;
+    write_lifecycle_rfc(config, &replacement_path, &replacement, op)?;
 
     if !op.is_preview() {
         ui::superseded("RFC", rfc_id, by);
     }
     Ok(vec![])
+}
+
+fn write_lifecycle_rfc(
+    config: &Config,
+    rfc_path: &Path,
+    rfc: &RfcSpec,
+    op: WriteOp,
+) -> DiagnosticResult<()> {
+    crate::write::write_rfc(rfc_path, rfc, op, Some(&config.display_path(rfc_path)))
+}
+
+fn refresh_rfc_signature_best_effort(
+    config: &Config,
+    rfc_path: &Path,
+    rfc: &mut RfcSpec,
+    op: WriteOp,
+) -> DiagnosticResult<()> {
+    if let Ok(rfc_index) = crate::load::load_rfc(config, rfc_path)
+        && let Ok(sig) = crate::signature::compute_rfc_signature(&rfc_index)
+    {
+        rfc.signature = Some(sig);
+        write_lifecycle_rfc(config, rfc_path, rfc, op)?;
+    }
+    Ok(())
 }

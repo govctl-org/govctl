@@ -64,16 +64,13 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
 pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, Diagnostic> {
-    let mut hasher = signature_hasher("adr");
-    let adr_json = signature_value(
+    compute_simple_signature(
+        "adr",
         &adr.spec,
         DiagnosticCode::E0301AdrSchemaInvalid,
         "ADR",
-        &adr.spec.govctl.id,
-    )?;
-    update_canonical_json(&mut hasher, &adr_json);
-
-    Ok(finalize_signature(hasher))
+        adr.spec.govctl.id.as_str(),
+    )
 }
 
 /// Compute SHA-256 signature for a Work Item.
@@ -81,14 +78,25 @@ pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, Diagnostic> {
 /// # Errors
 /// Returns an error if serialization fails (should not happen for valid specs).
 pub fn compute_work_item_signature(item: &WorkItemEntry) -> Result<String, Diagnostic> {
-    let mut hasher = signature_hasher("work");
-    let item_json = signature_value(
+    compute_simple_signature(
+        "work",
         &item.spec,
         DiagnosticCode::E0401WorkSchemaInvalid,
         "work item",
-        &item.spec.govctl.id,
-    )?;
-    update_canonical_json(&mut hasher, &item_json);
+        item.spec.govctl.id.as_str(),
+    )
+}
+
+fn compute_simple_signature<T: Serialize>(
+    kind: &str,
+    value: &T,
+    code: DiagnosticCode,
+    artifact: &str,
+    id: impl Into<String>,
+) -> Result<String, Diagnostic> {
+    let mut hasher = signature_hasher(kind);
+    let value_json = signature_value(value, code, artifact, id)?;
+    update_canonical_json(&mut hasher, &value_json);
 
     Ok(finalize_signature(hasher))
 }
