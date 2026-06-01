@@ -18,9 +18,7 @@ pub(super) fn list_rfcs(
         });
     }
 
-    if !tags.is_empty() {
-        rfcs.retain(|r| tags.iter().all(|t| r.rfc.tags.contains(t)));
-    }
+    retain_by_tags(&mut rfcs, tags, |r| r.rfc.tags.as_slice());
 
     rfcs.sort_by(|a, b| a.rfc.rfc_id.cmp(&b.rfc.rfc_id));
     apply_limit(&mut rfcs, limit);
@@ -56,9 +54,7 @@ pub(super) fn list_clauses(
         });
     }
 
-    if !tags.is_empty() {
-        clauses.retain(|(_, c)| tags.iter().all(|t| c.spec.tags.contains(t)));
-    }
+    retain_by_tags(&mut clauses, tags, |(_, c)| c.spec.tags.as_slice());
 
     clauses.sort_by(|a, b| {
         a.0.cmp(&b.0)
@@ -92,9 +88,7 @@ pub(super) fn list_adrs(
         adrs.retain(|a| a.meta().status.as_ref() == f || a.meta().id.contains(f));
     }
 
-    if !tags.is_empty() {
-        adrs.retain(|a| tags.iter().all(|t| a.meta().tags.contains(t)));
-    }
+    retain_by_tags(&mut adrs, tags, |a| a.meta().tags.as_slice());
 
     adrs.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
     apply_limit(&mut adrs, limit);
@@ -125,9 +119,7 @@ pub(super) fn list_guards(
         items.retain(|g| g.meta().id.contains(f) || g.meta().title.contains(f));
     }
 
-    if !tags.is_empty() {
-        items.retain(|g| tags.iter().all(|t| g.meta().tags.contains(t)));
-    }
+    retain_by_tags(&mut items, tags, |g| g.meta().tags.as_slice());
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
     apply_limit(&mut items, limit);
@@ -173,9 +165,7 @@ pub(super) fn list_work_items(
         }
     }
 
-    if !tags.is_empty() {
-        items.retain(|i| tags.iter().all(|t| i.meta().tags.contains(t)));
-    }
+    retain_by_tags(&mut items, tags, |i| i.meta().tags.as_slice());
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
     apply_limit(&mut items, limit);
@@ -197,4 +187,17 @@ fn apply_limit<T>(items: &mut Vec<T>, limit: Option<usize>) {
     if let Some(n) = limit {
         items.truncate(n);
     }
+}
+
+fn retain_by_tags<T, F>(items: &mut Vec<T>, required: &[String], mut tags_for: F)
+where
+    F: for<'a> FnMut(&'a T) -> &'a [String],
+{
+    if required.is_empty() {
+        return;
+    }
+    items.retain(|item| {
+        let item_tags = tags_for(item);
+        required.iter().all(|tag| item_tags.contains(tag))
+    });
 }

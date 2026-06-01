@@ -34,7 +34,7 @@ The canonical loop subcommands are:
 7. `loop add LOOP-ID work WI-ID`: add a Work Item ID to the loop's editable `work` field and replan.
 8. `loop remove LOOP-ID work WI-ID`: remove a Work Item ID from the loop's editable `work` field and replan.
 
-The `work` field is the only canonical user-facing field name for the loop's explicit work set. Implementations MAY accept `wi` as an alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID` while documenting the alias.
+The `work` field is the only canonical user-facing field name for the loop's explicit work set. Implementations MUST accept `wi` as a shorthand alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID` while documenting the alias.
 
 **Discovery semantics:**
 
