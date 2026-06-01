@@ -1,5 +1,5 @@
 use crate::config::{Config, IdStrategy};
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{
     WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
@@ -14,7 +14,7 @@ pub(super) fn create(
     title: &str,
     active: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let work_dir = config.work_dir();
     let display_work_dir = config.display_path(&work_dir);
     create_dir_all(&work_dir, op, Some(&display_work_dir))?;

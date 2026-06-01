@@ -55,55 +55,43 @@ fn render_global_target(
 
 fn execute_create(config: &Config, create: &CreateOp, op: WriteOp) -> CommandResult {
     match create {
-        CreateOp::Rfc { title, id } => legacy_command(
-            cmd::new::create(
-                config,
-                &NewTarget::Rfc {
-                    title: title.clone(),
-                    id: id.clone(),
-                },
-                op,
-            ),
-            "create rfc",
+        CreateOp::Rfc { title, id } => cmd::new::create(
+            config,
+            &NewTarget::Rfc {
+                title: title.clone(),
+                id: id.clone(),
+            },
+            op,
         ),
         CreateOp::Clause {
             clause_id,
             title,
             section,
             kind,
-        } => legacy_command(
-            cmd::new::create(
-                config,
-                &NewTarget::Clause {
-                    clause_id: clause_id.clone(),
-                    title: title.clone(),
-                    section: section.clone(),
-                    kind: *kind,
-                },
-                op,
-            ),
-            "create clause",
+        } => cmd::new::create(
+            config,
+            &NewTarget::Clause {
+                clause_id: clause_id.clone(),
+                title: title.clone(),
+                section: section.clone(),
+                kind: *kind,
+            },
+            op,
         ),
-        CreateOp::Adr { title } => legacy_command(
-            cmd::new::create(
-                config,
-                &NewTarget::Adr {
-                    title: title.clone(),
-                },
-                op,
-            ),
-            "create adr",
+        CreateOp::Adr { title } => cmd::new::create(
+            config,
+            &NewTarget::Adr {
+                title: title.clone(),
+            },
+            op,
         ),
-        CreateOp::Work { title, active } => legacy_command(
-            cmd::new::create(
-                config,
-                &NewTarget::Work {
-                    title: title.clone(),
-                    active: *active,
-                },
-                op,
-            ),
-            "create work",
+        CreateOp::Work { title, active } => cmd::new::create(
+            config,
+            &NewTarget::Work {
+                title: title.clone(),
+                active: *active,
+            },
+            op,
         ),
         CreateOp::Guard { title } => cmd::guard::new_guard(config, title, op),
     }
@@ -202,36 +190,22 @@ fn execute_lifecycle(
             level,
             summary,
             changes,
-        } => legacy_command(
-            cmd::lifecycle::bump(config, id, *level, summary.as_deref(), changes, op),
-            "lifecycle bump",
-        ),
-        LifecycleOp::Finalize { status } => legacy_command(
-            cmd::lifecycle::finalize(config, id, *status, op),
-            "lifecycle finalize",
-        ),
-        LifecycleOp::Advance { phase } => legacy_command(
-            cmd::lifecycle::advance(config, id, *phase, op),
-            "lifecycle advance",
-        ),
-        LifecycleOp::Deprecate { force } => legacy_command(
-            cmd::lifecycle::deprecate(config, id, *force, op),
-            "lifecycle deprecate",
-        ),
-        LifecycleOp::Supersede { by, force } => legacy_command(
-            cmd::lifecycle::supersede(config, id, by, *force, op),
-            "lifecycle supersede",
-        ),
+        } => cmd::lifecycle::bump(config, id, *level, summary.as_deref(), changes, op),
+        LifecycleOp::Finalize { status } => cmd::lifecycle::finalize(config, id, *status, op),
+        LifecycleOp::Advance { phase } => cmd::lifecycle::advance(config, id, *phase, op),
+        LifecycleOp::Deprecate { force } => {
+            cmd::lifecycle::deprecate(config, id, *force, op)
+        }
+        LifecycleOp::Supersede { by, force } => {
+            cmd::lifecycle::supersede(config, id, by, *force, op)
+        }
         LifecycleOp::AcceptAdr { force } => {
             debug_assert!(matches!(artifact, cmd::edit::ArtifactType::Adr));
-            legacy_command(
-                cmd::lifecycle::accept_adr(config, id, *force, op),
-                "accept adr",
-            )
+            cmd::lifecycle::accept_adr(config, id, *force, op)
         }
         LifecycleOp::RejectAdr => {
             debug_assert!(matches!(artifact, cmd::edit::ArtifactType::Adr));
-            legacy_command(cmd::lifecycle::reject_adr(config, id, op), "reject adr")
+            cmd::lifecycle::reject_adr(config, id, op)
         }
         LifecycleOp::MoveWork { file_or_id, status } => {
             cmd::move_::move_item(config, file_or_id, *status, op)

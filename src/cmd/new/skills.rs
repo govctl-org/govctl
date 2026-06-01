@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, write_file};
 
@@ -90,7 +90,7 @@ pub fn sync_skills(
     format: &crate::SkillFormat,
     dir_override: Option<&Path>,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     // Resolution: --dir flag > config agent_dir > format-implied default
     let format_default = match format {
         crate::SkillFormat::Claude => std::path::Path::new(".claude"),

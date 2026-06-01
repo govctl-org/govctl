@@ -7,11 +7,11 @@ mod work;
 
 use crate::NewTarget;
 use crate::config::Config;
-use crate::diagnostic::Diagnostic;
+use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::write::WriteOp;
 
 /// Create a new artifact.
-pub fn create(config: &Config, target: &NewTarget, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn create(config: &Config, target: &NewTarget, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     match target {
         NewTarget::Rfc { title, id } => rfc::create(config, title, id.as_deref(), op),
         NewTarget::Clause {

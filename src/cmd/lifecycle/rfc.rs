@@ -1,7 +1,7 @@
 use crate::FinalizeStatus;
 use crate::cmd::edit;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::find_rfc_toml;
 use crate::model::{RfcPhase, RfcStatus};
 use crate::ui;
@@ -17,7 +17,7 @@ fn legacy_rfc_json_path(config: &Config, rfc_id: &str) -> Option<PathBuf> {
     path.exists().then_some(path)
 }
 
-fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> anyhow::Result<PathBuf> {
+fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> DiagnosticResult<PathBuf> {
     if let Some(path) = find_rfc_toml(config, rfc_id) {
         return Ok(path);
     }
@@ -28,15 +28,13 @@ fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> anyhow::Result<PathBu
                 "Legacy JSON RFC exists for {rfc_id}; run `govctl migrate` before RFC lifecycle commands."
             ),
             rfc_id,
-        )
-        .into());
+        ));
     }
     Err(Diagnostic::new(
         DiagnosticCode::E0102RfcNotFound,
         format!("RFC not found: {rfc_id}"),
         rfc_id,
-    )
-    .into())
+    ))
 }
 
 /// Update pending clauses (since: null) with the given version.
@@ -48,7 +46,7 @@ fn fill_pending_clause_versions(
     rfc_path: &Path,
     version: &str,
     op: WriteOp,
-) -> anyhow::Result<()> {
+) -> DiagnosticResult<()> {
     let clauses_dir = rfc_path
         .parent()
         .ok_or_else(|| {
@@ -100,7 +98,7 @@ pub fn bump(
     summary: Option<&str>,
     changes: &[String],
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let mut rfc = read_rfc(config, &rfc_path)?;
@@ -142,8 +140,7 @@ pub fn bump(
                 DiagnosticCode::E0108RfcBumpRequiresSummary,
                 "--summary is required when bumping version",
                 rfc_id,
-            )
-            .into());
+            ));
         }
         (None, _, false) => {
             for change in changes {
@@ -158,16 +155,14 @@ pub fn bump(
                 DiagnosticCode::E0108RfcBumpRequiresSummary,
                 "Bump level (--patch/--minor/--major) required when providing --summary",
                 rfc_id,
-            )
-            .into());
+            ));
         }
         (None, None, true) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0801MissingRequiredArg,
                 "Provide bump level with --summary, or --change",
                 rfc_id,
-            )
-            .into());
+            ));
         }
     }
 
@@ -181,7 +176,7 @@ pub fn finalize(
     rfc_id: &str,
     status: FinalizeStatus,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let rfc = read_rfc(config, &rfc_path)?;
@@ -200,8 +195,7 @@ pub fn finalize(
                 target_status.as_ref()
             ),
             rfc_id,
-        )
-        .into());
+        ));
     }
 
     edit::set_field_direct(config, rfc_id, "status", target_status.as_ref(), op)?;
@@ -222,7 +216,7 @@ pub fn advance(
     rfc_id: &str,
     phase: RfcPhase,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let rfc = read_rfc(config, &rfc_path)?;
@@ -236,8 +230,7 @@ pub fn advance(
                 phase.as_ref()
             ),
             rfc_id,
-        )
-        .into());
+        ));
     }
 
     if !is_valid_phase_transition(rfc.phase, phase) {
@@ -249,8 +242,7 @@ pub fn advance(
                 phase.as_ref()
             ),
             rfc_id,
-        )
-        .into());
+        ));
     }
 
     edit::set_field_direct(config, rfc_id, "phase", phase.as_ref(), op)?;

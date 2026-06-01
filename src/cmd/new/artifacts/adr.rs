@@ -1,12 +1,12 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{AdrContent, AdrMeta, AdrSpec, AdrStatus};
 use crate::schema::{ArtifactSchema, with_schema_header};
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, today, write_file};
 use slug::slugify;
 
-pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     let adr_dir = config.adr_dir();
     let display_adr_dir = config.display_path(&adr_dir);
     create_dir_all(&adr_dir, op, Some(&display_adr_dir))?;

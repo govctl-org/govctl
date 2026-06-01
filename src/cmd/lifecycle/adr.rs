@@ -1,6 +1,6 @@
 use crate::cmd::edit;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{AdrStatus, AlternativeStatus};
 use crate::parse::load_adrs;
 use crate::ui;
@@ -60,7 +60,7 @@ pub fn accept_adr(
     adr_id: &str,
     force: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let entry = load_adrs(config)?
         .into_iter()
         .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
@@ -80,8 +80,7 @@ pub fn accept_adr(
                 entry.spec.govctl.status.as_ref()
             ),
             adr_id,
-        )
-        .into());
+        ));
     }
 
     // Implements [[ADR-0042]]: validate alternatives completeness before acceptance
@@ -98,7 +97,7 @@ pub fn accept_adr(
 }
 
 /// Reject an ADR
-pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     let entry = load_adrs(config)?
         .into_iter()
         .find(|a| a.spec.govctl.id == adr_id || a.path.to_string_lossy().contains(adr_id))
@@ -118,8 +117,7 @@ pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> anyhow::Result<
                 entry.spec.govctl.status.as_ref()
             ),
             adr_id,
-        )
-        .into());
+        ));
     }
 
     edit::set_field_direct(config, adr_id, "status", "rejected", op)?;

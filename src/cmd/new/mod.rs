@@ -1,7 +1,7 @@
 //! New command implementation - create artifacts.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, write_file};
@@ -19,7 +19,7 @@ fn schema_version_for_init() -> u32 {
         .unwrap_or(crate::cmd::migrate::CURRENT_SCHEMA_VERSION)
 }
 /// Initialize govctl project
-pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     let config_path = config.gov_root.join("config.toml");
 
     if config_path.exists() && !force && !op.is_preview() {
@@ -30,8 +30,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
                 config_path.display()
             ),
             config_path.display().to_string(),
-        )
-        .into());
+        ));
     }
 
     let dirs: Vec<_> = vec![
@@ -88,7 +87,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> anyhow::Result
 }
 
 /// Ensure .gitignore contains local govctl state entries.
-fn ensure_gitignore_lock_entry(op: WriteOp) -> anyhow::Result<()> {
+fn ensure_gitignore_lock_entry(op: WriteOp) -> DiagnosticResult<()> {
     const LOCAL_STATE_ENTRIES: &[&str] = &[".govctl.lock", ".govctl/"];
     let gitignore_path = PathBuf::from(".gitignore");
 

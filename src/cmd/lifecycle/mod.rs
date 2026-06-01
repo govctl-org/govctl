@@ -4,7 +4,7 @@ use crate::FinalizeStatus;
 use crate::cmd::confirmation::confirm_destructive_action;
 use crate::cmd::edit;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::find_clause_toml;
 use crate::model::{AdrStatus, ClauseStatus};
 use crate::parse::{load_adrs, write_adr};
@@ -30,7 +30,7 @@ fn legacy_clause_json_path(config: &Config, clause_id: &str) -> Option<PathBuf> 
     path.exists().then_some(path)
 }
 
-fn require_clause_toml_path(config: &Config, clause_id: &str) -> anyhow::Result<PathBuf> {
+fn require_clause_toml_path(config: &Config, clause_id: &str) -> DiagnosticResult<PathBuf> {
     if let Some(path) = find_clause_toml(config, clause_id) {
         return Ok(path);
     }
@@ -41,15 +41,13 @@ fn require_clause_toml_path(config: &Config, clause_id: &str) -> anyhow::Result<
                 "Legacy JSON clause exists for {clause_id}; run `govctl migrate` before clause lifecycle commands."
             ),
             clause_id,
-        )
-        .into());
+        ));
     }
     Err(Diagnostic::new(
         DiagnosticCode::E0202ClauseNotFound,
         format!("Clause not found: {clause_id}"),
         clause_id,
-    )
-    .into())
+    ))
 }
 
 /// Deprecate an artifact
@@ -60,7 +58,7 @@ pub fn deprecate(
     id: &str,
     force: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     if !confirm_destructive_action(
         force,
         op,
@@ -81,16 +79,14 @@ pub fn deprecate(
                 DiagnosticCode::E0208ClauseAlreadyDeprecated,
                 "Clause is already deprecated",
                 id,
-            )
-            .into());
+            ));
         }
         if clause.status == ClauseStatus::Superseded {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0209ClauseAlreadySuperseded,
                 "Clause is superseded, cannot deprecate",
                 id,
-            )
-            .into());
+            ));
         }
 
         edit::set_field_direct(config, id, "status", "deprecated", op)?;
@@ -109,15 +105,13 @@ pub fn deprecate(
                 "ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead."
             ),
             id,
-        )
-        .into());
+        ));
     } else {
         return Err(Diagnostic::new(
             DiagnosticCode::E0813SupersedeNotSupported,
             format!("Unknown artifact type: {id}"),
             id,
-        )
-        .into());
+        ));
     }
 
     Ok(vec![])
@@ -132,7 +126,7 @@ pub fn supersede(
     by: &str,
     force: bool,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     if !confirm_destructive_action(
         force,
         op,
@@ -145,18 +139,16 @@ pub fn supersede(
     if id.contains(':') {
         // It's a clause
         // Validate replacement exists
-        let _ = require_clause_toml_path(config, by).map_err(|err| {
-            match err.downcast::<Diagnostic>() {
-                Ok(diag) if diag.code == DiagnosticCode::E0202ClauseNotFound => Diagnostic::new(
+        if let Err(err) = require_clause_toml_path(config, by) {
+            if err.code == DiagnosticCode::E0202ClauseNotFound {
+                return Err(Diagnostic::new(
                     DiagnosticCode::E0202ClauseNotFound,
                     format!("Replacement clause not found: {by}"),
                     by,
-                )
-                .into(),
-                Ok(diag) => anyhow::Error::new(diag),
-                Err(err) => err,
+                ));
             }
-        })?;
+            return Err(err);
+        }
 
         let clause_path = require_clause_toml_path(config, id)?;
 
@@ -167,8 +159,7 @@ pub fn supersede(
                 DiagnosticCode::E0209ClauseAlreadySuperseded,
                 "Clause is already superseded",
                 id,
-            )
-            .into());
+            ));
         }
 
         clause.status = ClauseStatus::Superseded;
@@ -219,8 +210,7 @@ pub fn supersede(
                     entry.spec.govctl.status.as_ref()
                 ),
                 id,
-            )
-            .into());
+            ));
         }
 
         entry.spec.govctl.status = AdrStatus::Superseded;
@@ -240,8 +230,7 @@ pub fn supersede(
             DiagnosticCode::E0813SupersedeNotSupported,
             format!("Supersede is not supported for this artifact type: {id}"),
             id,
-        )
-        .into());
+        ));
     }
 
     Ok(vec![])

@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{ClauseKind, ClauseSpec, ClauseStatus, ClauseWire, RfcWire, SectionSpec};
 use crate::schema::{ArtifactSchema, with_schema_header};
 use crate::ui;
@@ -12,15 +12,14 @@ pub(super) fn create(
     section: &str,
     kind: ClauseKind,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let parts: Vec<&str> = clause_id.split(':').collect();
     if parts.len() != 2 {
         return Err(Diagnostic::new(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
             "Invalid clause ID format. Expected RFC-NNNN:C-NAME",
             clause_id,
-        )
-        .into());
+        ));
     }
 
     let rfc_id = parts[0];
@@ -32,8 +31,7 @@ pub(super) fn create(
             DiagnosticCode::E0102RfcNotFound,
             format!("RFC not found: {rfc_id}"),
             rfc_id,
-        )
-        .into());
+        ));
     }
 
     let mut rfc = crate::write::read_rfc(config, &rfc_path)?;

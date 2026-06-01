@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{Release, WorkItemStatus};
 use crate::parse::{load_releases, load_work_items, validate_version, write_releases};
 use crate::ui;
@@ -14,7 +14,7 @@ pub fn cut_release(
     version: &str,
     date: Option<&str>,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let releases_path = config.releases_path();
     let releases_path_str = config.display_path(&releases_path).display().to_string();
 
@@ -37,7 +37,7 @@ pub fn cut_release(
             format!("Release {version} already exists"),
             &releases_path_str,
         );
-        return Err(diag.into());
+        return Err(diag);
     }
 
     // Get all work item IDs already in releases
@@ -61,7 +61,7 @@ pub fn cut_release(
             "No unreleased work items to include in release",
             &releases_path_str,
         );
-        return Err(diag.into());
+        return Err(diag);
     }
 
     // Create new release

@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{ChangelogEntry, RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec};
 use crate::schema::{ArtifactSchema, with_schema_header};
 use crate::ui;
@@ -10,7 +10,7 @@ pub(super) fn create(
     title: &str,
     manual_id: Option<&str>,
     op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+) -> DiagnosticResult<Diagnostics> {
     let rfcs_dir = config.rfc_dir();
 
     let rfc_id = match manual_id {
@@ -20,16 +20,14 @@ pub(super) fn create(
                     DiagnosticCode::E0110RfcInvalidId,
                     format!("RFC ID must start with 'RFC-' (got: {id})"),
                     id,
-                )
-                .into());
+                ));
             }
             if !op.is_preview() && rfcs_dir.join(id).exists() {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0109RfcAlreadyExists,
                     format!("RFC already exists: {id}"),
                     id,
-                )
-                .into());
+                ));
             }
             id.to_string()
         }
@@ -60,8 +58,7 @@ pub(super) fn create(
             DiagnosticCode::E0109RfcAlreadyExists,
             format!("RFC already exists: {}", rfc_dir.display()),
             rfc_dir.display().to_string(),
-        )
-        .into());
+        ));
     }
 
     let display_clauses_dir = config.display_path(&clauses_dir);

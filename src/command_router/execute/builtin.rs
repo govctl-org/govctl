@@ -8,13 +8,10 @@ use super::{CommandResult, legacy_command, render_global_target};
 
 pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp) -> CommandResult {
     match builtin {
-        BuiltinOp::Init { force } => {
-            legacy_command(cmd::new::init_project(config, *force, op), "init")
+        BuiltinOp::Init { force } => cmd::new::init_project(config, *force, op),
+        BuiltinOp::InitSkills { force, format, dir } => {
+            cmd::new::sync_skills(config, *force, format, dir.as_deref(), op)
         }
-        BuiltinOp::InitSkills { force, format, dir } => legacy_command(
-            cmd::new::sync_skills(config, *force, format, dir.as_deref(), op),
-            "init skills",
-        ),
         BuiltinOp::Check { has_active: true } => cmd::check::check_has_active(config),
         BuiltinOp::Check { has_active: false } => cmd::check::check_all(config),
         BuiltinOp::Status => cmd::status::show_status(config),
@@ -43,10 +40,9 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             crate::tui::run(config).map_err(|err| Diagnostic::from_anyhow(err, "tui"))?;
             Ok(vec![])
         }
-        BuiltinOp::ReleaseCut { version, date } => legacy_command(
-            cmd::lifecycle::cut_release(config, version, date.as_deref(), op),
-            "release cut",
-        ),
+        BuiltinOp::ReleaseCut { version, date } => {
+            cmd::lifecycle::cut_release(config, version, date.as_deref(), op)
+        }
         BuiltinOp::TagNew { tag } => cmd::tag::tag_new(config, tag, op),
         BuiltinOp::TagDelete { tag } => cmd::tag::tag_delete(config, tag, op),
         BuiltinOp::TagList { output } => cmd::tag::tag_list(config, *output),
