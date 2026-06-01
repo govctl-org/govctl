@@ -1,8 +1,9 @@
 use super::super::{ArtifactType, path};
 use super::mutate::{array_items_mut, ensure_array_path_mut};
 use super::{
-    remove_indices_preserving_order, simple_runtime_list_path, simple_status_list_spec,
-    status_list_text, type_mismatch, unknown_field_error, value_at_path,
+    remove_indices_preserving_order, scalar_list_item_text, simple_runtime_list_path,
+    simple_status_list_spec, status_list_entry_line, status_list_text, type_mismatch,
+    unknown_field_error, value_at_path,
 };
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
@@ -17,34 +18,13 @@ pub fn get_simple_list_item(
     if let Some(path) = simple_runtime_list_path(artifact, field) {
         let items = array_items(doc, path, id)?;
         let resolved = path::resolve_index(index, items.len())?;
-        let item = &items[resolved];
-        return Ok(match item {
-            Value::String(s) => s.clone(),
-            Value::Null => String::new(),
-            _ => item.to_string(),
-        });
+        return Ok(scalar_list_item_text(&items[resolved]));
     }
 
     if let Some(spec) = simple_status_list_spec(artifact, field) {
         let items = array_items(doc, spec.path, id)?;
         let resolved = path::resolve_index(index, items.len())?;
-        let item = &items[resolved];
-        let Some(obj) = item.as_object() else {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                "Expected object entries in array",
-                id,
-            ));
-        };
-        let status = obj
-            .get(spec.status_key)
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let text = obj
-            .get(spec.text_key)
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        return Ok(format!("[{status}] {text}"));
+        return status_list_entry_line(&items[resolved], spec.status_key, spec.text_key, id);
     }
 
     Err(unknown_field_error(artifact, field, id))

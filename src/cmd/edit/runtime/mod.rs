@@ -176,6 +176,34 @@ fn status_list_text<'a>(item: &'a Value, text_key: &str, id: &str) -> Result<&'a
         })
 }
 
+fn scalar_list_item_text(item: &Value) -> String {
+    match item {
+        Value::String(s) => s.clone(),
+        Value::Null => String::new(),
+        _ => item.to_string(),
+    }
+}
+
+fn status_list_entry_line(
+    item: &Value,
+    status_key: &str,
+    text_key: &str,
+    id: &str,
+) -> DiagnosticResult<String> {
+    let Some(obj) = item.as_object() else {
+        return Err(type_mismatch("Expected object entries in array", id));
+    };
+    let status = obj
+        .get(status_key)
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    let text = obj
+        .get(text_key)
+        .and_then(Value::as_str)
+        .unwrap_or_default();
+    Ok(format!("[{status}] {text}"))
+}
+
 fn remove_indices_preserving_order<F>(
     items: &mut Vec<Value>,
     indices: Vec<usize>,

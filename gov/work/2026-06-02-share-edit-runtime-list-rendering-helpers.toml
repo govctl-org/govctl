@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-009"
+title = "Share edit runtime list rendering helpers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reduce duplication in edit runtime list rendering by sharing scalar list item formatting and status-list line rendering between get/list and render paths while preserving existing field output and diagnostics."
+
+[[content.acceptance_criteria]]
+text = "edit runtime simple-list get and render paths share scalar item formatting"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "edit runtime status-list get and render paths share status line formatting"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "targeted edit tests, cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"

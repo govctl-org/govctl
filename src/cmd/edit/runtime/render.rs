@@ -1,4 +1,7 @@
-use super::{RenderMode, SimpleFieldSpec, type_mismatch, value_at_path};
+use super::{
+    RenderMode, SimpleFieldSpec, scalar_list_item_text, status_list_entry_line, type_mismatch,
+    value_at_path,
+};
 use crate::diagnostic::DiagnosticResult;
 use serde_json::Value;
 
@@ -40,14 +43,7 @@ fn render_string_array(v: Option<&Value>, sep: &str, id: &str) -> DiagnosticResu
         return Err(type_mismatch("Expected an array value", id));
     };
 
-    let rendered: Vec<String> = items
-        .iter()
-        .map(|item| match item {
-            Value::String(s) => s.clone(),
-            Value::Null => String::new(),
-            _ => item.to_string(),
-        })
-        .collect();
+    let rendered: Vec<String> = items.iter().map(scalar_list_item_text).collect();
     Ok(rendered.join(sep))
 }
 
@@ -66,18 +62,7 @@ pub(super) fn render_status_lines(
 
     let mut out = Vec::with_capacity(items.len());
     for item in items {
-        let Some(obj) = item.as_object() else {
-            return Err(type_mismatch("Expected object entries in array", id));
-        };
-        let status = obj
-            .get(status_key)
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let text = obj
-            .get(text_key)
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        out.push(format!("[{status}] {text}"));
+        out.push(status_list_entry_line(item, status_key, text_key, id)?);
     }
     Ok(out.join("\n"))
 }
