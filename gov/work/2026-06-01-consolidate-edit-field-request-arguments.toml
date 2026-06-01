@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-096"
 title = "Consolidate edit field request arguments"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = ["ADR-0031"]
 depends_on = ["WI-2026-06-01-095"]
 
@@ -14,20 +15,20 @@ description = "Replace the long edit field dispatch argument list with a cohesiv
 
 [[content.acceptance_criteria]]
 text = "edit command tests and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "clippy too_many_arguments suppression is removed from src/cmd/edit/mod.rs"
-status = "pending"
+status = "done"
 category = "removed"
 
 [[content.acceptance_criteria]]
 text = "edit field dispatch uses a request struct instead of a long positional parameter list"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "inert internal scope_override argument plumbing is removed while the hidden CLI compatibility flag remains accepted"
-status = "pending"
+status = "done"
 category = "removed"

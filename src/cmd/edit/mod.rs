@@ -30,6 +30,7 @@ pub use self::tick::tick_item;
 use self::{engine as edit_engine, rules as edit_rules};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::model::ChangelogCategory;
 use crate::ui;
 use crate::write::WriteOp;
 use anyhow::Context;
@@ -57,6 +58,18 @@ pub enum OwnedEditAction {
         match_opts: MatchOptionsOwned,
         status: crate::TickStatus,
     },
+}
+
+pub struct EditFieldRequest<'a> {
+    pub config: &'a Config,
+    pub id: &'a str,
+    pub path: &'a str,
+    pub action: &'a OwnedEditAction,
+    pub category_override: Option<ChangelogCategory>,
+    pub pros: Option<Vec<String>>,
+    pub cons: Option<Vec<String>>,
+    pub reject_reason: Option<String>,
+    pub op: WriteOp,
 }
 
 fn read_stdin() -> anyhow::Result<String> {
@@ -147,19 +160,19 @@ pub fn edit_clause(
     Ok(vec![])
 }
 
-#[allow(clippy::too_many_arguments)]
-pub fn edit_field(
-    config: &Config,
-    id: &str,
-    path: &str,
-    action: &OwnedEditAction,
-    category_override: Option<crate::model::ChangelogCategory>,
-    _scope_override: Option<&str>,
-    pros: Option<Vec<String>>,
-    cons: Option<Vec<String>>,
-    reject_reason: Option<String>,
-    op: WriteOp,
-) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn edit_field(request: EditFieldRequest<'_>) -> anyhow::Result<Vec<Diagnostic>> {
+    let EditFieldRequest {
+        config,
+        id,
+        path,
+        action,
+        category_override,
+        pros,
+        cons,
+        reject_reason,
+        op,
+    } = request;
+
     match action {
         OwnedEditAction::Set { value, stdin } => {
             let value = resolve_owned_value(value.as_ref(), *stdin)?;

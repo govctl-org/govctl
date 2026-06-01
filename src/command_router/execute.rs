@@ -257,18 +257,17 @@ fn execute_edit(
             let path = target.display_path();
             let pros = (!extras.pros.is_empty()).then(|| extras.pros.clone());
             let cons = (!extras.cons.is_empty()).then(|| extras.cons.clone());
-            cmd::edit::edit_field(
+            cmd::edit::edit_field(cmd::edit::EditFieldRequest {
                 config,
                 id,
-                &path,
+                path: &path,
                 action,
-                extras.category,
-                extras.scope.as_deref(),
+                category_override: extras.category,
                 pros,
                 cons,
-                extras.reject_reason.clone(),
+                reject_reason: extras.reject_reason.clone(),
                 op,
-            )
+            })
         }
         EditOp::ClauseLegacy {
             text,
