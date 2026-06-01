@@ -88,7 +88,7 @@ govctl work add <WI-ID> notes "Do not use old command name in examples"
 ```
 
 Add `notes` only when there is something future steps should remember. Transient execution progress belongs in loop state, not in work item fields.
-When a related cleanup batch gains or loses roots, use `govctl loop add --id <LOOP-ID>`, `govctl loop remove --id <LOOP-ID>`, or `govctl loop replan --id <LOOP-ID>` rather than creating a new loop for each small item.
+When a related cleanup batch gains or loses roots, use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>`, `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>`, or `govctl loop replan <LOOP-ID>` rather than creating a new loop for each small item. `wi` is accepted as a short alias for the loop `work` field, but examples should prefer `work`.
 
 ### 4. Record
 

@@ -129,10 +129,12 @@ When a requested change naturally splits into several related work items, write 
 If the batch scope changes after the loop starts, update the same loop:
 
 ```bash
-govctl loop add --id <LOOP-ID> <ROOT-WI-ID>
-govctl loop remove --id <LOOP-ID> <ROOT-WI-ID>
-govctl loop replan --id <LOOP-ID>
+govctl loop add <LOOP-ID> work <ROOT-WI-ID>
+govctl loop remove <LOOP-ID> work <ROOT-WI-ID>
+govctl loop replan <LOOP-ID>
 ```
+
+`work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
 
 Do not hand-write descriptive loop IDs or encode time finer than the day in loop IDs.
 

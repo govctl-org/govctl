@@ -45,10 +45,10 @@ govctl tag new <tag>
 govctl tag list
 govctl loop list open
 govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]
-govctl loop run --id <LOOP-ID>
-govctl loop replan --id <LOOP-ID>
-govctl loop add --id <LOOP-ID> <ROOT-WI-ID>
-govctl loop remove --id <LOOP-ID> <ROOT-WI-ID>
+govctl loop run <LOOP-ID>
+govctl loop replan <LOOP-ID>
+govctl loop add <LOOP-ID> work <ROOT-WI-ID>
+govctl loop remove <LOOP-ID> work <ROOT-WI-ID>
 govctl rfc list
 govctl adr list
 govctl rfc new "<title>"
@@ -100,15 +100,17 @@ For a multi-step task, cleanup run, refactor, or feature that naturally splits i
 2. Add `depends_on` edges for hard execution ordering.
 3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
 4. Start one loop for the batch root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
-5. Continue with `govctl loop run --id <LOOP-ID>` or `govctl loop resume --id <LOOP-ID>`.
+5. Continue with `govctl loop run <LOOP-ID>` or `govctl loop resume <LOOP-ID>`.
 
 When resuming after an interruption or inspecting current local execution state, run `govctl loop list open` first. Use the listed generated loop ID for `run`, `show`, `resume`, `add`, `remove`, or `replan`; do not guess a loop ID from memory.
 
 If the scope changes during execution, keep the same loop identity:
 
-- Use `govctl loop add --id <LOOP-ID> <ROOT-WI-ID>` when newly discovered work belongs in the current batch.
-- Use `govctl loop remove --id <LOOP-ID> <ROOT-WI-ID>` when a root no longer belongs in the batch.
-- Use `govctl loop replan --id <LOOP-ID>` after dependency edits that should refresh the current closure.
+- Use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>` when newly discovered work belongs in the current batch.
+- Use `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>` when a root no longer belongs in the batch.
+- Use `govctl loop replan <LOOP-ID>` after dependency edits that should refresh the current closure.
+
+`work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
 
 Do not create scattered single-item loops for work that is part of one coherent batch.
 
