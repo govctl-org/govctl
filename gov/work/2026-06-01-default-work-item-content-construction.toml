@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-116"
+title = "Default work item content construction"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["ADR-0047"]
+
+[content]
+description = "Clean the work item creation path so new work item content uses default initialization for legacy-compatible fields instead of explicitly constructing an empty legacy inline history collection. This keeps the new-work-item serialized output unchanged while reducing stale field-surface references in creation code."
+
+[[content.acceptance_criteria]]
+text = "new work item creation initializes content without explicitly constructing an empty legacy inline history field"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "work creation regression tests, cargo clippy, and govctl check pass"
+status = "pending"
+category = "chore"
