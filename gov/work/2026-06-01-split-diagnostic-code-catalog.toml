@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-110"
+title = "Split diagnostic code catalog"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["RFC-0002"]
+
+[content]
+description = "Split the stable diagnostic code catalog out of the diagnostic message type implementation. Preserve the public crate::diagnostic API and diagnostic formatting behavior while making the code catalog easier to scan without creating same-name file/directory coexistence."
+
+[[content.acceptance_criteria]]
+text = "DiagnosticCode and DiagnosticLevel live in a focused diagnostic code module"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "existing crate::diagnostic imports continue to compile without caller changes"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "diagnostic-focused compile checks and govctl check pass"
+status = "pending"
+category = "chore"
