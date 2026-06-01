@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-142"
+title = "Normalize loop state validation module"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+refs = ["RFC-0006"]
+
+[content]
+description = "Normalize src/loop_state/validation.rs into a validation directory module so loop validation helpers can be split without same-name file and directory coexistence. Preserve validate_loop_id, loop state validation, round record validation, transition validation, storage helper access, and existing diagnostics."
+
+[[content.acceptance_criteria]]
+text = "loop state validation is normalized to a directory module without same-name file and directory coexistence"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "validation public and storage-facing helper access remains compatible"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop tests and govctl check pass"
+status = "pending"
+category = "chore"
