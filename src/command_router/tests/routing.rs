@@ -95,3 +95,25 @@ fn test_work_tick_defaults_status_to_done() -> Result<(), Box<dyn std::error::Er
     }
     Ok(())
 }
+
+#[test]
+fn test_artifact_render_rejects_unsupported_artifacts() -> Result<(), Box<dyn std::error::Error>> {
+    for (artifact, id) in [
+        (cmd::edit::ArtifactType::Clause, "RFC-0001:C-SCOPE"),
+        (cmd::edit::ArtifactType::Guard, "GUARD-CHECK"),
+    ] {
+        let plan = plan_artifact_render(artifact, id, false);
+        let err = match plan.execute(
+            &crate::config::Config::default(),
+            crate::write::WriteOp::Execute,
+        ) {
+            Ok(_) => return Err("unsupported artifact render should fail".into()),
+            Err(err) => err,
+        };
+
+        assert_eq!(err.code, DiagnosticCode::E0822UnsupportedOperation);
+        assert_eq!(err.message, "render is not supported for this artifact");
+        assert_eq!(err.file, id);
+    }
+    Ok(())
+}

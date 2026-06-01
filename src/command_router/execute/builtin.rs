@@ -3,7 +3,7 @@ use crate::cmd;
 use crate::config::Config;
 use crate::write::WriteOp;
 
-use super::{CommandResult, render_global_target};
+use super::{CommandResult, render::execute_global_render};
 
 pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp) -> CommandResult {
     match builtin {
@@ -18,7 +18,7 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             target,
             dry_run,
             force,
-        } => render_global_target(config, *target, *dry_run, *force),
+        } => execute_global_render(config, *target, *dry_run, *force),
         BuiltinOp::Migrate => cmd::migrate::migrate(config, op),
         BuiltinOp::Verify { guard_ids, work } => {
             cmd::verify::verify(config, guard_ids, work.as_deref())
