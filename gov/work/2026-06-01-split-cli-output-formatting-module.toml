@@ -3,9 +3,10 @@
 [govctl]
 id = "WI-2026-06-01-114"
 title = "Split CLI output formatting module"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 refs = [
     "ADR-0005",
     "ADR-0017",
@@ -16,15 +17,15 @@ description = "Split the CLI output formatting module into focused submodules fo
 
 [[content.acceptance_criteria]]
 text = "CLI output formatting is split into focused ui submodules without changing crate::ui call sites"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "cargo fmt, cargo check, focused output/help tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"
 
 [[content.acceptance_criteria]]
 text = "color capability detection and diagnostic formatting remain reusable through crate::ui"
-status = "pending"
+status = "done"
 category = "changed"

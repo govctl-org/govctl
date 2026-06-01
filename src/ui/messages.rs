@@ -1,41 +1,8 @@
-//! CLI output formatting with colors.
-//!
-//! Implements [[ADR-0005]] CLI output color scheme and formatting.
-//!
-//! Provides consistent, colorized output for all CLI commands.
-//! Colors auto-disable when output is not a TTY (agent-friendly).
-
+use super::color::use_colors;
+use super::path_str;
 use owo_colors::OwoColorize;
 use std::fmt::Display;
 use std::path::Path;
-
-/// Check if stderr supports colors (TTY detection + NO_COLOR)
-///
-/// Implements [[ADR-0017]] terminal capability detection:
-/// - Auto-detect TTY
-/// - Respect `NO_COLOR` environment variable
-fn use_colors() -> bool {
-    // Respect NO_COLOR environment variable per https://no-color.org/
-    if std::env::var("NO_COLOR").is_ok() {
-        return false;
-    }
-    supports_color::on(supports_color::Stream::Stderr).is_some()
-}
-
-/// Check if stdout supports colors (TTY detection + NO_COLOR)
-///
-/// Use this for commands that output to stdout (e.g., `list`, `status`).
-pub fn stdout_supports_color() -> bool {
-    // Respect NO_COLOR environment variable per https://no-color.org/
-    if std::env::var("NO_COLOR").is_ok() {
-        return false;
-    }
-    supports_color::on(supports_color::Stream::Stdout).is_some()
-}
-
-// =============================================================================
-// Color Helpers
-// =============================================================================
 
 /// Format a success message (green checkmark prefix)
 pub fn success(msg: impl Display) {
@@ -66,15 +33,6 @@ pub fn created(kind: &str, path: &Path) {
         eprintln!("{} {}: {}", "Created".green(), kind, path.display().cyan());
     } else {
         eprintln!("Created {}: {}", kind, path.display());
-    }
-}
-
-/// Format a file path (cyan)
-pub fn path_str(p: &Path) -> String {
-    if use_colors() {
-        format!("{}", p.display().cyan())
-    } else {
-        format!("{}", p.display())
     }
 }
 
@@ -258,12 +216,6 @@ pub fn render_summary(count: usize, kind: &str) {
     }
 }
 
-// =============================================================================
-// Diagnostic Formatting
-// =============================================================================
-
-use crate::diagnostic::{Diagnostic, DiagnosticLevel};
-
 /// Format a simple "Created: path" message
 pub fn created_path(path: &Path) {
     if use_colors() {
@@ -313,7 +265,7 @@ pub fn release_created(version: &str, date: &str, work_item_count: usize) {
 }
 
 /// Format a changelog rendered message
-pub fn changelog_rendered(path: &std::path::Path, release_count: usize, unreleased_count: usize) {
+pub fn changelog_rendered(path: &Path, release_count: usize, unreleased_count: usize) {
     if use_colors() {
         eprintln!(
             "Rendered CHANGELOG to {} ({} releases, {} unreleased)",
@@ -387,36 +339,5 @@ pub fn dry_run_mkdir(path: &Path) {
         eprintln!("{}: {}", "Would create dir".yellow(), path.display().cyan());
     } else {
         eprintln!("Would create dir: {}", path.display());
-    }
-}
-
-/// Format a diagnostic message
-pub fn diagnostic(diag: &Diagnostic) {
-    if use_colors() {
-        let level_str = match diag.level {
-            DiagnosticLevel::Error => "error".red().bold().to_string(),
-            DiagnosticLevel::Warning => "warning".yellow().bold().to_string(),
-            DiagnosticLevel::Info => "info".cyan().bold().to_string(),
-        };
-        eprintln!(
-            "{}[{}]: {} ({})",
-            level_str,
-            diag.code.code().bright_black(),
-            diag.message,
-            diag.file.cyan()
-        );
-    } else {
-        let level_str = match diag.level {
-            DiagnosticLevel::Error => "error",
-            DiagnosticLevel::Warning => "warning",
-            DiagnosticLevel::Info => "info",
-        };
-        eprintln!(
-            "{}[{}]: {} ({})",
-            level_str,
-            diag.code.code(),
-            diag.message,
-            diag.file
-        );
     }
 }
