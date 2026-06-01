@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-031"
+title = "Normalize signature module"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Move src/signature.rs into a directory-owned signature module and extract deterministic canonical JSON serialization into a focused child module. Preserve the public crate::signature API and rendered signature behavior while avoiding same-name file/directory coexistence."
+
+[[content.acceptance_criteria]]
+text = "src/signature.rs is replaced by src/signature/mod.rs without same-name file/directory coexistence"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "signature module root no longer mixes signature orchestration with canonical JSON serialization"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "signature tests and full verification pass"
+status = "done"
+category = "chore"
