@@ -12,13 +12,8 @@ pub(super) fn plan_release_upgrade(config: &Config) -> anyhow::Result<Option<Vec
     }
 
     let display_path = config.display_path(&path).display().to_string();
-    let content = fs::read_to_string(&path).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read releases file: {err}"),
-            &display_path,
-        )
-    })?;
+    let content = fs::read_to_string(&path)
+        .map_err(|err| Diagnostic::io_error("read releases file", err, &display_path))?;
     let mut raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
             DiagnosticCode::E0704ReleaseSchemaInvalid,

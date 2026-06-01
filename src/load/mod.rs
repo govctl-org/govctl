@@ -19,17 +19,42 @@ pub struct ProjectLoadResult {
 /// Load error types
 #[derive(Debug)]
 pub enum LoadError {
-    Io { file: String, message: String },
-    Json { file: String, message: String },
-    RfcSchema { file: String, message: String },
-    ClauseSchema { file: String, message: String },
-    ClausePathInvalid { file: String, clause: String },
+    Io {
+        file: String,
+        action: &'static str,
+        message: String,
+    },
+    InternalIo {
+        file: String,
+        message: String,
+    },
+    Json {
+        file: String,
+        message: String,
+    },
+    RfcSchema {
+        file: String,
+        message: String,
+    },
+    ClauseSchema {
+        file: String,
+        message: String,
+    },
+    ClausePathInvalid {
+        file: String,
+        clause: String,
+    },
 }
 
 impl From<LoadError> for Diagnostic {
     fn from(err: LoadError) -> Self {
         match err {
-            LoadError::Io { file, message } => {
+            LoadError::Io {
+                file,
+                action,
+                message,
+            } => Diagnostic::io_error(action, message, file),
+            LoadError::InternalIo { file, message } => {
                 Diagnostic::new(DiagnosticCode::E0901IoError, message, file)
             }
             LoadError::Json { file, message } => {

@@ -153,11 +153,7 @@ fn find_work_item_by_name(config: &Config, name: &str) -> anyhow::Result<std::pa
 
     let entries: Vec<_> = std::fs::read_dir(work_dir)
         .map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read work directory: {err}"),
-                work_dir.display().to_string(),
-            )
+            Diagnostic::io_error("read work directory", err, work_dir.display().to_string())
         })?
         .filter_map(Result::ok)
         .filter(|e| {

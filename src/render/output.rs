@@ -1,5 +1,5 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::Diagnostic;
 use crate::ui;
 use std::io::Write;
 
@@ -26,24 +26,24 @@ pub(super) fn write_rendered_md(
     } else {
         if let Some(parent) = output_path.parent() {
             std::fs::create_dir_all(parent).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to create render output directory: {err}"),
+                Diagnostic::io_error(
+                    "create render output directory",
+                    err,
                     config.display_path(parent).display().to_string(),
                 )
             })?;
         }
         let mut file = std::fs::File::create(output_path).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to create render output file: {err}"),
+            Diagnostic::io_error(
+                "create render output file",
+                err,
                 display_path.display().to_string(),
             )
         })?;
         file.write_all(content.as_bytes()).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to write render output file: {err}"),
+            Diagnostic::io_error(
+                "write render output file",
+                err,
                 display_path.display().to_string(),
             )
         })?;

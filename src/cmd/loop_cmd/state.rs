@@ -72,18 +72,10 @@ pub(super) fn canonical_loop_ids(config: &Config) -> anyhow::Result<Vec<String>>
 
     let mut loop_ids = Vec::new();
     for entry in std::fs::read_dir(&root).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read loop state directory: {e}"),
-            root.display().to_string(),
-        )
+        Diagnostic::io_error("read loop state directory", e, root.display().to_string())
     })? {
         let entry = entry.map_err(|e| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read loop state entry: {e}"),
-                root.display().to_string(),
-            )
+            Diagnostic::io_error("read loop state entry", e, root.display().to_string())
         })?;
         if !entry.path().is_dir() {
             continue;

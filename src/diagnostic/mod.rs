@@ -24,6 +24,18 @@ impl Diagnostic {
             file: file.into(),
         }
     }
+
+    pub fn io_error(
+        action: impl fmt::Display,
+        err: impl fmt::Display,
+        file: impl Into<String>,
+    ) -> Self {
+        Self::new(
+            DiagnosticCode::E0901IoError,
+            format!("Failed to {action}: {err}"),
+            file,
+        )
+    }
 }
 
 impl fmt::Display for Diagnostic {

@@ -11,13 +11,8 @@ use std::path::Path;
 /// Read RFC from file and validate its normalized structure.
 /// Handles both legacy flat format and new `[govctl]` wire format (TOML and JSON).
 pub fn read_rfc(config: &Config, path: &Path) -> Result<RfcSpec> {
-    let content = std::fs::read_to_string(path).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read RFC: {err}"),
-            path.display().to_string(),
-        )
-    })?;
+    let content = std::fs::read_to_string(path)
+        .map_err(|err| Diagnostic::io_error("read RFC", err, path.display().to_string()))?;
     let rfc = match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
             let mut raw: toml::Value = toml::from_str(&content).map_err(|err| {
@@ -85,13 +80,8 @@ pub fn write_rfc(
 /// Read clause from file and validate its normalized structure.
 /// Handles both legacy flat format and new `[govctl]` + `[content]` wire format.
 pub fn read_clause(config: &Config, path: &Path) -> Result<ClauseSpec> {
-    let content = std::fs::read_to_string(path).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read clause: {err}"),
-            path.display().to_string(),
-        )
-    })?;
+    let content = std::fs::read_to_string(path)
+        .map_err(|err| Diagnostic::io_error("read clause", err, path.display().to_string()))?;
     let clause = match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => {
             let mut raw: toml::Value = toml::from_str(&content).map_err(|err| {

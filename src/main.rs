@@ -100,11 +100,7 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             let gov_root = config.gov_root.as_path();
             if !op.is_preview() && !gov_root.exists() {
                 std::fs::create_dir_all(gov_root).map_err(|e| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0901IoError,
-                        format!("Failed to create gov root: {}", e),
-                        gov_root.display().to_string(),
-                    )
+                    Diagnostic::io_error("create gov root", e, gov_root.display().to_string())
                 })?;
             }
         }

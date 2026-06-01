@@ -3,7 +3,7 @@
 //! Implements [[ADR-0006]] global dry-run support for content-modifying commands.
 //! Implements [[ADR-0012]] prefix-based changelog category parsing.
 
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::Diagnostic;
 use crate::ui;
 use anyhow::Result;
 use std::path::Path;
@@ -63,11 +63,7 @@ pub fn write_file(
     match op {
         WriteOp::Execute => {
             std::fs::write(path, content).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to write file: {err}"),
-                    output_path.display().to_string(),
-                )
+                Diagnostic::io_error("write file", err, output_path.display().to_string())
             })?;
         }
         WriteOp::Preview => {
@@ -86,11 +82,7 @@ pub fn create_dir_all(path: &Path, op: WriteOp, display_path: Option<&Path>) -> 
     match op {
         WriteOp::Execute => {
             std::fs::create_dir_all(path).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to create directory: {err}"),
-                    output_path.display().to_string(),
-                )
+                Diagnostic::io_error("create directory", err, output_path.display().to_string())
             })?;
         }
         WriteOp::Preview => {
@@ -109,11 +101,7 @@ pub fn delete_file(path: &Path, op: WriteOp, display_path: Option<&Path>) -> Res
     match op {
         WriteOp::Execute => {
             std::fs::remove_file(path).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to delete file: {err}"),
-                    output_path.display().to_string(),
-                )
+                Diagnostic::io_error("delete file", err, output_path.display().to_string())
             })?;
         }
         WriteOp::Preview => {

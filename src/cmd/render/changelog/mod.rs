@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::Diagnostic;
 use crate::model::{ReleasesFile, WorkItemEntry, WorkItemStatus};
 use crate::parse::{load_releases, load_work_items};
 use crate::ui;
@@ -58,11 +58,7 @@ pub fn render_changelog(
         ui::dry_run_file_preview(&changelog_path, &output);
     } else {
         std::fs::write(&changelog_path, &output).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to write changelog: {err}"),
-                changelog_path.display().to_string(),
-            )
+            Diagnostic::io_error("write changelog", err, changelog_path.display().to_string())
         })?;
         ui::changelog_rendered(
             &changelog_path,
@@ -114,11 +110,7 @@ fn render_changelog_incremental(
 ) -> anyhow::Result<String> {
     let existing = if changelog_path.exists() {
         std::fs::read_to_string(changelog_path).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read changelog: {err}"),
-                changelog_path.display().to_string(),
-            )
+            Diagnostic::io_error("read changelog", err, changelog_path.display().to_string())
         })?
     } else {
         String::new()

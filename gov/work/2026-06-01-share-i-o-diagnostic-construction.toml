@@ -3,25 +3,29 @@
 [govctl]
 id = "WI-2026-06-01-167"
 title = "Share I/O diagnostic construction"
-status = "active"
+status = "done"
 created = "2026-06-01"
 started = "2026-06-01"
+completed = "2026-06-01"
 
 [content]
 description = "Extract the repeated filesystem error Diagnostic construction into a single reusable helper on the diagnostic type, then update CLI-visible I/O paths to use it. Preserve existing E0901 codes, scopes, and command behavior while reducing copy-pasted error formatting introduced by the diagnostic cleanup."
-notes = ["This cleanup should not create another file/module split. Keep the helper on Diagnostic so repeated E0901 construction is centralized without worsening module fragmentation."]
+notes = [
+    "This cleanup should not create another file/module split. Keep the helper on Diagnostic so repeated E0901 construction is centralized without worsening module fragmentation.",
+    "Subagent review found two low-risk scope issues. Keep Diagnostic::io_error limited to filesystem-style failures: self-update backend errors remain explicit Diagnostic::new calls, and the RFC parent-path invariant keeps its original uncategorized E0901 message instead of using the filesystem helper.",
+]
 
 [[content.acceptance_criteria]]
 text = "Diagnostic exposes a reusable helper for E0901 filesystem failures with action and scope context"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "CLI-visible filesystem call sites reuse the helper without changing diagnostic code or scope semantics"
-status = "pending"
+status = "done"
 category = "changed"
 
 [[content.acceptance_criteria]]
 text = "cargo fmt, targeted tests, and govctl check pass"
-status = "pending"
+status = "done"
 category = "chore"

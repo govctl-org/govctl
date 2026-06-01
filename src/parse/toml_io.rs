@@ -22,13 +22,8 @@ pub(super) fn load_toml_dir<T>(
 
     let mut items = Vec::new();
     let mut warnings = Vec::new();
-    let entries = std::fs::read_dir(dir).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            dir.display().to_string(),
-        )
-    })?;
+    let entries = std::fs::read_dir(dir)
+        .map_err(|e| Diagnostic::io_error("read TOML directory", e, dir.display().to_string()))?;
 
     for entry in entries.flatten() {
         let path = entry.path();
@@ -56,13 +51,8 @@ pub(super) fn load_toml_spec<T>(
 where
     T: DeserializeOwned,
 {
-    let content = std::fs::read_to_string(path).map_err(|e| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            e.to_string(),
-            path.display().to_string(),
-        )
-    })?;
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| Diagnostic::io_error("read TOML file", e, path.display().to_string()))?;
 
     let raw: toml::Value = toml::from_str(&content).map_err(|e| {
         Diagnostic::new(
@@ -107,11 +97,7 @@ where
     match op {
         WriteOp::Execute => {
             std::fs::write(path, &content).map_err(|e| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    e.to_string(),
-                    diagnostic_path.display().to_string(),
-                )
+                Diagnostic::io_error("write TOML file", e, diagnostic_path.display().to_string())
             })?;
         }
         WriteOp::Preview => {

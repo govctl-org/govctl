@@ -52,13 +52,7 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
         .read(true)
         .write(true)
         .open(&lock_path)
-        .map_err(|e| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to open lock file: {}", e),
-                lock_path.display().to_string(),
-            )
-        })?;
+        .map_err(|e| Diagnostic::io_error("open lock file", e, lock_path.display().to_string()))?;
 
     let deadline = Instant::now() + Duration::from_secs(timeout_secs);
     let poll = Duration::from_millis(POLL_INTERVAL_MS);
@@ -83,9 +77,9 @@ pub fn acquire_gov_lock(config: &Config) -> Result<GovLockGuard> {
                 thread::sleep(poll);
             }
             Err(e) => {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to acquire lock: {}", e),
+                return Err(Diagnostic::io_error(
+                    "acquire lock",
+                    e,
                     lock_path.display().to_string(),
                 )
                 .into());

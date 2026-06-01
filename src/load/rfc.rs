@@ -14,12 +14,14 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
     let mut rfcs = Vec::new();
     let entries = std::fs::read_dir(&rfcs_dir).map_err(|e| LoadError::Io {
         file: rfcs_dir.display().to_string(),
+        action: "read RFC directory",
         message: e.to_string(),
     })?;
 
     for entry in entries {
         let entry = entry.map_err(|e| LoadError::Io {
             file: rfcs_dir.display().to_string(),
+            action: "read RFC directory entry",
             message: e.to_string(),
         })?;
 
@@ -41,6 +43,7 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
 pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError> {
     let content = std::fs::read_to_string(rfc_path).map_err(|e| LoadError::Io {
         file: rfc_path.display().to_string(),
+        action: "read RFC",
         message: e.to_string(),
     })?;
 
@@ -84,7 +87,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         }
     };
 
-    let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::Io {
+    let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::InternalIo {
         file: rfc_path.display().to_string(),
         message: "RFC path has no parent directory".to_string(),
     })?;
@@ -118,6 +121,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
 pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
     let content = std::fs::read_to_string(path).map_err(|e| LoadError::Io {
         file: path.display().to_string(),
+        action: "read clause",
         message: e.to_string(),
     })?;
 

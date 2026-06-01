@@ -35,16 +35,16 @@ pub(super) fn plan_rfc_json_to_toml(
     }
 
     for entry in fs::read_dir(rfc_dir).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read RFC directory for migration: {err}"),
+        Diagnostic::io_error(
+            "read RFC directory for migration",
+            err,
             config.display_path(rfc_dir).display().to_string(),
         )
     })? {
         let entry = entry.map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read RFC directory entry for migration: {err}"),
+            Diagnostic::io_error(
+                "read RFC directory entry for migration",
+                err,
                 config.display_path(rfc_dir).display().to_string(),
             )
         })?;
@@ -71,16 +71,16 @@ pub(super) fn plan_rfc_json_to_toml(
 
     if clauses_dir.exists() {
         for entry in fs::read_dir(&clauses_dir).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read clauses directory for migration: {err}"),
+            Diagnostic::io_error(
+                "read clauses directory for migration",
+                err,
                 config.display_path(&clauses_dir).display().to_string(),
             )
         })? {
             let entry = entry.map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to read clause directory entry for migration: {err}"),
+                Diagnostic::io_error(
+                    "read clause directory entry for migration",
+                    err,
                     config.display_path(&clauses_dir).display().to_string(),
                 )
             })?;

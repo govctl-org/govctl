@@ -16,11 +16,7 @@ impl Config {
 
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to read config: {err}"),
-                    config_path.display().to_string(),
-                )
+                Diagnostic::io_error("read config", err, config_path.display().to_string())
             })?;
             let mut config: Config = toml::from_str(&content).map_err(|err| {
                 Diagnostic::new(

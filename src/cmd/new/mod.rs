@@ -94,11 +94,7 @@ fn ensure_gitignore_lock_entry(op: WriteOp) -> anyhow::Result<()> {
 
     if gitignore_path.exists() {
         let content = std::fs::read_to_string(&gitignore_path).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read .gitignore: {err}"),
-                gitignore_path.display().to_string(),
-            )
+            Diagnostic::io_error("read .gitignore", err, gitignore_path.display().to_string())
         })?;
         let missing_entries: Vec<&str> = LOCAL_STATE_ENTRIES
             .iter()

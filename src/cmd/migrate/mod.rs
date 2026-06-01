@@ -4,7 +4,7 @@
 //! The current version is tracked in `gov/config.toml` under `[schema] version`.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::Diagnostic;
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
 use crate::write::{WriteOp, write_file};
@@ -140,13 +140,8 @@ fn sync_schemas(config: &Config, op: WriteOp) -> anyhow::Result<usize> {
 fn bump_config_version(config: &Config, new_version: u32) -> anyhow::Result<()> {
     let path = config.gov_root.join("config.toml");
     let display_path = config.display_path(&path).display().to_string();
-    let content = fs::read_to_string(&path).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read config for migration: {err}"),
-            &display_path,
-        )
-    })?;
+    let content = fs::read_to_string(&path)
+        .map_err(|err| Diagnostic::io_error("read config for migration", err, &display_path))?;
 
     let mut lines: Vec<String> = content.lines().map(String::from).collect();
     let mut in_schema = false;
@@ -174,13 +169,8 @@ fn bump_config_version(config: &Config, new_version: u32) -> anyhow::Result<()> 
     if !output.ends_with('\n') {
         output.push('\n');
     }
-    fs::write(&path, output).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to write migrated config: {err}"),
-            &display_path,
-        )
-    })?;
+    fs::write(&path, output)
+        .map_err(|err| Diagnostic::io_error("write migrated config", err, &display_path))?;
     Ok(())
 }
 
@@ -197,9 +187,9 @@ fn plan_v1_to_v2(config: &Config) -> anyhow::Result<Vec<FileOp>> {
     if rfc_root.exists() {
         let mut dirs: Vec<_> = fs::read_dir(&rfc_root)
             .map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0901IoError,
-                    format!("Failed to read RFC directory for migration: {err}"),
+                Diagnostic::io_error(
+                    "read RFC directory for migration",
+                    err,
                     config.display_path(&rfc_root).display().to_string(),
                 )
             })?

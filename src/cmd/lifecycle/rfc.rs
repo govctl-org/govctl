@@ -65,9 +65,9 @@ fn fill_pending_clause_versions(
 
     let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)
         .map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read clauses directory: {err}"),
+            Diagnostic::io_error(
+                "read clauses directory",
+                err,
                 clauses_dir.display().to_string(),
             )
         })?

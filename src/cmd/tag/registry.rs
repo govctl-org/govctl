@@ -38,11 +38,7 @@ pub(super) fn validate_tag_format(tag: &str) -> Result<()> {
 pub(super) fn read_config_table(config: &Config) -> Result<toml::Table> {
     let config_path = config.gov_root.join("config.toml");
     let content = std::fs::read_to_string(&config_path).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to read config: {err}"),
-            config_path.display().to_string(),
-        )
+        Diagnostic::io_error("read config", err, config_path.display().to_string())
     })?;
     toml::from_str::<toml::Table>(&content).map_err(|err| {
         Diagnostic::new(
@@ -65,11 +61,7 @@ pub(super) fn write_config_table(config: &Config, table: &toml::Table) -> Result
         )
     })?;
     std::fs::write(&config_path, content).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            format!("Failed to write config: {err}"),
-            config_path.display().to_string(),
-        )
+        Diagnostic::io_error("write config", err, config_path.display().to_string())
     })?;
     Ok(())
 }

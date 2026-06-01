@@ -137,9 +137,5 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> anyhow::
 }
 
 fn io_error(path: &Path, action: &str, err: io::Error) -> Diagnostic {
-    Diagnostic::new(
-        DiagnosticCode::E0901IoError,
-        format!("Failed to {action}: {err}"),
-        path.display().to_string(),
-    )
+    Diagnostic::io_error(action, err, path.display().to_string())
 }

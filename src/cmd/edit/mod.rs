@@ -103,13 +103,7 @@ fn read_stdin() -> anyhow::Result<String> {
     let mut buffer = String::new();
     std::io::stdin()
         .read_to_string(&mut buffer)
-        .map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read from stdin: {err}"),
-                "stdin",
-            )
-        })?;
+        .map_err(|err| Diagnostic::io_error("read from stdin", err, "stdin"))?;
     // Trim trailing newline that HEREDOC adds
     Ok(buffer.trim_end_matches('\n').to_string())
 }
@@ -171,11 +165,7 @@ pub fn edit_clause(
     let new_text = match (text, text_file, stdin) {
         (Some(t), None, false) => t.to_string(),
         (None, Some(path), false) => std::fs::read_to_string(path).map_err(|err| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                format!("Failed to read text file: {err}"),
-                path.display().to_string(),
-            )
+            Diagnostic::io_error("read text file", err, path.display().to_string())
         })?,
         (None, None, true) => read_stdin()?,
         (None, None, false) => {
