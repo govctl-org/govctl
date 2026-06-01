@@ -170,7 +170,7 @@ fn run_command_with_timeout(
     while started.elapsed() < timeout {
         if child.try_wait()?.is_some() {
             let result = child.wait_with_output()?;
-            return Ok(Some(format_command_output(args, &result)));
+            return Ok(Some(common::format_command_output(args, &result)));
         }
         std::thread::sleep(Duration::from_millis(25));
     }
@@ -178,27 +178,4 @@ fn run_command_with_timeout(
     let _ = child.kill();
     let _ = child.wait();
     Ok(None)
-}
-
-#[cfg(unix)]
-fn format_command_output(args: &[&str], result: &std::process::Output) -> String {
-    let mut output = format!("$ govctl {}\n", args.join(" "));
-    let stdout = String::from_utf8_lossy(&result.stdout);
-    let stderr = String::from_utf8_lossy(&result.stderr);
-
-    if !stdout.is_empty() {
-        output.push_str(&stdout);
-        if !stdout.ends_with('\n') {
-            output.push('\n');
-        }
-    }
-    if !stderr.is_empty() {
-        output.push_str(&stderr);
-        if !stderr.ends_with('\n') {
-            output.push('\n');
-        }
-    }
-
-    output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
-    output
 }

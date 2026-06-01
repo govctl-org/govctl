@@ -110,8 +110,6 @@ fn append_command_output(
     args: &[&str],
     output: &mut String,
 ) -> Result<(), std::io::Error> {
-    output.push_str(&format!("$ govctl {}\n", args.join(" ")));
-
     let result = Command::new(env!("CARGO_BIN_EXE_govctl"))
         .args(args)
         .current_dir(dir)
@@ -119,11 +117,17 @@ fn append_command_output(
         .env("GOVCTL_DEFAULT_OWNER", "@test-user")
         .output()?;
 
-    append_process_output(output, &result.stdout);
-    append_process_output(output, &result.stderr);
-    output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
+    output.push_str(&format_command_output(args, &result));
 
     Ok(())
+}
+
+pub fn format_command_output(args: &[&str], result: &std::process::Output) -> String {
+    let mut output = format!("$ govctl {}\n", args.join(" "));
+    append_process_output(&mut output, &result.stdout);
+    append_process_output(&mut output, &result.stderr);
+    output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
+    output
 }
 
 fn append_process_output(output: &mut String, bytes: &[u8]) {
