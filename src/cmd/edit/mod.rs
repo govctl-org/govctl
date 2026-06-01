@@ -6,6 +6,7 @@ pub mod adapter;
 mod add;
 mod artifact;
 mod delete;
+mod doc_adapter;
 pub mod engine;
 mod get;
 mod json_target;
@@ -18,6 +19,7 @@ pub mod runtime;
 mod set;
 mod target_doc;
 mod tick;
+mod toml_adapter;
 mod toml_target;
 
 use self::adapter::{ClauseTomlAdapter, DocAdapter};

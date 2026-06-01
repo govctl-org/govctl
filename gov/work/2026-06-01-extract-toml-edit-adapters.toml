@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-187"
+title = "Extract TOML edit adapters"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move ADR, work item, and guard TOML edit adapters out of src/cmd/edit/adapter.rs into a flat sibling module, leaving adapter.rs focused on shared adapter contracts."
+
+[[content.acceptance_criteria]]
+text = "ADR, work item, and guard TOML edit adapters live outside the common adapter core"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Shared adapter core owns only common adapter contracts and document container types"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"
