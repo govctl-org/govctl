@@ -1,0 +1,21 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-120"
+title = "Normalize config module root"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Move src/config.rs into a directory-owned config module root so future config-specific helpers can live under src/config/ without creating same-name file/directory coexistence. Preserve the public Config and related type exports used by the rest of the crate."
+
+[[content.acceptance_criteria]]
+text = "src/config.rs is moved to src/config/mod.rs with no same-name file/directory coexistence"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "existing crate-level config imports and config-loading behavior remain unchanged"
+status = "pending"
+category = "chore"

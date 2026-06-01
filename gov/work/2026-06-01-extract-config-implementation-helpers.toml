@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-121"
+title = "Extract config implementation helpers"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+depends_on = ["WI-2026-06-01-120"]
+
+[content]
+description = "Extract focused config implementation helpers from the config module root after it becomes directory-owned. Keep config data types in the root while moving ID strategy behavior, load/path accessors, and default TOML rendering into coherent child modules."
+
+[[content.acceptance_criteria]]
+text = "IdStrategy behavior lives in a focused config child module and remains re-exported through crate::config"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Config load/path helpers and default TOML rendering are separated from config data type definitions"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo fmt, cargo check, cargo clippy, focused config tests, and govctl check pass"
+status = "pending"
+category = "chore"
