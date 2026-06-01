@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-089"
+title = "Specify loop listing command"
+status = "queue"
+created = "2026-06-01"
+refs = ["RFC-0006"]
+
+[content]
+description = "Specify the user-facing loop listing/discovery command in RFC-0006 so local loop state can be enumerated without knowing a loop ID or root set first."
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 defines loop listing semantics for local state discovery"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 changelog records the loop listing addition"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "pending"
+category = "chore"

@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-090"
+title = "Implement loop list command"
+status = "queue"
+created = "2026-06-01"
+refs = ["RFC-0006"]
+depends_on = ["WI-2026-06-01-089"]
+
+[content]
+description = "Implement `govctl loop list` as the discovery entrypoint for persisted local loop state. The command should enumerate valid loop state files, show concise status/root/progress summaries, support standard output formats, and leave execution trace in loop state."
+
+[[content.acceptance_criteria]]
+text = "`govctl loop list` lists persisted loop states without requiring a loop ID"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "loop list supports table, plain, and json output with stable ordering"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "loop list tests cover empty state, multi-loop output, and invalid canonical state handling"
+status = "pending"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "loop tests and govctl check pass"
+status = "pending"
+category = "chore"
