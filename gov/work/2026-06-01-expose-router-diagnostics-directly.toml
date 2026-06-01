@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-170"
+title = "Expose router diagnostics directly"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Convert the command routing and process entry boundary toward explicit Diagnostic/Diagnostics propagation so command planning and selected router execution adapters no longer type-erase diagnostics through anyhow. Keep this slice focused on router/main-facing boundaries; do not rewrite unrelated command internals."
+notes = ["Scope guard: this slice targets router/main-facing type erasure. If converting all command internals becomes large, record remaining DiagnosticResult migrations as follow-up rather than broadening this commit uncontrollably."]
+
+[[content.acceptance_criteria]]
+text = "command planning and router entry functions use DiagnosticResult where their error values are Diagnostics"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "main error handling no longer depends on downcasting anyhow errors for converted router paths"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "router, CLI, loop, move, verify, full tests, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
