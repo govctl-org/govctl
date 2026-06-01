@@ -2,13 +2,37 @@
 
 #![allow(dead_code)] // Functions used across different test binaries
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::TempDir;
 
 pub mod loop_helpers;
 
 pub type TestResult = Result<(), Box<dyn std::error::Error>>;
+
+pub fn snapshot_path() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots")
+}
+
+pub fn current_test_snapshot_name(prefix: &str, function_name: &str) -> String {
+    let test_name = function_name.rsplit("::").next().unwrap_or(function_name);
+    let snapshot_case = test_name.strip_prefix("test_").unwrap_or(test_name);
+    format!("{prefix}__{snapshot_case}")
+}
+
+pub fn named_snapshot_name(prefix: &str, name: &str) -> String {
+    format!("{prefix}__{name}")
+}
+
+#[macro_export]
+macro_rules! with_test_snapshot_settings {
+    ($body:block) => {{
+        insta::with_settings!({
+            snapshot_path => $crate::common::snapshot_path(),
+            prepend_module_to_snapshot => false
+        }, $body);
+    }};
+}
 
 /// Get today's date in YYYY-MM-DD format (same as govctl uses)
 pub fn today() -> String {

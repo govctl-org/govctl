@@ -8,11 +8,8 @@ use tempfile::TempDir;
 macro_rules! assert_changelog_snapshot {
     ($name:literal, $value:expr) => {{
         let value = $value;
-        let snapshot_name = concat!("test_changelog__", $name);
-        insta::with_settings!({
-            snapshot_path => std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/snapshots"),
-            prepend_module_to_snapshot => false
-        }, {
+        let snapshot_name = common::named_snapshot_name("test_changelog", $name);
+        crate::with_test_snapshot_settings!({
             insta::assert_snapshot!(snapshot_name, value);
         });
     }};
