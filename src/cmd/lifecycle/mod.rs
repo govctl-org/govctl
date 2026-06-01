@@ -8,8 +8,10 @@ use crate::write::WriteOp;
 
 mod adr;
 mod clause;
+mod paths;
 mod release;
 mod rfc;
+mod rfc_clause_versions;
 pub use adr::{accept_adr, reject_adr, validate_adr_completeness};
 pub use release::cut_release;
 pub use rfc::{advance, bump, finalize};

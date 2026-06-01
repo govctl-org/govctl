@@ -1,94 +1,15 @@
+use super::paths::require_rfc_toml_path;
+use super::rfc_clause_versions::fill_pending_clause_versions;
 use crate::FinalizeStatus;
 use crate::cmd::edit;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::load::find_rfc_toml;
 use crate::model::{RfcPhase, RfcStatus};
 use crate::ui;
 use crate::validate::{is_valid_phase_transition, is_valid_status_transition};
 use crate::write::{
-    BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_clause, read_rfc, today,
-    write_clause, write_rfc,
+    BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_rfc, today, write_rfc,
 };
-use std::path::{Path, PathBuf};
-
-fn legacy_rfc_json_path(config: &Config, rfc_id: &str) -> Option<PathBuf> {
-    let path = config.rfc_dir().join(rfc_id).join("rfc.json");
-    path.exists().then_some(path)
-}
-
-pub(super) fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> DiagnosticResult<PathBuf> {
-    if let Some(path) = find_rfc_toml(config, rfc_id) {
-        return Ok(path);
-    }
-    if legacy_rfc_json_path(config, rfc_id).is_some() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0505MigrationRequired,
-            format!(
-                "Legacy JSON RFC exists for {rfc_id}; run `govctl migrate` before RFC lifecycle commands."
-            ),
-            rfc_id,
-        ));
-    }
-    Err(Diagnostic::new(
-        DiagnosticCode::E0102RfcNotFound,
-        format!("RFC not found: {rfc_id}"),
-        rfc_id,
-    ))
-}
-
-/// Update pending clauses (since: null) with the given version.
-///
-/// Clauses are created with `since: None` and filled in when the RFC
-/// is bumped or finalized.
-fn fill_pending_clause_versions(
-    config: &Config,
-    rfc_path: &Path,
-    version: &str,
-    op: WriteOp,
-) -> DiagnosticResult<()> {
-    let clauses_dir = rfc_path
-        .parent()
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                "RFC path has no parent directory",
-                rfc_path.display().to_string(),
-            )
-        })?
-        .join("clauses");
-    if !clauses_dir.exists() {
-        return Ok(());
-    }
-
-    let mut pending_clauses: Vec<_> = std::fs::read_dir(&clauses_dir)
-        .map_err(|err| {
-            Diagnostic::io_error(
-                "read clauses directory",
-                err,
-                clauses_dir.display().to_string(),
-            )
-        })?
-        .filter_map(Result::ok)
-        .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|e| e == "toml"))
-        .filter_map(|p| read_clause(config, &p).ok().map(|c| (p, c)))
-        .filter(|(_, c)| c.since.is_none())
-        .collect();
-
-    // Sort by clause_id for deterministic output order
-    pending_clauses.sort_by_key(|(_, c)| c.clause_id.clone());
-
-    for (path, mut clause) in pending_clauses {
-        clause.since = Some(version.to_string());
-        write_clause(&path, &clause, op, Some(&config.display_path(&path)))?;
-        if !op.is_preview() {
-            ui::sub_info(format!("Set {}.since = {}", clause.clause_id, version));
-        }
-    }
-
-    Ok(())
-}
 
 /// Bump RFC version
 pub fn bump(

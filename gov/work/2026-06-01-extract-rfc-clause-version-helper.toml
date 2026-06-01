@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-193"
+title = "Extract RFC clause version helper"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Move RFC pending clause since-version updates out of src/cmd/lifecycle/rfc.rs into a flat helper module used by RFC bump and finalize."
+
+[[content.acceptance_criteria]]
+text = "Pending clause version update logic lives outside rfc lifecycle action handlers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC bump and finalize still update clauses with missing since values"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"

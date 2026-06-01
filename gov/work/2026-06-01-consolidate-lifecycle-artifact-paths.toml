@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-192"
+title = "Consolidate lifecycle artifact paths"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+
+[content]
+description = "Consolidate RFC and clause lifecycle TOML path resolution plus legacy JSON migration diagnostics into a flat lifecycle helper module, preserving existing error codes and messages."
+
+[[content.acceptance_criteria]]
+text = "RFC and clause lifecycle commands share path resolution helpers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing legacy JSON migration-required diagnostics are preserved"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "lifecycle tests pass"
+status = "done"
+category = "chore"
