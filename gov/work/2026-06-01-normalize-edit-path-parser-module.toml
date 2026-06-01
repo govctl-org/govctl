@@ -3,8 +3,9 @@
 [govctl]
 id = "WI-2026-06-01-101"
 title = "Normalize edit path parser module"
-status = "queue"
+status = "active"
 created = "2026-06-01"
+started = "2026-06-01"
 refs = [
     "ADR-0030",
     "ADR-0029",
