@@ -2,7 +2,7 @@ use super::TomlEditableEntry;
 use crate::cmd::edit::adapter::TomlAdapter;
 use crate::cmd::edit::engine as edit_engine;
 use crate::cmd::edit::matching::MatchOptions;
-use crate::cmd::edit::target_doc::{notify_removed, remove_target_from_doc};
+use crate::cmd::edit::target_doc_remove::{notify_removed, remove_target_from_doc};
 use crate::cmd::edit::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
 use crate::config::Config;
 use crate::diagnostic::DiagnosticResult;

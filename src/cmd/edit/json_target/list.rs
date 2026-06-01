@@ -4,7 +4,8 @@ use super::super::{
     deserialize_edit_doc, engine as edit_engine,
     matching::MatchOptions,
     runtime as edit_runtime, serialize_edit_doc,
-    target_doc::{cannot_add_to_field_error, notify_removed, remove_target_from_doc},
+    target_doc::cannot_add_to_field_error,
+    target_doc_remove::{notify_removed, remove_target_from_doc},
 };
 use super::require_simple_field;
 use crate::config::Config;

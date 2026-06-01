@@ -19,6 +19,7 @@ pub mod rules;
 pub mod runtime;
 mod set;
 mod target_doc;
+mod target_doc_remove;
 mod tick;
 mod toml_adapter;
 mod toml_target;
