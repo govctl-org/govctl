@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-169"
+title = "Audit diagnostic error surfaces"
+status = "active"
+created = "2026-06-01"
+started = "2026-06-01"
+
+[content]
+description = "Systematically audit executable error-handling surfaces and convert focused non-diagnostic error paths to Diagnostic/Diagnostics where the existing command boundary expects governed diagnostics. Keep the slice limited to error representation and propagation; avoid unrelated module splitting or behavior changes."
+notes = ["Scope guard: this slice is about executable error representation and propagation. Do not combine it with module splitting, RFC behavior changes, or legacy journal-field work."]
+
+[[content.acceptance_criteria]]
+text = "scan command and core execution paths for non-Diagnostic error propagation and classify remaining intentional boundaries"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "convert in-scope anyhow/String/std error returns to Diagnostic or Diagnostics without changing CLI behavior"
+status = "pending"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo fmt, targeted tests, clippy, and govctl check pass"
+status = "pending"
+category = "chore"
