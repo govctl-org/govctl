@@ -19,23 +19,26 @@ fn legacy_clause_json_path(config: &Config, clause_id: &str) -> Option<PathBuf> 
 }
 
 pub(super) fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> DiagnosticResult<PathBuf> {
-    if let Some(path) = find_rfc_toml(config, rfc_id) {
-        return Ok(path);
-    }
-    if legacy_rfc_json_path(config, rfc_id).is_some() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0505MigrationRequired,
-            format!(
-                "Legacy JSON RFC exists for {rfc_id}; run `govctl migrate` before RFC lifecycle commands."
-            ),
-            rfc_id,
-        ));
-    }
-    Err(Diagnostic::new(
-        DiagnosticCode::E0102RfcNotFound,
-        format!("RFC not found: {rfc_id}"),
-        rfc_id,
-    ))
+    require_toml_path(
+        || find_rfc_toml(config, rfc_id),
+        || legacy_rfc_json_path(config, rfc_id).is_some(),
+        || {
+            Diagnostic::new(
+                DiagnosticCode::E0505MigrationRequired,
+                format!(
+                    "Legacy JSON RFC exists for {rfc_id}; run `govctl migrate` before RFC lifecycle commands."
+                ),
+                rfc_id,
+            )
+        },
+        || {
+            Diagnostic::new(
+                DiagnosticCode::E0102RfcNotFound,
+                format!("RFC not found: {rfc_id}"),
+                rfc_id,
+            )
+        },
+    )
 }
 
 pub(super) fn require_replacement_rfc_toml_path(
@@ -59,23 +62,26 @@ pub(super) fn require_clause_toml_path(
     config: &Config,
     clause_id: &str,
 ) -> DiagnosticResult<PathBuf> {
-    if let Some(path) = find_clause_toml(config, clause_id) {
-        return Ok(path);
-    }
-    if legacy_clause_json_path(config, clause_id).is_some() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0505MigrationRequired,
-            format!(
-                "Legacy JSON clause exists for {clause_id}; run `govctl migrate` before clause lifecycle commands."
-            ),
-            clause_id,
-        ));
-    }
-    Err(Diagnostic::new(
-        DiagnosticCode::E0202ClauseNotFound,
-        format!("Clause not found: {clause_id}"),
-        clause_id,
-    ))
+    require_toml_path(
+        || find_clause_toml(config, clause_id),
+        || legacy_clause_json_path(config, clause_id).is_some(),
+        || {
+            Diagnostic::new(
+                DiagnosticCode::E0505MigrationRequired,
+                format!(
+                    "Legacy JSON clause exists for {clause_id}; run `govctl migrate` before clause lifecycle commands."
+                ),
+                clause_id,
+            )
+        },
+        || {
+            Diagnostic::new(
+                DiagnosticCode::E0202ClauseNotFound,
+                format!("Clause not found: {clause_id}"),
+                clause_id,
+            )
+        },
+    )
 }
 
 pub(super) fn require_replacement_clause_toml_path(
@@ -111,4 +117,25 @@ where
             err
         }
     })
+}
+
+fn require_toml_path<Find, HasLegacy, MigrationRequired, NotFound>(
+    find: Find,
+    has_legacy: HasLegacy,
+    migration_required: MigrationRequired,
+    not_found: NotFound,
+) -> DiagnosticResult<PathBuf>
+where
+    Find: FnOnce() -> Option<PathBuf>,
+    HasLegacy: FnOnce() -> bool,
+    MigrationRequired: FnOnce() -> Diagnostic,
+    NotFound: FnOnce() -> Diagnostic,
+{
+    if let Some(path) = find() {
+        return Ok(path);
+    }
+    if has_legacy() {
+        return Err(migration_required());
+    }
+    Err(not_found())
 }
