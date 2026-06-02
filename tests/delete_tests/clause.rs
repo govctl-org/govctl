@@ -3,8 +3,7 @@ use super::*;
 /// Test: Delete clause - safeguard prevents deleting from normative RFC
 #[test]
 fn test_delete_clause_safeguard_normative() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     // Create normative RFC with clause
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
@@ -65,8 +64,7 @@ text = "This clause cannot be deleted - RFC is normative."
 /// Test: Delete clause - successful deletion from draft RFC
 #[test]
 fn test_delete_clause_success_draft() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     // Create draft RFC with two clauses
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
@@ -147,9 +145,8 @@ text = "This clause will be deleted."
 
 #[test]
 fn test_delete_clause_safeguard_referenced_by_artifacts() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
-    let work_id = format!("WI-{date}-001");
+    let (temp_dir, date) = init_project_with_date()?;
+    let work_id = first_work_id(&date);
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;

@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-074"
+title = "Use shared fixtures in clause delete tests"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Replace repeated initialized-project-plus-date setup and local first work-item ID formatting in the clause deletion integration tests with shared common fixture helpers. Preserve the existing delete test module structure and snapshots."
+
+[[content.acceptance_criteria]]
+text = "clause delete tests use shared project-date and work-id fixture helpers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "delete integration test binary passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

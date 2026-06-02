@@ -3,9 +3,8 @@ use super::*;
 /// Test: Delete work item - safeguard prevents deleting active work item
 #[test]
 fn test_delete_work_safeguard_active() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
-    let wi1 = format!("WI-{}-001", date);
+    let (temp_dir, date) = init_project_with_date()?;
+    let wi1 = first_work_id(&date);
 
     // Create active work item
     let commands: Vec<Vec<String>> = vec![
@@ -39,9 +38,8 @@ fn test_delete_work_safeguard_active() -> TestResult {
 /// Test: Delete work item - safeguard prevents deleting done work item
 #[test]
 fn test_delete_work_safeguard_done() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
-    let wi1 = format!("WI-{}-001", date);
+    let (temp_dir, date) = init_project_with_date()?;
+    let wi1 = first_work_id(&date);
 
     // Create and complete work item
     let commands: Vec<Vec<String>> = vec![
@@ -90,9 +88,8 @@ fn test_delete_work_safeguard_done() -> TestResult {
 /// Test: Delete work item - successful deletion of queued work item
 #[test]
 fn test_delete_work_success_queue() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
-    let wi1 = format!("WI-{}-001", date);
+    let (temp_dir, date) = init_project_with_date()?;
+    let wi1 = first_work_id(&date);
 
     // Create two queued work items
     let commands: Vec<Vec<String>> = vec![
@@ -126,10 +123,9 @@ fn test_delete_work_success_queue() -> TestResult {
 /// Test: Delete work item - safeguard prevents deletion when referenced
 #[test]
 fn test_delete_work_safeguard_referenced() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
-    let wi1 = format!("WI-{}-001", date);
-    let wi2 = format!("WI-{}-002", date);
+    let (temp_dir, date) = init_project_with_date()?;
+    let wi1 = first_work_id(&date);
+    let wi2 = work_id(&date, 2);
 
     // Create two work items where wi2 references wi1
     let setup_commands: Vec<Vec<String>> = vec![
@@ -171,10 +167,9 @@ fn test_delete_work_safeguard_referenced() -> TestResult {
 /// Test: Delete work item - safeguard prevents deletion when depended on
 #[test]
 fn test_delete_work_safeguard_depended_on() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
-    let wi1 = format!("WI-{}-001", date);
-    let wi2 = format!("WI-{}-002", date);
+    let (temp_dir, date) = init_project_with_date()?;
+    let wi1 = first_work_id(&date);
+    let wi2 = work_id(&date, 2);
 
     let setup_commands: Vec<Vec<String>> = vec![
         vec![
