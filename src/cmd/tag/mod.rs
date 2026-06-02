@@ -28,7 +28,7 @@ pub fn tag_new(
     let mut table = read_config_table(config)?;
     let mut allowed = get_allowed_tags(&table)?;
 
-    if allowed.contains(&tag.to_string()) {
+    if allowed.iter().any(|allowed| allowed == tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1102TagAlreadyExists,
             format!("Tag '{tag}' already exists in [tags] allowed"),
@@ -58,7 +58,7 @@ pub fn tag_delete(
     let mut table = read_config_table(config)?;
     let allowed = get_allowed_tags(&table)?;
 
-    if !allowed.contains(&tag.to_string()) {
+    if !allowed.iter().any(|allowed| allowed == tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1103TagNotFound,
             format!("Tag '{tag}' not found in [tags] allowed"),
