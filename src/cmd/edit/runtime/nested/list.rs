@@ -6,7 +6,7 @@ use super::resolve_nested_root;
 use super::traverse::{default_value_for_node, descend_mut, ensure_node_path_mut};
 use crate::cmd::edit::ArtifactType;
 use crate::cmd::edit::path::{self, FieldPath};
-use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb};
+use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb, nested_status_list_spec};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
@@ -135,21 +135,14 @@ where
             id,
         ));
     }
-    let _text_key = node
-        .text_key
-        .ok_or_else(|| type_mismatch("Expected text_key for tickable list", id))?;
+    let spec = nested_status_list_spec(node)
+        .ok_or_else(|| type_mismatch("Expected status list rule for tickable list", id))?;
     let texts = list_item_texts(node, item_rule, list, id)?;
     let idx = resolve(&texts)?[0];
     let text = texts[idx].to_string();
-    let status_key = item_rule
-        .fields
-        .iter()
-        .find(|field| field.name == "status")
-        .map(|field| field.name)
-        .ok_or_else(|| type_mismatch("Expected status field for tickable list", id))?;
     set_object_string_field(
         &mut list[idx],
-        status_key,
+        spec.status_key,
         new_status,
         "Expected object entries in tickable list",
         id,

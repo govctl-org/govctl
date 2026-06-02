@@ -1,6 +1,6 @@
 use super::super::render::{render_scalar, render_status_lines};
 use super::super::support::{joined_scalar_list_text, type_mismatch};
-use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule};
+use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, nested_status_list_spec};
 use crate::diagnostic::DiagnosticResult;
 use serde_json::Value;
 
@@ -30,11 +30,8 @@ fn render_nested_list(
     let item = node
         .item
         .ok_or_else(|| type_mismatch("List node missing item rule", id))?;
-    if item.kind == NestedNodeKind::Object
-        && node.text_key.is_some()
-        && item.fields.iter().any(|field| field.name == "status")
-    {
-        return render_status_lines(Some(value), "status", node.text_key.unwrap_or("text"), id);
+    if let Some(spec) = nested_status_list_spec(node) {
+        return render_status_lines(Some(value), spec.status_key, spec.text_key, id);
     }
     if item.kind == NestedNodeKind::Scalar {
         return Ok(joined_scalar_list_text(arr, "\n"));

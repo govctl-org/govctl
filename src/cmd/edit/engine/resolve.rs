@@ -120,7 +120,7 @@ fn resolve_nested_target(
                     },
                     index,
                     item_kind: map_nested_kind(item_node.kind),
-                    status_list: nested_list_supports_tick(current_node),
+                    status_list: edit_rules::nested_status_list_spec(current_node).is_some(),
                 });
             }
             current_node = current_node
@@ -134,8 +134,7 @@ fn resolve_nested_target(
                 origin: TargetOrigin::Nested,
                 path: fp.clone(),
                 kind: map_nested_kind(current_node.kind),
-                status_list: current_node.kind == NestedNodeKind::List
-                    && nested_list_supports_tick(current_node),
+                status_list: edit_rules::nested_status_list_spec(current_node).is_some(),
             });
         }
     }
@@ -152,21 +151,6 @@ fn map_nested_kind(kind: NestedNodeKind) -> TargetKind {
         NestedNodeKind::List => TargetKind::List,
         NestedNodeKind::Object => TargetKind::Object,
     }
-}
-
-fn nested_list_supports_tick(node: &'static NestedNodeRule) -> bool {
-    if node.kind != NestedNodeKind::List {
-        return false;
-    }
-    let Some(item) = node.item else {
-        return false;
-    };
-    if item.kind != NestedNodeKind::Object {
-        return false;
-    }
-    item.fields
-        .iter()
-        .any(|field| field.name == "status" && field.node.kind == NestedNodeKind::Scalar)
 }
 
 fn path_type_error(id: &str, message: impl Into<String>) -> Diagnostic {
