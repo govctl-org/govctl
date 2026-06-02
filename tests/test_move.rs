@@ -34,6 +34,15 @@ fn setup_active_work_item_with_criteria(
     Ok(())
 }
 
+fn normalize_move_output(
+    dir: &Path,
+    date: &str,
+    output: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let output = output.replace("WI-<DATE>-001", &first_work_id(date));
+    Ok(normalize_output(&output, dir, date)?)
+}
+
 #[test]
 fn test_move_queue_to_active() -> common::TestResult {
     // Move work item from queue to active
@@ -48,8 +57,7 @@ fn test_move_queue_to_active() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    let output = output.replace("WI-<DATE>-001", &first_work_id(&date));
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -77,7 +85,7 @@ fn test_move_active_to_done_with_criteria() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -94,7 +102,7 @@ fn test_move_to_done_without_criteria_fails() -> common::TestResult {
             &["work", "move", &work_id, "done"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -107,7 +115,7 @@ fn test_move_to_done_with_pending_criteria_fails() -> common::TestResult {
     setup_active_work_item_with_criteria(temp_dir.path(), &date, "Test task", "add: Task done")?;
 
     let output = run_commands(temp_dir.path(), &[&["work", "move", &work_id, "done"]])?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -125,7 +133,7 @@ fn test_move_active_to_cancelled() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -143,7 +151,7 @@ fn test_move_queue_to_cancelled() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -161,7 +169,7 @@ fn test_move_by_work_item_id() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -174,7 +182,7 @@ fn test_move_nonexistent_work_item() -> common::TestResult {
         temp_dir.path(),
         &[&["work", "move", "WI-9999-99-999", "active"]],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -193,7 +201,7 @@ fn test_move_sets_started_date() -> common::TestResult {
             &["work", "show", &work_id],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
 
@@ -222,6 +230,6 @@ fn test_move_sets_completed_date() -> common::TestResult {
             &["work", "show", &work_id],
         ],
     )?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
     Ok(())
 }
