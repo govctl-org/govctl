@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-160"
+title = "Share display-path RFC edit fixture"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Remove the duplicated RFC TOML fixture setup inside the display-path edit tests by introducing a local helper in the same test module. Preserve dry-run command behavior, snapshots, and the existing display-path assertions without broadening fixture abstractions across unrelated test files."
+
+[[content.acceptance_criteria]]
+text = "Display-path edit tests share one local RFC fixture helper for set and bump dry-run cases"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Display-path tests, fmt, clippy, and govctl check pass"
+status = "done"
+category = "chore"
