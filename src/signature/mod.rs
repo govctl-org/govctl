@@ -28,7 +28,7 @@ const SIGNATURE_VERSION: u32 = 1;
 /// 3. Canonical clause JSONs (sorted by clause_id, then keys sorted recursively)
 ///
 /// # Errors
-/// Returns an error if serialization fails (should not happen for valid specs).
+/// Returns a diagnostic if an RFC or clause cannot be serialized for signature input.
 pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
     let mut hasher = signature_hasher("rfc");
 
@@ -62,7 +62,7 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
 /// Compute SHA-256 signature for an ADR.
 ///
 /// # Errors
-/// Returns an error if serialization fails (should not happen for valid specs).
+/// Returns a diagnostic if the ADR cannot be serialized for signature input.
 pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, Diagnostic> {
     compute_simple_signature(
         "adr",
@@ -76,7 +76,7 @@ pub fn compute_adr_signature(adr: &AdrEntry) -> Result<String, Diagnostic> {
 /// Compute SHA-256 signature for a Work Item.
 ///
 /// # Errors
-/// Returns an error if serialization fails (should not happen for valid specs).
+/// Returns a diagnostic if the work item cannot be serialized for signature input.
 pub fn compute_work_item_signature(item: &WorkItemEntry) -> Result<String, Diagnostic> {
     compute_simple_signature(
         "work",
@@ -158,9 +158,12 @@ pub fn format_signature_header(source_id: &str, signature: &str) -> String {
 }
 
 fn hex_encode(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+
     let mut hex = String::with_capacity(bytes.len() * 2);
-    for b in bytes {
-        hex.push_str(&format!("{b:02x}"));
+    for byte in bytes {
+        hex.push(HEX[(byte >> 4) as usize] as char);
+        hex.push(HEX[(byte & 0x0f) as usize] as char);
     }
     hex
 }

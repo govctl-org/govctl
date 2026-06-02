@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-103"
+title = "Clean signature helper wording"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Clean the signature module by replacing repeated stale serialization comments with accurate diagnostic wording and simplifying local hex encoding without changing signature output."
+
+[[content.acceptance_criteria]]
+text = "Signature public function comments use accurate diagnostic wording"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Signature hex encoding avoids per-byte format allocation"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused signature tests and govctl check pass"
+status = "done"
+category = "chore"
