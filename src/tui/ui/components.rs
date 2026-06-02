@@ -143,6 +143,29 @@ impl<'a> MarkdownPanel<'a> {
     }
 }
 
+pub(super) struct MarkdownDetailPanel<'a> {
+    title: &'a str,
+    border_color: Color,
+    scroll: u16,
+    markdown: &'a str,
+}
+
+impl<'a> MarkdownDetailPanel<'a> {
+    pub(super) fn new(title: &'a str, border_color: Color, scroll: u16, markdown: &'a str) -> Self {
+        Self {
+            title,
+            border_color,
+            scroll,
+            markdown,
+        }
+    }
+
+    pub(super) fn render(self, frame: &mut Frame, area: Rect) -> DetailViewport {
+        let text = crate::terminal_md::render_to_tui_text(self.markdown);
+        MarkdownPanel::new(self.title, self.border_color, self.scroll, text).render(frame, area)
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) struct DetailViewport {
     total_lines: usize,

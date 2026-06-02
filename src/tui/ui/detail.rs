@@ -1,5 +1,5 @@
 use super::super::app::App;
-use super::components::{DetailViewport, MarkdownPanel, MetadataLine};
+use super::components::{DetailViewport, MarkdownDetailPanel, MetadataLine};
 use super::{rounded_block, status_style};
 use crate::theme::status_icon;
 use ratatui::{
@@ -82,12 +82,9 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
         return DetailViewport::new(0);
     };
 
-    let text = crate::render::render_adr(adr)
-        .map(|md| crate::terminal_md::render_to_tui_text(&md))
-        .unwrap_or_default();
-
+    let markdown = crate::render::render_adr(adr).unwrap_or_default();
     let title = format!("📝 {}", adr.meta().id);
-    draw_markdown_panel(frame, area, app.scroll, &title, Color::Green, text)
+    MarkdownDetailPanel::new(&title, Color::Green, app.scroll, &markdown).render(frame, area)
 }
 
 pub(super) fn draw_work(
@@ -100,12 +97,9 @@ pub(super) fn draw_work(
         return DetailViewport::new(0);
     };
 
-    let text = crate::render::render_work_item(item)
-        .map(|md| crate::terminal_md::render_to_tui_text(&md))
-        .unwrap_or_default();
-
+    let markdown = crate::render::render_work_item(item).unwrap_or_default();
     let title = format!("📌 {}", item.meta().id);
-    draw_markdown_panel(frame, area, app.scroll, &title, Color::Yellow, text)
+    MarkdownDetailPanel::new(&title, Color::Yellow, app.scroll, &markdown).render(frame, area)
 }
 
 pub(super) fn draw_clause(
@@ -125,21 +119,9 @@ pub(super) fn draw_clause(
 
     let mut raw = String::new();
     crate::render::render_clause(&mut raw, &rfc.rfc.rfc_id, clause);
-    let text = crate::terminal_md::render_to_tui_text(&raw);
 
     let title = format!("📜 {}", clause.spec.clause_id);
-    draw_markdown_panel(frame, area, app.scroll, &title, Color::Magenta, text)
-}
-
-fn draw_markdown_panel(
-    frame: &mut Frame,
-    area: Rect,
-    scroll: u16,
-    title: &str,
-    border_color: Color,
-    text: Text<'_>,
-) -> DetailViewport {
-    MarkdownPanel::new(title, border_color, scroll, text).render(frame, area)
+    MarkdownDetailPanel::new(&title, Color::Magenta, app.scroll, &raw).render(frame, area)
 }
 
 #[cfg(test)]
