@@ -1,5 +1,5 @@
 use super::super::app::App;
-use super::components::{MarkdownPanel, MetadataLine};
+use super::components::{DetailViewport, MarkdownPanel, MetadataLine};
 use super::{rounded_block, status_style};
 use crate::theme::status_icon;
 use ratatui::{
@@ -77,9 +77,9 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
     frame.render_stateful_widget(clause_list, chunks[1], &mut app.clause_list_state);
 }
 
-pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> usize {
+pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> DetailViewport {
     let Some(adr) = app.index.adrs.get(idx) else {
-        return 0;
+        return DetailViewport::new(0);
     };
 
     let text = crate::render::render_adr(adr)
@@ -90,9 +90,14 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
     draw_markdown_panel(frame, area, app.scroll, &title, Color::Green, text)
 }
 
-pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> usize {
+pub(super) fn draw_work(
+    frame: &mut Frame,
+    app: &mut App,
+    area: Rect,
+    idx: usize,
+) -> DetailViewport {
     let Some(item) = app.index.work_items.get(idx) else {
-        return 0;
+        return DetailViewport::new(0);
     };
 
     let text = crate::render::render_work_item(item)
@@ -109,13 +114,13 @@ pub(super) fn draw_clause(
     area: Rect,
     rfc_idx: usize,
     clause_idx: usize,
-) -> usize {
+) -> DetailViewport {
     let Some(rfc) = app.index.rfcs.get(rfc_idx) else {
-        return 0;
+        return DetailViewport::new(0);
     };
 
     let Some(clause) = rfc.clauses.get(clause_idx) else {
-        return 0;
+        return DetailViewport::new(0);
     };
 
     let mut raw = String::new();
@@ -133,7 +138,7 @@ fn draw_markdown_panel(
     title: &str,
     border_color: Color,
     text: Text<'_>,
-) -> usize {
+) -> DetailViewport {
     MarkdownPanel::new(title, border_color, scroll, text).render(frame, area)
 }
 

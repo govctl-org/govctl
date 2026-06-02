@@ -129,7 +129,7 @@ impl<'a> MarkdownPanel<'a> {
         }
     }
 
-    pub(super) fn render(self, frame: &mut Frame, area: Rect) -> usize {
+    pub(super) fn render(self, frame: &mut Frame, area: Rect) -> DetailViewport {
         let block = rounded_block(self.title).border_style(Style::default().fg(self.border_color));
         let inner_width = block.inner(area).width;
         let total_lines = wrapped_line_count(&self.text.lines, inner_width);
@@ -139,7 +139,30 @@ impl<'a> MarkdownPanel<'a> {
             .block(block);
 
         frame.render_widget(content, area);
-        total_lines
+        DetailViewport::new(total_lines)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) struct DetailViewport {
+    total_lines: usize,
+}
+
+impl DetailViewport {
+    pub(super) fn new(total_lines: usize) -> Self {
+        Self { total_lines }
+    }
+
+    pub(super) fn footer_status(self, scroll: &mut u16) -> String {
+        let max_scroll = self.total_lines.saturating_sub(1) as u16;
+        if *scroll > max_scroll {
+            *scroll = max_scroll;
+        }
+        format!(
+            "Scroll {}/{}",
+            (*scroll).saturating_add(1),
+            self.total_lines
+        )
     }
 }
 
@@ -231,5 +254,19 @@ impl SummaryCard {
     pub(super) fn into_paragraph(self) -> Paragraph<'static> {
         Paragraph::new(self.lines)
             .block(rounded_block(self.title).border_style(Style::default().fg(self.border_color)))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::DetailViewport;
+
+    #[test]
+    fn detail_viewport_footer_status_clamps_scroll() {
+        let viewport = DetailViewport::new(4);
+        let mut scroll = 8;
+
+        assert_eq!(viewport.footer_status(&mut scroll), "Scroll 4/4");
+        assert_eq!(scroll, 3);
     }
 }

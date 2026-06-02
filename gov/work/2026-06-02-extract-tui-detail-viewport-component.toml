@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-109"
+title = "Extract TUI detail viewport component"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Refactor TUI detail rendering so scrollable detail views share a component-level viewport result for scroll clamping and footer status, while preserving existing rendering behavior and avoiding additional TUI module splits."
+
+[[content.acceptance_criteria]]
+text = "TUI detail views share a component-level viewport result for scroll clamping and footer status"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI refactor preserves existing dashboard, list, and detail rendering behavior without adding new TUI module splits"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused TUI tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"

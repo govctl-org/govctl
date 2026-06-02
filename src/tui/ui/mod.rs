@@ -11,6 +11,7 @@ mod test_support;
 
 use super::app::{App, View};
 use crate::theme::{phase_semantic, status_semantic};
+use components::DetailViewport;
 use ratatui::{
     prelude::*,
     symbols::border,
@@ -66,45 +67,51 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         ],
     };
 
-    match app.view {
-        View::Dashboard => dashboard::draw(frame, app, chunks[1]),
-        View::RfcList => lists::draw_rfc(frame, app, chunks[1]),
-        View::AdrList => lists::draw_adr(frame, app, chunks[1]),
-        View::WorkList => lists::draw_work(frame, app, chunks[1]),
-        View::RfcDetail(idx) => detail::draw_rfc(frame, app, chunks[1], idx),
-        View::AdrDetail(idx) => {
-            // Implements [[RFC-0003:C-DETAIL]]
-            let total = detail::draw_adr(frame, app, chunks[1], idx);
-            let max_scroll = total.saturating_sub(1) as u16;
-            if app.scroll > max_scroll {
-                app.scroll = max_scroll;
-            }
-            footer_status = Some(format!("Scroll {}/{}", app.scroll + 1, total));
-        }
-        View::WorkDetail(idx) => {
-            // Implements [[RFC-0003:C-DETAIL]]
-            let total = detail::draw_work(frame, app, chunks[1], idx);
-            let max_scroll = total.saturating_sub(1) as u16;
-            if app.scroll > max_scroll {
-                app.scroll = max_scroll;
-            }
-            footer_status = Some(format!("Scroll {}/{}", app.scroll + 1, total));
-        }
-        View::ClauseDetail(rfc_idx, clause_idx) => {
-            // Implements [[RFC-0003:C-DETAIL]]
-            let total = detail::draw_clause(frame, app, chunks[1], rfc_idx, clause_idx);
-            let max_scroll = total.saturating_sub(1) as u16;
-            if app.scroll > max_scroll {
-                app.scroll = max_scroll;
-            }
-            footer_status = Some(format!("Scroll {}/{}", app.scroll + 1, total));
-        }
+    if let Some(viewport) = draw_content(frame, app, chunks[1]) {
+        footer_status = Some(viewport.footer_status(&mut app.scroll));
     }
 
     chrome::draw_footer(frame, chunks[2], bindings, footer_status.as_deref());
 
     if app.show_help {
         help::draw_overlay(frame, app);
+    }
+}
+
+fn draw_content(frame: &mut Frame, app: &mut App, area: Rect) -> Option<DetailViewport> {
+    match app.view {
+        View::Dashboard => {
+            dashboard::draw(frame, app, area);
+            None
+        }
+        View::RfcList => {
+            lists::draw_rfc(frame, app, area);
+            None
+        }
+        View::AdrList => {
+            lists::draw_adr(frame, app, area);
+            None
+        }
+        View::WorkList => {
+            lists::draw_work(frame, app, area);
+            None
+        }
+        View::RfcDetail(idx) => {
+            detail::draw_rfc(frame, app, area, idx);
+            None
+        }
+        View::AdrDetail(idx) => {
+            // Implements [[RFC-0003:C-DETAIL]]
+            Some(detail::draw_adr(frame, app, area, idx))
+        }
+        View::WorkDetail(idx) => {
+            // Implements [[RFC-0003:C-DETAIL]]
+            Some(detail::draw_work(frame, app, area, idx))
+        }
+        View::ClauseDetail(rfc_idx, clause_idx) => {
+            // Implements [[RFC-0003:C-DETAIL]]
+            Some(detail::draw_clause(frame, app, area, rfc_idx, clause_idx))
+        }
     }
 }
 
