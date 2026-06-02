@@ -4,22 +4,46 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::load::{find_clause_json, find_clause_toml, find_rfc_json, find_rfc_toml};
 use crate::model::{ClauseSpec, RfcSpec};
 use crate::write::{WriteOp, read_clause, read_rfc, write_clause, write_rfc};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+
+fn load_doc_with<T, F, R>(
+    config: &Config,
+    id: &str,
+    finder: F,
+    scope_path: PathBuf,
+    missing_code: DiagnosticCode,
+    missing_label: &str,
+    read: R,
+) -> DiagnosticResult<JsonDoc<T>>
+where
+    F: Fn(&Config, &str) -> Option<PathBuf>,
+    R: Fn(&Config, &Path) -> DiagnosticResult<T>,
+{
+    let scope = display_scope_for_dir(config, scope_path);
+    let path = finder(config, id).ok_or_else(|| {
+        Diagnostic::new(
+            missing_code,
+            format!("{missing_label} not found: {id}"),
+            &scope,
+        )
+    })?;
+    let data = read(config, &path)?;
+    Ok(JsonDoc { path, data })
+}
 
 fn load_rfc_with<F>(config: &Config, id: &str, finder: F) -> DiagnosticResult<JsonDoc<RfcSpec>>
 where
     F: Fn(&Config, &str) -> Option<PathBuf>,
 {
-    let scope = display_scope_for_dir(config, config.rfc_dir());
-    let path = finder(config, id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0102RfcNotFound,
-            format!("RFC not found: {id}"),
-            &scope,
-        )
-    })?;
-    let data = read_rfc(config, &path)?;
-    Ok(JsonDoc { path, data })
+    load_doc_with(
+        config,
+        id,
+        finder,
+        config.rfc_dir(),
+        DiagnosticCode::E0102RfcNotFound,
+        "RFC",
+        read_rfc,
+    )
 }
 
 fn write_rfc_doc(config: &Config, doc: &JsonDoc<RfcSpec>, op: WriteOp) -> DiagnosticResult<()> {
@@ -46,16 +70,15 @@ fn load_clause_with<F>(
 where
     F: Fn(&Config, &str) -> Option<PathBuf>,
 {
-    let scope = display_scope_for_dir(config, clause_scope_path(config, id));
-    let path = finder(config, id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0202ClauseNotFound,
-            format!("Clause not found: {id}"),
-            &scope,
-        )
-    })?;
-    let data = read_clause(config, &path)?;
-    Ok(JsonDoc { path, data })
+    load_doc_with(
+        config,
+        id,
+        finder,
+        clause_scope_path(config, id),
+        DiagnosticCode::E0202ClauseNotFound,
+        "Clause",
+        read_clause,
+    )
 }
 
 fn write_clause_doc(
