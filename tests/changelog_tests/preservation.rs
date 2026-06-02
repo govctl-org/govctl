@@ -1,5 +1,30 @@
 use super::*;
 
+fn assert_no_absolute_paths(rendered: &str, phase: &str) {
+    assert!(
+        !rendered.contains("/Users/"),
+        "{phase}: no absolute paths (macOS)"
+    );
+    assert!(
+        !rendered.contains("/home/"),
+        "{phase}: no absolute paths (Linux)"
+    );
+}
+
+fn assert_legacy_versions(rendered: &str, context: &str, v080_context: &str) {
+    assert!(rendered.contains("## [0.9.0]"), "legacy 0.9.0 {context}");
+    let has_080 = rendered.contains("## [0.8.0]") || rendered.contains("## [v0.8.0]");
+    assert!(has_080, "legacy 0.8.0 {v080_context}");
+    assert!(rendered.contains("## [0.7.0]"), "legacy 0.7.0 {context}");
+}
+
+fn changelog_versions(rendered: &str) -> Vec<&str> {
+    rendered
+        .lines()
+        .filter(|line| line.starts_with("## [") && !line.contains("Unreleased"))
+        .collect()
+}
+
 /// Integration test: changelog preservation across the full adoption lifecycle.
 ///
 /// Phase 1 — Brownfield: legacy CHANGELOG pre-dates govctl. First govctl
@@ -87,20 +112,10 @@ All notable changes to this project will be documented in this file.
         rendered.contains("[ADR-0014](docs/adr/ADR-0014.md)"),
         "inline refs in new releases should expand to relative docs/ path"
     );
-    assert!(
-        !rendered.contains("/Users/"),
-        "phase 1: no absolute paths (macOS)"
-    );
-    assert!(
-        !rendered.contains("/home/"),
-        "phase 1: no absolute paths (Linux)"
-    );
+    assert_no_absolute_paths(&rendered, "phase 1");
 
     // Legacy versions preserved (handle v-prefix)
-    assert!(rendered.contains("## [0.9.0]"), "legacy 0.9.0 preserved");
-    let has_080 = rendered.contains("## [0.8.0]") || rendered.contains("## [v0.8.0]");
-    assert!(has_080, "legacy 0.8.0 preserved (v-prefix ok)");
-    assert!(rendered.contains("## [0.7.0]"), "legacy 0.7.0 preserved");
+    assert_legacy_versions(&rendered, "preserved", "preserved (v-prefix ok)");
 
     // Legacy content intact
     assert!(rendered.contains("Widget subsystem with drag-and-drop support"));
@@ -110,10 +125,7 @@ All notable changes to this project will be documented in this file.
     assert!(rendered.contains("Initial public release"));
 
     // Semver descending
-    let versions_p1: Vec<&str> = rendered
-        .lines()
-        .filter(|l| l.starts_with("## [") && !l.contains("Unreleased"))
-        .collect();
+    let versions_p1 = changelog_versions(&rendered);
     assert_eq!(versions_p1.len(), 4, "phase 1: 4 versions");
     assert!(versions_p1[0].contains("1.0.0"), "newest first");
     assert!(versions_p1[3].contains("0.7.0"), "oldest last");
@@ -236,26 +248,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     );
 
     // All legacy versions still present
-    assert!(rendered.contains("## [0.9.0]"), "legacy 0.9.0 still there");
-    let has_080 = rendered.contains("## [0.8.0]") || rendered.contains("## [v0.8.0]");
-    assert!(has_080, "legacy 0.8.0 still there");
-    assert!(rendered.contains("## [0.7.0]"), "legacy 0.7.0 still there");
+    assert_legacy_versions(&rendered, "still there", "still there");
 
     // No absolute paths
-    assert!(
-        !rendered.contains("/Users/"),
-        "phase 2: no absolute paths (macOS)"
-    );
-    assert!(
-        !rendered.contains("/home/"),
-        "phase 2: no absolute paths (Linux)"
-    );
+    assert_no_absolute_paths(&rendered, "phase 2");
 
     // Semver descending: 2.0.0 > 1.0.1 > 1.0.0 > 0.9.0 > 0.8.0 > 0.7.0
-    let versions_p2: Vec<&str> = rendered
-        .lines()
-        .filter(|l| l.starts_with("## [") && !l.contains("Unreleased"))
-        .collect();
+    let versions_p2 = changelog_versions(&rendered);
     assert_eq!(versions_p2.len(), 6, "phase 2: 6 versions");
     assert!(versions_p2[0].contains("2.0.0"), "newest first");
     assert!(
