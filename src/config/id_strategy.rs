@@ -39,7 +39,7 @@ impl IdStrategy {
         let mut hasher = Sha256::new();
         hasher.update(email.as_bytes());
         let result = hasher.finalize();
-        Some(format!("{:02x}{:02x}", result[0], result[1]))
+        Some(format_hex4(result[0], result[1]))
     }
 
     /// Generate a random 4-char hex suffix
@@ -47,6 +47,10 @@ impl IdStrategy {
         use rand::RngExt;
         let mut rng = rand::rng();
         let bytes: [u8; 2] = rng.random();
-        format!("{:02x}{:02x}", bytes[0], bytes[1])
+        format_hex4(bytes[0], bytes[1])
     }
+}
+
+fn format_hex4(first: u8, second: u8) -> String {
+    format!("{first:02x}{second:02x}")
 }

@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-101"
+title = "Share ID suffix hex formatter"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Remove duplicated four-character hex suffix formatting in the work item ID strategy by routing author-hash and random suffix generation through one private helper without changing generated ID semantics."
+
+[[content.acceptance_criteria]]
+text = "ID strategy author-hash and random suffix generation share one hex formatter"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused identity tests and govctl check pass"
+status = "done"
+category = "chore"
