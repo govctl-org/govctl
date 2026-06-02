@@ -1,4 +1,4 @@
-use super::display_path_string;
+use super::artifact_not_found;
 use crate::OutputFormat;
 use crate::cmd::output::print_json;
 use crate::config::Config;
@@ -50,19 +50,6 @@ where
         .ok_or_else(not_found)
 }
 
-fn show_not_found(
-    config: &Config,
-    code: DiagnosticCode,
-    message: impl Into<String>,
-    scope_path: impl AsRef<std::path::Path>,
-) -> Diagnostic {
-    Diagnostic::new(
-        code,
-        message.into(),
-        display_path_string(config, scope_path),
-    )
-}
-
 /// Show RFC content to stdout (no file written).
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
@@ -74,10 +61,11 @@ pub fn show_rfc(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
         id,
         |rfc| rfc.rfc.rfc_id.as_str(),
         || {
-            show_not_found(
+            artifact_not_found(
                 config,
                 DiagnosticCode::E0102RfcNotFound,
-                format!("RFC not found: {id}"),
+                "RFC",
+                id,
                 config.rfc_dir(),
             )
         },
@@ -107,10 +95,11 @@ pub fn show_adr(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
         id,
         |adr| adr.spec.govctl.id.as_str(),
         || {
-            show_not_found(
+            artifact_not_found(
                 config,
                 DiagnosticCode::E0302AdrNotFound,
-                format!("ADR not found: {id}"),
+                "ADR",
+                id,
                 config.adr_dir(),
             )
         },
@@ -140,10 +129,11 @@ pub fn show_work(config: &Config, id: &str, output: OutputFormat) -> DiagnosticR
         id,
         |item| item.spec.govctl.id.as_str(),
         || {
-            show_not_found(
+            artifact_not_found(
                 config,
                 DiagnosticCode::E0402WorkNotFound,
-                format!("Work item not found: {id}"),
+                "Work item",
+                id,
                 config.work_dir(),
             )
         },
@@ -185,10 +175,11 @@ pub fn show_clause(
         rfc_id,
         |rfc| rfc.rfc.rfc_id.as_str(),
         || {
-            show_not_found(
+            artifact_not_found(
                 config,
                 DiagnosticCode::E0102RfcNotFound,
-                format!("RFC not found: {rfc_id}"),
+                "RFC",
+                rfc_id,
                 config.rfc_dir(),
             )
         },
@@ -199,10 +190,11 @@ pub fn show_clause(
         clause_name,
         |clause| clause.spec.clause_id.as_str(),
         || {
-            show_not_found(
+            artifact_not_found(
                 config,
                 DiagnosticCode::E0202ClauseNotFound,
-                format!("Clause not found: {id}"),
+                "Clause",
+                id,
                 config.rfc_dir().join(rfc_id).join("clauses"),
             )
         },

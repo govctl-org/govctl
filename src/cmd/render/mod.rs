@@ -17,6 +17,20 @@ fn display_path_string(config: &Config, path: impl AsRef<Path>) -> String {
     config.display_path(path.as_ref()).display().to_string()
 }
 
+fn artifact_not_found(
+    config: &Config,
+    code: DiagnosticCode,
+    artifact: &str,
+    id: &str,
+    scope_path: impl AsRef<Path>,
+) -> Diagnostic {
+    Diagnostic::new(
+        code,
+        format!("{artifact} not found: {id}"),
+        display_path_string(config, scope_path),
+    )
+}
+
 struct RenderSelection<'a> {
     id: Option<&'a str>,
     dry_run: bool,
@@ -85,11 +99,12 @@ pub fn render(
         },
         || ui::not_found("RFC", &config.rfc_dir()),
         |id| {
-            let scope = display_path_string(config, config.rfc_dir());
-            Diagnostic::new(
+            artifact_not_found(
+                config,
                 DiagnosticCode::E0102RfcNotFound,
-                format!("RFC not found: {id}"),
-                scope,
+                "RFC",
+                id,
+                config.rfc_dir(),
             )
         },
         |rfc| rfc.rfc.rfc_id.as_str(),
@@ -116,11 +131,12 @@ pub fn render_adrs(
         },
         || ui::info("No ADRs found"),
         |id| {
-            let scope = display_path_string(config, config.adr_dir());
-            Diagnostic::new(
+            artifact_not_found(
+                config,
                 DiagnosticCode::E0302AdrNotFound,
-                format!("ADR not found: {id}"),
-                scope,
+                "ADR",
+                id,
+                config.adr_dir(),
             )
         },
         |adr| adr.spec.govctl.id.as_str(),
@@ -147,14 +163,12 @@ pub fn render_work_items(
         },
         || ui::info("No work items found"),
         |id| {
-            let scope = config
-                .display_path(&config.work_dir())
-                .display()
-                .to_string();
-            Diagnostic::new(
+            artifact_not_found(
+                config,
                 DiagnosticCode::E0402WorkNotFound,
-                format!("Work item not found: {id}"),
-                scope,
+                "Work item",
+                id,
+                config.work_dir(),
             )
         },
         |item| item.spec.govctl.id.as_str(),
