@@ -6,16 +6,13 @@ use common::run_commands;
 use std::fs;
 use tempfile::TempDir;
 
-/// Test: init creates .gitignore with local govctl state entries if not exists
 #[test]
 fn test_init_creates_gitignore() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 
-    // Run init
     let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
-    // .gitignore should exist and contain local govctl state entries
     let gitignore_path = temp_dir.path().join(".gitignore");
     assert!(gitignore_path.exists(), ".gitignore should be created");
 
@@ -31,7 +28,6 @@ fn test_init_creates_gitignore() -> common::TestResult {
     Ok(())
 }
 
-/// Test: init installs bundled artifact JSON Schemas
 #[test]
 fn test_init_creates_artifact_schema_files() -> common::TestResult {
     let temp_dir = TempDir::new()?;
@@ -73,20 +69,16 @@ fn test_init_creates_artifact_schema_files() -> common::TestResult {
     Ok(())
 }
 
-/// Test: init appends local govctl state entries to existing .gitignore
 #[test]
 fn test_init_appends_to_existing_gitignore() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 
-    // Create existing .gitignore
     let gitignore_path = temp_dir.path().join(".gitignore");
     fs::write(&gitignore_path, "# Existing content\ntarget/\n")?;
 
-    // Run init
     let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
-    // .gitignore should still exist with both old and new content
     let content = fs::read_to_string(&gitignore_path)?;
     assert!(
         content.contains("target/"),
@@ -103,20 +95,16 @@ fn test_init_appends_to_existing_gitignore() -> common::TestResult {
     Ok(())
 }
 
-/// Test: init doesn't duplicate local govctl state entries if already present
 #[test]
 fn test_init_no_duplicate_gitignore_entry() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 
-    // Create .gitignore with local govctl state entries already present
     let gitignore_path = temp_dir.path().join(".gitignore");
     fs::write(&gitignore_path, ".govctl.lock\n.govctl/\n")?;
 
-    // Run init
     let output = run_commands(temp_dir.path(), &[&["init"]])?;
     assert!(output.contains("Project initialized"));
 
-    // Should not have duplicate entry
     let content = fs::read_to_string(&gitignore_path)?;
     let lock_count = content.matches(".govctl.lock").count();
     assert_eq!(
@@ -131,15 +119,12 @@ fn test_init_no_duplicate_gitignore_entry() -> common::TestResult {
     Ok(())
 }
 
-/// Test: custom docs_output is respected for render
 #[test]
 fn test_init_custom_docs_output() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 
-    // Run init first
     run_commands(temp_dir.path(), &[&["init"]])?;
 
-    // Update gov/config.toml with custom docs_output
     let config_path = temp_dir.path().join("gov/config.toml");
     let config_content = r#"[project]
 name = "test-project"
@@ -149,21 +134,16 @@ docs_output = "documentation"
 "#;
     fs::write(&config_path, config_content)?;
 
-    // Create an RFC
     let output = run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
     assert!(output.contains("Created RFC"));
 
-    // Render the first RFC (RFC-0001 by default on fresh init)
-    let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-0001"]])?;
-    eprintln!("render output: {}", output);
+    run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-0001"]])?;
 
-    // Rendered output should be under documentation/rfc/
     let docs_dir = temp_dir.path().join("documentation/rfc");
     assert!(docs_dir.exists(), "docs should be under documentation/rfc/");
     Ok(())
 }
 
-/// Test: custom docs_output with ADR render
 #[test]
 fn test_init_custom_paths_combined() -> common::TestResult {
     let temp_dir = TempDir::new()?;

@@ -5,7 +5,6 @@ mod common;
 use common::{init_project, run_commands};
 use std::fs;
 
-/// Test: Default agent_dir is .claude
 #[test]
 fn test_default_agent_dir() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -26,7 +25,6 @@ fn test_default_agent_dir() -> common::TestResult {
     Ok(())
 }
 
-/// Test: generated wi-writer skill recommends reusable verification guards.
 #[test]
 fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -54,7 +52,6 @@ fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
     Ok(())
 }
 
-/// Test: Custom agent_dir is respected
 #[test]
 fn test_custom_agent_dir() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -69,14 +66,7 @@ agent_dir = ".custom-agent"
 "#;
     fs::write(&config_path, config_content)?;
 
-    let output = run_commands(temp_dir.path(), &[&["init-skills", "-f"]])?;
-    eprintln!("init-skills output:\n{}", output);
-
-    if let Ok(entries) = fs::read_dir(temp_dir.path()) {
-        for entry in entries.flatten() {
-            eprintln!("  {:?}", entry.path());
-        }
-    }
+    run_commands(temp_dir.path(), &[&["init-skills", "-f"]])?;
 
     let cursor_skill = temp_dir.path().join(".custom-agent/skills/gov/SKILL.md");
     assert!(
@@ -87,7 +77,6 @@ agent_dir = ".custom-agent"
     Ok(())
 }
 
-/// Test: init-skills creates all subdirs (skills, agents)
 #[test]
 fn test_agent_dir_creates_subdirs() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -100,17 +89,14 @@ fn test_agent_dir_creates_subdirs() -> common::TestResult {
     Ok(())
 }
 
-/// Test: --format codex writes .toml agents instead of .md
 #[test]
 fn test_codex_format_agents() -> common::TestResult {
     let temp_dir = init_project()?;
 
     run_commands(temp_dir.path(), &[&["init-skills", "--format", "codex"]])?;
 
-    // Skills are the same format regardless
     assert!(temp_dir.path().join(".claude/skills/gov/SKILL.md").exists());
 
-    // Agents should be .toml, not .md
     let toml_agent = temp_dir.path().join(".claude/agents/rfc-reviewer.toml");
     assert!(
         toml_agent.exists(),
@@ -120,7 +106,6 @@ fn test_codex_format_agents() -> common::TestResult {
     assert!(content.contains("name = \"rfc-reviewer\""));
     assert!(content.contains("developer_instructions"));
 
-    // .md agents should NOT exist
     assert!(
         !temp_dir
             .path()
@@ -131,7 +116,6 @@ fn test_codex_format_agents() -> common::TestResult {
     Ok(())
 }
 
-/// Test: default format writes .md agents
 #[test]
 fn test_claude_format_agents() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -151,11 +135,11 @@ fn test_claude_format_agents() -> common::TestResult {
     Ok(())
 }
 
-/// Test: init does NOT create skills/agents [[ADR-0035]]
 #[test]
 fn test_init_no_skills() -> common::TestResult {
     let temp_dir = init_project()?;
 
+    // Skills and agents are intentionally created only by init-skills. [[ADR-0035]]
     assert!(
         !temp_dir.path().join(".claude/skills").exists(),
         "init should not create .claude/skills"

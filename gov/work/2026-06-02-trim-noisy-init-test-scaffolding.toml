@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-119"
+title = "Trim noisy init test scaffolding"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Clean init and agent-dir integration tests by removing leftover debug eprintln output and comments that only restate the adjacent test function names or obvious setup steps. Keep behavior-specific assertions, ADR context, module layout, and command behavior unchanged."
+
+[[content.acceptance_criteria]]
+text = "init and agent-dir tests remove leftover debug eprintln output"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "comments that only restate init and agent-dir test names or obvious setup steps are removed"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused integration tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"
