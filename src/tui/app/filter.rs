@@ -1,5 +1,11 @@
 use super::{App, View};
 
+fn fields_match_normalized_query(query: &str, fields: &[&str]) -> bool {
+    fields
+        .iter()
+        .any(|field| field.to_ascii_lowercase().contains(query))
+}
+
 impl App {
     /// Get the total count of items in current list view (unfiltered)
     pub fn list_total_len(&self) -> usize {
@@ -31,15 +37,15 @@ impl App {
                     if !has_query {
                         return Some(idx);
                     }
-                    let status = rfc.rfc.status.as_ref().to_ascii_lowercase();
-                    let phase = rfc.rfc.phase.as_ref().to_ascii_lowercase();
-                    let id = rfc.rfc.rfc_id.to_ascii_lowercase();
-                    let title = rfc.rfc.title.to_ascii_lowercase();
-                    if id.contains(&query)
-                        || title.contains(&query)
-                        || status.contains(&query)
-                        || phase.contains(&query)
-                    {
+                    if fields_match_normalized_query(
+                        &query,
+                        &[
+                            rfc.rfc.rfc_id.as_str(),
+                            rfc.rfc.title.as_str(),
+                            rfc.rfc.status.as_ref(),
+                            rfc.rfc.phase.as_ref(),
+                        ],
+                    ) {
                         Some(idx)
                     } else {
                         None
@@ -56,10 +62,10 @@ impl App {
                         return Some(idx);
                     }
                     let meta = adr.meta();
-                    let status = meta.status.as_ref().to_ascii_lowercase();
-                    let id = meta.id.to_ascii_lowercase();
-                    let title = meta.title.to_ascii_lowercase();
-                    if id.contains(&query) || title.contains(&query) || status.contains(&query) {
+                    if fields_match_normalized_query(
+                        &query,
+                        &[meta.id.as_str(), meta.title.as_str(), meta.status.as_ref()],
+                    ) {
                         Some(idx)
                     } else {
                         None
@@ -76,10 +82,10 @@ impl App {
                         return Some(idx);
                     }
                     let meta = item.meta();
-                    let status = meta.status.as_ref().to_ascii_lowercase();
-                    let id = meta.id.to_ascii_lowercase();
-                    let title = meta.title.to_ascii_lowercase();
-                    if id.contains(&query) || title.contains(&query) || status.contains(&query) {
+                    if fields_match_normalized_query(
+                        &query,
+                        &[meta.id.as_str(), meta.title.as_str(), meta.status.as_ref()],
+                    ) {
                         Some(idx)
                     } else {
                         None
@@ -151,5 +157,26 @@ impl App {
             self.selected = len - 1;
         }
         self.table_state.select(Some(self.selected));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::fields_match_normalized_query;
+
+    #[test]
+    fn fields_match_normalized_query_checks_mixed_case_fields() {
+        assert!(fields_match_normalized_query(
+            "norm",
+            &["RFC-0001", "Title", "Normative", "Spec"],
+        ));
+        assert!(fields_match_normalized_query(
+            "rfc-0001",
+            &["RFC-0001", "Title", "draft"],
+        ));
+        assert!(!fields_match_normalized_query(
+            "missing",
+            &["RFC-0001", "Title", "draft"],
+        ));
     }
 }
