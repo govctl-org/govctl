@@ -2,7 +2,7 @@ use super::{phase_style, rounded_block, status_style, wrapped_line_count};
 use crate::theme::status_icon;
 use ratatui::{
     prelude::*,
-    widgets::{Paragraph, Row, Table, TableState, Wrap},
+    widgets::{List, ListItem, ListState, Paragraph, Row, Table, TableState, Wrap},
 };
 use std::borrow::Cow;
 
@@ -58,6 +58,26 @@ impl ResourceListRow<'_> {
     }
 }
 
+pub(super) struct ClauseListRow<'a> {
+    pub(super) id: &'a str,
+    pub(super) title: &'a str,
+    pub(super) status: &'a str,
+}
+
+impl ClauseListRow<'_> {
+    pub(super) fn render(&self) -> ListItem<'static> {
+        ListItem::new(Line::from(vec![
+            Span::styled(
+                format!("{} ", status_icon(self.status)),
+                status_style(self.status),
+            ),
+            Span::styled(self.id.to_string(), Style::default().fg(Color::Blue).bold()),
+            Span::raw(" — "),
+            Span::raw(self.title.to_string()),
+        ]))
+    }
+}
+
 pub(super) struct StatusCell<'a> {
     status: &'a str,
 }
@@ -109,6 +129,61 @@ impl<'a> TagsCell<'a> {
             self.tags.join(" "),
             Style::default().fg(Color::Magenta),
         ))
+    }
+}
+
+pub(super) struct MetadataPanel<'a> {
+    title: String,
+    border_color: Color,
+    lines: Vec<Line<'a>>,
+}
+
+impl<'a> MetadataPanel<'a> {
+    pub(super) fn new(title: impl Into<String>, border_color: Color, lines: Vec<Line<'a>>) -> Self {
+        Self {
+            title: title.into(),
+            border_color,
+            lines,
+        }
+    }
+
+    pub(super) fn outer_height(&self) -> u16 {
+        (self.lines.len() as u16) + 2
+    }
+
+    pub(super) fn render(self, frame: &mut Frame, area: Rect) {
+        let block = rounded_block(&self.title).border_style(Style::default().fg(self.border_color));
+        let panel = Paragraph::new(self.lines).block(block);
+        frame.render_widget(panel, area);
+    }
+}
+
+pub(super) struct SelectableList {
+    title: String,
+    border_color: Color,
+    items: Vec<ListItem<'static>>,
+}
+
+impl SelectableList {
+    pub(super) fn new(
+        title: impl Into<String>,
+        border_color: Color,
+        items: Vec<ListItem<'static>>,
+    ) -> Self {
+        Self {
+            title: title.into(),
+            border_color,
+            items,
+        }
+    }
+
+    pub(super) fn render(self, frame: &mut Frame, area: Rect, state: &mut ListState) {
+        let list = List::new(self.items)
+            .block(rounded_block(&self.title).border_style(Style::default().fg(self.border_color)))
+            .highlight_style(Style::default().bg(Color::DarkGray))
+            .highlight_symbol("▶ ");
+
+        frame.render_stateful_widget(list, area, state);
     }
 }
 

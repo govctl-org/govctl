@@ -1,11 +1,8 @@
 use super::super::app::App;
-use super::components::{DetailViewport, MarkdownDetailPanel, MetadataLine};
-use super::{rounded_block, status_style};
-use crate::theme::status_icon;
-use ratatui::{
-    prelude::*,
-    widgets::{List, ListItem, Paragraph},
+use super::components::{
+    ClauseListRow, DetailViewport, MarkdownDetailPanel, MetadataLine, MetadataPanel, SelectableList,
 };
+use ratatui::prelude::*;
 
 pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
     let Some(rfc) = app.index.rfcs.get(idx) else {
@@ -37,44 +34,36 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
         header_lines.push(MetadataLine::tags("Tags:    ", &rfc.rfc.tags).render());
     }
 
-    let header_height = (header_lines.len() as u16) + 2;
+    let header_panel =
+        MetadataPanel::new(format!("📋 {}", rfc.rfc.rfc_id), Color::Blue, header_lines);
+    let header_height = header_panel.outer_height();
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(header_height), Constraint::Min(5)])
         .split(area);
 
-    let title = format!("📋 {}", rfc.rfc.rfc_id);
-    let header = Paragraph::new(header_lines)
-        .block(rounded_block(&title).border_style(Style::default().fg(Color::Blue)));
-    frame.render_widget(header, chunks[0]);
+    header_panel.render(frame, chunks[0]);
 
-    let clause_items: Vec<ListItem> = rfc
+    let clause_items = rfc
         .clauses
         .iter()
         .map(|clause| {
             let clause_status = clause.spec.status.as_ref();
-            ListItem::new(Line::from(vec![
-                Span::styled(
-                    format!("{} ", status_icon(clause_status)),
-                    status_style(clause_status),
-                ),
-                Span::styled(
-                    clause.spec.clause_id.clone(),
-                    Style::default().fg(Color::Blue).bold(),
-                ),
-                Span::raw(" — "),
-                Span::raw(clause.spec.title.clone()),
-            ]))
+            ClauseListRow {
+                id: &clause.spec.clause_id,
+                title: &clause.spec.title,
+                status: clause_status,
+            }
+            .render()
         })
         .collect();
 
-    let clause_list = List::new(clause_items)
-        .block(rounded_block("Clauses").border_style(Style::default().fg(Color::Cyan)))
-        .highlight_style(Style::default().bg(Color::DarkGray))
-        .highlight_symbol("▶ ");
-
-    frame.render_stateful_widget(clause_list, chunks[1], &mut app.clause_list_state);
+    SelectableList::new("Clauses", Color::Cyan, clause_items).render(
+        frame,
+        chunks[1],
+        &mut app.clause_list_state,
+    );
 }
 
 pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) -> DetailViewport {
