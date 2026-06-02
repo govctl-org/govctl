@@ -25,7 +25,7 @@ pub(super) fn find_reusable_loop(
     find_matching_non_terminal_loop(config, work)
 }
 
-pub(super) fn find_matching_non_terminal_loop(
+fn find_matching_non_terminal_loop(
     config: &Config,
     work: &[String],
 ) -> DiagnosticResult<Option<LoopState>> {
@@ -123,7 +123,7 @@ pub(super) fn ensure_unique_work_item_ids(
     Ok(())
 }
 
-pub(super) fn ensure_same_work_set(state: &LoopState, work: &[String]) -> DiagnosticResult<()> {
+fn ensure_same_work_set(state: &LoopState, work: &[String]) -> DiagnosticResult<()> {
     if same_work_set(&state.loop_meta.work, work) {
         Ok(())
     } else {
