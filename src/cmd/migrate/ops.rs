@@ -91,11 +91,8 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
             let backup_path = backup_root.join(format!("{i}"));
             match op {
                 FileOp::Write { path, .. } => {
-                    let existed = path.exists();
-                    if path.exists() {
-                        fs::copy(path, &backup_path)
-                            .map_err(|err| io_error(path, "backup file before migration", err))?;
-                    }
+                    let existed =
+                        backup_existing_file(path, &backup_path, "backup file before migration")?;
                     if let Some(parent) = path.parent() {
                         fs::create_dir_all(parent).map_err(|err| {
                             io_error(parent, "create migration target directory", err)
@@ -114,9 +111,7 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
                     }
                 }
                 FileOp::Delete { path } => {
-                    if path.exists() {
-                        fs::copy(path, &backup_path)
-                            .map_err(|err| io_error(path, "backup file before deletion", err))?;
+                    if backup_existing_file(path, &backup_path, "backup file before deletion")? {
                         fs::remove_file(path)
                             .map_err(|err| io_error(path, "delete migrated legacy file", err))?;
                         applied.push(AppliedOp::Restore {
@@ -146,6 +141,14 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
     }
 
     result
+}
+
+fn backup_existing_file(path: &Path, backup_path: &Path, action: &str) -> DiagnosticResult<bool> {
+    if !path.exists() {
+        return Ok(false);
+    }
+    fs::copy(path, backup_path).map_err(|err| io_error(path, action, err))?;
+    Ok(true)
 }
 
 enum AppliedOp {
