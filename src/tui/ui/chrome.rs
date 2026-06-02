@@ -70,6 +70,49 @@ fn header_status(app: &mut App) -> String {
     }
 }
 
+struct ChromeBar {
+    border_color: Color,
+    left: Line<'static>,
+    left_alignment: Alignment,
+    right: String,
+}
+
+impl ChromeBar {
+    fn new(border_color: Color, left: Line<'static>, right: impl Into<String>) -> Self {
+        Self {
+            border_color,
+            left,
+            left_alignment: Alignment::Left,
+            right: right.into(),
+        }
+    }
+
+    fn left_alignment(mut self, alignment: Alignment) -> Self {
+        self.left_alignment = alignment;
+        self
+    }
+
+    fn render(self, frame: &mut Frame, area: Rect) {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
+            .border_style(Style::default().fg(self.border_color));
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(10), Constraint::Length(30)])
+            .split(inner);
+
+        let left = Paragraph::new(self.left).alignment(self.left_alignment);
+        let right = Paragraph::new(self.right).alignment(Alignment::Right);
+
+        frame.render_widget(left, chunks[0]);
+        frame.render_widget(right, chunks[1]);
+    }
+}
+
 pub(super) struct Header<'a> {
     app: &'a mut App,
 }
@@ -82,29 +125,13 @@ impl<'a> Header<'a> {
     // Implements [[RFC-0003:C-NAV]]
     pub(super) fn render(self, frame: &mut Frame, area: Rect) {
         let app = self.app;
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::Cyan));
-        let inner = block.inner(area);
-        frame.render_widget(block, area);
-
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(10), Constraint::Length(30)])
-            .split(inner);
-
-        let left = Paragraph::new(Line::from(vec![
+        let left = Line::from(vec![
             Span::styled("govctl", Style::default().fg(Color::Cyan).bold()),
             Span::raw(" "),
             Span::raw(breadcrumb(app)),
-        ]))
-        .alignment(Alignment::Left);
+        ]);
 
-        let right = Paragraph::new(header_status(app)).alignment(Alignment::Right);
-
-        frame.render_widget(left, chunks[0]);
-        frame.render_widget(right, chunks[1]);
+        ChromeBar::new(Color::Cyan, left, header_status(app)).render(frame, area);
     }
 }
 
@@ -166,23 +193,12 @@ impl<'a> Footer<'a> {
 
     // Implements [[RFC-0003:C-NAV]]
     pub(super) fn render(self, frame: &mut Frame, area: Rect) {
-        let block = Block::default()
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(Color::DarkGray));
-        let inner = block.inner(area);
-        frame.render_widget(block, area);
-
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(10), Constraint::Length(30)])
-            .split(inner);
-
-        let left =
-            Paragraph::new(keybind_line(bindings_for_view(self.view))).alignment(Alignment::Center);
-        let right = Paragraph::new(self.status.unwrap_or("")).alignment(Alignment::Right);
-
-        frame.render_widget(left, chunks[0]);
-        frame.render_widget(right, chunks[1]);
+        ChromeBar::new(
+            Color::DarkGray,
+            keybind_line(bindings_for_view(self.view)),
+            self.status.unwrap_or(""),
+        )
+        .left_alignment(Alignment::Center)
+        .render(frame, area);
     }
 }

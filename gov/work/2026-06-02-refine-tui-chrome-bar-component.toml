@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-132"
+title = "Refine TUI chrome bar component"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Refine the TUI chrome rendering boundary by extracting the shared framed two-column bar used by header and footer, preserving existing navigation text and tests."
+
+[[content.acceptance_criteria]]
+text = "Extract shared TUI header/footer bar framing into a component-style helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused TUI tests and project checks pass"
+status = "done"
+category = "chore"
