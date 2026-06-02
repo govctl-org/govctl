@@ -1,15 +1,19 @@
 use super::ArtifactType;
+use super::adapter::DocAdapter;
+use super::deserialize_edit_doc;
 use super::engine as edit_engine;
+use super::matching::MatchOptions;
+use super::runtime as edit_runtime;
+use super::serialize_edit_doc;
+use super::target_doc::{NestedGetMode, cannot_add_to_field_error, render_target_from_doc};
+use super::target_doc_remove::{notify_removed, remove_target_from_doc};
+use crate::cmd::output::print_json;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 
-mod get;
-mod list;
 mod set;
 
-pub(super) use get::get_json_field;
-pub(super) use list::{add_json_simple_list_field, remove_json_simple_list_field};
 pub(super) use set::{set_clause_field, set_rfc_field};
 
 #[derive(Debug, Clone, Copy)]
@@ -80,4 +84,114 @@ fn require_simple_field<'a>(
 ) -> DiagnosticResult<&'a str> {
     fp.as_simple()
         .ok_or_else(|| Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id))
+}
+
+pub(super) fn get_json_field<A>(
+    config: &Config,
+    id: &str,
+    target: Option<&edit_engine::ResolvedTarget>,
+    artifact: ArtifactType,
+    nested_error: &str,
+) -> DiagnosticResult<()>
+where
+    A: DocAdapter,
+    A::Data: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let loaded = A::load(config, id)?;
+    if let Some(target) = target {
+        let doc = serialize_edit_doc(&loaded.data, id)?;
+        println!(
+            "{}",
+            render_target_from_doc(
+                artifact,
+                &doc,
+                target,
+                id,
+                NestedGetMode::Reject(nested_error),
+            )?
+        );
+    } else {
+        print_json(
+            &loaded.data,
+            DiagnosticCode::E0903UnexpectedError,
+            "Failed to serialize editable document JSON",
+            id,
+        )?;
+    }
+    Ok(())
+}
+
+pub(super) fn add_json_simple_list_field<A>(
+    config: &Config,
+    id: &str,
+    target: &edit_engine::ResolvedTarget,
+    value: &str,
+    op: WriteOp,
+    artifact: ArtifactType,
+    nested_error: &str,
+) -> DiagnosticResult<()>
+where
+    A: DocAdapter,
+    A::Data: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let edit_engine::ResolvedTarget::Node {
+        path,
+        kind: edit_engine::TargetKind::List,
+        origin: edit_engine::TargetOrigin::Simple,
+        ..
+    } = target
+    else {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            nested_error,
+            id,
+        ));
+    };
+    let simple = require_simple_field(path, id, nested_error)?;
+    let mut loaded = A::load(config, id)?;
+    let mut doc = serialize_edit_doc(&loaded.data, id)?;
+    if !edit_runtime::add_simple_list_value(artifact, &mut doc, simple, value, id)? {
+        return Err(cannot_add_to_field_error(id, simple));
+    }
+    loaded.data = deserialize_edit_doc(doc, id)?;
+    A::write(config, &loaded, op)?;
+    Ok(())
+}
+
+pub(super) fn remove_json_simple_list_field<A>(
+    config: &Config,
+    id: &str,
+    target: &edit_engine::ResolvedTarget,
+    opts: &MatchOptions,
+    op: WriteOp,
+    artifact: ArtifactType,
+    nested_error: &str,
+) -> DiagnosticResult<()>
+where
+    A: DocAdapter,
+    A::Data: serde::Serialize + serde::de::DeserializeOwned,
+{
+    let mut loaded = A::load(config, id)?;
+    let mut doc = serialize_edit_doc(&loaded.data, id)?;
+    let (display_field, removed) = remove_target_from_doc(artifact, &mut doc, id, target, opts)?;
+    if !matches!(
+        target,
+        edit_engine::ResolvedTarget::Node {
+            origin: edit_engine::TargetOrigin::Simple,
+            ..
+        } | edit_engine::ResolvedTarget::IndexedItem {
+            origin: edit_engine::TargetOrigin::Simple,
+            ..
+        }
+    ) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            nested_error,
+            id,
+        ));
+    }
+    loaded.data = deserialize_edit_doc(doc, id)?;
+    A::write(config, &loaded, op)?;
+    notify_removed(id, &display_field, &removed, op);
+    Ok(())
 }

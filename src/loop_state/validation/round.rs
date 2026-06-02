@@ -1,5 +1,4 @@
-use super::common::{ensure_work_item_id, invalid_state};
-use super::id::validate_loop_id;
+use super::{ensure_work_item_id, invalid_state, validate_loop_id};
 use crate::diagnostic::DiagnosticResult;
 use crate::loop_state::LoopRoundRecord;
 
