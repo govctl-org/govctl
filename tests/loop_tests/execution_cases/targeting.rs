@@ -1,5 +1,43 @@
 use super::*;
 
+fn command(args: &[&str]) -> Vec<String> {
+    args.iter().map(|arg| (*arg).to_string()).collect()
+}
+
+fn work_new(title: &str) -> Vec<String> {
+    command(&["work", "new", title])
+}
+
+fn add_acceptance(work_id: &str, text: &str) -> Vec<String> {
+    command(&["work", "add", work_id, "acceptance_criteria", text])
+}
+
+fn tick_acceptance_done(work_id: &str, pattern: &str) -> Vec<String> {
+    command(&[
+        "work",
+        "tick",
+        work_id,
+        "acceptance_criteria",
+        pattern,
+        "-s",
+        "done",
+    ])
+}
+
+fn add_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
+    command(&["work", "add", work_id, "depends_on", dependency_id])
+}
+
+fn loop_start(loop_id: &str, work_ids: &[&str]) -> Vec<String> {
+    let mut cmd = command(&["loop", "start", "--id", loop_id]);
+    cmd.extend(work_ids.iter().map(|work_id| (*work_id).to_string()));
+    cmd
+}
+
+fn loop_run_target(loop_id: &str, work_id: &str) -> Vec<String> {
+    command(&["loop", "run", loop_id, "--work", work_id])
+}
+
 #[test]
 fn test_loop_run_targets_work_item_without_executing_unrelated_work() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
@@ -10,46 +48,13 @@ fn test_loop_run_targets_work_item_without_executing_unrelated_work() -> common:
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "First".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                first_id.clone(),
-                "acceptance_criteria".into(),
-                "add: first ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                first_id.clone(),
-                "acceptance_criteria".into(),
-                "first ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec!["work".into(), "new".into(), "Second".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                second_id.clone(),
-                "acceptance_criteria".into(),
-                "add: second pending".into(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                first_id.clone(),
-                second_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "run".into(),
-                loop_id.clone(),
-                "--work".into(),
-                first_id.clone(),
-            ],
+            work_new("First"),
+            add_acceptance(&first_id, "add: first ready"),
+            tick_acceptance_done(&first_id, "first ready"),
+            work_new("Second"),
+            add_acceptance(&second_id, "add: second pending"),
+            loop_start(&loop_id, &[&first_id, &second_id]),
+            loop_run_target(&loop_id, &first_id),
         ],
     )?;
 
@@ -89,61 +94,15 @@ fn test_loop_run_target_includes_transitive_dependencies() -> common::TestResult
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Dependency".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                dependency_id.clone(),
-                "acceptance_criteria".into(),
-                "add: dependency ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                dependency_id.clone(),
-                "acceptance_criteria".into(),
-                "dependency ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "add: root ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "root ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "depends_on".into(),
-                dependency_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "run".into(),
-                loop_id.clone(),
-                "--work".into(),
-                root_id.clone(),
-            ],
+            work_new("Dependency"),
+            add_acceptance(&dependency_id, "add: dependency ready"),
+            tick_acceptance_done(&dependency_id, "dependency ready"),
+            work_new("Root"),
+            add_acceptance(&root_id, "add: root ready"),
+            tick_acceptance_done(&root_id, "root ready"),
+            add_dependency(&root_id, &dependency_id),
+            loop_start(&loop_id, &[&root_id]),
+            loop_run_target(&loop_id, &root_id),
         ],
     )?;
 
@@ -176,29 +135,14 @@ fn test_loop_run_rejects_target_outside_loop() -> common::TestResult {
     let setup_output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec!["work".into(), "new".into(), "Outside".into()],
+            work_new("Root"),
+            loop_start(&loop_id, &[&root_id]),
+            work_new("Outside"),
         ],
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
-    let output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "run".into(),
-            loop_id.clone(),
-            "--work".into(),
-            outside_id.clone(),
-        ]],
-    )?;
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run_target(&loop_id, &outside_id)])?;
 
     assert!(output.contains("error[E1201]"), "{output}");
     assert!(
@@ -234,30 +178,15 @@ fn test_loop_run_rejects_duplicate_targets_before_state_change() -> common::Test
 
     let setup_output = run_dynamic_commands(
         temp_dir.path(),
-        &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-        ],
+        &[work_new("Root"), loop_start(&loop_id, &[&root_id])],
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
     let output = run_dynamic_commands(
         temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "run".into(),
-            loop_id.clone(),
-            "--work".into(),
-            root_id.clone(),
-            "--work".into(),
-            root_id.clone(),
-        ]],
+        &[command(&[
+            "loop", "run", &loop_id, "--work", &root_id, "--work", &root_id,
+        ])],
     )?;
 
     assert!(output.contains("error[E1201]"), "{output}");
