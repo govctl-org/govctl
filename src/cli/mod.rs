@@ -2,6 +2,7 @@
 
 mod commands;
 mod common;
+mod help;
 mod loop_cmd;
 mod resources;
 
