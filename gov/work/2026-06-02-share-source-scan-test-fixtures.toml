@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-067"
+title = "Share source scan test fixtures"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reduce duplicated setup in the source-scan integration tests by sharing project initialization and source-file fixture helpers. Keep the source-scan suite as one coherent test binary, preserve snapshot names and command coverage, and avoid include-based splitting."
+
+[[content.acceptance_criteria]]
+text = "source-scan tests share project and source-file fixture helpers without splitting the suite"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "source-scan integration test binary passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

@@ -7,6 +7,7 @@ mod common;
 
 use common::{init_project, normalize_output, run_commands, today};
 use std::fs;
+use std::path::Path;
 
 /// Helper to enable source scanning in a project.
 /// Parses config as typed TOML, inserts an active `[source_scan]` table, and writes back.
@@ -26,12 +27,24 @@ fn enable_source_scan(dir: &std::path::Path) -> Result<(), Box<dyn std::error::E
     Ok(())
 }
 
-#[test]
-fn test_scan_no_references() -> common::TestResult {
-    // project with no source files should scan successfully
+fn init_source_scan_project() -> Result<(tempfile::TempDir, String), Box<dyn std::error::Error>> {
     let temp_dir = init_project()?;
     enable_source_scan(temp_dir.path())?;
     let date = today();
+    Ok((temp_dir, date))
+}
+
+fn write_main_rs(dir: &Path, contents: impl AsRef<str>) -> Result<(), Box<dyn std::error::Error>> {
+    let src_dir = dir.join("src");
+    fs::create_dir_all(&src_dir)?;
+    fs::write(src_dir.join("main.rs"), contents.as_ref())?;
+    Ok(())
+}
+
+#[test]
+fn test_scan_no_references() -> common::TestResult {
+    // project with no source files should scan successfully
+    let (temp_dir, date) = init_source_scan_project()?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -41,9 +54,7 @@ fn test_scan_no_references() -> common::TestResult {
 #[test]
 fn test_scan_valid_rfc_reference() -> common::TestResult {
     // source file with valid RFC reference should pass
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create an RFC
     run_commands(
@@ -55,9 +66,8 @@ fn test_scan_valid_rfc_reference() -> common::TestResult {
     )?;
 
     // Create a source file with a reference to the RFC
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         "// Implements [[RFC-0001]]\nfn main() {}\n",
     )?;
 
@@ -69,9 +79,7 @@ fn test_scan_valid_rfc_reference() -> common::TestResult {
 #[test]
 fn test_scan_valid_clause_reference() -> common::TestResult {
     // source file with valid clause reference should pass
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create an RFC with a clause
     run_commands(
@@ -93,9 +101,8 @@ fn test_scan_valid_clause_reference() -> common::TestResult {
     )?;
 
     // Create a source file with a reference to the clause
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         "// Implements [[RFC-0001:C-TEST]]\nfn main() {}\n",
     )?;
 
@@ -107,14 +114,11 @@ fn test_scan_valid_clause_reference() -> common::TestResult {
 #[test]
 fn test_scan_unknown_rfc_reference() -> common::TestResult {
     // source file with unknown RFC reference should error
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create a source file with a reference to non-existent RFC
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         "// Implements [[RFC-9999]]\nfn main() {}\n",
     )?;
 
@@ -126,9 +130,7 @@ fn test_scan_unknown_rfc_reference() -> common::TestResult {
 #[test]
 fn test_scan_unknown_clause_reference() -> common::TestResult {
     // source file with unknown clause reference should error
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create an RFC but no clause
     run_commands(
@@ -140,9 +142,8 @@ fn test_scan_unknown_clause_reference() -> common::TestResult {
     )?;
 
     // Create a source file with a reference to non-existent clause
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         "// Implements [[RFC-0001:C-NONEXISTENT]]\nfn main() {}\n",
     )?;
 
@@ -154,9 +155,7 @@ fn test_scan_unknown_clause_reference() -> common::TestResult {
 #[test]
 fn test_scan_deprecated_rfc_reference() -> common::TestResult {
     // source file with deprecated RFC reference should warn
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create and deprecate an RFC
     run_commands(
@@ -169,9 +168,8 @@ fn test_scan_deprecated_rfc_reference() -> common::TestResult {
     )?;
 
     // Create a source file with a reference to deprecated RFC
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         "// Implements [[RFC-0001]]\nfn main() {}\n",
     )?;
 
@@ -183,9 +181,7 @@ fn test_scan_deprecated_rfc_reference() -> common::TestResult {
 #[test]
 fn test_scan_valid_adr_reference() -> common::TestResult {
     // source file with valid ADR reference should pass
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create an ADR
     run_commands(
@@ -197,11 +193,7 @@ fn test_scan_valid_adr_reference() -> common::TestResult {
     )?;
 
     // Create a source file with a reference to the ADR
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
-        "// Follows [[ADR-0001]]\nfn main() {}\n",
-    )?;
+    write_main_rs(temp_dir.path(), "// Follows [[ADR-0001]]\nfn main() {}\n")?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -211,9 +203,7 @@ fn test_scan_valid_adr_reference() -> common::TestResult {
 #[test]
 fn test_scan_valid_work_item_reference() -> common::TestResult {
     // source file with valid work item reference should pass
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create a work item
     run_commands(temp_dir.path(), &[&["work", "new", "Test task"]])?;
@@ -227,9 +217,8 @@ fn test_scan_valid_work_item_reference() -> common::TestResult {
         .to_string();
 
     // Create a source file with a reference to the work item
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         format!("// Implements [[{}]]\nfn main() {{}}\n", wi_id),
     )?;
 
@@ -241,9 +230,7 @@ fn test_scan_valid_work_item_reference() -> common::TestResult {
 #[test]
 fn test_scan_multiple_references_in_file() -> common::TestResult {
     // source file with multiple references should check all
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create RFCs
     run_commands(
@@ -257,9 +244,8 @@ fn test_scan_multiple_references_in_file() -> common::TestResult {
     )?;
 
     // Create a source file with multiple references
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         "// Implements [[RFC-0001]] and [[RFC-0002]]\nfn main() {}\n",
     )?;
 
@@ -271,9 +257,7 @@ fn test_scan_multiple_references_in_file() -> common::TestResult {
 #[test]
 fn test_scan_mixed_valid_invalid_references() -> common::TestResult {
     // source file with mixed valid/invalid references should report errors
-    let temp_dir = init_project()?;
-    enable_source_scan(temp_dir.path())?;
-    let date = today();
+    let (temp_dir, date) = init_source_scan_project()?;
 
     // Create one RFC
     run_commands(
@@ -285,9 +269,8 @@ fn test_scan_mixed_valid_invalid_references() -> common::TestResult {
     )?;
 
     // Create a source file with valid and invalid references
-    fs::create_dir_all(temp_dir.path().join("src"))?;
-    fs::write(
-        temp_dir.path().join("src/main.rs"),
+    write_main_rs(
+        temp_dir.path(),
         "// Implements [[RFC-0001]] and [[RFC-9999]]\nfn main() {}\n",
     )?;
 
