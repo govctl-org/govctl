@@ -160,3 +160,35 @@ fn test_loop_resume_missing_loop_id_reports_diagnostic() -> common::TestResult {
     assert!(output.contains("Failed to read loop state"), "{output}");
     Ok(())
 }
+
+#[test]
+fn test_loop_resume_completed_loop_reports_terminal_diagnostic() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Root"),
+            work_add_acceptance(&root_id, "add: ready"),
+            work_tick_acceptance_done(&root_id, "ready"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_run(&loop_id),
+            loop_resume(&loop_id),
+        ],
+    )?;
+
+    assert!(
+        output.contains(&format!("Completed loop {loop_id}")),
+        "{output}"
+    );
+    assert!(output.contains("error[E1210]"), "{output}");
+    assert!(
+        output.contains(&format!(
+            "Cannot resume terminal loop '{loop_id}' in completed state"
+        )),
+        "{output}"
+    );
+    Ok(())
+}

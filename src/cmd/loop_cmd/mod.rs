@@ -10,14 +10,17 @@ pub use scope::{add_work_item, remove_work_item, replan};
 
 use crate::OutputFormat;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
+use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::loop_planner::build_loop_plan_from_config;
 use crate::loop_state::{
     LoopLifecycleState, LoopState, load_loop_state, validate_loop_id, write_loop_state_with_op,
 };
 use crate::write::WriteOp;
 use output::{LoopListEntry, print_loop, print_loop_list};
-use state::{canonical_loop_ids, ensure_work_values, find_reusable_loop, generated_loop_id};
+use state::{
+    canonical_loop_ids, ensure_loop_not_terminal, ensure_work_values, find_reusable_loop,
+    generated_loop_id,
+};
 
 pub fn start(
     config: &Config,
@@ -103,21 +106,7 @@ fn loop_list_filter_matches(state: &LoopState, filter: &str) -> bool {
 
 pub fn resume(config: &Config, loop_id: &str) -> DiagnosticResult<Diagnostics> {
     let state = load_loop_state(config, loop_id)?;
-    if matches!(
-        state.loop_meta.state,
-        LoopLifecycleState::Completed | LoopLifecycleState::Failed
-    ) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1210LoopExecutionFailed,
-            format!(
-                "Cannot resume terminal loop '{}' in {} state",
-                state.loop_meta.id,
-                state.loop_meta.state.as_str()
-            ),
-            state.loop_meta.id.clone(),
-        ));
-    }
-
+    ensure_loop_not_terminal(&state, "resume")?;
     print_loop("Resumed", &state)?;
     Ok(vec![])
 }
