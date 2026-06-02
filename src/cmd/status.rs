@@ -222,7 +222,6 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
         total: index.work_items.len(),
     });
 
-    // Show active work items if any
     let active_items: Vec<_> = index
         .work_items
         .iter()

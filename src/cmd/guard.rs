@@ -31,7 +31,6 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<
     }
     let id = format!("GUARD-{slug}");
 
-    // Check for duplicate
     if !op.is_preview() {
         let existing = load_guards(config)?;
         if existing.iter().any(|g| g.spec.govctl.id == id) {

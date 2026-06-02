@@ -18,7 +18,6 @@ pub fn cut_release(
     let releases_path = config.releases_path();
     let releases_path_str = config.display_path(&releases_path).display().to_string();
 
-    // Validate version is valid semver
     validate_version(version).map_err(|_| {
         Diagnostic::new(
             DiagnosticCode::E0701ReleaseInvalidSemver,
@@ -27,10 +26,8 @@ pub fn cut_release(
         )
     })?;
 
-    // Load existing releases
     let mut releases_file = load_releases(config)?;
 
-    // Check for duplicate version
     if releases_file.releases.iter().any(|r| r.version == version) {
         let diag = Diagnostic::new(
             DiagnosticCode::E0702ReleaseDuplicate,
@@ -40,14 +37,12 @@ pub fn cut_release(
         return Err(diag);
     }
 
-    // Get all work item IDs already in releases
     let released_ids: HashSet<_> = releases_file
         .releases
         .iter()
         .flat_map(|r| r.refs.iter().cloned())
         .collect();
 
-    // Load all done work items
     let work_items = load_work_items(config)?;
     let unreleased: Vec<_> = work_items
         .iter()
@@ -64,7 +59,6 @@ pub fn cut_release(
         return Err(diag);
     }
 
-    // Create new release
     let release_date = date.map(|d| d.to_string()).unwrap_or_else(today);
     let mut refs: Vec<_> = unreleased
         .iter()
@@ -78,10 +72,9 @@ pub fn cut_release(
         refs: refs.clone(),
     };
 
-    // Insert at the beginning (newest first)
+    // Releases are stored newest-first for changelog rendering.
     releases_file.releases.insert(0, release);
 
-    // Write releases file
     write_releases(config, &releases_file, op)?;
 
     if !op.is_preview() {
