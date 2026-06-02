@@ -1,10 +1,10 @@
 use super::state::loop_item_state;
 use crate::OutputFormat;
-use crate::cmd::output::print_json_array;
+use crate::cmd::output::{print_json_array, table_with_bold_headers};
 use crate::diagnostic::DiagnosticResult;
 use crate::loop_planner::topological_order_for_state;
 use crate::loop_state::LoopState;
-use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
+use comfy_table::Cell;
 use serde::Serialize;
 
 #[derive(Debug, Serialize)]
@@ -50,17 +50,7 @@ pub(super) fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
             }
         }
         OutputFormat::Table => {
-            let mut table = Table::new();
-            table
-                .load_preset(UTF8_FULL)
-                .set_content_arrangement(ContentArrangement::Dynamic)
-                .set_header(vec![
-                    Cell::new("ID").add_attribute(Attribute::Bold),
-                    Cell::new("State").add_attribute(Attribute::Bold),
-                    Cell::new("Work").add_attribute(Attribute::Bold),
-                    Cell::new("Items").add_attribute(Attribute::Bold),
-                    Cell::new("Rounds").add_attribute(Attribute::Bold),
-                ]);
+            let mut table = table_with_bold_headers(&["ID", "State", "Work", "Items", "Rounds"]);
             for entry in entries {
                 table.add_row(vec![
                     Cell::new(&entry.id),

@@ -1,8 +1,8 @@
 use crate::OutputFormat;
-use crate::cmd::output::print_json_array;
+use crate::cmd::output::{command_table, print_json_array};
 use crate::theme::{SemanticColor, status_semantic};
 use crate::ui::stdout_supports_color;
-use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
+use comfy_table::{Attribute, Cell};
 use serde::Serialize;
 
 fn cell(text: &str) -> Cell {
@@ -62,16 +62,13 @@ pub(super) fn output_list<T: Serialize>(
         }
         OutputFormat::Table => {
             let use_colors = stdout_supports_color();
-            let mut table = Table::new();
-            table
-                .load_preset(UTF8_FULL)
-                .set_content_arrangement(ContentArrangement::Dynamic)
-                .set_header(
-                    headers
-                        .iter()
-                        .map(|h| header_cell(h, use_colors))
-                        .collect::<Vec<_>>(),
-                );
+            let mut table = command_table();
+            table.set_header(
+                headers
+                    .iter()
+                    .map(|h| header_cell(h, use_colors))
+                    .collect::<Vec<_>>(),
+            );
 
             for item in items {
                 let row = to_row(item);

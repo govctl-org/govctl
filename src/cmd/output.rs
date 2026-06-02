@@ -1,6 +1,25 @@
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use serde::Serialize;
 use std::fmt::Display;
+
+pub(crate) fn command_table() -> Table {
+    let mut table = Table::new();
+    table.load_preset(UTF8_FULL);
+    table.set_content_arrangement(ContentArrangement::Dynamic);
+    table
+}
+
+pub(crate) fn table_with_bold_headers(headers: &[&str]) -> Table {
+    let mut table = command_table();
+    table.set_header(
+        headers
+            .iter()
+            .map(|header| Cell::new(*header).add_attribute(Attribute::Bold))
+            .collect::<Vec<_>>(),
+    );
+    table
+}
 
 pub(crate) fn print_json_array<T: Serialize>(items: &[T]) {
     println!(

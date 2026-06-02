@@ -1,6 +1,6 @@
 use crate::OutputFormat;
-use crate::cmd::output::print_json_array;
-use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
+use crate::cmd::output::{print_json_array, table_with_bold_headers};
+use comfy_table::Cell;
 use serde::Serialize;
 
 #[derive(Serialize)]
@@ -20,14 +20,7 @@ pub(super) fn print_tag_entries(entries: &[TagEntry], output: OutputFormat) {
             }
         }
         OutputFormat::Table => {
-            let mut table = Table::new();
-            table
-                .load_preset(UTF8_FULL)
-                .set_content_arrangement(ContentArrangement::Dynamic)
-                .set_header(vec![
-                    Cell::new("Tag").add_attribute(Attribute::Bold),
-                    Cell::new("Usage").add_attribute(Attribute::Bold),
-                ]);
+            let mut table = table_with_bold_headers(&["Tag", "Usage"]);
             for entry in entries {
                 table.add_row(vec![
                     Cell::new(&entry.tag),
