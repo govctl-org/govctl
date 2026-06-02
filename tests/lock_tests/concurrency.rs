@@ -11,25 +11,9 @@ fn test_concurrent_write_blocked_by_lock() -> common::TestResult {
     // Short timeout for the second writer
     create_config_with_timeout(temp_dir.path(), 1)?;
 
-    // Start a work item deletion in another process
-    // This will prompt for confirmation, holding the lock while waiting
-    let work_dir = temp_dir.path().join("gov/work");
-    fs::create_dir_all(&work_dir)?;
-    let work_file = work_dir.join("2026-01-01-test-item.toml");
-    fs::write(
-        &work_file,
-        r#"[govctl]
-schema = 1
-id = "WI-2026-01-01-001"
-title = "Test Item"
-status = "queue"
-created = "2026-01-01"
-
-[content]
-description = "Test"
-acceptance_criteria = []
-"#,
-    )?;
+    // Start a work item deletion in another process.
+    // This will prompt for confirmation, holding the lock while waiting.
+    write_queue_work_item_for_lock_delete(temp_dir.path())?;
 
     // Spawn a delete command (will hold lock while waiting for confirmation)
     let holder = Command::new(env!("CARGO_BIN_EXE_govctl"))
@@ -80,24 +64,8 @@ fn test_write_succeeds_after_lock_released() -> common::TestResult {
     // Longer timeout for this test
     create_config_with_timeout(temp_dir.path(), 30)?;
 
-    // Create a work item to delete
-    let work_dir = temp_dir.path().join("gov/work");
-    fs::create_dir_all(&work_dir)?;
-    let work_file = work_dir.join("2026-01-01-test-item.toml");
-    fs::write(
-        &work_file,
-        r#"[govctl]
-schema = 1
-id = "WI-2026-01-01-001"
-title = "Test Item"
-status = "queue"
-created = "2026-01-01"
-
-[content]
-description = "Test"
-acceptance_criteria = []
-"#,
-    )?;
+    // Create a work item to delete.
+    write_queue_work_item_for_lock_delete(temp_dir.path())?;
 
     // Spawn a delete command with -f flag (no confirmation, completes immediately)
     let result = Command::new(env!("CARGO_BIN_EXE_govctl"))

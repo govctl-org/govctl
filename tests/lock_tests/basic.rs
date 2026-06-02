@@ -107,17 +107,7 @@ fn test_lock_timeout_configurable() -> common::TestResult {
     let temp_dir = init_project()?;
 
     // Create config with short timeout
-    let config_path = temp_dir.path().join("gov/config.toml");
-    let config_content = r#"[project]
-name = "test-project"
-
-[paths]
-docs_output = "docs"
-
-[concurrency]
-lock_timeout_secs = 1
-"#;
-    fs::write(&config_path, config_content)?;
+    create_config_with_timeout(temp_dir.path(), 1)?;
 
     // The timeout is now 1 second instead of default 30
     // A write command should still succeed quickly

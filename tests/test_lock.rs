@@ -52,4 +52,27 @@ lock_timeout_secs = {}
     Ok(())
 }
 
+fn write_queue_work_item_for_lock_delete(
+    temp_dir: &std::path::Path,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let work_dir = temp_dir.join("gov/work");
+    fs::create_dir_all(&work_dir)?;
+    let work_file = work_dir.join("2026-01-01-test-item.toml");
+    fs::write(
+        &work_file,
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Test Item"
+status = "queue"
+created = "2026-01-01"
+
+[content]
+description = "Test"
+acceptance_criteria = []
+"#,
+    )?;
+    Ok(())
+}
+
 mod lock_tests;
