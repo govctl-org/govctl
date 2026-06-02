@@ -2,6 +2,7 @@ use super::LoadError;
 use crate::config::Config;
 use crate::model::{ClauseEntry, ClauseWire, RfcIndex, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value};
+use serde::de::DeserializeOwned;
 use std::path::{Path, PathBuf};
 
 /// Load all RFCs from the gov/rfc directory
@@ -41,47 +42,18 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
 
 /// Load a single RFC and its clauses
 pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError> {
-    let content = read_source_file(rfc_path, "read RFC")?;
-
-    let rfc: RfcSpec = match rfc_path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let mut raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
-                file: rfc_path.display().to_string(),
-                message: e.to_string(),
-            })?;
-            crate::write::normalize_rfc_value(&mut raw);
-            validate_toml_value(ArtifactSchema::Rfc, config, rfc_path, &raw).map_err(|e| {
-                LoadError::RfcSchema {
-                    file: rfc_path.display().to_string(),
-                    message: e.message,
-                }
-            })?;
-            let wire: RfcWire = raw.try_into().map_err(|e| LoadError::Json {
-                file: rfc_path.display().to_string(),
-                message: e.to_string(),
-            })?;
-            wire.into()
-        }
-        _ => {
-            let mut raw: serde_json::Value =
-                serde_json::from_str(&content).map_err(|e| LoadError::Json {
-                    file: rfc_path.display().to_string(),
-                    message: e.to_string(),
-                })?;
-            crate::write::normalize_rfc_json(&mut raw);
-            validate_json_value(ArtifactSchema::Rfc, config, rfc_path, &raw).map_err(|e| {
-                LoadError::RfcSchema {
-                    file: rfc_path.display().to_string(),
-                    message: e.message,
-                }
-            })?;
-            let wire: RfcWire = serde_json::from_value(raw).map_err(|e| LoadError::Json {
-                file: rfc_path.display().to_string(),
-                message: e.to_string(),
-            })?;
-            wire.into()
-        }
-    };
+    let rfc: RfcSpec = load_source_wire::<RfcWire>(
+        config,
+        rfc_path,
+        SourceWireSpec {
+            read_action: "read RFC",
+            schema: ArtifactSchema::Rfc,
+            normalize_toml: crate::write::normalize_rfc_value,
+            normalize_json: crate::write::normalize_rfc_json,
+            schema_error: rfc_schema_error,
+        },
+    )?
+    .into();
 
     let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::InternalIo {
         file: rfc_path.display().to_string(),
@@ -115,48 +87,18 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
 
 /// Load a single clause
 pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
-    let content = read_source_file(path, "read clause")?;
-
-    let spec = match path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let mut raw: toml::Value = toml::from_str(&content).map_err(|e| LoadError::Json {
-                file: path.display().to_string(),
-                message: e.to_string(),
-            })?;
-            crate::write::normalize_clause_value(&mut raw);
-            validate_toml_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
-                LoadError::ClauseSchema {
-                    file: path.display().to_string(),
-                    message: e.message,
-                }
-            })?;
-            let wire: ClauseWire = raw.try_into().map_err(|e| LoadError::Json {
-                file: path.display().to_string(),
-                message: e.to_string(),
-            })?;
-            let spec: crate::model::ClauseSpec = wire.into();
-            spec
-        }
-        _ => {
-            let mut raw: serde_json::Value =
-                serde_json::from_str(&content).map_err(|e| LoadError::Json {
-                    file: path.display().to_string(),
-                    message: e.to_string(),
-                })?;
-            crate::write::normalize_clause_json(&mut raw);
-            validate_json_value(ArtifactSchema::Clause, config, path, &raw).map_err(|e| {
-                LoadError::ClauseSchema {
-                    file: path.display().to_string(),
-                    message: e.message,
-                }
-            })?;
-            let wire: ClauseWire = serde_json::from_value(raw).map_err(|e| LoadError::Json {
-                file: path.display().to_string(),
-                message: e.to_string(),
-            })?;
-            wire.into()
-        }
-    };
+    let spec = load_source_wire::<ClauseWire>(
+        config,
+        path,
+        SourceWireSpec {
+            read_action: "read clause",
+            schema: ArtifactSchema::Clause,
+            normalize_toml: crate::write::normalize_clause_value,
+            normalize_json: crate::write::normalize_clause_json,
+            schema_error: clause_schema_error,
+        },
+    )?
+    .into();
 
     Ok(ClauseEntry {
         spec,
@@ -200,6 +142,82 @@ fn read_source_file(path: &Path, action: &'static str) -> Result<String, LoadErr
         action,
         message: e.to_string(),
     })
+}
+
+struct SourceWireSpec {
+    read_action: &'static str,
+    schema: ArtifactSchema,
+    normalize_toml: fn(&mut toml::Value),
+    normalize_json: fn(&mut serde_json::Value),
+    schema_error: fn(String, String) -> LoadError,
+}
+
+fn load_source_wire<Wire>(
+    config: &Config,
+    path: &Path,
+    spec: SourceWireSpec,
+) -> Result<Wire, LoadError>
+where
+    Wire: DeserializeOwned,
+{
+    let content = read_source_file(path, spec.read_action)?;
+    match path.extension().and_then(|ext| ext.to_str()) {
+        Some("toml") => load_toml_wire(config, path, &content, spec),
+        _ => load_json_wire(config, path, &content, spec),
+    }
+}
+
+fn load_toml_wire<Wire>(
+    config: &Config,
+    path: &Path,
+    content: &str,
+    spec: SourceWireSpec,
+) -> Result<Wire, LoadError>
+where
+    Wire: DeserializeOwned,
+{
+    let mut raw: toml::Value = toml::from_str(content).map_err(|e| LoadError::Json {
+        file: path.display().to_string(),
+        message: e.to_string(),
+    })?;
+    (spec.normalize_toml)(&mut raw);
+    validate_toml_value(spec.schema, config, path, &raw)
+        .map_err(|e| (spec.schema_error)(path.display().to_string(), e.message))?;
+    raw.try_into().map_err(|e| LoadError::Json {
+        file: path.display().to_string(),
+        message: e.to_string(),
+    })
+}
+
+fn load_json_wire<Wire>(
+    config: &Config,
+    path: &Path,
+    content: &str,
+    spec: SourceWireSpec,
+) -> Result<Wire, LoadError>
+where
+    Wire: DeserializeOwned,
+{
+    let mut raw: serde_json::Value =
+        serde_json::from_str(content).map_err(|e| LoadError::Json {
+            file: path.display().to_string(),
+            message: e.to_string(),
+        })?;
+    (spec.normalize_json)(&mut raw);
+    validate_json_value(spec.schema, config, path, &raw)
+        .map_err(|e| (spec.schema_error)(path.display().to_string(), e.message))?;
+    serde_json::from_value(raw).map_err(|e| LoadError::Json {
+        file: path.display().to_string(),
+        message: e.to_string(),
+    })
+}
+
+fn rfc_schema_error(file: String, message: String) -> LoadError {
+    LoadError::RfcSchema { file, message }
+}
+
+fn clause_schema_error(file: String, message: String) -> LoadError {
+    LoadError::ClauseSchema { file, message }
 }
 
 pub(crate) fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {

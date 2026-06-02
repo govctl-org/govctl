@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-108"
+title = "Share RFC loader source parsing"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Refactor the RFC loader so RFC and clause source-file parsing share a local TOML/JSON parse-normalize-validate helper while preserving current diagnostics and loader behavior."
+
+[[content.acceptance_criteria]]
+text = "RFC and clause loaders share a local source parse-normalize-validate helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loader refactor preserves current wire-format error snapshots and legacy JSON/TOML behavior"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused loader/error tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"
