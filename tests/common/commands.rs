@@ -36,7 +36,7 @@ pub fn work_add_field(work_id: &str, field: &str, value: &str) -> Vec<String> {
     command(&["work", "add", work_id, field, value])
 }
 
-pub fn work_remove_field(work_id: &str, field: &str, value: &str) -> Vec<String> {
+fn work_remove_field(work_id: &str, field: &str, value: &str) -> Vec<String> {
     command(&["work", "remove", work_id, field, value])
 }
 

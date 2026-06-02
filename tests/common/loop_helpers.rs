@@ -53,7 +53,7 @@ pub fn loop_remove_wi(loop_id: &str, work_id: &str) -> Vec<String> {
     loop_remove_field(loop_id, "wi", work_id)
 }
 
-pub fn loop_remove_field(loop_id: &str, field: &str, work_id: &str) -> Vec<String> {
+fn loop_remove_field(loop_id: &str, field: &str, work_id: &str) -> Vec<String> {
     command(&["loop", "remove", loop_id, field, work_id])
 }
 
