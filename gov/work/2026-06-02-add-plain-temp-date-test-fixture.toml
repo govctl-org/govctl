@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-083"
+title = "Add plain temp-date test fixture"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Add a shared integration-test helper for tests that need a temporary directory plus the current date without initializing a gov project. Use it in no-project snapshot setup while preserving existing snapshot names and output normalization."
+
+[[content.acceptance_criteria]]
+text = "Plain temp-date fixture helper is available for integration tests"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "No-project describe test uses the shared temp-date helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "describe test binary passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

@@ -2,13 +2,12 @@
 
 mod common;
 
-use common::{init_project_with_date, normalize_output, run_commands, today};
+use common::{init_project_with_date, normalize_output, run_commands, temp_dir_with_date};
 
 #[test]
 fn test_describe_basic() -> common::TestResult {
     // describe without a project should output static metadata
-    let temp_dir = tempfile::TempDir::new()?;
-    let date = today();
+    let (temp_dir, date) = temp_dir_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["describe"]])?;
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);

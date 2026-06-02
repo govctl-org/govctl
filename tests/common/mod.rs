@@ -165,6 +165,12 @@ pub fn init_project() -> Result<TempDir, Box<dyn std::error::Error>> {
     init_project_at(None)
 }
 
+pub fn temp_dir_with_date() -> Result<(TempDir, String), std::io::Error> {
+    let temp_dir = TempDir::new()?;
+    let date = today();
+    Ok((temp_dir, date))
+}
+
 pub fn init_project_with_date() -> Result<(TempDir, String), Box<dyn std::error::Error>> {
     let temp_dir = init_project()?;
     let date = today();
