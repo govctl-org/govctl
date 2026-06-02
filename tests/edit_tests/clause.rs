@@ -4,32 +4,41 @@ use super::*;
 // Clause Edit Tests
 // ============================================================================
 
+const NEW_TEST_RFC: &[&str] = &["rfc", "new", "Test RFC"];
+const TEST_CLAUSE_ID: &str = "RFC-0001:C-TEST";
+const SHOW_TEST_CLAUSE: &[&str] = &["clause", "show", TEST_CLAUSE_ID];
+
+fn new_test_clause(title: &'static str) -> [&'static str; 8] {
+    [
+        "clause",
+        "new",
+        TEST_CLAUSE_ID,
+        title,
+        "-s",
+        "Specification",
+        "-k",
+        "normative",
+    ]
+}
+
 #[test]
 fn test_clause_set_text() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let clause = new_test_clause("Test Clause");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Test Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
+            NEW_TEST_RFC,
+            &clause,
             &[
                 "clause",
                 "edit",
-                "RFC-0001:C-TEST",
+                TEST_CLAUSE_ID,
                 "--text",
                 "Updated clause text",
             ],
-            &["clause", "show", "RFC-0001:C-TEST"],
+            SHOW_TEST_CLAUSE,
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -39,30 +48,22 @@ fn test_clause_set_text() -> common::TestResult {
 #[test]
 fn test_clause_edit_text_canonical() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let clause = new_test_clause("Test Clause");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Test Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
+            NEW_TEST_RFC,
+            &clause,
             &[
                 "clause",
                 "edit",
-                "RFC-0001:C-TEST",
+                TEST_CLAUSE_ID,
                 "text",
                 "--set",
                 "Updated clause text",
             ],
-            &["clause", "show", "RFC-0001:C-TEST"],
+            SHOW_TEST_CLAUSE,
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -72,23 +73,15 @@ fn test_clause_edit_text_canonical() -> common::TestResult {
 #[test]
 fn test_clause_set_title() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let clause = new_test_clause("Original Title");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Original Title",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-            &["clause", "set", "RFC-0001:C-TEST", "title", "New Title"],
-            &["clause", "show", "RFC-0001:C-TEST"],
+            NEW_TEST_RFC,
+            &clause,
+            &["clause", "set", TEST_CLAUSE_ID, "title", "New Title"],
+            SHOW_TEST_CLAUSE,
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -98,30 +91,22 @@ fn test_clause_set_title() -> common::TestResult {
 #[test]
 fn test_clause_edit_title_canonical() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let clause = new_test_clause("Original Title");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Original Title",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
+            NEW_TEST_RFC,
+            &clause,
             &[
                 "clause",
                 "edit",
-                "RFC-0001:C-TEST",
+                TEST_CLAUSE_ID,
                 "title",
                 "--set",
                 "New Title",
             ],
-            &["clause", "show", "RFC-0001:C-TEST"],
+            SHOW_TEST_CLAUSE,
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -131,25 +116,17 @@ fn test_clause_edit_title_canonical() -> common::TestResult {
 #[test]
 fn test_clause_remove_anchor_by_index_canonical() -> common::TestResult {
     let temp_dir = init_project()?;
+    let clause = new_test_clause("Original Title");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Original Title",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
+            NEW_TEST_RFC,
+            &clause,
             &[
                 "clause",
                 "edit",
-                "RFC-0001:C-TEST",
+                TEST_CLAUSE_ID,
                 "anchors",
                 "--add",
                 "anchor-one",
@@ -157,19 +134,13 @@ fn test_clause_remove_anchor_by_index_canonical() -> common::TestResult {
             &[
                 "clause",
                 "edit",
-                "RFC-0001:C-TEST",
+                TEST_CLAUSE_ID,
                 "anchors",
                 "--add",
                 "anchor-two",
             ],
-            &[
-                "clause",
-                "edit",
-                "RFC-0001:C-TEST",
-                "anchors[0]",
-                "--remove",
-            ],
-            &["clause", "show", "RFC-0001:C-TEST", "-o", "json"],
+            &["clause", "edit", TEST_CLAUSE_ID, "anchors[0]", "--remove"],
+            &["clause", "show", TEST_CLAUSE_ID, "-o", "json"],
         ],
     )?;
 
@@ -190,24 +161,16 @@ fn test_clause_remove_anchor_by_index_canonical() -> common::TestResult {
 #[test]
 fn test_clause_get_field() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let clause = new_test_clause("Test Clause");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Test Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-            &["clause", "get", "RFC-0001:C-TEST", "title"],
-            &["clause", "get", "RFC-0001:C-TEST", "kind"],
-            &["clause", "get", "RFC-0001:C-TEST", "status"],
+            NEW_TEST_RFC,
+            &clause,
+            &["clause", "get", TEST_CLAUSE_ID, "title"],
+            &["clause", "get", TEST_CLAUSE_ID, "kind"],
+            &["clause", "get", TEST_CLAUSE_ID, "status"],
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -217,22 +180,14 @@ fn test_clause_get_field() -> common::TestResult {
 #[test]
 fn test_clause_set_since_rejected() -> common::TestResult {
     let temp_dir = init_project()?;
+    let clause = new_test_clause("Test Clause");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Test Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-            &["clause", "set", "RFC-0001:C-TEST", "since", "0.1.0"],
+            NEW_TEST_RFC,
+            &clause,
+            &["clause", "set", TEST_CLAUSE_ID, "since", "0.1.0"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -247,23 +202,15 @@ fn test_clause_set_since_rejected() -> common::TestResult {
 #[test]
 fn test_clause_set_text_sugar() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let clause = new_test_clause("Test Clause");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Test Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-            &["clause", "set", "RFC-0001:C-TEST", "text", "new text"],
-            &["clause", "show", "RFC-0001:C-TEST"],
+            NEW_TEST_RFC,
+            &clause,
+            &["clause", "set", TEST_CLAUSE_ID, "text", "new text"],
+            SHOW_TEST_CLAUSE,
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -273,22 +220,14 @@ fn test_clause_set_text_sugar() -> common::TestResult {
 #[test]
 fn test_clause_set_status_rejected() -> common::TestResult {
     let temp_dir = init_project()?;
+    let clause = new_test_clause("Test Clause");
 
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-TEST",
-                "Test Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-            &["clause", "set", "RFC-0001:C-TEST", "status", "deprecated"],
+            NEW_TEST_RFC,
+            &clause,
+            &["clause", "set", TEST_CLAUSE_ID, "status", "deprecated"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -307,7 +246,7 @@ fn test_clause_edit_nonexistent() -> common::TestResult {
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["rfc", "new", "Test RFC"],
+            NEW_TEST_RFC,
             &["clause", "edit", "RFC-0001:C-NONEXISTENT", "--text", "Text"],
         ],
     )?;
