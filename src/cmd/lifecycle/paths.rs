@@ -4,17 +4,13 @@ use crate::load::{find_clause_toml, find_rfc_toml, split_clause_id};
 use std::path::PathBuf;
 
 fn legacy_rfc_json_path(config: &Config, rfc_id: &str) -> Option<PathBuf> {
-    let path = config.rfc_dir().join(rfc_id).join("rfc.json");
+    let path = config.rfc_source_path(rfc_id, "json");
     path.exists().then_some(path)
 }
 
 fn legacy_clause_json_path(config: &Config, clause_id: &str) -> Option<PathBuf> {
     let (rfc_id, clause_name) = split_clause_id(clause_id)?;
-    let path = config
-        .rfc_dir()
-        .join(rfc_id)
-        .join("clauses")
-        .join(format!("{clause_name}.json"));
+    let path = config.clause_source_path(rfc_id, clause_name, "json");
     path.exists().then_some(path)
 }
 

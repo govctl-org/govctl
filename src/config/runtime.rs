@@ -60,6 +60,24 @@ impl Config {
         self.gov_root.join("rfc")
     }
 
+    pub fn rfc_artifact_dir(&self, rfc_id: &str) -> PathBuf {
+        self.rfc_dir().join(rfc_id)
+    }
+
+    pub fn rfc_source_path(&self, rfc_id: &str, extension: &str) -> PathBuf {
+        self.rfc_artifact_dir(rfc_id)
+            .join(format!("rfc.{extension}"))
+    }
+
+    pub fn clause_dir(&self, rfc_id: &str) -> PathBuf {
+        self.rfc_artifact_dir(rfc_id).join("clauses")
+    }
+
+    pub fn clause_source_path(&self, rfc_id: &str, clause_name: &str, extension: &str) -> PathBuf {
+        self.clause_dir(rfc_id)
+            .join(format!("{clause_name}.{extension}"))
+    }
+
     pub fn adr_dir(&self) -> PathBuf {
         self.gov_root.join("adr")
     }

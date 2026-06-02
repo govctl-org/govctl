@@ -23,7 +23,7 @@ pub(super) fn create(
         )
     })?;
 
-    let rfc_path = config.rfc_dir().join(rfc_id).join("rfc.toml");
+    let rfc_path = config.rfc_source_path(rfc_id, "toml");
     if !rfc_path.exists() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0102RfcNotFound,
@@ -46,11 +46,7 @@ pub(super) fn create(
         tags: vec![],
     };
 
-    let clause_path = config
-        .rfc_dir()
-        .join(rfc_id)
-        .join("clauses")
-        .join(format!("{clause_name}.toml"));
+    let clause_path = config.clause_source_path(rfc_id, clause_name, "toml");
 
     let wire: ClauseWire = clause.into();
     write_new_artifact_toml(

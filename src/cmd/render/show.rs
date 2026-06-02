@@ -195,7 +195,7 @@ pub fn show_clause(
                 DiagnosticCode::E0202ClauseNotFound,
                 "Clause",
                 id,
-                config.rfc_dir().join(rfc_id).join("clauses"),
+                config.clause_dir(rfc_id),
             )
         },
     )?;

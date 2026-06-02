@@ -51,8 +51,8 @@ pub(super) fn create(
         }
     };
 
-    let rfc_dir = rfcs_dir.join(&rfc_id);
-    let clauses_dir = rfc_dir.join("clauses");
+    let rfc_dir = config.rfc_artifact_dir(&rfc_id);
+    let clauses_dir = config.clause_dir(&rfc_id);
 
     if !op.is_preview() && rfc_dir.exists() {
         return Err(Diagnostic::new(
@@ -101,7 +101,7 @@ pub(super) fn create(
         signature: None, // Will be set on first bump per [[ADR-0016]]
     };
 
-    let rfc_toml = rfc_dir.join("rfc.toml");
+    let rfc_toml = config.rfc_source_path(&rfc_id, "toml");
     let wire: RfcWire = rfc.into();
     write_new_artifact_toml(
         config,

@@ -108,31 +108,31 @@ pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEnt
 
 /// Find an RFC source file by ID, preferring TOML over legacy JSON.
 pub fn find_rfc_json(config: &Config, rfc_id: &str) -> Option<PathBuf> {
-    let rfc_dir = config.rfc_dir().join(rfc_id);
+    let rfc_dir = config.rfc_artifact_dir(rfc_id);
     find_rfc_in_dir(&rfc_dir)
 }
 
 pub fn find_rfc_toml(config: &Config, rfc_id: &str) -> Option<PathBuf> {
-    let path = config.rfc_dir().join(rfc_id).join("rfc.toml");
+    let path = config.rfc_source_path(rfc_id, "toml");
     path.exists().then_some(path)
 }
 
 /// Find a clause source file by full ID, preferring TOML over legacy JSON.
 pub fn find_clause_json(config: &Config, clause_id: &str) -> Option<PathBuf> {
     let (rfc_id, clause_name) = split_clause_id(clause_id)?;
-    let clause_path = clause_source_path(config, rfc_id, clause_name, "toml");
+    let clause_path = config.clause_source_path(rfc_id, clause_name, "toml");
 
     if clause_path.exists() {
         Some(clause_path)
     } else {
-        let legacy_clause_path = clause_source_path(config, rfc_id, clause_name, "json");
+        let legacy_clause_path = config.clause_source_path(rfc_id, clause_name, "json");
         legacy_clause_path.exists().then_some(legacy_clause_path)
     }
 }
 
 pub fn find_clause_toml(config: &Config, clause_id: &str) -> Option<PathBuf> {
     let (rfc_id, clause_name) = split_clause_id(clause_id)?;
-    let clause_path = clause_source_path(config, rfc_id, clause_name, "toml");
+    let clause_path = config.clause_source_path(rfc_id, clause_name, "toml");
     clause_path.exists().then_some(clause_path)
 }
 
@@ -226,19 +226,6 @@ pub(crate) fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {
         (Some(rfc_id), Some(clause_name), None) => Some((rfc_id, clause_name)),
         _ => None,
     }
-}
-
-fn clause_source_path(
-    config: &Config,
-    rfc_id: &str,
-    clause_name: &str,
-    extension: &str,
-) -> PathBuf {
-    config
-        .rfc_dir()
-        .join(rfc_id)
-        .join("clauses")
-        .join(format!("{clause_name}.{extension}"))
 }
 
 fn find_rfc_in_dir(dir: &Path) -> Option<PathBuf> {

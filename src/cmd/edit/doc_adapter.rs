@@ -58,7 +58,7 @@ fn write_rfc_doc(config: &Config, doc: &JsonDoc<RfcSpec>, op: WriteOp) -> Diagno
 fn clause_scope_path(config: &Config, id: &str) -> PathBuf {
     id.split(':')
         .next()
-        .map(|rfc_id| config.rfc_dir().join(rfc_id).join("clauses"))
+        .map(|rfc_id| config.clause_dir(rfc_id))
         .unwrap_or_else(|| config.rfc_dir())
 }
 
