@@ -20,6 +20,7 @@ mod resource_plan;
 mod scan;
 mod schema;
 mod signature;
+mod status_counts;
 mod terminal_md;
 mod theme;
 mod ui;

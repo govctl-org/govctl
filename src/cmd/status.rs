@@ -4,10 +4,10 @@ use crate::config::Config;
 use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::load::load_project;
 use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus, WorkItemEntry, WorkItemStatus};
+use crate::status_counts::{StatusCounts, count_by, count_for, total_count};
 use crate::theme::status_semantic;
 use crate::ui::stdout_supports_color;
 use owo_colors::OwoColorize;
-use std::collections::HashMap;
 use std::hash::Hash;
 
 struct StatusPrinter {
@@ -27,7 +27,7 @@ impl<K> StatusRow<K> {
 
 struct StatusSection<'a, K> {
     title: &'static str,
-    counts: &'a HashMap<K, usize>,
+    counts: &'a StatusCounts<K>,
     rows: &'a [StatusRow<K>],
     total: usize,
 }
@@ -99,7 +99,7 @@ impl StatusPrinter {
         self.total_line(section.total);
     }
 
-    fn status_breakdown<K>(&self, counts: &HashMap<K, usize>, rows: &[StatusRow<K>])
+    fn status_breakdown<K>(&self, counts: &StatusCounts<K>, rows: &[StatusRow<K>])
     where
         K: Copy + Eq + Hash,
     {
@@ -152,27 +152,6 @@ impl StatusPrinter {
             print!("{} ", "0".dimmed());
         }
     }
-}
-
-fn count_by<I, T, K, F>(items: I, mut key: F) -> HashMap<K, usize>
-where
-    I: IntoIterator<Item = T>,
-    K: Eq + Hash,
-    F: FnMut(T) -> K,
-{
-    let mut counts = HashMap::new();
-    for item in items {
-        *counts.entry(key(item)).or_insert(0) += 1;
-    }
-    counts
-}
-
-fn count_for<K: Eq + Hash>(counts: &HashMap<K, usize>, key: K) -> usize {
-    counts.get(&key).copied().unwrap_or(0)
-}
-
-fn total_count<K>(counts: &HashMap<K, usize>) -> usize {
-    counts.values().sum()
 }
 
 /// Show summary status

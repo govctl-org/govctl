@@ -1,5 +1,6 @@
 use super::super::app::App;
 use super::components::{SummaryCard, SummaryMetric};
+use crate::status_counts::{count_by, counts_for_keys};
 use ratatui::{prelude::*, widgets::Paragraph};
 
 pub(super) fn draw(frame: &mut Frame, app: &App, area: Rect) {
@@ -26,30 +27,9 @@ fn summary_block(
     SummaryCard::new(title, border_color, metrics, total).into_paragraph()
 }
 
-fn count_statuses<T, F, const N: usize>(
-    items: &[T],
-    statuses: [&str; N],
-    mut status_for: F,
-) -> [usize; N]
-where
-    F: for<'a> FnMut(&'a T) -> &'a str,
-{
-    let mut counts = [0; N];
-    for item in items {
-        let status = status_for(item);
-        if let Some(idx) = statuses.iter().position(|expected| *expected == status) {
-            counts[idx] += 1;
-        }
-    }
-    counts
-}
-
 fn rfc_stats(app: &App) -> Paragraph<'static> {
-    let counts = count_statuses(
-        &app.index.rfcs,
-        ["draft", "normative", "deprecated"],
-        |rfc| rfc.rfc.status.as_ref(),
-    );
+    let counts = count_by(&app.index.rfcs, |rfc| rfc.rfc.status.as_ref());
+    let counts = counts_for_keys(&counts, ["draft", "normative", "deprecated"]);
 
     summary_block(
         "📋 RFCs",
@@ -64,11 +44,8 @@ fn rfc_stats(app: &App) -> Paragraph<'static> {
 }
 
 fn adr_stats(app: &App) -> Paragraph<'static> {
-    let counts = count_statuses(
-        &app.index.adrs,
-        ["proposed", "accepted", "superseded"],
-        |adr| adr.meta().status.as_ref(),
-    );
+    let counts = count_by(&app.index.adrs, |adr| adr.meta().status.as_ref());
+    let counts = counts_for_keys(&counts, ["proposed", "accepted", "superseded"]);
 
     summary_block(
         "📝 ADRs",
@@ -83,9 +60,8 @@ fn adr_stats(app: &App) -> Paragraph<'static> {
 }
 
 fn work_stats(app: &App) -> Paragraph<'static> {
-    let counts = count_statuses(&app.index.work_items, ["queue", "active", "done"], |item| {
-        item.meta().status.as_ref()
-    });
+    let counts = count_by(&app.index.work_items, |item| item.meta().status.as_ref());
+    let counts = counts_for_keys(&counts, ["queue", "active", "done"]);
 
     summary_block(
         "📌 Work Items",
