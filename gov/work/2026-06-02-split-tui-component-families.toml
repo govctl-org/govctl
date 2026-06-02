@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-123"
+title = "Split TUI component families"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reshape the TUI component catalog into a component namespace with coherent family modules for resource/list widgets, detail/metadata panels, and dashboard summary cards. Preserve public module boundaries, rendering behavior, and avoid same-name file plus directory coexistence."
+
+[[content.acceptance_criteria]]
+text = "TUI-focused tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "TUI rendering behavior and existing component call sites are preserved"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI component definitions are grouped by coherent component family modules rather than one mixed catalog file"
+status = "done"
+category = "changed"

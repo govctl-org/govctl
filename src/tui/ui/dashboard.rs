@@ -1,5 +1,5 @@
 use super::super::app::App;
-use super::components::SummaryCard;
+use super::components::{SummaryCard, SummaryMetric};
 use ratatui::{prelude::*, widgets::Paragraph};
 
 pub(super) fn draw(frame: &mut Frame, app: &App, area: Rect) {
@@ -20,25 +20,10 @@ pub(super) fn draw(frame: &mut Frame, app: &App, area: Rect) {
 fn summary_block(
     title: &'static str,
     border_color: Color,
-    lines: Vec<Line<'static>>,
+    metrics: Vec<SummaryMetric>,
+    total: usize,
 ) -> Paragraph<'static> {
-    SummaryCard::new(title, border_color, lines).into_paragraph()
-}
-
-fn summary_line(icon: &'static str, icon_color: Color, label: &str, value: usize) -> Line<'static> {
-    Line::from(vec![
-        Span::raw("  "),
-        Span::styled(icon, Style::default().fg(icon_color)),
-        Span::raw(format!(" {}{}", label, value)),
-    ])
-}
-
-fn total_line(total: usize) -> Line<'static> {
-    Line::from(vec![
-        Span::raw("  "),
-        Span::styled("Σ", Style::default().fg(Color::Cyan).bold()),
-        Span::styled(format!(" Total: {}", total), Style::default().bold()),
-    ])
+    SummaryCard::new(title, border_color, metrics, total).into_paragraph()
 }
 
 fn count_statuses<T, F, const N: usize>(
@@ -70,12 +55,11 @@ fn rfc_stats(app: &App) -> Paragraph<'static> {
         "📋 RFCs",
         Color::Blue,
         vec![
-            summary_line("○", Color::Yellow, "Draft:      ", counts[0]),
-            summary_line("●", Color::Green, "Normative:  ", counts[1]),
-            summary_line("✗", Color::Red, "Deprecated: ", counts[2]),
-            Line::from(""),
-            total_line(app.index.rfcs.len()),
+            SummaryMetric::new("○", Color::Yellow, "Draft:      ", counts[0]),
+            SummaryMetric::new("●", Color::Green, "Normative:  ", counts[1]),
+            SummaryMetric::new("✗", Color::Red, "Deprecated: ", counts[2]),
         ],
+        app.index.rfcs.len(),
     )
 }
 
@@ -90,12 +74,11 @@ fn adr_stats(app: &App) -> Paragraph<'static> {
         "📝 ADRs",
         Color::Green,
         vec![
-            summary_line("○", Color::Yellow, "Proposed:   ", counts[0]),
-            summary_line("●", Color::Green, "Accepted:   ", counts[1]),
-            summary_line("✗", Color::Red, "Superseded: ", counts[2]),
-            Line::from(""),
-            total_line(app.index.adrs.len()),
+            SummaryMetric::new("○", Color::Yellow, "Proposed:   ", counts[0]),
+            SummaryMetric::new("●", Color::Green, "Accepted:   ", counts[1]),
+            SummaryMetric::new("✗", Color::Red, "Superseded: ", counts[2]),
         ],
+        app.index.adrs.len(),
     )
 }
 
@@ -108,12 +91,11 @@ fn work_stats(app: &App) -> Paragraph<'static> {
         "📌 Work Items",
         Color::Yellow,
         vec![
-            summary_line("○", Color::Yellow, "Queue:  ", counts[0]),
-            summary_line("◉", Color::Green, "Active: ", counts[1]),
-            summary_line("●", Color::Green, "Done:   ", counts[2]),
-            Line::from(""),
-            total_line(app.index.work_items.len()),
+            SummaryMetric::new("○", Color::Yellow, "Queue:  ", counts[0]),
+            SummaryMetric::new("◉", Color::Green, "Active: ", counts[1]),
+            SummaryMetric::new("●", Color::Green, "Done:   ", counts[2]),
         ],
+        app.index.work_items.len(),
     )
 }
 
