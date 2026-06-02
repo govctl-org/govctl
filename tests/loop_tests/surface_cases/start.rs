@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_loop_start_show_and_resume_by_loop_id() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let dependency_id = format!("WI-{date}-001");
     let root_id = format!("WI-{date}-002");
     let loop_id = loop_id(&date, 1);
@@ -62,8 +61,7 @@ fn test_loop_start_show_and_resume_by_loop_id() -> common::TestResult {
 
 #[test]
 fn test_loop_start_generates_canonical_daily_sequence_ids() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let first_root = format!("WI-{date}-001");
     let second_root = format!("WI-{date}-002");
     let first_loop = loop_id(&date, 1);
@@ -104,8 +102,7 @@ fn test_loop_start_generates_canonical_daily_sequence_ids() -> common::TestResul
 
 #[test]
 fn test_loop_start_reuses_existing_loop_id() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 
@@ -143,8 +140,7 @@ fn test_loop_start_reuses_existing_loop_id() -> common::TestResult {
 
 #[test]
 fn test_loop_start_dry_run_previews_state_without_writing() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 
@@ -186,8 +182,7 @@ fn test_loop_start_dry_run_previews_state_without_writing() -> common::TestResul
 
 #[test]
 fn test_loop_resume_missing_loop_id_reports_diagnostic() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let loop_id = loop_id(&date, 1);
 
     let output = run_dynamic_commands(

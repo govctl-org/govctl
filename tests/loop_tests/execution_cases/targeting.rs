@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_loop_run_targets_work_item_without_executing_unrelated_work() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let first_id = format!("WI-{date}-001");
     let second_id = format!("WI-{date}-002");
     let loop_id = loop_id(&date, 1);
@@ -82,8 +81,7 @@ fn test_loop_run_targets_work_item_without_executing_unrelated_work() -> common:
 
 #[test]
 fn test_loop_run_target_includes_transitive_dependencies() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let dependency_id = format!("WI-{date}-001");
     let root_id = format!("WI-{date}-002");
     let loop_id = loop_id(&date, 1);
@@ -170,8 +168,7 @@ fn test_loop_run_target_includes_transitive_dependencies() -> common::TestResult
 
 #[test]
 fn test_loop_run_rejects_target_outside_loop() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let outside_id = format!("WI-{date}-002");
     let loop_id = loop_id(&date, 1);
@@ -231,8 +228,7 @@ fn test_loop_run_rejects_target_outside_loop() -> common::TestResult {
 
 #[test]
 fn test_loop_run_rejects_duplicate_targets_before_state_change() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 

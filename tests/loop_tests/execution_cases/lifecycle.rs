@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_loop_run_completes_ready_work_item() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 
@@ -84,8 +83,7 @@ fn test_loop_run_completes_ready_work_item() -> common::TestResult {
 
 #[test]
 fn test_loop_run_marks_failed_and_blocks_dependents() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let dependency_id = format!("WI-{date}-001");
     let root_id = format!("WI-{date}-002");
     let loop_id = loop_id(&date, 1);
@@ -184,8 +182,7 @@ fn test_loop_run_marks_failed_and_blocks_dependents() -> common::TestResult {
 
 #[test]
 fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let dependency_id = format!("WI-{date}-001");
     let root_id = format!("WI-{date}-002");
     let loop_id = loop_id(&date, 1);

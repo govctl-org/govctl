@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_loop_run_records_guard_failure_without_completing_work_item() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 
@@ -70,8 +69,7 @@ fn test_loop_run_records_guard_failure_without_completing_work_item() -> common:
 
 #[test]
 fn test_loop_run_guard_failure_can_pause_until_max_rounds() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 

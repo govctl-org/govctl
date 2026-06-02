@@ -15,8 +15,7 @@ fn test_loop_list_empty_state() -> common::TestResult {
 
 #[test]
 fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let first_root = format!("WI-{date}-001");
     let second_root = format!("WI-{date}-002");
     let first_loop = loop_id(&date, 1);
@@ -79,8 +78,7 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
 
 #[test]
 fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let pending_root = format!("WI-{date}-001");
     let paused_root = format!("WI-{date}-002");
     let completed_root = format!("WI-{date}-003");
@@ -223,8 +221,7 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
 
 #[test]
 fn test_loop_list_reports_invalid_canonical_state() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let loop_id = loop_id(&date, 1);
     fs::create_dir_all(temp_dir.path().join(format!(".govctl/loops/{loop_id}")))?;
 

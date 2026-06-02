@@ -2,14 +2,13 @@ use crate::common;
 use crate::common::loop_helpers::{
     loop_id, loop_item_round_count, loop_item_status, loop_item_table, loop_resolved, loop_work,
 };
-use crate::common::{init_project, run_dynamic_commands};
+use crate::common::{init_project_with_date, run_dynamic_commands};
 use std::fs;
 
 #[test]
 fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() -> common::TestResult
 {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let extra_id = format!("WI-{date}-002");
     let loop_id = loop_id(&date, 1);
@@ -121,8 +120,7 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
 
 #[test]
 fn test_loop_root_aliases_are_not_supported() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let loop_id = loop_id(&date, 1);
     let work_id = format!("WI-{date}-001");
 
@@ -154,8 +152,7 @@ fn test_loop_root_aliases_are_not_supported() -> common::TestResult {
 
 #[test]
 fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let original_id = format!("WI-{date}-001");
     let new_dependency_id = format!("WI-{date}-002");
     let new_root_id = format!("WI-{date}-003");

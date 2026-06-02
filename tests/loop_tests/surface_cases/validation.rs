@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_loop_start_rejects_plain_text_loop_id() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = common::today();
+    let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
 
     let output = run_dynamic_commands(
