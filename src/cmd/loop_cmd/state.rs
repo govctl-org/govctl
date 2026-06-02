@@ -17,9 +17,7 @@ pub(super) fn find_reusable_loop(
                 ensure_same_work_set(&state, work)?;
                 return Ok(Some(state));
             }
-            Err(err) if diagnostic_code(&err) == DiagnosticCode::E1202LoopStateNotFound => {
-                return Ok(None);
-            }
+            Err(err) if err.code == DiagnosticCode::E1202LoopStateNotFound => return Ok(None),
             Err(err) => return Err(err),
         }
     }
@@ -96,20 +94,29 @@ pub(super) fn ensure_work_values(work: &[String]) -> DiagnosticResult<()> {
             "loop",
         ));
     }
+    ensure_unique_work_item_ids(work, "Loop work field value", "loop work item", "loop")
+}
+
+pub(super) fn ensure_unique_work_item_ids(
+    work: &[String],
+    invalid_subject: &str,
+    duplicate_subject: &str,
+    scope: &str,
+) -> DiagnosticResult<()> {
     let mut seen = BTreeSet::new();
     for work_id in work {
         if !crate::validate::is_work_item_id(work_id) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0409WorkDependencyInvalid,
-                format!("Loop work field value '{work_id}' must be a work item ID"),
-                "loop",
+                format!("{invalid_subject} '{work_id}' must be a work item ID"),
+                scope,
             ));
         }
         if !seen.insert(work_id.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1201LoopStateInvalid,
-                format!("duplicate loop work item: {work_id}"),
-                "loop",
+                format!("duplicate {duplicate_subject}: {work_id}"),
+                scope,
             ));
         }
     }
@@ -166,10 +173,6 @@ pub(super) fn loop_item_state<'a>(
 pub(super) fn generated_loop_id(config: &Config) -> DiagnosticResult<String> {
     let date = chrono::Local::now().format("%Y-%m-%d").to_string();
     generated_loop_id_for_date(config, &date)
-}
-
-pub(super) fn diagnostic_code(err: &Diagnostic) -> DiagnosticCode {
-    err.code
 }
 
 fn same_work_set(left: &[String], right: &[String]) -> bool {

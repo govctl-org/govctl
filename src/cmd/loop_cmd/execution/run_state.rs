@@ -1,3 +1,4 @@
+use crate::cmd::loop_cmd::state::ensure_unique_work_item_ids;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_state::{LoopLifecycleState, LoopState, load_loop_state};
@@ -20,22 +21,13 @@ fn validate_target_work_ids(state: &LoopState, target_work_ids: &[String]) -> Di
         .iter()
         .map(String::as_str)
         .collect::<BTreeSet<_>>();
-    let mut seen = BTreeSet::new();
+    ensure_unique_work_item_ids(
+        target_work_ids,
+        "Loop run target",
+        "loop run target work item",
+        &state.loop_meta.id,
+    )?;
     for work_id in target_work_ids {
-        if !crate::validate::is_work_item_id(work_id) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0409WorkDependencyInvalid,
-                format!("Loop run target '{work_id}' must be a work item ID"),
-                state.loop_meta.id.clone(),
-            ));
-        }
-        if !seen.insert(work_id.as_str()) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E1201LoopStateInvalid,
-                format!("duplicate loop run target work item: {work_id}"),
-                state.loop_meta.id.clone(),
-            ));
-        }
         if !loop_work_ids.contains(work_id.as_str()) {
             return Err(Diagnostic::new(
                 DiagnosticCode::E1201LoopStateInvalid,

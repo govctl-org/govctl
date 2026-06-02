@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-104"
+title = "Share loop command work helpers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reduce duplication inside loop command work-item handling by sharing command-surface work ID validation and root-set construction helpers. Preserve loop start/scope/run diagnostics, targeting behavior, generated loop state, and the current loop module layout."
+
+[[content.acceptance_criteria]]
+text = "loop command work ID validation uses one shared command helper for loop work fields and run targets"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop scope add and remove reuse shared root-set construction without changing output or diagnostics"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused loop command tests and govctl check pass"
+status = "done"
+category = "chore"
