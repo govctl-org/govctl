@@ -2,13 +2,15 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, run_dynamic_commands, today};
+use common::{
+    first_work_id, init_project_with_date, normalize_output, run_commands, run_dynamic_commands,
+};
 use std::fs;
 use std::path::Path;
 
 /// Create a minimal valid project with RFC, clause, ADR, and work item
 fn setup_minimal_valid(dir: &Path, date: &str) -> common::TestResult {
-    let wi1 = format!("WI-{}-001", date);
+    let wi1 = first_work_id(date);
 
     // Create RFC with clause
     let rfc_dir = dir.join("gov/rfc/RFC-0001");
@@ -93,8 +95,7 @@ consequences = "Tests will pass."
 
 #[test]
 fn test_minimal_valid_check() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
@@ -104,8 +105,7 @@ fn test_minimal_valid_check() -> common::TestResult {
 
 #[test]
 fn test_minimal_valid_list_rfc() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(temp_dir.path(), &[&["rfc", "list"]])?;
@@ -115,8 +115,7 @@ fn test_minimal_valid_list_rfc() -> common::TestResult {
 
 #[test]
 fn test_minimal_valid_list_clause() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(temp_dir.path(), &[&["clause", "list"]])?;
@@ -126,8 +125,7 @@ fn test_minimal_valid_list_clause() -> common::TestResult {
 
 #[test]
 fn test_minimal_valid_list_adr() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(temp_dir.path(), &[&["adr", "list"]])?;
@@ -137,8 +135,7 @@ fn test_minimal_valid_list_adr() -> common::TestResult {
 
 #[test]
 fn test_minimal_valid_list_work() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(temp_dir.path(), &[&["work", "list"]])?;
@@ -148,8 +145,7 @@ fn test_minimal_valid_list_work() -> common::TestResult {
 
 #[test]
 fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(
@@ -171,8 +167,7 @@ fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
 
 #[test]
 fn test_minimal_valid_status() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(temp_dir.path(), &[&["status"]])?;
@@ -182,8 +177,7 @@ fn test_minimal_valid_status() -> common::TestResult {
 
 #[test]
 fn test_minimal_valid_full_workflow() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
     let output = run_commands(

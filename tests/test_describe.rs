@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, today};
+use common::{init_project_with_date, normalize_output, run_commands, today};
 
 #[test]
 fn test_describe_basic() -> common::TestResult {
@@ -18,8 +18,7 @@ fn test_describe_basic() -> common::TestResult {
 #[test]
 fn test_describe_in_initialized_project() -> common::TestResult {
     // describe in an initialized project (without --context) should still output static metadata
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["describe"]])?;
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -29,8 +28,7 @@ fn test_describe_in_initialized_project() -> common::TestResult {
 #[test]
 fn test_describe_with_context_empty_project() -> common::TestResult {
     // describe --context in an empty initialized project should show empty state
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["describe", "--context"]])?;
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -40,8 +38,7 @@ fn test_describe_with_context_empty_project() -> common::TestResult {
 #[test]
 fn test_describe_with_context_draft_rfc() -> common::TestResult {
     // describe --context with a draft RFC should suggest finalizing
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -54,8 +51,7 @@ fn test_describe_with_context_draft_rfc() -> common::TestResult {
 #[test]
 fn test_describe_with_context_normative_spec_phase_rfc() -> common::TestResult {
     // describe --context with a normative RFC in spec phase should suggest advancing to impl
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -72,8 +68,7 @@ fn test_describe_with_context_normative_spec_phase_rfc() -> common::TestResult {
 #[test]
 fn test_describe_with_context_normative_impl_phase_rfc() -> common::TestResult {
     // describe --context with a normative RFC in impl phase should suggest advancing to test
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -91,8 +86,7 @@ fn test_describe_with_context_normative_impl_phase_rfc() -> common::TestResult {
 #[test]
 fn test_describe_with_context_normative_test_phase_rfc() -> common::TestResult {
     // describe --context with a normative RFC in test phase should suggest advancing to stable
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -111,8 +105,7 @@ fn test_describe_with_context_normative_test_phase_rfc() -> common::TestResult {
 #[test]
 fn test_describe_with_context_proposed_adr() -> common::TestResult {
     // describe --context with a proposed ADR should suggest accepting
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -125,8 +118,7 @@ fn test_describe_with_context_proposed_adr() -> common::TestResult {
 #[test]
 fn test_describe_with_context_active_work_item() -> common::TestResult {
     // describe --context with an active work item should show it
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -142,8 +134,7 @@ fn test_describe_with_context_active_work_item() -> common::TestResult {
 #[test]
 fn test_describe_with_context_queued_work_items() -> common::TestResult {
     // describe --context with queued work items but no active should suggest activating one
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),

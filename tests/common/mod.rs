@@ -165,6 +165,20 @@ pub fn init_project() -> Result<TempDir, Box<dyn std::error::Error>> {
     init_project_at(None)
 }
 
+pub fn init_project_with_date() -> Result<(TempDir, String), Box<dyn std::error::Error>> {
+    let temp_dir = init_project()?;
+    let date = today();
+    Ok((temp_dir, date))
+}
+
+pub fn work_id(date: &str, sequence: u32) -> String {
+    format!("WI-{date}-{sequence:03}")
+}
+
+pub fn first_work_id(date: &str) -> String {
+    work_id(date, 1)
+}
+
 pub fn append_verification_config(
     dir: &Path,
     enabled: bool,

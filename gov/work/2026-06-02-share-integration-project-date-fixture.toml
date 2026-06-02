@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-069"
+title = "Share integration project-date fixture"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract a shared integration-test helper for the common initialized-project-plus-current-date fixture and apply it to representative suites without splitting those suites or changing command coverage."
+
+[[content.acceptance_criteria]]
+text = "common integration helper returns initialized temp project with normalized current date"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "representative integration suites use the shared project-date fixture without file splitting"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "touched integration test binaries pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

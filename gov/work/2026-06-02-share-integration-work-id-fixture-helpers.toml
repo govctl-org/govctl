@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-070"
+title = "Share integration work-id fixture helpers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract shared integration-test helpers for deterministic work item IDs and replace local or repeated first-ID formatting in the same touched suites. Keep helper names narrow and avoid broad test-suite restructuring."
+
+[[content.acceptance_criteria]]
+text = "common integration helpers expose deterministic work item ID formatting"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "touched integration suites use shared work item ID helpers instead of local first-ID formatting"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "touched integration test binaries pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

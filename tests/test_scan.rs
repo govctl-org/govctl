@@ -5,7 +5,7 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, today};
+use common::{init_project_with_date, normalize_output, run_commands};
 use std::fs;
 use std::path::Path;
 
@@ -28,9 +28,8 @@ fn enable_source_scan(dir: &std::path::Path) -> Result<(), Box<dyn std::error::E
 }
 
 fn init_source_scan_project() -> Result<(tempfile::TempDir, String), Box<dyn std::error::Error>> {
-    let temp_dir = init_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     enable_source_scan(temp_dir.path())?;
-    let date = today();
     Ok((temp_dir, date))
 }
 

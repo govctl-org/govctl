@@ -2,19 +2,10 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, run_dynamic_commands, today};
+use common::{
+    first_work_id, init_project_with_date, normalize_output, run_commands, run_dynamic_commands,
+};
 use std::path::Path;
-use tempfile::TempDir;
-
-fn init_move_project() -> Result<(TempDir, String), Box<dyn std::error::Error>> {
-    let temp_dir = init_project()?;
-    let date = today();
-    Ok((temp_dir, date))
-}
-
-fn first_work_id(date: &str) -> String {
-    format!("WI-{date}-001")
-}
 
 fn setup_active_work_item_with_criteria(
     dir: &Path,
@@ -46,7 +37,7 @@ fn setup_active_work_item_with_criteria(
 #[test]
 fn test_move_queue_to_active() -> common::TestResult {
     // Move work item from queue to active
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -57,7 +48,7 @@ fn test_move_queue_to_active() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    let output = output.replace("WI-<DATE>-001", &format!("WI-{}-001", date));
+    let output = output.replace("WI-<DATE>-001", &first_work_id(&date));
     insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
@@ -65,7 +56,7 @@ fn test_move_queue_to_active() -> common::TestResult {
 #[test]
 fn test_move_active_to_done_with_criteria() -> common::TestResult {
     // Move work item from active to done with acceptance criteria
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     setup_active_work_item_with_criteria(temp_dir.path(), &date, "Test task", "add: Task done")?;
@@ -93,7 +84,7 @@ fn test_move_active_to_done_with_criteria() -> common::TestResult {
 #[test]
 fn test_move_to_done_without_criteria_fails() -> common::TestResult {
     // Cannot move to done without acceptance criteria
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     let output = run_commands(
@@ -110,7 +101,7 @@ fn test_move_to_done_without_criteria_fails() -> common::TestResult {
 #[test]
 fn test_move_to_done_with_pending_criteria_fails() -> common::TestResult {
     // Cannot move to done with pending acceptance criteria
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     setup_active_work_item_with_criteria(temp_dir.path(), &date, "Test task", "add: Task done")?;
@@ -123,7 +114,7 @@ fn test_move_to_done_with_pending_criteria_fails() -> common::TestResult {
 #[test]
 fn test_move_active_to_cancelled() -> common::TestResult {
     // Move work item from active to cancelled
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     let output = run_commands(
@@ -141,7 +132,7 @@ fn test_move_active_to_cancelled() -> common::TestResult {
 #[test]
 fn test_move_queue_to_cancelled() -> common::TestResult {
     // Move work item from queue to cancelled (skip active)
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     let output = run_commands(
@@ -159,7 +150,7 @@ fn test_move_queue_to_cancelled() -> common::TestResult {
 #[test]
 fn test_move_by_work_item_id() -> common::TestResult {
     // Can reference work item by ID instead of filename
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     let output = run_commands(
@@ -177,7 +168,7 @@ fn test_move_by_work_item_id() -> common::TestResult {
 #[test]
 fn test_move_nonexistent_work_item() -> common::TestResult {
     // Cannot move non-existent work item
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -190,7 +181,7 @@ fn test_move_nonexistent_work_item() -> common::TestResult {
 #[test]
 fn test_move_sets_started_date() -> common::TestResult {
     // Moving to active sets started date if not already set
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     let output = run_commands(
@@ -209,7 +200,7 @@ fn test_move_sets_started_date() -> common::TestResult {
 #[test]
 fn test_move_sets_completed_date() -> common::TestResult {
     // Moving to done/cancelled sets completed date
-    let (temp_dir, date) = init_move_project()?;
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     setup_active_work_item_with_criteria(temp_dir.path(), &date, "Task to complete", "add: Done")?;
