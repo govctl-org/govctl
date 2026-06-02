@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-064"
+title = "Share loop guard fixture writer"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Remove duplicated loop-test guard fixture writing by delegating the loop helper to the existing shared canonical guard writer with timeout support. Keep loop guard test behavior and fixture TOML shape unchanged."
+
+[[content.acceptance_criteria]]
+text = "loop guard helper reuses the shared canonical guard writer with timeout support"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop guard execution tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
