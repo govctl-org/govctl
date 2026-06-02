@@ -1,28 +1,117 @@
 use super::*;
 
+const ACCEPTANCE_CRITERIA: &str = "acceptance_criteria";
+const CONTENT_ACCEPTANCE_CRITERIA: &str = "content.acceptance_criteria";
+
+fn work_id(date: &str) -> String {
+    format!("WI-{date}-001")
+}
+
+fn command(args: &[&str]) -> Vec<String> {
+    args.iter().map(|arg| (*arg).to_string()).collect()
+}
+
+fn work_new(title: &str) -> Vec<String> {
+    command(&["work", "new", title])
+}
+
+fn work_show(id: &str) -> Vec<String> {
+    command(&["work", "show", id])
+}
+
+fn work_add_acceptance_criteria(id: &str, text: &str) -> Vec<String> {
+    command(&["work", "add", id, ACCEPTANCE_CRITERIA, text])
+}
+
+fn work_add_acceptance_criteria_with_extras(
+    id: &str,
+    text: &str,
+    category: &str,
+    scope: &str,
+) -> Vec<String> {
+    command(&[
+        "work",
+        "add",
+        id,
+        ACCEPTANCE_CRITERIA,
+        text,
+        "--category",
+        category,
+        "--scope",
+        scope,
+    ])
+}
+
+fn work_edit_add_content_acceptance_criteria(id: &str, text: &str) -> Vec<String> {
+    command(&[
+        "work",
+        "edit",
+        id,
+        CONTENT_ACCEPTANCE_CRITERIA,
+        "--add",
+        text,
+    ])
+}
+
+fn work_edit_add_acceptance_criteria_with_extras(
+    id: &str,
+    text: &str,
+    category: &str,
+    scope: &str,
+) -> Vec<String> {
+    command(&[
+        "work",
+        "edit",
+        id,
+        ACCEPTANCE_CRITERIA,
+        "--add",
+        text,
+        "--category",
+        category,
+        "--scope",
+        scope,
+    ])
+}
+
+fn work_tick_acceptance_criteria(id: &str, pattern: &str, status: &str) -> Vec<String> {
+    command(&[
+        "work",
+        "tick",
+        id,
+        ACCEPTANCE_CRITERIA,
+        pattern,
+        "-s",
+        status,
+    ])
+}
+
+fn work_edit_tick_acceptance_criteria_index(id: &str, index: usize, status: &str) -> Vec<String> {
+    vec![
+        "work".to_string(),
+        "edit".to_string(),
+        id.to_string(),
+        format!("{CONTENT_ACCEPTANCE_CRITERIA}[{index}]"),
+        "--tick".to_string(),
+        status.to_string(),
+    ]
+}
+
+fn work_remove_acceptance_criteria(id: &str, pattern: &str) -> Vec<String> {
+    command(&["work", "remove", id, ACCEPTANCE_CRITERIA, pattern])
+}
+
 #[test]
 fn test_work_add_acceptance_criteria() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let id = work_id(&date);
 
-    let output = run_commands(
+    let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            &["work", "new", "Test Task"],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "add: Criterion 1",
-            ],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "add: Criterion 2",
-            ],
-            &["work", "show", &format!("WI-{}-001", date)],
+            work_new("Test Task"),
+            work_add_acceptance_criteria(&id, "add: Criterion 1"),
+            work_add_acceptance_criteria(&id, "add: Criterion 2"),
+            work_show(&id),
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -32,36 +121,25 @@ fn test_work_add_acceptance_criteria() -> common::TestResult {
 #[test]
 fn test_work_add_and_edit_acceptance_criteria_extras() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
-    let work_id = format!("WI-{}-001", date);
+    let id = work_id(&date);
 
-    let output = run_commands(
+    let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            &["work", "new", "Category Extras"],
-            &[
-                "work",
-                "add",
-                &work_id,
-                "acceptance_criteria",
+            work_new("Category Extras"),
+            work_add_acceptance_criteria_with_extras(
+                &id,
                 "Add without prefix",
-                "--category",
                 "fixed",
-                "--scope",
                 "legacy-add",
-            ],
-            &[
-                "work",
-                "edit",
-                &work_id,
-                "acceptance_criteria",
-                "--add",
+            ),
+            work_edit_add_acceptance_criteria_with_extras(
+                &id,
                 "Edit without prefix",
-                "--category",
                 "changed",
-                "--scope",
                 "legacy-edit",
-            ],
-            &["work", "show", &work_id],
+            ),
+            work_show(&id),
         ],
     )?;
 
@@ -81,35 +159,16 @@ fn test_work_add_and_edit_acceptance_criteria_extras() -> common::TestResult {
 #[test]
 fn test_work_tick_acceptance_criteria() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let id = work_id(&date);
 
-    let output = run_commands(
+    let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            &["work", "new", "Test Task"],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "add: Criterion 1",
-            ],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "add: Criterion 2",
-            ],
-            &[
-                "work",
-                "tick",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "Criterion 1",
-                "-s",
-                "done",
-            ],
-            &["work", "show", &format!("WI-{}-001", date)],
+            work_new("Test Task"),
+            work_add_acceptance_criteria(&id, "add: Criterion 1"),
+            work_add_acceptance_criteria(&id, "add: Criterion 2"),
+            work_tick_acceptance_criteria(&id, "Criterion 1", "done"),
+            work_show(&id),
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -119,34 +178,17 @@ fn test_work_tick_acceptance_criteria() -> common::TestResult {
 #[test]
 fn test_work_edit_tick_indexed_path_canonical() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
-    let wi_id = format!("WI-{}-001", date);
+    let id = work_id(&date);
 
-    let commands = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Canonical Tick".to_string(),
+    let output = common::run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Canonical Tick"),
+            work_edit_add_content_acceptance_criteria(&id, "add: Criterion 1"),
+            work_edit_tick_acceptance_criteria_index(&id, 0, "done"),
+            work_show(&id),
         ],
-        vec![
-            "work".to_string(),
-            "edit".to_string(),
-            wi_id.clone(),
-            "content.acceptance_criteria".to_string(),
-            "--add".to_string(),
-            "add: Criterion 1".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "edit".to_string(),
-            wi_id.clone(),
-            "content.acceptance_criteria[0]".to_string(),
-            "--tick".to_string(),
-            "done".to_string(),
-        ],
-        vec!["work".to_string(), "show".to_string(), wi_id],
-    ];
-
-    let output = common::run_dynamic_commands(temp_dir.path(), &commands)?;
+    )?;
 
     assert!(
         output.contains("Added 'add: Criterion 1' to WI-"),
@@ -169,28 +211,15 @@ fn test_work_edit_tick_indexed_path_canonical() -> common::TestResult {
 #[test]
 fn test_work_tick_cancel_acceptance_criteria() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let id = work_id(&date);
 
-    let output = run_commands(
+    let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            &["work", "new", "Test Task"],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "add: Criterion 1",
-            ],
-            &[
-                "work",
-                "tick",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "Criterion 1",
-                "-s",
-                "cancelled",
-            ],
-            &["work", "show", &format!("WI-{}-001", date)],
+            work_new("Test Task"),
+            work_add_acceptance_criteria(&id, "add: Criterion 1"),
+            work_tick_acceptance_criteria(&id, "Criterion 1", "cancelled"),
+            work_show(&id),
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -200,33 +229,16 @@ fn test_work_tick_cancel_acceptance_criteria() -> common::TestResult {
 #[test]
 fn test_work_remove_acceptance_criteria() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let id = work_id(&date);
 
-    let output = run_commands(
+    let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            &["work", "new", "Test Task"],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "add: To remove",
-            ],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "add: To keep",
-            ],
-            &[
-                "work",
-                "remove",
-                &format!("WI-{}-001", date),
-                "acceptance_criteria",
-                "To remove",
-            ],
-            &["work", "show", &format!("WI-{}-001", date)],
+            work_new("Test Task"),
+            work_add_acceptance_criteria(&id, "add: To remove"),
+            work_add_acceptance_criteria(&id, "add: To keep"),
+            work_remove_acceptance_criteria(&id, "To remove"),
+            work_show(&id),
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
