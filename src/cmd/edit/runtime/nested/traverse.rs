@@ -1,4 +1,4 @@
-use super::super::support::type_mismatch;
+use super::super::support::{ensure_path_mut_with_leaf, type_mismatch};
 use crate::cmd::edit::path::{self, PathSegment};
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
@@ -207,35 +207,7 @@ pub(super) fn ensure_node_path_mut<'a>(
     node: &'static NestedNodeRule,
     id: &str,
 ) -> DiagnosticResult<&'a mut Value> {
-    let mut cur = doc;
-    for (idx, key) in path.iter().enumerate() {
-        let is_leaf = idx + 1 == path.len();
-        let obj = cur.as_object_mut().ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!("Cannot resolve field path '{}'", path.join(".")),
-                id,
-            )
-        })?;
-        if !obj.contains_key(*key) {
-            obj.insert(
-                (*key).to_string(),
-                if is_leaf {
-                    default_value_for_node(node)
-                } else {
-                    Value::Object(serde_json::Map::new())
-                },
-            );
-        }
-        cur = obj.get_mut(*key).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                format!("Cannot resolve field path '{}'", path.join(".")),
-                id,
-            )
-        })?;
-    }
-    Ok(cur)
+    ensure_path_mut_with_leaf(doc, path, id, || default_value_for_node(node))
 }
 
 pub(super) fn default_value_for_node(node: &NestedNodeRule) -> Value {

@@ -138,6 +138,38 @@ pub(super) fn value_at_path<'a>(v: &'a Value, path: &[&str]) -> Option<&'a Value
     Some(cur)
 }
 
+pub(super) fn ensure_path_mut_with_leaf<'a>(
+    mut cur: &'a mut Value,
+    path: &[&str],
+    id: &str,
+    mut leaf_default: impl FnMut() -> Value,
+) -> DiagnosticResult<&'a mut Value> {
+    for (idx, key) in path.iter().enumerate() {
+        let is_leaf = idx + 1 == path.len();
+        let obj = cur.as_object_mut().ok_or_else(|| path_mismatch(path, id))?;
+        if !obj.contains_key(*key) {
+            obj.insert(
+                (*key).to_string(),
+                if is_leaf {
+                    leaf_default()
+                } else {
+                    Value::Object(serde_json::Map::new())
+                },
+            );
+        }
+        cur = obj.get_mut(*key).ok_or_else(|| path_mismatch(path, id))?;
+    }
+    Ok(cur)
+}
+
+fn path_mismatch(path: &[&str], id: &str) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0817PathTypeMismatch,
+        format!("Cannot resolve field path '{}'", path.join(".")),
+        id,
+    )
+}
+
 pub(super) fn type_mismatch(msg: &str, id: &str) -> Diagnostic {
     Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, msg, id)
 }

@@ -1,5 +1,5 @@
 use super::spec::{SetMode, SimpleSetSpec};
-use super::support::type_mismatch;
+use super::support::{ensure_path_mut_with_leaf, type_mismatch};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
 
@@ -56,55 +56,17 @@ pub(super) fn array_items_mut<'a>(
 }
 
 pub(super) fn ensure_value_path_mut<'a>(
-    mut cur: &'a mut Value,
+    doc: &'a mut Value,
     path: &[&str],
     id: &str,
 ) -> DiagnosticResult<&'a mut Value> {
-    for (idx, key) in path.iter().enumerate() {
-        let is_leaf = idx + 1 == path.len();
-        let obj = cur.as_object_mut().ok_or_else(|| path_mismatch(path, id))?;
-        if !obj.contains_key(*key) {
-            obj.insert(
-                (*key).to_string(),
-                if is_leaf {
-                    Value::Null
-                } else {
-                    Value::Object(serde_json::Map::new())
-                },
-            );
-        }
-        cur = obj.get_mut(*key).ok_or_else(|| path_mismatch(path, id))?;
-    }
-    Ok(cur)
+    ensure_path_mut_with_leaf(doc, path, id, || Value::Null)
 }
 
 pub(super) fn ensure_array_path_mut<'a>(
-    mut cur: &'a mut Value,
+    doc: &'a mut Value,
     path: &[&str],
     id: &str,
 ) -> DiagnosticResult<&'a mut Value> {
-    for (idx, key) in path.iter().enumerate() {
-        let is_leaf = idx + 1 == path.len();
-        let obj = cur.as_object_mut().ok_or_else(|| path_mismatch(path, id))?;
-        if !obj.contains_key(*key) {
-            obj.insert(
-                (*key).to_string(),
-                if is_leaf {
-                    Value::Array(Vec::new())
-                } else {
-                    Value::Object(serde_json::Map::new())
-                },
-            );
-        }
-        cur = obj.get_mut(*key).ok_or_else(|| path_mismatch(path, id))?;
-    }
-    Ok(cur)
-}
-
-fn path_mismatch(path: &[&str], id: &str) -> Diagnostic {
-    Diagnostic::new(
-        DiagnosticCode::E0817PathTypeMismatch,
-        format!("Cannot resolve field path '{}'", path.join(".")),
-        id,
-    )
+    ensure_path_mut_with_leaf(doc, path, id, || Value::Array(Vec::new()))
 }
