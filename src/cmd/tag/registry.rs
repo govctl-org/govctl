@@ -36,6 +36,10 @@ pub(super) fn validate_tag_format(tag: &str) -> DiagnosticResult<()> {
     Ok(())
 }
 
+pub(super) fn has_allowed_tag(tags: &[String], tag: &str) -> bool {
+    tags.iter().any(|allowed| allowed == tag)
+}
+
 pub(crate) fn validate_registered_tag(
     config: &Config,
     tag: &str,
@@ -49,7 +53,7 @@ pub(crate) fn validate_registered_tag(
             file,
         ));
     }
-    if !config.tags.allowed.iter().any(|allowed| allowed == tag) {
+    if !has_allowed_tag(&config.tags.allowed, tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1105TagUnknown,
             format!(
@@ -77,7 +81,7 @@ pub(crate) fn validate_artifact_tag(
             file,
         ));
     }
-    if !config.tags.allowed.iter().any(|allowed| allowed == tag) {
+    if !has_allowed_tag(&config.tags.allowed, tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1105TagUnknown,
             format!(

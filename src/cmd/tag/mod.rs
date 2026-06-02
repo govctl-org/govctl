@@ -12,7 +12,8 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use output::{TagEntry, print_tag_entries};
 use registry::{
-    get_allowed_tags, read_config_table, set_allowed_tags, validate_tag_format, write_config_table,
+    get_allowed_tags, has_allowed_tag, read_config_table, set_allowed_tags, validate_tag_format,
+    write_config_table,
 };
 pub(crate) use registry::{validate_artifact_tag, validate_registered_tag};
 use usage::build_tag_usage_map;
@@ -28,7 +29,7 @@ pub fn tag_new(
     let mut table = read_config_table(config)?;
     let mut allowed = get_allowed_tags(&table)?;
 
-    if allowed.iter().any(|allowed| allowed == tag) {
+    if has_allowed_tag(&allowed, tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1102TagAlreadyExists,
             format!("Tag '{tag}' already exists in [tags] allowed"),
@@ -58,7 +59,7 @@ pub fn tag_delete(
     let mut table = read_config_table(config)?;
     let allowed = get_allowed_tags(&table)?;
 
-    if !allowed.iter().any(|allowed| allowed == tag) {
+    if !has_allowed_tag(&allowed, tag) {
         return Err(Diagnostic::new(
             DiagnosticCode::E1103TagNotFound,
             format!("Tag '{tag}' not found in [tags] allowed"),
