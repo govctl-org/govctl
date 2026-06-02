@@ -2,24 +2,14 @@
 
 mod common;
 
-use common::{init_project_with_date, normalize_output, run_commands, temp_dir_with_date};
-use std::path::Path;
-
-fn normalized_describe_output(
-    dir: &Path,
-    date: &str,
-    commands: &[&[&str]],
-) -> Result<String, Box<dyn std::error::Error>> {
-    let output = run_commands(dir, commands)?;
-    Ok(normalize_output(&output, dir, date)?)
-}
+use common::{init_project_with_date, run_normalized_commands, temp_dir_with_date};
 
 #[test]
 fn test_describe_basic() -> common::TestResult {
     let (temp_dir, date) = temp_dir_with_date()?;
 
     // Expected: static metadata is available without an initialized project.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[&["describe"]]
@@ -32,7 +22,7 @@ fn test_describe_in_initialized_project() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected: plain describe still returns static metadata inside a project.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[&["describe"]]
@@ -45,7 +35,7 @@ fn test_describe_with_context_empty_project() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected: context output reports an empty initialized project state.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[&["describe", "--context"]]
@@ -58,7 +48,7 @@ fn test_describe_with_context_draft_rfc() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected context action: finalize the draft RFC.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[&["rfc", "new", "Test RFC"], &["describe", "--context"]],
@@ -71,7 +61,7 @@ fn test_describe_with_context_normative_spec_phase_rfc() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected context action: advance the RFC from spec to impl.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[
@@ -88,7 +78,7 @@ fn test_describe_with_context_normative_impl_phase_rfc() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected context action: advance the RFC from impl to test.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[
@@ -106,7 +96,7 @@ fn test_describe_with_context_normative_test_phase_rfc() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected context action: advance the RFC from test to stable.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[
@@ -125,7 +115,7 @@ fn test_describe_with_context_proposed_adr() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected context action: accept the proposed ADR.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[&["adr", "new", "Test Decision"], &["describe", "--context"]],
@@ -138,7 +128,7 @@ fn test_describe_with_context_active_work_item() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected context state: show the active work item.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[
@@ -154,7 +144,7 @@ fn test_describe_with_context_queued_work_items() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     // Expected context action: activate one queued work item.
-    insta::assert_snapshot!(normalized_describe_output(
+    insta::assert_snapshot!(run_normalized_commands(
         temp_dir.path(),
         &date,
         &[

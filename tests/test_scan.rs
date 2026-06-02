@@ -5,7 +5,7 @@
 
 mod common;
 
-use common::{init_project_with_date, normalize_output, run_commands};
+use common::{init_project_with_date, run_commands, run_normalized_commands};
 use std::fs;
 use std::path::Path;
 
@@ -40,17 +40,16 @@ fn write_main_rs(dir: &Path, contents: impl AsRef<str>) -> Result<(), Box<dyn st
     Ok(())
 }
 
-fn normalized_check_output(dir: &Path, date: &str) -> Result<String, Box<dyn std::error::Error>> {
-    let output = run_commands(dir, &[&["check"]])?;
-    Ok(normalize_output(&output, dir, date)?)
-}
-
 #[test]
 fn test_scan_no_references() -> common::TestResult {
     // project with no source files should scan successfully
     let (temp_dir, date) = init_source_scan_project()?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -74,7 +73,11 @@ fn test_scan_valid_rfc_reference() -> common::TestResult {
         "// Implements [[RFC-0001]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -108,7 +111,11 @@ fn test_scan_valid_clause_reference() -> common::TestResult {
         "// Implements [[RFC-0001:C-TEST]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -123,7 +130,11 @@ fn test_scan_unknown_rfc_reference() -> common::TestResult {
         "// Implements [[RFC-9999]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -147,7 +158,11 @@ fn test_scan_unknown_clause_reference() -> common::TestResult {
         "// Implements [[RFC-0001:C-NONEXISTENT]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -172,7 +187,11 @@ fn test_scan_deprecated_rfc_reference() -> common::TestResult {
         "// Implements [[RFC-0001]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -193,7 +212,11 @@ fn test_scan_valid_adr_reference() -> common::TestResult {
     // Create a source file with a reference to the ADR
     write_main_rs(temp_dir.path(), "// Follows [[ADR-0001]]\nfn main() {}\n")?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -219,7 +242,11 @@ fn test_scan_valid_work_item_reference() -> common::TestResult {
         format!("// Implements [[{}]]\nfn main() {{}}\n", wi_id),
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -245,7 +272,11 @@ fn test_scan_multiple_references_in_file() -> common::TestResult {
         "// Implements [[RFC-0001]] and [[RFC-0002]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }
 
@@ -269,6 +300,10 @@ fn test_scan_mixed_valid_invalid_references() -> common::TestResult {
         "// Implements [[RFC-0001]] and [[RFC-9999]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
+    insta::assert_snapshot!(run_normalized_commands(
+        temp_dir.path(),
+        &date,
+        &[&["check"]]
+    )?);
     Ok(())
 }

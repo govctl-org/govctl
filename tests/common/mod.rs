@@ -79,6 +79,15 @@ pub fn normalize_output(output: &str, dir: &Path, date: &str) -> Result<String, 
     Ok(normalized)
 }
 
+pub fn run_normalized_commands(
+    dir: &Path,
+    date: &str,
+    commands: &[&[&str]],
+) -> Result<String, Box<dyn std::error::Error>> {
+    let output = run_commands(dir, commands)?;
+    Ok(normalize_output(&output, dir, date)?)
+}
+
 /// Run govctl commands in a directory and capture output.
 pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> Result<String, std::io::Error> {
     let mut output = String::new();

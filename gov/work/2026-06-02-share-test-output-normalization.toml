@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-099"
+title = "Share test output normalization"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract shared integration-test helpers for running govctl commands and normalizing snapshot output, replacing local duplicate helpers while preserving snapshot assertion call sites."
+
+[[content.acceptance_criteria]]
+text = "Common test helper runs commands and normalizes snapshot output"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Scan and describe tests use the shared normalized command helper"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Happy-path tests use the shared normalized command helper where applicable"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused affected tests and govctl check pass"
+status = "done"
+category = "chore"
