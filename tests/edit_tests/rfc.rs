@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_rfc_set_title() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -23,8 +22,7 @@ fn test_rfc_set_title() -> common::TestResult {
 
 #[test]
 fn test_rfc_get_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -41,8 +39,7 @@ fn test_rfc_get_field() -> common::TestResult {
 
 #[test]
 fn test_rfc_add_owner() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -58,8 +55,7 @@ fn test_rfc_add_owner() -> common::TestResult {
 
 #[test]
 fn test_rfc_remove_owner() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -105,8 +101,7 @@ fn test_rfc_remove_owner_by_index_canonical() -> common::TestResult {
 
 #[test]
 fn test_rfc_add_ref() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -190,8 +185,7 @@ fn test_rfc_edit_set_owner_by_index_canonical() -> common::TestResult {
 
 #[test]
 fn test_rfc_set_nonexistent_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -242,8 +236,7 @@ fn test_rfc_set_status_rejected() -> common::TestResult {
 
 #[test]
 fn test_rfc_get_nonexistent() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["rfc", "get", "RFC-9999", "title"]])?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);

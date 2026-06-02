@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, today};
+use common::{init_project, init_project_with_date, normalize_output, run_commands, today};
 
 macro_rules! assert_edit_snapshot {
     ($value:expr) => {{

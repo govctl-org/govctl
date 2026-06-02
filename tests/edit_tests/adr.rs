@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_adr_get_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -23,8 +22,7 @@ fn test_adr_get_field() -> common::TestResult {
 
 #[test]
 fn test_adr_set_title() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -79,8 +77,7 @@ fn test_adr_set_alternative_status_field_rejected() -> common::TestResult {
 
 #[test]
 fn test_adr_add_ref() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -142,8 +139,7 @@ fn test_adr_edit_add_nested_path_canonical() -> common::TestResult {
 
 #[test]
 fn test_adr_set_context() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -165,8 +161,7 @@ fn test_adr_set_context() -> common::TestResult {
 
 #[test]
 fn test_adr_set_decision() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -205,8 +200,7 @@ fn test_adr_set_decision() -> common::TestResult {
 
 #[test]
 fn test_adr_set_consequences() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -228,8 +222,7 @@ fn test_adr_set_consequences() -> common::TestResult {
 
 #[test]
 fn test_adr_get_nonexistent() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["adr", "get", "ADR-9999", "title"]])?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
