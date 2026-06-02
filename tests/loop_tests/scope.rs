@@ -1,6 +1,8 @@
 use crate::common;
 use crate::common::loop_helpers::{
-    loop_id, loop_item_round_count, loop_item_status, loop_item_table, loop_resolved, loop_work,
+    loop_add_work, loop_id, loop_item_round_count, loop_item_status, loop_item_table,
+    loop_remove_work, loop_replan, loop_resolved, loop_run_with_max_rounds, loop_start_with_id,
+    loop_work, work_add_acceptance, work_add_dependency, work_new, work_remove_dependency,
 };
 use crate::common::{init_project_with_date, run_dynamic_commands};
 use std::fs;
@@ -16,28 +18,16 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
     let setup_output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec!["work".into(), "new".into(), "Extra".into()],
+            work_new("Root"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            work_new("Extra"),
         ],
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
     let work_items_output = run_dynamic_commands(
         temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "add".into(),
-            loop_id.clone(),
-            "work_items".into(),
-            extra_id.clone(),
-        ]],
+        &[loop_add_work(&loop_id, "work_items", &extra_id)],
     )?;
 
     assert!(
@@ -51,13 +41,7 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
 
     let root_work_items_output = run_dynamic_commands(
         temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "add".into(),
-            loop_id.clone(),
-            "root_work_items".into(),
-            extra_id.clone(),
-        ]],
+        &[loop_add_work(&loop_id, "root_work_items", &extra_id)],
     )?;
 
     assert!(
@@ -69,16 +53,8 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
         "{root_work_items_output}"
     );
 
-    let wi_output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "add".into(),
-            loop_id.clone(),
-            "wi".into(),
-            extra_id.clone(),
-        ]],
-    )?;
+    let wi_output =
+        run_dynamic_commands(temp_dir.path(), &[loop_add_work(&loop_id, "wi", &extra_id)])?;
 
     assert!(
         wi_output.contains(&format!("Updated loop {loop_id}")),
@@ -96,13 +72,7 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
 
     let wi_remove_output = run_dynamic_commands(
         temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "remove".into(),
-            loop_id.clone(),
-            "wi".into(),
-            extra_id,
-        ]],
+        &[loop_remove_work(&loop_id, "wi", &extra_id)],
     )?;
 
     assert!(
@@ -161,44 +131,14 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Original".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                original_id.clone(),
-                "acceptance_criteria".into(),
-                "add: unfinished".into(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                original_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "run".into(),
-                loop_id.clone(),
-                "--max-rounds".into(),
-                "2".into(),
-            ],
-            vec!["work".into(), "new".into(), "Dependency".into()],
-            vec!["work".into(), "new".into(), "New root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                new_root_id.clone(),
-                "depends_on".into(),
-                new_dependency_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "add".into(),
-                loop_id.clone(),
-                "wi".into(),
-                new_root_id.clone(),
-            ],
+            work_new("Original"),
+            work_add_acceptance(&original_id, "add: unfinished"),
+            loop_start_with_id(&loop_id, &[&original_id]),
+            loop_run_with_max_rounds(&loop_id, "2"),
+            work_new("Dependency"),
+            work_new("New root"),
+            work_add_dependency(&new_root_id, &new_dependency_id),
+            loop_add_work(&loop_id, "wi", &new_root_id),
         ],
     )?;
 
@@ -230,21 +170,9 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec![
-                "loop".into(),
-                "remove".into(),
-                loop_id.clone(),
-                "work".into(),
-                original_id.clone(),
-            ],
-            vec![
-                "work".into(),
-                "remove".into(),
-                new_root_id.clone(),
-                "depends_on".into(),
-                new_dependency_id.clone(),
-            ],
-            vec!["loop".into(), "replan".into(), loop_id.clone()],
+            loop_remove_work(&loop_id, "work", &original_id),
+            work_remove_dependency(&new_root_id, &new_dependency_id),
+            loop_replan(&loop_id),
         ],
     )?;
 

@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-140"
+title = "Share loop scope command builders"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+refs = ["RFC-0006"]
+
+[content]
+description = "Move repeated loop scope and listing test command construction into the shared loop helper module while preserving the existing test scenarios and assertions."
+
+[[content.acceptance_criteria]]
+text = "Loop scope and listing tests use shared command builders for repeated loop operations"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing loop scope and listing scenarios and assertions remain intact"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused loop tests and project checks pass"
+status = "done"
+category = "chore"

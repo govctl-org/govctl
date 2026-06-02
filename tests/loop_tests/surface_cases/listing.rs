@@ -4,7 +4,7 @@ use super::*;
 fn test_loop_list_empty_state() -> common::TestResult {
     let temp_dir = init_project()?;
 
-    let output = run_dynamic_commands(temp_dir.path(), &[vec!["loop".into(), "list".into()]])?;
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_list(&[])])?;
 
     assert!(output.contains("│ ID"), "{output}");
     assert!(output.contains("State"), "{output}");
@@ -24,24 +24,12 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "First".into()],
-            vec!["work".into(), "new".into(), "Second".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                second_loop.clone(),
-                second_root.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                first_loop.clone(),
-                first_root.clone(),
-            ],
-            vec!["loop".into(), "list".into(), "-o".into(), "plain".into()],
-            vec!["loop".into(), "list".into(), "-o".into(), "json".into()],
+            work_new("First"),
+            work_new("Second"),
+            loop_start_with_id(&second_loop, &[&second_root]),
+            loop_start_with_id(&first_loop, &[&first_root]),
+            loop_list(&["-o", "plain"]),
+            loop_list(&["-o", "json"]),
         ],
     )?;
 
@@ -89,75 +77,22 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
     let setup_output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Pending".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                pending_loop.clone(),
-                pending_root.clone(),
-            ],
-            vec!["work".into(), "new".into(), "Paused".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                paused_root.clone(),
-                "acceptance_criteria".into(),
-                "add: waiting".into(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                paused_loop.clone(),
-                paused_root.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "run".into(),
-                paused_loop.clone(),
-                "--max-rounds".into(),
-                "2".into(),
-            ],
-            vec!["work".into(), "new".into(), "Completed".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                completed_root.clone(),
-                "acceptance_criteria".into(),
-                "add: ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                completed_root.clone(),
-                "acceptance_criteria".into(),
-                "ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                completed_loop.clone(),
-                completed_root.clone(),
-            ],
-            vec!["loop".into(), "run".into(), completed_loop.clone()],
+            work_new("Pending"),
+            loop_start_with_id(&pending_loop, &[&pending_root]),
+            work_new("Paused"),
+            work_add_acceptance(&paused_root, "add: waiting"),
+            loop_start_with_id(&paused_loop, &[&paused_root]),
+            loop_run_with_max_rounds(&paused_loop, "2"),
+            work_new("Completed"),
+            work_add_acceptance(&completed_root, "add: ready"),
+            work_tick_acceptance_done(&completed_root, "ready"),
+            loop_start_with_id(&completed_loop, &[&completed_root]),
+            loop_run(&completed_loop),
         ],
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
-    let open_output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "list".into(),
-            "open".into(),
-            "-o".into(),
-            "json".into(),
-        ]],
-    )?;
+    let open_output = run_dynamic_commands(temp_dir.path(), &[loop_list(&["open", "-o", "json"])])?;
     let json_start = open_output.find("[\n").ok_or("missing JSON list output")?;
     let json_end = open_output[json_start..]
         .find("\nexit:")
@@ -178,16 +113,8 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
     assert_eq!(loops[0]["state"], "pending");
     assert_eq!(loops[1]["state"], "paused");
 
-    let paused_output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "list".into(),
-            "paused".into(),
-            "-o".into(),
-            "plain".into(),
-        ]],
-    )?;
+    let paused_output =
+        run_dynamic_commands(temp_dir.path(), &[loop_list(&["paused", "-o", "plain"])])?;
     assert!(
         paused_output.contains(&format!("{paused_loop}\tpaused\t{paused_root}\t1\t1")),
         "{paused_output}"
@@ -197,15 +124,7 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
 
     let limited_output = run_dynamic_commands(
         temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "list".into(),
-            "resumable".into(),
-            "-n".into(),
-            "1".into(),
-            "-o".into(),
-            "plain".into(),
-        ]],
+        &[loop_list(&["resumable", "-n", "1", "-o", "plain"])],
     )?;
     assert!(
         limited_output.contains(&format!("{pending_loop}\tpending\t{pending_root}\t1\t0")),
@@ -225,7 +144,7 @@ fn test_loop_list_reports_invalid_canonical_state() -> common::TestResult {
     let loop_id = loop_id(&date, 1);
     fs::create_dir_all(temp_dir.path().join(format!(".govctl/loops/{loop_id}")))?;
 
-    let output = run_dynamic_commands(temp_dir.path(), &[vec!["loop".into(), "list".into()]])?;
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_list(&[])])?;
 
     assert!(output.contains("error[E1202]"), "{output}");
     assert!(output.contains("Failed to read loop state"), "{output}");
