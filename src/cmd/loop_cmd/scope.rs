@@ -103,15 +103,15 @@ fn mutated_work_set(
         }
         ScopeMutation::Add => {
             ensure_work_values(work)?;
-            let mut roots = work_root_set(state);
-            roots.extend(work.iter().cloned());
-            Ok(roots.into_iter().collect())
+            let mut work_items = loop_work_set(state);
+            work_items.extend(work.iter().cloned());
+            Ok(work_items.into_iter().collect())
         }
         ScopeMutation::Remove => {
             ensure_work_values(work)?;
-            let mut roots = work_root_set(state);
+            let mut work_items = loop_work_set(state);
             for work_id in work {
-                if !roots.remove(work_id) {
+                if !work_items.remove(work_id) {
                     return Err(Diagnostic::new(
                         DiagnosticCode::E1209LoopWorkMismatch,
                         format!("Loop work field does not contain item to remove: {work_id}"),
@@ -119,19 +119,19 @@ fn mutated_work_set(
                     ));
                 }
             }
-            if roots.is_empty() {
+            if work_items.is_empty() {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0801MissingRequiredArg,
                     "Loop work field must not be empty after remove",
                     state.loop_meta.id.clone(),
                 ));
             }
-            Ok(roots.into_iter().collect())
+            Ok(work_items.into_iter().collect())
         }
     }
 }
 
-fn work_root_set(state: &LoopState) -> BTreeSet<String> {
+fn loop_work_set(state: &LoopState) -> BTreeSet<String> {
     state.loop_meta.work.iter().cloned().collect()
 }
 

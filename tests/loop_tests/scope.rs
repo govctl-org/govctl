@@ -1,8 +1,8 @@
 use crate::common;
 use crate::common::loop_helpers::{
-    loop_add_work, loop_id, loop_item_round_count, loop_item_status, loop_item_table,
-    loop_remove_work, loop_replan, loop_resolved, loop_run_with_max_rounds, loop_start_with_id,
-    loop_work,
+    loop_add_field, loop_add_wi, loop_add_work, loop_id, loop_item_round_count, loop_item_status,
+    loop_item_table, loop_remove_wi, loop_remove_work, loop_replan, loop_resolved,
+    loop_run_with_max_rounds, loop_start_with_id, loop_work,
 };
 use crate::common::{
     init_project_with_date, run_dynamic_commands, work_add_acceptance, work_add_dependency,
@@ -30,7 +30,7 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
 
     let work_items_output = run_dynamic_commands(
         temp_dir.path(),
-        &[loop_add_work(&loop_id, "work_items", &extra_id)],
+        &[loop_add_field(&loop_id, "work_items", &extra_id)],
     )?;
 
     assert!(
@@ -44,7 +44,7 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
 
     let root_work_items_output = run_dynamic_commands(
         temp_dir.path(),
-        &[loop_add_work(&loop_id, "root_work_items", &extra_id)],
+        &[loop_add_field(&loop_id, "root_work_items", &extra_id)],
     )?;
 
     assert!(
@@ -56,8 +56,7 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
         "{root_work_items_output}"
     );
 
-    let wi_output =
-        run_dynamic_commands(temp_dir.path(), &[loop_add_work(&loop_id, "wi", &extra_id)])?;
+    let wi_output = run_dynamic_commands(temp_dir.path(), &[loop_add_wi(&loop_id, &extra_id)])?;
 
     assert!(
         wi_output.contains(&format!("Updated loop {loop_id}")),
@@ -73,10 +72,8 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
         vec![root_id.clone(), extra_id.clone()]
     );
 
-    let wi_remove_output = run_dynamic_commands(
-        temp_dir.path(),
-        &[loop_remove_work(&loop_id, "wi", &extra_id)],
-    )?;
+    let wi_remove_output =
+        run_dynamic_commands(temp_dir.path(), &[loop_remove_wi(&loop_id, &extra_id)])?;
 
     assert!(
         wi_remove_output.contains(&format!("Updated loop {loop_id}")),
@@ -141,7 +138,7 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
             work_new("Dependency"),
             work_new("New root"),
             work_add_dependency(&new_root_id, &new_dependency_id),
-            loop_add_work(&loop_id, "wi", &new_root_id),
+            loop_add_work(&loop_id, &new_root_id),
         ],
     )?;
 
@@ -173,7 +170,7 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            loop_remove_work(&loop_id, "work", &original_id),
+            loop_remove_work(&loop_id, &original_id),
             work_remove_dependency(&new_root_id, &new_dependency_id),
             loop_replan(&loop_id),
         ],

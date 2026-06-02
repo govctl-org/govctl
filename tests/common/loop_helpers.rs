@@ -33,11 +33,27 @@ pub fn loop_resume(loop_id: &str) -> Vec<String> {
     command(&["loop", "resume", loop_id])
 }
 
-pub fn loop_add_work(loop_id: &str, field: &str, work_id: &str) -> Vec<String> {
+pub fn loop_add_work(loop_id: &str, work_id: &str) -> Vec<String> {
+    loop_add_field(loop_id, "work", work_id)
+}
+
+pub fn loop_add_wi(loop_id: &str, work_id: &str) -> Vec<String> {
+    loop_add_field(loop_id, "wi", work_id)
+}
+
+pub fn loop_add_field(loop_id: &str, field: &str, work_id: &str) -> Vec<String> {
     command(&["loop", "add", loop_id, field, work_id])
 }
 
-pub fn loop_remove_work(loop_id: &str, field: &str, work_id: &str) -> Vec<String> {
+pub fn loop_remove_work(loop_id: &str, work_id: &str) -> Vec<String> {
+    loop_remove_field(loop_id, "work", work_id)
+}
+
+pub fn loop_remove_wi(loop_id: &str, work_id: &str) -> Vec<String> {
+    loop_remove_field(loop_id, "wi", work_id)
+}
+
+pub fn loop_remove_field(loop_id: &str, field: &str, work_id: &str) -> Vec<String> {
     command(&["loop", "remove", loop_id, field, work_id])
 }
 

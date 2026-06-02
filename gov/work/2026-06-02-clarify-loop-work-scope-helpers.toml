@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-158"
+title = "Clarify loop work scope helpers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Clarify loop scope mutation support around the editable work field by replacing overgeneric test command helpers with explicit work/wi helpers and using work-field vocabulary in the small production helper path. Preserve the loop add/remove CLI surface, including the supported wi alias and rejection of unpublished root/work_items aliases."
+
+[[content.acceptance_criteria]]
+text = "Loop scope mutation tests use explicit work and wi command helpers instead of a generic supported-field helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Loop scope tests, fmt, clippy, and govctl check pass"
+status = "done"
+category = "chore"
