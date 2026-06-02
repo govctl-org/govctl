@@ -6,25 +6,9 @@ use ratatui::{prelude::*, widgets::Row};
 
 pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect) {
     let indices = app.list_indices();
-    let rows = indices
-        .iter()
-        .filter_map(|&idx| app.index.rfcs.get(idx))
-        .map(|rfc| {
-            let status = rfc.rfc.status.as_ref();
-            let phase = rfc.rfc.phase.as_ref();
-
-            Row::new(vec![
-                Line::from(rfc.rfc.rfc_id.clone()),
-                Line::from(rfc.rfc.title.clone()),
-                StatusCell::new(status).render(),
-                PhaseCell::new(phase).render(),
-                TagsCell::new(&rfc.rfc.tags).render(),
-            ])
-        })
-        .collect::<Vec<_>>();
-
-    ResourceTable::new(
-        rows,
+    ResourceTable::from_indexed_items(
+        &app.index.rfcs,
+        &indices,
         ResourceTableSpec {
             widths: vec![
                 Constraint::Length(10),
@@ -38,29 +22,27 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect) {
             title: "📋 RFCs",
             border_color: Color::Blue,
         },
+        |rfc| {
+            let status = rfc.rfc.status.as_ref();
+            let phase = rfc.rfc.phase.as_ref();
+
+            Row::new(vec![
+                Line::from(rfc.rfc.rfc_id.clone()),
+                Line::from(rfc.rfc.title.clone()),
+                StatusCell::new(status).render(),
+                PhaseCell::new(phase).render(),
+                TagsCell::new(&rfc.rfc.tags).render(),
+            ])
+        },
     )
     .render(frame, area, &mut app.table_state);
 }
 
 pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect) {
     let indices = app.list_indices();
-    let rows = indices
-        .iter()
-        .filter_map(|&idx| app.index.adrs.get(idx))
-        .map(|adr| {
-            let meta = adr.meta();
-            ResourceListRow {
-                id: &meta.id,
-                title: &meta.title,
-                status: meta.status.as_ref(),
-                tags: &meta.tags,
-            }
-            .render()
-        })
-        .collect::<Vec<_>>();
-
-    ResourceTable::new(
-        rows,
+    ResourceTable::from_indexed_items(
+        &app.index.adrs,
+        &indices,
         ResourceTableSpec {
             widths: vec![
                 Constraint::Length(10),
@@ -73,17 +55,8 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect) {
             title: "📝 ADRs",
             border_color: Color::Green,
         },
-    )
-    .render(frame, area, &mut app.table_state);
-}
-
-pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
-    let indices = app.list_indices();
-    let rows = indices
-        .iter()
-        .filter_map(|&idx| app.index.work_items.get(idx))
-        .map(|item| {
-            let meta = item.meta();
+        |adr| {
+            let meta = adr.meta();
             ResourceListRow {
                 id: &meta.id,
                 title: &meta.title,
@@ -91,11 +64,16 @@ pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
                 tags: &meta.tags,
             }
             .render()
-        })
-        .collect::<Vec<_>>();
+        },
+    )
+    .render(frame, area, &mut app.table_state);
+}
 
-    ResourceTable::new(
-        rows,
+pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
+    let indices = app.list_indices();
+    ResourceTable::from_indexed_items(
+        &app.index.work_items,
+        &indices,
         ResourceTableSpec {
             widths: vec![
                 Constraint::Length(22),
@@ -107,6 +85,16 @@ pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
             header_color: Color::Yellow,
             title: "📌 Work Items",
             border_color: Color::Yellow,
+        },
+        |item| {
+            let meta = item.meta();
+            ResourceListRow {
+                id: &meta.id,
+                title: &meta.title,
+                status: meta.status.as_ref(),
+                tags: &meta.tags,
+            }
+            .render()
         },
     )
     .render(frame, area, &mut app.table_state);

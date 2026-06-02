@@ -24,6 +24,21 @@ impl ResourceTable {
         Self { rows, spec }
     }
 
+    pub(super) fn from_indexed_items<T>(
+        items: &[T],
+        indices: &[usize],
+        spec: ResourceTableSpec,
+        row_for: impl FnMut(&T) -> Row<'static>,
+    ) -> Self {
+        let rows = indices
+            .iter()
+            .filter_map(|&idx| items.get(idx))
+            .map(row_for)
+            .collect();
+
+        Self::new(rows, spec)
+    }
+
     pub(super) fn render(self, frame: &mut Frame, area: Rect, state: &mut TableState) {
         let table = Table::new(self.rows, self.spec.widths)
             .header(

@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-120"
+title = "Share TUI resource table assembly"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Refactor the TUI list renderers so the repeated filtered-index row assembly lives on the existing ResourceTable component. Keep RFC, ADR, and work item row contents and table specs local to the list renderer, and avoid adding new files or splitting unrelated TUI systems."
+
+[[content.acceptance_criteria]]
+text = "ResourceTable exposes a reusable filtered-index row assembly path for TUI resource lists"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC, ADR, and work item list renderers keep resource-specific row content while dropping duplicate collect-and-render scaffolding"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI focused tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"
