@@ -6,7 +6,7 @@ pub(super) fn status_list_text<'a>(
     item: &'a Value,
     text_key: &str,
     id: &str,
-) -> Result<&'a str, Diagnostic> {
+) -> DiagnosticResult<&'a str> {
     item.as_object()
         .and_then(|obj| obj.get(text_key))
         .and_then(Value::as_str)
@@ -19,12 +19,42 @@ pub(super) fn status_list_text<'a>(
         })
 }
 
+pub(super) fn status_list_texts<'a>(
+    items: &'a [Value],
+    text_key: &str,
+    id: &str,
+) -> DiagnosticResult<Vec<&'a str>> {
+    items
+        .iter()
+        .map(|item| status_list_text(item, text_key, id))
+        .collect()
+}
+
 pub(super) fn scalar_list_item_text(item: &Value) -> String {
     match item {
         Value::String(s) => s.clone(),
         Value::Null => String::new(),
         _ => item.to_string(),
     }
+}
+
+pub(super) fn string_list_item_text<'a>(
+    item: &'a Value,
+    expected: &str,
+    id: &str,
+) -> DiagnosticResult<&'a str> {
+    item.as_str().ok_or_else(|| type_mismatch(expected, id))
+}
+
+pub(super) fn string_list_item_texts<'a>(
+    items: &'a [Value],
+    expected: &str,
+    id: &str,
+) -> DiagnosticResult<Vec<&'a str>> {
+    items
+        .iter()
+        .map(|item| string_list_item_text(item, expected, id))
+        .collect()
 }
 
 pub(super) fn joined_scalar_list_text(items: &[Value], sep: &str) -> String {
@@ -53,6 +83,20 @@ pub(super) fn status_list_entry_line(
         .and_then(Value::as_str)
         .unwrap_or_default();
     Ok(format!("[{status}] {text}"))
+}
+
+pub(super) fn set_object_string_field(
+    item: &mut Value,
+    field: &str,
+    value: &str,
+    expected: &str,
+    id: &str,
+) -> DiagnosticResult<()> {
+    let obj = item
+        .as_object_mut()
+        .ok_or_else(|| type_mismatch(expected, id))?;
+    obj.insert(field.to_string(), Value::String(value.to_string()));
+    Ok(())
 }
 
 pub(super) fn remove_indices_preserving_order<F>(

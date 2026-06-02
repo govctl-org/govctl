@@ -1,4 +1,7 @@
-use super::super::support::{remove_indices_preserving_order, status_list_text, type_mismatch};
+use super::super::support::{
+    remove_indices_preserving_order, set_object_string_field, status_list_text,
+    string_list_item_text, type_mismatch,
+};
 use super::resolve_nested_root;
 use super::traverse::{default_value_for_node, descend_mut, ensure_node_path_mut};
 use crate::cmd::edit::ArtifactType;
@@ -144,13 +147,13 @@ where
         .find(|field| field.name == "status")
         .map(|field| field.name)
         .ok_or_else(|| type_mismatch("Expected status field for tickable list", id))?;
-    let obj = list[idx]
-        .as_object_mut()
-        .ok_or_else(|| type_mismatch("Expected object entries in tickable list", id))?;
-    obj.insert(
-        status_key.to_string(),
-        Value::String(new_status.to_string()),
-    );
+    set_object_string_field(
+        &mut list[idx],
+        status_key,
+        new_status,
+        "Expected object entries in tickable list",
+        id,
+    )?;
     Ok(text)
 }
 
@@ -172,13 +175,7 @@ fn list_item_text<'a>(
     id: &str,
 ) -> DiagnosticResult<&'a str> {
     match item_rule.kind {
-        NestedNodeKind::Scalar => item.as_str().ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0817PathTypeMismatch,
-                "Expected string items in list",
-                id,
-            )
-        }),
+        NestedNodeKind::Scalar => string_list_item_text(item, "Expected string items in list", id),
         NestedNodeKind::Object => {
             let text_key = node
                 .text_key

@@ -1,8 +1,9 @@
 use super::super::{ArtifactType, path};
 use super::mutate::{array_items_mut, ensure_array_path_mut};
 use super::support::{
-    remove_indices_preserving_order, scalar_list_item_text, status_list_entry_line,
-    status_list_text, type_mismatch, unknown_field_error, value_at_path,
+    remove_indices_preserving_order, scalar_list_item_text, set_object_string_field,
+    status_list_entry_line, status_list_text, status_list_texts, string_list_item_text,
+    string_list_item_texts, type_mismatch, unknown_field_error, value_at_path,
 };
 use super::{simple_runtime_list_path, simple_status_list_spec};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
@@ -90,10 +91,10 @@ where
     };
     let items = array_items_mut(doc, path, id)?;
 
-    let texts = string_list_texts(items, id)?;
+    let texts = string_list_item_texts(items, "Expected string entries in array", id)?;
     let indices = resolve(&texts)?;
     let removed = remove_indices_preserving_order(items, indices, |item| {
-        Ok(string_list_text(item, id)?.to_string())
+        Ok(string_list_item_text(item, "Expected string entries in array", id)?.to_string())
     })?;
     Ok(Some(removed))
 }
@@ -139,17 +140,13 @@ where
     let texts = status_list_texts(items, spec.text_key, id)?;
     let idx = resolve(&texts)?[0];
     let text = texts[idx].to_string();
-    let obj = items[idx].as_object_mut().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            "Expected object entries in array",
-            id,
-        )
-    })?;
-    obj.insert(
-        spec.status_key.to_string(),
-        Value::String(new_status.to_string()),
-    );
+    set_object_string_field(
+        &mut items[idx],
+        spec.status_key,
+        new_status,
+        "Expected object entries in array",
+        id,
+    )?;
     Ok(Some(text))
 }
 
@@ -164,32 +161,4 @@ fn array_items<'a>(doc: &'a Value, path: &[&str], id: &str) -> DiagnosticResult<
                 id,
             )
         })
-}
-
-fn string_list_texts<'a>(items: &'a [Value], id: &str) -> DiagnosticResult<Vec<&'a str>> {
-    items
-        .iter()
-        .map(|item| string_list_text(item, id))
-        .collect()
-}
-
-fn string_list_text<'a>(item: &'a Value, id: &str) -> DiagnosticResult<&'a str> {
-    item.as_str().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            "Expected string entries in array",
-            id,
-        )
-    })
-}
-
-fn status_list_texts<'a>(
-    items: &'a [Value],
-    text_key: &str,
-    id: &str,
-) -> DiagnosticResult<Vec<&'a str>> {
-    items
-        .iter()
-        .map(|item| status_list_text(item, text_key, id))
-        .collect()
 }
