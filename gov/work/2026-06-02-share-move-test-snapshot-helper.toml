@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-114"
+title = "Share move test snapshot helper"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Reduce repetition in move-command integration tests by sharing a local normalized snapshot assertion macro while keeping tests in tests/test_move.rs and preserving existing snapshot names. Remove redundant comments that restate test names without changing move-command behavior."
+
+[[content.acceptance_criteria]]
+text = "move-command integration tests share a local normalized snapshot assertion while preserving existing snapshot names"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "move-command tests remove comments that only restate test names"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "move tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"

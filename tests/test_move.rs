@@ -43,9 +43,20 @@ fn normalize_move_output(
     Ok(normalize_output(&output, dir, date)?)
 }
 
+macro_rules! assert_move_snapshot {
+    ($temp_dir:expr, $date:expr, $output:expr) => {{
+        let snapshot_name =
+            common::current_test_snapshot_name("test_move", insta::_function_name!());
+        let value = normalize_move_output($temp_dir.path(), $date, $output)?;
+        crate::with_test_snapshot_settings!({
+            insta::assert_snapshot!(snapshot_name, value);
+        });
+        Ok(())
+    }};
+}
+
 #[test]
 fn test_move_queue_to_active() -> common::TestResult {
-    // Move work item from queue to active
     let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
@@ -57,13 +68,11 @@ fn test_move_queue_to_active() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_active_to_done_with_criteria() -> common::TestResult {
-    // Move work item from active to done with acceptance criteria
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
@@ -85,13 +94,11 @@ fn test_move_active_to_done_with_criteria() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_to_done_without_criteria_fails() -> common::TestResult {
-    // Cannot move to done without acceptance criteria
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
@@ -102,26 +109,22 @@ fn test_move_to_done_without_criteria_fails() -> common::TestResult {
             &["work", "move", &work_id, "done"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_to_done_with_pending_criteria_fails() -> common::TestResult {
-    // Cannot move to done with pending acceptance criteria
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     setup_active_work_item_with_criteria(temp_dir.path(), &date, "Test task", "add: Task done")?;
 
     let output = run_commands(temp_dir.path(), &[&["work", "move", &work_id, "done"]])?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_active_to_cancelled() -> common::TestResult {
-    // Move work item from active to cancelled
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
@@ -133,13 +136,11 @@ fn test_move_active_to_cancelled() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_queue_to_cancelled() -> common::TestResult {
-    // Move work item from queue to cancelled (skip active)
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
@@ -151,13 +152,11 @@ fn test_move_queue_to_cancelled() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_by_work_item_id() -> common::TestResult {
-    // Can reference work item by ID instead of filename
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
@@ -169,26 +168,22 @@ fn test_move_by_work_item_id() -> common::TestResult {
             &["work", "list", "all"],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_nonexistent_work_item() -> common::TestResult {
-    // Cannot move non-existent work item
     let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
         &[&["work", "move", "WI-9999-99-999", "active"]],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_sets_started_date() -> common::TestResult {
-    // Moving to active sets started date if not already set
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
@@ -201,13 +196,11 @@ fn test_move_sets_started_date() -> common::TestResult {
             &["work", "show", &work_id],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
 
 #[test]
 fn test_move_sets_completed_date() -> common::TestResult {
-    // Moving to done/cancelled sets completed date
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
@@ -230,6 +223,5 @@ fn test_move_sets_completed_date() -> common::TestResult {
             &["work", "show", &work_id],
         ],
     )?;
-    insta::assert_snapshot!(normalize_move_output(temp_dir.path(), &date, &output)?);
-    Ok(())
+    assert_move_snapshot!(temp_dir, &date, &output)
 }
