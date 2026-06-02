@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_work_new_same_title_uses_filename_suffix() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -31,8 +30,7 @@ fn test_work_new_same_title_uses_filename_suffix() -> common::TestResult {
 
 #[test]
 fn test_work_new_author_hash_id_strategy_uses_shared_author_sequence() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let git_init = std::process::Command::new("git")
         .args(["init"])
@@ -93,8 +91,7 @@ fn test_work_new_author_hash_id_strategy_uses_shared_author_sequence() -> common
 
 #[test]
 fn test_work_new_random_id_strategy_uses_random_suffix() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     set_work_item_id_strategy(temp_dir.path(), "random")?;
     let output = run_commands(temp_dir.path(), &[&["work", "new", "Random ID"]])?;

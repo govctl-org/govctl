@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_adr_get_nested_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -35,8 +34,7 @@ fn test_adr_get_nested_path() -> common::TestResult {
 
 #[test]
 fn test_adr_set_nested_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -73,8 +71,7 @@ fn test_adr_set_nested_path() -> common::TestResult {
 
 #[test]
 fn test_adr_add_nested_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -101,8 +98,7 @@ fn test_adr_add_nested_path() -> common::TestResult {
 
 #[test]
 fn test_adr_nested_path_rejects_extra_segments() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -126,8 +122,7 @@ fn test_adr_nested_path_rejects_extra_segments() -> common::TestResult {
 
 #[test]
 fn test_adr_add_nested_path_rejects_indexed_terminal() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -151,8 +146,7 @@ fn test_adr_add_nested_path_rejects_indexed_terminal() -> common::TestResult {
 
 #[test]
 fn test_adr_get_nested_scalar_rejects_index() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -176,8 +170,7 @@ fn test_adr_get_nested_scalar_rejects_index() -> common::TestResult {
 
 #[test]
 fn test_adr_remove_nested_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -213,8 +206,7 @@ fn test_adr_remove_nested_path() -> common::TestResult {
 
 #[test]
 fn test_adr_remove_nested_path_requires_selector() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -238,8 +230,7 @@ fn test_adr_remove_nested_path_requires_selector() -> common::TestResult {
 
 #[test]
 fn test_remove_indexed_path_conflict() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),

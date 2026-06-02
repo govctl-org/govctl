@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_work_journal_field_surface_is_unavailable() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let wi_id = format!("WI-{date}-001");
     let output = run_commands(
@@ -52,8 +51,7 @@ fn test_work_journal_field_surface_is_unavailable() -> common::TestResult {
 
 #[test]
 fn test_work_new_omits_journal_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["work", "new", "Test Task"]])?;
     assert!(output.contains("Created work item"), "output: {output}");

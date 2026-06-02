@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_work_get_nested_scalar_rejects_index() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let wi_id = format!("WI-{}-001", date);
     let output = run_commands(
@@ -30,8 +29,7 @@ fn test_work_get_nested_scalar_rejects_index() -> common::TestResult {
 
 #[test]
 fn test_work_journal_legacy_entries_are_read_only() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let wi_id = format!("WI-{}-001", date);
     let work_path = temp_dir

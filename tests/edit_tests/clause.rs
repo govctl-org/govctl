@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_clause_set_text() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -39,8 +38,7 @@ fn test_clause_set_text() -> common::TestResult {
 
 #[test]
 fn test_clause_edit_text_canonical() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -73,8 +71,7 @@ fn test_clause_edit_text_canonical() -> common::TestResult {
 
 #[test]
 fn test_clause_set_title() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -100,8 +97,7 @@ fn test_clause_set_title() -> common::TestResult {
 
 #[test]
 fn test_clause_edit_title_canonical() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -193,8 +189,7 @@ fn test_clause_remove_anchor_by_index_canonical() -> common::TestResult {
 
 #[test]
 fn test_clause_get_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -251,8 +246,7 @@ fn test_clause_set_since_rejected() -> common::TestResult {
 
 #[test]
 fn test_clause_set_text_sugar() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -308,8 +302,7 @@ fn test_clause_set_status_rejected() -> common::TestResult {
 
 #[test]
 fn test_clause_edit_nonexistent() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),

@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_path_backward_compat() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),

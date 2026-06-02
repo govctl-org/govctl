@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_work_add_ref() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -25,8 +24,7 @@ fn test_work_add_ref() -> common::TestResult {
 
 #[test]
 fn test_work_depends_on_add_get_show_remove() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let dependency_id = format!("WI-{date}-001");
     let dependent_id = format!("WI-{date}-002");
 
@@ -102,8 +100,7 @@ fn test_work_depends_on_add_get_show_remove() -> common::TestResult {
 
 #[test]
 fn test_work_depends_on_rejects_invalid_unknown_and_cycle() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let first_id = format!("WI-{date}-001");
     let second_id = format!("WI-{date}-002");
     let third_id = format!("WI-{date}-003");

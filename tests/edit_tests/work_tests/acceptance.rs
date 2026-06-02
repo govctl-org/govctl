@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_work_add_acceptance_criteria() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -32,8 +31,7 @@ fn test_work_add_acceptance_criteria() -> common::TestResult {
 
 #[test]
 fn test_work_add_and_edit_acceptance_criteria_extras() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let work_id = format!("WI-{}-001", date);
 
     let output = run_commands(
@@ -82,8 +80,7 @@ fn test_work_add_and_edit_acceptance_criteria_extras() -> common::TestResult {
 
 #[test]
 fn test_work_tick_acceptance_criteria() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -121,8 +118,7 @@ fn test_work_tick_acceptance_criteria() -> common::TestResult {
 
 #[test]
 fn test_work_edit_tick_indexed_path_canonical() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let wi_id = format!("WI-{}-001", date);
 
     let commands = vec![
@@ -172,8 +168,7 @@ fn test_work_edit_tick_indexed_path_canonical() -> common::TestResult {
 
 #[test]
 fn test_work_tick_cancel_acceptance_criteria() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -204,8 +199,7 @@ fn test_work_tick_cancel_acceptance_criteria() -> common::TestResult {
 
 #[test]
 fn test_work_remove_acceptance_criteria() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
