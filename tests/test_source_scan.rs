@@ -5,7 +5,6 @@ mod common;
 use common::{init_project_with_date, normalize_output, run_commands};
 use std::fs;
 
-/// Test: Source code scanning detects valid and invalid [[RFC-XXX:C-XXX]] references
 #[test]
 fn test_source_scan_detects_refs() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
@@ -79,6 +78,7 @@ fn main() {
     )?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    let normalized = normalize_output(&output, temp_dir.path(), &date)?;
+    crate::assert_current_test_snapshot!("test_source_scan", normalized);
     Ok(())
 }

@@ -4,7 +4,6 @@ mod common;
 
 use common::{init_project_with_date, normalize_output, run_commands};
 
-/// Test: RFC amendment tracking with signature-based detection
 #[test]
 fn test_rfc_amendment_tracking() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
@@ -83,6 +82,7 @@ fn test_rfc_amendment_tracking() -> common::TestResult {
     )?;
 
     let combined = format!("{}{}{}{}{}", setup, baseline, edit, amended, released);
-    insta::assert_snapshot!(normalize_output(&combined, temp_dir.path(), &date)?);
+    let normalized = normalize_output(&combined, temp_dir.path(), &date)?;
+    crate::assert_current_test_snapshot!("test_rfc_lifecycle", normalized);
     Ok(())
 }
