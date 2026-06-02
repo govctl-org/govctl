@@ -1,4 +1,4 @@
-use super::{expand_inline_refs, render_refs, write_rendered_md};
+use super::{render_refs, write_expanded_rendered_md};
 use crate::config::Config;
 use crate::diagnostic::DiagnosticResult;
 use crate::model::{AdrEntry, AlternativeStatus};
@@ -108,9 +108,6 @@ pub fn write_adr_md(config: &Config, adr: &AdrEntry, dry_run: bool) -> Diagnosti
     let meta = adr.meta();
     let output_path = config.adr_output().join(format!("{}.md", meta.id));
 
-    // Render and expand inline references (per ADR-0011)
     let raw = render_adr(adr)?;
-    let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-
-    write_rendered_md(config, &output_path, &expanded, dry_run, 15)
+    write_expanded_rendered_md(config, &output_path, &raw, dry_run, 15)
 }

@@ -18,7 +18,7 @@ mod work;
 pub use adr::{render_adr, write_adr_md};
 pub use links::expand_inline_refs;
 use links::render_refs;
-use output::write_rendered_md;
+use output::write_expanded_rendered_md;
 pub use rfc::{render_clause, render_rfc, write_rfc};
 pub use work::{render_work_item, write_work_item_md};
 

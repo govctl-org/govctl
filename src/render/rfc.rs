@@ -1,4 +1,4 @@
-use super::{expand_inline_refs, render_refs, write_rendered_md};
+use super::{render_refs, write_expanded_rendered_md};
 use crate::config::Config;
 use crate::diagnostic::DiagnosticResult;
 use crate::model::{ClauseEntry, ClauseKind, ClauseStatus, RfcIndex};
@@ -162,9 +162,6 @@ pub fn render_clause(out: &mut String, rfc_id: &str, clause: &ClauseEntry) {
 pub fn write_rfc(config: &Config, rfc: &RfcIndex, dry_run: bool) -> DiagnosticResult<()> {
     let output_path = config.rfc_output().join(format!("{}.md", rfc.rfc.rfc_id));
 
-    // Render and expand inline references (per ADR-0011)
     let raw = render_rfc(rfc)?;
-    let expanded = expand_inline_refs(&raw, &config.source_scan.pattern);
-
-    write_rendered_md(config, &output_path, &expanded, dry_run, 20)
+    write_expanded_rendered_md(config, &output_path, &raw, dry_run, 20)
 }

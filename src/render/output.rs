@@ -2,6 +2,9 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::ui;
 use std::io::Write;
+use std::path::Path;
+
+use super::expand_inline_refs;
 
 /// Write rendered markdown to file with common formatting.
 ///
@@ -51,4 +54,15 @@ pub(super) fn write_rendered_md(
     }
 
     Ok(())
+}
+
+pub(super) fn write_expanded_rendered_md(
+    config: &Config,
+    output_path: &Path,
+    raw_markdown: &str,
+    dry_run: bool,
+    preview_lines: usize,
+) -> DiagnosticResult<()> {
+    let expanded = expand_inline_refs(raw_markdown, &config.source_scan.pattern);
+    write_rendered_md(config, output_path, &expanded, dry_run, preview_lines)
 }
