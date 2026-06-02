@@ -1,21 +1,74 @@
 use super::*;
 
+const REFS: &str = "refs";
+const DEPENDS_ON: &str = "depends_on";
+
+fn work_id(date: &str, sequence: u16) -> String {
+    format!("WI-{date}-{sequence:03}")
+}
+
+fn command(args: &[&str]) -> Vec<String> {
+    args.iter().map(|arg| (*arg).to_string()).collect()
+}
+
+fn work_new(title: &str) -> Vec<String> {
+    command(&["work", "new", title])
+}
+
+fn work_add_field(id: &str, field: &str, value: &str) -> Vec<String> {
+    command(&["work", "add", id, field, value])
+}
+
+fn work_get_field(id: &str, field: &str) -> Vec<String> {
+    command(&["work", "get", id, field])
+}
+
+fn work_show(id: &str) -> Vec<String> {
+    command(&["work", "show", id])
+}
+
+fn work_remove_field(id: &str, field: &str, value: &str) -> Vec<String> {
+    command(&["work", "remove", id, field, value])
+}
+
+fn work_add_ref(id: &str, target: &str) -> Vec<String> {
+    work_add_field(id, REFS, target)
+}
+
+fn work_add_dependency(id: &str, dependency: &str) -> Vec<String> {
+    work_add_field(id, DEPENDS_ON, dependency)
+}
+
+fn work_get_dependencies(id: &str) -> Vec<String> {
+    work_get_field(id, DEPENDS_ON)
+}
+
+fn work_remove_dependency(id: &str, dependency: &str) -> Vec<String> {
+    work_remove_field(id, DEPENDS_ON, dependency)
+}
+
+fn work_edit_dependency_index(id: &str, index: usize, dependency: &str) -> Vec<String> {
+    vec![
+        "work".to_string(),
+        "edit".to_string(),
+        id.to_string(),
+        format!("{DEPENDS_ON}[{index}]"),
+        "--set".to_string(),
+        dependency.to_string(),
+    ]
+}
+
 #[test]
 fn test_work_add_ref() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    let id = work_id(&date, 1);
 
-    let output = run_commands(
+    let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            &["work", "new", "Test Task"],
-            &[
-                "work",
-                "add",
-                &format!("WI-{}-001", date),
-                "refs",
-                "RFC-0001",
-            ],
-            &["work", "get", &format!("WI-{}-001", date), "refs"],
+            work_new("Test Task"),
+            work_add_ref(&id, "RFC-0001"),
+            work_get_field(&id, REFS),
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -25,50 +78,19 @@ fn test_work_add_ref() -> common::TestResult {
 #[test]
 fn test_work_depends_on_add_get_show_remove() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
-    let dependency_id = format!("WI-{date}-001");
-    let dependent_id = format!("WI-{date}-002");
+    let dependency_id = work_id(&date, 1);
+    let dependent_id = work_id(&date, 2);
 
     let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec![
-                "work".to_string(),
-                "new".to_string(),
-                "Dependency Task".to_string(),
-            ],
-            vec![
-                "work".to_string(),
-                "new".to_string(),
-                "Dependent Task".to_string(),
-            ],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                dependent_id.clone(),
-                "refs".to_string(),
-                "RFC-0001".to_string(),
-            ],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                dependent_id.clone(),
-                "depends_on".to_string(),
-                dependency_id.clone(),
-            ],
-            vec![
-                "work".to_string(),
-                "get".to_string(),
-                dependent_id.clone(),
-                "depends_on".to_string(),
-            ],
-            vec!["work".to_string(), "show".to_string(), dependent_id.clone()],
-            vec![
-                "work".to_string(),
-                "remove".to_string(),
-                dependent_id.clone(),
-                "depends_on".to_string(),
-                dependency_id.clone(),
-            ],
+            work_new("Dependency Task"),
+            work_new("Dependent Task"),
+            work_add_ref(&dependent_id, "RFC-0001"),
+            work_add_dependency(&dependent_id, &dependency_id),
+            work_get_dependencies(&dependent_id),
+            work_show(&dependent_id),
+            work_remove_dependency(&dependent_id, &dependency_id),
         ],
     )?;
 
@@ -101,66 +123,24 @@ fn test_work_depends_on_add_get_show_remove() -> common::TestResult {
 #[test]
 fn test_work_depends_on_rejects_invalid_unknown_and_cycle() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
-    let first_id = format!("WI-{date}-001");
-    let second_id = format!("WI-{date}-002");
-    let third_id = format!("WI-{date}-003");
+    let first_id = work_id(&date, 1);
+    let second_id = work_id(&date, 2);
+    let third_id = work_id(&date, 3);
     let unknown_id = format!("WI-{date}-999");
 
     let output = common::run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".to_string(), "new".to_string(), "First".to_string()],
-            vec!["work".to_string(), "new".to_string(), "Second".to_string()],
-            vec!["work".to_string(), "new".to_string(), "Third".to_string()],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                second_id.clone(),
-                "depends_on".to_string(),
-                "RFC-0001".to_string(),
-            ],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                second_id.clone(),
-                "depends_on".to_string(),
-                unknown_id.clone(),
-            ],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                second_id.clone(),
-                "depends_on".to_string(),
-                first_id.clone(),
-            ],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                first_id.clone(),
-                "depends_on".to_string(),
-                second_id.clone(),
-            ],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                first_id.clone(),
-                "depends_on".to_string(),
-                third_id.clone(),
-            ],
-            vec![
-                "work".to_string(),
-                "edit".to_string(),
-                first_id.clone(),
-                "depends_on[0]".to_string(),
-                "--set".to_string(),
-                second_id.clone(),
-            ],
-            vec![
-                "work".to_string(),
-                "get".to_string(),
-                first_id.clone(),
-                "depends_on".to_string(),
-            ],
+            work_new("First"),
+            work_new("Second"),
+            work_new("Third"),
+            work_add_dependency(&second_id, "RFC-0001"),
+            work_add_dependency(&second_id, &unknown_id),
+            work_add_dependency(&second_id, &first_id),
+            work_add_dependency(&first_id, &second_id),
+            work_add_dependency(&first_id, &third_id),
+            work_edit_dependency_index(&first_id, 0, &second_id),
+            work_get_dependencies(&first_id),
         ],
     )?;
 
