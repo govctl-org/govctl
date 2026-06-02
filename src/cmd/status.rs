@@ -14,6 +14,24 @@ struct StatusPrinter {
     colors: bool,
 }
 
+struct StatusRow<K> {
+    label: &'static str,
+    key: K,
+}
+
+impl<K> StatusRow<K> {
+    fn new(label: &'static str, key: K) -> Self {
+        Self { label, key }
+    }
+}
+
+struct StatusSection<'a, K> {
+    title: &'static str,
+    counts: &'a HashMap<K, usize>,
+    rows: &'a [StatusRow<K>],
+    total: usize,
+}
+
 impl StatusPrinter {
     fn new() -> Self {
         Self {
@@ -63,12 +81,30 @@ impl StatusPrinter {
         }
     }
 
-    fn status_breakdown<K>(&self, counts: &HashMap<K, usize>, rows: &[(&str, K, &str)])
+    fn status_section<K>(&self, section: StatusSection<'_, K>)
     where
         K: Copy + Eq + Hash,
     {
-        for &(label, key, semantic) in rows {
-            self.status_line(label, count_for(counts, key), semantic);
+        self.status_section_with_extra(section, |_| {});
+    }
+
+    fn status_section_with_extra<K, Extra>(&self, section: StatusSection<'_, K>, extra: Extra)
+    where
+        K: Copy + Eq + Hash,
+        Extra: FnOnce(&Self),
+    {
+        self.section_header(section.title);
+        self.status_breakdown(section.counts, section.rows);
+        extra(self);
+        self.total_line(section.total);
+    }
+
+    fn status_breakdown<K>(&self, counts: &HashMap<K, usize>, rows: &[StatusRow<K>])
+    where
+        K: Copy + Eq + Hash,
+    {
+        for row in rows {
+            self.status_line(row.label, count_for(counts, row.key), row.label);
         }
     }
 
@@ -149,73 +185,63 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
 
     printer.title();
 
-    // RFC summary
-    printer.section_header("RFCs");
-
     let by_status = count_by(&index.rfcs, |rfc| rfc.rfc.status);
     let by_phase = count_by(&index.rfcs, |rfc| rfc.rfc.phase);
-
-    printer.status_breakdown(
-        &by_status,
-        &[
-            ("draft", RfcStatus::Draft, "draft"),
-            ("normative", RfcStatus::Normative, "normative"),
-            ("deprecated", RfcStatus::Deprecated, "deprecated"),
-        ],
-    );
-
-    // Show phase breakdown for non-stable RFCs
     let spec = count_for(&by_phase, RfcPhase::Spec);
     let impl_phase = count_for(&by_phase, RfcPhase::Impl);
     let test = count_for(&by_phase, RfcPhase::Test);
     let stable = count_for(&by_phase, RfcPhase::Stable);
 
-    printer.phase_breakdown(spec, impl_phase, test, stable);
-
-    printer.total_line(index.rfcs.len());
-
-    // Clause summary
-    printer.section_header("Clauses");
+    printer.status_section_with_extra(
+        StatusSection {
+            title: "RFCs",
+            counts: &by_status,
+            rows: &[
+                StatusRow::new("draft", RfcStatus::Draft),
+                StatusRow::new("normative", RfcStatus::Normative),
+                StatusRow::new("deprecated", RfcStatus::Deprecated),
+            ],
+            total: index.rfcs.len(),
+        },
+        |printer| printer.phase_breakdown(spec, impl_phase, test, stable),
+    );
 
     let clause_by_status = count_by(index.iter_clauses(), |(_, clause)| clause.spec.status);
-    printer.status_breakdown(
-        &clause_by_status,
-        &[
-            ("active", ClauseStatus::Active, "active"),
-            ("deprecated", ClauseStatus::Deprecated, "deprecated"),
-            ("superseded", ClauseStatus::Superseded, "superseded"),
+    printer.status_section(StatusSection {
+        title: "Clauses",
+        counts: &clause_by_status,
+        rows: &[
+            StatusRow::new("active", ClauseStatus::Active),
+            StatusRow::new("deprecated", ClauseStatus::Deprecated),
+            StatusRow::new("superseded", ClauseStatus::Superseded),
         ],
-    );
-    printer.total_line(total_count(&clause_by_status));
-
-    // ADR summary
-    printer.section_header("ADRs");
+        total: total_count(&clause_by_status),
+    });
 
     let adr_by_status = count_by(&index.adrs, |adr| adr.meta().status);
-    printer.status_breakdown(
-        &adr_by_status,
-        &[
-            ("proposed", AdrStatus::Proposed, "proposed"),
-            ("accepted", AdrStatus::Accepted, "accepted"),
-            ("superseded", AdrStatus::Superseded, "superseded"),
+    printer.status_section(StatusSection {
+        title: "ADRs",
+        counts: &adr_by_status,
+        rows: &[
+            StatusRow::new("proposed", AdrStatus::Proposed),
+            StatusRow::new("accepted", AdrStatus::Accepted),
+            StatusRow::new("superseded", AdrStatus::Superseded),
         ],
-    );
-    printer.total_line(index.adrs.len());
-
-    // Work Item summary
-    printer.section_header("Work Items");
+        total: index.adrs.len(),
+    });
 
     let work_by_status = count_by(&index.work_items, |item| item.meta().status);
-    printer.status_breakdown(
-        &work_by_status,
-        &[
-            ("queue", WorkItemStatus::Queue, "queue"),
-            ("active", WorkItemStatus::Active, "active"),
-            ("done", WorkItemStatus::Done, "done"),
-            ("cancelled", WorkItemStatus::Cancelled, "cancelled"),
+    printer.status_section(StatusSection {
+        title: "Work Items",
+        counts: &work_by_status,
+        rows: &[
+            StatusRow::new("queue", WorkItemStatus::Queue),
+            StatusRow::new("active", WorkItemStatus::Active),
+            StatusRow::new("done", WorkItemStatus::Done),
+            StatusRow::new("cancelled", WorkItemStatus::Cancelled),
         ],
-    );
-    printer.total_line(index.work_items.len());
+        total: index.work_items.len(),
+    });
 
     // Show active work items if any
     let active_items: Vec<_> = index
