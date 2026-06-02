@@ -40,53 +40,54 @@ fn write_main_rs(dir: &Path, contents: impl AsRef<str>) -> Result<(), Box<dyn st
     Ok(())
 }
 
+fn create_normative_rfc(dir: &Path, id: &str, title: &str) -> common::TestResult {
+    run_commands(
+        dir,
+        &[
+            &["rfc", "new", title],
+            &["rfc", "finalize", id, "normative"],
+        ],
+    )?;
+    Ok(())
+}
+
+macro_rules! assert_scan_check_snapshot {
+    ($temp_dir:expr, $date:expr) => {{
+        let snapshot_name =
+            common::current_test_snapshot_name("test_scan", insta::_function_name!());
+        let value = run_normalized_commands($temp_dir.path(), $date, &[&["check"]])?;
+        crate::with_test_snapshot_settings!({
+            insta::assert_snapshot!(snapshot_name, value);
+        });
+        Ok(())
+    }};
+}
+
 #[test]
 fn test_scan_no_references() -> common::TestResult {
-    // project with no source files should scan successfully
     let (temp_dir, date) = init_source_scan_project()?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_valid_rfc_reference() -> common::TestResult {
-    // source file with valid RFC reference should pass
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create an RFC
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &["rfc", "finalize", "RFC-0001", "normative"],
-        ],
-    )?;
+    create_normative_rfc(temp_dir.path(), "RFC-0001", "Test RFC")?;
 
-    // Create a source file with a reference to the RFC
     write_main_rs(
         temp_dir.path(),
         "// Implements [[RFC-0001]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_valid_clause_reference() -> common::TestResult {
-    // source file with valid clause reference should pass
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create an RFC with a clause
     run_commands(
         temp_dir.path(),
         &[
@@ -105,102 +106,62 @@ fn test_scan_valid_clause_reference() -> common::TestResult {
         ],
     )?;
 
-    // Create a source file with a reference to the clause
     write_main_rs(
         temp_dir.path(),
         "// Implements [[RFC-0001:C-TEST]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_unknown_rfc_reference() -> common::TestResult {
-    // source file with unknown RFC reference should error
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create a source file with a reference to non-existent RFC
     write_main_rs(
         temp_dir.path(),
         "// Implements [[RFC-9999]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_unknown_clause_reference() -> common::TestResult {
-    // source file with unknown clause reference should error
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create an RFC but no clause
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &["rfc", "finalize", "RFC-0001", "normative"],
-        ],
-    )?;
+    create_normative_rfc(temp_dir.path(), "RFC-0001", "Test RFC")?;
 
-    // Create a source file with a reference to non-existent clause
     write_main_rs(
         temp_dir.path(),
         "// Implements [[RFC-0001:C-NONEXISTENT]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_deprecated_rfc_reference() -> common::TestResult {
-    // source file with deprecated RFC reference should warn
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create and deprecate an RFC
+    create_normative_rfc(temp_dir.path(), "RFC-0001", "Old RFC")?;
     run_commands(
         temp_dir.path(),
-        &[
-            &["rfc", "new", "Old RFC"],
-            &["rfc", "finalize", "RFC-0001", "normative"],
-            &["rfc", "deprecate", "RFC-0001", "--force"],
-        ],
+        &[&["rfc", "deprecate", "RFC-0001", "--force"]],
     )?;
 
-    // Create a source file with a reference to deprecated RFC
     write_main_rs(
         temp_dir.path(),
         "// Implements [[RFC-0001]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_valid_adr_reference() -> common::TestResult {
-    // source file with valid ADR reference should pass
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create an ADR
     run_commands(
         temp_dir.path(),
         &[
@@ -209,26 +170,17 @@ fn test_scan_valid_adr_reference() -> common::TestResult {
         ],
     )?;
 
-    // Create a source file with a reference to the ADR
     write_main_rs(temp_dir.path(), "// Follows [[ADR-0001]]\nfn main() {}\n")?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_valid_work_item_reference() -> common::TestResult {
-    // source file with valid work item reference should pass
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create a work item
     run_commands(temp_dir.path(), &[&["work", "new", "Test task"]])?;
 
-    // Get the work item ID from the output
     let wi_output = run_commands(temp_dir.path(), &[&["work", "list", "all"]])?;
     let wi_id = regex::Regex::new(r"WI-\d{4}-\d{2}-\d{2}-\d{3}")?
         .find(&wi_output)
@@ -236,74 +188,39 @@ fn test_scan_valid_work_item_reference() -> common::TestResult {
         .as_str()
         .to_string();
 
-    // Create a source file with a reference to the work item
     write_main_rs(
         temp_dir.path(),
         format!("// Implements [[{}]]\nfn main() {{}}\n", wi_id),
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_multiple_references_in_file() -> common::TestResult {
-    // source file with multiple references should check all
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create RFCs
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "RFC One"],
-            &["rfc", "finalize", "RFC-0001", "normative"],
-            &["rfc", "new", "RFC Two"],
-            &["rfc", "finalize", "RFC-0002", "normative"],
-        ],
-    )?;
+    create_normative_rfc(temp_dir.path(), "RFC-0001", "RFC One")?;
+    create_normative_rfc(temp_dir.path(), "RFC-0002", "RFC Two")?;
 
-    // Create a source file with multiple references
     write_main_rs(
         temp_dir.path(),
         "// Implements [[RFC-0001]] and [[RFC-0002]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }
 
 #[test]
 fn test_scan_mixed_valid_invalid_references() -> common::TestResult {
-    // source file with mixed valid/invalid references should report errors
     let (temp_dir, date) = init_source_scan_project()?;
 
-    // Create one RFC
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Valid RFC"],
-            &["rfc", "finalize", "RFC-0001", "normative"],
-        ],
-    )?;
+    create_normative_rfc(temp_dir.path(), "RFC-0001", "Valid RFC")?;
 
-    // Create a source file with valid and invalid references
     write_main_rs(
         temp_dir.path(),
         "// Implements [[RFC-0001]] and [[RFC-9999]]\nfn main() {}\n",
     )?;
 
-    insta::assert_snapshot!(run_normalized_commands(
-        temp_dir.path(),
-        &date,
-        &[&["check"]]
-    )?);
-    Ok(())
+    assert_scan_check_snapshot!(temp_dir, &date)
 }

@@ -143,5 +143,3 @@ fn build_glob_set(patterns: &[String], label: &str) -> Result<GlobSet, Diagnosti
         )
     })
 }
-
-// Tests moved to tests/cli_snapshots.rs using fixtures/source_scan
