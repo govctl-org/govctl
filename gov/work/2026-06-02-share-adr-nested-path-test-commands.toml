@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-142"
+title = "Share ADR nested path test commands"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+refs = ["ADR-0029"]
+
+[content]
+description = "Extract local command helpers in ADR nested path edit tests to remove repeated ADR-0001, alternatives, and nested path command construction while preserving the test scenarios and snapshots."
+
+[[content.acceptance_criteria]]
+text = "ADR nested path tests use local command helpers for repeated ADR setup and nested path commands"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing ADR nested path scenarios and snapshots remain intact"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused edit tests and project checks pass"
+status = "done"
+category = "chore"
