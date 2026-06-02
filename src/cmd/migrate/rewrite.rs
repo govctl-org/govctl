@@ -51,6 +51,17 @@ fn rewrite_toml(content: &str, schema: ArtifactSchema) -> String {
     }
 }
 
+fn rewrite_file_op(path: &Path, schema: ArtifactSchema) -> Option<FileOp> {
+    let content = fs::read_to_string(path).ok()?;
+    if !needs_rewrite(&content) {
+        return None;
+    }
+    Some(FileOp::Write {
+        path: path.to_path_buf(),
+        content: rewrite_toml(&content, schema),
+    })
+}
+
 /// Collect TOML files in a directory that need rewriting.
 fn collect_rewrites(dir: &Path, schema: ArtifactSchema) -> Vec<FileOp> {
     let Ok(entries) = fs::read_dir(dir) else {
@@ -62,10 +73,8 @@ fn collect_rewrites(dir: &Path, schema: ArtifactSchema) -> Vec<FileOp> {
         if path.extension().and_then(|e| e.to_str()) != Some("toml") {
             continue;
         }
-        if let Ok(content) = fs::read_to_string(&path)
-            && needs_rewrite(&content)
-        {
-            ops.push((path, rewrite_toml(&content, schema)));
+        if let Some(FileOp::Write { path, content }) = rewrite_file_op(&path, schema) {
+            ops.push((path, content));
         }
     }
     ops.sort_by(|a, b| a.0.cmp(&b.0));
@@ -110,14 +119,8 @@ pub(super) fn plan_toml_rewrites(
                 continue;
             }
             let rfc_toml = dir.join("rfc.toml");
-            if rfc_toml.exists()
-                && let Ok(content) = fs::read_to_string(&rfc_toml)
-                && needs_rewrite(&content)
-            {
-                ops.push(FileOp::Write {
-                    path: rfc_toml,
-                    content: rewrite_toml(&content, ArtifactSchema::Rfc),
-                });
+            if let Some(op) = rewrite_file_op(&rfc_toml, ArtifactSchema::Rfc) {
+                ops.push(op);
             }
             ops.extend(collect_rewrites(
                 &dir.join("clauses"),
@@ -128,14 +131,8 @@ pub(super) fn plan_toml_rewrites(
 
     if !skip_releases {
         let releases_path = config.releases_path();
-        if releases_path.exists()
-            && let Ok(content) = fs::read_to_string(&releases_path)
-            && needs_rewrite(&content)
-        {
-            ops.push(FileOp::Write {
-                path: releases_path,
-                content: rewrite_toml(&content, ArtifactSchema::Release),
-            });
+        if let Some(op) = rewrite_file_op(&releases_path, ArtifactSchema::Release) {
+            ops.push(op);
         }
     }
 
