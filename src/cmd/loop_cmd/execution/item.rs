@@ -1,6 +1,7 @@
+use super::super::state::loop_item_state;
 use crate::cmd::work_lookup::load_work_item_by_id;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::loop_state::{LoopRoundRecord, LoopState, LoopWorkItemStatus, write_loop_round_record};
 use crate::model::{ChecklistStatus, WorkItemEntry, WorkItemStatus};
 use crate::write::WriteOp;
@@ -45,17 +46,7 @@ pub(super) fn execute_work_item_round(
     }
 
     state.set_item_status(work_id, LoopWorkItemStatus::Active)?;
-    let current_rounds = state
-        .items
-        .get(work_id)
-        .map(|item| item.round_count)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1201LoopStateInvalid,
-                format!("missing item state for work item: {work_id}"),
-                state.loop_meta.id.clone(),
-            )
-        })?;
+    let current_rounds = loop_item_state(state, work_id)?.round_count;
     if current_rounds >= max_rounds {
         state.set_item_status(work_id, LoopWorkItemStatus::Failed)?;
         return Ok(Some(format!(
@@ -150,17 +141,7 @@ fn acceptance_criteria_satisfied(entry: &WorkItemEntry) -> bool {
 }
 
 fn loop_item_status_string(state: &LoopState, work_id: &str) -> DiagnosticResult<String> {
-    state
-        .items
-        .get(work_id)
-        .map(|item| item.status.as_str().to_string())
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1201LoopStateInvalid,
-                format!("missing item state for work item: {work_id}"),
-                state.loop_meta.id.clone(),
-            )
-        })
+    Ok(loop_item_state(state, work_id)?.status.as_str().to_string())
 }
 
 fn work_item_status_string(status: WorkItemStatus) -> String {

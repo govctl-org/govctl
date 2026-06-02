@@ -1,8 +1,8 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_state::{
-    LoopLifecycleState, LoopState, load_loop_state, loop_state_path, loop_state_root,
-    validate_loop_id,
+    LoopItemState, LoopLifecycleState, LoopState, load_loop_state, loop_state_path,
+    loop_state_root, validate_loop_id,
 };
 use std::collections::BTreeSet;
 
@@ -130,6 +130,37 @@ pub(super) fn ensure_same_work_set(state: &LoopState, work: &[String]) -> Diagno
             state.loop_meta.id.clone(),
         ))
     }
+}
+
+pub(super) fn loop_dependencies<'a>(
+    state: &'a LoopState,
+    work_id: &str,
+    subject: &str,
+) -> DiagnosticResult<&'a [String]> {
+    state
+        .dependencies
+        .get(work_id)
+        .map(Vec::as_slice)
+        .ok_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E1201LoopStateInvalid,
+                format!("missing dependency entry for {subject}: {work_id}"),
+                state.loop_meta.id.clone(),
+            )
+        })
+}
+
+pub(super) fn loop_item_state<'a>(
+    state: &'a LoopState,
+    work_id: &str,
+) -> DiagnosticResult<&'a LoopItemState> {
+    state.items.get(work_id).ok_or_else(|| {
+        Diagnostic::new(
+            DiagnosticCode::E1201LoopStateInvalid,
+            format!("missing item state for work item: {work_id}"),
+            state.loop_meta.id.clone(),
+        )
+    })
 }
 
 pub(super) fn generated_loop_id(config: &Config) -> DiagnosticResult<String> {

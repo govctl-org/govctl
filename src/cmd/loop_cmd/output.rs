@@ -1,6 +1,7 @@
+use super::state::loop_item_state;
 use crate::OutputFormat;
 use crate::cmd::output::print_json_array;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::DiagnosticResult;
 use crate::loop_planner::topological_order_for_state;
 use crate::loop_state::LoopState;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table, presets::UTF8_FULL};
@@ -85,13 +86,7 @@ pub(super) fn print_loop(verb: &str, state: &LoopState) -> DiagnosticResult<()> 
     println!("Resolved: {} work item(s)", state.loop_meta.resolved.len());
     println!("Plan:");
     for (index, work_id) in topological_order_for_state(state)?.iter().enumerate() {
-        let item = state.items.get(work_id).ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1201LoopStateInvalid,
-                format!("missing item state for work item: {work_id}"),
-                state.loop_meta.id.clone(),
-            )
-        })?;
+        let item = loop_item_state(state, work_id)?;
         let deps = state
             .dependencies
             .get(work_id)

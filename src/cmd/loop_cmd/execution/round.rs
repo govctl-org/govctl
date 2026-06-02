@@ -1,6 +1,7 @@
+use super::super::state::loop_dependencies;
 use super::item::execute_work_item_round;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::DiagnosticResult;
 use crate::loop_planner::{propagate_blocked_outcomes, topological_order_for_state};
 use crate::loop_state::{
     LoopLifecycleState, LoopState, LoopWorkItemStatus, write_loop_state_with_op,
@@ -63,13 +64,7 @@ fn collect_target_with_dependencies(
     if !selected.insert(work_id.to_string()) {
         return Ok(());
     }
-    let dependencies = state.dependencies.get(work_id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E1201LoopStateInvalid,
-            format!("missing dependency entry for selected work item: {work_id}"),
-            state.loop_meta.id.clone(),
-        )
-    })?;
+    let dependencies = loop_dependencies(state, work_id, "selected work item")?;
     for dependency in dependencies {
         collect_target_with_dependencies(state, dependency, selected)?;
     }
@@ -111,13 +106,7 @@ enum DependencyReadiness {
 }
 
 fn dependency_readiness(state: &LoopState, work_id: &str) -> DiagnosticResult<DependencyReadiness> {
-    let dependencies = state.dependencies.get(work_id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E1201LoopStateInvalid,
-            format!("missing dependency entry for work item: {work_id}"),
-            state.loop_meta.id.clone(),
-        )
-    })?;
+    let dependencies = loop_dependencies(state, work_id, "work item")?;
     if dependencies.iter().any(|dependency| {
         matches!(
             state.items[dependency.as_str()].status,
