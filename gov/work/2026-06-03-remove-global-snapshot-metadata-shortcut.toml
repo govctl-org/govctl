@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-03-006"
+title = "Remove global snapshot metadata shortcut"
+status = "done"
+created = "2026-06-03"
+started = "2026-06-03"
+completed = "2026-06-03"
+
+[content]
+description = "Remove the global insta omit_expression shortcut from shared integration snapshot settings so snapshot metadata is not suppressed to hide helper-induced call-site churn. Keep this as test infrastructure cleanup only: do not edit snapshot files or change command behavior."
+
+[[content.acceptance_criteria]]
+text = "focused snapshot tests, clippy, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "shared integration snapshot settings no longer suppress expression metadata globally"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "no snapshot files are edited for this shortcut removal"
+status = "done"
+category = "chore"

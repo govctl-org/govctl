@@ -34,8 +34,7 @@ macro_rules! with_test_snapshot_settings {
     ($body:block) => {{
         insta::with_settings!({
             snapshot_path => $crate::common::snapshot_path(),
-            prepend_module_to_snapshot => false,
-            omit_expression => true
+            prepend_module_to_snapshot => false
         }, $body);
     }};
 }
