@@ -11,7 +11,7 @@ mod test_support;
 
 use super::app::{App, View};
 use crate::theme::{phase_semantic, status_semantic};
-use components::DetailViewport;
+use detail::DetailViewport;
 use ratatui::{
     prelude::*,
     symbols::border,

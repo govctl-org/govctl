@@ -4,6 +4,15 @@ use super::*;
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
 
 #[test]
+fn detail_viewport_footer_status_clamps_scroll() {
+    let viewport = DetailViewport::new(4);
+    let mut scroll = 8;
+
+    assert_eq!(viewport.footer_status(&mut scroll), "Scroll 4/4");
+    assert_eq!(scroll, 3);
+}
+
+#[test]
 fn detail_renderers_draw_expected_content() -> Result<(), Box<dyn std::error::Error>> {
     let rendered = render_detail(View::RfcDetail(0), |frame, app, area| {
         draw_rfc(frame, app, area, 0);
