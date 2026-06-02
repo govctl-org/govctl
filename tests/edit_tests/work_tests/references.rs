@@ -3,59 +3,17 @@ use super::*;
 const REFS: &str = "refs";
 const DEPENDS_ON: &str = "depends_on";
 
-fn work_id(date: &str, sequence: u16) -> String {
-    format!("WI-{date}-{sequence:03}")
-}
-
-fn command(args: &[&str]) -> Vec<String> {
-    args.iter().map(|arg| (*arg).to_string()).collect()
-}
-
-fn work_new(title: &str) -> Vec<String> {
-    command(&["work", "new", title])
-}
-
-fn work_add_field(id: &str, field: &str, value: &str) -> Vec<String> {
-    command(&["work", "add", id, field, value])
-}
-
-fn work_get_field(id: &str, field: &str) -> Vec<String> {
-    command(&["work", "get", id, field])
-}
-
-fn work_show(id: &str) -> Vec<String> {
-    command(&["work", "show", id])
-}
-
-fn work_remove_field(id: &str, field: &str, value: &str) -> Vec<String> {
-    command(&["work", "remove", id, field, value])
-}
-
 fn work_add_ref(id: &str, target: &str) -> Vec<String> {
     work_add_field(id, REFS, target)
-}
-
-fn work_add_dependency(id: &str, dependency: &str) -> Vec<String> {
-    work_add_field(id, DEPENDS_ON, dependency)
 }
 
 fn work_get_dependencies(id: &str) -> Vec<String> {
     work_get_field(id, DEPENDS_ON)
 }
 
-fn work_remove_dependency(id: &str, dependency: &str) -> Vec<String> {
-    work_remove_field(id, DEPENDS_ON, dependency)
-}
-
 fn work_edit_dependency_index(id: &str, index: usize, dependency: &str) -> Vec<String> {
-    vec![
-        "work".to_string(),
-        "edit".to_string(),
-        id.to_string(),
-        format!("{DEPENDS_ON}[{index}]"),
-        "--set".to_string(),
-        dependency.to_string(),
-    ]
+    let field = format!("{DEPENDS_ON}[{index}]");
+    command(&["work", "edit", id, &field, "--set", dependency])
 }
 
 #[test]

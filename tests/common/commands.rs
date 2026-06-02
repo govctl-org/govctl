@@ -16,11 +16,35 @@ pub fn work_new_active(title: &str) -> Vec<String> {
     cmd
 }
 
-pub fn work_add_acceptance(work_id: &str, text: &str) -> Vec<String> {
-    command(&["work", "add", work_id, "acceptance_criteria", text])
+pub fn work_show(work_id: &str) -> Vec<String> {
+    command(&["work", "show", work_id])
 }
 
-pub fn work_tick_acceptance_done(work_id: &str, pattern: &str) -> Vec<String> {
+pub fn work_list_all() -> Vec<String> {
+    command(&["work", "list", "all"])
+}
+
+pub fn work_get_field(work_id: &str, field: &str) -> Vec<String> {
+    command(&["work", "get", work_id, field])
+}
+
+pub fn work_set_field(work_id: &str, field: &str, value: &str) -> Vec<String> {
+    command(&["work", "set", work_id, field, value])
+}
+
+pub fn work_add_field(work_id: &str, field: &str, value: &str) -> Vec<String> {
+    command(&["work", "add", work_id, field, value])
+}
+
+pub fn work_remove_field(work_id: &str, field: &str, value: &str) -> Vec<String> {
+    command(&["work", "remove", work_id, field, value])
+}
+
+pub fn work_add_acceptance(work_id: &str, text: &str) -> Vec<String> {
+    work_add_field(work_id, "acceptance_criteria", text)
+}
+
+pub fn work_tick_acceptance(work_id: &str, pattern: &str, status: &str) -> Vec<String> {
     command(&[
         "work",
         "tick",
@@ -28,8 +52,16 @@ pub fn work_tick_acceptance_done(work_id: &str, pattern: &str) -> Vec<String> {
         "acceptance_criteria",
         pattern,
         "-s",
-        "done",
+        status,
     ])
+}
+
+pub fn work_tick_acceptance_done(work_id: &str, pattern: &str) -> Vec<String> {
+    work_tick_acceptance(work_id, pattern, "done")
+}
+
+pub fn work_remove_acceptance(work_id: &str, pattern: &str) -> Vec<String> {
+    work_remove_field(work_id, "acceptance_criteria", pattern)
 }
 
 pub fn work_move_done(work_id: &str) -> Vec<String> {
@@ -37,11 +69,11 @@ pub fn work_move_done(work_id: &str) -> Vec<String> {
 }
 
 pub fn work_add_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
-    command(&["work", "add", work_id, "depends_on", dependency_id])
+    work_add_field(work_id, "depends_on", dependency_id)
 }
 
 pub fn work_remove_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
-    command(&["work", "remove", work_id, "depends_on", dependency_id])
+    work_remove_field(work_id, "depends_on", dependency_id)
 }
 
 pub fn run_normalized_commands(
