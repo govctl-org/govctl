@@ -53,14 +53,13 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect) {
         .filter_map(|&idx| app.index.adrs.get(idx))
         .map(|adr| {
             let meta = adr.meta();
-            let status = meta.status.as_ref();
-
-            Row::new(vec![
-                Line::from(meta.id.clone()),
-                Line::from(meta.title.clone()),
-                status_cell(status),
-                tags_cell(&meta.tags),
-            ])
+            ResourceListRow {
+                id: &meta.id,
+                title: &meta.title,
+                status: meta.status.as_ref(),
+                tags: &meta.tags,
+            }
+            .render()
         })
         .collect::<Vec<_>>();
 
@@ -91,14 +90,13 @@ pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
         .filter_map(|&idx| app.index.work_items.get(idx))
         .map(|item| {
             let meta = item.meta();
-            let status = meta.status.as_ref();
-
-            Row::new(vec![
-                Line::from(meta.id.clone()),
-                Line::from(meta.title.clone()),
-                status_cell(status),
-                tags_cell(&meta.tags),
-            ])
+            ResourceListRow {
+                id: &meta.id,
+                title: &meta.title,
+                status: meta.status.as_ref(),
+                tags: &meta.tags,
+            }
+            .render()
         })
         .collect::<Vec<_>>();
 
@@ -120,6 +118,24 @@ pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
             border_color: Color::Yellow,
         },
     );
+}
+
+struct ResourceListRow<'a> {
+    id: &'a str,
+    title: &'a str,
+    status: &'a str,
+    tags: &'a [String],
+}
+
+impl ResourceListRow<'_> {
+    fn render(&self) -> Row<'static> {
+        Row::new(vec![
+            Line::from(self.id.to_string()),
+            Line::from(self.title.to_string()),
+            status_cell(self.status),
+            tags_cell(self.tags),
+        ])
+    }
 }
 
 fn status_cell(status: &str) -> Line<'static> {

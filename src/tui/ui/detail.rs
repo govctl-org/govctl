@@ -5,6 +5,7 @@ use ratatui::{
     prelude::*,
     widgets::{List, ListItem, Paragraph, Wrap},
 };
+use std::borrow::Cow;
 
 pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
     let Some(rfc) = app.index.rfcs.get(idx) else {
@@ -15,48 +16,25 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
     let phase = rfc.rfc.phase.as_ref();
 
     let mut header_lines = vec![
-        Line::from(vec![
-            Span::styled("ID:      ", Style::default().fg(Color::DarkGray)),
-            Span::styled(rfc.rfc.rfc_id.clone(), Style::default().bold()),
-        ]),
-        Line::from(vec![
-            Span::styled("Title:   ", Style::default().fg(Color::DarkGray)),
-            Span::raw(rfc.rfc.title.clone()),
-        ]),
-        Line::from(vec![
-            Span::styled("Version: ", Style::default().fg(Color::DarkGray)),
-            Span::styled(rfc.rfc.version.clone(), Style::default().fg(Color::Cyan)),
-        ]),
-        Line::from(vec![
-            Span::styled("Status:  ", Style::default().fg(Color::DarkGray)),
-            Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-            Span::styled(status.to_string(), status_style(status)),
-        ]),
-        Line::from(vec![
-            Span::styled("Phase:   ", Style::default().fg(Color::DarkGray)),
-            Span::styled(phase.to_string(), phase_style(phase)),
-        ]),
-        Line::from(vec![
-            Span::styled("Owners:  ", Style::default().fg(Color::DarkGray)),
-            Span::raw(rfc.rfc.owners.join(", ")),
-        ]),
+        MetadataLine::styled("ID:      ", &rfc.rfc.rfc_id, Style::default().bold()).render(),
+        MetadataLine::plain("Title:   ", &rfc.rfc.title).render(),
+        MetadataLine::styled(
+            "Version: ",
+            &rfc.rfc.version,
+            Style::default().fg(Color::Cyan),
+        )
+        .render(),
+        MetadataLine::status("Status:  ", status).render(),
+        MetadataLine::phase("Phase:   ", phase).render(),
+        MetadataLine::joined("Owners:  ", &rfc.rfc.owners, ", ").render(),
     ];
 
     if !rfc.rfc.refs.is_empty() {
-        header_lines.push(Line::from(vec![
-            Span::styled("Refs:    ", Style::default().fg(Color::DarkGray)),
-            Span::raw(rfc.rfc.refs.join(", ")),
-        ]));
+        header_lines.push(MetadataLine::joined("Refs:    ", &rfc.rfc.refs, ", ").render());
     }
 
     if !rfc.rfc.tags.is_empty() {
-        header_lines.push(Line::from(vec![
-            Span::styled("Tags:    ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                rfc.rfc.tags.join("  "),
-                Style::default().fg(Color::Magenta).bold(),
-            ),
-        ]));
+        header_lines.push(MetadataLine::tags("Tags:    ", &rfc.rfc.tags).render());
     }
 
     let header_height = (header_lines.len() as u16) + 2;
@@ -166,6 +144,67 @@ fn draw_markdown_panel(
 
     frame.render_widget(content, area);
     total_lines
+}
+
+struct MetadataLine<'a> {
+    label: &'static str,
+    value: Vec<Span<'a>>,
+}
+
+impl<'a> MetadataLine<'a> {
+    fn plain(label: &'static str, value: impl Into<Cow<'a, str>>) -> Self {
+        Self {
+            label,
+            value: vec![Span::raw(value.into())],
+        }
+    }
+
+    fn styled(label: &'static str, value: impl Into<Cow<'a, str>>, style: Style) -> Self {
+        Self {
+            label,
+            value: vec![Span::styled(value.into(), style)],
+        }
+    }
+
+    fn status(label: &'static str, status: &str) -> Self {
+        Self {
+            label,
+            value: vec![
+                Span::styled(format!("{} ", status_icon(status)), status_style(status)),
+                Span::styled(status.to_string(), status_style(status)),
+            ],
+        }
+    }
+
+    fn phase(label: &'static str, phase: &str) -> Self {
+        Self {
+            label,
+            value: vec![Span::styled(phase.to_string(), phase_style(phase))],
+        }
+    }
+
+    fn joined(label: &'static str, values: &[String], separator: &str) -> Self {
+        Self::plain(label, values.join(separator))
+    }
+
+    fn tags(label: &'static str, tags: &[String]) -> Self {
+        Self {
+            label,
+            value: vec![Span::styled(
+                tags.join("  "),
+                Style::default().fg(Color::Magenta).bold(),
+            )],
+        }
+    }
+
+    fn render(mut self) -> Line<'a> {
+        let mut spans = vec![Span::styled(
+            self.label,
+            Style::default().fg(Color::DarkGray),
+        )];
+        spans.append(&mut self.value);
+        Line::from(spans)
+    }
 }
 
 #[cfg(test)]
