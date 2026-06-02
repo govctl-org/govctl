@@ -66,7 +66,7 @@ impl ResourceListRow<'_> {
         Row::new(vec![
             Line::from(self.id.to_string()),
             Line::from(self.title.to_string()),
-            StatusCell::new(self.status).render(),
+            StatusText::new(self.status).render(),
             TagsCell::new(self.tags).render(),
         ])
     }
@@ -81,10 +81,7 @@ pub(in crate::tui::ui) struct ClauseListRow<'a> {
 impl ClauseListRow<'_> {
     pub(in crate::tui::ui) fn render(&self) -> ListItem<'static> {
         ListItem::new(Line::from(vec![
-            Span::styled(
-                format!("{} ", status_icon(self.status)),
-                status_style(self.status),
-            ),
+            StatusText::new(self.status).icon_span(),
             Span::styled(self.id.to_string(), Style::default().fg(Color::Blue).bold()),
             Span::raw(" — "),
             Span::raw(self.title.to_string()),
@@ -92,23 +89,31 @@ impl ClauseListRow<'_> {
     }
 }
 
-pub(in crate::tui::ui) struct StatusCell<'a> {
+pub(in crate::tui::ui) struct StatusText<'a> {
     status: &'a str,
 }
 
-impl<'a> StatusCell<'a> {
+impl<'a> StatusText<'a> {
     pub(in crate::tui::ui) fn new(status: &'a str) -> Self {
         Self { status }
     }
 
     pub(in crate::tui::ui) fn render(&self) -> Line<'static> {
-        Line::from(vec![
-            Span::styled(
-                format!("{} ", status_icon(self.status)),
-                status_style(self.status),
-            ),
+        Line::from(self.spans())
+    }
+
+    pub(in crate::tui::ui) fn spans<'b>(&self) -> Vec<Span<'b>> {
+        vec![
+            self.icon_span(),
             Span::styled(self.status.to_string(), status_style(self.status)),
-        ])
+        ]
+    }
+
+    pub(in crate::tui::ui) fn icon_span<'b>(&self) -> Span<'b> {
+        Span::styled(
+            format!("{} ", status_icon(self.status)),
+            status_style(self.status),
+        )
     }
 }
 

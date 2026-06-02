@@ -1,6 +1,6 @@
 use super::super::app::App;
 use super::components::{
-    PhaseCell, ResourceListRow, ResourceTable, ResourceTableSpec, StatusCell, TagsCell,
+    PhaseCell, ResourceListRow, ResourceTable, ResourceTableSpec, StatusText, TagsCell,
 };
 use ratatui::{prelude::*, widgets::Row};
 
@@ -29,7 +29,7 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect) {
             Row::new(vec![
                 Line::from(rfc.rfc.rfc_id.clone()),
                 Line::from(rfc.rfc.title.clone()),
-                StatusCell::new(status).render(),
+                StatusText::new(status).render(),
                 PhaseCell::new(phase).render(),
                 TagsCell::new(&rfc.rfc.tags).render(),
             ])

@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-143"
+title = "Share TUI status text component"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+refs = ["RFC-0003"]
+
+[content]
+description = "Extract a shared TUI status text component for icon+status rendering used by list rows and metadata lines, preserving current TUI output while keeping the component boundary inside the existing TUI component family."
+
+[[content.acceptance_criteria]]
+text = "TUI list and metadata status rendering share one explicit status text component"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI component structure remains cohesive without include-based test splitting or same-name file/module pairs"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused TUI tests and govctl check pass"
+status = "done"
+category = "chore"

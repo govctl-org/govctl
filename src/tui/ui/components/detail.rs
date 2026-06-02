@@ -1,5 +1,5 @@
-use super::super::{phase_style, rounded_block, status_style, wrapped_line_count};
-use crate::theme::status_icon;
+use super::super::{phase_style, rounded_block, wrapped_line_count};
+use super::resource::StatusText;
 use ratatui::{
     prelude::*,
     widgets::{Paragraph, Wrap},
@@ -145,10 +145,7 @@ impl<'a> MetadataLine<'a> {
     pub(in crate::tui::ui) fn status(label: &'static str, status: &str) -> Self {
         Self {
             label,
-            value: vec![
-                Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-                Span::styled(status.to_string(), status_style(status)),
-            ],
+            value: StatusText::new(status).spans(),
         }
     }
 
