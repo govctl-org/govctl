@@ -1,4 +1,4 @@
-use crate::cmd::loop_cmd::state::ensure_unique_work_item_ids;
+use crate::cmd::loop_cmd::state::{ensure_loop_not_terminal, ensure_unique_work_item_ids};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::loop_state::{LoopLifecycleState, LoopState, load_loop_state};
@@ -42,30 +42,14 @@ fn validate_target_work_ids(state: &LoopState, target_work_ids: &[String]) -> Di
     Ok(())
 }
 
-pub(super) fn ensure_loop_can_run(state: &LoopState) -> DiagnosticResult<()> {
-    if matches!(
-        state.loop_meta.state,
-        LoopLifecycleState::Completed | LoopLifecycleState::Failed
-    ) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1210LoopExecutionFailed,
-            format!(
-                "Cannot run terminal loop '{}' in {} state",
-                state.loop_meta.id,
-                state.loop_meta.state.as_str()
-            ),
-            state.loop_meta.id.clone(),
-        ));
-    }
-    Ok(())
-}
-
 pub(super) fn enter_active_state(state: &mut LoopState) -> DiagnosticResult<()> {
     match state.loop_meta.state {
         LoopLifecycleState::Pending | LoopLifecycleState::Paused => {
             state.transition_to(LoopLifecycleState::Active)
         }
         LoopLifecycleState::Active => Ok(()),
-        LoopLifecycleState::Completed | LoopLifecycleState::Failed => ensure_loop_can_run(state),
+        LoopLifecycleState::Completed | LoopLifecycleState::Failed => {
+            ensure_loop_not_terminal(state, "run")
+        }
     }
 }

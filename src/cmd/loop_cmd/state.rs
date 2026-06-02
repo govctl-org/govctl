@@ -170,6 +170,24 @@ pub(super) fn loop_item_state<'a>(
     })
 }
 
+pub(super) fn ensure_loop_not_terminal(state: &LoopState, action: &str) -> DiagnosticResult<()> {
+    if matches!(
+        state.loop_meta.state,
+        LoopLifecycleState::Completed | LoopLifecycleState::Failed
+    ) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1210LoopExecutionFailed,
+            format!(
+                "Cannot {action} terminal loop '{}' in {} state",
+                state.loop_meta.id,
+                state.loop_meta.state.as_str()
+            ),
+            state.loop_meta.id.clone(),
+        ));
+    }
+    Ok(())
+}
+
 pub(super) fn generated_loop_id(config: &Config) -> DiagnosticResult<String> {
     let date = chrono::Local::now().format("%Y-%m-%d").to_string();
     generated_loop_id_for_date(config, &date)

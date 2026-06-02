@@ -3,12 +3,13 @@ mod round;
 mod run_state;
 
 use super::output::print_loop;
+use super::state::ensure_loop_not_terminal;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::loop_state::{LoopLifecycleState, write_loop_state_with_op};
 use crate::write::WriteOp;
 use round::{execute_run_round, finalize_run_state, loop_failure_message};
-use run_state::{ensure_loop_can_run, enter_active_state, state_for_run};
+use run_state::{enter_active_state, state_for_run};
 
 pub fn run(
     config: &Config,
@@ -26,7 +27,7 @@ pub fn run(
     }
 
     let mut state = state_for_run(config, loop_id, target_work_ids)?;
-    ensure_loop_can_run(&state)?;
+    ensure_loop_not_terminal(&state, "run")?;
 
     println!("Running loop {}", state.loop_meta.id);
     println!("Max rounds: {max_rounds}");

@@ -1,8 +1,11 @@
-use super::{output::print_loop, state::ensure_work_values};
+use super::{
+    output::print_loop,
+    state::{ensure_loop_not_terminal, ensure_work_values},
+};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::loop_planner::replan_loop_state_from_config;
-use crate::loop_state::{LoopLifecycleState, LoopState, load_loop_state, write_loop_state_with_op};
+use crate::loop_state::{LoopState, load_loop_state, write_loop_state_with_op};
 use crate::write::WriteOp;
 use std::collections::BTreeSet;
 
@@ -52,7 +55,7 @@ fn mutate_scope(
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     let state = load_loop_state(config, loop_id)?;
-    ensure_loop_can_mutate_scope(&state)?;
+    ensure_loop_not_terminal(&state, "mutate")?;
     let updated_work = mutated_work_set(&state, mutation, work)?;
     let plan = replan_loop_state_from_config(config, &state, &updated_work)?;
     write_loop_state_with_op(config, &plan.state, op)?;
@@ -69,24 +72,6 @@ fn mutate_scope(
     };
     print_loop(verb, &plan.state)?;
     Ok(vec![])
-}
-
-fn ensure_loop_can_mutate_scope(state: &LoopState) -> DiagnosticResult<()> {
-    if matches!(
-        state.loop_meta.state,
-        LoopLifecycleState::Completed | LoopLifecycleState::Failed
-    ) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1210LoopExecutionFailed,
-            format!(
-                "Cannot mutate terminal loop '{}' in {} state",
-                state.loop_meta.id,
-                state.loop_meta.state.as_str()
-            ),
-            state.loop_meta.id.clone(),
-        ));
-    }
-    Ok(())
 }
 
 fn mutated_work_set(
