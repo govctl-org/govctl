@@ -40,15 +40,7 @@ pub fn validate_toml_against_schema(
     schema_filename: &str,
     toml_text: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let schema_text = fs::read_to_string(dir.join("gov/schema").join(schema_filename))?;
-    let schema: serde_json::Value = serde_json::from_str(&schema_text)?;
-    let compiled = jsonschema::validator_for(&schema)?;
-    let toml_value: toml::Value = toml::from_str(toml_text)?;
-    let json_value = serde_json::to_value(toml_value)?;
-    let errors = compiled
-        .iter_errors(&json_value)
-        .map(|err| err.to_string())
-        .collect::<Vec<_>>();
+    let errors = schema_validation_errors(dir, schema_filename, toml_text)?;
     assert!(
         errors.is_empty(),
         "{schema_filename} validation errors: {errors:#?}"
@@ -62,17 +54,25 @@ pub fn assert_schema_rejects(
     toml_text: &str,
     context: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    let errors = schema_validation_errors(dir, schema_filename, toml_text)?;
+    assert!(!errors.is_empty(), "{context}");
+    Ok(())
+}
+
+fn schema_validation_errors(
+    dir: &Path,
+    schema_filename: &str,
+    toml_text: &str,
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
     let schema_text = fs::read_to_string(dir.join("gov/schema").join(schema_filename))?;
     let schema: serde_json::Value = serde_json::from_str(&schema_text)?;
     let compiled = jsonschema::validator_for(&schema)?;
     let toml_value: toml::Value = toml::from_str(toml_text)?;
     let json_value = serde_json::to_value(toml_value)?;
-    let errors = compiled
+    Ok(compiled
         .iter_errors(&json_value)
         .map(|err| err.to_string())
-        .collect::<Vec<_>>();
-    assert!(!errors.is_empty(), "{context}");
-    Ok(())
+        .collect())
 }
 
 pub fn toml_string(value: &toml::Value, key: &str) -> Result<String, Box<dyn std::error::Error>> {

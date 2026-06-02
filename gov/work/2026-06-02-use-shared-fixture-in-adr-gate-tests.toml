@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-087"
+title = "Use shared fixture in ADR gate tests"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Replace the remaining direct project initialization plus date capture in the ADR gate integration-test helper with the shared project-date fixture helper. Scope is limited to tests/test_adr_gates.rs; preserve command coverage, snapshot names, assertions, and module layout."
+
+[[content.acceptance_criteria]]
+text = "ADR gate test helper uses the shared project-date fixture helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "ADR gate integration test binary passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

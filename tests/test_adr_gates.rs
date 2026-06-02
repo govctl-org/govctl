@@ -7,8 +7,7 @@ mod common;
 const ADR_GATE_ERROR: &str = "alternatives incomplete";
 
 fn run_gate_commands(commands: &[&[&str]]) -> Result<String, Box<dyn std::error::Error>> {
-    let dir = common::init_project()?;
-    let date = common::today();
+    let (dir, date) = common::init_project_with_date()?;
     let output = common::run_commands(dir.path(), commands)?;
     Ok(common::normalize_output(&output, dir.path(), &date)?)
 }
