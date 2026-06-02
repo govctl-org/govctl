@@ -9,31 +9,11 @@ fn test_loop_run_completes_ready_work_item() -> common::TestResult {
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "add: ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec!["loop".into(), "run".into(), loop_id.clone()],
+            work_new("Root"),
+            work_add_acceptance(&root_id, "add: ready"),
+            work_tick_acceptance_done(&root_id, "ready"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_run(&loop_id),
         ],
     )?;
 
@@ -91,46 +71,14 @@ fn test_loop_run_marks_failed_and_blocks_dependents() -> common::TestResult {
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Dependency".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                dependency_id.clone(),
-                "acceptance_criteria".into(),
-                "add: unfinished".into(),
-            ],
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "add: ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "depends_on".into(),
-                dependency_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec!["loop".into(), "run".into(), loop_id.clone()],
+            work_new("Dependency"),
+            work_add_acceptance(&dependency_id, "add: unfinished"),
+            work_new("Root"),
+            work_add_acceptance(&root_id, "add: ready"),
+            work_tick_acceptance_done(&root_id, "ready"),
+            work_add_dependency(&root_id, &dependency_id),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_run(&loop_id),
         ],
     )?;
 
@@ -190,52 +138,14 @@ fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Dependency".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                dependency_id.clone(),
-                "acceptance_criteria".into(),
-                "add: dependency ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                dependency_id.clone(),
-                "acceptance_criteria".into(),
-                "dependency ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "add: root ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "depends_on".into(),
-                dependency_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "run".into(),
-                loop_id.clone(),
-                "--max-rounds".into(),
-                "2".into(),
-            ],
+            work_new("Dependency"),
+            work_add_acceptance(&dependency_id, "add: dependency ready"),
+            work_tick_acceptance_done(&dependency_id, "dependency ready"),
+            work_new("Root"),
+            work_add_acceptance(&root_id, "add: root ready"),
+            work_add_dependency(&root_id, &dependency_id),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_run_with_max_rounds(&loop_id, "2"),
         ],
     )?;
 
@@ -254,22 +164,8 @@ fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec![
-                "work".into(),
-                "tick".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "root ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
-            vec![
-                "loop".into(),
-                "run".into(),
-                loop_id.clone(),
-                "--max-rounds".into(),
-                "2".into(),
-            ],
+            work_tick_acceptance_done(&root_id, "root ready"),
+            loop_run_with_max_rounds(&loop_id, "2"),
         ],
     )?;
 

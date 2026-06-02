@@ -5,6 +5,52 @@ pub fn loop_id(date: &str, sequence: u32) -> String {
     format!("LOOP-{date}-{sequence:03}")
 }
 
+pub fn command(args: &[&str]) -> Vec<String> {
+    args.iter().map(|arg| (*arg).to_string()).collect()
+}
+
+pub fn work_new(title: &str) -> Vec<String> {
+    command(&["work", "new", title])
+}
+
+pub fn work_add_acceptance(work_id: &str, text: &str) -> Vec<String> {
+    command(&["work", "add", work_id, "acceptance_criteria", text])
+}
+
+pub fn work_tick_acceptance_done(work_id: &str, pattern: &str) -> Vec<String> {
+    command(&[
+        "work",
+        "tick",
+        work_id,
+        "acceptance_criteria",
+        pattern,
+        "-s",
+        "done",
+    ])
+}
+
+pub fn work_add_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
+    command(&["work", "add", work_id, "depends_on", dependency_id])
+}
+
+pub fn loop_start_with_id(loop_id: &str, work_ids: &[&str]) -> Vec<String> {
+    let mut cmd = command(&["loop", "start", "--id", loop_id]);
+    cmd.extend(work_ids.iter().map(|work_id| (*work_id).to_string()));
+    cmd
+}
+
+pub fn loop_run(loop_id: &str) -> Vec<String> {
+    command(&["loop", "run", loop_id])
+}
+
+pub fn loop_run_with_max_rounds(loop_id: &str, max_rounds: &str) -> Vec<String> {
+    command(&["loop", "run", loop_id, "--max-rounds", max_rounds])
+}
+
+pub fn loop_run_target(loop_id: &str, work_id: &str) -> Vec<String> {
+    command(&["loop", "run", loop_id, "--work", work_id])
+}
+
 pub fn write_guard(dir: &Path, guard_id: &str, command: &str) -> super::TestResult {
     super::write_guard_with_timeout(dir, guard_id, command, None, 300)
 }
