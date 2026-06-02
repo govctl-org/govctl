@@ -1,11 +1,11 @@
 use super::super::app::App;
-use super::{phase_style, rounded_block, status_style, wrapped_line_count};
+use super::components::{MarkdownPanel, MetadataLine};
+use super::{rounded_block, status_style};
 use crate::theme::status_icon;
 use ratatui::{
     prelude::*,
-    widgets::{List, ListItem, Paragraph, Wrap},
+    widgets::{List, ListItem, Paragraph},
 };
-use std::borrow::Cow;
 
 pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
     let Some(rfc) = app.index.rfcs.get(idx) else {
@@ -134,77 +134,7 @@ fn draw_markdown_panel(
     border_color: Color,
     text: Text<'_>,
 ) -> usize {
-    let block = rounded_block(title).border_style(Style::default().fg(border_color));
-    let inner_width = block.inner(area).width;
-    let total_lines = wrapped_line_count(&text.lines, inner_width);
-    let content = Paragraph::new(text)
-        .wrap(Wrap { trim: false })
-        .scroll((scroll, 0))
-        .block(block);
-
-    frame.render_widget(content, area);
-    total_lines
-}
-
-struct MetadataLine<'a> {
-    label: &'static str,
-    value: Vec<Span<'a>>,
-}
-
-impl<'a> MetadataLine<'a> {
-    fn plain(label: &'static str, value: impl Into<Cow<'a, str>>) -> Self {
-        Self {
-            label,
-            value: vec![Span::raw(value.into())],
-        }
-    }
-
-    fn styled(label: &'static str, value: impl Into<Cow<'a, str>>, style: Style) -> Self {
-        Self {
-            label,
-            value: vec![Span::styled(value.into(), style)],
-        }
-    }
-
-    fn status(label: &'static str, status: &str) -> Self {
-        Self {
-            label,
-            value: vec![
-                Span::styled(format!("{} ", status_icon(status)), status_style(status)),
-                Span::styled(status.to_string(), status_style(status)),
-            ],
-        }
-    }
-
-    fn phase(label: &'static str, phase: &str) -> Self {
-        Self {
-            label,
-            value: vec![Span::styled(phase.to_string(), phase_style(phase))],
-        }
-    }
-
-    fn joined(label: &'static str, values: &[String], separator: &str) -> Self {
-        Self::plain(label, values.join(separator))
-    }
-
-    fn tags(label: &'static str, tags: &[String]) -> Self {
-        Self {
-            label,
-            value: vec![Span::styled(
-                tags.join("  "),
-                Style::default().fg(Color::Magenta).bold(),
-            )],
-        }
-    }
-
-    fn render(mut self) -> Line<'a> {
-        let mut spans = vec![Span::styled(
-            self.label,
-            Style::default().fg(Color::DarkGray),
-        )];
-        spans.append(&mut self.value);
-        Line::from(spans)
-    }
+    MarkdownPanel::new(title, border_color, scroll, text).render(frame, area)
 }
 
 #[cfg(test)]

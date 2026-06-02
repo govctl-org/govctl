@@ -1,9 +1,6 @@
 use super::super::app::App;
-use ratatui::{
-    prelude::*,
-    symbols::border,
-    widgets::{Block, Borders, Paragraph},
-};
+use super::components::SummaryCard;
+use ratatui::{prelude::*, widgets::Paragraph};
 
 pub(super) fn draw(frame: &mut Frame, app: &App, area: Rect) {
     let content_chunks = Layout::default()
@@ -21,18 +18,11 @@ pub(super) fn draw(frame: &mut Frame, app: &App, area: Rect) {
 }
 
 fn summary_block(
-    title: &str,
+    title: &'static str,
     border_color: Color,
-    mut lines: Vec<Line<'static>>,
+    lines: Vec<Line<'static>>,
 ) -> Paragraph<'static> {
-    lines.insert(0, Line::from(""));
-    Paragraph::new(lines).block(
-        Block::default()
-            .title(format!(" {} ", title))
-            .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
-            .border_style(Style::default().fg(border_color)),
-    )
+    SummaryCard::new(title, border_color, lines).into_paragraph()
 }
 
 fn summary_line(icon: &'static str, icon_color: Color, label: &str, value: usize) -> Line<'static> {

@@ -1,6 +1,7 @@
 //! UI rendering for TUI.
 
 mod chrome;
+mod components;
 mod dashboard;
 mod detail;
 mod help;

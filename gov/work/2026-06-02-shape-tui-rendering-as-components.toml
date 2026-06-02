@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-106"
+title = "Shape TUI rendering as components"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Refactor the TUI rendering layer so shared list/detail/dashboard pieces are represented as explicit component-style renderers, preserving behavior while making component boundaries visible for future TUI work."
+
+[[content.acceptance_criteria]]
+text = "TUI list/detail/dashboard shared render pieces use explicit component-style structs instead of anonymous helper flow"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI refactor keeps files cohesive and does not introduce include-based test splitting or same-name file/directory module pairs"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI renderer tests and govctl check pass"
+status = "done"
+category = "chore"
