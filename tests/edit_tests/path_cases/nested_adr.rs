@@ -3,10 +3,6 @@ use super::*;
 const ADR_ID: &str = "ADR-0001";
 const ALTERNATIVES: &str = "alternatives";
 
-fn command(args: &[&str]) -> Vec<String> {
-    args.iter().map(|arg| (*arg).to_string()).collect()
-}
-
 fn adr_new(title: &str) -> Vec<String> {
     command(&["adr", "new", title])
 }

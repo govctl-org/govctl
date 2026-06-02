@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-151"
+title = "Reuse edit path command builder"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+refs = ["RFC-0002"]
+
+[content]
+description = "Remove the remaining duplicate generic command builder from the nested ADR edit-path integration tests. Reuse the existing common command helper through the edit test harness while keeping ADR-specific scenario helpers local and avoiding new files, snapshot churn, include-based splitting, or behavior changes."
+
+[[content.acceptance_criteria]]
+text = "Nested ADR edit-path tests reuse the common dynamic command builder instead of defining a local duplicate"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "ADR-specific nested path scenario helpers remain local and no new abstraction or file split is introduced"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused edit tests, govctl check, and no-snapshot/no-include/no-journal scans pass"
+status = "done"
+category = "chore"
