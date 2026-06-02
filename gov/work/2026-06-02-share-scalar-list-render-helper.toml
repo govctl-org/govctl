@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-100"
+title = "Share scalar list render helper"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Extract the duplicated scalar-list rendering join into one runtime helper so simple and nested edit rendering share the same conversion path without changing command behavior."
+
+[[content.acceptance_criteria]]
+text = "Simple and nested edit rendering use a shared scalar-list text helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused edit-rendering tests and govctl check pass"
+status = "done"
+category = "chore"

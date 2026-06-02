@@ -1,5 +1,7 @@
 use super::spec::{RenderMode, SimpleFieldSpec};
-use super::support::{scalar_list_item_text, status_list_entry_line, type_mismatch, value_at_path};
+use super::support::{
+    joined_scalar_list_text, status_list_entry_line, type_mismatch, value_at_path,
+};
 use crate::diagnostic::DiagnosticResult;
 use serde_json::Value;
 
@@ -41,8 +43,7 @@ fn render_string_array(v: Option<&Value>, sep: &str, id: &str) -> DiagnosticResu
         return Err(type_mismatch("Expected an array value", id));
     };
 
-    let rendered: Vec<String> = items.iter().map(scalar_list_item_text).collect();
-    Ok(rendered.join(sep))
+    Ok(joined_scalar_list_text(items, sep))
 }
 
 pub(super) fn render_status_lines(

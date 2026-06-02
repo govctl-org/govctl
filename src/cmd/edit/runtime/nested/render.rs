@@ -1,5 +1,5 @@
 use super::super::render::{render_scalar, render_status_lines};
-use super::super::support::type_mismatch;
+use super::super::support::{joined_scalar_list_text, type_mismatch};
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule};
 use crate::diagnostic::DiagnosticResult;
 use serde_json::Value;
@@ -37,8 +37,7 @@ fn render_nested_list(
         return render_status_lines(Some(value), "status", node.text_key.unwrap_or("text"), id);
     }
     if item.kind == NestedNodeKind::Scalar {
-        let rendered: Vec<String> = arr.iter().map(|item| render_scalar(Some(item))).collect();
-        return Ok(rendered.join("\n"));
+        return Ok(joined_scalar_list_text(arr, "\n"));
     }
     let mut rendered = Vec::new();
     for item_value in arr {
@@ -70,11 +69,7 @@ fn render_nested_object(
                 let items = field_value
                     .as_array()
                     .ok_or_else(|| type_mismatch("Expected array value", id))?;
-                items
-                    .iter()
-                    .map(|item| render_scalar(Some(item)))
-                    .collect::<Vec<_>>()
-                    .join(", ")
+                joined_scalar_list_text(items, ", ")
             } else {
                 render_nested_node(field.node, Some(field_value), id)?
             };

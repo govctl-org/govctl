@@ -27,6 +27,14 @@ pub(super) fn scalar_list_item_text(item: &Value) -> String {
     }
 }
 
+pub(super) fn joined_scalar_list_text(items: &[Value], sep: &str) -> String {
+    items
+        .iter()
+        .map(scalar_list_item_text)
+        .collect::<Vec<_>>()
+        .join(sep)
+}
+
 pub(super) fn status_list_entry_line(
     item: &Value,
     status_key: &str,
