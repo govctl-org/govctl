@@ -48,7 +48,7 @@ added = ["Loop listing command discovers persisted local loop state"]
 version = "0.2.0"
 date = "2026-06-01"
 notes = "Define loop scope mutation and canonical loop IDs"
-added = ["Loop scope mutation supports replan add roots and remove roots"]
+added = ["Loop scope mutation supports replan plus add/remove of the editable work field"]
 changed = ["Loop IDs use LOOP-YYYY-MM-DD-NNN canonical format"]
 
 [[changelog]]

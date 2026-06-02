@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-159"
+title = "Clarify loop scope changelog wording"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Update stale RFC-0006 changelog wording from old root-oriented terminology to the current loop edit model. Keep the normative root-set dependency concept intact, but make the changelog match replan plus add/remove of the editable work field."
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 source and rendered changelog mention replan plus work-field add/remove instead of roots"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and targeted RFC render verification pass"
+status = "done"
+category = "chore"
