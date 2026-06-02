@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-082"
+title = "Use shared fixtures in scan lifecycle tests"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Replace repeated initialized-project-plus-date setup in source-scan and RFC lifecycle integration tests with the shared common fixture helper. Scope is existing standalone test files only; preserve assertions, command coverage, and snapshot names."
+
+[[content.acceptance_criteria]]
+text = "Source-scan and RFC lifecycle tests use the shared project-date fixture helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "source-scan and RFC lifecycle test binaries pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

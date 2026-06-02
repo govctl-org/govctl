@@ -7,8 +7,7 @@ use super::*;
 /// Test: Valid RFC TOML in [govctl] wire format passes check
 #[test]
 fn test_valid_rfc_toml_wire_format() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -40,8 +39,7 @@ title = "Summary"
 /// Test: Valid clause TOML in [govctl]+[content] wire format passes check
 #[test]
 fn test_valid_clause_toml_wire_format() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -91,8 +89,7 @@ text = "Clause body text."
 /// Test: RFC TOML in wire format rejects unknown fields in [govctl]
 #[test]
 fn test_invalid_rfc_toml_wire_unknown_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -123,8 +120,7 @@ title = "Summary"
 /// Test: Clause TOML in wire format rejects unknown fields in [content]
 #[test]
 fn test_invalid_clause_toml_wire_unknown_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -169,8 +165,7 @@ unexpected = "extra field"
 /// Test: RFC TOML in wire format rejects missing required field (owners)
 #[test]
 fn test_invalid_rfc_toml_wire_missing_required() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -199,8 +194,7 @@ title = "Summary"
 /// Test: Clause TOML in wire format rejects missing [content].text
 #[test]
 fn test_invalid_clause_toml_wire_missing_text() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -243,8 +237,7 @@ kind = "normative"
 /// Test: Legacy flat RFC TOML is still accepted via normalization
 #[test]
 fn test_legacy_flat_rfc_toml_accepted() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -272,8 +265,7 @@ title = "Summary"
 /// Test: Legacy flat clause TOML is still accepted via normalization
 #[test]
 fn test_legacy_flat_clause_toml_accepted() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;

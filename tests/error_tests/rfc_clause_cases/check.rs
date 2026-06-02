@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_broken_superseded_check() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     // Create RFC with broken supersession
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
@@ -69,8 +68,7 @@ fn test_broken_superseded_check() -> common::TestResult {
 /// Test: RFC has invalid status/phase combination (draft + stable)
 #[test]
 fn test_invalid_transition_check() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     // Create RFC with invalid state
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");

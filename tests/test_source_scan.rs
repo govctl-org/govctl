@@ -2,14 +2,13 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, today};
+use common::{init_project_with_date, normalize_output, run_commands};
 use std::fs;
 
 /// Test: Source code scanning detects valid and invalid [[RFC-XXX:C-XXX]] references
 #[test]
 fn test_source_scan_detects_refs() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     // Create RFC with a valid clause
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");

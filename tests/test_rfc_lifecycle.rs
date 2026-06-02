@@ -2,13 +2,12 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, today};
+use common::{init_project_with_date, normalize_output, run_commands};
 
 /// Test: RFC amendment tracking with signature-based detection
 #[test]
 fn test_rfc_amendment_tracking() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     // Create RFC and clause
     let setup = run_commands(

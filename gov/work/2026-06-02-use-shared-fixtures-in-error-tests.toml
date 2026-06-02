@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-081"
+title = "Use shared fixtures in error tests"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Replace repeated initialized-project-plus-date setup in error integration tests with the shared common fixture helper. Scope is existing error test modules only; preserve module layout, fixture data, assertions, and snapshot names."
+
+[[content.acceptance_criteria]]
+text = "Error tests use the shared project-date fixture helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "error integration test binary passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
