@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-155"
+title = "Collapse loop state storage wrappers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Remove trivial loop_state wrapper functions that only forward to the storage module, replacing them with direct private-module re-exports. Preserve the public loop_state API and keep the cleanup limited to dead indirection and related imports."
+
+[[content.acceptance_criteria]]
+text = "loop_state storage functions are re-exported without trivial forwarding wrappers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused loop_state tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "fmt, clippy, and govctl check pass"
+status = "done"
+category = "chore"

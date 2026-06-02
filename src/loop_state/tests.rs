@@ -1,6 +1,7 @@
 use super::*;
 use crate::config::{Config, PathsConfig};
 use crate::diagnostic::Diagnostic;
+use crate::write::WriteOp;
 use std::collections::BTreeMap;
 
 type TestResult = Result<(), Box<dyn std::error::Error>>;

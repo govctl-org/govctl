@@ -1,15 +1,16 @@
-use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::write::WriteOp;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::path::PathBuf;
 
 mod storage;
 #[cfg(test)]
 mod tests;
 mod validation;
 
+pub use storage::{
+    load_loop_state, loop_state_path, loop_state_root, write_loop_round_record,
+    write_loop_state_with_op,
+};
 pub use validation::validate_loop_id;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -185,32 +186,4 @@ impl LoopWorkItemStatus {
             Self::Cancelled => "cancelled",
         }
     }
-}
-
-pub fn loop_state_path(config: &Config, loop_id: &str) -> DiagnosticResult<PathBuf> {
-    storage::loop_state_path(config, loop_id)
-}
-
-pub fn loop_state_root(config: &Config) -> PathBuf {
-    storage::loop_state_root(config)
-}
-
-pub fn write_loop_state_with_op(
-    config: &Config,
-    state: &LoopState,
-    op: WriteOp,
-) -> DiagnosticResult<()> {
-    storage::write_loop_state_with_op(config, state, op)
-}
-
-pub fn load_loop_state(config: &Config, loop_id: &str) -> DiagnosticResult<LoopState> {
-    storage::load_loop_state(config, loop_id)
-}
-
-pub fn write_loop_round_record(
-    config: &Config,
-    record: &LoopRoundRecord,
-    op: WriteOp,
-) -> DiagnosticResult<()> {
-    storage::write_loop_round_record(config, record, op)
 }
