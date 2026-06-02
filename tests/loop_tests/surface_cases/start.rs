@@ -10,24 +10,12 @@ fn test_loop_start_show_and_resume_by_loop_id() -> common::TestResult {
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Dependency".into()],
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "depends_on".into(),
-                dependency_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec!["loop".into(), "show".into(), loop_id.clone()],
-            vec!["loop".into(), "resume".into(), loop_id.clone()],
+            work_new("Dependency"),
+            work_new("Root"),
+            work_add_dependency(&root_id, &dependency_id),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_show(&loop_id),
+            loop_resume(&loop_id),
         ],
     )?;
 
@@ -70,10 +58,10 @@ fn test_loop_start_generates_canonical_daily_sequence_ids() -> common::TestResul
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "First".into()],
-            vec!["loop".into(), "start".into(), first_root.clone()],
-            vec!["work".into(), "new".into(), "Second".into()],
-            vec!["loop".into(), "start".into(), second_root.clone()],
+            work_new("First"),
+            loop_start(&[&first_root]),
+            work_new("Second"),
+            loop_start(&[&second_root]),
         ],
     )?;
 
@@ -109,21 +97,9 @@ fn test_loop_start_reuses_existing_loop_id() -> common::TestResult {
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-            ],
+            work_new("Root"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_start_with_id(&loop_id, &[&root_id]),
         ],
     )?;
 
@@ -147,15 +123,8 @@ fn test_loop_start_dry_run_previews_state_without_writing() -> common::TestResul
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                loop_id.clone(),
-                root_id.clone(),
-                "--dry-run".into(),
-            ],
+            work_new("Root"),
+            loop_start_with_id_dry_run(&loop_id, &[&root_id]),
         ],
     )?;
 
@@ -185,10 +154,7 @@ fn test_loop_resume_missing_loop_id_reports_diagnostic() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let loop_id = loop_id(&date, 1);
 
-    let output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec!["loop".into(), "resume".into(), loop_id.clone()]],
-    )?;
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_resume(&loop_id)])?;
 
     assert!(output.contains("error[E1202]"), "{output}");
     assert!(output.contains("Failed to read loop state"), "{output}");

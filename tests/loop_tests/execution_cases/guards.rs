@@ -9,23 +9,9 @@ fn test_loop_run_records_guard_failure_without_completing_work_item() -> common:
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "add: ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
+            work_new("Root"),
+            work_add_acceptance(&root_id, "add: ready"),
+            work_tick_acceptance_done(&root_id, "ready"),
         ],
     )?;
     assert!(output.contains("exit: 0"), "{output}");
@@ -35,20 +21,11 @@ fn test_loop_run_records_guard_failure_without_completing_work_item() -> common:
 
     let output = run_dynamic_commands(
         temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "start".into(),
-            "--id".into(),
-            loop_id.clone(),
-            root_id.clone(),
-        ]],
+        &[loop_start_with_id(&loop_id, &[&root_id])],
     )?;
     assert!(output.contains("exit: 0"), "{output}");
 
-    let output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec!["loop".into(), "run".into(), loop_id.clone()]],
-    )?;
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
 
     assert!(output.contains("FAIL GUARD-FAIL"), "{output}");
     assert!(output.contains("error[E1210]"), "{output}");
@@ -76,23 +53,9 @@ fn test_loop_run_guard_failure_can_pause_until_max_rounds() -> common::TestResul
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "work".into(),
-                "add".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "add: ready".into(),
-            ],
-            vec![
-                "work".into(),
-                "tick".into(),
-                root_id.clone(),
-                "acceptance_criteria".into(),
-                "ready".into(),
-                "-s".into(),
-                "done".into(),
-            ],
+            work_new("Root"),
+            work_add_acceptance(&root_id, "add: ready"),
+            work_tick_acceptance_done(&root_id, "ready"),
         ],
     )?;
     assert!(output.contains("exit: 0"), "{output}");
@@ -102,26 +65,11 @@ fn test_loop_run_guard_failure_can_pause_until_max_rounds() -> common::TestResul
 
     let output = run_dynamic_commands(
         temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "start".into(),
-            "--id".into(),
-            loop_id.clone(),
-            root_id.clone(),
-        ]],
+        &[loop_start_with_id(&loop_id, &[&root_id])],
     )?;
     assert!(output.contains("exit: 0"), "{output}");
 
-    let output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "run".into(),
-            loop_id.clone(),
-            "--max-rounds".into(),
-            "2".into(),
-        ]],
-    )?;
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run_with_max_rounds(&loop_id, "2")])?;
 
     assert!(output.contains("FAIL GUARD-FAIL"), "{output}");
     assert!(
@@ -146,16 +94,7 @@ fn test_loop_run_guard_failure_can_pause_until_max_rounds() -> common::TestResul
         "{round_toml}"
     );
 
-    let output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec![
-            "loop".into(),
-            "run".into(),
-            loop_id.clone(),
-            "--max-rounds".into(),
-            "2".into(),
-        ]],
-    )?;
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run_with_max_rounds(&loop_id, "2")])?;
 
     assert!(
         output.contains(&format!("Failed loop {loop_id}")),

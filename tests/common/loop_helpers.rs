@@ -37,10 +37,30 @@ pub fn work_remove_dependency(work_id: &str, dependency_id: &str) -> Vec<String>
     command(&["work", "remove", work_id, "depends_on", dependency_id])
 }
 
+pub fn loop_start(work_ids: &[&str]) -> Vec<String> {
+    let mut cmd = command(&["loop", "start"]);
+    cmd.extend(work_ids.iter().map(|work_id| (*work_id).to_string()));
+    cmd
+}
+
 pub fn loop_start_with_id(loop_id: &str, work_ids: &[&str]) -> Vec<String> {
     let mut cmd = command(&["loop", "start", "--id", loop_id]);
     cmd.extend(work_ids.iter().map(|work_id| (*work_id).to_string()));
     cmd
+}
+
+pub fn loop_start_with_id_dry_run(loop_id: &str, work_ids: &[&str]) -> Vec<String> {
+    let mut cmd = loop_start_with_id(loop_id, work_ids);
+    cmd.push("--dry-run".to_string());
+    cmd
+}
+
+pub fn loop_show(loop_id: &str) -> Vec<String> {
+    command(&["loop", "show", loop_id])
+}
+
+pub fn loop_resume(loop_id: &str) -> Vec<String> {
+    command(&["loop", "resume", loop_id])
 }
 
 pub fn loop_add_work(loop_id: &str, field: &str, work_id: &str) -> Vec<String> {

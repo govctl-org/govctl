@@ -8,14 +8,8 @@ fn test_loop_start_rejects_plain_text_loop_id() -> common::TestResult {
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            vec!["work".into(), "new".into(), "Root".into()],
-            vec![
-                "loop".into(),
-                "start".into(),
-                "--id".into(),
-                "loop-test".into(),
-                root_id.clone(),
-            ],
+            work_new("Root"),
+            loop_start_with_id("loop-test", &[&root_id]),
         ],
     )?;
 
