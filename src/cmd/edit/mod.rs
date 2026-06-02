@@ -25,7 +25,7 @@ mod toml_adapter;
 mod toml_target;
 
 use self::adapter::{ClauseTomlAdapter, DocAdapter};
-pub use self::add::{AddFieldRequest, add_to_field};
+use self::add::{AddFieldRequest, add_to_field};
 pub use self::artifact::ArtifactType;
 pub use self::get::get_field;
 pub use self::remove::remove_from_field;
@@ -173,13 +173,11 @@ pub fn edit_field(request: EditFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnos
         }
         OwnedEditAction::Add { value, stdin } => {
             let value = resolve_owned_value(value.as_ref(), *stdin)?;
-            let value = Some(Some(value));
             add_to_field(AddFieldRequest {
                 config,
                 id,
                 field: path,
-                value: value.as_ref(),
-                stdin: false,
+                value: value.as_str(),
                 category_override,
                 pros,
                 cons,

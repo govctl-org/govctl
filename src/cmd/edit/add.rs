@@ -7,10 +7,7 @@ use super::json_target::add_json_simple_list_field;
 use super::rules as edit_rules;
 use super::target_doc::add_to_target_doc;
 use super::toml_target::{is_work_dependency_target, validate_work_dependency_edit};
-use super::{
-    ArtifactType, deserialize_edit_doc, plan_mutation_target, resolve_owned_value,
-    serialize_edit_doc,
-};
+use super::{ArtifactType, deserialize_edit_doc, plan_mutation_target, serialize_edit_doc};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{AdrEntry, ChangelogCategory, WorkItemEntry};
@@ -27,17 +24,16 @@ struct WorkAddContext {
     category_override: Option<ChangelogCategory>,
 }
 
-pub struct AddFieldRequest<'a> {
-    pub config: &'a Config,
-    pub id: &'a str,
-    pub field: &'a str,
-    pub value: Option<&'a Option<String>>,
-    pub stdin: bool,
-    pub category_override: Option<ChangelogCategory>,
-    pub pros: Option<Vec<String>>,
-    pub cons: Option<Vec<String>>,
-    pub reject_reason: Option<String>,
-    pub op: WriteOp,
+pub(super) struct AddFieldRequest<'a> {
+    pub(super) config: &'a Config,
+    pub(super) id: &'a str,
+    pub(super) field: &'a str,
+    pub(super) value: &'a str,
+    pub(super) category_override: Option<ChangelogCategory>,
+    pub(super) pros: Option<Vec<String>>,
+    pub(super) cons: Option<Vec<String>>,
+    pub(super) reject_reason: Option<String>,
+    pub(super) op: WriteOp,
 }
 
 fn adr_add_alternatives(
@@ -137,7 +133,6 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
         id,
         field,
         value,
-        stdin,
         category_override,
         pros,
         cons,
@@ -149,8 +144,6 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
     let artifact = plan.artifact;
     let fp = &plan.field_path;
     let target = &plan.target;
-    let value = resolve_owned_value(value, stdin)?;
-    let value = value.as_str();
 
     // Validate tags against controlled vocabulary at add time — [[RFC-0002:C-RESOURCES]]
     if fp.as_simple() == Some("tags") {
