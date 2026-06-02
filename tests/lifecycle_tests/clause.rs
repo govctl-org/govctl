@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_deprecate_legacy_json_clause_requires_migrate() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let clauses_dir = temp_dir.path().join("gov/rfc/RFC-0001/clauses");
     fs::create_dir_all(&clauses_dir)?;
@@ -35,8 +34,7 @@ fn test_deprecate_legacy_json_clause_requires_migrate() -> common::TestResult {
 
 #[test]
 fn test_supersede_clause() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -111,8 +109,7 @@ fn test_supersede_clause_rejects_missing_replacement() -> common::TestResult {
 
 #[test]
 fn test_deprecate_clause_force() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -138,8 +135,7 @@ fn test_deprecate_clause_force() -> common::TestResult {
 
 #[test]
 fn test_deprecate_clause_already_deprecated_fails() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -165,8 +161,7 @@ fn test_deprecate_clause_already_deprecated_fails() -> common::TestResult {
 
 #[test]
 fn test_deprecate_clause_superseded_fails() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),

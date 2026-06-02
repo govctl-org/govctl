@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_advance_spec_to_impl() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -24,8 +23,7 @@ fn test_advance_spec_to_impl() -> common::TestResult {
 
 #[test]
 fn test_advance_impl_to_test() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -43,8 +41,7 @@ fn test_advance_impl_to_test() -> common::TestResult {
 
 #[test]
 fn test_advance_test_to_stable() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -64,8 +61,7 @@ fn test_advance_test_to_stable() -> common::TestResult {
 #[test]
 fn test_advance_draft_to_impl_fails() -> common::TestResult {
     // Cannot advance draft RFC to impl phase
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -81,8 +77,7 @@ fn test_advance_draft_to_impl_fails() -> common::TestResult {
 #[test]
 fn test_advance_skip_phase_fails() -> common::TestResult {
     // Cannot skip phases (e.g., spec -> test)
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -99,8 +94,7 @@ fn test_advance_skip_phase_fails() -> common::TestResult {
 #[test]
 fn test_advance_backwards_fails() -> common::TestResult {
     // Cannot go backwards (e.g., impl -> spec)
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -117,8 +111,7 @@ fn test_advance_backwards_fails() -> common::TestResult {
 
 #[test]
 fn test_advance_nonexistent_rfc() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-9999", "impl"]])?;
     assert_lifecycle_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -127,8 +120,7 @@ fn test_advance_nonexistent_rfc() -> common::TestResult {
 
 #[test]
 fn test_finalize_sets_updated_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -144,8 +136,7 @@ fn test_finalize_sets_updated_field() -> common::TestResult {
 
 #[test]
 fn test_advance_sets_updated_field() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),

@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_accept_proposed_adr() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -47,8 +46,7 @@ fn test_accept_proposed_adr() -> common::TestResult {
 
 #[test]
 fn test_reject_proposed_adr() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -64,8 +62,7 @@ fn test_reject_proposed_adr() -> common::TestResult {
 
 #[test]
 fn test_accept_already_accepted_fails() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -159,8 +156,7 @@ fn test_supersede_adr() -> common::TestResult {
 
 #[test]
 fn test_accept_rejected_adr_fails() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -176,8 +172,7 @@ fn test_accept_rejected_adr_fails() -> common::TestResult {
 
 #[test]
 fn test_accept_nonexistent_adr() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["adr", "accept", "ADR-9999"]])?;
     assert_lifecycle_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);

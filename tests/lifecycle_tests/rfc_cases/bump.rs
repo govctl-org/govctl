@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_bump_patch_version() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -31,8 +30,7 @@ fn test_bump_patch_version() -> common::TestResult {
 
 #[test]
 fn test_bump_minor_version() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -56,8 +54,7 @@ fn test_bump_minor_version() -> common::TestResult {
 
 #[test]
 fn test_bump_major_version() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -81,8 +78,7 @@ fn test_bump_major_version() -> common::TestResult {
 
 #[test]
 fn test_bump_requires_summary() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -98,8 +94,7 @@ fn test_bump_requires_summary() -> common::TestResult {
 
 #[test]
 fn test_bump_with_change() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -116,8 +111,7 @@ fn test_bump_with_change() -> common::TestResult {
 
 #[test]
 fn test_bump_nonexistent_rfc() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),

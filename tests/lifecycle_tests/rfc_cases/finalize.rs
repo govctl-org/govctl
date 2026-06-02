@@ -6,8 +6,7 @@ use super::*;
 
 #[test]
 fn test_finalize_draft_to_normative() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -24,8 +23,7 @@ fn test_finalize_draft_to_normative() -> common::TestResult {
 
 #[test]
 fn test_finalize_draft_to_deprecated() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -41,8 +39,7 @@ fn test_finalize_draft_to_deprecated() -> common::TestResult {
 
 #[test]
 fn test_finalize_normative_to_deprecated() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -59,8 +56,7 @@ fn test_finalize_normative_to_deprecated() -> common::TestResult {
 
 #[test]
 fn test_finalize_already_normative_fails() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -76,8 +72,7 @@ fn test_finalize_already_normative_fails() -> common::TestResult {
 
 #[test]
 fn test_finalize_nonexistent_rfc() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -89,8 +84,7 @@ fn test_finalize_nonexistent_rfc() -> common::TestResult {
 
 #[test]
 fn test_finalize_legacy_json_rfc_requires_migrate() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(&rfc_dir)?;
