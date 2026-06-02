@@ -64,40 +64,11 @@ All notable changes to this project will be documented in this file.
 
     // First govctl work item — includes an inline ref
     let phase1_commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Govctl adoption".to_string(),
-            "--active".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi1.clone(),
-            "acceptance_criteria".to_string(),
-            "added: Governance structure per [[ADR-0014]]".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "tick".to_string(),
-            wi1.clone(),
-            "acceptance_criteria".to_string(),
-            "Governance".to_string(),
-            "-s".to_string(),
-            "done".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "move".to_string(),
-            wi1.clone(),
-            "done".to_string(),
-        ],
-        vec![
-            "release".to_string(),
-            "1.0.0".to_string(),
-            "--date".to_string(),
-            "2026-03-01".to_string(),
-        ],
+        work_new_active("Govctl adoption"),
+        work_add_acceptance(&wi1, "added: Governance structure per [[ADR-0014]]"),
+        work_tick_acceptance_done(&wi1, "Governance"),
+        work_move_done(&wi1),
+        command(&["release", "1.0.0", "--date", "2026-03-01"]),
     ];
     let _ = run_dynamic_commands(dir, &phase1_commands)?;
 
@@ -220,40 +191,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
     // Second govctl release
     let phase2_commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Breaking changes".to_string(),
-            "--active".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi2.clone(),
-            "acceptance_criteria".to_string(),
-            "changed: Response format to JSON".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "tick".to_string(),
-            wi2.clone(),
-            "acceptance_criteria".to_string(),
-            "Response".to_string(),
-            "-s".to_string(),
-            "done".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "move".to_string(),
-            wi2.clone(),
-            "done".to_string(),
-        ],
-        vec![
-            "release".to_string(),
-            "2.0.0".to_string(),
-            "--date".to_string(),
-            "2026-03-14".to_string(),
-        ],
+        work_new_active("Breaking changes"),
+        work_add_acceptance(&wi2, "changed: Response format to JSON"),
+        work_tick_acceptance_done(&wi2, "Response"),
+        work_move_done(&wi2),
+        command(&["release", "2.0.0", "--date", "2026-03-14"]),
     ];
     let _ = run_dynamic_commands(dir, &phase2_commands)?;
 

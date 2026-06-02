@@ -1,40 +1,10 @@
 use std::fs;
 use std::path::Path;
 
+use super::command;
+
 pub fn loop_id(date: &str, sequence: u32) -> String {
     format!("LOOP-{date}-{sequence:03}")
-}
-
-pub fn command(args: &[&str]) -> Vec<String> {
-    args.iter().map(|arg| (*arg).to_string()).collect()
-}
-
-pub fn work_new(title: &str) -> Vec<String> {
-    command(&["work", "new", title])
-}
-
-pub fn work_add_acceptance(work_id: &str, text: &str) -> Vec<String> {
-    command(&["work", "add", work_id, "acceptance_criteria", text])
-}
-
-pub fn work_tick_acceptance_done(work_id: &str, pattern: &str) -> Vec<String> {
-    command(&[
-        "work",
-        "tick",
-        work_id,
-        "acceptance_criteria",
-        pattern,
-        "-s",
-        "done",
-    ])
-}
-
-pub fn work_add_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
-    command(&["work", "add", work_id, "depends_on", dependency_id])
-}
-
-pub fn work_remove_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
-    command(&["work", "remove", work_id, "depends_on", dependency_id])
 }
 
 pub fn loop_start(work_ids: &[&str]) -> Vec<String> {

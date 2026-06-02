@@ -2,6 +2,48 @@ use super::normalize_output;
 use std::path::Path;
 use std::process::Command;
 
+pub fn command(args: &[&str]) -> Vec<String> {
+    args.iter().map(|arg| (*arg).to_string()).collect()
+}
+
+pub fn work_new(title: &str) -> Vec<String> {
+    command(&["work", "new", title])
+}
+
+pub fn work_new_active(title: &str) -> Vec<String> {
+    let mut cmd = work_new(title);
+    cmd.push("--active".to_string());
+    cmd
+}
+
+pub fn work_add_acceptance(work_id: &str, text: &str) -> Vec<String> {
+    command(&["work", "add", work_id, "acceptance_criteria", text])
+}
+
+pub fn work_tick_acceptance_done(work_id: &str, pattern: &str) -> Vec<String> {
+    command(&[
+        "work",
+        "tick",
+        work_id,
+        "acceptance_criteria",
+        pattern,
+        "-s",
+        "done",
+    ])
+}
+
+pub fn work_move_done(work_id: &str) -> Vec<String> {
+    command(&["work", "move", work_id, "done"])
+}
+
+pub fn work_add_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
+    command(&["work", "add", work_id, "depends_on", dependency_id])
+}
+
+pub fn work_remove_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
+    command(&["work", "remove", work_id, "depends_on", dependency_id])
+}
+
 pub fn run_normalized_commands(
     dir: &Path,
     date: &str,

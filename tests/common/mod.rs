@@ -10,7 +10,9 @@ mod snapshots;
 // Each integration test binary imports a different subset of this facade.
 #[allow(unused_imports)]
 pub use commands::{
-    format_command_output, run_commands, run_dynamic_commands, run_normalized_commands,
+    command, format_command_output, run_commands, run_dynamic_commands, run_normalized_commands,
+    work_add_acceptance, work_add_dependency, work_move_done, work_new, work_new_active,
+    work_remove_dependency, work_tick_acceptance_done,
 };
 #[allow(unused_imports)]
 pub use fixtures::{

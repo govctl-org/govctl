@@ -2,9 +2,12 @@ use crate::common;
 use crate::common::loop_helpers::{
     loop_add_work, loop_id, loop_item_round_count, loop_item_status, loop_item_table,
     loop_remove_work, loop_replan, loop_resolved, loop_run_with_max_rounds, loop_start_with_id,
-    loop_work, work_add_acceptance, work_add_dependency, work_new, work_remove_dependency,
+    loop_work,
 };
-use crate::common::{init_project_with_date, run_dynamic_commands};
+use crate::common::{
+    init_project_with_date, run_dynamic_commands, work_add_acceptance, work_add_dependency,
+    work_new, work_remove_dependency,
+};
 use std::fs;
 
 #[test]
