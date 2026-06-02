@@ -38,40 +38,16 @@ pub fn draw(frame: &mut Frame, app: &mut App) {
         ])
         .split(area);
 
-    chrome::draw_header(frame, app, chunks[0]);
+    chrome::Header::new(app).render(frame, chunks[0]);
     app.content_height = chunks[1].height;
 
     let mut footer_status = None;
-    let bindings: &[&str] = match app.view {
-        View::Dashboard => &[
-            "1/r", "RFCs", "2/a", "ADRs", "3/w", "Work", "?", "Help", "q", "Quit",
-        ],
-        View::RfcList | View::AdrList | View::WorkList => &[
-            "j/k", "Navigate", "Enter", "View", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?",
-            "Help", "q", "Quit",
-        ],
-        View::RfcDetail(_) => &[
-            "j/k",
-            "Navigate",
-            "Enter",
-            "View Clause",
-            "Esc",
-            "Back",
-            "?",
-            "Help",
-            "q",
-            "Quit",
-        ],
-        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => &[
-            "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
-        ],
-    };
 
     if let Some(viewport) = draw_content(frame, app, chunks[1]) {
         footer_status = Some(viewport.footer_status(&mut app.scroll));
     }
 
-    chrome::draw_footer(frame, chunks[2], bindings, footer_status.as_deref());
+    chrome::Footer::new(app.view, footer_status.as_deref()).render(frame, chunks[2]);
 
     if app.show_help {
         help::draw_overlay(frame, app);

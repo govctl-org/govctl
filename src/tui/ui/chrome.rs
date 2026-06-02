@@ -70,31 +70,69 @@ fn header_status(app: &mut App) -> String {
     }
 }
 
-// Implements [[RFC-0003:C-NAV]]
-pub(super) fn draw_header(frame: &mut Frame, app: &mut App, area: Rect) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .border_set(border::ROUNDED)
-        .border_style(Style::default().fg(Color::Cyan));
-    let inner = block.inner(area);
-    frame.render_widget(block, area);
+pub(super) struct Header<'a> {
+    app: &'a mut App,
+}
 
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(10), Constraint::Length(30)])
-        .split(inner);
+impl<'a> Header<'a> {
+    pub(super) fn new(app: &'a mut App) -> Self {
+        Self { app }
+    }
 
-    let left = Paragraph::new(Line::from(vec![
-        Span::styled("govctl", Style::default().fg(Color::Cyan).bold()),
-        Span::raw(" "),
-        Span::raw(breadcrumb(app)),
-    ]))
-    .alignment(Alignment::Left);
+    // Implements [[RFC-0003:C-NAV]]
+    pub(super) fn render(self, frame: &mut Frame, area: Rect) {
+        let app = self.app;
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
+            .border_style(Style::default().fg(Color::Cyan));
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
 
-    let right = Paragraph::new(header_status(app)).alignment(Alignment::Right);
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(10), Constraint::Length(30)])
+            .split(inner);
 
-    frame.render_widget(left, chunks[0]);
-    frame.render_widget(right, chunks[1]);
+        let left = Paragraph::new(Line::from(vec![
+            Span::styled("govctl", Style::default().fg(Color::Cyan).bold()),
+            Span::raw(" "),
+            Span::raw(breadcrumb(app)),
+        ]))
+        .alignment(Alignment::Left);
+
+        let right = Paragraph::new(header_status(app)).alignment(Alignment::Right);
+
+        frame.render_widget(left, chunks[0]);
+        frame.render_widget(right, chunks[1]);
+    }
+}
+
+fn bindings_for_view(view: View) -> &'static [&'static str] {
+    match view {
+        View::Dashboard => &[
+            "1/r", "RFCs", "2/a", "ADRs", "3/w", "Work", "?", "Help", "q", "Quit",
+        ],
+        View::RfcList | View::AdrList | View::WorkList => &[
+            "j/k", "Navigate", "Enter", "View", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?",
+            "Help", "q", "Quit",
+        ],
+        View::RfcDetail(_) => &[
+            "j/k",
+            "Navigate",
+            "Enter",
+            "View Clause",
+            "Esc",
+            "Back",
+            "?",
+            "Help",
+            "q",
+            "Quit",
+        ],
+        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => &[
+            "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
+        ],
+    }
 }
 
 fn keybind_line(bindings: &[&str]) -> Line<'static> {
@@ -116,23 +154,35 @@ fn keybind_line(bindings: &[&str]) -> Line<'static> {
     Line::from(spans)
 }
 
-// Implements [[RFC-0003:C-NAV]]
-pub(super) fn draw_footer(frame: &mut Frame, area: Rect, bindings: &[&str], status: Option<&str>) {
-    let block = Block::default()
-        .borders(Borders::ALL)
-        .border_set(border::ROUNDED)
-        .border_style(Style::default().fg(Color::DarkGray));
-    let inner = block.inner(area);
-    frame.render_widget(block, area);
+pub(super) struct Footer<'a> {
+    view: View,
+    status: Option<&'a str>,
+}
 
-    let chunks = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Min(10), Constraint::Length(30)])
-        .split(inner);
+impl<'a> Footer<'a> {
+    pub(super) fn new(view: View, status: Option<&'a str>) -> Self {
+        Self { view, status }
+    }
 
-    let left = Paragraph::new(keybind_line(bindings)).alignment(Alignment::Center);
-    let right = Paragraph::new(status.unwrap_or("")).alignment(Alignment::Right);
+    // Implements [[RFC-0003:C-NAV]]
+    pub(super) fn render(self, frame: &mut Frame, area: Rect) {
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .border_set(border::ROUNDED)
+            .border_style(Style::default().fg(Color::DarkGray));
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
 
-    frame.render_widget(left, chunks[0]);
-    frame.render_widget(right, chunks[1]);
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(10), Constraint::Length(30)])
+            .split(inner);
+
+        let left =
+            Paragraph::new(keybind_line(bindings_for_view(self.view))).alignment(Alignment::Center);
+        let right = Paragraph::new(self.status.unwrap_or("")).alignment(Alignment::Right);
+
+        frame.render_widget(left, chunks[0]);
+        frame.render_widget(right, chunks[1]);
+    }
 }
