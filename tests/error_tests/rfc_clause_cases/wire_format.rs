@@ -4,16 +4,42 @@ use super::*;
 // New wire-format TOML tests ([govctl] layout)
 // =============================================================================
 
+fn rfc_dir(root: &std::path::Path) -> std::path::PathBuf {
+    root.join("gov/rfc/RFC-0001")
+}
+
+fn ensure_rfc_dir(root: &std::path::Path) -> common::TestResult {
+    fs::create_dir_all(rfc_dir(root).join("clauses"))?;
+    Ok(())
+}
+
+fn write_rfc_toml(root: &std::path::Path, content: &str) -> common::TestResult {
+    ensure_rfc_dir(root)?;
+    fs::write(rfc_dir(root).join("rfc.toml"), content)?;
+    Ok(())
+}
+
+fn write_clause_toml(root: &std::path::Path, file_name: &str, content: &str) -> common::TestResult {
+    ensure_rfc_dir(root)?;
+    fs::write(rfc_dir(root).join("clauses").join(file_name), content)?;
+    Ok(())
+}
+
+fn normalized_check_output(
+    root: &std::path::Path,
+    date: &str,
+) -> Result<String, Box<dyn std::error::Error>> {
+    let output = run_commands(root, &[&["check"]])?;
+    Ok(normalize_output(&output, root, date)?)
+}
+
 /// Test: Valid RFC TOML in [govctl] wire format passes check
 #[test]
 fn test_valid_rfc_toml_wire_format() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
@@ -31,8 +57,7 @@ title = "Summary"
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
 
@@ -41,11 +66,8 @@ title = "Summary"
 fn test_valid_clause_toml_wire_format() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
@@ -64,8 +86,9 @@ clauses = ["clauses/C-TEST.toml"]
 "#,
     )?;
 
-    fs::write(
-        rfc_dir.join("clauses/C-TEST.toml"),
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TEST.toml",
         r#"#:schema ../../../schema/clause.schema.json
 
 [govctl]
@@ -81,8 +104,7 @@ text = "Clause body text."
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
 
@@ -91,11 +113,8 @@ text = "Clause body text."
 fn test_invalid_rfc_toml_wire_unknown_field() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"[govctl]
 schema = 1
 id = "RFC-0001"
@@ -112,8 +131,7 @@ title = "Summary"
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
 
@@ -122,11 +140,8 @@ title = "Summary"
 fn test_invalid_clause_toml_wire_unknown_field() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"[govctl]
 schema = 1
 id = "RFC-0001"
@@ -143,8 +158,9 @@ clauses = ["clauses/C-BAD.toml"]
 "#,
     )?;
 
-    fs::write(
-        rfc_dir.join("clauses/C-BAD.toml"),
+    write_clause_toml(
+        temp_dir.path(),
+        "C-BAD.toml",
         r#"[govctl]
 schema = 1
 id = "C-BAD"
@@ -157,8 +173,7 @@ unexpected = "extra field"
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
 
@@ -167,11 +182,8 @@ unexpected = "extra field"
 fn test_invalid_rfc_toml_wire_missing_required() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"[govctl]
 schema = 1
 id = "RFC-0001"
@@ -186,8 +198,7 @@ title = "Summary"
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
 
@@ -196,11 +207,8 @@ title = "Summary"
 fn test_invalid_clause_toml_wire_missing_text() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"[govctl]
 schema = 1
 id = "RFC-0001"
@@ -217,8 +225,9 @@ clauses = ["clauses/C-NOTEXT.toml"]
 "#,
     )?;
 
-    fs::write(
-        rfc_dir.join("clauses/C-NOTEXT.toml"),
+    write_clause_toml(
+        temp_dir.path(),
+        "C-NOTEXT.toml",
         r#"[govctl]
 schema = 1
 id = "C-NOTEXT"
@@ -229,8 +238,7 @@ kind = "normative"
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
 
@@ -239,11 +247,8 @@ kind = "normative"
 fn test_legacy_flat_rfc_toml_accepted() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"rfc_id = "RFC-0001"
 title = "Flat Format"
 version = "0.1.0"
@@ -257,8 +262,7 @@ title = "Summary"
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
 
@@ -267,11 +271,8 @@ title = "Summary"
 fn test_legacy_flat_clause_toml_accepted() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
+    write_rfc_toml(
+        temp_dir.path(),
         r#"rfc_id = "RFC-0001"
 title = "Flat Clause Test"
 version = "0.1.0"
@@ -286,8 +287,9 @@ clauses = ["clauses/C-FLAT.toml"]
 "#,
     )?;
 
-    fs::write(
-        rfc_dir.join("clauses/C-FLAT.toml"),
+    write_clause_toml(
+        temp_dir.path(),
+        "C-FLAT.toml",
         r#"clause_id = "C-FLAT"
 title = "Flat Clause"
 kind = "normative"
@@ -296,7 +298,6 @@ text = "Legacy flat format body."
 "#,
     )?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert_error_snapshot!(normalized_check_output(temp_dir.path(), &date)?);
     Ok(())
 }
