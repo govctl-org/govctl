@@ -45,12 +45,8 @@ fn normalize_move_output(
 
 macro_rules! assert_move_snapshot {
     ($temp_dir:expr, $date:expr, $output:expr) => {{
-        let snapshot_name =
-            common::current_test_snapshot_name("test_move", insta::_function_name!());
         let value = normalize_move_output($temp_dir.path(), $date, $output)?;
-        crate::with_test_snapshot_settings!({
-            insta::assert_snapshot!(snapshot_name, value);
-        });
+        crate::assert_current_test_snapshot!("test_move", value);
         Ok(())
     }};
 }

@@ -29,11 +29,7 @@ fn assert_no_gate_error(normalized: &str, context: &str) {
 macro_rules! assert_adr_gate_snapshot {
     ($value:expr) => {{
         let snapshot = $value;
-        let snapshot_name =
-            common::current_test_snapshot_name("test_adr_gates", insta::_function_name!());
-        crate::with_test_snapshot_settings!({
-            insta::assert_snapshot!(snapshot_name, snapshot);
-        });
+        crate::assert_current_test_snapshot!("test_adr_gates", snapshot);
     }};
 }
 

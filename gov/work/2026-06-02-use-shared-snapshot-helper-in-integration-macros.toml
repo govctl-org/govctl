@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-117"
+title = "Use shared snapshot helper in integration macros"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+depends_on = ["WI-2026-06-02-116"]
+
+[content]
+description = "Replace duplicated current-test snapshot-name and settings boilerplate in existing integration-test helper macros with the shared tests/common snapshot assertion helper. Preserve all existing snapshot names, helper macro names, test module layout, and command behavior."
+
+[[content.acceptance_criteria]]
+text = "integration-test helper macros delegate current-test snapshot assertions to the shared helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "snapshot names and integration test module layout remain unchanged"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused integration tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"

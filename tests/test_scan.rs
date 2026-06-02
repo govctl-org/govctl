@@ -53,12 +53,8 @@ fn create_normative_rfc(dir: &Path, id: &str, title: &str) -> common::TestResult
 
 macro_rules! assert_scan_check_snapshot {
     ($temp_dir:expr, $date:expr) => {{
-        let snapshot_name =
-            common::current_test_snapshot_name("test_scan", insta::_function_name!());
         let value = run_normalized_commands($temp_dir.path(), $date, &[&["check"]])?;
-        crate::with_test_snapshot_settings!({
-            insta::assert_snapshot!(snapshot_name, value);
-        });
+        crate::assert_current_test_snapshot!("test_scan", value);
         Ok(())
     }};
 }

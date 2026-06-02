@@ -2,10 +2,7 @@
 
 mod common;
 
-use common::{
-    first_work_id, init_project_with_date, run_commands, run_dynamic_commands,
-    run_normalized_commands,
-};
+use common::{first_work_id, init_project_with_date, run_commands, run_dynamic_commands};
 use std::fs;
 use std::path::Path;
 
@@ -99,11 +96,12 @@ fn test_minimal_valid_check() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
-    insta::assert_snapshot!(run_normalized_commands(
+    crate::assert_normalized_command_snapshot!(
+        "test_happy_path",
         temp_dir.path(),
         &date,
         &[&["check"]]
-    )?);
+    );
     Ok(())
 }
 
@@ -112,11 +110,12 @@ fn test_minimal_valid_list_rfc() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
-    insta::assert_snapshot!(run_normalized_commands(
+    crate::assert_normalized_command_snapshot!(
+        "test_happy_path",
         temp_dir.path(),
         &date,
         &[&["rfc", "list"]]
-    )?);
+    );
     Ok(())
 }
 
@@ -125,11 +124,12 @@ fn test_minimal_valid_list_clause() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
-    insta::assert_snapshot!(run_normalized_commands(
+    crate::assert_normalized_command_snapshot!(
+        "test_happy_path",
         temp_dir.path(),
         &date,
         &[&["clause", "list"]]
-    )?);
+    );
     Ok(())
 }
 
@@ -138,11 +138,12 @@ fn test_minimal_valid_list_adr() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
-    insta::assert_snapshot!(run_normalized_commands(
+    crate::assert_normalized_command_snapshot!(
+        "test_happy_path",
         temp_dir.path(),
         &date,
         &[&["adr", "list"]]
-    )?);
+    );
     Ok(())
 }
 
@@ -151,11 +152,12 @@ fn test_minimal_valid_list_work() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
-    insta::assert_snapshot!(run_normalized_commands(
+    crate::assert_normalized_command_snapshot!(
+        "test_happy_path",
         temp_dir.path(),
         &date,
         &[&["work", "list"]]
-    )?);
+    );
     Ok(())
 }
 
@@ -186,11 +188,12 @@ fn test_minimal_valid_status() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
-    insta::assert_snapshot!(run_normalized_commands(
+    crate::assert_normalized_command_snapshot!(
+        "test_happy_path",
         temp_dir.path(),
         &date,
         &[&["status"]]
-    )?);
+    );
     Ok(())
 }
 
@@ -199,7 +202,8 @@ fn test_minimal_valid_full_workflow() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
-    insta::assert_snapshot!(run_normalized_commands(
+    crate::assert_normalized_command_snapshot!(
+        "test_happy_path",
         temp_dir.path(),
         &date,
         &[
@@ -210,6 +214,6 @@ fn test_minimal_valid_full_workflow() -> common::TestResult {
             &["work", "list"],
             &["status"],
         ],
-    )?);
+    );
     Ok(())
 }

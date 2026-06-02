@@ -9,11 +9,7 @@ macro_rules! assert_help_snapshot {
         let (temp_dir, date) = common::temp_dir_with_date()?;
         let output = run_commands(temp_dir.path(), &[$command])?;
         let normalized = normalize_output(&output, temp_dir.path(), &date)?;
-        let snapshot_name =
-            common::current_test_snapshot_name("test_help", insta::_function_name!());
-        crate::with_test_snapshot_settings!({
-            insta::assert_snapshot!(snapshot_name, normalized);
-        });
+        crate::assert_current_test_snapshot!("test_help", normalized);
         Ok(())
     }};
 }

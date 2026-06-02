@@ -35,6 +35,25 @@ macro_rules! with_test_snapshot_settings {
     }};
 }
 
+#[macro_export]
+macro_rules! assert_current_test_snapshot {
+    ($prefix:expr, $value:expr $(,)?) => {{
+        let snapshot_name =
+            $crate::common::current_test_snapshot_name($prefix, insta::_function_name!());
+        $crate::with_test_snapshot_settings!({
+            insta::assert_snapshot!(snapshot_name, $value);
+        });
+    }};
+}
+
+#[macro_export]
+macro_rules! assert_normalized_command_snapshot {
+    ($prefix:expr, $dir:expr, $date:expr, $commands:expr $(,)?) => {{
+        let value = $crate::common::run_normalized_commands($dir, $date, $commands)?;
+        $crate::assert_current_test_snapshot!($prefix, value);
+    }};
+}
+
 /// Get today's date in YYYY-MM-DD format (same as govctl uses)
 pub fn today() -> String {
     chrono::Local::now().format("%Y-%m-%d").to_string()

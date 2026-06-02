@@ -27,11 +27,7 @@ fn assert_show_missing_scope(output: &str, temp_dir: &Path, error: &str, scope: 
 macro_rules! assert_display_path_snapshot {
     ($value:expr) => {{
         let value = $value;
-        let snapshot_name =
-            common::current_test_snapshot_name("test_display_paths", insta::_function_name!());
-        crate::with_test_snapshot_settings!({
-            insta::assert_snapshot!(snapshot_name, value);
-        });
+        crate::assert_current_test_snapshot!("test_display_paths", value);
     }};
 }
 
