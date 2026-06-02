@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-126"
+title = "Split common test fixture helpers"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+depends_on = ["WI-2026-06-02-125"]
+
+[content]
+description = "Split temp-project setup, date/id helpers, guard fixtures, and guarded work-item fixtures out of the mixed tests/common module into a focused fixture helper module. Preserve current integration test call sites via the common module re-export surface."
+
+[[content.acceptance_criteria]]
+text = "fixture-focused tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "temp-project, date/id, guard, and guarded-work fixtures live in a focused common fixture helper module"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "existing integration tests continue to use the stable common helper surface"
+status = "done"
+category = "changed"
