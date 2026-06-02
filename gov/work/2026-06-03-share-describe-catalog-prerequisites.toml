@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-03-008"
+title = "Share describe catalog prerequisites"
+status = "done"
+created = "2026-06-03"
+started = "2026-06-03"
+completed = "2026-06-03"
+
+[content]
+description = "Reduce duplication in the describe command catalog by replacing repeated prerequisite literal slices with named constants inside the existing catalog module. Preserve catalog order and serialized describe output; do not split files or edit snapshots."
+
+[[content.acceptance_criteria]]
+text = "describe catalog prerequisite literals are shared through named constants"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "describe snapshots remain unchanged and describe tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "fmt, clippy, govctl check, and no-snapshot/no-include scans pass"
+status = "done"
+category = "chore"
