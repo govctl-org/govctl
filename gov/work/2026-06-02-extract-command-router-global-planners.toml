@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-111"
+title = "Extract command-router global planners"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Refactor command-router parsed planning so top-level global loop and tag command branches delegate to local planner helpers, matching the existing resource-command delegation style while preserving current planned operations."
+
+[[content.acceptance_criteria]]
+text = "command-router parsed planning delegates loop command conversion to a local helper"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "command-router parsed planning delegates tag command conversion without adding new module splits"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "focused command-router tests, clippy, full tests, and govctl check pass"
+status = "done"
+category = "chore"

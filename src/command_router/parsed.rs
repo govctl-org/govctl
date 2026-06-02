@@ -1,6 +1,6 @@
 use super::{BuiltinOp, CommandPlan, Op, global};
-use crate::Commands;
 use crate::diagnostic::DiagnosticResult;
+use crate::{Commands, LoopCommand, TagCommand};
 
 impl CommandPlan {
     pub fn from_parsed(cmd: &Commands, global_dry_run: bool) -> DiagnosticResult<Self> {
@@ -49,76 +49,68 @@ impl CommandPlan {
             Commands::Adr { command } => command.to_plan(),
             Commands::Work { command } => command.to_plan(),
             Commands::Guard { command } => command.to_plan(),
-            Commands::Loop { command } => match command {
-                crate::LoopCommand::List {
-                    filter,
-                    limit,
-                    output,
-                } => Ok(global(Op::Builtin(BuiltinOp::LoopList {
-                    filter: filter.clone(),
-                    limit: *limit,
-                    output: *output,
-                }))),
-                crate::LoopCommand::Start { id, work_ids } => {
-                    Ok(global(Op::Builtin(BuiltinOp::LoopStart {
-                        loop_id: id.clone(),
-                        work_ids: work_ids.clone(),
-                    })))
-                }
-                crate::LoopCommand::Show { id } => Ok(global(Op::Builtin(BuiltinOp::LoopShow {
-                    loop_id: id.clone(),
-                }))),
-                crate::LoopCommand::Resume { id } => {
-                    Ok(global(Op::Builtin(BuiltinOp::LoopResume {
-                        loop_id: id.clone(),
-                    })))
-                }
-                crate::LoopCommand::Replan { id } => {
-                    Ok(global(Op::Builtin(BuiltinOp::LoopReplan {
-                        loop_id: id.clone(),
-                    })))
-                }
-                crate::LoopCommand::Add { id, field, value } => {
-                    Ok(global(Op::Builtin(BuiltinOp::LoopAdd {
-                        loop_id: id.clone(),
-                        field: field.clone(),
-                        value: value.clone(),
-                    })))
-                }
-                crate::LoopCommand::Remove { id, field, value } => {
-                    Ok(global(Op::Builtin(BuiltinOp::LoopRemove {
-                        loop_id: id.clone(),
-                        field: field.clone(),
-                        value: value.clone(),
-                    })))
-                }
-                crate::LoopCommand::Run {
-                    id,
-                    target_work_ids,
-                    max_rounds,
-                } => Ok(global(Op::Builtin(BuiltinOp::LoopRun {
-                    loop_id: id.clone(),
-                    target_work_ids: target_work_ids.clone(),
-                    max_rounds: *max_rounds,
-                }))),
-            },
+            Commands::Loop { command } => Ok(plan_loop_command(command)),
             Commands::Release { version, date } => Ok(global(Op::Builtin(BuiltinOp::ReleaseCut {
                 version: version.clone(),
                 date: date.clone(),
             }))),
-            Commands::Tag { command } => match command {
-                crate::TagCommand::New { tag } => {
-                    Ok(global(Op::Builtin(BuiltinOp::TagNew { tag: tag.clone() })))
-                }
-                crate::TagCommand::Delete { tag } => {
-                    Ok(global(Op::Builtin(BuiltinOp::TagDelete {
-                        tag: tag.clone(),
-                    })))
-                }
-                crate::TagCommand::List { output } => {
-                    Ok(global(Op::Builtin(BuiltinOp::TagList { output: *output })))
-                }
-            },
+            Commands::Tag { command } => Ok(plan_tag_command(command)),
         }
     }
+}
+
+fn plan_loop_command(command: &LoopCommand) -> CommandPlan {
+    let op = match command {
+        LoopCommand::List {
+            filter,
+            limit,
+            output,
+        } => BuiltinOp::LoopList {
+            filter: filter.clone(),
+            limit: *limit,
+            output: *output,
+        },
+        LoopCommand::Start { id, work_ids } => BuiltinOp::LoopStart {
+            loop_id: id.clone(),
+            work_ids: work_ids.clone(),
+        },
+        LoopCommand::Show { id } => BuiltinOp::LoopShow {
+            loop_id: id.clone(),
+        },
+        LoopCommand::Resume { id } => BuiltinOp::LoopResume {
+            loop_id: id.clone(),
+        },
+        LoopCommand::Replan { id } => BuiltinOp::LoopReplan {
+            loop_id: id.clone(),
+        },
+        LoopCommand::Add { id, field, value } => BuiltinOp::LoopAdd {
+            loop_id: id.clone(),
+            field: field.clone(),
+            value: value.clone(),
+        },
+        LoopCommand::Remove { id, field, value } => BuiltinOp::LoopRemove {
+            loop_id: id.clone(),
+            field: field.clone(),
+            value: value.clone(),
+        },
+        LoopCommand::Run {
+            id,
+            target_work_ids,
+            max_rounds,
+        } => BuiltinOp::LoopRun {
+            loop_id: id.clone(),
+            target_work_ids: target_work_ids.clone(),
+            max_rounds: *max_rounds,
+        },
+    };
+    global(Op::Builtin(op))
+}
+
+fn plan_tag_command(command: &TagCommand) -> CommandPlan {
+    let op = match command {
+        TagCommand::New { tag } => BuiltinOp::TagNew { tag: tag.clone() },
+        TagCommand::Delete { tag } => BuiltinOp::TagDelete { tag: tag.clone() },
+        TagCommand::List { output } => BuiltinOp::TagList { output: *output },
+    };
+    global(Op::Builtin(op))
 }
