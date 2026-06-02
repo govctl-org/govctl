@@ -1,57 +1,102 @@
 use super::*;
 
-/// Test: Delete clause - safeguard prevents deleting from normative RFC
-#[test]
-fn test_delete_clause_safeguard_normative() -> TestResult {
-    let (temp_dir, date) = init_project_with_date()?;
-
-    // Create normative RFC with clause
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+fn write_rfc_fixture(
+    project_dir: &std::path::Path,
+    title: &str,
+    version: &str,
+    status: &str,
+    phase: &str,
+    clauses: &[(&str, &str, &str)],
+    changelog_entry: &str,
+) -> std::io::Result<std::path::PathBuf> {
+    let rfc_dir = project_dir.join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
+
+    let clause_paths = clauses
+        .iter()
+        .map(|(id, _, _)| format!("\"clauses/{id}.toml\""))
+        .collect::<Vec<_>>()
+        .join(", ");
 
     fs::write(
         rfc_dir.join("rfc.toml"),
-        r#"#:schema ../../schema/rfc.schema.json
+        format!(
+            r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
 schema = 1
 id = "RFC-0001"
-title = "Normative RFC"
-version = "1.0.0"
-status = "normative"
-phase = "stable"
+title = "{title}"
+version = "{version}"
+status = "{status}"
+phase = "{phase}"
 owners = ["test@example.com"]
 created = "2026-01-01"
 
 [[sections]]
 title = "Specification"
-clauses = ["clauses/C-LOCKED.toml"]
+clauses = [{clause_paths}]
 
 [[changelog]]
-version = "1.0.0"
+version = "{version}"
 date = "2026-01-01"
-added = ["Initial release"]
-"#,
+{changelog_entry}
+"#
+        ),
     )?;
 
+    for (id, title, text) in clauses {
+        write_clause_fixture(&rfc_dir, id, title, version, text)?;
+    }
+
+    Ok(rfc_dir)
+}
+
+fn write_clause_fixture(
+    rfc_dir: &std::path::Path,
+    id: &str,
+    title: &str,
+    since: &str,
+    text: &str,
+) -> std::io::Result<()> {
     fs::write(
-        rfc_dir.join("clauses/C-LOCKED.toml"),
-        r#"#:schema ../../schema/clause.schema.json
+        rfc_dir.join(format!("clauses/{id}.toml")),
+        format!(
+            r#"#:schema ../../schema/clause.schema.json
 
 [govctl]
 schema = 1
-id = "C-LOCKED"
-title = "Locked Clause"
+id = "{id}"
+title = "{title}"
 kind = "normative"
 status = "active"
-since = "1.0.0"
+since = "{since}"
 
 [content]
-text = "This clause cannot be deleted - RFC is normative."
-"#,
+text = "{text}"
+"#
+        ),
+    )
+}
+
+#[test]
+fn test_delete_clause_safeguard_normative() -> TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+
+    write_rfc_fixture(
+        temp_dir.path(),
+        "Normative RFC",
+        "1.0.0",
+        "normative",
+        "stable",
+        &[(
+            "C-LOCKED",
+            "Locked Clause",
+            "This clause cannot be deleted - RFC is normative.",
+        )],
+        r#"added = ["Initial release"]"#,
     )?;
 
-    // Try to delete the clause (should fail)
     let output = run_commands(
         temp_dir.path(),
         &[&["clause", "delete", "RFC-0001:C-LOCKED", "-f"]],
@@ -61,75 +106,27 @@ text = "This clause cannot be deleted - RFC is normative."
     Ok(())
 }
 
-/// Test: Delete clause - successful deletion from draft RFC
 #[test]
 fn test_delete_clause_success_draft() -> TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
-    // Create draft RFC with two clauses
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
-        r#"#:schema ../../schema/rfc.schema.json
-
-[govctl]
-schema = 1
-id = "RFC-0001"
-title = "Draft RFC"
-version = "0.1.0"
-status = "draft"
-phase = "spec"
-owners = ["test@example.com"]
-created = "2026-01-01"
-
-[[sections]]
-title = "Specification"
-clauses = ["clauses/C-KEEP.toml", "clauses/C-DELETE.toml"]
-
-[[changelog]]
-version = "0.1.0"
-date = "2026-01-01"
-notes = "Initial draft"
-"#,
+    write_rfc_fixture(
+        temp_dir.path(),
+        "Draft RFC",
+        "0.1.0",
+        "draft",
+        "spec",
+        &[
+            ("C-KEEP", "Keep This Clause", "This clause will remain."),
+            (
+                "C-DELETE",
+                "Delete This Clause",
+                "This clause will be deleted.",
+            ),
+        ],
+        r#"notes = "Initial draft""#,
     )?;
 
-    fs::write(
-        rfc_dir.join("clauses/C-KEEP.toml"),
-        r#"#:schema ../../schema/clause.schema.json
-
-[govctl]
-schema = 1
-id = "C-KEEP"
-title = "Keep This Clause"
-kind = "normative"
-status = "active"
-since = "0.1.0"
-
-[content]
-text = "This clause will remain."
-"#,
-    )?;
-
-    fs::write(
-        rfc_dir.join("clauses/C-DELETE.toml"),
-        r#"#:schema ../../schema/clause.schema.json
-
-[govctl]
-schema = 1
-id = "C-DELETE"
-title = "Delete This Clause"
-kind = "normative"
-status = "active"
-since = "0.1.0"
-
-[content]
-text = "This clause will be deleted."
-"#,
-    )?;
-
-    // Delete the clause with force flag, then verify
     let output = run_commands(
         temp_dir.path(),
         &[
@@ -148,49 +145,18 @@ fn test_delete_clause_safeguard_referenced_by_artifacts() -> TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
-    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.toml"),
-        r#"#:schema ../../schema/rfc.schema.json
-
-[govctl]
-schema = 1
-id = "RFC-0001"
-title = "Draft RFC"
-version = "0.1.0"
-status = "draft"
-phase = "spec"
-owners = ["test@example.com"]
-created = "2026-01-01"
-
-[[sections]]
-title = "Specification"
-clauses = ["clauses/C-DELETE.toml"]
-
-[[changelog]]
-version = "0.1.0"
-date = "2026-01-01"
-notes = "Initial draft"
-"#,
-    )?;
-
-    fs::write(
-        rfc_dir.join("clauses/C-DELETE.toml"),
-        r#"#:schema ../../schema/clause.schema.json
-
-[govctl]
-schema = 1
-id = "C-DELETE"
-title = "Referenced Clause"
-kind = "normative"
-status = "active"
-since = "0.1.0"
-
-[content]
-text = "This clause is still referenced."
-"#,
+    let rfc_dir = write_rfc_fixture(
+        temp_dir.path(),
+        "Draft RFC",
+        "0.1.0",
+        "draft",
+        "spec",
+        &[(
+            "C-DELETE",
+            "Referenced Clause",
+            "This clause is still referenced.",
+        )],
+        r#"notes = "Initial draft""#,
     )?;
 
     let commands: Vec<Vec<String>> = vec![

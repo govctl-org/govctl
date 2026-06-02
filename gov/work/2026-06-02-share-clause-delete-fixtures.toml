@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-137"
+title = "Share clause delete fixtures"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Consolidate repeated inline RFC and clause TOML fixtures inside the clause delete integration tests while preserving the existing deletion scenarios and snapshot assertions."
+
+[[content.acceptance_criteria]]
+text = "Focused clause delete tests and project checks pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Clause delete tests share local RFC and clause fixture writers"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Existing clause delete scenarios and snapshot call sites remain intact"
+status = "done"
+category = "changed"
