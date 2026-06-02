@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_artifact_add_tag() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let output = run_commands(
         temp_dir.path(),
         &[
@@ -22,8 +21,7 @@ fn test_artifact_add_tag() -> TestResult {
 
 #[test]
 fn test_artifact_add_unregistered_tag() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     register_tags(temp_dir.path(), &["registered"])?;
 
@@ -43,8 +41,7 @@ fn test_artifact_add_unregistered_tag() -> TestResult {
 
 #[test]
 fn test_check_rejects_unknown_tag() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     register_tags(temp_dir.path(), &["allowed-tag"])?;
 
@@ -84,8 +81,7 @@ fn test_check_rejects_unknown_tag() -> TestResult {
 
 #[test]
 fn test_check_accepts_registered_tag() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     register_tags(temp_dir.path(), &["caching"])?;
 

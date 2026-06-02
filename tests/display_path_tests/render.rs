@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_render_rfc_display_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -53,8 +52,7 @@ text = "Test clause content."
 
 #[test]
 fn test_render_adr_display_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let adr_dir = temp_dir.path().join("gov/adr");
     fs::create_dir_all(&adr_dir)?;
@@ -87,8 +85,8 @@ consequences = "Test consequences"
 
 #[test]
 fn test_render_work_display_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
+    let work_id = first_work_id(&date);
 
     let work_dir = temp_dir.path().join("gov/work");
     fs::create_dir_all(&work_dir)?;
@@ -99,7 +97,7 @@ fn test_render_work_display_path() -> common::TestResult {
         format!(
             r#"[govctl]
 schema = 1
-id = "WI-{}-001"
+id = "{}"
 title = "Test Work"
 status = "active"
 created = "{}"
@@ -111,13 +109,13 @@ description = "Test description"
 acceptance_criteria = []
 notes = []
 "#,
-            date, date, date
+            work_id, date, date
         ),
     )?;
 
     let output = run_commands(
         temp_dir.path(),
-        &[&["work", "render", &format!("WI-{}-001", date), "--dry-run"]],
+        &[&["work", "render", &work_id, "--dry-run"]],
     )?;
     assert_display_path_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
@@ -125,8 +123,7 @@ notes = []
 
 #[test]
 fn test_render_rfc_missing_returns_scope_context() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["rfc", "render", "RFC-9999"]])?;
     assert_display_path_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -135,8 +132,7 @@ fn test_render_rfc_missing_returns_scope_context() -> common::TestResult {
 
 #[test]
 fn test_render_adr_missing_returns_scope_context() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["adr", "render", "ADR-9999"]])?;
     assert_display_path_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -145,8 +141,7 @@ fn test_render_adr_missing_returns_scope_context() -> common::TestResult {
 
 #[test]
 fn test_render_work_missing_returns_scope_context() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(temp_dir.path(), &[&["work", "render", "WI-9999-01-01-001"]])?;
     assert_display_path_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);

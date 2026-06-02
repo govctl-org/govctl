@@ -2,8 +2,8 @@ use super::*;
 
 #[test]
 fn test_delete_work_dry_run_display_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
+    let work_id = first_work_id(&date);
 
     let work_dir = temp_dir.path().join("gov/work");
     fs::create_dir_all(&work_dir)?;
@@ -14,7 +14,7 @@ fn test_delete_work_dry_run_display_path() -> common::TestResult {
         format!(
             r#"[govctl]
 schema = 1
-id = "WI-{}-001"
+id = "{}"
 title = "Test Work to Delete"
 status = "queue"
 created = "{}"
@@ -25,13 +25,13 @@ description = "Test description"
 acceptance_criteria = []
 notes = []
 "#,
-            date, date
+            work_id, date
         ),
     )?;
 
     let output = run_commands(
         temp_dir.path(),
-        &[&["work", "delete", &format!("WI-{}-001", date), "--dry-run"]],
+        &[&["work", "delete", &work_id, "--dry-run"]],
     )?;
     assert_display_path_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
@@ -39,8 +39,7 @@ notes = []
 
 #[test]
 fn test_delete_clause_dry_run_display_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;

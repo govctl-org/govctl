@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_tag_new() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let output = run_commands(
         temp_dir.path(),
         &[&["tag", "new", "caching"], &["tag", "list"]],
@@ -17,8 +16,7 @@ fn test_tag_new() -> TestResult {
 
 #[test]
 fn test_tag_new_duplicate() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let output = run_commands(
         temp_dir.path(),
         &[&["tag", "new", "caching"], &["tag", "new", "caching"]],
@@ -32,8 +30,7 @@ fn test_tag_new_duplicate() -> TestResult {
 
 #[test]
 fn test_tag_new_invalid_format() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let output = run_commands(temp_dir.path(), &[&["tag", "new", "UPPER"]])?;
     assert_tag_snapshot(
         "tag_new_invalid_format",
@@ -44,8 +41,7 @@ fn test_tag_new_invalid_format() -> TestResult {
 
 #[test]
 fn test_tag_delete() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let output = run_commands(
         temp_dir.path(),
         &[
@@ -63,8 +59,7 @@ fn test_tag_delete() -> TestResult {
 
 #[test]
 fn test_tag_delete_referenced() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
     let output = run_commands(
         temp_dir.path(),
         &[
@@ -83,8 +78,7 @@ fn test_tag_delete_referenced() -> TestResult {
 
 #[test]
 fn test_tag_list_plain_and_json_output() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     run_commands(
         temp_dir.path(),

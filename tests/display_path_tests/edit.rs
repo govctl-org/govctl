@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_rfc_set_dry_run_display_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -49,8 +48,7 @@ notes = "Initial draft"
 
 #[test]
 fn test_rfc_bump_dry_run_display_path() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;

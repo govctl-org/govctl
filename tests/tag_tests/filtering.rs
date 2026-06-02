@@ -2,8 +2,7 @@ use super::*;
 
 #[test]
 fn test_list_filter_by_tag() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     run_commands(
         temp_dir.path(),
@@ -25,8 +24,7 @@ fn test_list_filter_by_tag() -> TestResult {
 
 #[test]
 fn test_list_filter_multiple_tags() -> TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     run_commands(
         temp_dir.path(),

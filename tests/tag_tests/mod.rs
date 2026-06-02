@@ -1,4 +1,4 @@
-use crate::common::{TestResult, init_project, normalize_output, run_commands, today};
+use crate::common::{TestResult, init_project_with_date, normalize_output, run_commands};
 use std::fs;
 
 mod artifacts;
