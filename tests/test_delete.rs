@@ -3,8 +3,10 @@
 mod common;
 
 use common::{
-    TestResult, first_work_id, init_project_with_date, normalize_output, run_commands,
-    run_dynamic_commands, work_id,
+    TestResult, command, first_work_id, init_project_with_date, normalize_output, run_commands,
+    run_dynamic_commands, work_add_acceptance, work_add_dependency, work_add_field,
+    work_delete_force, work_id, work_move_done, work_new, work_new_active,
+    work_tick_acceptance_done,
 };
 use std::fs;
 

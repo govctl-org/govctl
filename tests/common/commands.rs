@@ -68,6 +68,10 @@ pub fn work_move_done(work_id: &str) -> Vec<String> {
     command(&["work", "move", work_id, "done"])
 }
 
+pub fn work_delete_force(work_id: &str) -> Vec<String> {
+    command(&["work", "delete", work_id, "-f"])
+}
+
 pub fn work_add_dependency(work_id: &str, dependency_id: &str) -> Vec<String> {
     work_add_field(work_id, "depends_on", dependency_id)
 }

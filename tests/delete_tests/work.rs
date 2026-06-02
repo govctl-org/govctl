@@ -8,25 +8,9 @@ fn test_delete_work_safeguard_active() -> TestResult {
 
     // Create active work item
     let commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Active work item".to_string(),
-            "--active".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi1.clone(),
-            "acceptance_criteria".to_string(),
-            "chore: Test criterion".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "delete".to_string(),
-            wi1.clone(),
-            "-f".to_string(),
-        ],
+        work_new_active("Active work item"),
+        work_add_acceptance(&wi1, "chore: Test criterion"),
+        work_delete_force(&wi1),
     ];
 
     let output = run_dynamic_commands(temp_dir.path(), &commands)?;
@@ -43,40 +27,11 @@ fn test_delete_work_safeguard_done() -> TestResult {
 
     // Create and complete work item
     let commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Completed work item".to_string(),
-            "--active".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi1.clone(),
-            "acceptance_criteria".to_string(),
-            "chore: Test criterion".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "tick".to_string(),
-            wi1.clone(),
-            "acceptance_criteria".to_string(),
-            "Test".to_string(),
-            "-s".to_string(),
-            "done".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "move".to_string(),
-            wi1.clone(),
-            "done".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "delete".to_string(),
-            wi1.clone(),
-            "-f".to_string(),
-        ],
+        work_new_active("Completed work item"),
+        work_add_acceptance(&wi1, "chore: Test criterion"),
+        work_tick_acceptance_done(&wi1, "Test"),
+        work_move_done(&wi1),
+        work_delete_force(&wi1),
     ];
 
     let output = run_dynamic_commands(temp_dir.path(), &commands)?;
@@ -93,25 +48,12 @@ fn test_delete_work_success_queue() -> TestResult {
 
     // Create two queued work items
     let commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Keep this work item".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Delete this work item".to_string(),
-        ],
-        vec!["work".to_string(), "list".to_string()],
-        vec![
-            "work".to_string(),
-            "delete".to_string(),
-            wi1.clone(),
-            "-f".to_string(),
-        ],
-        vec!["work".to_string(), "list".to_string()],
-        vec!["check".to_string()],
+        work_new("Keep this work item"),
+        work_new("Delete this work item"),
+        command(&["work", "list"]),
+        work_delete_force(&wi1),
+        command(&["work", "list"]),
+        command(&["check"]),
     ];
 
     let output = run_dynamic_commands(temp_dir.path(), &commands)?;
@@ -129,34 +71,15 @@ fn test_delete_work_safeguard_referenced() -> TestResult {
 
     // Create two work items where wi2 references wi1
     let setup_commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Referenced work item".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Work item with reference".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi2.clone(),
-            "refs".to_string(),
-            wi1.clone(),
-        ],
+        work_new("Referenced work item"),
+        work_new("Work item with reference"),
+        work_add_field(&wi2, "refs", &wi1),
     ];
 
     let _ = run_dynamic_commands(temp_dir.path(), &setup_commands)?;
 
     // Try to delete wi1 (should fail because wi2 references it)
-    let delete_commands: Vec<Vec<String>> = vec![vec![
-        "work".to_string(),
-        "delete".to_string(),
-        wi1.clone(),
-        "-f".to_string(),
-    ]];
+    let delete_commands: Vec<Vec<String>> = vec![work_delete_force(&wi1)];
 
     let output = run_dynamic_commands(temp_dir.path(), &delete_commands)?;
     assert_delete_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -172,36 +95,14 @@ fn test_delete_work_safeguard_depended_on() -> TestResult {
     let wi2 = work_id(&date, 2);
 
     let setup_commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Dependency work item".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Dependent work item".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi2.clone(),
-            "depends_on".to_string(),
-            wi1.clone(),
-        ],
+        work_new("Dependency work item"),
+        work_new("Dependent work item"),
+        work_add_dependency(&wi2, &wi1),
     ];
 
     let _ = run_dynamic_commands(temp_dir.path(), &setup_commands)?;
 
-    let output = run_dynamic_commands(
-        temp_dir.path(),
-        &[vec![
-            "work".to_string(),
-            "delete".to_string(),
-            wi1.clone(),
-            "-f".to_string(),
-        ]],
-    )?;
+    let output = run_dynamic_commands(temp_dir.path(), &[work_delete_force(&wi1)])?;
 
     assert!(output.contains("exit: 1"), "output: {}", output);
     assert!(

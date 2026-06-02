@@ -4,6 +4,7 @@ mod common;
 
 use common::{
     first_work_id, init_project_with_date, normalize_output, run_commands, run_dynamic_commands,
+    work_add_acceptance, work_new_active,
 };
 use std::path::Path;
 
@@ -16,19 +17,8 @@ fn setup_active_work_item_with_criteria(
     run_dynamic_commands(
         dir,
         &[
-            vec![
-                "work".to_string(),
-                "new".to_string(),
-                title.to_string(),
-                "--active".to_string(),
-            ],
-            vec![
-                "work".to_string(),
-                "add".to_string(),
-                first_work_id(date),
-                "acceptance_criteria".to_string(),
-                criterion.to_string(),
-            ],
+            work_new_active(title),
+            work_add_acceptance(&first_work_id(date), criterion),
         ],
     )?;
     Ok(())

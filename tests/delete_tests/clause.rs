@@ -160,60 +160,21 @@ fn test_delete_clause_safeguard_referenced_by_artifacts() -> TestResult {
     )?;
 
     let commands: Vec<Vec<String>> = vec![
-        vec![
-            "rfc".to_string(),
-            "new".to_string(),
-            "Referencing RFC".to_string(),
-        ],
-        vec![
-            "rfc".to_string(),
-            "add".to_string(),
-            "RFC-0002".to_string(),
-            "refs".to_string(),
-            "RFC-0001:C-DELETE".to_string(),
-        ],
-        vec![
-            "adr".to_string(),
-            "new".to_string(),
-            "Referencing ADR".to_string(),
-        ],
-        vec![
-            "adr".to_string(),
-            "add".to_string(),
-            "ADR-0001".to_string(),
-            "refs".to_string(),
-            "RFC-0001:C-DELETE".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Referencing work item".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            work_id.clone(),
-            "refs".to_string(),
-            "RFC-0001:C-DELETE".to_string(),
-        ],
-        vec![
-            "guard".to_string(),
-            "new".to_string(),
-            "Clause guard".to_string(),
-        ],
-        vec![
-            "guard".to_string(),
-            "add".to_string(),
-            "GUARD-CLAUSE-GUARD".to_string(),
-            "refs".to_string(),
-            "RFC-0001:C-DELETE".to_string(),
-        ],
-        vec![
-            "clause".to_string(),
-            "delete".to_string(),
-            "RFC-0001:C-DELETE".to_string(),
-            "-f".to_string(),
-        ],
+        command(&["rfc", "new", "Referencing RFC"]),
+        command(&["rfc", "add", "RFC-0002", "refs", "RFC-0001:C-DELETE"]),
+        command(&["adr", "new", "Referencing ADR"]),
+        command(&["adr", "add", "ADR-0001", "refs", "RFC-0001:C-DELETE"]),
+        work_new("Referencing work item"),
+        work_add_field(&work_id, "refs", "RFC-0001:C-DELETE"),
+        command(&["guard", "new", "Clause guard"]),
+        command(&[
+            "guard",
+            "add",
+            "GUARD-CLAUSE-GUARD",
+            "refs",
+            "RFC-0001:C-DELETE",
+        ]),
+        command(&["clause", "delete", "RFC-0001:C-DELETE", "-f"]),
     ];
 
     let output = run_dynamic_commands(temp_dir.path(), &commands)?;

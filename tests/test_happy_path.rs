@@ -2,7 +2,10 @@
 
 mod common;
 
-use common::{first_work_id, init_project_with_date, run_commands, run_dynamic_commands};
+use common::{
+    first_work_id, init_project_with_date, run_commands, run_dynamic_commands, work_add_acceptance,
+    work_new_active,
+};
 use std::fs;
 use std::path::Path;
 
@@ -72,19 +75,8 @@ consequences = "Tests will pass."
 
     // Create work item via commands
     let commands: Vec<Vec<String>> = vec![
-        vec![
-            "work".to_string(),
-            "new".to_string(),
-            "Test work item".to_string(),
-            "--active".to_string(),
-        ],
-        vec![
-            "work".to_string(),
-            "add".to_string(),
-            wi1.clone(),
-            "acceptance_criteria".to_string(),
-            "add: Test criterion".to_string(),
-        ],
+        work_new_active("Test work item"),
+        work_add_acceptance(&wi1, "add: Test criterion"),
     ];
 
     let _ = run_dynamic_commands(dir, &commands)?;
