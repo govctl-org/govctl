@@ -1,17 +1,12 @@
-use super::super::test_support::{adr, buffer_lines, project_index, rfc, work_item};
+use super::super::test_support::{adr, project_index, render_app, rfc, work_item};
 use super::*;
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
-use ratatui::{Terminal, backend::TestBackend};
 
 #[test]
 fn dashboard_draws_summary_counts() -> Result<(), Box<dyn std::error::Error>> {
-    let backend = TestBackend::new(90, 8);
-    let mut terminal = Terminal::new(backend)?;
     let app = App::new(dashboard_project_index());
 
-    terminal.draw(|frame| draw(frame, &app, frame.area()))?;
-
-    let rendered = buffer_lines(terminal.backend().buffer());
+    let (_, rendered) = render_app(90, 8, app, |frame, app| draw(frame, app, frame.area()))?;
     assert!(rendered.iter().any(|line| line.contains("Draft:      1")));
     assert!(rendered.iter().any(|line| line.contains("Normative:  1")));
     assert!(rendered.iter().any(|line| line.contains("Proposed:   1")));

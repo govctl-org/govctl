@@ -1,13 +1,10 @@
 use super::super::app::{App, View};
-use super::test_support::{adr, buffer_lines, clause, project_index, rfc, work_item};
+use super::test_support::{adr, clause, project_index, render_app, rfc, work_item};
 use super::*;
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
-use ratatui::{Terminal, backend::TestBackend};
 
 #[test]
 fn draw_renders_chrome_and_help_overlay() -> Result<(), Box<dyn std::error::Error>> {
-    let backend = TestBackend::new(100, 18);
-    let mut terminal = Terminal::new(backend)?;
     let mut app = App::new(project_index(
         vec![rfc(
             "RFC-0001",
@@ -32,9 +29,7 @@ fn draw_renders_chrome_and_help_overlay() -> Result<(), Box<dyn std::error::Erro
     app.view = View::RfcList;
     app.show_help = true;
 
-    terminal.draw(|frame| draw(frame, &mut app))?;
-
-    let rendered = buffer_lines(terminal.backend().buffer());
+    let (_, rendered) = render_app(100, 18, app, draw)?;
     assert!(rendered.iter().any(|line| line.contains("govctl")));
     assert!(
         rendered
@@ -69,8 +64,6 @@ fn draw_clamps_detail_scroll_and_renders_footer_status() -> Result<(), Box<dyn s
 }
 
 fn render_scrolled_detail(view: View) -> Result<(u16, Vec<String>), Box<dyn std::error::Error>> {
-    let backend = TestBackend::new(100, 18);
-    let mut terminal = Terminal::new(backend)?;
     let mut rfc = rfc(
         "RFC-0001",
         "RFC title",
@@ -99,7 +92,6 @@ fn render_scrolled_detail(view: View) -> Result<(u16, Vec<String>), Box<dyn std:
     app.view = view;
     app.scroll = u16::MAX;
 
-    terminal.draw(|frame| draw(frame, &mut app))?;
-
-    Ok((app.scroll, buffer_lines(terminal.backend().buffer())))
+    let (app, rendered) = render_app(100, 18, app, draw)?;
+    Ok((app.scroll, rendered))
 }

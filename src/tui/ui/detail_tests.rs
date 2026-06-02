@@ -1,8 +1,7 @@
 use super::super::super::app::{App, View};
-use super::super::test_support::{adr, buffer_lines, clause, project_index, rfc, work_item};
+use super::super::test_support::{adr, clause, project_index, render_app, rfc, work_item};
 use super::*;
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
-use ratatui::{Terminal, backend::TestBackend};
 
 #[test]
 fn detail_renderers_draw_expected_content() -> Result<(), Box<dyn std::error::Error>> {
@@ -40,29 +39,21 @@ fn render_detail(
     view: View,
     mut draw: impl FnMut(&mut Frame, &mut App, Rect),
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let backend = TestBackend::new(110, 12);
-    let mut terminal = Terminal::new(backend)?;
     let mut app = App::new(detail_project_index());
     app.view = view;
 
-    terminal.draw(|frame| {
-        draw(frame, &mut app, frame.area());
-    })?;
-
-    Ok(buffer_lines(terminal.backend().buffer()))
+    let (_, rendered) = render_app(110, 12, app, |frame, app| draw(frame, app, frame.area()))?;
+    Ok(rendered)
 }
 
 fn render_clause_detail() -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let backend = TestBackend::new(110, 12);
-    let mut terminal = Terminal::new(backend)?;
     let mut app = App::new(detail_project_index());
     app.view = View::ClauseDetail(0, 0);
 
-    terminal.draw(|frame| {
-        draw_clause(frame, &mut app, frame.area(), 0, 0);
+    let (_, rendered) = render_app(110, 12, app, |frame, app| {
+        draw_clause(frame, app, frame.area(), 0, 0);
     })?;
-
-    Ok(buffer_lines(terminal.backend().buffer()))
+    Ok(rendered)
 }
 
 fn detail_project_index() -> crate::model::ProjectIndex {

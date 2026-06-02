@@ -1,9 +1,11 @@
+use super::super::app::App;
 use crate::model::{
     AdrContent, AdrEntry, AdrMeta, AdrSpec, AdrStatus, ClauseEntry, ClauseKind, ClauseSpec,
     ClauseStatus, ProjectIndex, RfcIndex, RfcPhase, RfcSpec, RfcStatus, WorkItemContent,
     WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
 use ratatui::buffer::Buffer;
+use ratatui::{Terminal, backend::TestBackend, prelude::*};
 use std::path::PathBuf;
 
 pub(super) fn buffer_lines(buffer: &Buffer) -> Vec<String> {
@@ -19,6 +21,21 @@ pub(super) fn buffer_lines(buffer: &Buffer) -> Vec<String> {
             line
         })
         .collect()
+}
+
+pub(super) fn render_app(
+    width: u16,
+    height: u16,
+    mut app: App,
+    mut draw: impl FnMut(&mut Frame, &mut App),
+) -> Result<(App, Vec<String>), Box<dyn std::error::Error>> {
+    let backend = TestBackend::new(width, height);
+    let mut terminal = Terminal::new(backend)?;
+
+    terminal.draw(|frame| draw(frame, &mut app))?;
+
+    let rendered = buffer_lines(terminal.backend().buffer());
+    Ok((app, rendered))
 }
 
 pub(super) fn project_index(

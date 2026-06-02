@@ -1,8 +1,7 @@
 use super::super::super::app::View;
-use super::super::test_support::{adr, buffer_lines, project_index, rfc, work_item};
+use super::super::test_support::{adr, project_index, render_app, rfc, work_item};
 use super::*;
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
-use ratatui::{Terminal, backend::TestBackend};
 
 #[test]
 fn list_renderers_draw_table_rows() -> Result<(), Box<dyn std::error::Error>> {
@@ -31,14 +30,11 @@ fn render_list(
     view: View,
     draw: fn(&mut Frame, &mut App, Rect),
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let backend = TestBackend::new(110, 8);
-    let mut terminal = Terminal::new(backend)?;
     let mut app = App::new(list_project_index());
     app.view = view;
 
-    terminal.draw(|frame| draw(frame, &mut app, frame.area()))?;
-
-    Ok(buffer_lines(terminal.backend().buffer()))
+    let (_, rendered) = render_app(110, 8, app, |frame, app| draw(frame, app, frame.area()))?;
+    Ok(rendered)
 }
 
 fn list_project_index() -> crate::model::ProjectIndex {
