@@ -114,15 +114,31 @@ fn default_owner() -> String {
         return owner;
     }
 
-    // Try to get git user.name, fall back to placeholder
-    std::process::Command::new("git")
-        .args(["config", "user.name"])
-        .output()
-        .ok()
-        .and_then(|o| String::from_utf8(o.stdout).ok())
-        .map(|s| format!("@{}", s.trim()))
-        .filter(|s| s.len() > 1) // "@" alone is not valid
+    // Try to get git user.name, fall back to placeholder.
+    // The value becomes an owner handle, so "@" alone is not useful.
+    git_config_value("user.name")
+        .map(|name| format!("@{name}"))
+        .filter(|owner| owner.len() > 1)
         .unwrap_or_else(|| "@your-handle".to_string())
+}
+
+fn git_config_value(key: &str) -> Option<String> {
+    let output = std::process::Command::new("git")
+        .args(["config", key])
+        .output()
+        .ok()?;
+
+    if !output.status.success() {
+        return None;
+    }
+
+    let value = String::from_utf8(output.stdout).ok()?;
+    let value = value.trim();
+    if value.is_empty() {
+        return None;
+    }
+
+    Some(value.to_string())
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

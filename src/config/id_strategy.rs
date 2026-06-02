@@ -20,20 +20,7 @@ pub enum IdStrategy {
 impl IdStrategy {
     /// Get the author hash (first 4 chars of sha256(git user.email))
     pub fn get_author_hash() -> Option<String> {
-        let output = std::process::Command::new("git")
-            .args(["config", "user.email"])
-            .output()
-            .ok()?;
-
-        if !output.status.success() {
-            return None;
-        }
-
-        let email = String::from_utf8(output.stdout).ok()?;
-        let email = email.trim();
-        if email.is_empty() {
-            return None;
-        }
+        let email = super::git_config_value("user.email")?;
 
         use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
