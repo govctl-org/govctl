@@ -118,11 +118,14 @@ govctl work add <WI-ID> refs ADR-0023
 
 ### Dependencies and Batches
 
-When a requested change naturally splits into several related work items, write the batch before implementation starts:
+Create multiple work items only when each item is independently meaningful to future readers:
 
-- Create work items for the coherent slices that should be reviewed or completed separately.
+- Each work item should represent a durable outcome, user-visible behavior, spec/ADR obligation, or independently reviewable deliverable.
+- Do not create work items for mechanical helper extraction, fixture sharing, file moves, module normalization, formatting, comment cleanup, snapshot reshaping, or other low-level execution steps.
+- For trivial cleanup or docs-only edits, no work item may be the right answer; follow the invoking workflow instead of inventing tracking.
+- For one coherent cleanup/refactor, prefer one coarse work item over many narrow slices.
 - Use `depends_on` only for hard execution ordering; keep `refs` for informational links.
-- Prefer one batch loop over scattered single-item loops for work that shares one goal.
+- Use one batch loop only when there are multiple durable work items; do not use loops to justify creating mechanical work-item fragments.
 - Let govctl generate the loop ID with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; use the returned `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
 - Use `govctl loop list open` to discover existing non-terminal loops before resuming interrupted batch work.
 
@@ -212,4 +215,5 @@ Keep `chore:` criteria for validation summaries, especially when the validation 
 | No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                                          |
 | Description used for tracking      | Use loop state and round artifacts for execution trace or `notes` for durable memory |
 | Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts     |
+| Mechanical substeps become WIs     | Use no WI or one coarse WI; leave helper/test/file-move details to the commit diff   |
 | Work item invents new requirements | Move those requirements into an RFC or ADR first                                     |

@@ -73,7 +73,7 @@ govctl render
 8. Avoid retry cycles. If the same approach already failed, do not repeat it unchanged.
 9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
 10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description` or `notes`.
-11. For related work, create the work item batch first, declare `depends_on` ordering, then execute it through one generated-ID loop.
+11. Create work items for durable, reader-useful outcomes only. Do not create separate work items for mechanical helper extraction, fixture sharing, file moves, formatting, or cleanup substeps.
 12. Do not invent loop IDs. Omit `--id` when starting a loop; use the generated `LOOP-YYYY-MM-DD-NNN` ID printed by the command for later `run`, `show`, `replan`, `add`, or `remove`.
 
 ## Working Memory
@@ -94,9 +94,9 @@ The active work item is persistent working memory. Read it with `govctl work sho
 
 ### Loop usage
 
-For a multi-step task, cleanup run, refactor, or feature that naturally splits into related work items:
+Use a loop only when a task has multiple independently meaningful work items. A loop coordinates durable work; it is not permission to split one cleanup/refactor into mechanical work-item fragments.
 
-1. Create or activate the known work items before implementation starts.
+1. Create or activate only the work items that represent durable outcomes a future reader should see.
 2. Add `depends_on` edges for hard execution ordering.
 3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
 4. Start one loop for the batch root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
@@ -119,6 +119,8 @@ If the scope changes during execution, keep the same loop identity:
 
 Do not create scattered single-item loops for work that is part of one coherent batch.
 
+Do not create separate work items for low-level implementation slices such as helper moves, test fixture sharing, module normalization, comment cleanup, snapshot reshaping, or other changes whose only durable record should be the commit diff or one higher-level work item.
+
 ## Workflow
 
 ### 0. Initialize
@@ -129,7 +131,7 @@ govctl status
 
 - Read `gov/config.toml`.
 - Classify the task:
-  - Doc-only: skip governance analysis, but still use a work item
+  - Doc-only: use `/quick` or `/spec` unless the user explicitly wants `/gov`
   - Bug fix: usually no new RFC if behavior is already specified
   - Feature: likely requires an RFC or ADR
   - Deprecation or removal: amend the governing RFC before implementation
@@ -143,8 +145,9 @@ govctl work list pending
 
 - Matching active item: use it
 - Matching queued item: `govctl work move <WI-ID> active`
-- No match and the task is single-slice: `govctl work new --active "<concise-title>"`
-- No match and the task splits naturally: create the related work items first, wire `depends_on`, then start one generated-ID loop for the batch.
+- No match and the task has one durable outcome: `govctl work new --active "<concise-title>"`
+- No match and the task has multiple independently reviewable durable outcomes: create that small batch first, wire only hard `depends_on` edges, then start one generated-ID loop for the batch.
+- No match and the apparent split is only mechanical implementation steps: create at most one coarse work item, or route trivial cleanup to `/quick`.
 
 Then immediately:
 
@@ -298,7 +301,8 @@ Use the `commit` skill for all raw VCS operations.
 
 - [ ] Environment validated; config read
 - [ ] Active work item exists
-- [ ] Related work was batched into one loop where applicable
+- [ ] Work items represent durable outcomes, not mechanical substeps
+- [ ] Related durable work was batched into one loop where applicable
 - [ ] `govctl work show <WI-ID>` read before implementation
 - [ ] `description` and `notes` used correctly
 - [ ] Governance analysis completed or explicitly skipped

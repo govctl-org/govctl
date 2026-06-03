@@ -53,12 +53,12 @@ When invoked:
 ### Abstraction Level
 
 - [ ] RFC defines **system-level contracts and invariants**, not implementation details
-- [ ] No directory structures (`.govctl/loops/`, `src/cmd/`, etc.) unless they are the external contract
-- [ ] No file format schemas (TOML/JSON structure) unless the format itself is the contract
+- [ ] Directory structures are present only when they are an external contract (for example persisted local state locations), not internal source layout
+- [ ] File format schemas or field inventories are present only when the wire/storage format itself is the contract
 - [ ] No skill invocation syntax (`/loop WI-001`) or agent workflow patterns
 - [ ] No specific algorithms, data structures, or internal implementation choices
 - [ ] Each clause answers "WHAT must be true?" not "HOW is it implemented?"
-- [ ] Implementation details (storage formats, directory layouts, CLI flags) are deferred to ADRs or work items
+- [ ] CLI commands, arguments, flags, storage formats, and directory layouts are not flagged merely for being concrete; flag them only when they describe internal implementation rather than externally observable contract
 - [ ] If the RFC describes a workflow or process, it defines the **invariants and rules**, not the step-by-step procedure
 
 ### Completeness
