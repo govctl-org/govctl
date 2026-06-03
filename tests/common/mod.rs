@@ -20,7 +20,7 @@ pub use commands::{
 pub use fixtures::{
     append_verification_config, first_work_id, init_project, init_project_at, init_project_v1,
     init_project_with_date, temp_dir_with_date, today, work_id, write_canonical_guarded_work_item,
-    write_guard, write_guard_with_timeout, write_guarded_work_item,
+    write_guard, write_guard_with_timeout, write_guarded_work_item, write_minimal_rfc,
 };
 #[allow(unused_imports)]
 pub use snapshots::{

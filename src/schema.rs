@@ -121,15 +121,6 @@ pub const ARTIFACT_SCHEMA_TEMPLATES: &[SchemaTemplate] = &[
     },
 ];
 
-pub fn validate_json_value(
-    kind: ArtifactSchema,
-    config: &Config,
-    artifact_path: &Path,
-    value: &Value,
-) -> Result<(), Diagnostic> {
-    validate_value(kind, config, artifact_path, value)
-}
-
 pub fn validate_toml_value(
     kind: ArtifactSchema,
     config: &Config,

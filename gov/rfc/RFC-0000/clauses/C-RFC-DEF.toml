@@ -6,7 +6,10 @@ title = "RFC Definition"
 kind = "normative"
 status = "active"
 since = "1.0.0"
-tags = ["core", "schema"]
+tags = [
+    "core",
+    "schema",
+]
 
 [content]
 text = """
@@ -14,7 +17,7 @@ An RFC (Request for Comments) is a normative document that defines intent, const
 
 An RFC is not a suggestion. It is law.
 
-The current canonical RFC storage format is TOML. New repositories and repositories that have completed the RFC/clause migration MUST store each RFC as a TOML file (`rfc.toml`) containing:
+The canonical RFC storage format is TOML. Repositories MUST store each RFC as a TOML file (`rfc.toml`) containing:
 - `[govctl]` section with: `id`, `title`, `version`, `status`, `phase`, `owners`, `created`
 - optional `[govctl]` fields: `updated`, `supersedes`, `refs`, `signature`
 - `[[sections]]` array with ordered section definitions and clause references
@@ -22,9 +25,9 @@ The current canonical RFC storage format is TOML. New repositories and repositor
 
 Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 
-Entries in `sections[].clauses` MUST reference clause TOML files by relative path (for example `clauses/C-EXAMPLE.toml`) in migrated repositories.
+Entries in `sections[].clauses` MUST reference clause TOML files by relative path (for example `clauses/C-EXAMPLE.toml`).
 
-Repositories that have not yet completed the RFC/clause migration MAY retain legacy JSON RFC files temporarily. After `govctl migrate` has completed for a repository, normal govctl operations MUST create and modify RFCs only in TOML form.
+Implementations MUST reject legacy RFC JSON storage files (`rfc.json`) during normal operations. The diagnostic MUST instruct users to migrate those repositories with a govctl version earlier than 0.9 before upgrading to a TOML-only govctl release.
 
 **Rationale:**
-This removes the last storage-format split from RFC handling without forcing a silent in-place break for repositories that still need an explicit migration step."""
+This removes the last storage-format split from RFC handling while preserving a clear upgrade path for repositories that still contain legacy JSON sources."""

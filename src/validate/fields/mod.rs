@@ -1,7 +1,7 @@
 use crate::cmd::edit::rules as edit_rules;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::load::find_clause_json;
+use crate::load::find_clause_toml;
 use crate::model::ClauseStatus;
 use crate::validate::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
 use crate::write::read_clause;
@@ -144,7 +144,7 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> Diagn
         ));
     }
 
-    let target_path = find_clause_json(ctx.config, &full_target).ok_or_else(|| {
+    let target_path = find_clause_toml(ctx.config, &full_target).ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0202ClauseNotFound,
             format!("Target clause not found: {full_target}"),
@@ -169,11 +169,11 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> Diagn
 }
 
 fn validate_artifact_ref(ctx: &ValidationContext, ref_id: &str) -> DiagnosticResult<()> {
-    use crate::load::find_rfc_json;
+    use crate::load::find_rfc_toml;
     use crate::parse::{load_adrs, load_work_items};
 
     if ref_id.starts_with("RFC-") {
-        if find_rfc_json(ctx.config, ref_id).is_none() {
+        if find_rfc_toml(ctx.config, ref_id).is_none() {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0102RfcNotFound,
                 format!("RFC not found: {ref_id}"),

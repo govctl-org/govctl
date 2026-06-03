@@ -16,10 +16,16 @@ fn work_edit_dependency_index(id: &str, index: usize, dependency: &str) -> Vec<S
     command(&["work", "edit", id, &field, "--set", dependency])
 }
 
+fn work_edit_ref_index(id: &str, index: usize, target: &str) -> Vec<String> {
+    let field = format!("{REFS}[{index}]");
+    command(&["work", "edit", id, &field, "--set", target])
+}
+
 #[test]
 fn test_work_add_ref() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let id = work_id(&date, 1);
+    common::write_minimal_rfc(temp_dir.path(), "RFC-0001", "Referenced RFC")?;
 
     let output = common::run_dynamic_commands(
         temp_dir.path(),
@@ -34,10 +40,59 @@ fn test_work_add_ref() -> common::TestResult {
 }
 
 #[test]
+fn test_work_refs_validate_unknown_targets_and_accept_all_artifact_types() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let first_id = work_id(&date, 1);
+    let second_id = work_id(&date, 2);
+
+    let output = common::run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            command(&["rfc", "new", "Governing RFC"]),
+            command(&["adr", "new", "Test Decision"]),
+            work_new("First Task"),
+            work_new("Second Task"),
+            work_add_ref(&first_id, "RFC-0001"),
+            work_add_ref(&first_id, "ADR-0001"),
+            work_add_ref(&first_id, &second_id),
+            work_add_ref(&first_id, "WI-2026-01-01-999"),
+            work_edit_ref_index(&first_id, 0, "WI-2026-01-01-999"),
+            work_get_field(&first_id, REFS),
+        ],
+    )?;
+
+    assert!(output.contains("error[E0404]"), "output: {}", output);
+    assert!(
+        output.contains(&format!("Added '{second_id}' to {first_id}.refs")),
+        "output: {}",
+        output
+    );
+    assert!(
+        !output.contains("Added 'WI-2026-01-01-999'"),
+        "output: {}",
+        output
+    );
+    assert!(
+        !output.contains("Set "),
+        "invalid indexed refs set should not be reported as successful: {}",
+        output
+    );
+    assert!(
+        output.contains(&format!(
+            "$ govctl work get {first_id} refs\nRFC-0001, ADR-0001, {second_id}"
+        )),
+        "output: {}",
+        output
+    );
+    Ok(())
+}
+
+#[test]
 fn test_work_depends_on_add_get_show_remove() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let dependency_id = work_id(&date, 1);
     let dependent_id = work_id(&date, 2);
+    common::write_minimal_rfc(temp_dir.path(), "RFC-0001", "Referenced RFC")?;
 
     let output = common::run_dynamic_commands(
         temp_dir.path(),

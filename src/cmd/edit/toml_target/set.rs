@@ -2,6 +2,7 @@ use super::TomlEditableEntry;
 use super::work_dependencies::{is_work_dependency_target, validate_work_dependency_edit};
 use crate::cmd::edit::adapter::{TomlAdapter, WorkTomlAdapter};
 use crate::cmd::edit::engine as edit_engine;
+use crate::cmd::edit::refs::{is_refs_target, validate_ref_edit};
 use crate::cmd::edit::runtime as edit_runtime;
 use crate::cmd::edit::{
     ArtifactType, deserialize_edit_doc, serialize_edit_doc, unexpected_edit_state,
@@ -32,6 +33,9 @@ where
         allow_forced_simple_set,
         id,
     )?;
+    if is_refs_target(target) {
+        validate_ref_edit(config, artifact, id, value)?;
+    }
     A::write(config, &entry, op)?;
     Ok(())
 }
@@ -53,6 +57,9 @@ pub(in crate::cmd::edit) fn set_work_toml_field(
         allow_forced_simple_set,
         id,
     )?;
+    if is_refs_target(target) {
+        validate_ref_edit(config, ArtifactType::WorkItem, id, value)?;
+    }
     if is_work_dependency_target(target) {
         validate_work_dependency_edit(config, &entry)?;
     }

@@ -78,6 +78,7 @@ fn test_adr_set_alternative_status_field_rejected() -> common::TestResult {
 #[test]
 fn test_adr_add_ref() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
+    common::write_minimal_rfc(temp_dir.path(), "RFC-0001", "Referenced RFC")?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -88,6 +89,45 @@ fn test_adr_add_ref() -> common::TestResult {
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[test]
+fn test_adr_refs_reject_work_item_and_preserve_existing_value() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let work_id = work_id(&date, 1);
+
+    let output = common::run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            command(&["rfc", "new", "Governing RFC"]),
+            command(&["adr", "new", "Test Decision"]),
+            work_new("Execution Task"),
+            command(&["adr", "add", "ADR-0001", "refs", &work_id]),
+            command(&["adr", "add", "ADR-0001", "refs", "RFC-0001"]),
+            command(&["adr", "edit", "ADR-0001", "refs[0]", "--set", &work_id]),
+            command(&["adr", "get", "ADR-0001", "refs"]),
+        ],
+    )?;
+
+    assert!(output.contains("error[E0306]"), "output: {}", output);
+    assert!(
+        !output.contains(&format!("Added '{work_id}' to ADR-0001.refs")),
+        "output: {}",
+        output
+    );
+    assert!(
+        !output.contains(&format!("Set ADR-0001.refs[0] = {work_id}")),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl adr get ADR-0001 refs\nRFC-0001"),
+        "output: {}",
+        output
+    );
+    let adr = std::fs::read_to_string(temp_dir.path().join("gov/adr/ADR-0001-test-decision.toml"))?;
+    assert!(!adr.contains(&work_id), "adr.toml: {}", adr);
     Ok(())
 }
 

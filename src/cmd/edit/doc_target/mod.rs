@@ -17,22 +17,22 @@ mod set;
 pub(super) use set::{set_clause_field, set_rfc_field};
 
 #[derive(Debug, Clone, Copy)]
-enum JsonTargetKind {
+enum DocTargetKind {
     Rfc,
     Clause,
 }
 
-struct SetJsonRequest<'a> {
+struct SetDocRequest<'a> {
     config: &'a Config,
     id: &'a str,
     target: &'a edit_engine::ResolvedTarget,
     value: &'a str,
     op: WriteOp,
     allow_forced_simple_set: bool,
-    kind: JsonTargetKind,
+    kind: DocTargetKind,
 }
 
-impl JsonTargetKind {
+impl DocTargetKind {
     fn artifact(self) -> ArtifactType {
         match self {
             Self::Rfc => ArtifactType::Rfc,
@@ -86,7 +86,7 @@ fn require_simple_field<'a>(
         .ok_or_else(|| Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id))
 }
 
-pub(super) fn get_json_field<A>(
+pub(super) fn get_doc_field<A>(
     config: &Config,
     id: &str,
     target: Option<&edit_engine::ResolvedTarget>,
@@ -114,14 +114,14 @@ where
         print_json(
             &loaded.data,
             DiagnosticCode::E0903UnexpectedError,
-            "Failed to serialize editable document JSON",
+            "Failed to serialize editable document",
             id,
         )?;
     }
     Ok(())
 }
 
-pub(super) fn add_json_simple_list_field<A>(
+pub(super) fn add_doc_simple_list_field<A>(
     config: &Config,
     id: &str,
     target: &edit_engine::ResolvedTarget,
@@ -158,7 +158,7 @@ where
     Ok(())
 }
 
-pub(super) fn remove_json_simple_list_field<A>(
+pub(super) fn remove_doc_simple_list_field<A>(
     config: &Config,
     id: &str,
     target: &edit_engine::ResolvedTarget,

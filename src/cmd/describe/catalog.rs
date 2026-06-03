@@ -262,8 +262,8 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
         ),
         command(
             "migrate",
-            "Convert legacy JSON governance storage to current TOML formats",
-            "When a repository still stores RFCs or clauses as JSON, or when releases.toml needs schema metadata normalization.",
+            "Upgrade TOML governance storage to the current schema format",
+            "When a TOML-based repository needs schema metadata normalization or bundled schema files refreshed.",
             "govctl migrate",
             INIT_REQUIRED,
         ),

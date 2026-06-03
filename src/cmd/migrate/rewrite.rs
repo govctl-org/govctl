@@ -86,7 +86,6 @@ fn collect_rewrites(dir: &Path, schema: ArtifactSchema) -> Vec<FileOp> {
 /// Plan header + schema-strip rewrites for all TOML artifacts.
 pub(super) fn plan_toml_rewrites(
     config: &Config,
-    skip_rfc_ids: &[String],
     skip_releases: bool,
 ) -> DiagnosticResult<Vec<FileOp>> {
     let mut ops = Vec::new();
@@ -112,10 +111,6 @@ pub(super) fn plan_toml_rewrites(
         {
             let dir = entry.path();
             if !dir.is_dir() {
-                continue;
-            }
-            let dir_name = dir.file_name().and_then(|n| n.to_str()).unwrap_or_default();
-            if skip_rfc_ids.iter().any(|id| id == dir_name) {
                 continue;
             }
             let rfc_toml = dir.join("rfc.toml");

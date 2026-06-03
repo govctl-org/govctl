@@ -189,10 +189,10 @@ For AI-assisted migration, use the `/migrate` skill to systematically discover u
 | ---------- | --------------------------------------------------- | ----------------------------------------------------- |
 | **What**   | Upgrade existing govctl artifacts to current format | Adopt govctl in an existing project                   |
 | **When**   | After updating govctl version                       | When starting governance in a brownfield repo         |
-| **Effect** | Rewrites TOML/JSON files in `gov/`                  | Discovers decisions, backfills ADRs, annotates source |
+| **Effect** | Rewrites TOML files in `gov/` and syncs schemas     | Discovers decisions, backfills ADRs, annotates source |
 | **Risk**   | Low — transactional, reversible                     | Medium — requires human review of generated ADRs      |
 
-Run `govctl migrate` when govctl tells you a migration is needed (error `E0505`). Use the `/migrate` skill when bringing a legacy project under governance for the first time.
+Run `govctl migrate` when govctl reports an outdated schema version. If a repository still contains legacy RFC or clause JSON storage, migrate it with govctl <0.9 before upgrading. Use the `/migrate` skill when bringing a legacy project under governance for the first time.
 
 ## Canonical Edit Surface
 

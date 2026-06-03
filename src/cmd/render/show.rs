@@ -205,7 +205,7 @@ pub fn show_clause(
         output,
         &clause.spec,
         DiagnosticCode::E0201ClauseSchemaInvalid,
-        "Failed to serialize clause JSON",
+        "Failed to serialize clause structured output",
         id,
         || {
             let mut raw = String::new();

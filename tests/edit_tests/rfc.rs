@@ -101,17 +101,65 @@ fn test_rfc_remove_owner_by_index_canonical() -> common::TestResult {
 
 #[test]
 fn test_rfc_add_ref() -> common::TestResult {
-    let (temp_dir, date) = init_project_with_date()?;
+    let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "refs", "ADR-0001"],
+            &["rfc", "new", "Referenced RFC"],
+            &["rfc", "add", "RFC-0001", "refs", "RFC-0002"],
             &["rfc", "get", "RFC-0001", "refs"],
         ],
     )?;
-    assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    assert!(
+        output.contains("Added 'RFC-0002' to RFC-0001.refs"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 refs\nRFC-0002"),
+        "output: {}",
+        output
+    );
+    Ok(())
+}
+
+#[test]
+fn test_rfc_refs_reject_invalid_hierarchy_and_preserve_existing_value() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "new", "Referenced RFC"],
+            &["adr", "new", "Lower Authority Decision"],
+            &["rfc", "add", "RFC-0001", "refs", "ADR-0001"],
+            &["rfc", "add", "RFC-0001", "refs", "RFC-0002"],
+            &["rfc", "edit", "RFC-0001", "refs[0]", "--set", "ADR-0001"],
+            &["rfc", "get", "RFC-0001", "refs"],
+        ],
+    )?;
+
+    assert!(output.contains("error[E0112]"), "output: {}", output);
+    assert!(
+        !output.contains("Added 'ADR-0001' to RFC-0001.refs"),
+        "output: {}",
+        output
+    );
+    assert!(
+        !output.contains("Set RFC-0001.refs[0] = ADR-0001"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 refs\nRFC-0002"),
+        "output: {}",
+        output
+    );
+    let rfc = std::fs::read_to_string(temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml"))?;
+    assert!(!rfc.contains("ADR-0001"), "rfc.toml: {}", rfc);
     Ok(())
 }
 

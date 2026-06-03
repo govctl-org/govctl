@@ -50,8 +50,9 @@ pub(super) const MIGRATE: &str = r#"EXAMPLES:
     govctl --dry-run migrate
 
 NOTES:
-    - Reads legacy JSON artifacts and upgrades them to current canonical storage.
-    - Intended for one-time repository migration, not normal day-to-day editing.
+    - Upgrades current TOML governance artifacts and syncs bundled JSON Schema files.
+    - Does not convert legacy RFC/clause JSON storage in govctl 0.9 and later.
+    - If legacy JSON storage is present, first run `govctl migrate` with govctl <0.9.
 "#;
 
 pub(super) const VERIFY: &str = r#"EXAMPLES:

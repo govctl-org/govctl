@@ -6,22 +6,23 @@ title = "Clause Definition"
 kind = "normative"
 status = "active"
 since = "1.0.0"
-tags = ["core", "schema"]
+tags = [
+    "core",
+    "schema",
+]
 
 [content]
 text = """
 A clause is an individual requirement or statement within an RFC.
 
-The current canonical clause storage format is TOML. New repositories and repositories that have completed the RFC/clause migration MUST store each clause as a TOML file containing:
+The canonical clause storage format is TOML. Repositories MUST store each clause as a TOML file containing:
 - `[govctl]` section with: `id`, `title`, `kind`, `status`
 - optional `[govctl]` fields: `since`, `superseded_by`, `anchors`
 - `[content]` section with: `text`
 
 Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 
-After `govctl migrate` has completed for a repository, normal govctl operations MUST create and modify clauses only in TOML form.
-
-Repositories that have not yet completed the RFC/clause migration MAY retain legacy JSON clause files temporarily.
+Implementations MUST reject legacy clause JSON storage files (`gov/rfc/<RFC-ID>/clauses/*.json`) during normal operations. The diagnostic MUST instruct users to migrate those repositories with a govctl version earlier than 0.9 before upgrading to a TOML-only govctl release.
 
 Clause kinds:
 - **normative**: Defines a requirement. Implementations MUST comply.
@@ -30,4 +31,4 @@ Clause kinds:
 Deprecation is a lifecycle state (in `status`), not a document kind.
 
 **Rationale:**
-This aligns clause storage with RFC, ADR, Work Item, and Release storage while preserving an explicit migration boundary for existing repositories."""
+This aligns clause storage with RFC, ADR, Work Item, and Release storage while removing the legacy JSON compatibility path from normal operation."""

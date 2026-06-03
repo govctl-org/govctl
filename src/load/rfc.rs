@@ -1,7 +1,8 @@
 use super::LoadError;
 use crate::config::Config;
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{ClauseEntry, ClauseWire, RfcIndex, RfcSpec, RfcWire};
-use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value};
+use crate::schema::{ArtifactSchema, validate_toml_value};
 use serde::de::DeserializeOwned;
 use std::path::{Path, PathBuf};
 
@@ -27,6 +28,9 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
         })?;
 
         let path = entry.path();
+        if path.is_dir() {
+            reject_legacy_json_in_rfc_dir(config, &path).map_err(LoadError::Diagnostic)?;
+        }
         if path.is_dir()
             && let Some(rfc_path) = find_rfc_in_dir(&path)
         {
@@ -42,6 +46,12 @@ pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
 
 /// Load a single RFC and its clauses
 pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError> {
+    if rfc_path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+        return Err(LoadError::Diagnostic(legacy_json_diagnostic(
+            config, rfc_path,
+        )));
+    }
+
     let rfc: RfcSpec = load_source_wire::<RfcWire>(
         config,
         rfc_path,
@@ -49,7 +59,6 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
             read_action: "read RFC",
             schema: ArtifactSchema::Rfc,
             normalize_toml: crate::write::normalize_rfc_value,
-            normalize_json: crate::write::normalize_rfc_json,
             schema_error: rfc_schema_error,
         },
     )?
@@ -59,6 +68,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         file: rfc_path.display().to_string(),
         message: "RFC path has no parent directory".to_string(),
     })?;
+    reject_legacy_json_in_rfc_dir(config, rfc_dir).map_err(LoadError::Diagnostic)?;
     let mut clauses = Vec::new();
 
     for section in &rfc.sections {
@@ -87,6 +97,10 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
 
 /// Load a single clause
 pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
+    if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+        return Err(LoadError::Diagnostic(legacy_json_diagnostic(config, path)));
+    }
+
     let spec = load_source_wire::<ClauseWire>(
         config,
         path,
@@ -94,7 +108,6 @@ pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEnt
             read_action: "read clause",
             schema: ArtifactSchema::Clause,
             normalize_toml: crate::write::normalize_clause_value,
-            normalize_json: crate::write::normalize_clause_json,
             schema_error: clause_schema_error,
         },
     )?
@@ -106,34 +119,80 @@ pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEnt
     })
 }
 
-/// Find an RFC source file by ID, preferring TOML over legacy JSON.
-pub fn find_rfc_json(config: &Config, rfc_id: &str) -> Option<PathBuf> {
-    let rfc_dir = config.rfc_artifact_dir(rfc_id);
-    find_rfc_in_dir(&rfc_dir)
-}
-
 pub fn find_rfc_toml(config: &Config, rfc_id: &str) -> Option<PathBuf> {
     let path = config.rfc_source_path(rfc_id, "toml");
     path.exists().then_some(path)
-}
-
-/// Find a clause source file by full ID, preferring TOML over legacy JSON.
-pub fn find_clause_json(config: &Config, clause_id: &str) -> Option<PathBuf> {
-    let (rfc_id, clause_name) = split_clause_id(clause_id)?;
-    let clause_path = config.clause_source_path(rfc_id, clause_name, "toml");
-
-    if clause_path.exists() {
-        Some(clause_path)
-    } else {
-        let legacy_clause_path = config.clause_source_path(rfc_id, clause_name, "json");
-        legacy_clause_path.exists().then_some(legacy_clause_path)
-    }
 }
 
 pub fn find_clause_toml(config: &Config, clause_id: &str) -> Option<PathBuf> {
     let (rfc_id, clause_name) = split_clause_id(clause_id)?;
     let clause_path = config.clause_source_path(rfc_id, clause_name, "toml");
     clause_path.exists().then_some(clause_path)
+}
+
+pub fn reject_legacy_json_storage(config: &Config) -> DiagnosticResult<()> {
+    let rfc_root = config.rfc_dir();
+    if !rfc_root.exists() {
+        return Ok(());
+    }
+
+    let mut dirs: Vec<_> = std::fs::read_dir(&rfc_root)
+        .map_err(|err| {
+            Diagnostic::io_error(
+                "read RFC directory for legacy JSON scan",
+                err,
+                config.display_path(&rfc_root).display().to_string(),
+            )
+        })?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| path.is_dir())
+        .collect();
+    dirs.sort();
+
+    for dir in dirs {
+        reject_legacy_json_in_rfc_dir(config, &dir)?;
+    }
+    Ok(())
+}
+
+fn reject_legacy_json_in_rfc_dir(config: &Config, rfc_dir: &Path) -> DiagnosticResult<()> {
+    let rfc_json = rfc_dir.join("rfc.json");
+    if rfc_json.exists() {
+        return Err(legacy_json_diagnostic(config, &rfc_json));
+    }
+
+    let clauses_dir = rfc_dir.join("clauses");
+    if !clauses_dir.exists() {
+        return Ok(());
+    }
+
+    let mut clauses: Vec<_> = std::fs::read_dir(&clauses_dir)
+        .map_err(|err| {
+            Diagnostic::io_error(
+                "read clause directory for legacy JSON scan",
+                err,
+                config.display_path(&clauses_dir).display().to_string(),
+            )
+        })?
+        .filter_map(Result::ok)
+        .map(|entry| entry.path())
+        .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"))
+        .collect();
+    clauses.sort();
+
+    if let Some(path) = clauses.first() {
+        return Err(legacy_json_diagnostic(config, path));
+    }
+    Ok(())
+}
+
+fn legacy_json_diagnostic(config: &Config, path: &Path) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0505MigrationRequired,
+        "Legacy RFC/clause JSON artifact storage is no longer supported. Use govctl <0.9 to run `govctl migrate` before upgrading.",
+        config.display_path(path).display().to_string(),
+    )
 }
 
 fn read_source_file(path: &Path, action: &'static str) -> Result<String, LoadError> {
@@ -148,7 +207,6 @@ struct SourceWireSpec {
     read_action: &'static str,
     schema: ArtifactSchema,
     normalize_toml: fn(&mut toml::Value),
-    normalize_json: fn(&mut serde_json::Value),
     schema_error: fn(String, String) -> LoadError,
 }
 
@@ -163,7 +221,11 @@ where
     let content = read_source_file(path, spec.read_action)?;
     match path.extension().and_then(|ext| ext.to_str()) {
         Some("toml") => load_toml_wire(config, path, &content, spec),
-        _ => load_json_wire(config, path, &content, spec),
+        Some("json") => Err(LoadError::Diagnostic(legacy_json_diagnostic(config, path))),
+        _ => Err((spec.schema_error)(
+            path.display().to_string(),
+            "Unsupported artifact source extension; expected TOML".to_string(),
+        )),
     }
 }
 
@@ -189,29 +251,6 @@ where
     })
 }
 
-fn load_json_wire<Wire>(
-    config: &Config,
-    path: &Path,
-    content: &str,
-    spec: SourceWireSpec,
-) -> Result<Wire, LoadError>
-where
-    Wire: DeserializeOwned,
-{
-    let mut raw: serde_json::Value =
-        serde_json::from_str(content).map_err(|e| LoadError::Json {
-            file: path.display().to_string(),
-            message: e.to_string(),
-        })?;
-    (spec.normalize_json)(&mut raw);
-    validate_json_value(spec.schema, config, path, &raw)
-        .map_err(|e| (spec.schema_error)(path.display().to_string(), e.message))?;
-    serde_json::from_value(raw).map_err(|e| LoadError::Json {
-        file: path.display().to_string(),
-        message: e.to_string(),
-    })
-}
-
 fn rfc_schema_error(file: String, message: String) -> LoadError {
     LoadError::RfcSchema { file, message }
 }
@@ -230,9 +269,5 @@ pub(crate) fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {
 
 fn find_rfc_in_dir(dir: &Path) -> Option<PathBuf> {
     let toml = dir.join("rfc.toml");
-    if toml.exists() {
-        return Some(toml);
-    }
-    let json = dir.join("rfc.json");
-    json.exists().then_some(json)
+    toml.exists().then_some(toml)
 }

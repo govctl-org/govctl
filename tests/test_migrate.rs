@@ -52,43 +52,28 @@ fn write_legacy_rfc_project(dir: &std::path::Path) -> Result<(), Box<dyn std::er
 }
 
 #[test]
-fn test_migrate_converts_json_rfc_and_upgrades_releases() -> TestResult {
+fn test_migrate_rejects_legacy_json_storage() -> TestResult {
     let temp_dir = init_project_v1()?;
     write_legacy_rfc_project(temp_dir.path())?;
-    fs::write(
-        temp_dir.path().join("gov/releases.toml"),
-        r#"[[releases]]
-version = "1.0.0"
-date = "2026-01-01"
-"#,
-    )?;
 
-    let output = run_commands(temp_dir.path(), &[&["migrate"], &["check"]])?;
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(output.contains("error[E0505]"), "output: {}", output);
     assert!(
-        output.contains("file(s) written"),
-        "should report written files: {}",
+        output.contains("Use govctl <0.9 to run `govctl migrate` before upgrading."),
+        "output: {}",
         output
     );
-    assert!(output.contains("exit: 0"), "output: {}", output);
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    assert!(rfc_dir.join("rfc.toml").exists());
-    assert!(rfc_dir.join("clauses/C-LEGACY.toml").exists());
-    assert!(!rfc_dir.join("rfc.json").exists());
-    assert!(!rfc_dir.join("clauses/C-LEGACY.json").exists());
-
-    let releases = fs::read_to_string(temp_dir.path().join("gov/releases.toml"))?;
-    assert!(releases.contains("#:schema"));
-    assert!(
-        !releases.contains("schema = 1"),
-        "govctl.schema should be stripped: {}",
-        releases
-    );
+    assert!(rfc_dir.join("rfc.json").exists());
+    assert!(rfc_dir.join("clauses/C-LEGACY.json").exists());
+    assert!(!rfc_dir.join("rfc.toml").exists());
+    assert!(!rfc_dir.join("clauses/C-LEGACY.toml").exists());
 
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
     assert!(
-        config.contains("version = 2"),
-        "schema version should be bumped to 2: {}",
+        config.contains("version = 1"),
+        "schema version should not be bumped on legacy JSON rejection: {}",
         config
     );
 
@@ -96,14 +81,27 @@ date = "2026-01-01"
 }
 
 #[test]
-fn test_migrate_dry_run_preserves_legacy_files() -> TestResult {
+fn test_migrate_dry_run_rejects_legacy_json_storage() -> TestResult {
     let temp_dir = init_project_v1()?;
     write_legacy_rfc_project(temp_dir.path())?;
 
     let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]])?;
-    assert!(output.contains("Would write: gov/config.toml"));
-    assert!(output.contains("Would write: gov/rfc/RFC-0001/rfc.toml"));
-    assert!(output.contains("Would delete: gov/rfc/RFC-0001/rfc.json"));
+    assert!(output.contains("error[E0505]"), "output: {}", output);
+    assert!(
+        output.contains("Use govctl <0.9 to run `govctl migrate` before upgrading."),
+        "output: {}",
+        output
+    );
+    assert!(
+        !output.contains("Would write: gov/rfc/RFC-0001/rfc.toml"),
+        "output: {}",
+        output
+    );
+    assert!(
+        !output.contains("Would delete: gov/rfc/RFC-0001/rfc.json"),
+        "output: {}",
+        output
+    );
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     assert!(rfc_dir.join("rfc.json").exists());
@@ -204,40 +202,19 @@ fn test_migrate_bumps_version_even_without_file_changes() -> TestResult {
 }
 
 #[test]
-fn test_migrate_failure_leaves_legacy_repo_unchanged() -> TestResult {
+fn test_check_rejects_legacy_json_storage() -> TestResult {
     let temp_dir = init_project_v1()?;
+    write_legacy_rfc_project(temp_dir.path())?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0505]"), "output: {}", output);
+    assert!(
+        output.contains("Use govctl <0.9 to run `govctl migrate` before upgrading."),
+        "output: {}",
+        output
+    );
+
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
-    fs::create_dir_all(rfc_dir.join("clauses"))?;
-
-    fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Broken Legacy RFC",
-  "version": "1.0.0",
-  "status": "normative",
-  "phase": "stable",
-  "owners": ["@test-user"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": ["clauses/C-MISSING.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "1.0.0",
-      "date": "2026-01-01",
-      "added": ["Initial release"]
-    }
-  ]
-}"#,
-    )?;
-
-    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
-    assert!(output.contains("error[E0202]"), "output: {}", output);
-
     assert!(rfc_dir.join("rfc.json").exists());
     assert!(!rfc_dir.join("rfc.toml").exists());
 

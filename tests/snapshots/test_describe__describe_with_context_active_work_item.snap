@@ -298,8 +298,8 @@ $ govctl describe --context
     },
     {
       "name": "migrate",
-      "purpose": "Convert legacy JSON governance storage to current TOML formats",
-      "when_to_use": "When a repository still stores RFCs or clauses as JSON, or when releases.toml needs schema metadata normalization.",
+      "purpose": "Upgrade TOML governance storage to the current schema format",
+      "when_to_use": "When a TOML-based repository needs schema metadata normalization or bundled schema files refreshed.",
       "example": "govctl migrate",
       "prerequisites": [
         "govctl init"

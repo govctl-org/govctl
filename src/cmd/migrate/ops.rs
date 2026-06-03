@@ -8,8 +8,14 @@ use std::path::{Path, PathBuf};
 /// A single file operation produced by a migration step.
 #[derive(Debug, Clone)]
 pub(super) enum FileOp {
-    Write { path: PathBuf, content: String },
-    Delete { path: PathBuf },
+    Write {
+        path: PathBuf,
+        content: String,
+    },
+    #[allow(dead_code)]
+    Delete {
+        path: PathBuf,
+    },
 }
 
 pub(super) fn preview_ops(config: &Config, ops: &[FileOp]) {

@@ -14,6 +14,8 @@ default:
 
 # Cargo: https://rust-lang.org
 _cargo := require("cargo")
+# cargo-edit: https://github.com/killercup/cargo-edit
+_cargo_set_version := require("cargo-set-version")
 # Nix (optional, for flake operations)
 # nix := require("nix")
 
@@ -136,8 +138,8 @@ alias r := render
 
 # Bump version everywhere (Cargo, plugin manifests, releases, changelog)
 [group("release")]
-[confirm("Bump version to {{ new_version }}?")]
 bump new_version:
+    @printf 'Bump version to {{ new_version }}? [y/N] '; read -r answer; case "$answer" in y|Y|yes|YES|Yes) ;; *) echo 'Aborted'; exit 1;; esac
     @just _run-with-status _bump-cargo {{ new_version }}
     @just _run-with-status _bump-plugin {{ new_version }}
     @just _run-with-status _bump-releases {{ new_version }}
@@ -157,19 +159,9 @@ bump new_version:
     just {{ recipe }} {{ args }}
     @echo -e '{{ GREEN }}✓ {{ recipe }} completed{{ NORMAL }}'
 
-# Cross-platform sed in-place edit (macOS and Linux)
-[private]
-[script("bash")]
-_sed_inplace pattern file:
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "$1" "$2"
-    else
-        sed -i "$1" "$2"
-    fi
-
 [private]
 _bump-cargo new_version:
-    just _sed_inplace 's/^version = ".*"/version = "{{ new_version }}"/' Cargo.toml
+    {{ _cargo_set_version }} set-version "{{ new_version }}"
     cargo check --quiet 2>/dev/null || true
 
 [private]

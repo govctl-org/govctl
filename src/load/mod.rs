@@ -7,9 +7,7 @@ mod rfc;
 
 pub use project::{load_project, load_project_with_warnings};
 pub(crate) use rfc::split_clause_id;
-pub use rfc::{
-    find_clause_json, find_clause_toml, find_rfc_json, find_rfc_toml, load_rfc, load_rfcs,
-};
+pub use rfc::{find_clause_toml, find_rfc_toml, load_rfc, load_rfcs, reject_legacy_json_storage};
 
 /// Result of loading a project: index plus any warnings encountered
 pub struct ProjectLoadResult {
@@ -45,6 +43,7 @@ pub enum LoadError {
         file: String,
         clause: String,
     },
+    Diagnostic(Diagnostic),
 }
 
 impl From<LoadError> for Diagnostic {
@@ -72,6 +71,7 @@ impl From<LoadError> for Diagnostic {
                 format!("Invalid clause path: {clause}"),
                 file,
             ),
+            LoadError::Diagnostic(diagnostic) => diagnostic,
         }
     }
 }

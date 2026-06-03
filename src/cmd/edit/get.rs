@@ -1,9 +1,9 @@
 use super::ArtifactType;
 use super::adapter::{
-    AdrTomlAdapter, ClauseJsonAdapter, GuardTomlAdapter, RfcJsonAdapter, WorkTomlAdapter,
+    AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, WorkTomlAdapter,
 };
+use super::doc_target::get_doc_field;
 use super::engine as edit_engine;
-use super::json_target::get_json_field;
 use super::toml_target::get_toml_field;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticResult};
@@ -24,14 +24,14 @@ pub fn get_field(
             plan.target.as_ref(),
             ArtifactType::WorkItem,
         )?,
-        ArtifactType::Rfc => get_json_field::<RfcJsonAdapter>(
+        ArtifactType::Rfc => get_doc_field::<RfcTomlAdapter>(
             config,
             id,
             plan.target.as_ref(),
             ArtifactType::Rfc,
             "RFC fields do not support nested paths",
         )?,
-        ArtifactType::Clause => get_json_field::<ClauseJsonAdapter>(
+        ArtifactType::Clause => get_doc_field::<ClauseTomlAdapter>(
             config,
             id,
             plan.target.as_ref(),

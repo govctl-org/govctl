@@ -10,90 +10,41 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-04
+
 ### Added
 
-- govctl check reports work items that contain legacy inline execution-history entries with an informational diagnostic (WI-2026-05-31-004)
-- The diagnostic message points users to notes for durable takeaways and loop state for new execution trace (WI-2026-05-31-004)
-- Work item TOML model and schema support depends_on as a list of work item IDs (WI-2026-05-31-008)
-- Work item show and render output display dependency declarations distinctly from refs (WI-2026-05-31-008)
-- Edit and validation paths reject malformed dependency IDs and unknown dependency targets (WI-2026-05-31-008)
-- govctl check and work add reject cyclic work item dependencies (WI-2026-05-31-008)
-- Loop state structs serialize and deserialize state.toml under .govctl/loops/<loop-id> (WI-2026-05-31-009)
-- Loop state tracks lifecycle status work item statuses dependency graph and round counts (WI-2026-05-31-009)
-- Loop state storage is local under .govctl and does not write execution trace to work item fields (WI-2026-05-31-009)
-- Planner builds a dependency graph from explicit loop work items and their depends_on fields (WI-2026-05-31-010)
-- Planner rejects cycles and missing dependencies with coded diagnostics (WI-2026-05-31-010)
-- Planner computes a deterministic execution order for dependency-satisfied work items (WI-2026-05-31-010)
-- Planner marks downstream work items blocked in loop state when dependencies fail or cancel (WI-2026-05-31-010)
-- CLI exposes loop start and loop show commands for explicit work item sets (WI-2026-05-31-011)
-- Loop start creates or reuses local loop state and reports loop ID status and planned work items (WI-2026-05-31-011)
-- Loop show renders persisted loop state including work item statuses dependency order and round counts (WI-2026-05-31-011)
-- Loop resume detects existing state for the same work item set or reports a clear diagnostic (WI-2026-05-31-011)
-- Loop runner transitions queued work items to active through govctl work move semantics (WI-2026-05-31-012)
-- Loop runner evaluates acceptance criteria and required guards before moving work items to done (WI-2026-05-31-012)
-- Loop runner records round counts statuses and failure or blocked outcomes in loop state (WI-2026-05-31-012)
-- Failed work items remain active while loop state records failure and propagates blocked dependents (WI-2026-05-31-012)
-- Loop commands can replan an existing loop after adding or removing root work items (WI-2026-06-01-082)
-- Loop start and run generate LOOP-YYYY-MM-DD-NNN IDs and reject non-canonical explicit IDs (WI-2026-06-01-082)
-- RFC-0006 defines loop listing semantics for local state discovery (WI-2026-06-01-089)
-- RFC-0006 changelog records the loop listing addition (WI-2026-06-01-089)
-- `govctl loop list` lists persisted loop states without requiring a loop ID (WI-2026-06-01-090)
-- loop list supports table, plain, and json output with stable ordering (WI-2026-06-01-090)
-- loop list tests cover empty state, multi-loop output, and invalid canonical state handling (WI-2026-06-01-090)
-- loop list accepts a filter argument for lifecycle states plus a resumable/open alias covering non-terminal loop states (WI-2026-06-01-099)
-- loop list supports -n/--limit after filtering while preserving deterministic loop ID ordering (WI-2026-06-01-099)
-- repository tests fail when `include!` is used under `tests/` for test-suite splitting (WI-2026-06-02-058)
+- Added the first local loop workflow. `govctl loop start`, `show`, `resume`, `run`, `list`, `add`, `remove`, and `replan` now operate on persisted loop state under `.govctl/loops/` instead of writing execution trace into work item fields.
+- Added canonical loop IDs (`LOOP-YYYY-MM-DD-NNN`), deterministic loop listing, lifecycle filters, and table/plain/json output for local loop state discovery.
+- Added work item dependencies through `depends_on`, including display support in `work show`/render output and validation for malformed, unknown, or cyclic dependencies.
+- Added dependency-aware loop planning. Loops compute an execution order from `depends_on`, preserve existing item state where possible, and mark downstream items blocked when dependencies fail or cancel.
+- Added loop state and round schemas for execution evidence, summaries, verification evidence, and note candidates.
+- Added non-blocking diagnostics for work items that still contain legacy inline execution-history entries, with guidance to move durable takeaways to notes and keep new execution trace in loop state.
 
 ### Changed
 
-- Newly created work items omit content.journal from serialized TOML (WI-2026-05-31-003)
-- Work item show/render still renders legacy inline journal entries correctly (WI-2026-05-31-003)
-- Existing repositories with legacy inline execution-history entries continue to pass govctl check unless they have unrelated blocking errors (WI-2026-05-31-004)
-- RFC-0006 defines dynamic root-scope replan/add/remove semantics with dependency closure recomputation (WI-2026-06-01-081)
-- RFC-0006 defines how existing loop item state is preserved or removed during scope mutation (WI-2026-06-01-081)
-- RFC-0006 specifies canonical loop IDs as LOOP-YYYY-MM-DD-NNN and rejects plain-text loop IDs (WI-2026-06-01-081)
-- Replanning recomputes dependency closure while preserving applicable item statuses and round counts (WI-2026-06-01-082)
-- direct command-router invariant failures return Diagnostic errors instead of uncoded anyhow messages (WI-2026-06-01-166)
-- file I/O and serialization helpers used by CLI commands map failures to Diagnostic values (WI-2026-06-01-166)
-- remaining intentional anyhow boundaries are documented as transport or test-only, not user-facing errors (WI-2026-06-01-166)
-- scan command and core execution paths for non-Diagnostic error propagation and classify remaining intentional boundaries (WI-2026-06-01-169)
-- convert in-scope anyhow/String/std error returns to Diagnostic or Diagnostics without changing CLI behavior (WI-2026-06-01-169)
-- RFC-0002 classifies loop as a project-level local execution-state command namespace (WI-2026-06-01-179)
-- RFC-0006 defines loop command-surface semantics without positional argument overloading (WI-2026-06-01-179)
-- Loop state storage uses `loop.work` for the editable work set and a separate non-editable resolved dependency closure field (WI-2026-06-01-202)
-- Loop add/remove help and behavior prefer `work`, accept `wi`, and reject `work_items` as a field name (WI-2026-06-01-202)
-- RFC-0006 requires the loop `wi` field alias for `work` scope mutation (WI-2026-06-01-212)
-- Loop tests continue to accept `wi` and reject `work_items`/`root_work_items` (WI-2026-06-01-212)
-- integration tests use normal Rust modules instead of `include!` for split test suites (WI-2026-06-02-057)
-- existing integration-test coverage and insta snapshot names remain stable after module conversion (WI-2026-06-02-057)
-- no test file under `tests/` contains `include!(` after the cleanup (WI-2026-06-02-058)
-- Small CLI/tag-only helper modules are merged where they add no reusable boundary (WI-2026-06-03-013)
-- Edit target handlers no longer use thin get/remove micro modules (WI-2026-06-03-013)
-- Loop execution and validation micro helpers are consolidated without behavior changes (WI-2026-06-03-013)
-- RFC-0006 defines loop run as a local execution protocol that records and validates round evidence instead of implementing code or directly completing work items (WI-2026-06-03-014)
-- loop state and round schemas model loop-level execution rounds, summaries, verification evidence, and note candidates while preserving existing work, depends_on, guards, and notes ownership (WI-2026-06-03-014)
-- loop command behavior reuses start/list/show/resume/run/add/remove/replan without adding a parallel resource CRUD model or new testing system (WI-2026-06-03-014)
-- embedded gov and wi-writer skills plus CLI describe/help guidance avoid journal and direct agents to loop state for execution trace (WI-2026-06-03-014)
+- Work item execution history is no longer modeled as an editable field. New work items omit `content.journal`; existing legacy entries still render correctly in `work show` and generated work item output.
+- Loop scope mutation now uses `work` as the editable field, keeps `wi` as the supported alias, and rejects legacy `work_items`/`root_work_items` field names.
+- `loop run` is specified as a local execution protocol that records and validates round evidence. It does not introduce a parallel resource CRUD model or a separate testing system.
+- CLI-visible command routing, file I/O, serialization, and scan paths now return coded `Diagnostic` values where possible. Remaining `anyhow` boundaries are documented as transport or test-only.
+- Embedded skills, agent guidance, CLI help, and `describe` output now direct execution trace to loop state and durable takeaways to notes.
+- Integration tests were converted from `include!`-based splitting to normal Rust modules, and several over-split helper modules were folded back into their callers.
 
 ### Removed
 
-- Journal cannot be fetched, added, edited, ticked, or removed as a path-addressable work item field (WI-2026-05-31-003)
-- Legacy loop state keys `root_work_items` and `work_items` are not accepted for the unreleased loop schema (WI-2026-06-01-202)
+- Removed path-addressable work item journal operations. `journal` can no longer be fetched, added, edited, ticked, or removed as a work item field.
+- Removed support for legacy loop state keys `root_work_items` and `work_items`.
+- Removed legacy RFC/clause JSON storage compatibility from normal operation. Repositories that still contain `rfc.json` or clause JSON files now fail with `E0505` and must be migrated with govctl `<0.9` before upgrading.
+- Removed RFC/clause JSON conversion from `govctl migrate`. The command now upgrades TOML artifacts and schema metadata only.
 
 ### Fixed
 
-- commit skill detects governance before running govctl commands (WI-2026-05-31-001)
-- global skill copy at ~/.agents/skills/commit matches repo-local copy (WI-2026-05-31-001)
-- non-governed repos skip govctl check and work item steps (WI-2026-05-31-001)
-- governed repos continue to run full govctl workflow unchanged (WI-2026-05-31-001)
-- tick matches category-prefixed pattern on acceptance criteria (WI-2026-05-31-002)
-- CLI help and routing distinguish loop work-field discovery, scope mutation, resume, and targeted run selectors (WI-2026-06-01-179)
-- migrate config version bump participates in the same transactional file operation set as artifact rewrites (WI-2026-06-01-180)
-- migrate rollback removes newly created files and restores overwritten or deleted originals after apply failure (WI-2026-06-01-180)
-- rfc supersede marks source RFC superseded and records the replacement RFC (WI-2026-06-01-181)
-- rfc supersede rejects missing or invalid replacement RFCs with diagnostics (WI-2026-06-01-181)
-- clause delete rejects deletion when another artifact references the clause ID (WI-2026-06-01-182)
-- clause delete preserves existing draft-status and RFC section update behavior for unreferenced clauses (WI-2026-06-01-182)
+- `govctl migrate` now treats the config version bump as part of the same transactional operation set as artifact rewrites, and rollback restores overwritten or deleted files if apply fails.
+- `govctl rfc supersede` now updates the source RFC, records the replacement, and rejects missing or invalid replacements with diagnostics.
+- `govctl clause delete` now refuses to delete clauses referenced by another artifact while preserving the existing draft-status and section-update behavior for safe deletions.
+- `refs` edits now validate target existence and RFC/ADR reference hierarchy before writing, including indexed `refs[N]` updates.
+- Acceptance-criteria ticking now matches category-prefixed patterns.
+- Commit skill behavior now detects whether a repository is governed before running `govctl` commands, so non-governed repositories skip governance checks while governed repositories keep the full workflow.
 
 ## [0.8.5] - 2026-05-25
 

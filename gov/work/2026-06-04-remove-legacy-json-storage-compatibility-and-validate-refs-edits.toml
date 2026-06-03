@@ -1,0 +1,46 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-04-001"
+title = "Remove legacy JSON storage compatibility and validate refs edits"
+status = "done"
+created = "2026-06-04"
+started = "2026-06-04"
+completed = "2026-06-04"
+refs = [
+    "RFC-0000",
+    "RFC-0002",
+    "ADR-0034",
+]
+
+[content]
+description = "Remove v0.9 legacy RFC/clause JSON artifact storage compatibility while keeping JSON Schema and structured JSON output, and reject invalid refs mutations at edit time so CLI writes cannot create hierarchy-invalid references."
+notes = [
+    "Do not bump CURRENT_SCHEMA_VERSION for this change; v2 TOML repositories should not need an empty migration.",
+    "Do not remove JSON Schema files, structured JSON CLI output, or internal serde_json edit documents; only legacy RFC/clause JSON artifact storage is removed.",
+]
+
+[[content.acceptance_criteria]]
+text = "Legacy RFC and clause JSON artifact storage is rejected with an E0505 diagnostic that instructs users to migrate with govctl <0.9"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "govctl migrate no longer converts rfc.json or clause JSON files and TOML-only migrations remain supported without a schema version bump"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "refs add and indexed refs set validate target existence and RFC/ADR hierarchy before writing"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFCs, guides, help, and describe output describe TOML-only storage and legacy JSON removal accurately"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and targeted tests pass"
+status = "done"
+category = "chore"

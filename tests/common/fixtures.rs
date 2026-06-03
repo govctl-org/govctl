@@ -124,6 +124,32 @@ pub fn write_guarded_work_item(
     write_guarded_work_item_content(dir, &content)
 }
 
+pub fn write_minimal_rfc(
+    dir: &Path,
+    rfc_id: &str,
+    title: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let rfc_dir = dir.join("gov/rfc").join(rfc_id);
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
+    let content = format!(
+        r#"[govctl]
+schema = 1
+id = "{rfc_id}"
+title = "{title}"
+version = "0.1.0"
+status = "draft"
+phase = "spec"
+owners = ["@test-user"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+"#
+    );
+    fs::write(rfc_dir.join("rfc.toml"), content)?;
+    Ok(())
+}
+
 pub fn write_canonical_guarded_work_item(
     dir: &Path,
     work_id: &str,

@@ -1,7 +1,7 @@
 use super::{WriteOp, write_file};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::schema::{ArtifactSchema, validate_json_value, validate_toml_value, with_schema_header};
+use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
 use serde::{Serialize, de::DeserializeOwned};
 use std::path::Path;
 
@@ -11,7 +11,6 @@ pub(super) struct ArtifactIo {
     pub schema: ArtifactSchema,
     pub schema_error: DiagnosticCode,
     pub normalize_toml: fn(&mut toml::Value),
-    pub normalize_json: fn(&mut serde_json::Value),
 }
 
 pub(super) fn read_artifact<Wire, Spec>(
@@ -29,47 +28,38 @@ where
             path.display().to_string(),
         )
     })?;
-    let spec = match path.extension().and_then(|ext| ext.to_str()) {
-        Some("toml") => {
-            let mut raw: toml::Value = toml::from_str(&content).map_err(|err| {
-                Diagnostic::new(
-                    io.schema_error,
-                    format!("Failed to parse {} TOML: {err}", io.message_label),
-                    path.display().to_string(),
-                )
-            })?;
-            (io.normalize_toml)(&mut raw);
-            validate_toml_value(io.schema, config, path, &raw)?;
-            let wire: Wire = raw.try_into().map_err(|err| {
-                Diagnostic::new(
-                    io.schema_error,
-                    format!("Failed to deserialize {} TOML: {err}", io.message_label),
-                    path.display().to_string(),
-                )
-            })?;
-            wire.into()
-        }
-        _ => {
-            let mut raw: serde_json::Value = serde_json::from_str(&content).map_err(|err| {
-                Diagnostic::new(
-                    DiagnosticCode::E0902JsonParseError,
-                    format!("Failed to parse {} JSON: {err}", io.message_label),
-                    path.display().to_string(),
-                )
-            })?;
-            (io.normalize_json)(&mut raw);
-            validate_json_value(io.schema, config, path, &raw)?;
-            let wire: Wire = serde_json::from_value(raw).map_err(|err| {
-                Diagnostic::new(
-                    io.schema_error,
-                    format!("Failed to deserialize {} JSON: {err}", io.message_label),
-                    path.display().to_string(),
-                )
-            })?;
-            wire.into()
-        }
-    };
-    Ok(spec)
+    if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0505MigrationRequired,
+            "Legacy RFC/clause JSON artifact storage is no longer supported. Use govctl <0.9 to run `govctl migrate` before upgrading.",
+            path.display().to_string(),
+        ));
+    }
+    if path.extension().and_then(|ext| ext.to_str()) != Some("toml") {
+        return Err(Diagnostic::new(
+            io.schema_error,
+            "Unsupported artifact source extension; expected TOML",
+            path.display().to_string(),
+        ));
+    }
+
+    let mut raw: toml::Value = toml::from_str(&content).map_err(|err| {
+        Diagnostic::new(
+            io.schema_error,
+            format!("Failed to parse {} TOML: {err}", io.message_label),
+            path.display().to_string(),
+        )
+    })?;
+    (io.normalize_toml)(&mut raw);
+    validate_toml_value(io.schema, config, path, &raw)?;
+    let wire: Wire = raw.try_into().map_err(|err| {
+        Diagnostic::new(
+            io.schema_error,
+            format!("Failed to deserialize {} TOML: {err}", io.message_label),
+            path.display().to_string(),
+        )
+    })?;
+    Ok(wire.into())
 }
 
 pub(super) fn write_toml_artifact<Wire: Serialize>(

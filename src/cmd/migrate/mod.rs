@@ -13,12 +13,10 @@ use std::fs;
 mod ops;
 mod releases;
 mod rewrite;
-mod rfc_json;
 
 use ops::{FileOp, execute_ops, preview_ops};
 use releases::plan_release_upgrade;
 use rewrite::plan_toml_rewrites;
-use rfc_json::plan_rfc_json_to_toml;
 
 /// Latest schema version. Bump when adding a new migration step.
 pub const CURRENT_SCHEMA_VERSION: u32 = 2;
@@ -44,6 +42,8 @@ const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
 // =============================================================================
 
 pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
+    crate::load::reject_legacy_json_storage(config)?;
+
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
     let schemas_synced = sync_schemas(config, op)?;
 
@@ -174,41 +174,15 @@ fn plan_config_version_bump(config: &Config, new_version: u32) -> DiagnosticResu
 fn plan_v1_to_v2(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
     let mut ops = Vec::new();
 
-    // 1. JSON RFC/clause -> TOML wire format
-    let rfc_root = config.rfc_dir();
-    let mut converted_rfc_dirs = Vec::new();
-    if rfc_root.exists() {
-        let mut dirs: Vec<_> = fs::read_dir(&rfc_root)
-            .map_err(|err| {
-                Diagnostic::io_error(
-                    "read RFC directory for migration",
-                    err,
-                    config.display_path(&rfc_root).display().to_string(),
-                )
-            })?
-            .filter_map(Result::ok)
-            .map(|e| e.path())
-            .filter(|p| p.is_dir())
-            .collect();
-        dirs.sort();
-
-        for dir in dirs {
-            if let Some((rfc_ops, rfc_id)) = plan_rfc_json_to_toml(config, &dir)? {
-                ops.extend(rfc_ops);
-                converted_rfc_dirs.push(rfc_id);
-            }
-        }
-    }
-
-    // 2. Release metadata normalization
+    // 1. Release metadata normalization
     let mut skip_releases = false;
     if let Some(release_ops) = plan_release_upgrade(config)? {
         ops.extend(release_ops);
         skip_releases = true;
     }
 
-    // 3. Rewrite all artifacts: add #:schema headers + strip govctl.schema
-    let rewrite_ops = plan_toml_rewrites(config, &converted_rfc_dirs, skip_releases)?;
+    // 2. Rewrite all TOML artifacts: add #:schema headers + strip govctl.schema
+    let rewrite_ops = plan_toml_rewrites(config, skip_releases)?;
     ops.extend(rewrite_ops);
 
     Ok(ops)

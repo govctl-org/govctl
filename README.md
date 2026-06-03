@@ -208,7 +208,7 @@ You can also require extra guards on a specific work item or waive a guard with 
 These are related, but different:
 
 - **`/migrate` workflow** — adopt `govctl` in an existing repository by discovering decisions, backfilling ADRs, and introducing governance incrementally
-- **`govctl migrate` command** — upgrade existing `govctl`-managed artifacts to the current on-disk format and schema
+- **`govctl migrate` command** — upgrade existing TOML `govctl` artifacts to the current on-disk format and schema
 
 For format upgrades:
 
@@ -217,7 +217,7 @@ govctl migrate
 govctl check
 ```
 
-As of the `0.8.x` line, RFC and clause artifacts are written canonically as TOML. Legacy JSON is supported for migration and compatibility on read, not as an ongoing write format.
+In govctl `0.9` and later, RFC and clause artifacts are TOML-only. `govctl migrate` no longer converts legacy RFC/clause JSON storage; migrate those repositories with govctl `<0.9` before upgrading.
 
 ### Interactive TUI
 

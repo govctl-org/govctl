@@ -1,6 +1,6 @@
 use super::adapter::{AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter};
+use super::doc_target::{set_clause_field, set_rfc_field};
 use super::engine as edit_engine;
-use super::json_target::{set_clause_field, set_rfc_field};
 use super::path::FieldPath;
 use super::rules as edit_rules;
 use super::toml_target::{set_toml_field, set_work_toml_field};

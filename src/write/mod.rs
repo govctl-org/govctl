@@ -1,4 +1,4 @@
-//! JSON and frontmatter mutation utilities.
+//! Artifact write utilities.
 //!
 //! Implements [[ADR-0006]] global dry-run support for content-modifying commands.
 //! Implements [[ADR-0012]] prefix-based changelog category parsing.
@@ -13,7 +13,6 @@ mod artifact_normalize;
 mod changelog;
 
 pub use artifact::{read_clause, read_rfc, write_clause, write_rfc};
-pub(crate) use artifact_normalize::{normalize_clause_json, normalize_rfc_json};
 pub use artifact_normalize::{normalize_clause_value, normalize_rfc_value};
 pub use changelog::{BumpLevel, ParsedChange, add_changelog_change, bump_rfc_version, today};
 

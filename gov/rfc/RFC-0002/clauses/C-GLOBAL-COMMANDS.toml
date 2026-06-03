@@ -42,7 +42,7 @@ Behavior:
 - Verifies cross-references
 - Validates the semantic correctness of the optional `[verification]` section in `gov/config.toml`, including that configured default guard IDs resolve
 - Scans source code for references (if enabled in config)
-- In repositories that have completed RFC/clause migration, if legacy JSON RFC or clause files are detected, MUST fail with a migration-required diagnostic that points to `govctl migrate`
+- If legacy JSON RFC or clause storage files are detected, MUST fail with a migration-required diagnostic that instructs users to run `govctl migrate` with a govctl version earlier than 0.9 before upgrading
 - Returns exit code 0 if valid, non-zero if errors
 - With `--deny-warnings`: treats warnings as errors
 
@@ -66,7 +66,7 @@ Generates markdown documentation from source-of-truth governance artifacts.
 Syntax: `govctl render [targets...] [--output-dir PATH] [--dry-run]`
 
 Behavior:
-- In repositories that have completed RFC/clause migration, renders RFCs from TOML to markdown (published)
+- Renders RFCs from TOML to markdown (published)
 - Renders ADRs from TOML to markdown (local only)
 - Renders work items from TOML to markdown (local only)
 - Generates CHANGELOG.md from releases
@@ -111,12 +111,13 @@ Syntax: `govctl migrate [--dry-run]`
 Behavior:
 - Reads the current schema version from `gov/config.toml` `[schema] version`
 - Runs all pending migration steps from the current version to the latest
-- Each step produces a set of file operations (writes and deletes) executed transactionally
+- Each step produces a set of file operations executed transactionally
 - Bumps `[schema] version` in `gov/config.toml` after successful migration
 - MUST leave the repository unchanged if any step fails
 - MUST be safe to run on an already-migrated repository and report a no-op result
 - MUST NOT perform heuristic project discovery or broad adoption tasks
 - MUST ensure all bundled JSON Schema files exist in `gov/schema/`, overwriting with the latest version regardless of schema version (per ADR-0035)
+- In govctl 0.9 and later, MUST NOT convert legacy JSON RFC or clause storage; repositories with those files MUST be migrated with a govctl version earlier than 0.9 before upgrading
 
 **8. `govctl verify`**
 

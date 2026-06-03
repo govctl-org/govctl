@@ -1,8 +1,7 @@
 ---
-source: tests/test_lifecycle.rs
-assertion_line: 296
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/clause.rs
+expression: snapshot
 ---
 $ govctl clause deprecate RFC-0001:C-TEST --force
-error[E0505]: Legacy JSON clause exists for RFC-0001:C-TEST; run `govctl migrate` before clause lifecycle commands. (RFC-0001:C-TEST)
+error[E0505]: Legacy JSON clause exists for RFC-0001:C-TEST; use govctl <0.9 to run `govctl migrate` before upgrading. (RFC-0001:C-TEST)
 exit: 1

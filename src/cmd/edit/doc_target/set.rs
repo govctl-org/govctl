@@ -1,8 +1,8 @@
 use super::super::{
-    adapter::DocAdapter, deserialize_edit_doc, engine as edit_engine, runtime as edit_runtime,
-    serialize_edit_doc, unexpected_edit_state,
+    adapter::DocAdapter, deserialize_edit_doc, engine as edit_engine, refs,
+    runtime as edit_runtime, serialize_edit_doc, unexpected_edit_state,
 };
-use super::{JsonTargetKind, SetJsonRequest, require_simple_field};
+use super::{DocTargetKind, SetDocRequest, require_simple_field};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::{WriteOp, today};
@@ -18,16 +18,16 @@ pub(in crate::cmd::edit) fn set_rfc_field<A>(
 where
     A: DocAdapter<Data = crate::model::RfcSpec>,
 {
-    let request = SetJsonRequest {
+    let request = SetDocRequest {
         config,
         id,
         target,
         value,
         op,
         allow_forced_simple_set,
-        kind: JsonTargetKind::Rfc,
+        kind: DocTargetKind::Rfc,
     };
-    set_json_field::<A, _>(request, |data| {
+    set_doc_field::<A, _>(request, |data| {
         data.updated = Some(today());
         Ok(())
     })
@@ -44,25 +44,25 @@ pub(in crate::cmd::edit) fn set_clause_field<A>(
 where
     A: DocAdapter<Data = crate::model::ClauseSpec>,
 {
-    let request = SetJsonRequest {
+    let request = SetDocRequest {
         config,
         id,
         target,
         value,
         op,
         allow_forced_simple_set,
-        kind: JsonTargetKind::Clause,
+        kind: DocTargetKind::Clause,
     };
-    set_json_field::<A, _>(request, |_| Ok(()))
+    set_doc_field::<A, _>(request, |_| Ok(()))
 }
 
-fn set_json_field<A, F>(request: SetJsonRequest<'_>, touch_loaded_data: F) -> DiagnosticResult<()>
+fn set_doc_field<A, F>(request: SetDocRequest<'_>, touch_loaded_data: F) -> DiagnosticResult<()>
 where
     A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
     F: FnOnce(&mut A::Data) -> DiagnosticResult<()>,
 {
-    let SetJsonRequest {
+    let SetDocRequest {
         config,
         id,
         target,
@@ -74,6 +74,9 @@ where
 
     let mut loaded = A::load(config, id)?;
     let mut doc = serialize_edit_doc(&loaded.data, id)?;
+    if refs::is_refs_target(target) {
+        refs::validate_ref_edit(config, kind.artifact(), id, value)?;
+    }
     match target {
         edit_engine::ResolvedTarget::Node {
             path,

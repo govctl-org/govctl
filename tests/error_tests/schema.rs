@@ -9,18 +9,21 @@ fn test_invalid_rfc_schema_check() -> common::TestResult {
     fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Invalid RFC",
-  "version": "1.0.0",
-  "status": "normative",
-  "phase": "stable",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [],
-  "unexpected": true
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Invalid RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+unexpected = true
+
+[[sections]]
+title = "Specification"
+"#,
     )?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
@@ -38,28 +41,35 @@ fn test_invalid_clause_schema_check() -> common::TestResult {
     fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Clause Schema Test",
-  "version": "1.0.0",
-  "status": "normative",
-  "phase": "stable",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [{"title": "Test", "clauses": ["clauses/C-TEST.json"]}]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Clause Schema Test"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Test"
+clauses = ["clauses/C-TEST.toml"]
+"#,
     )?;
 
     fs::write(
-        rfc_dir.join("clauses/C-TEST.json"),
-        r#"{
-  "clause_id": "C-TEST",
-  "title": "Invalid Clause",
-  "kind": "normative",
-  "text": "Clause text",
-  "unexpected": "should fail schema validation"
-}"#,
+        rfc_dir.join("clauses/C-TEST.toml"),
+        r#"[govctl]
+schema = 1
+id = "C-TEST"
+title = "Invalid Clause"
+kind = "normative"
+
+[content]
+text = "Clause text"
+unexpected = "should fail schema validation"
+"#,
     )?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;

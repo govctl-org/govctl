@@ -22,7 +22,7 @@ pub(super) fn require_rfc_toml_path(config: &Config, rfc_id: &str) -> Diagnostic
             Diagnostic::new(
                 DiagnosticCode::E0505MigrationRequired,
                 format!(
-                    "Legacy JSON RFC exists for {rfc_id}; run `govctl migrate` before RFC lifecycle commands."
+                    "Legacy JSON RFC exists for {rfc_id}; use govctl <0.9 to run `govctl migrate` before upgrading."
                 ),
                 rfc_id,
             )
@@ -65,7 +65,7 @@ pub(super) fn require_clause_toml_path(
             Diagnostic::new(
                 DiagnosticCode::E0505MigrationRequired,
                 format!(
-                    "Legacy JSON clause exists for {clause_id}; run `govctl migrate` before clause lifecycle commands."
+                    "Legacy JSON clause exists for {clause_id}; use govctl <0.9 to run `govctl migrate` before upgrading."
                 ),
                 clause_id,
             )

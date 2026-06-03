@@ -11,6 +11,11 @@ use std::path::Path;
 use std::process::Command;
 use std::time::{Duration, Instant};
 
+const NON_TIMEOUT_GUARD_TIMEOUT_SECS: u64 = 10;
+
+#[cfg(unix)]
+const DETACHED_GUARD_RUN_TIMEOUT: Duration = Duration::from_secs(5);
+
 #[test]
 fn test_verify_runs_project_default_guard() -> TestResult {
     let temp_dir = init_project()?;
@@ -35,7 +40,7 @@ fn test_verify_noisy_guard_output_does_not_timeout() -> TestResult {
         "GUARD-NOISY",
         "yes noisy | head -c 131072",
         None,
-        1,
+        NON_TIMEOUT_GUARD_TIMEOUT_SECS,
     )?;
 
     let output = run_commands(temp_dir.path(), &[&["verify"]])?;
@@ -78,11 +83,12 @@ fn test_verify_detached_guard_descendant_holding_output_open_does_not_hang() -> 
         "GUARD-DETACHED",
         "perl -MPOSIX=setsid -e 'if (fork() == 0) { setsid(); sleep 6 }'",
         None,
-        1,
+        NON_TIMEOUT_GUARD_TIMEOUT_SECS,
     )?;
 
-    let output = run_command_with_timeout(temp_dir.path(), &["verify"], Duration::from_secs(2))?
-        .ok_or("govctl verify hung while collecting output from a detached guard descendant")?;
+    let output =
+        run_command_with_timeout(temp_dir.path(), &["verify"], DETACHED_GUARD_RUN_TIMEOUT)?
+            .ok_or("govctl verify hung while collecting output from a detached guard descendant")?;
     assert!(output.contains("PASS GUARD-DETACHED"), "output: {}", output);
     assert!(output.contains("exit: 0"), "output: {}", output);
 

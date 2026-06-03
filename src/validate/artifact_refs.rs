@@ -2,7 +2,7 @@ use super::ValidationResult;
 use super::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
 use crate::artifact_index::artifact_ref_ids;
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::ProjectIndex;
 use std::collections::HashSet;
 
@@ -93,6 +93,39 @@ pub(super) fn validate_artifact_refs(
     }
 }
 
+pub fn validate_artifact_ref_edit(
+    config: &Config,
+    owner_id: &str,
+    ref_id: &str,
+    diagnostic_path: &str,
+) -> DiagnosticResult<()> {
+    let index = crate::load::load_project(config).map_err(|mut diagnostics| {
+        if diagnostics.is_empty() {
+            Diagnostic::new(
+                DiagnosticCode::E0903UnexpectedError,
+                "Failed to load project for refs validation",
+                diagnostic_path,
+            )
+        } else {
+            diagnostics.remove(0)
+        }
+    })?;
+    let known_ids = artifact_ref_ids(&index);
+    if !known_ids.contains(ref_id) {
+        return Err(Diagnostic::new(
+            unknown_ref_code(owner_id),
+            unknown_ref_message(owner_id, ref_id),
+            diagnostic_path,
+        ));
+    }
+    check_ref_hierarchy(
+        owner_id,
+        ref_id,
+        diagnostic_path,
+        ReferenceSurface::StructuredRef,
+    )
+}
+
 #[derive(Clone, Copy)]
 struct RefCheck<'a> {
     known_ids: &'a HashSet<String>,
@@ -128,5 +161,25 @@ fn validate_refs<'a, I, F>(
         {
             result.diagnostics.push(diagnostic);
         }
+    }
+}
+
+fn unknown_ref_code(owner_id: &str) -> DiagnosticCode {
+    if owner_id.starts_with("RFC-") {
+        DiagnosticCode::E0105RfcRefNotFound
+    } else if owner_id.starts_with("ADR-") {
+        DiagnosticCode::E0304AdrRefNotFound
+    } else {
+        DiagnosticCode::E0404WorkRefNotFound
+    }
+}
+
+fn unknown_ref_message(owner_id: &str, ref_id: &str) -> String {
+    if owner_id.starts_with("RFC-") {
+        format!("RFC '{owner_id}' references unknown artifact: {ref_id}")
+    } else if owner_id.starts_with("ADR-") {
+        format!("ADR '{owner_id}' references unknown artifact: {ref_id}")
+    } else {
+        format!("Work item '{owner_id}' references unknown artifact: {ref_id}")
     }
 }

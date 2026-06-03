@@ -2,8 +2,9 @@ use super::adapter::{
     AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, TomlAdapter,
     WorkTomlAdapter,
 };
+use super::doc_target::add_doc_simple_list_field;
 use super::engine as edit_engine;
-use super::json_target::add_json_simple_list_field;
+use super::refs::{is_refs_target, validate_ref_edit};
 use super::rules as edit_rules;
 use super::target_doc::add_to_target_doc;
 use super::toml_target::{is_work_dependency_target, validate_work_dependency_edit};
@@ -149,6 +150,9 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
     if fp.as_simple() == Some("tags") {
         crate::cmd::tag::validate_registered_tag(config, value, id)?;
     }
+    if is_refs_target(target) {
+        validate_ref_edit(config, artifact, id, value)?;
+    }
 
     match artifact {
         ArtifactType::Adr => {
@@ -178,7 +182,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
             }
             WorkTomlAdapter::write(config, &entry, op)?;
         }
-        ArtifactType::Rfc => add_json_simple_list_field::<RfcTomlAdapter>(
+        ArtifactType::Rfc => add_doc_simple_list_field::<RfcTomlAdapter>(
             config,
             id,
             target,
@@ -187,7 +191,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
             ArtifactType::Rfc,
             "RFC fields do not support nested paths for add",
         )?,
-        ArtifactType::Clause => add_json_simple_list_field::<ClauseTomlAdapter>(
+        ArtifactType::Clause => add_doc_simple_list_field::<ClauseTomlAdapter>(
             config,
             id,
             target,

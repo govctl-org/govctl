@@ -1,7 +1,7 @@
 use super::adapter::{
     AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, WorkTomlAdapter,
 };
-use super::json_target::remove_json_simple_list_field;
+use super::doc_target::remove_doc_simple_list_field;
 use super::matching::MatchOptions;
 use super::rules as edit_rules;
 use super::toml_target::remove_toml_field;
@@ -34,7 +34,7 @@ pub fn remove_from_field(
             op,
             ArtifactType::WorkItem,
         )?,
-        ArtifactType::Rfc => remove_json_simple_list_field::<RfcTomlAdapter>(
+        ArtifactType::Rfc => remove_doc_simple_list_field::<RfcTomlAdapter>(
             config,
             id,
             target,
@@ -43,7 +43,7 @@ pub fn remove_from_field(
             ArtifactType::Rfc,
             "RFC fields do not support nested paths for remove",
         )?,
-        ArtifactType::Clause => remove_json_simple_list_field::<ClauseTomlAdapter>(
+        ArtifactType::Clause => remove_doc_simple_list_field::<ClauseTomlAdapter>(
             config,
             id,
             target,

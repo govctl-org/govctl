@@ -18,41 +18,45 @@ fn setup_minimal_valid(dir: &Path, date: &str) -> common::TestResult {
     fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Test RFC",
-  "version": "1.0.0",
-  "status": "normative",
-  "phase": "stable",
-  "owners": ["test@example.com"],
-  "created": "2026-01-01",
-  "sections": [
-    {
-      "title": "Overview",
-      "clauses": ["clauses/C-EXAMPLE.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "1.0.0",
-      "date": "2026-01-01",
-      "added": ["Initial release"]
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Test RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+clauses = ["clauses/C-EXAMPLE.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
     )?;
 
     fs::write(
-        rfc_dir.join("clauses/C-EXAMPLE.json"),
-        r#"{
-  "clause_id": "C-EXAMPLE",
-  "title": "Example Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "This is an example clause for testing.",
-  "since": "1.0.0"
-}"#,
+        rfc_dir.join("clauses/C-EXAMPLE.toml"),
+        r#"#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-EXAMPLE"
+title = "Example Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "This is an example clause for testing."
+"#,
     )?;
 
     // Create ADR
