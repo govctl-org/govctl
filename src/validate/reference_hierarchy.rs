@@ -73,7 +73,7 @@ mod tests {
         assert!(
             check_ref_hierarchy(
                 "RFC-0001",
-                "WI-2026-06-01-136",
+                "WI-2026-01-17-001",
                 "f",
                 ReferenceSurface::StructuredRef,
             )
@@ -103,7 +103,7 @@ mod tests {
         assert!(
             check_ref_hierarchy(
                 "ADR-0001",
-                "WI-2026-06-01-136",
+                "WI-2026-01-17-001",
                 "f",
                 ReferenceSurface::StructuredRef,
             )
@@ -132,8 +132,8 @@ mod tests {
     fn work_allows_any() {
         assert!(
             check_ref_hierarchy(
-                "WI-2026-06-01-136",
-                "WI-2026-06-01-137",
+                "WI-2026-01-17-001",
+                "WI-2026-01-17-002",
                 "f",
                 ReferenceSurface::StructuredRef,
             )
@@ -141,7 +141,7 @@ mod tests {
         );
         assert!(
             check_ref_hierarchy(
-                "WI-2026-06-01-136",
+                "WI-2026-01-17-001",
                 "ADR-0001",
                 "f",
                 ReferenceSurface::StructuredRef,
@@ -166,7 +166,7 @@ mod tests {
 
     #[test]
     fn preserves_bracket_link_diagnostic_wording() {
-        let target_id = "WI-2026-06-01-136";
+        let target_id = "WI-2026-01-17-001";
         let result = check_ref_hierarchy("ADR-0001", target_id, "f", ReferenceSurface::BracketLink);
         assert!(result.is_err(), "ADR to WI bracket link should fail");
         if let Err(err) = result {
