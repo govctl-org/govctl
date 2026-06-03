@@ -5,6 +5,7 @@ id = "C-LOOP-COMMAND-SURFACE"
 title = "Loop Command Surface"
 kind = "normative"
 status = "active"
+since = "0.4.0"
 
 [content]
 text = """

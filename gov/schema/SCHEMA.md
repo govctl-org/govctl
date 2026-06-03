@@ -344,27 +344,27 @@ blockers = []
 note_candidates = []
 ```
 
-| Field                | Required | Type    | Description                                      |
-| -------------------- | -------- | ------- | ------------------------------------------------ |
-| `loop.id`            | yes      | string  | Local loop identifier                            |
-| `loop.state`         | yes      | enum    | `pending` \| `active` \| `paused` \| `completed` \| `failed` |
-| `loop.work`         | yes      | array   | Editable work item IDs requested by the user      |
-| `loop.resolved`     | yes      | array   | Dependency-closed work item IDs                  |
-| `loop.current_round` | no      | integer | Latest loop-level round number known to state    |
-| `loop.next_action`   | no      | enum    | `start` \| `write_summary` \| `continue` \| `resolve_blocker` \| `complete` |
-| `dependencies`       | yes      | table   | Work item dependency adjacency map               |
-| `items.<WI-ID>.status` | yes    | enum    | `pending` \| `active` \| `done` \| `failed` \| `blocked` \| `cancelled` |
-| `items.<WI-ID>.round_count` | yes | integer | Number of executed rounds for the work item      |
-| `items.<WI-ID>.last_round` | no | integer | Last loop-level round that selected the work item |
-| `round.round_number` | yes      | integer | One-based loop-level round number                |
-| `round.max_rounds`   | yes      | integer | Per-item round limit used when the round opened  |
-| `round.status`       | yes      | enum    | `open` \| `submitted` \| `closed`                |
-| `round.work`         | yes      | array   | Work Item IDs selected for the round             |
-| `summary.actions`    | yes      | array   | Actions performed during the round               |
-| `summary.changed_paths` | yes   | array   | Changed paths or an explicit no-change entry     |
-| `summary.verification` | yes    | array   | Verification evidence summaries                  |
-| `summary.blockers`   | yes      | array   | Blockers or open questions                       |
-| `summary.note_candidates` | yes | array   | Candidate durable notes for explicit Work Item note commands |
+| Field                       | Required | Type    | Description                                                                 |
+| --------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
+| `loop.id`                   | yes      | string  | Local loop identifier                                                       |
+| `loop.state`                | yes      | enum    | `pending` \| `active` \| `paused` \| `completed` \| `failed`                |
+| `loop.work`                 | yes      | array   | Editable work item IDs requested by the user                                |
+| `loop.resolved`             | yes      | array   | Dependency-closed work item IDs                                             |
+| `loop.current_round`        | no       | integer | Latest loop-level round number known to state                               |
+| `loop.next_action`          | no       | enum    | `start` \| `write_summary` \| `continue` \| `resolve_blocker` \| `complete` |
+| `dependencies`              | yes      | table   | Work item dependency adjacency map                                          |
+| `items.<WI-ID>.status`      | yes      | enum    | `pending` \| `active` \| `done` \| `failed` \| `blocked` \| `cancelled`     |
+| `items.<WI-ID>.round_count` | yes      | integer | Number of executed rounds for the work item                                 |
+| `items.<WI-ID>.last_round`  | no       | integer | Last loop-level round that selected the work item                           |
+| `round.round_number`        | yes      | integer | One-based loop-level round number                                           |
+| `round.max_rounds`          | yes      | integer | Per-item round limit used when the round opened                             |
+| `round.status`              | yes      | enum    | `open` \| `submitted` \| `closed`                                           |
+| `round.work`                | yes      | array   | Work Item IDs selected for the round                                        |
+| `summary.actions`           | yes      | array   | Actions performed during the round                                          |
+| `summary.changed_paths`     | yes      | array   | Changed paths or an explicit no-change entry                                |
+| `summary.verification`      | yes      | array   | Verification evidence summaries                                             |
+| `summary.blockers`          | yes      | array   | Blockers or open questions                                                  |
+| `summary.note_candidates`   | yes      | array   | Candidate durable notes for explicit Work Item note commands                |
 
 ---
 

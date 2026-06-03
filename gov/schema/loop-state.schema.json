@@ -37,7 +37,13 @@
         },
         "next_action": {
           "type": "string",
-          "enum": ["start", "write_summary", "continue", "resolve_blocker", "complete"]
+          "enum": [
+            "start",
+            "write_summary",
+            "continue",
+            "resolve_blocker",
+            "complete"
+          ]
         }
       },
       "additionalProperties": false
@@ -66,7 +72,14 @@
         "properties": {
           "status": {
             "type": "string",
-            "enum": ["pending", "active", "done", "failed", "blocked", "cancelled"]
+            "enum": [
+              "pending",
+              "active",
+              "done",
+              "failed",
+              "blocked",
+              "cancelled"
+            ]
           },
           "round_count": {
             "type": "integer",

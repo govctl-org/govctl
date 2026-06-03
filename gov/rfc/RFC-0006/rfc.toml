@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0006"
 title = "Loop Execution Model"
-version = "0.3.0"
+version = "0.4.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-05-31"
-updated = "2026-06-01"
-signature = "30f3369d0597c2caa81115ed0a284512a6f75c370f52ff55fcac44c8e80ce169"
+updated = "2026-06-03"
+signature = "8c414b17e2d0a1422a7e6b2a637a26978f3ce561018154276202ab40f37e42ca"
 
 [[sections]]
 title = "Summary"
@@ -37,6 +37,13 @@ clauses = [
     "clauses/C-EXECUTION-STATE-SEPARATION.toml",
     "clauses/C-DEPENDENCY-SEPARATION.toml",
 ]
+
+[[changelog]]
+version = "0.4.0"
+date = "2026-06-03"
+notes = "Define loop command surface"
+added = ["Loop command surface defines canonical loop subcommands and argument roles"]
+changed = ["Loop run advances an existing local round protocol by LOOP-ID with explicit --work target selection"]
 
 [[changelog]]
 version = "0.3.0"

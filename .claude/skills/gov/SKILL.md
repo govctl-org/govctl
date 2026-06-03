@@ -279,11 +279,11 @@ govctl work move <WI-ID> done
 
 ### Otherwise recover and continue
 
-| Problem                       | Recovery                                                        |
-| ----------------------------- | --------------------------------------------------------------- |
-| `govctl check` fails          | Read diagnostics, fix, rerun                                    |
-| Tests fail                    | Debug, fix, rerun                                               |
-| `work move ... done` rejected | Add or tick acceptance criteria first                           |
+| Problem                       | Recovery                                        |
+| ----------------------------- | ----------------------------------------------- |
+| `govctl check` fails          | Read diagnostics, fix, rerun                    |
+| Tests fail                    | Debug, fix, rerun                               |
+| `work move ... done` rejected | Add or tick acceptance criteria first           |
 | Same failure repeats          | Read `notes`; record a new plan or stop and ask |
 
 ## Commit Conventions

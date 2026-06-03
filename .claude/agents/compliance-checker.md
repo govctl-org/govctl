@@ -68,12 +68,12 @@ For each accepted ADR:
 
 ## Violation Categories
 
-| Category         | Meaning                                          | Default Severity | Example                                                            |
-| ---------------- | ------------------------------------------------ | ---------------- | ------------------------------------------------------------------ |
-| **VIOLATION**    | Code contradicts a MUST/MUST NOT clause          | Critical         | Clause says MUST validate; code skips validation                   |
-| **DEVIATION**    | Code doesn't follow a SHOULD/SHOULD NOT          | Warning          | Clause says SHOULD log; code doesn't log                           |
+| Category         | Meaning                                          | Default Severity | Example                                                      |
+| ---------------- | ------------------------------------------------ | ---------------- | ------------------------------------------------------------ |
+| **VIOLATION**    | Code contradicts a MUST/MUST NOT clause          | Critical         | Clause says MUST validate; code skips validation             |
+| **DEVIATION**    | Code doesn't follow a SHOULD/SHOULD NOT          | Warning          | Clause says SHOULD log; code doesn't log                     |
 | **DRIFT**        | Code has diverged from an ADR decision           | Warning          | ADR says a field is render-only; code exposes it as editable |
-| **UNDOCUMENTED** | Code implements behavior not covered by any spec | Warning          | Feature exists with no governing clause                            |
+| **UNDOCUMENTED** | Code implements behavior not covered by any spec | Warning          | Feature exists with no governing clause                      |
 
 ## Output Contract
 

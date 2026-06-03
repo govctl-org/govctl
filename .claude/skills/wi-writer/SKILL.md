@@ -140,11 +140,11 @@ Do not hand-write descriptive loop IDs or encode time finer than the day in loop
 
 ## Field Semantics Summary
 
-| Field                 | Purpose                    | Update Pattern                                |
-| --------------------- | -------------------------- | --------------------------------------------- |
-| `description`         | Task scope declaration     | Define once, rarely change                    |
-| `notes`               | Durable learnings          | Add when future steps must remember something |
-| `acceptance_criteria` | Completion criteria        | Define then tick                              |
+| Field                 | Purpose                | Update Pattern                                |
+| --------------------- | ---------------------- | --------------------------------------------- |
+| `description`         | Task scope declaration | Define once, rarely change                    |
+| `notes`               | Durable learnings      | Add when future steps must remember something |
+| `acceptance_criteria` | Completion criteria    | Define then tick                              |
 
 **Per ADR-0047:** Keep description focused on "what", notes on durable "what to remember next", and execution trace outside the work item field surface.
 If you discover a missing requirement or unresolved design choice, stop and route that back to RFC/ADR work rather than inventing it inside the work item.
@@ -203,13 +203,13 @@ Keep `chore:` criteria for validation summaries, especially when the validation 
 
 ## Common Mistakes
 
-| Mistake                            | Fix                                                         |
-| ---------------------------------- | ----------------------------------------------------------- |
-| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                   |
-| Placeholder description left in    | Replace immediately with real description                   |
-| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"         |
-| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass" |
-| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                 |
+| Mistake                            | Fix                                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                                            |
+| Placeholder description left in    | Replace immediately with real description                                            |
+| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"                                  |
+| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass"                          |
+| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                                          |
 | Description used for tracking      | Use loop state and round artifacts for execution trace or `notes` for durable memory |
-| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts |
-| Work item invents new requirements | Move those requirements into an RFC or ADR first            |
+| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts     |
+| Work item invents new requirements | Move those requirements into an RFC or ADR first                                     |

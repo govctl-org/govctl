@@ -36,7 +36,9 @@ pub enum LoopWorkItemStatus {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+#[derive(Default)]
 pub enum LoopNextAction {
+    #[default]
     Start,
     WriteSummary,
     Continue,
@@ -44,11 +46,6 @@ pub enum LoopNextAction {
     Complete,
 }
 
-impl Default for LoopNextAction {
-    fn default() -> Self {
-        Self::Start
-    }
-}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
