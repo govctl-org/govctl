@@ -3,56 +3,66 @@
   "title": "Loop Round Record",
   "description": "JSON Schema for local loop round TOML after parsing",
   "type": "object",
-  "required": [
-    "loop_id",
-    "work_item_id",
-    "round_number",
-    "max_rounds",
-    "item_status_before",
-    "item_status_after",
-    "work_status_before",
-    "work_status_after",
-    "action",
-    "outcome"
-  ],
+  "required": ["round", "summary"],
   "properties": {
-    "loop_id": {
-      "type": "string",
-      "pattern": "^LOOP-(?:(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29|[0-9]{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8])))-(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2})$"
+    "round": {
+      "type": "object",
+      "required": ["loop_id", "round_number", "max_rounds", "status", "work"],
+      "properties": {
+        "loop_id": {
+          "type": "string",
+          "pattern": "^LOOP-(?:(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)-02-29|[0-9]{4}-(?:(?:01|03|05|07|08|10|12)-(?:0[1-9]|[12][0-9]|3[01])|(?:04|06|09|11)-(?:0[1-9]|[12][0-9]|30)|02-(?:0[1-9]|1[0-9]|2[0-8])))-(?:00[1-9]|0[1-9][0-9]|[1-9][0-9]{2})$"
+        },
+        "round_number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_rounds": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "status": {
+          "type": "string",
+          "enum": ["open", "submitted", "closed"]
+        },
+        "work": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/workItemId"
+          },
+          "uniqueItems": true
+        }
+      },
+      "additionalProperties": false
     },
-    "work_item_id": {
-      "$ref": "#/definitions/workItemId"
-    },
-    "round_number": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "max_rounds": {
-      "type": "integer",
-      "minimum": 1
-    },
-    "item_status_before": {
-      "$ref": "#/definitions/loopItemStatus"
-    },
-    "item_status_after": {
-      "$ref": "#/definitions/loopItemStatus"
-    },
-    "work_status_before": {
-      "$ref": "#/definitions/workStatus"
-    },
-    "work_status_after": {
-      "$ref": "#/definitions/workStatus"
-    },
-    "action": {
-      "type": "string",
-      "minLength": 1
-    },
-    "outcome": {
-      "$ref": "#/definitions/loopItemStatus"
-    },
-    "reason": {
-      "type": "string",
-      "minLength": 1
+    "summary": {
+      "type": "object",
+      "required": [
+        "actions",
+        "changed_paths",
+        "verification",
+        "blockers",
+        "note_candidates"
+      ],
+      "properties": {
+        "actions": {
+          "$ref": "#/definitions/nonEmptyStringArray"
+        },
+        "changed_paths": {
+          "$ref": "#/definitions/nonEmptyStringArray"
+        },
+        "verification": {
+          "$ref": "#/definitions/nonEmptyStringArray"
+        },
+        "blockers": {
+          "$ref": "#/definitions/nonEmptyStringArray"
+        },
+        "note_candidates": {
+          "$ref": "#/definitions/nonEmptyStringArray"
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false,
@@ -61,13 +71,12 @@
       "type": "string",
       "pattern": "^WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3})$"
     },
-    "loopItemStatus": {
-      "type": "string",
-      "enum": ["pending", "active", "done", "failed", "blocked", "cancelled"]
-    },
-    "workStatus": {
-      "type": "string",
-      "enum": ["queue", "active", "done", "cancelled"]
+    "nonEmptyStringArray": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
     }
   }
 }

@@ -158,12 +158,15 @@ pub fn replan_loop_state(
 ) -> DiagnosticResult<LoopPlan> {
     let mut plan = build_loop_plan(&existing.loop_meta.id, work, all_work_items)?;
     plan.state.loop_meta.state = existing.loop_meta.state;
+    plan.state.loop_meta.current_round = existing.loop_meta.current_round;
+    plan.state.loop_meta.next_action = existing.loop_meta.next_action;
 
     for (work_id, item) in &mut plan.state.items {
         let Some(previous) = existing.items.get(work_id) else {
             continue;
         };
         item.round_count = previous.round_count;
+        item.last_round = previous.last_round;
         item.status = preserved_replan_status(previous.status, item.status);
     }
 

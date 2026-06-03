@@ -1,0 +1,55 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-03-014"
+title = "Redesign loop execution protocol"
+status = "done"
+created = "2026-06-03"
+started = "2026-06-03"
+completed = "2026-06-03"
+refs = [
+    "RFC-0006",
+    "RFC-0002",
+    "ADR-0044",
+    "ADR-0046",
+    "ADR-0047",
+]
+tags = [
+    "core",
+    "cli",
+    "work-items",
+]
+
+[content]
+description = "Redesign govctl loop execution so the existing loop command surface becomes a local execution protocol that reuses work items, depends_on validation, verification guards, notes, and existing schemas instead of acting as an automatic work-item status wrapper."
+notes = ["Loop run is intentionally a two-step local protocol: open a round, fill summary evidence after explicit implementation/verification/work commands, then rerun loop run to close and reflect state."]
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 defines loop run as a local execution protocol that records and validates round evidence instead of implementing code or directly completing work items"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop state and round schemas model loop-level execution rounds, summaries, verification evidence, and note candidates while preserving existing work, depends_on, guards, and notes ownership"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "loop command behavior reuses start/list/show/resume/run/add/remove/replan without adding a parallel resource CRUD model or new testing system"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "embedded gov and wi-writer skills plus CLI describe/help guidance avoid journal and direct agents to loop state for execution trace"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

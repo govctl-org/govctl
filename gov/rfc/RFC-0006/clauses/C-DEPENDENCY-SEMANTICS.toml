@@ -24,11 +24,11 @@ At loop start, and after every scope mutation, the loop MUST resolve the depende
 
 1. **Acyclicity**: The dependency graph MUST be acyclic. Implementations MUST detect cycles at loop start and after scope mutation and reject the operation before the new state becomes authoritative. The diagnostic MUST include at least one Work Item ID from the detected cycle.
 
-2. **Blocking semantics**: A work item MUST NOT begin execution until every dependency has a terminal loop-level outcome.
+2. **Selection readiness**: A work item MUST NOT be selected for new round work until every dependency has a terminal loop-level outcome.
 
 3. **Outcome checking**: After a dependency reaches a terminal loop-level outcome, the loop MUST check that outcome:
-   - If all dependencies are `done`: the dependent work item MAY proceed with execution
-   - If any dependency is `cancelled`, `failed`, or `blocked`: the dependent work item MUST be marked as `blocked` in loop state and MUST NOT be executed
+   - If all dependencies are `done`: the dependent work item MAY be selected for round work
+   - If any dependency is `cancelled`, `failed`, or `blocked`: the dependent work item MUST be marked as `blocked` in loop state and MUST NOT be selected
 
 4. **Distinction from refs**: The `depends_on` field is distinct from `refs`:
    - `refs`: informational cross-references to related artifacts (RFCs, ADRs, work items)
@@ -36,6 +36,6 @@ At loop start, and after every scope mutation, the loop MUST resolve the depende
 
 5. **Failure propagation**: When a work item is marked as `blocked`, all work items that depend on it (directly or transitively) MUST also be marked as `blocked`.
 
-**Loop-level status tracking**: The `blocked`, `failed`, and `cancelled` states are loop-level execution statuses tracked in loop state, not additional work item `status` field values. Work items maintain their own lifecycle states (queue, active, done, cancelled) per RFC-0001:C-WORK-STATUS. A work item with Work Item status `cancelled` MUST be represented as `cancelled` in loop state when it is part of the resolved loop set.
+**Loop-level status tracking**: The `blocked`, `failed`, and `cancelled` states are loop-level execution statuses tracked in loop state, not additional Work Item `status` field values. Work Items maintain their own lifecycle states (`queue`, `active`, `done`, `cancelled`) per RFC-0001:C-WORK-STATUS. A Work Item with Work Item status `cancelled` MUST be represented as `cancelled` in loop state when it is part of the resolved loop set.
 
-Rationale: Dependencies enable complex workflows where work items must be executed in a specific order. By keeping `depends_on` separate from `refs`, we maintain clear semantics: `refs` are informational, `depends_on` are blocking. Resolving a dependency closure preserves an explicit root set while ensuring the loop has every prerequisite needed for deterministic planning. Re-resolving after explicit scope mutation lets a long-running loop adapt to corrected or newly discovered work without losing its execution session. Loop-level status tracking avoids polluting the work item status field with execution-specific states."""
+Rationale: Dependencies enable complex workflows where work items must be selected in a specific order. By keeping `depends_on` separate from `refs`, we maintain clear semantics: `refs` are informational, `depends_on` are blocking. Resolving a dependency closure preserves an explicit root set while ensuring the loop has every prerequisite needed for deterministic planning. Re-resolving after explicit scope mutation lets a long-running loop adapt to corrected or newly discovered work without losing its execution session. Loop-level status tracking avoids polluting the Work Item status field with execution-specific states."""

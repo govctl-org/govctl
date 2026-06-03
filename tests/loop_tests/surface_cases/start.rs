@@ -170,14 +170,30 @@ fn test_loop_resume_completed_loop_reports_terminal_diagnostic() -> common::Test
     let output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            work_new("Root"),
+            work_new_active("Root"),
             work_add_acceptance(&root_id, "add: ready"),
             work_tick_acceptance_done(&root_id, "ready"),
             loop_start_with_id(&loop_id, &[&root_id]),
             loop_run(&loop_id),
-            loop_resume(&loop_id),
+            work_move_done(&root_id),
         ],
     )?;
+    submit_round_summary(
+        temp_dir.path(),
+        &loop_id,
+        1,
+        &["completed root work"],
+        &["gov/work"],
+        &["govctl work move succeeded"],
+        &[],
+    )?;
+    let output = format!(
+        "{output}{}",
+        run_dynamic_commands(
+            temp_dir.path(),
+            &[loop_run(&loop_id), loop_resume(&loop_id)]
+        )?
+    );
 
     assert!(
         output.contains(&format!("Completed loop {loop_id}")),

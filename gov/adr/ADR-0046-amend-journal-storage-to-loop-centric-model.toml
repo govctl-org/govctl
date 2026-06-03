@@ -21,11 +21,11 @@ RFC-0006 now specifies `.govctl/loops/<loop-id>/state.toml` as the loop state an
 decision = """
 We will store loop execution state by loop ID under `.govctl/loops/<loop-id>/`.
 
-The required state anchor is `.govctl/loops/<loop-id>/state.toml`. Optional detailed per-round artifacts live below the same loop directory and include the relevant work item ID when they describe a specific work item, for example `.govctl/loops/<loop-id>/rounds/<WI-ID>/round-N.md`.
+The required state anchor is `.govctl/loops/<loop-id>/state.toml`. Optional detailed per-round artifacts live below the same loop directory as loop-level round records, for example `.govctl/loops/<loop-id>/rounds/round-NNN.toml`. Round artifacts may mention relevant Work Item IDs in their payload, but the canonical storage path is loop-level rather than per-work-item.
 
 Loop resumption supports two lookup paths: explicit lookup by loop ID, and root-set discovery when the caller provides the same explicit root work item set and exactly one matching non-terminal loop state exists. Ambiguous root-set matches require the caller to provide a loop ID.
 
-Work item files remain outcome artifacts. Durable context belongs in `notes`; execution trace belongs in loop state. ADR-0047 remains authoritative for removing execution history from the work item field surface. This ADR replaces the older work-item-centric storage direction from ADR-0043 with loop-centric execution state storage and resolves stale future-storage wording in favor of `state.toml`."""
+Work item files remain outcome artifacts. Durable context belongs in `notes`; execution trace belongs in loop state and round artifacts. ADR-0047 remains authoritative for removing execution history from the work item field surface. This ADR replaces the older work-item-centric storage direction from ADR-0043 with loop-centric execution state storage and resolves stale future-storage wording in favor of `state.toml`."""
 consequences = """
 ### Positive
 

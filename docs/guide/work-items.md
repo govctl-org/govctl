@@ -1,6 +1,6 @@
 # Working with Work Items
 
-Work Items track units of work from inception to completion. They provide an audit trail of what was done and when.
+Work Items track durable units of work from inception to completion, including scope, lifecycle state, acceptance criteria, references, dependencies, and durable notes. Round-by-round execution trace belongs in local loop state and round artifacts.
 
 > **See also:** [Tags](../guide/validation.md#controlled-vocabulary-tags), [TUI](../guide/getting-started.md#interactive-tui), [Canonical Edit](../guide/getting-started.md#canonical-edit-surface)
 

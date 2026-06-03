@@ -16,7 +16,7 @@ It is responsible for work-item content quality and field semantics, not code ch
 
 ## Authority
 
-Work items track execution: what this task is doing, what happened, and what remains before closure.
+Work items track durable operational state: task scope, lifecycle, acceptance criteria, dependencies, references, and notes that should remain after closure.
 They are operational memory, not normative authority and not decision records.
 
 ## Quick Reference
@@ -52,14 +52,14 @@ Replace the placeholder immediately. One paragraph explaining:
 - Why it's needed
 - Any relevant context
 
-**Important:** Description is for task scope, NOT execution tracking. Use loop state for execution trace when available, and `notes` for durable learnings that belong on the work item.
+**Important:** Description is for task scope, NOT execution tracking. Use loop state and round artifacts for execution trace when available, and `notes` for durable learnings that belong on the work item.
 It must not introduce new product behavior requirements that are missing from the governing RFC or ADR.
 
 ### Execution Trace
 
 **Where execution information goes now:**
 
-- Round-by-round execution trace belongs in loop state.
+- Round-by-round execution trace belongs in loop state and round artifacts.
 - Durable lessons, constraints, retry rules, and future-facing observations belong in `notes`.
 - Acceptance progress belongs in `acceptance_criteria` status.
 
@@ -210,6 +210,6 @@ Keep `chore:` criteria for validation summaries, especially when the validation 
 | Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"         |
 | No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass" |
 | No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                 |
-| Description used for tracking      | Use loop state for execution trace or `notes` for durable memory |
-| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state |
+| Description used for tracking      | Use loop state and round artifacts for execution trace or `notes` for durable memory |
+| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts |
 | Work item invents new requirements | Move those requirements into an RFC or ADR first            |

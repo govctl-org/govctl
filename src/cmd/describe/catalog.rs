@@ -126,8 +126,8 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
         ),
         command(
             "loop run",
-            "Run execution rounds for an existing loop",
-            "To execute ready work items in a loop by loop ID, optionally targeting specific work items.",
+            "Advance the local round protocol for an existing loop",
+            "To open a round for ready work items or validate submitted round evidence by loop ID.",
             "govctl loop run LOOP-2026-04-06-001 --work WI-2026-04-06-002",
             LOOP_EXISTS,
         ),

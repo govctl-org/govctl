@@ -13,31 +13,47 @@ tags = [
 
 [content]
 text = """
-Each work item is processed through iterative **rounds** until termination.
+Loop rounds are local execution-protocol checkpoints for one loop, not automatic implementation performed by govctl.
 
-**Round structure:**
+A loop round MAY cover one or more work items from the loop's current resolved dependency closure. The selected work set for a round MUST be derived from the loop state, dependency readiness, and any explicit `--work` selector accepted by [[RFC-0006:C-LOOP-COMMAND-SURFACE]].
 
-Each round MUST:
-1. Read the work item (description, acceptance criteria, refs, notes)
-2. Implement changes addressing pending acceptance criteria
-3. Run verification guards
-4. Evaluate acceptance criteria (ticked, still pending, or failed)
-5. Record loop execution state (what was done, what changed, why) outside the work item file
-6. Decide: continue (pending criteria remain) or terminate (all done or failed)
+**Round lifecycle:**
 
-**Termination conditions:**
+Each round MUST have one of these local round states:
 
-A work item MUST terminate when:
-- **Success**: All acceptance criteria are satisfied and all required guards pass
-- **Failure**: Any of the following conditions are met:
-  - Maximum rounds reached. Implementations MUST define and display the max-round limit before or when execution starts.
-  - Critical guard execution error, such as a guard command that cannot be launched or a guard timeout. A normal guard assertion failure is a failed verification result, not a critical guard execution error.
-  - Execution cannot proceed because required information, permissions, or a non-conflicting specification path is unavailable.
+1. **open** — govctl has created the round skeleton and the agent is expected to implement, verify, and fill the summary evidence.
+2. **submitted** — the round summary evidence has been provided but has not yet been incorporated into authoritative loop state.
+3. **closed** — govctl has validated the round evidence and updated loop state.
 
-**Post-termination:**
+`govctl loop run LOOP-ID` MUST advance the local round protocol. It MUST NOT implement repository changes itself. It MUST NOT mark a Work Item `done` directly merely because loop-local criteria appear satisfied. Work Item lifecycle transitions remain owned by `govctl work move` per [[RFC-0002:C-LIFECYCLE-VERBS]].
 
-- On success: The work item MUST transition to `done` via `govctl work move`
-- On failure: The work item remains in `active` state but is marked as `failed` in loop state
-- Failed work items trigger failure propagation per C-DEPENDENCY-SEMANTICS
+**Opening a round:**
 
-Rationale: Rounds provide iterative refinement toward acceptance criteria. The round structure ensures each iteration makes measurable progress without writing execution trace into the work item field surface. Termination conditions prevent infinite loops while allowing implementations to define appropriate limits."""
+When no open round exists, `loop run` MUST:
+
+1. Load and validate the loop state.
+2. Re-read current Work Item files for the selected work set.
+3. Verify dependency readiness using [[RFC-0006:C-DEPENDENCY-SEMANTICS]].
+4. Create a loop-level round artifact under the loop directory.
+5. Write a summary skeleton that records where the agent MUST provide actions, changed paths, verification evidence, blockers, and note candidates.
+6. Display the round artifact path and the next required agent action.
+
+Opening a round MAY update loop-local item statuses and round counters, but MUST NOT write transient execution trace into Work Item files.
+
+**Closing a round:**
+
+When an open round exists, `loop run` MUST validate the round summary before advancing loop state. A round summary MUST distinguish:
+
+- actions performed during the round
+- changed paths or explicitly state that no file changes were made
+- verification evidence, including existing `govctl verify --work WI-ID` or project guard output when applicable
+- blockers or open questions
+- note candidates that may become durable Work Item `notes` through explicit `govctl work add <WI-ID> notes ...`
+
+If required summary evidence is missing, `loop run` MUST return a Diagnostic that names the round artifact to complete and MUST leave loop state unchanged.
+
+If blockers prevent progress, `loop run` MUST keep the loop non-terminal and record the next action in loop state. Durable retry rules MAY be added to Work Item `notes`, but only through explicit Work Item commands.
+
+If the relevant Work Items have already reached terminal Work Item lifecycle states through `govctl work move`, `loop run` MUST reflect those lifecycle states in loop-local item status and MAY mark the loop completed when every current resolved item is terminal without failed or blocked loop outcomes.
+
+Rationale: govctl can coordinate local execution state, Work Item metadata, dependency readiness, and verification evidence, but the agent performs implementation work. This keeps loop execution trace in local loop artifacts, preserves Work Items as durable outcome artifacts, and reuses existing `notes`, `depends_on`, `verify`, and `work move` mechanisms instead of inventing parallel systems."""

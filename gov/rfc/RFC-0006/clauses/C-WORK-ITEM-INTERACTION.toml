@@ -14,42 +14,42 @@ tags = [
 
 [content]
 text = """
-Loops interact with work items through status transitions and validation checks.
+Loops interact with work items by reading Work Item lifecycle state, mapping it into loop-local item state, and recording local execution evidence. Loops MUST NOT own Work Item lifecycle transitions.
 
-**Status transitions:**
+**Lifecycle ownership:**
 
-1. **Before execution**: Work items in the resolved loop set MUST be in `queue`, `active`, `done`, or `cancelled` state
-2. **During execution**: The loop transitions executable work items from `queue` to `active` via `govctl work move`
-3. **On success**: The loop transitions work items from `active` to `done` via `govctl work move`
-4. **On failure**: Work items remain in `active` state (the loop marks them as `failed` in loop state, but does not change their work item `status` field)
-5. **On pre-existing cancellation**: A work item with status `cancelled` is represented as `cancelled` in loop state and is not executed
+1. Work Items in the resolved loop set MUST remain valid Work Items whose lifecycle state is one of `queue`, `active`, `done`, or `cancelled`.
+2. `govctl loop run` MUST NOT transition a Work Item from `queue` to `active`.
+3. `govctl loop run` MUST NOT transition a Work Item from `active` to `done`.
+4. Work Item lifecycle transitions remain owned by `govctl work move` and its existing acceptance-criteria and verification-guard gates.
+5. A Work Item with lifecycle state `done` MUST be represented as `done` in loop state when reflected by a loop operation.
+6. A Work Item with lifecycle state `cancelled` MUST be represented as `cancelled` in loop state when reflected by a loop operation and MUST NOT be selected for new round work.
 
 **Validation requirements:**
 
-Before transitioning a work item to `done`, the loop MUST verify:
-1. All acceptance criteria are satisfied (per RFC-0001:C-GATE-CONDITIONS)
-2. All required verification guards pass (per RFC-0001:C-GATE-CONDITIONS)
-3. The work item has been in `active` state during this loop execution
+Before a Work Item is transitioned to `done`, the Work Item lifecycle command MUST verify the existing gate conditions defined by RFC-0001:C-GATE-CONDITIONS. A loop MAY record verification evidence in round summary artifacts, but that evidence does not replace the Work Item lifecycle gate.
 
 **Durable work item context:**
 
-The work item `notes` field is reserved for **durable context** that should persist across sessions:
+The work item `notes` field is reserved for durable context that should persist across sessions:
+
 - Key decisions made during implementation
 - Blockers encountered and how they were resolved
 - Important technical insights
 
-Execution trace (round-by-round progress) MUST be tracked in loop state, not in work item fields.
+Execution trace, including round-by-round progress, MUST be tracked in loop state and round artifacts, not in Work Item fields.
 
 **Loop-level work item status:**
 
 The loop tracks additional execution status for each work item in loop state:
-- `pending`: Work item has not started execution
-- `active`: Work item is currently being executed
-- `done`: Work item completed successfully (matches work item `done` state)
-- `failed`: Work item execution failed and dependents must not execute
-- `blocked`: Work item cannot execute due to failed, blocked, or cancelled dependencies
-- `cancelled`: Work item has work item status `cancelled` and is not executed
 
-The loop-level statuses are independent of work item `status` field values except where explicitly mapped above. `done`, `failed`, `blocked`, and `cancelled` are terminal loop-level outcomes for dependency planning.
+- `pending`: Work item has not been selected or reflected as active/done/cancelled in this loop
+- `active`: Work item is selected for local execution protocol or remains in progress
+- `done`: Work item completed successfully through Work Item lifecycle state
+- `failed`: Local loop execution evidence records an unrecoverable failure and dependents must not be selected
+- `blocked`: Work item cannot be selected because dependencies failed, blocked, or were cancelled
+- `cancelled`: Work item has Work Item status `cancelled` and is not selected
 
-Rationale: Using `govctl work move` commands ensures all status transitions are validated and auditable. Separating loop-level status from work item status and notes maintains clear boundaries between execution state (ephemeral) and governance artifacts (durable)."""
+The loop-level statuses are independent of Work Item `status` field values except where explicitly mapped above. `done`, `failed`, `blocked`, and `cancelled` are terminal loop-level outcomes for dependency planning.
+
+Rationale: Existing Work Item commands already provide lifecycle validation, acceptance criteria, verification guards, and durable governance history. Loops provide resumable local execution protocol state around those commands without becoming a second Work Item lifecycle engine. Separating loop-level status from Work Item status and notes maintains clear boundaries between execution state and governed artifacts."""

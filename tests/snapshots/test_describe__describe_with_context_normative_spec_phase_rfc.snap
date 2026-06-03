@@ -1,5 +1,6 @@
 ---
 source: tests/test_describe.rs
+expression: value
 ---
 $ govctl rfc new Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -128,8 +129,8 @@ $ govctl describe --context
     },
     {
       "name": "loop run",
-      "purpose": "Run execution rounds for an existing loop",
-      "when_to_use": "To execute ready work items in a loop by loop ID, optionally targeting specific work items.",
+      "purpose": "Advance the local round protocol for an existing loop",
+      "when_to_use": "To open a round for ready work items or validate submitted round evidence by loop ID.",
       "example": "govctl loop run LOOP-2026-04-06-001 --work WI-<DATE>-002",
       "prerequisites": [
         "Loop must exist"

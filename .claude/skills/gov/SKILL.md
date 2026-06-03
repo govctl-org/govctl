@@ -100,9 +100,14 @@ For a multi-step task, cleanup run, refactor, or feature that naturally splits i
 2. Add `depends_on` edges for hard execution ordering.
 3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
 4. Start one loop for the batch root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
-5. Continue with `govctl loop run <LOOP-ID>` or `govctl loop resume <LOOP-ID>`.
+5. Run `govctl loop run <LOOP-ID>` to open a local round for ready work.
+6. Perform implementation, verification, and any explicit `govctl work move` commands yourself.
+7. Fill the opened `.govctl/loops/<LOOP-ID>/rounds/round-NNN.toml` summary evidence.
+8. Run `govctl loop run <LOOP-ID>` again to validate and close the round.
 
 When resuming after an interruption or inspecting current local execution state, run `govctl loop list open` first. Use the listed generated loop ID for `run`, `show`, `resume`, `add`, `remove`, or `replan`; do not guess a loop ID from memory.
+
+`govctl loop run` advances local round state only. It does not implement code, tick acceptance criteria, add notes, or move Work Items to `done`.
 
 If the scope changes during execution, keep the same loop identity:
 

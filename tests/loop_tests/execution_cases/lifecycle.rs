@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn test_loop_run_completes_ready_work_item() -> common::TestResult {
+fn test_loop_run_opens_round_without_mutating_work_item() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
@@ -21,14 +21,17 @@ fn test_loop_run_completes_ready_work_item() -> common::TestResult {
         output.contains(&format!("Running loop {loop_id}")),
         "{output}"
     );
-    assert!(output.contains("Max rounds: 1"), "{output}");
     assert!(
-        output.contains(&format!("Completed loop {loop_id}")),
+        output.contains(&format!("Opened round 1 for loop {loop_id}")),
+        "{output}"
+    );
+    assert!(
+        output.contains("Next action: fill summary evidence"),
         "{output}"
     );
 
     let work_toml = fs::read_to_string(temp_dir.path().join(format!("gov/work/{date}-root.toml")))?;
-    assert!(work_toml.contains("status = \"done\""), "{work_toml}");
+    assert!(work_toml.contains("status = \"queue\""), "{work_toml}");
 
     let state_toml = fs::read_to_string(
         temp_dir
@@ -36,25 +39,29 @@ fn test_loop_run_completes_ready_work_item() -> common::TestResult {
             .join(format!(".govctl/loops/{loop_id}/state.toml")),
     )?;
     validate_toml_against_schema(temp_dir.path(), "loop-state.schema.json", &state_toml)?;
-    assert!(state_toml.contains("state = \"completed\""), "{state_toml}");
-    assert!(state_toml.contains("status = \"done\""), "{state_toml}");
-    assert!(state_toml.contains("round_count = 1"), "{state_toml}");
+    assert!(state_toml.contains("state = \"active\""), "{state_toml}");
+    assert!(state_toml.contains("current_round = 1"), "{state_toml}");
+    assert!(
+        state_toml.contains("next_action = \"write_summary\""),
+        "{state_toml}"
+    );
+    assert_eq!(loop_item_status(&state_toml, &root_id)?, "active");
+    assert_eq!(loop_item_round_count(&state_toml, &root_id)?, 1);
+    assert!(state_toml.contains("last_round = 1"), "{state_toml}");
     assert!(!state_toml.contains("journal"), "{state_toml}");
 
     let round_toml = read_round_record(temp_dir.path(), &loop_id, &root_id, 1)?;
     validate_toml_against_schema(temp_dir.path(), "loop-round.schema.json", &round_toml)?;
     let round: toml::Value = toml::from_str(&round_toml)?;
-    assert_eq!(toml_string(&round, "loop_id")?, loop_id);
-    assert_eq!(toml_string(&round, "work_item_id")?, root_id);
-    assert_eq!(toml_int(&round, "round_number")?, 1);
-    assert_eq!(toml_int(&round, "max_rounds")?, 1);
-    assert_eq!(toml_string(&round, "item_status_before")?, "pending");
-    assert_eq!(toml_string(&round, "item_status_after")?, "done");
-    assert_eq!(toml_string(&round, "work_status_before")?, "queue");
-    assert_eq!(toml_string(&round, "work_status_after")?, "done");
-    assert_eq!(toml_string(&round, "outcome")?, "done");
+    assert_eq!(round["round"]["loop_id"].as_str(), Some(loop_id.as_str()));
+    assert_eq!(round["round"]["round_number"].as_integer(), Some(1));
+    assert_eq!(round["round"]["max_rounds"].as_integer(), Some(1));
+    assert_eq!(round["round"]["status"].as_str(), Some("open"));
+    assert_eq!(round["round"]["work"][0].as_str(), Some(root_id.as_str()));
     assert!(
-        toml_string(&round, "action")?.contains("acceptance criteria"),
+        round["summary"]["actions"]
+            .as_array()
+            .is_some_and(Vec::is_empty),
         "{round_toml}"
     );
     assert!(!round_toml.contains("journal"), "{round_toml}");
@@ -62,92 +69,129 @@ fn test_loop_run_completes_ready_work_item() -> common::TestResult {
 }
 
 #[test]
-fn test_loop_run_marks_failed_and_blocks_dependents() -> common::TestResult {
+fn test_loop_run_rejects_incomplete_open_round_without_state_change() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
-    let dependency_id = format!("WI-{date}-001");
-    let root_id = format!("WI-{date}-002");
+    let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 
-    let output = run_dynamic_commands(
+    let setup_output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            work_new("Dependency"),
-            work_add_acceptance(&dependency_id, "add: unfinished"),
             work_new("Root"),
-            work_add_acceptance(&root_id, "add: ready"),
-            work_tick_acceptance_done(&root_id, "ready"),
-            work_add_dependency(&root_id, &dependency_id),
             loop_start_with_id(&loop_id, &[&root_id]),
             loop_run(&loop_id),
         ],
     )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+
+    assert!(output.contains("error[E1210]"), "{output}");
     assert!(
-        output.contains(&format!("Failed loop {loop_id}")),
+        output.contains("Loop round summary is incomplete"),
         "{output}"
     );
-    assert!(output.contains("error[E1210]"), "{output}");
-
-    let dependency_toml = fs::read_to_string(
-        temp_dir
-            .path()
-            .join(format!("gov/work/{date}-dependency.toml")),
-    )?;
     assert!(
-        dependency_toml.contains("status = \"active\""),
-        "{dependency_toml}"
+        output.contains(&format!(".govctl/loops/{loop_id}/rounds/round-001.toml")),
+        "{output}"
     );
-    let root_toml = fs::read_to_string(temp_dir.path().join(format!("gov/work/{date}-root.toml")))?;
-    assert!(root_toml.contains("status = \"queue\""), "{root_toml}");
-
     let state_toml = fs::read_to_string(
         temp_dir
             .path()
             .join(format!(".govctl/loops/{loop_id}/state.toml")),
     )?;
-    assert!(state_toml.contains("state = \"failed\""), "{state_toml}");
-    assert_eq!(loop_item_status(&state_toml, &dependency_id)?, "failed");
-    assert_eq!(loop_item_status(&state_toml, &root_id)?, "blocked");
-
-    let dependency_round = read_round_record(temp_dir.path(), &loop_id, &dependency_id, 1)?;
-    let dependency_round: toml::Value = toml::from_str(&dependency_round)?;
-    assert_eq!(toml_string(&dependency_round, "outcome")?, "failed");
+    assert!(state_toml.contains("state = \"active\""), "{state_toml}");
     assert!(
-        toml_string(&dependency_round, "reason")?.contains("pending acceptance criteria"),
-        "{dependency_round:?}"
+        state_toml.contains("next_action = \"write_summary\""),
+        "{state_toml}"
     );
+    let round_toml = read_round_record(temp_dir.path(), &loop_id, &root_id, 1)?;
+    assert!(round_toml.contains("status = \"open\""), "{round_toml}");
+    Ok(())
+}
+
+#[test]
+fn test_loop_run_closes_submitted_round_and_reflects_done_work() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new_active("Root"),
+            work_add_acceptance(&root_id, "add: ready"),
+            work_tick_acceptance_done(&root_id, "ready"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_run(&loop_id),
+            work_move_done(&root_id),
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+    submit_round_summary(
+        temp_dir.path(),
+        &loop_id,
+        1,
+        &["implemented root work"],
+        &["gov/work"],
+        &["govctl work move succeeded"],
+        &[],
+    )?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+
     assert!(
-        !temp_dir
+        output.contains(&format!("Completed loop {loop_id}")),
+        "{output}"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
             .path()
-            .join(format!(
-                ".govctl/loops/{loop_id}/rounds/{root_id}/round-001.toml"
-            ))
-            .exists(),
-        "blocked dependent should not execute a round"
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("state = \"completed\""), "{state_toml}");
+    assert!(
+        state_toml.contains("next_action = \"complete\""),
+        "{state_toml}"
+    );
+    assert_eq!(loop_item_status(&state_toml, &root_id)?, "done");
+
+    let round_toml = read_round_record(temp_dir.path(), &loop_id, &root_id, 1)?;
+    let round: toml::Value = toml::from_str(&round_toml)?;
+    assert_eq!(round["round"]["status"].as_str(), Some("closed"));
+    assert_eq!(
+        round["summary"]["actions"][0].as_str(),
+        Some("implemented root work")
     );
     Ok(())
 }
 
 #[test]
-fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::TestResult {
+fn test_loop_run_closes_blocked_round_as_paused_then_honors_max_rounds() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
-    let dependency_id = format!("WI-{date}-001");
-    let root_id = format!("WI-{date}-002");
+    let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
 
-    let output = run_dynamic_commands(
+    let setup_output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            work_new("Dependency"),
-            work_add_acceptance(&dependency_id, "add: dependency ready"),
-            work_tick_acceptance_done(&dependency_id, "dependency ready"),
             work_new("Root"),
-            work_add_acceptance(&root_id, "add: root ready"),
-            work_add_dependency(&root_id, &dependency_id),
             loop_start_with_id(&loop_id, &[&root_id]),
-            loop_run_with_max_rounds(&loop_id, "2"),
+            loop_run(&loop_id),
         ],
     )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+    submit_round_summary(
+        temp_dir.path(),
+        &loop_id,
+        1,
+        &["attempted root work"],
+        &["no changes"],
+        &[],
+        &["blocked on missing decision"],
+    )?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
 
     assert!(
         output.contains(&format!("Paused loop {loop_id}")),
@@ -158,32 +202,17 @@ fn test_loop_run_resumes_paused_loop_without_restarting_done_items() -> common::
             .path()
             .join(format!(".govctl/loops/{loop_id}/state.toml")),
     )?;
-    assert!(state_toml.contains("state = \"paused\""), "{state_toml}");
-    assert!(state_toml.contains("round_count = 1"), "{state_toml}");
-
-    let output = run_dynamic_commands(
-        temp_dir.path(),
-        &[
-            work_tick_acceptance_done(&root_id, "root ready"),
-            loop_run_with_max_rounds(&loop_id, "2"),
-        ],
-    )?;
-
     assert!(
-        output.contains(&format!("Completed loop {loop_id}")),
-        "{output}"
-    );
-    let state_toml = fs::read_to_string(
-        temp_dir
-            .path()
-            .join(format!(".govctl/loops/{loop_id}/state.toml")),
-    )?;
-    assert!(state_toml.contains("state = \"completed\""), "{state_toml}");
-    assert_eq!(
-        state_toml.matches("round_count = 1").count(),
-        1,
+        state_toml.contains("next_action = \"resolve_blocker\""),
         "{state_toml}"
     );
-    assert!(state_toml.contains("round_count = 2"), "{state_toml}");
+    assert_eq!(loop_item_status(&state_toml, &root_id)?, "active");
+
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+    assert!(
+        output.contains(&format!("Failed loop {loop_id}")),
+        "{output}"
+    );
+    assert!(output.contains("maximum rounds reached (1)"), "{output}");
     Ok(())
 }

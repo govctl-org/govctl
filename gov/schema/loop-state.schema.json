@@ -30,6 +30,14 @@
             "$ref": "#/definitions/workItemId"
           },
           "uniqueItems": true
+        },
+        "current_round": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "next_action": {
+          "type": "string",
+          "enum": ["start", "write_summary", "continue", "resolve_blocker", "complete"]
         }
       },
       "additionalProperties": false
@@ -61,6 +69,10 @@
             "enum": ["pending", "active", "done", "failed", "blocked", "cancelled"]
           },
           "round_count": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "last_round": {
             "type": "integer",
             "minimum": 0
           }

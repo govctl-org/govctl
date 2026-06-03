@@ -14,6 +14,7 @@ pub(super) struct LoopListEntry {
     work: Vec<String>,
     items: usize,
     rounds: u32,
+    next_action: String,
 }
 
 impl LoopListEntry {
@@ -24,6 +25,7 @@ impl LoopListEntry {
             work: state.loop_meta.work.clone(),
             items: state.loop_meta.resolved.len(),
             rounds: state.items.values().map(|item| item.round_count).sum(),
+            next_action: state.loop_meta.next_action.as_str().to_string(),
         }
     }
 
@@ -40,17 +42,19 @@ pub(super) fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
         OutputFormat::Plain => {
             for entry in entries {
                 println!(
-                    "{}\t{}\t{}\t{}\t{}",
+                    "{}\t{}\t{}\t{}\t{}\t{}",
                     entry.id,
                     entry.state,
                     entry.work_display(),
                     entry.items,
-                    entry.rounds
+                    entry.rounds,
+                    entry.next_action
                 );
             }
         }
         OutputFormat::Table => {
-            let mut table = table_with_bold_headers(&["ID", "State", "Work", "Items", "Rounds"]);
+            let mut table =
+                table_with_bold_headers(&["ID", "State", "Work", "Items", "Rounds", "Action"]);
             for entry in entries {
                 table.add_row(vec![
                     Cell::new(&entry.id),
@@ -58,6 +62,7 @@ pub(super) fn print_loop_list(entries: &[LoopListEntry], output: OutputFormat) {
                     Cell::new(entry.work_display()),
                     Cell::new(entry.items.to_string()),
                     Cell::new(entry.rounds.to_string()),
+                    Cell::new(&entry.next_action),
                 ]);
             }
             println!("{table}");
@@ -72,6 +77,8 @@ pub(super) fn print_loop(verb: &str, state: &LoopState) -> DiagnosticResult<()> 
         println!("{} loop {}", verb, state.loop_meta.id);
     }
     println!("State: {}", state.loop_meta.state.as_str());
+    println!("Current round: {}", state.loop_meta.current_round);
+    println!("Next action: {}", state.loop_meta.next_action.as_str());
     println!("Work: {}", state.loop_meta.work.join(", "));
     println!("Resolved: {} work item(s)", state.loop_meta.resolved.len());
     println!("Plan:");
@@ -84,11 +91,12 @@ pub(super) fn print_loop(verb: &str, state: &LoopState) -> DiagnosticResult<()> 
             .map(|deps| deps.join(","))
             .unwrap_or_else(|| "-".to_string());
         println!(
-            "  {}. {} status={} rounds={} depends_on={}",
+            "  {}. {} status={} rounds={} last_round={} depends_on={}",
             index + 1,
             work_id,
             item.status.as_str(),
             item.round_count,
+            item.last_round,
             deps
         );
     }

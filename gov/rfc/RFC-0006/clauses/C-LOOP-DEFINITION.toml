@@ -10,20 +10,22 @@ tags = ["core"]
 
 [content]
 text = """
-A **loop** is an execution session that drives one or more work items to completion through iterative rounds of implementation, verification, and refinement.
+A **loop** is a local execution session that coordinates one or more Work Items through iterative rounds of agent implementation, verification evidence collection, and refinement.
 
 Each loop MUST:
-1. Be initialized from an explicit, finite root set of work items
+1. Be initialized from an explicit, finite root set of Work Items
 2. Resolve the transitive dependency closure before execution begins
 3. Recompute the transitive dependency closure after any successful scope mutation defined by [[RFC-0006:C-LOOP-SCOPE-MUTATION]]
-4. Track execution state independently of work item files
-5. Terminate when all work items in the current resolved loop set reach terminal loop-level outcomes or a failure condition is met
+4. Track execution state independently of Work Item files
+5. Store transient round evidence in loop-local artifacts rather than Work Item fields
+6. Terminate when all Work Items in the current resolved loop set reach terminal loop-level outcomes or a failure condition is met
 
-A loop MAY support explicit scope mutation after start. A scope mutation MUST be requested through loop commands; implementations MUST NOT treat unrelated work item file edits as implicit loop scope changes.
+A loop MAY support explicit scope mutation after start. A scope mutation MUST be requested through loop commands; implementations MUST NOT treat unrelated Work Item file edits as implicit loop scope changes.
 
 A loop MUST NOT:
-1. Modify work item files directly (MUST use `govctl work` commands for status transitions)
-2. Persist execution trace to work item fields; execution trace belongs in loop state
-3. Assume a specific execution order (sequential or parallel) — downstream implementations choose
+1. Modify Work Item files directly except by invoking existing `govctl work` command semantics where explicitly required
+2. Persist execution trace to Work Item fields; execution trace belongs in loop state and round artifacts
+3. Assume a specific implementation order (sequential or parallel) beyond dependency readiness
+4. Introduce parallel replacements for Work Item `notes`, `depends_on`, acceptance criteria, or verification guards
 
-Rationale: Loops are a first-class execution concept that orchestrate work item completion. By keeping loops separate from work item files, we maintain clear separation between execution state (ephemeral) and governance artifacts (durable). Work item `notes` hold durable constraints and learnings that should survive future work; loop state holds execution trace. Using `govctl work` commands ensures all status transitions are validated and auditable. Explicit scope mutation lets long cleanup loops adapt without replacing the execution session identity."""
+Rationale: Loops are a first-class execution concept that coordinates Work Item completion without becoming a second Work Item model. By keeping loops separate from Work Item files, govctl preserves the boundary between local execution trace (ephemeral) and governance artifacts (durable). Work Item `notes` hold durable constraints and learnings that should survive future work; loop state holds transient execution evidence. Explicit scope mutation lets long cleanup loops adapt without replacing the execution session identity."""

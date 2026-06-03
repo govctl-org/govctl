@@ -117,7 +117,7 @@ NOTES:
         #[arg(value_name = "WI-ID")]
         value: String,
     },
-    /// Run one execution round for each currently executable work item
+    /// Advance the local round protocol for ready work items
     #[command(after_help = "\
 EXAMPLES:
     govctl loop run LOOP-2026-04-06-001
@@ -125,9 +125,10 @@ EXAMPLES:
     govctl loop run LOOP-2026-04-06-001 --work WI-2026-04-06-002
 
 NOTES:
-    - Runs an existing loop by loop ID.
-    - Use --work to select target work items inside the loop.
-    - Uses `govctl work move` semantics for work item status transitions.
+    - Opens a loop-level round when no open round exists.
+    - Validates summary evidence when an open round exists.
+    - Use --work to select target work items inside the loop when opening a round.
+    - Does not change Work Item lifecycle state; use `govctl work move` explicitly.
 ")]
     Run {
         /// Loop ID

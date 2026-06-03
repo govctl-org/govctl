@@ -302,7 +302,7 @@ category = "chore"
 
 ### Local Loop State (TOML)
 
-Loop execution state is local runtime data under `.govctl/loops/<loop-id>/`, not a governed work item field. `loop-state.schema.json` defines `state.toml`; `loop-round.schema.json` defines per-round records under `rounds/<WI-ID>/round-NNN.toml`.
+Loop execution state is local runtime data under `.govctl/loops/<loop-id>/`, not a governed work item field. `loop-state.schema.json` defines `state.toml`; `loop-round.schema.json` defines loop-level round records under `rounds/round-NNN.toml`.
 
 ```toml
 [loop]
@@ -310,6 +310,8 @@ id = "LOOP-2026-01-17-001"
 state = "active"
 work = ["WI-2026-01-17-002"]
 resolved = ["WI-2026-01-17-001", "WI-2026-01-17-002"]
+current_round = 1
+next_action = "write_summary"
 
 [dependencies]
 WI-2026-01-17-001 = []
@@ -318,24 +320,28 @@ WI-2026-01-17-002 = ["WI-2026-01-17-001"]
 [items.WI-2026-01-17-001]
 status = "done"
 round_count = 1
+last_round = 1
 
 [items.WI-2026-01-17-002]
 status = "active"
 round_count = 1
+last_round = 1
 ```
 
 ```toml
+[round]
 loop_id = "LOOP-2026-01-17-001"
-work_item_id = "WI-2026-01-17-002"
 round_number = 1
 max_rounds = 2
-item_status_before = "pending"
-item_status_after = "active"
-work_status_before = "queue"
-work_status_after = "active"
-action = "evaluated acceptance criteria"
-outcome = "active"
-reason = "pending acceptance criteria remain; max rounds not reached"
+status = "open"
+work = ["WI-2026-01-17-002"]
+
+[summary]
+actions = []
+changed_paths = []
+verification = []
+blockers = []
+note_candidates = []
 ```
 
 | Field                | Required | Type    | Description                                      |
@@ -344,14 +350,21 @@ reason = "pending acceptance criteria remain; max rounds not reached"
 | `loop.state`         | yes      | enum    | `pending` \| `active` \| `paused` \| `completed` \| `failed` |
 | `loop.work`         | yes      | array   | Editable work item IDs requested by the user      |
 | `loop.resolved`     | yes      | array   | Dependency-closed work item IDs                  |
+| `loop.current_round` | no      | integer | Latest loop-level round number known to state    |
+| `loop.next_action`   | no      | enum    | `start` \| `write_summary` \| `continue` \| `resolve_blocker` \| `complete` |
 | `dependencies`       | yes      | table   | Work item dependency adjacency map               |
 | `items.<WI-ID>.status` | yes    | enum    | `pending` \| `active` \| `done` \| `failed` \| `blocked` \| `cancelled` |
 | `items.<WI-ID>.round_count` | yes | integer | Number of executed rounds for the work item      |
-| `round_number`       | yes      | integer | One-based round number for a work item record    |
-| `max_rounds`         | yes      | integer | Round limit used for that invocation             |
-| `action`             | yes      | string  | Summary of what the runner attempted             |
-| `outcome`            | yes      | enum    | Resulting loop item status for the round         |
-| `reason`             | no       | string  | Pending or failure explanation                   |
+| `items.<WI-ID>.last_round` | no | integer | Last loop-level round that selected the work item |
+| `round.round_number` | yes      | integer | One-based loop-level round number                |
+| `round.max_rounds`   | yes      | integer | Per-item round limit used when the round opened  |
+| `round.status`       | yes      | enum    | `open` \| `submitted` \| `closed`                |
+| `round.work`         | yes      | array   | Work Item IDs selected for the round             |
+| `summary.actions`    | yes      | array   | Actions performed during the round               |
+| `summary.changed_paths` | yes   | array   | Changed paths or an explicit no-change entry     |
+| `summary.verification` | yes    | array   | Verification evidence summaries                  |
+| `summary.blockers`   | yes      | array   | Blockers or open questions                       |
+| `summary.note_candidates` | yes | array   | Candidate durable notes for explicit Work Item note commands |
 
 ---
 

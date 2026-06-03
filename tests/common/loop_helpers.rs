@@ -101,12 +101,47 @@ pub fn append_required_guard(
 pub fn read_round_record(
     dir: &Path,
     loop_id: &str,
-    work_id: &str,
+    _work_id: &str,
     round: u32,
 ) -> Result<String, Box<dyn std::error::Error>> {
     Ok(fs::read_to_string(dir.join(format!(
-        ".govctl/loops/{loop_id}/rounds/{work_id}/round-{round:03}.toml"
+        ".govctl/loops/{loop_id}/rounds/round-{round:03}.toml"
     )))?)
+}
+
+pub fn submit_round_summary(
+    dir: &Path,
+    loop_id: &str,
+    round: u32,
+    actions: &[&str],
+    changed_paths: &[&str],
+    verification: &[&str],
+    blockers: &[&str],
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = dir.join(format!(
+        ".govctl/loops/{loop_id}/rounds/round-{round:03}.toml"
+    ));
+    let mut value: toml::Value = toml::from_str(&fs::read_to_string(&path)?)?;
+    value["round"]["status"] = toml::Value::String("submitted".to_string());
+    let summary = value
+        .get_mut("summary")
+        .and_then(toml::Value::as_table_mut)
+        .ok_or("missing summary table")?;
+    summary.insert("actions".to_string(), string_array(actions));
+    summary.insert("changed_paths".to_string(), string_array(changed_paths));
+    summary.insert("verification".to_string(), string_array(verification));
+    summary.insert("blockers".to_string(), string_array(blockers));
+    fs::write(path, toml::to_string_pretty(&value)?)?;
+    Ok(())
+}
+
+fn string_array(values: &[&str]) -> toml::Value {
+    toml::Value::Array(
+        values
+            .iter()
+            .map(|value| toml::Value::String((*value).to_string()))
+            .collect(),
+    )
 }
 
 pub fn validate_toml_against_schema(

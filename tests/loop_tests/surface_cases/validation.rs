@@ -42,16 +42,19 @@ status = "pending"
 round_count = 0
 "#;
     let invalid_round = r#"
+[round]
 loop_id = "LOOP-2026-02-31-001"
-work_item_id = "WI-2026-02-28-001"
 round_number = 1
 max_rounds = 1
-item_status_before = "pending"
-item_status_after = "active"
-work_status_before = "queue"
-work_status_after = "active"
-action = "evaluated acceptance criteria"
-outcome = "active"
+status = "open"
+work = ["WI-2026-02-28-001"]
+
+[summary]
+actions = []
+changed_paths = []
+verification = []
+blockers = []
+note_candidates = []
 "#;
     let legacy_state = r#"
 [loop]

@@ -33,8 +33,8 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
         ],
     )?;
 
-    let first_plain = format!("{first_loop}\tpending\t{first_root}\t1\t0");
-    let second_plain = format!("{second_loop}\tpending\t{second_root}\t1\t0");
+    let first_plain = format!("{first_loop}\tpending\t{first_root}\t1\t0\tstart");
+    let second_plain = format!("{second_loop}\tpending\t{second_root}\t1\t0\tstart");
     assert!(output.contains(&first_plain), "{output}");
     assert!(output.contains(&second_plain), "{output}");
     assert!(
@@ -60,7 +60,44 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
     assert_eq!(loops[0]["work"][0], first_root);
     assert_eq!(loops[0]["items"], 1);
     assert_eq!(loops[0]["rounds"], 0);
+    assert_eq!(loops[0]["next_action"], "start");
     assert_eq!(loops[1]["id"], second_loop);
+    Ok(())
+}
+
+#[test]
+fn test_loop_list_rounds_are_aggregate_item_round_counts() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let first_root = format!("WI-{date}-001");
+    let second_root = format!("WI-{date}-002");
+    let loop_id = loop_id(&date, 1);
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("First"),
+            work_new("Second"),
+            loop_start_with_id(&loop_id, &[&first_root, &second_root]),
+            loop_run(&loop_id),
+            loop_list(&["-o", "json"]),
+        ],
+    )?;
+
+    let json_start = output.find("[\n").ok_or("missing JSON list output")?;
+    let json_end = output[json_start..]
+        .find("\nexit:")
+        .ok_or("missing JSON command terminator")?
+        + json_start;
+    let loops: serde_json::Value = serde_json::from_str(&output[json_start..json_end])?;
+    assert_eq!(loops[0]["rounds"], 2, "{output}");
+    assert_eq!(loops[0]["next_action"], "write_summary", "{output}");
+
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("current_round = 1"), "{state_toml}");
     Ok(())
 }
 
@@ -83,13 +120,41 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
             work_add_acceptance(&paused_root, "add: waiting"),
             loop_start_with_id(&paused_loop, &[&paused_root]),
             loop_run_with_max_rounds(&paused_loop, "2"),
-            work_new("Completed"),
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+    submit_round_summary(
+        temp_dir.path(),
+        &paused_loop,
+        1,
+        &["attempted paused work"],
+        &["no changes"],
+        &[],
+        &["blocked"],
+    )?;
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            loop_run_with_max_rounds(&paused_loop, "2"),
+            work_new_active("Completed"),
             work_add_acceptance(&completed_root, "add: ready"),
             work_tick_acceptance_done(&completed_root, "ready"),
             loop_start_with_id(&completed_loop, &[&completed_root]),
             loop_run(&completed_loop),
+            work_move_done(&completed_root),
         ],
     )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+    submit_round_summary(
+        temp_dir.path(),
+        &completed_loop,
+        1,
+        &["completed work"],
+        &["gov/work"],
+        &["govctl work move succeeded"],
+        &[],
+    )?;
+    let setup_output = run_dynamic_commands(temp_dir.path(), &[loop_run(&completed_loop)])?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
     let open_output = run_dynamic_commands(temp_dir.path(), &[loop_list(&["open", "-o", "json"])])?;
@@ -116,7 +181,9 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
     let paused_output =
         run_dynamic_commands(temp_dir.path(), &[loop_list(&["paused", "-o", "plain"])])?;
     assert!(
-        paused_output.contains(&format!("{paused_loop}\tpaused\t{paused_root}\t1\t1")),
+        paused_output.contains(&format!(
+            "{paused_loop}\tpaused\t{paused_root}\t1\t1\tresolve_blocker"
+        )),
         "{paused_output}"
     );
     assert!(!paused_output.contains(&pending_loop), "{paused_output}");
@@ -127,7 +194,9 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
         &[loop_list(&["resumable", "-n", "1", "-o", "plain"])],
     )?;
     assert!(
-        limited_output.contains(&format!("{pending_loop}\tpending\t{pending_root}\t1\t0")),
+        limited_output.contains(&format!(
+            "{pending_loop}\tpending\t{pending_root}\t1\t0\tstart"
+        )),
         "{limited_output}"
     );
     assert!(!limited_output.contains(&paused_loop), "{limited_output}");
