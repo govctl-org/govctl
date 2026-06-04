@@ -10,12 +10,25 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-06-04
+
+0.9.1 is a patch release for upgrade safety after 0.9.0. It tightens
+reference validation and makes stale local project support state visible before
+users hit confusing schema or local-state failures.
+
 ### Fixed
 
-- govctl check rejects invalid RFC/ADR hierarchy references even when the artifact ID appears as bare governed text (WI-2026-06-04-003)
-- govctl check reports stale bundled schema files and tells users to run govctl migrate (WI-2026-06-04-003)
-- govctl migrate adds missing .govctl local state entries to .gitignore for existing repositories (WI-2026-06-04-004)
-- govctl check warns when local .govctl state entries are missing from .gitignore (WI-2026-06-04-004)
+- `govctl check` now catches lower-authority artifact references written as bare
+  IDs in governed RFC and ADR text, closing the loophole where removing
+  `[[...]]` delimiters avoided hierarchy validation.
+- `govctl check` now warns when bundled JSON Schema files under `gov/schema/`
+  are missing or stale, even if `gov/config.toml` already reports the current
+  schema version.
+- `govctl migrate` now refreshes missing `.govctl.lock` and `.govctl/`
+  `.gitignore` entries for existing projects, matching the local-state
+  protection that fresh `govctl init` projects already receive.
+- `govctl check` now reports missing govctl-managed local-state `.gitignore`
+  entries and points users to `govctl migrate`.
 
 ## [0.9.0] - 2026-06-04
 
