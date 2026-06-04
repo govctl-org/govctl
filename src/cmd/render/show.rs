@@ -3,8 +3,7 @@ use crate::OutputFormat;
 use crate::cmd::output::print_json;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::load::{load_rfcs, split_clause_id};
-use crate::parse::{load_adrs, load_work_items};
+use crate::load::{find_clause_toml, find_rfc_toml, load_clause, load_rfc, split_clause_id};
 use crate::render::{expand_inline_refs, render_adr, render_clause, render_rfc, render_work_item};
 use crate::terminal_md::render_terminal_md;
 use serde::Serialize;
@@ -34,42 +33,33 @@ where
     Ok(())
 }
 
-fn find_show_item<T, Id, NotFound>(
-    items: Vec<T>,
-    id: &str,
-    item_id: Id,
-    not_found: NotFound,
-) -> DiagnosticResult<T>
-where
-    Id: for<'a> Fn(&'a T) -> &'a str,
-    NotFound: FnOnce() -> Diagnostic,
-{
-    items
-        .into_iter()
-        .find(|item| item_id(item) == id)
-        .ok_or_else(not_found)
-}
-
 /// Show RFC content to stdout (no file written).
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
 pub fn show_rfc(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
-    let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
-
-    let rfc = find_show_item(
-        rfcs,
-        id,
-        |rfc| rfc.rfc.rfc_id.as_str(),
-        || {
-            artifact_not_found(
-                config,
-                DiagnosticCode::E0102RfcNotFound,
-                "RFC",
-                id,
-                config.rfc_dir(),
-            )
-        },
-    )?;
+    // [[RFC-0002:C-CRUD-VERBS]]: read-by-ID must error when no RFC exists for
+    // the requested stable resource ID from [[RFC-0002:C-RESOURCES]].
+    let path = find_rfc_toml(config, id).ok_or_else(|| {
+        artifact_not_found(
+            config,
+            DiagnosticCode::E0102RfcNotFound,
+            "RFC",
+            id,
+            config.rfc_dir(),
+        )
+    })?;
+    let rfc = load_rfc(config, &path).map_err(Diagnostic::from)?;
+    // [[RFC-0000:C-RFC-DEF]] makes the TOML `[govctl].id` authoritative; the
+    // resolved path must not satisfy a different requested RFC ID.
+    if rfc.rfc.rfc_id != id {
+        return Err(artifact_not_found(
+            config,
+            DiagnosticCode::E0102RfcNotFound,
+            "RFC",
+            id,
+            config.rfc_dir(),
+        ));
+    }
 
     print_show_output(
         config,
@@ -88,22 +78,7 @@ pub fn show_rfc(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
 pub fn show_adr(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
-    let adrs = load_adrs(config)?;
-
-    let adr = find_show_item(
-        adrs,
-        id,
-        |adr| adr.spec.govctl.id.as_str(),
-        || {
-            artifact_not_found(
-                config,
-                DiagnosticCode::E0302AdrNotFound,
-                "ADR",
-                id,
-                config.adr_dir(),
-            )
-        },
-    )?;
+    let adr = crate::artifact_catalog::load_adr_by_id(config, id)?;
 
     print_show_output(
         config,
@@ -122,22 +97,7 @@ pub fn show_adr(config: &Config, id: &str, output: OutputFormat) -> DiagnosticRe
 ///
 /// Per [[ADR-0022]], outputs markdown by default or JSON with --output json.
 pub fn show_work(config: &Config, id: &str, output: OutputFormat) -> DiagnosticResult<Diagnostics> {
-    let items = load_work_items(config)?;
-
-    let item = find_show_item(
-        items,
-        id,
-        |item| item.spec.govctl.id.as_str(),
-        || {
-            artifact_not_found(
-                config,
-                DiagnosticCode::E0402WorkNotFound,
-                "Work item",
-                id,
-                config.work_dir(),
-            )
-        },
-    )?;
+    let item = crate::artifact_catalog::load_work_item_by_id(config, id)?;
 
     print_show_output(
         config,
@@ -168,37 +128,27 @@ pub fn show_clause(
         )
     })?;
 
-    let rfcs = load_rfcs(config).map_err(Diagnostic::from)?;
-
-    let rfc = find_show_item(
-        rfcs,
-        rfc_id,
-        |rfc| rfc.rfc.rfc_id.as_str(),
-        || {
-            artifact_not_found(
-                config,
-                DiagnosticCode::E0102RfcNotFound,
-                "RFC",
-                rfc_id,
-                config.rfc_dir(),
-            )
-        },
-    )?;
-
-    let clause = find_show_item(
-        rfc.clauses,
-        clause_name,
-        |clause| clause.spec.clause_id.as_str(),
-        || {
-            artifact_not_found(
-                config,
-                DiagnosticCode::E0202ClauseNotFound,
-                "Clause",
-                id,
-                config.clause_dir(rfc_id),
-            )
-        },
-    )?;
+    let path = find_clause_toml(config, id).ok_or_else(|| {
+        artifact_not_found(
+            config,
+            DiagnosticCode::E0202ClauseNotFound,
+            "Clause",
+            id,
+            config.clause_dir(rfc_id),
+        )
+    })?;
+    let clause = load_clause(config, &path).map_err(Diagnostic::from)?;
+    // [[RFC-0002:C-RESOURCES]] defines `RFC-NNNN:C-NAME` as self-scoping, and
+    // [[RFC-0000:C-CLAUSE-DEF]] makes the clause TOML ID authoritative.
+    if clause.spec.clause_id != clause_name {
+        return Err(artifact_not_found(
+            config,
+            DiagnosticCode::E0202ClauseNotFound,
+            "Clause",
+            id,
+            config.clause_dir(rfc_id),
+        ));
+    }
 
     print_show_output(
         config,

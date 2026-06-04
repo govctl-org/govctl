@@ -4,7 +4,7 @@ This guide walks you through installing govctl and creating your first governed 
 
 ## Requirements
 
-- **Rust 1.88+** (per `Cargo.toml` `rust-version`)
+- **Rust 1.96+** (per `Cargo.toml` `rust-version`)
 
 ## Installation
 

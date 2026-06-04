@@ -2,7 +2,7 @@
 name = "govctl"
 version = "0.9.1"
 edition = "2024"
-rust-version = "1.88"
+rust-version = "1.96"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
 license = "MIT"
 repository = "https://github.com/govctl-org/govctl"
@@ -68,6 +68,7 @@ slug = "0.1"
 strum = { version = "0.28", features = ["derive"] }
 winnow = "0.7"
 pulldown-cmark = "0.13"
+rusqlite = { version = "0.40", features = ["bundled"] }
 
 # File system traversal
 walkdir = "2"

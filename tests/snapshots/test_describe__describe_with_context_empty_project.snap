@@ -55,6 +55,15 @@ $ govctl describe --context
       ]
     },
     {
+      "name": "search",
+      "purpose": "Search governed artifacts across the project",
+      "when_to_use": "To find RFCs, clauses, ADRs, work items, and guards by content or ID.",
+      "example": "govctl search caching --type adr",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
       "name": "loop list",
       "purpose": "List persisted local loop states",
       "when_to_use": "To discover interrupted or resumable loops before selecting one by loop ID.",

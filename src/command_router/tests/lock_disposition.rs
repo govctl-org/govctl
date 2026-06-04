@@ -93,6 +93,18 @@ fn test_lock_disposition_is_lock_free_for_inspect_commands()
         LockDisposition::None
     );
     assert_eq!(
+        global(Op::Builtin(BuiltinOp::Search {
+            query: vec!["cache".to_string()],
+            types: vec![],
+            tags: vec![],
+            limit: None,
+            output: OutputFormat::Table,
+            reindex: false,
+        }))
+        .lock_disposition(),
+        LockDisposition::None
+    );
+    assert_eq!(
         plan_get("RFC-0001", Some("title"))?.lock_disposition(),
         LockDisposition::None
     );

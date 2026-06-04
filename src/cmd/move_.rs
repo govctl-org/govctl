@@ -126,17 +126,14 @@ pub fn move_item(
 
 /// Find work item by partial name or ID
 fn find_work_item_by_name(config: &Config, name: &str) -> DiagnosticResult<std::path::PathBuf> {
-    use crate::parse::load_work_items;
-
-    // First try: load all work items and match by ID
     if name.starts_with("WI-") {
-        let items = load_work_items(config)?;
-        if let Some(item) = items.iter().find(|w| w.spec.govctl.id == name) {
-            return Ok(item.path.clone());
+        match crate::artifact_catalog::load_work_item_by_id(config, name) {
+            Ok(item) => return Ok(item.path),
+            Err(err) if err.code == DiagnosticCode::E0402WorkNotFound => {}
+            Err(err) => return Err(err),
         }
     }
 
-    // Second try: match by filename
     let work_dir = &config.work_dir();
 
     if !work_dir.exists() {

@@ -33,6 +33,21 @@ impl CommandPlan {
                 guard_ids: guard_ids.clone(),
                 work: work.clone(),
             }))),
+            Commands::Search {
+                query,
+                types,
+                tag,
+                limit,
+                output,
+                reindex,
+            } => Ok(global(Op::Builtin(BuiltinOp::Search {
+                query: query.clone(),
+                types: types.clone(),
+                tags: tag.clone(),
+                limit: *limit,
+                output: *output,
+                reindex: *reindex,
+            }))),
             Commands::Describe { context, .. } => Ok(global(Op::Builtin(BuiltinOp::Describe {
                 context: *context,
             }))),

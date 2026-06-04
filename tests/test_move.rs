@@ -3,10 +3,10 @@
 mod common;
 
 use common::{
-    first_work_id, init_project_with_date, normalize_output, run_commands, run_dynamic_commands,
-    work_add_acceptance, work_new_active,
+    first_work_id, init_project, init_project_with_date, normalize_output, run_commands,
+    run_dynamic_commands, work_add_acceptance, work_new_active,
 };
-use std::path::Path;
+use std::{fs, path::Path};
 
 fn setup_active_work_item_with_criteria(
     dir: &Path,
@@ -155,6 +155,53 @@ fn test_move_by_work_item_id() -> common::TestResult {
         ],
     )?;
     assert_move_snapshot!(temp_dir, &date, &output)
+}
+
+#[test]
+fn test_move_falls_back_to_partial_filename_starting_with_wi() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let work_path = temp_dir.path().join("gov/work/WI-partial-custom.toml");
+    fs::write(
+        work_path,
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-777"
+title = "Partial Filename"
+status = "active"
+created = "2026-01-01"
+started = "2026-01-01"
+
+[content]
+description = "Partial filename lookup"
+"#,
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "move", "WI-partial", "cancelled"],
+            &["work", "get", "WI-2026-01-01-777", "status"],
+        ],
+    )?;
+    assert!(output.contains("Moved WI-partial-custom.toml to cancelled"));
+    assert!(output.contains("$ govctl work get WI-2026-01-01-777 status\ncancelled"));
+    Ok(())
+}
+
+#[test]
+fn test_move_by_work_item_id_propagates_lookup_errors() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let work_dir = temp_dir.path().join("gov/work");
+    fs::remove_dir_all(&work_dir)?;
+    fs::write(&work_dir, "not a directory")?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["work", "move", "WI-2026-01-01-001", "active"]],
+    )?;
+    assert!(output.contains("error[E0901]"), "{output}");
+    assert!(!output.contains("Work item not found"), "{output}");
+    Ok(())
 }
 
 #[test]

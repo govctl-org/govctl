@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.9.4"
+version = "0.10.1"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "8c6259a92889fd5cb0a87ca5798ca004168631bb63e824eb9c006dc9c90e369a"
+signature = "681093335724498e211e93fb519c9e16f9990da7986a2f50db914b9e60e88339"
 
 [[sections]]
 title = "Summary"
@@ -33,7 +33,20 @@ clauses = [
     "clauses/C-GLOBAL-COMMANDS.toml",
     "clauses/C-VERIFY-CONFIG.toml",
     "clauses/C-SELF-UPDATE.toml",
+    "clauses/C-SEARCH-COMMAND.toml",
 ]
+
+[[changelog]]
+version = "0.10.1"
+date = "2026-06-04"
+notes = "Set search clause version metadata"
+fixed = ["C-SEARCH-COMMAND has derived since version metadata"]
+
+[[changelog]]
+version = "0.10.0"
+date = "2026-06-04"
+notes = "Add search command contract"
+added = ["C-SEARCH-COMMAND clause for govctl search"]
 
 [[changelog]]
 version = "0.9.4"

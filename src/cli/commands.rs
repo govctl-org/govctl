@@ -1,7 +1,7 @@
 use super::help;
 use super::{
-    AdrCommand, ClauseCommand, GuardCommand, LoopCommand, RenderTarget, RfcCommand, SkillFormat,
-    TagCommand, WorkCommand,
+    AdrCommand, ClauseCommand, GuardCommand, ListTarget, LoopCommand, OutputFormat, RenderTarget,
+    RfcCommand, SkillFormat, TagCommand, WorkCommand,
 };
 use clap::Subcommand;
 use std::path::PathBuf;
@@ -81,6 +81,51 @@ pub(crate) enum Commands {
         /// Run the effective guard set for a specific work item
         #[arg(long, conflicts_with = "guard_ids")]
         work: Option<String>,
+    },
+
+    /// Search governed artifacts.
+    ///
+    /// Traceability: global search is an explicit namespace exception in
+    /// [[RFC-0002:C-GLOBAL-COMMANDS]] and is specified by
+    /// [[RFC-0002:C-SEARCH-COMMAND]].
+    #[command(after_help = help::SEARCH)]
+    Search {
+        /// Query terms to search for.
+        ///
+        /// [[RFC-0002:C-SEARCH-COMMAND]]: `<query>...` is required and is
+        /// interpreted as user search terms, not backend raw query syntax.
+        #[arg(value_name = "QUERY", required = true)]
+        query: Vec<String>,
+        /// Restrict results to artifact kind (repeatable).
+        ///
+        /// [[RFC-0002:C-SEARCH-COMMAND]]: searches all supported artifact
+        /// kinds unless one or more `--type` filters are provided.
+        #[arg(long = "type", value_enum)]
+        types: Vec<ListTarget>,
+        /// Filter by tag (repeatable; artifact must have ALL specified tags).
+        ///
+        /// [[RFC-0002:C-SEARCH-COMMAND]]: multiple `--tag` values use ALL-tag
+        /// semantics; results must contain every requested tag.
+        #[arg(long)]
+        tag: Vec<String>,
+        /// Limit number of results.
+        ///
+        /// [[RFC-0002:C-SEARCH-COMMAND]]: `--limit` is supported and omission
+        /// applies a finite default limit.
+        #[arg(short = 'n', long)]
+        limit: Option<usize>,
+        /// Output format.
+        ///
+        /// [[RFC-0002:C-SEARCH-COMMAND]]: supports table, JSON, and plain
+        /// result contracts, with table as the CLI default.
+        #[arg(short = 'o', long, value_enum, default_value = "table")]
+        output: OutputFormat,
+        /// Force a full rebuild of the local search index before querying.
+        ///
+        /// [[RFC-0002:C-SEARCH-COMMAND]]: `--reindex` rebuilds the local
+        /// derived search index before returning results.
+        #[arg(long)]
+        reindex: bool,
     },
 
     /// Loop execution-state commands

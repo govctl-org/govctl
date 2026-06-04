@@ -171,8 +171,8 @@ Behavior:
 - `list`: displays all registered tags with usage counts (how many artifacts reference each tag).
 
 Artifact-level tagging uses existing resource verbs on taggable types (rfc, clause, adr, work, guard):
-- `govctl {rfc|clause|adr|work|guard} add <ID> tags <tag>` — assign a tag to an artifact
-- `govctl {rfc|clause|adr|work|guard} remove <ID> tags <tag>` — remove a tag from an artifact
+- `govctl {rfc|clause|adr|work|guard} add <ID> tags <tag>` - assign a tag to an artifact
+- `govctl {rfc|clause|adr|work|guard} remove <ID> tags <tag>` - remove a tag from an artifact
 
 **11. `govctl self-update`**
 
@@ -198,6 +198,17 @@ Behavior:
 - MUST keep work item lifecycle transitions routed through `govctl work` semantics
 - MUST use stable subcommand and argument semantics defined by [[RFC-0006:C-LOOP-COMMAND-SURFACE]]
 
+**13. `govctl search`**
+
+Searches governed artifacts across the project by user-provided query text.
+
+Syntax: `govctl search <query>... [--type <rfc|clause|adr|work|guard>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
+
+Behavior:
+- Operates across RFCs, clauses, ADRs, work items, and verification guards according to [[RFC-0002:C-SEARCH-COMMAND]]
+- MUST remain at the global namespace because it is project-level discovery across multiple governed resource types, not a resource-specific CRUD operation
+- MUST NOT be required as a universal resource verb under each artifact namespace unless a future RFC amendment explicitly adds scoped search aliases
+
 **Rationale:**
 
 These commands are global because they:
@@ -218,6 +229,8 @@ These commands are global because they:
 `govctl self-update` qualifies because it provides meta-information about the CLI itself and performs binary lifecycle management (criterion 3).
 
 `govctl loop` qualifies because it manages local execution state that coordinates work items and verification guards without making loop state a governed resource (criterion 5).
+
+`govctl search` qualifies because it performs project-level discovery across multiple governed resource types (criterion 1).
 
 **Future Additions:**
 

@@ -155,6 +155,67 @@ fn test_supersede_adr() -> common::TestResult {
 }
 
 #[test]
+fn test_supersede_adr_propagates_replacement_lookup_errors() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let adr_dir = temp_dir.path().join("gov/adr");
+    std::fs::remove_dir_all(&adr_dir)?;
+    std::fs::write(&adr_dir, "not a directory")?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "adr",
+            "supersede",
+            "ADR-0001",
+            "--by",
+            "ADR-0002",
+            "--force",
+        ]],
+    )?;
+    assert!(output.contains("error[E0901]"), "{output}");
+    assert!(!output.contains("Replacement ADR not found"), "{output}");
+    Ok(())
+}
+
+#[test]
+fn test_accept_adr_propagates_lookup_errors() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let adr_dir = temp_dir.path().join("gov/adr");
+    std::fs::remove_dir_all(&adr_dir)?;
+    std::fs::write(&adr_dir, "not a directory")?;
+
+    let output = run_commands(temp_dir.path(), &[&["adr", "accept", "ADR-0001"]])?;
+    assert!(output.contains("error[E0901]"), "{output}");
+    assert!(!output.contains("ADR not found"), "{output}");
+    Ok(())
+}
+
+#[test]
+fn test_supersede_adr_rejects_missing_replacement() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["adr", "new", "Old Decision"],
+            &[
+                "adr",
+                "supersede",
+                "ADR-0001",
+                "--by",
+                "ADR-9999",
+                "--force",
+            ],
+        ],
+    )?;
+    assert!(
+        output.contains("Replacement ADR not found: ADR-9999"),
+        "{output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_accept_rejected_adr_fails() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 

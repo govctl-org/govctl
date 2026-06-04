@@ -10,6 +10,17 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- Search output supports table, JSON, and plain formats with stable result fields (WI-2026-06-04-006)
+- Search index sync updates changed artifacts, removes deleted artifacts, and refuses stale results when freshness cannot be established (WI-2026-06-04-006)
+- govctl search provides ranked search across RFCs, clauses, ADRs, work items, and guards (WI-2026-06-04-006)
+
+### Changed
+
+- Single-artifact RFC, ADR, work item, guard, and clause lookup paths use direct path resolution or artifact catalog lookup instead of full collection scans where possible (WI-2026-06-04-005)
+- Stale or missing catalog entries are repaired or bypassed without operating on the wrong artifact (WI-2026-06-04-005)
+
 ## [0.9.1] - 2026-06-04
 
 0.9.1 is a patch release for upgrade safety after 0.9.0. It tightens

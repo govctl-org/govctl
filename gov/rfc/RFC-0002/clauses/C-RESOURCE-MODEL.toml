@@ -34,7 +34,9 @@ The resource-first structure (noun-first) provides several advantages over verb-
 
 **Exceptions:**
 
-Commands that operate across all resource types (init, check, status, render) remain at the global level as they don't belong to a specific resource namespace.
+Global command exceptions are governed by [[RFC-0002:C-GLOBAL-COMMANDS]]. A command MAY remain at the global namespace when it operates across multiple resource types, performs project-level or CLI-level work, or manages local execution state that coordinates governed resources without becoming a governed artifact resource.
+
+Resource-specific CRUD, field-editing, and lifecycle operations MUST remain resource-first unless an RFC explicitly defines a global command exception.
 
 **Implementation Note:**
 

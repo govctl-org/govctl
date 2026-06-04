@@ -16,6 +16,7 @@ pub mod new;
 pub(crate) mod output;
 pub(crate) mod project_support;
 pub mod render;
+pub mod search;
 pub mod self_update;
 pub mod status;
 pub mod tag;

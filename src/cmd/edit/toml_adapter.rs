@@ -2,9 +2,7 @@ use super::adapter::{TomlAdapter, display_scope_for_dir};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{AdrEntry, GuardEntry, WorkItemEntry};
-use crate::parse::{
-    load_adrs, load_guards, load_work_items, write_adr, write_guard, write_work_item,
-};
+use crate::parse::{load_work_items, write_adr, write_guard, write_work_item};
 use crate::write::WriteOp;
 use std::path::PathBuf;
 
@@ -43,15 +41,7 @@ impl TomlAdapter for AdrTomlAdapter {
     type Entry = AdrEntry;
 
     fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry> {
-        load_toml_entry(
-            config,
-            id,
-            config.adr_dir(),
-            load_adrs,
-            |entry, id| entry.spec.govctl.id == id,
-            DiagnosticCode::E0302AdrNotFound,
-            "ADR",
-        )
+        crate::artifact_catalog::load_adr_by_id(config, id)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()> {
@@ -71,6 +61,14 @@ impl TomlAdapter for WorkTomlAdapter {
     type Entry = WorkItemEntry;
 
     fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry> {
+        if id.starts_with("WI-") {
+            match crate::artifact_catalog::load_work_item_by_id(config, id) {
+                Ok(entry) => return Ok(entry),
+                Err(err) if err.code == DiagnosticCode::E0402WorkNotFound => {}
+                Err(err) => return Err(err),
+            }
+        }
+
         load_toml_entry(
             config,
             id,
@@ -99,15 +97,7 @@ impl TomlAdapter for GuardTomlAdapter {
     type Entry = GuardEntry;
 
     fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry> {
-        load_toml_entry(
-            config,
-            id,
-            config.guard_dir(),
-            load_guards,
-            |entry, id| entry.spec.govctl.id == id,
-            DiagnosticCode::E1002GuardNotFound,
-            "Guard",
-        )
+        crate::artifact_catalog::load_guard_by_id(config, id)
     }
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()> {

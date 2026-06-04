@@ -66,6 +66,19 @@ NOTES:
     - `--work` conflicts with explicit guard IDs.
 "#;
 
+pub(super) const SEARCH: &str = r#"EXAMPLES:
+    govctl search caching
+    govctl search "work item" --type work
+    govctl search RFC-0002 -o json
+    govctl search migration --tag cli -n 5
+    govctl search cache --reindex
+
+NOTES:
+    - Searches RFCs, clauses, ADRs, work items, and guards by default.
+    - Use `--type` to limit results to one or more artifact kinds.
+    - Search indexes are derived local state under `.govctl/`.
+"#;
+
 pub(super) const LOOP: &str = r#"COMMON WORKFLOW:
     1. `govctl loop list open` to discover existing non-terminal loops
     2. `govctl loop start WI-2026-04-06-001` to create local loop state
