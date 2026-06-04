@@ -10,16 +10,28 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-06-05
+
+0.9.2 focuses on discovery and lookup performance. It adds a project-wide
+search command backed by disposable local state, and it speeds up common
+single-artifact commands without making local indexes authoritative.
+
 ### Added
 
-- Search output supports table, JSON, and plain formats with stable result fields (WI-2026-06-04-006)
-- Search index sync updates changed artifacts, removes deleted artifacts, and refuses stale results when freshness cannot be established (WI-2026-06-04-006)
-- govctl search provides ranked search across RFCs, clauses, ADRs, work items, and guards (WI-2026-06-04-006)
+- Added `govctl search` for ranked discovery across RFCs, clauses, ADRs, work
+  items, and verification guards.
+- Search can filter by artifact type and tag, limit results, rebuild the local
+  index with `--reindex`, and emit table, JSON, or plain output.
+- Search indexes are stored under `.govctl/` and refreshed before results are
+  returned, so stale local cache data is never treated as source of truth.
 
 ### Changed
 
-- Single-artifact RFC, ADR, work item, guard, and clause lookup paths use direct path resolution or artifact catalog lookup instead of full collection scans where possible (WI-2026-06-04-005)
-- Stale or missing catalog entries are repaired or bypassed without operating on the wrong artifact (WI-2026-06-04-005)
+- Single-artifact RFC, ADR, work item, guard, and clause lookups now use direct
+  path resolution or a local artifact catalog where possible, avoiding broad
+  scans on common commands.
+- Catalog entries are validated against the target artifact ID before use,
+  repaired when stale, and bypassed when they cannot be trusted.
 
 ## [0.9.1] - 2026-06-04
 
