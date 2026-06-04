@@ -22,6 +22,14 @@ fn write_clause_toml(
     Ok(())
 }
 
+fn write_adr_toml(project_dir: &std::path::Path, content: &str) -> common::TestResult {
+    fs::write(
+        project_dir.join("gov/adr/ADR-0001-lower-authority.toml"),
+        content,
+    )?;
+    Ok(())
+}
+
 #[test]
 fn test_broken_superseded_check() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
@@ -133,5 +141,323 @@ text = "A test clause in an invalid RFC."
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[test]
+fn test_rfc_plain_text_adr_reference_violates_hierarchy() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Plain ADR Reference"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TEST.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "This RFC tries to cite ADR-0001 without brackets."
+"#,
+    )?;
+
+    write_adr_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Lower Authority"
+status = "accepted"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Context"
+decision = "Decision"
+consequences = "Consequences"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0112]"), "output: {}", output);
+    assert!(output.contains("mentions ADR-0001"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_rfc_plain_text_nonexistent_adr_is_allowed() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Nonexistent ADR Mention"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TEST.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "This RFC mentions ADR-9999 as a nonexistent example."
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(!output.contains("error[E0112]"), "output: {}", output);
+    assert!(!output.contains("error[E0306]"), "output: {}", output);
+    assert!(!output.contains("mentions ADR-9999"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_rfc_changelog_plain_text_adr_reference_is_allowed() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Changelog ADR Mention"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+notes = "This release note mentions ADR-0001 as prose."
+added = ["Initial release mentions ADR-0001 as prose"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TEST.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "This RFC clause does not cite lower authority artifacts."
+"#,
+    )?;
+
+    write_adr_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Lower Authority"
+status = "accepted"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Context"
+decision = "Decision"
+consequences = "Consequences"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(!output.contains("error[E0112]"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_rfc_bracketed_adr_reference_reports_once() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Bracket ADR Reference"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TEST.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "This RFC links to [[ADR-0001]]."
+"#,
+    )?;
+
+    write_adr_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Lower Authority"
+status = "accepted"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Context"
+decision = "Decision"
+consequences = "Consequences"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert_eq!(
+        output.matches("error[E0112]").count(),
+        1,
+        "output: {output}"
+    );
+    assert_eq!(
+        output.matches("links to [[ADR-0001]]").count(),
+        1,
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_adr_plain_text_work_reference_violates_hierarchy() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Governing RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+"#,
+    )?;
+
+    write_adr_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Plain Work Reference"
+status = "accepted"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Context"
+decision = "This ADR tries to cite WI-2026-01-01-001 without brackets."
+consequences = "Consequences"
+"#,
+    )?;
+
+    fs::write(
+        temp_dir.path().join("gov/work/2026-01-01-task.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Execution task"
+status = "queue"
+created = "2026-01-01"
+
+[content]
+description = "Work description"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0306]"), "output: {}", output);
+    assert!(
+        output.contains("mentions WI-2026-01-01-001"),
+        "output: {}",
+        output
+    );
     Ok(())
 }

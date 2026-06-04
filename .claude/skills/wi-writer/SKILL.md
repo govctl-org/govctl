@@ -25,7 +25,7 @@ They are operational memory, not normative authority and not decision records.
 govctl work new --active "<title>"
 govctl work set <WI-ID> description "Task scope description"
 govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
-govctl work add <WI-ID> notes "Key observation"
+govctl work add <WI-ID> notes "Durable constraint or retry rule"
 govctl work add <WI-ID> refs RFC-NNNN
 govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
 govctl work add <WI-ID> tags <tag>
@@ -52,7 +52,7 @@ Replace the placeholder immediately. One paragraph explaining:
 - Why it's needed
 - Any relevant context
 
-**Important:** Description is for task scope, NOT execution tracking. Use loop state and round artifacts for execution trace when available, and `notes` for durable learnings that belong on the work item.
+**Important:** Description is for task scope, NOT execution tracking. Use loop state and round artifacts for execution trace, and `notes` only for closure-worthy durable learnings that belong on the work item.
 It must not introduce new product behavior requirements that are missing from the governing RFC or ADR.
 
 ### Execution Trace
@@ -60,24 +60,25 @@ It must not introduce new product behavior requirements that are missing from th
 **Where execution information goes now:**
 
 - Round-by-round execution trace belongs in loop state and round artifacts.
-- Durable lessons, constraints, retry rules, and future-facing observations belong in `notes`.
+- Durable lessons, constraints, and retry rules that should still matter after closure belong in `notes`.
 - Acceptance progress belongs in `acceptance_criteria` status.
 
 ### Notes
 
-**Purpose:** Durable learnings — constraints, decisions, and retry rules to remember before the next step.
+**Purpose:** Closure-worthy durable context — stable constraints, decisions, and retry rules that should remain useful after the work item is done.
 
-Notes are concise points recorded anytime, not just at completion. Use for:
+Use notes sparingly for:
 
-- Why an approach failed
-- What not to retry
-- Constraints or decisions future steps must obey
+- Why an approach must not be retried because of a stable technical reason
+- Constraints or decisions future maintainers must obey
+- Important implementation facts that are not obvious from the final diff
 
 These notes may explain local execution constraints, but they do not override RFCs or accepted ADRs.
+Do not use notes for progress updates, commands run, validation output, current plans, next actions, temporary blockers, hypotheses, review status, or "remember to do X" TODOs.
 
 ```bash
-govctl work add <WI-ID> notes "Remember to update migration guide"
-govctl work add <WI-ID> notes "API is now async"
+govctl work add <WI-ID> notes "Do not retry the legacy JSON migration path; v0.9 intentionally rejects it"
+govctl work add <WI-ID> notes "Legacy inline journal entries must remain render-only for older work items"
 ```
 
 ### Acceptance Criteria
@@ -143,13 +144,13 @@ Do not hand-write descriptive loop IDs or encode time finer than the day in loop
 
 ## Field Semantics Summary
 
-| Field                 | Purpose                | Update Pattern                                |
-| --------------------- | ---------------------- | --------------------------------------------- |
-| `description`         | Task scope declaration | Define once, rarely change                    |
-| `notes`               | Durable learnings      | Add when future steps must remember something |
-| `acceptance_criteria` | Completion criteria    | Define then tick                              |
+| Field                 | Purpose                | Update Pattern                               |
+| --------------------- | ---------------------- | -------------------------------------------- |
+| `description`         | Task scope declaration | Define once, rarely change                   |
+| `notes`               | Durable learnings      | Add only when useful after work-item closure |
+| `acceptance_criteria` | Completion criteria    | Define then tick                             |
 
-**Per ADR-0047:** Keep description focused on "what", notes on durable "what to remember next", and execution trace outside the work item field surface.
+**Per ADR-0047:** Keep description focused on "what", notes on closure-worthy durable context, and execution trace outside the work item field surface.
 If you discover a missing requirement or unresolved design choice, stop and route that back to RFC/ADR work rather than inventing it inside the work item.
 
 ## Writing Rules
@@ -206,14 +207,15 @@ Keep `chore:` criteria for validation summaries, especially when the validation 
 
 ## Common Mistakes
 
-| Mistake                            | Fix                                                                                  |
-| ---------------------------------- | ------------------------------------------------------------------------------------ |
-| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                                            |
-| Placeholder description left in    | Replace immediately with real description                                            |
-| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"                                  |
-| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass"                          |
-| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                                          |
-| Description used for tracking      | Use loop state and round artifacts for execution trace or `notes` for durable memory |
-| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts     |
-| Mechanical substeps become WIs     | Use no WI or one coarse WI; leave helper/test/file-move details to the commit diff   |
-| Work item invents new requirements | Move those requirements into an RFC or ADR first                                     |
+| Mistake                            | Fix                                                                                                      |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                                                                |
+| Placeholder description left in    | Replace immediately with real description                                                                |
+| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"                                                      |
+| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass"                                              |
+| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                                                              |
+| Description used for tracking      | Use loop state and round artifacts for execution trace                                                   |
+| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts                         |
+| TODOs or next actions stored notes | Put next actions in loop state or the final response; use acceptance criteria for completion obligations |
+| Mechanical substeps become WIs     | Use no WI or one coarse WI; leave helper/test/file-move details to the commit diff                       |
+| Work item invents new requirements | Move those requirements into an RFC or ADR first                                                         |

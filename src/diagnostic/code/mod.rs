@@ -151,6 +151,7 @@ pub enum DiagnosticCode {
     W0108WorkPlaceholderDescription,
     W0109WorkNoActive,
     W0110SchemaOutdated,
+    W0111ProjectSupportOutdated,
 
     // Informational diagnostics (I04xx)
     I0401WorkLegacyInlineHistory,
@@ -184,6 +185,7 @@ mod tests {
         assert_eq!(DiagnosticCode::E1101TagInvalidFormat.code(), "E1101");
         assert_eq!(DiagnosticCode::E1201LoopStateInvalid.code(), "E1201");
         assert_eq!(DiagnosticCode::W0101RfcNoChangelog.code(), "W0101");
+        assert_eq!(DiagnosticCode::W0111ProjectSupportOutdated.code(), "W0111");
         assert_eq!(DiagnosticCode::I0401WorkLegacyInlineHistory.code(), "I0401");
     }
 
@@ -199,6 +201,10 @@ mod tests {
         );
         assert_eq!(
             DiagnosticCode::W0110SchemaOutdated.level(),
+            DiagnosticLevel::Warning
+        );
+        assert_eq!(
+            DiagnosticCode::W0111ProjectSupportOutdated.level(),
             DiagnosticLevel::Warning
         );
         assert_eq!(

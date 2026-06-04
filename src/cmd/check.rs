@@ -8,22 +8,18 @@ use crate::load::load_project_with_warnings;
 use crate::model::WorkItemStatus;
 use crate::parse::{load_guards_with_warnings, load_releases, load_work_items};
 use crate::scan::scan_source_refs;
+use crate::schema::installed_schema_diagnostics;
 use crate::ui;
 use crate::validate::{validate_project, validate_releases};
 use crate::verification;
 
 /// Validate all governed documents
 pub fn check_all(config: &Config) -> DiagnosticResult<Diagnostics> {
-    // Load project (with warnings for parse errors)
-    let load_result = match load_project_with_warnings(config) {
-        Ok(result) => result,
-        Err(diags) => return Ok(diags),
-    };
+    let mut all_diagnostics = Vec::new();
 
-    let index = load_result.index;
-    let mut all_diagnostics = load_result.warnings;
-
-    // Check schema version
+    // Pre-load support checks implement [[RFC-0002:C-GLOBAL-COMMANDS]].
+    // They run before artifact loading because stale local schemas can reject
+    // newer artifact fields before users see the migrate hint.
     let current_schema = config.schema.version;
     let latest_schema = crate::cmd::migrate::CURRENT_SCHEMA_VERSION;
     if current_schema < latest_schema {
@@ -36,6 +32,20 @@ pub fn check_all(config: &Config) -> DiagnosticResult<Diagnostics> {
             "gov/config.toml",
         ));
     }
+    all_diagnostics.extend(installed_schema_diagnostics(config));
+    all_diagnostics.extend(crate::cmd::project_support::local_state_gitignore_diagnostics());
+
+    // Load project (with warnings for parse errors)
+    let load_result = match load_project_with_warnings(config) {
+        Ok(result) => result,
+        Err(diags) => {
+            all_diagnostics.extend(diags);
+            return Ok(all_diagnostics);
+        }
+    };
+
+    let index = load_result.index;
+    all_diagnostics.extend(load_result.warnings);
 
     // Validate governance artifacts
     let result = validate_project(&index, config);

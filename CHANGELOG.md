@@ -10,6 +10,13 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Fixed
+
+- govctl check rejects invalid RFC/ADR hierarchy references even when the artifact ID appears as bare governed text (WI-2026-06-04-003)
+- govctl check reports stale bundled schema files and tells users to run govctl migrate (WI-2026-06-04-003)
+- govctl migrate adds missing .govctl local state entries to .gitignore for existing repositories (WI-2026-06-04-004)
+- govctl check warns when local .govctl state entries are missing from .gitignore (WI-2026-06-04-004)
+
 ## [0.9.0] - 2026-06-04
 
 ### Added

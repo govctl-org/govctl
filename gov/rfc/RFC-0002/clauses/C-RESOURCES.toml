@@ -6,7 +6,10 @@ title = "Resource Types"
 kind = "normative"
 status = "active"
 since = "0.1.0"
-tags = ["cli", "schema"]
+tags = [
+    "cli",
+    "schema",
+]
 
 [content]
 text = """
@@ -24,14 +27,14 @@ Manages RFC specifications (normative documents defining system behavior).
 
 Manages ADRs (records of architectural decisions).
 
-- ID Format: `ADR-NNNN` (e.g., ADR-0001)
+- ID Format: `ADR-NNNN` (e.g., ADR-NNNN-style IDs)
 - Lifecycle: proposed → accepted → superseded, or proposed → rejected (per RFC-0001:C-ADR-STATUS)
 
 **3. `work` - Work Item**
 
 Manages work items (tasks, features, bugs).
 
-- ID Format: `WI-YYYY-MM-DD-NNN` (e.g., WI-2026-01-19-001)
+- ID Format: `WI-YYYY-MM-DD-NNN` (e.g., WI-YYYY-MM-DD-NNN)
 - Lifecycle: queue → active → done, with cancellation at any stage (per RFC-0001:C-WORK-STATUS)
 
 **4. `clause` - RFC Clause**

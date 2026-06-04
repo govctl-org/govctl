@@ -78,7 +78,7 @@ where:
 govctl adr edit ADR-0001 content.decision --set "We will ..."
 govctl adr edit ADR-0001 content.alternatives --add "Option A"
 govctl adr edit ADR-0001 content.alternatives[0].pros --add "Readable"
-govctl work edit WI-2026-04-06-001 content.acceptance_criteria[0] --tick done
+govctl work edit WI-YYYY-MM-DD-NNN content.acceptance_criteria[0] --tick done
 ```
 
 This keeps resource-first organization intact while giving both humans and agents a single canonical grammar for mutation.
@@ -87,8 +87,7 @@ This keeps resource-first organization intact while giving both humans and agent
 
 - Gives humans and agents one stable canonical mutation grammar
 - Lets existing verbs converge onto the same EditPlan without immediate breakage
-- Keeps the target path visually primary when reading or typing commands
-"""
+- Keeps the target path visually primary when reading or typing commands"""
 consequences = """
 ### Positive
 

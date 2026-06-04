@@ -174,7 +174,7 @@ error[E0102]: RFC not found: RFC-9999
 
 **Prompt format:**
 ```
-Delete work item WI-2026-01-19-001? [y/N]
+Delete work item WI-YYYY-MM-DD-NNN? [y/N]
 ```
 
 **Behavior:**
@@ -269,3 +269,16 @@ consequences = """
 - **Discoverability over uniformity:** Four clear verbs are better than one verb with special syntax that requires documentation.
 
 - **Safety over speed:** Confirmation prompts slow down destructive operations. This is intentional to prevent accidents."""
+
+[[content.alternatives]]
+text = "Document shared CLI implementation conventions."
+status = "accepted"
+pros = ["Keeps command behavior consistent across resources"]
+cons = ["Requires maintaining a single convention document"]
+
+[[content.alternatives]]
+text = "Leave CLI implementation details undocumented per command."
+status = "rejected"
+pros = ["No extra ADR maintenance"]
+cons = ["Commands drift in flags, prompts, errors, and help shape"]
+rejection_reason = "Inconsistent command behavior undermines RFC-0002's stable interface contract."

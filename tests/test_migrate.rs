@@ -4,6 +4,29 @@ mod common;
 
 use common::{TestResult, init_project, init_project_v1, run_commands};
 use std::fs;
+use std::io;
+use std::path::Path;
+
+fn current_schema_version(dir: &Path) -> Result<u32, Box<dyn std::error::Error>> {
+    let config = fs::read_to_string(dir.join("gov/config.toml"))?;
+    let parsed: toml::Value = toml::from_str(&config)?;
+    let version = parsed
+        .get("schema")
+        .and_then(|schema| schema.get("version"))
+        .and_then(toml::Value::as_integer)
+        .ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "missing gov/config.toml schema.version",
+            )
+        })?;
+    Ok(u32::try_from(version)?)
+}
+
+fn latest_schema_version() -> Result<u32, Box<dyn std::error::Error>> {
+    let temp_dir = init_project()?;
+    current_schema_version(temp_dir.path())
+}
 
 fn write_legacy_rfc_project(dir: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
     let rfc_dir = dir.join("gov/rfc/RFC-0001");
@@ -144,6 +167,7 @@ fn test_migrate_dry_run_previews_config_version_bump_without_artifact_changes() 
 #[test]
 fn test_migrate_is_noop_on_current_version() -> TestResult {
     let temp_dir = init_project()?;
+    let expected_version = current_schema_version(temp_dir.path())?;
 
     // Create an RFC so the project isn't empty, then migrate to bump version
     run_commands(
@@ -165,7 +189,7 @@ fn test_migrate_is_noop_on_current_version() -> TestResult {
     // Second migrate should be a noop
     let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
     assert!(
-        output.contains("already at schema version 2"),
+        output.contains(&format!("already at schema version {expected_version}")),
         "output: {}",
         output
     );
@@ -174,8 +198,83 @@ fn test_migrate_is_noop_on_current_version() -> TestResult {
 }
 
 #[test]
+fn test_migrate_syncs_stale_schema_file_at_current_version() -> TestResult {
+    let temp_dir = init_project()?;
+    let expected_version = current_schema_version(temp_dir.path())?;
+    let schema_path = temp_dir.path().join("gov/schema/work.schema.json");
+    fs::write(&schema_path, "{}\n")?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        output.contains(&format!(
+            "Synced 1 schema file(s); already at schema version {expected_version}"
+        )),
+        "output: {}",
+        output
+    );
+    assert_eq!(
+        fs::read_to_string(schema_path)?,
+        include_str!("../gov/schema/work.schema.json")
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_migrate_dry_run_reports_would_sync_at_current_version() -> TestResult {
+    let temp_dir = init_project()?;
+    let expected_version = current_schema_version(temp_dir.path())?;
+    let schema_path = temp_dir.path().join("gov/schema/work.schema.json");
+    fs::write(&schema_path, "{}\n")?;
+
+    let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]])?;
+    assert!(
+        output.contains(&format!(
+            "Would sync 1 schema file(s); already at schema version {expected_version}"
+        )),
+        "output: {}",
+        output
+    );
+    assert_eq!(fs::read_to_string(schema_path)?, "{}\n");
+
+    Ok(())
+}
+
+#[test]
+fn test_migrate_syncs_missing_local_state_gitignore_entry_at_current_version() -> TestResult {
+    let temp_dir = init_project()?;
+    let expected_version = current_schema_version(temp_dir.path())?;
+    let gitignore_path = temp_dir.path().join(".gitignore");
+    fs::write(&gitignore_path, ".govctl.lock\n")?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        output.contains(&format!(
+            "Synced 1 gitignore entry; already at schema version {expected_version}"
+        )),
+        "output: {}",
+        output
+    );
+
+    let gitignore = fs::read_to_string(gitignore_path)?;
+    assert_eq!(
+        gitignore.matches(".govctl.lock").count(),
+        1,
+        "migrate should not duplicate existing lock ignore entry"
+    );
+    assert!(
+        gitignore.lines().any(|line| line.trim() == ".govctl/"),
+        "migrate should add .govctl/ to .gitignore: {}",
+        gitignore
+    );
+
+    Ok(())
+}
+
+#[test]
 fn test_migrate_bumps_version_even_without_file_changes() -> TestResult {
     let temp_dir = init_project_v1()?;
+    let expected_version = latest_schema_version()?;
 
     // Create artifacts using govctl (already in new format with headers)
     run_commands(temp_dir.path(), &[&["rfc", "new", "New Format RFC"]])?;
@@ -186,15 +285,15 @@ fn test_migrate_bumps_version_even_without_file_changes() -> TestResult {
 
     let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
     assert!(
-        output.contains("Schema version bumped to 2"),
+        output.contains(&format!("Schema version bumped to {expected_version}")),
         "should bump version even with no file ops: {}",
         output
     );
 
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
     assert!(
-        config.contains("version = 2"),
-        "config should now be version 2: {}",
+        config.contains(&format!("version = {expected_version}")),
+        "config should now be version {expected_version}: {}",
         config
     );
 

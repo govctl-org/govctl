@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-04-004"
+title = "Fix migrate local state gitignore sync"
+status = "done"
+created = "2026-06-04"
+started = "2026-06-04"
+completed = "2026-06-04"
+refs = [
+    "RFC-0002",
+    "ADR-0043",
+]
+
+[content]
+description = "Ensure existing projects upgraded through govctl migrate also get local .govctl state ignored by git. New projects already receive .govctl.lock and .govctl/ entries during init; migrate should sync the same entries for pre-0.9 repositories."
+
+[[content.acceptance_criteria]]
+text = "govctl migrate adds missing .govctl local state entries to .gitignore for existing repositories"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "targeted migrate/init tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check warns when local .govctl state entries are missing from .gitignore"
+status = "done"
+category = "fixed"

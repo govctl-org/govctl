@@ -37,7 +37,6 @@ govctl work new --active "<title>"
 govctl work move <WI-ID> <status>
 govctl work set <WI-ID> description "Scope and why"
 govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
-govctl work add <WI-ID> notes "Do not retry old fixture path; it fails because snapshots are stale"
 govctl work add <WI-ID> refs RFC-0001
 govctl work add <WI-ID> tags <tag>
 govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
@@ -69,28 +68,29 @@ govctl render
 6. In source comments, reference artifacts with `[[artifact-id]]`.
 7. Use work item fields correctly:
    - `description`: task scope and why; set once, rarely change
-   - `notes`: durable learnings; record constraints, decisions, retry rules, and failure causes
+   - `notes`: closure-worthy durable facts only; record stable constraints, decisions, and retry rules that should still matter after the work item is done
 8. Avoid retry cycles. If the same approach already failed, do not repeat it unchanged.
 9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
 10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description` or `notes`.
 11. Create work items for durable, reader-useful outcomes only. Do not create separate work items for mechanical helper extraction, fixture sharing, file moves, formatting, or cleanup substeps.
 12. Do not invent loop IDs. Omit `--id` when starting a loop; use the generated `LOOP-YYYY-MM-DD-NNN` ID printed by the command for later `run`, `show`, `replan`, `add`, or `remove`.
 
-## Working Memory
+## Work Item Context
 
-The active work item is persistent working memory. Read it with `govctl work show <WI-ID>`; do not rely on raw TOML.
+The active work item is durable outcome context. Read it with `govctl work show <WI-ID>`; do not rely on raw TOML.
 
 ### Read order
 
 1. `description` tells you the scope.
-2. `notes` tells you what to remember before the next attempt.
+2. `notes` tells you closure-worthy constraints or lessons that should survive future sessions.
 3. `acceptance_criteria` tells you what must be true before closure.
 
 ### Write rules
 
-- Add a `notes` entry when you learn something future steps must obey.
-- Record execution trace in loop state when available.
-- On failure, put durable retry rules in `notes`.
+- Do not add `notes` by default. Add one only when the fact should remain useful after the work item is closed.
+- Never put progress, command output, review status, current plan, next action, temporary blocker, hypothesis, or "remember to do X" TODOs in `notes`.
+- Record execution trace, failed attempts, blockers, and next actions in loop state and round artifacts. If no loop exists, report them in the final response instead of writing them to the work item.
+- On failure, add a note only when you discovered a stable retry rule such as "Do not retry parser path X; it cannot preserve normalized arrays."
 
 ### Loop usage
 
@@ -211,10 +211,10 @@ Implementation rules:
 1. Keep changes focused.
 2. Follow RFC clauses and cite them in source comments when useful.
 3. After each substantive change, run the relevant validation.
-4. Update durable working memory as you go:
+4. Add durable work-item notes only when a closure-worthy fact exists:
 
 ```bash
-govctl work add <WI-ID> notes "Do not retry Y; it fails because Z"
+govctl work add <WI-ID> notes "Do not retry parser path X; it cannot preserve normalized arrays"
 ```
 
 ### 4. Test
@@ -229,8 +229,8 @@ Run the relevant verification for the change:
 
 If a check fails:
 
-- Record the failed attempt in loop state when available
-- Record the durable lesson or retry rule in `notes`
+- Record the failed attempt in loop state or the final response
+- Add a work-item note only for a stable retry rule that should survive closure
 - Change approach before retrying
 
 Do not continue until green.
@@ -282,12 +282,12 @@ govctl work move <WI-ID> done
 
 ### Otherwise recover and continue
 
-| Problem                       | Recovery                                        |
-| ----------------------------- | ----------------------------------------------- |
-| `govctl check` fails          | Read diagnostics, fix, rerun                    |
-| Tests fail                    | Debug, fix, rerun                               |
-| `work move ... done` rejected | Add or tick acceptance criteria first           |
-| Same failure repeats          | Read `notes`; record a new plan or stop and ask |
+| Problem                       | Recovery                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------ |
+| `govctl check` fails          | Read diagnostics, fix, rerun                                                               |
+| Tests fail                    | Debug, fix, rerun                                                                          |
+| `work move ... done` rejected | Add or tick acceptance criteria first                                                      |
+| Same failure repeats          | Read durable `notes`; record the new plan in loop state or final response, or stop and ask |
 
 ## Commit Conventions
 

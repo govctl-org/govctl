@@ -6,7 +6,10 @@ title = "Universal CRUD Verbs"
 kind = "normative"
 status = "active"
 since = "0.1.0"
-tags = ["cli", "editing"]
+tags = [
+    "cli",
+    "editing",
+]
 
 [content]
 text = """
@@ -60,17 +63,17 @@ Field names exposed via `get <id> <field>` MUST be stable identifiers defined by
 
 **4. `edit` - Update Resource**
 
-Syntax: `govctl <resource> edit <id> <field> [value]`
+Syntax: `govctl <resource> edit <id> <path> --set <value>` or `govctl <resource> edit <id> <path> --set --stdin`
 
-Updates a single field on a resource. Value can be provided as argument or via stdin.
+Updates a single field addressed by a deterministic path expression. Values can be provided through an explicit mutation flag or via stdin for multiline content.
 
 MUST support for: rfc, adr, work, clause, guard
 Behavior:
-- Simple fields: replace value
-- Array fields: special syntax (see ADR-0017 for implementation details)
-- MUST validate field names per resource schema
-- MUST validate values per field type
-- MUST support `--stdin` flag for multiline content
+- Simple fields: replace the value at the addressed path
+- Arrays and nested fields: MUST use deterministic path-based addressing, including indexed path expressions such as `content.alternatives[0].text`
+- MUST validate path syntax and reject unknown fields, invalid indices, and paths whose operation is not allowed by the resource schema
+- MUST validate values per field type before writing
+- MUST support `--stdin` with the explicit set operation for multiline content
 
 **5. `delete` - Delete Resource**
 

@@ -6,7 +6,10 @@ title = "Configurable work item ID strategies for multi-person collaboration"
 status = "accepted"
 date = "2026-01-26"
 refs = ["RFC-0000"]
-tags = ["collaboration", "work-items"]
+tags = [
+    "collaboration",
+    "work-items",
+]
 
 [content]
 context = """
@@ -15,8 +18,8 @@ The current work item ID format (`WI-YYYY-MM-DD-NNN`) uses local sequential numb
 **Problem:** When multiple people work on parallel branches and both create work items on the same day, they get the same ID:
 
 ```
-Alice: scans → max=002 → creates WI-2026-01-26-003
-Bob:   scans → max=002 → creates WI-2026-01-26-003 (collision!)
+Alice: scans → max=002 → creates WI-YYYY-MM-DD-003
+Bob:   scans → max=002 → creates WI-YYYY-MM-DD-003 (collision!)
 ```
 
 On merge, these IDs collide. This blocks multi-person teams from adopting govctl.

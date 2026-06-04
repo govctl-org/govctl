@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.9.0"
+version = "0.9.4"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "19ba6bf36bcbad55cf36d2e7d56993ed9e8d67ed98c6fe598ceb9ad86007fecf"
+signature = "8c6259a92889fd5cb0a87ca5798ca004168631bb63e824eb9c006dc9c90e369a"
 
 [[sections]]
 title = "Summary"
@@ -34,6 +34,30 @@ clauses = [
     "clauses/C-VERIFY-CONFIG.toml",
     "clauses/C-SELF-UPDATE.toml",
 ]
+
+[[changelog]]
+version = "0.9.4"
+date = "2026-06-04"
+notes = "Narrow project support diagnostics"
+changed = ["project-support diagnostics are scoped to govctl-managed local-state .gitignore entries"]
+
+[[changelog]]
+version = "0.9.3"
+date = "2026-06-04"
+notes = "Clarify edit path addressing"
+changed = ["edit operations use deterministic path-based addressing for arrays and nested fields"]
+
+[[changelog]]
+version = "0.9.2"
+date = "2026-06-04"
+notes = "Clarify project support file sync"
+changed = ["govctl check and migrate cover project support file freshness"]
+
+[[changelog]]
+version = "0.9.1"
+date = "2026-06-04"
+notes = "Require check to surface stale bundled schemas"
+changed = ["govctl check reports missing or stale bundled schema files and instructs users to run govctl migrate"]
 
 [[changelog]]
 version = "0.9.0"
