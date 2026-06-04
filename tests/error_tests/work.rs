@@ -1,0 +1,152 @@
+use super::*;
+
+#[test]
+fn test_work_legacy_inline_history_reports_info_and_passes_check() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    fs::write(
+        temp_dir
+            .path()
+            .join("gov/work/2026-01-01-legacy-history.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Legacy History"
+status = "queue"
+created = "2026-01-01"
+
+[content]
+description = "Work description"
+
+[[content.journal]]
+date = "2026-01-01"
+content = "Historical execution detail"
+"#,
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["check"], &["check", "--deny-warnings"]],
+    )?;
+    assert!(output.contains("info[I0401]"), "output: {}", output);
+    assert!(
+        output.contains("legacy inline execution history"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("notes"), "output: {}", output);
+    assert!(output.contains("loop state"), "output: {}", output);
+    assert!(output.contains("✓ All checks passed"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    assert!(!output.contains("exit: 1"), "output: {}", output);
+    Ok(())
+}
+
+/// Test: Work item files without legacy inline execution history do not report info
+#[test]
+fn test_work_without_legacy_inline_history_has_no_info() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    fs::write(
+        temp_dir.path().join("gov/work/2026-01-01-normal.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Normal Work"
+status = "queue"
+created = "2026-01-01"
+
+[content]
+description = "Work description"
+
+[[content.acceptance_criteria]]
+text = "Criterion"
+status = "pending"
+category = "added"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(!output.contains("info[I0401]"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_check_rejects_unknown_work_dependency() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    fs::write(
+        temp_dir
+            .path()
+            .join("gov/work/2026-01-01-unknown-dependency.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Unknown Dependency"
+status = "queue"
+created = "2026-01-01"
+depends_on = ["WI-2026-01-01-999"]
+
+[content]
+description = "Work description"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0410]"), "output: {}", output);
+    assert!(
+        output.contains("unknown work item dependency"),
+        "output: {}",
+        output
+    );
+    Ok(())
+}
+
+#[test]
+fn test_check_rejects_work_dependency_cycle() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    fs::write(
+        temp_dir.path().join("gov/work/2026-01-01-cycle-a.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Cycle A"
+status = "queue"
+created = "2026-01-01"
+depends_on = ["WI-2026-01-01-002"]
+
+[content]
+description = "Work description"
+"#,
+    )?;
+    fs::write(
+        temp_dir.path().join("gov/work/2026-01-01-cycle-b.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-002"
+title = "Cycle B"
+status = "queue"
+created = "2026-01-01"
+depends_on = ["WI-2026-01-01-001"]
+
+[content]
+description = "Work description"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0411]"), "output: {}", output);
+    assert!(
+        output.contains("cyclic work item dependency"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("WI-2026-01-01-001") || output.contains("WI-2026-01-01-002"),
+        "output: {}",
+        output
+    );
+    Ok(())
+}

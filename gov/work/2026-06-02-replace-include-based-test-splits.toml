@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-057"
+title = "Replace include-based test splits"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Replace integration-test `include!` splitting with normal Rust module declarations. Preserve existing test coverage and snapshot file names while removing `include!` as a test organization mechanism under `tests/`."
+
+[[content.acceptance_criteria]]
+text = "targeted integration tests, full tests, clippy, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "integration tests use normal Rust modules instead of `include!` for split test suites"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "existing integration-test coverage and insta snapshot names remain stable after module conversion"
+status = "done"
+category = "changed"

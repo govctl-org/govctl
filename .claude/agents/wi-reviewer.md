@@ -30,10 +30,8 @@ When invoked:
 
 ### Working Memory Fields
 
-- [ ] `journal`, if present, records actions and outcomes rather than task scope
 - [ ] `notes`, if present, record durable learnings, constraints, decisions, or retry rules
-- [ ] `notes` do not merely duplicate `journal`
-- [ ] Missing `journal` or `notes` is acceptable for very small work items
+- [ ] Missing `notes` is acceptable for very small work items
 
 ### Acceptance Criteria
 
@@ -53,7 +51,9 @@ When invoked:
 
 ### References
 
-- [ ] Links to governing RFCs/ADRs where applicable
+- [ ] All artifact IDs in description and notes use `[[artifact-id]]` syntax — never bare IDs like "ADR-0026" or "RFC-0001" in running text
+- [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
+- [ ] No redundant "References:" paragraph at the end of content fields — the `refs` field already tracks cross-references
 - [ ] If implementing an RFC, the RFC ID is in refs
 - [ ] If following an ADR, the ADR ID is in refs
 - [ ] If the work depends on requirements or decisions not yet captured in refs, the work item flags that gap instead of inventing authority locally
@@ -63,6 +63,9 @@ When invoked:
 - [ ] Work item is focused — one logical unit of work
 - [ ] Not too broad (should be completable in one session)
 - [ ] Not too narrow (shouldn't be split into multiple WIs)
+- [ ] Work item represents a durable outcome, not a mechanical helper/test/file-move step
+- [ ] If reviewing a related set, the set is not over-split into many low-value work items whose details belong in one higher-level work item, loop evidence, or the commit diff
+- [ ] Changelog-visible categories are not used for internal cleanup that should remain `chore:`
 
 ## Output Contract
 
@@ -83,4 +86,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", description fields that were abused as execution logs, and work items that invent requirements locally. Flag those as Critical.
+The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", description fields that were abused as execution logs, work items that invent requirements locally, and batches split into mechanical noise. Flag those as Critical.

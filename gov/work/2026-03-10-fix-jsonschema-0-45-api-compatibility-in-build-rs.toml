@@ -10,10 +10,7 @@ completed = "2026-03-10"
 
 [content]
 description = "Update build.rs to use jsonschema 0.45 API: JSONSchema::compile -> validator_for, validate -> iter_errors"
-
-[[content.journal]]
-date = "2026-03-10"
-content = "Removed use jsonschema::JSONSchema import; replaced JSONSchema::compile with jsonschema::validator_for; replaced validate+Err pattern with iter_errors; cargo check passes"
+notes = ["For jsonschema 0.45, use jsonschema::validator_for plus iter_errors; the older JSONSchema::compile API is not available."]
 
 [[content.acceptance_criteria]]
 text = "build.rs compiles with jsonschema 0.45"

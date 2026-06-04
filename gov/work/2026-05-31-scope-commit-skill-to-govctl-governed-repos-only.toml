@@ -1,0 +1,44 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-001"
+title = "scope commit skill to govctl-governed repos only"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+
+[content]
+description = """
+The /commit skill, when installed globally (e.g., in ~/.codex or ~/.agents/skills),
+fires in every repository — not just govctl-governed ones. During Codex goal workflows,
+the agent tries to commit after each compaction, causing meaningless govctl check calls
+in non-governed repos.
+
+Fix: Add a governance detection gate (check for gov/config.toml or gov/ directory)
+between Step 1 (Detect VCS) and Step 2 (Govctl Pre-Commit Checks) in the commit skill.
+When the repo is not governed, skip all govctl-specific steps and fall through to a
+plain VCS commit.
+
+See: https://github.com/govctl-org/govctl/issues/16"""
+notes = ["For jj-git colocated repositories, detect jj with jj root before checking git and avoid parallel VCS detection that could choose the wrong commit workflow."]
+
+[[content.acceptance_criteria]]
+text = "commit skill detects governance before running govctl commands"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "global skill copy at ~/.agents/skills/commit matches repo-local copy"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "non-governed repos skip govctl check and work item steps"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "governed repos continue to run full govctl workflow unchanged"
+status = "done"
+category = "fixed"

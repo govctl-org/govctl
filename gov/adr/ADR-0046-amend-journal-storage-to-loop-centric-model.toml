@@ -1,0 +1,79 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0046"
+title = "Use loop-centric execution state storage"
+status = "accepted"
+date = "2026-05-31"
+refs = [
+    "ADR-0043",
+    "RFC-0006",
+    "ADR-0047",
+]
+
+[content]
+context = """
+ADR-0043 chose a work-item-centric local execution-state layout under `.govctl/loops/<WI-ID>/`. ADR-0047 then removed execution history from the work item field surface while preserving render compatibility for legacy inline data.
+
+RFC-0006 introduces a unified loop model where one loop can drive one or more work items. A per-work-item storage root cannot represent a multi-work-item loop because dependency graph, execution order, aggregate lifecycle, failure propagation, and resumption are loop-level concepts.
+
+RFC-0006 now specifies `.govctl/loops/<loop-id>/state.toml` as the loop state anchor. That supersedes older storage-path wording that treated a per-loop execution-log file as the primary execution-tracking location. This ADR records the storage orientation for loop execution state so implementation does not inherit the older work-item-centric layout or legacy execution-history terminology."""
+decision = """
+We will store loop execution state by loop ID under `.govctl/loops/<loop-id>/`.
+
+The required state anchor is `.govctl/loops/<loop-id>/state.toml`. Optional detailed per-round artifacts live below the same loop directory as loop-level round records, for example `.govctl/loops/<loop-id>/rounds/round-NNN.toml`. Round artifacts may mention relevant Work Item IDs in their payload, but the canonical storage path is loop-level rather than per-work-item.
+
+Loop resumption supports two lookup paths: explicit lookup by loop ID, and root-set discovery when the caller provides the same explicit root work item set and exactly one matching non-terminal loop state exists. Ambiguous root-set matches require the caller to provide a loop ID.
+
+Work item files remain outcome artifacts. Durable context belongs in `notes`; execution trace belongs in loop state and round artifacts. ADR-0047 remains authoritative for removing execution history from the work item field surface. This ADR replaces the older work-item-centric storage direction from ADR-0043 with loop-centric execution state storage and resolves stale future-storage wording in favor of `state.toml`."""
+consequences = """
+### Positive
+
+- Enables unified multi-work-item loop execution with one shared state root.
+- Keeps dependency graph, execution order, lifecycle, failure propagation, and resumption state together.
+- Preserves the boundary that work item files are durable outcome artifacts, not execution traces.
+- Aligns local state layout with RFC-0006 and the ADR-0047 field-surface removal.
+- Gives resumption a deterministic fallback: exact loop ID first, root-set discovery only when unambiguous.
+
+### Negative
+
+- Existing experiments that wrote per-work-item local state need migration or removal. Mitigation: this work predates a stable loop implementation, so compatibility can be limited to explicit migration code or documented cleanup.
+- Loop ID generation becomes part of the storage contract. Mitigation: RFC-0006 constrains loop IDs to safe path segments and requires state to record the loop ID.
+- Root-set discovery requires scanning local loop state when no loop ID is provided. Mitigation: scanning is limited to non-terminal `state.toml` files under `.govctl/loops/`, and ambiguous matches are rejected.
+
+### Neutral
+
+- Detailed per-round artifacts are optional; `state.toml` is the required coordination point.
+- The `.govctl/loops/` directory remains local execution state and is not a governed artifact."""
+
+[[content.alternatives]]
+text = "Keep work-item-centric execution state storage"
+status = "rejected"
+pros = ["Smallest change to the older local-state direction"]
+cons = [
+    "Multi-WI coordination becomes complex",
+    "Resumption requires scanning multiple directories",
+    "Cannot represent one loop-level lifecycle for several work items",
+]
+rejection_reason = "A per-work-item state root cannot represent a multi-work-item loop lifecycle, dependency graph, failure propagation, or resumption state."
+
+[[content.alternatives]]
+text = "Use loop-centric execution state storage"
+status = "accepted"
+pros = [
+    "Natural multi-WI support",
+    "Shared loop state",
+    "Simpler resumption",
+]
+cons = ["Requires stable loop ID generation and lookup behavior"]
+
+[[content.alternatives]]
+text = "Use a per-loop execution-log file as the primary state anchor"
+status = "rejected"
+pros = ["Retains the older execution-log naming convention"]
+cons = [
+    "Cannot hold authoritative lifecycle and dependency graph state without becoming a mixed-purpose file",
+    "Conflicts with RFC-0006's state.toml storage contract",
+    "Keeps future loop execution tied to legacy execution-history terminology",
+]
+rejection_reason = "Loop execution needs an authoritative state file for lifecycle, dependency graph, work item statuses, and round counts; detailed logs may be separate optional artifacts, but state.toml is the coordination point."

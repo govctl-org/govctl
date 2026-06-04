@@ -1130,10 +1130,9 @@ dependencies = [
 
 [[package]]
 name = "govctl"
-version = "0.8.5"
+version = "0.9.0"
 dependencies = [
  "ansi-to-tui",
- "anyhow",
  "chrono",
  "clap",
  "clap_complete",

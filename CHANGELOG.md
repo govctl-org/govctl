@@ -10,6 +10,42 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-04
+
+### Added
+
+- Added the first local loop workflow. `govctl loop start`, `show`, `resume`, `run`, `list`, `add`, `remove`, and `replan` now operate on persisted loop state under `.govctl/loops/` instead of writing execution trace into work item fields.
+- Added canonical loop IDs (`LOOP-YYYY-MM-DD-NNN`), deterministic loop listing, lifecycle filters, and table/plain/json output for local loop state discovery.
+- Added work item dependencies through `depends_on`, including display support in `work show`/render output and validation for malformed, unknown, or cyclic dependencies.
+- Added dependency-aware loop planning. Loops compute an execution order from `depends_on`, preserve existing item state where possible, and mark downstream items blocked when dependencies fail or cancel.
+- Added loop state and round schemas for execution evidence, summaries, verification evidence, and note candidates.
+- Added non-blocking diagnostics for work items that still contain legacy inline execution-history entries, with guidance to move durable takeaways to notes and keep new execution trace in loop state.
+
+### Changed
+
+- Work item execution history is no longer modeled as an editable field. New work items omit `content.journal`; existing legacy entries still render correctly in `work show` and generated work item output.
+- Loop scope mutation now uses `work` as the editable field, keeps `wi` as the supported alias, and rejects legacy `work_items`/`root_work_items` field names.
+- `loop run` is specified as a local execution protocol that records and validates round evidence. It does not introduce a parallel resource CRUD model or a separate testing system.
+- CLI-visible command routing, file I/O, serialization, and scan paths now return coded `Diagnostic` values where possible. Remaining `anyhow` boundaries are documented as transport or test-only.
+- Embedded skills, agent guidance, CLI help, and `describe` output now direct execution trace to loop state and durable takeaways to notes.
+- Integration tests were converted from `include!`-based splitting to normal Rust modules, and several over-split helper modules were folded back into their callers.
+
+### Removed
+
+- Removed path-addressable work item journal operations. `journal` can no longer be fetched, added, edited, ticked, or removed as a work item field.
+- Removed support for legacy loop state keys `root_work_items` and `work_items`.
+- Removed legacy RFC/clause JSON storage compatibility from normal operation. Repositories that still contain `rfc.json` or clause JSON files now fail with `E0505` and must be migrated with govctl `<0.9` before upgrading.
+- Removed RFC/clause JSON conversion from `govctl migrate`. The command now upgrades TOML artifacts and schema metadata only.
+
+### Fixed
+
+- `govctl migrate` now treats the config version bump as part of the same transactional operation set as artifact rewrites, and rollback restores overwritten or deleted files if apply fails.
+- `govctl rfc supersede` now updates the source RFC, records the replacement, and rejects missing or invalid replacements with diagnostics.
+- `govctl clause delete` now refuses to delete clauses referenced by another artifact while preserving the existing draft-status and section-update behavior for safe deletions.
+- `refs` edits now validate target existence and RFC/ADR reference hierarchy before writing, including indexed `refs[N]` updates.
+- Acceptance-criteria ticking now matches category-prefixed patterns.
+- Commit skill behavior now detects whether a repository is governed before running `govctl` commands, so non-governed repositories skip governance checks while governed repositories keep the full workflow.
+
 ## [0.8.5] - 2026-05-25
 
 ### Added

@@ -1,120 +1,17 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
 
-use serde::Deserialize;
-use serde::Serialize;
-use serde_json::Value;
-use std::collections::HashSet;
+#[path = "build_support/agent_templates.rs"]
+mod agent_templates;
+#[path = "build_support/edit_ops_spec.rs"]
+mod edit_ops_spec;
+
+use agent_templates::generate_codex_agent_templates;
+use edit_ops_spec::{
+    EditOpsSpec, NestedNodeRule, RuntimeGetRule, RuntimeSetMode, RuntimeSetRule, load_edit_ops_spec,
+};
 use std::error::Error;
 use std::fs;
 use std::path::Path;
-
-#[derive(Debug, Deserialize)]
-struct EditOpsSpec {
-    version: u32,
-    aliases: Vec<AliasRule>,
-    legacy_prefixes: Vec<LegacyPrefixRule>,
-    simple_rules: Vec<SimpleFieldRule>,
-    runtime_fields: Vec<RuntimeFieldRule>,
-    nested_rules: Vec<NestedRootRule>,
-    validation_rules: Vec<FieldValidationRule>,
-}
-
-#[derive(Debug, Deserialize)]
-struct AliasRule {
-    alias: String,
-    canonical: String,
-}
-
-#[derive(Debug, Deserialize)]
-struct LegacyPrefixRule {
-    prefix: String,
-    allowed_fields: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct NestedRootRule {
-    artifact: String,
-    root: String,
-    content_path: Vec<String>,
-    node: NestedNodeRule,
-}
-
-#[derive(Debug, Deserialize)]
-struct NestedFieldRule {
-    name: String,
-    node: NestedNodeRule,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
-enum NestedNodeRule {
-    Scalar {
-        verbs: Vec<String>,
-        set_mode: Option<RuntimeSetMode>,
-    },
-    Object {
-        verbs: Vec<String>,
-        fields: Vec<NestedFieldRule>,
-    },
-    List {
-        verbs: Vec<String>,
-        text_key: Option<String>,
-        item: Box<NestedNodeRule>,
-    },
-}
-
-#[derive(Debug, Deserialize)]
-struct SimpleFieldRule {
-    artifact: String,
-    name: String,
-    kind: String,
-    verbs: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RuntimeFieldRule {
-    artifact: String,
-    name: String,
-    get: Option<RuntimeGetRule>,
-    set: Option<RuntimeSetRule>,
-    list_path: Option<Vec<String>>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RuntimeGetRule {
-    path: Vec<String>,
-    render: String,
-    status_key: Option<String>,
-    text_key: Option<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct RuntimeSetRule {
-    path: Vec<String>,
-    mode: RuntimeSetMode,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum RuntimeSetMode {
-    String,
-    Integer,
-    OptionalString {
-        empty_as_null: bool,
-    },
-    Enum {
-        allowed: Vec<String>,
-        invalid_msg: String,
-        code: Option<String>,
-    },
-}
-
-#[derive(Debug, Deserialize)]
-struct FieldValidationRule {
-    artifact: String,
-    field: String,
-    rule: String,
-}
 
 fn main() {
     // Recompile if any embedded .claude/ assets change
@@ -129,6 +26,7 @@ fn main() {
     println!("cargo:rerun-if-changed=.claude/skills/commit/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/migrate/SKILL.md");
     println!("cargo:rerun-if-changed=.claude/skills/decision-analysis/SKILL.md");
+    println!("cargo:rerun-if-changed=.claude/skills/detach/SKILL.md");
     // Agents
     println!("cargo:rerun-if-changed=.claude/agents/rfc-reviewer.md");
     println!("cargo:rerun-if-changed=.claude/agents/adr-reviewer.md");
@@ -146,14 +44,7 @@ fn main() {
 fn generate_edit_rules() -> Result<(), Box<dyn Error>> {
     let spec_path = Path::new("gov/schema/edit-ops.json");
     let schema_path = Path::new("gov/schema/edit-ops.schema.json");
-    let spec_text = fs::read_to_string(spec_path)?;
-    let schema_text = fs::read_to_string(schema_path)?;
-    let spec_value: Value = serde_json::from_str(&spec_text)?;
-    let schema_value: Value = serde_json::from_str(&schema_text)?;
-
-    validate_spec_against_schema(&schema_value, &spec_value)?;
-    let spec: EditOpsSpec = serde_json::from_value(spec_value)?;
-    validate_runtime_fields(&spec)?;
+    let spec = load_edit_ops_spec(spec_path, schema_path)?;
     let rendered = render_edit_rules(&spec)?;
     let rendered_runtime = render_edit_runtime(&spec)?;
     let out_dir = std::env::var("OUT_DIR")?;
@@ -164,70 +55,12 @@ fn generate_edit_rules() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn validate_spec_against_schema(schema: &Value, instance: &Value) -> Result<(), Box<dyn Error>> {
-    let compiled = jsonschema::validator_for(schema)
-        .map_err(|err| format!("invalid edit-ops schema: {err}"))?;
-    let mut diagnostics: Vec<String> = compiled
-        .iter_errors(instance)
-        .map(|err| err.to_string())
-        .collect();
-    if !diagnostics.is_empty() {
-        diagnostics.sort();
-        diagnostics.dedup();
-        let body = diagnostics
-            .into_iter()
-            .map(|d| format!("  - {d}"))
-            .collect::<Vec<_>>()
-            .join("\n");
-        return Err(format!("edit-ops.json failed schema validation:\n{body}").into());
-    }
-    Ok(())
-}
-
-fn validate_runtime_fields(spec: &EditOpsSpec) -> Result<(), Box<dyn Error>> {
-    let mut seen = HashSet::new();
-    for field in &spec.runtime_fields {
-        let key = format!("{}:{}", field.artifact, field.name);
-        if !seen.insert(key.clone()) {
-            return Err(format!("duplicate runtime_fields entry in SSOT: {key}").into());
-        }
-        let simple = spec
-            .simple_rules
-            .iter()
-            .find(|rule| rule.artifact == field.artifact && rule.name == field.name)
-            .ok_or_else(|| format!("runtime_fields entry missing matching simple_rule: {}", key))?;
-
-        if field.get.is_some() && !simple.verbs.iter().any(|v| v == "get") {
-            return Err(format!(
-                "runtime_fields {} defines get but simple_rules does not allow get",
-                key
-            )
-            .into());
-        }
-        if field.set.is_some() && !simple.verbs.iter().any(|v| v == "set") {
-            return Err(format!(
-                "runtime_fields {} defines set but simple_rules does not allow set",
-                key
-            )
-            .into());
-        }
-        if field.list_path.is_some() && !simple.verbs.iter().any(|v| v == "add" || v == "remove") {
-            return Err(format!(
-                "runtime_fields {} defines list_path but simple_rules has no add/remove verb",
-                key
-            )
-            .into());
-        }
-    }
-    Ok(())
-}
-
 fn render_edit_rules(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
     let mut out = String::new();
     out.push_str("// @generated by build.rs from gov/schema/edit-ops.json\n");
     out.push_str("// Do not edit manually.\n\n");
     out.push_str(&format!(
-        "#[allow(dead_code)]\npub const EDIT_RULES_VERSION: u32 = {};\n\n",
+        "#[cfg(test)]\npub const EDIT_RULES_VERSION: u32 = {};\n\n",
         spec.version
     ));
 
@@ -423,10 +256,6 @@ fn render_nested_scalar_mode_expr(mode: Option<&RuntimeSetMode>) -> Result<Strin
         None => Ok("None".to_string()),
         Some(RuntimeSetMode::String) => Ok("Some(NestedScalarMode::String)".to_string()),
         Some(RuntimeSetMode::Integer) => Ok("Some(NestedScalarMode::Integer)".to_string()),
-        Some(RuntimeSetMode::OptionalString { empty_as_null }) => Ok(format!(
-            "Some(NestedScalarMode::OptionalString {{ empty_as_null: {} }})",
-            empty_as_null
-        )),
         Some(RuntimeSetMode::Enum {
             allowed,
             invalid_msg,
@@ -460,86 +289,6 @@ fn diagnostic_code_variant(code: &str) -> Result<&str, Box<dyn Error>> {
         .map(|_| code)
         .ok_or_else(|| format!("invalid diagnostic code in SSOT: {code}").into())
 }
-
-// ---------------------------------------------------------------------------
-// Codex agent template codegen
-// ---------------------------------------------------------------------------
-
-/// YAML frontmatter from a Claude Code agent .md file.
-#[derive(Debug, Deserialize)]
-struct AgentFrontmatter {
-    name: String,
-    description: String,
-}
-
-/// Codex agent role TOML structure.
-#[derive(Debug, Serialize)]
-struct CodexAgentRole {
-    name: String,
-    description: String,
-    developer_instructions: String,
-}
-
-/// Agent source files to convert (relative to repo root).
-const AGENT_SOURCES: &[&str] = &[
-    ".claude/agents/rfc-reviewer.md",
-    ".claude/agents/adr-reviewer.md",
-    ".claude/agents/wi-reviewer.md",
-    ".claude/agents/compliance-checker.md",
-];
-
-fn generate_codex_agent_templates() -> Result<(), Box<dyn Error>> {
-    let mut entries = Vec::new();
-
-    for source in AGENT_SOURCES {
-        let content =
-            fs::read_to_string(source).map_err(|e| format!("failed to read {source}: {e}"))?;
-
-        let (frontmatter, body) = parse_agent_frontmatter(&content)
-            .map_err(|e| format!("failed to parse frontmatter in {source}: {e}"))?;
-
-        let role = CodexAgentRole {
-            name: frontmatter.name.clone(),
-            description: frontmatter.description.clone(),
-            developer_instructions: body.to_string(),
-        };
-
-        let toml_content = toml::to_string_pretty(&role)
-            .map_err(|e| format!("failed to serialize codex TOML for {source}: {e}"))?;
-
-        let out_filename = format!("agents/{}.toml", frontmatter.name);
-        entries.push((out_filename, toml_content));
-    }
-
-    // Generate Rust source with the TOML strings as constants
-    let mut out = String::new();
-    out.push_str("// @generated by build.rs from .claude/agents/*.md\n");
-    out.push_str("// Do not edit manually.\n\n");
-    out.push_str("pub const AGENT_TEMPLATES_CODEX: &[(&str, &str)] = &[\n");
-    for (path, content) in &entries {
-        out.push_str(&format!("    ({:?}, {:?}),\n", path, content));
-    }
-    out.push_str("];\n");
-
-    let out_dir = std::env::var("OUT_DIR")?;
-    let out_path = Path::new(&out_dir).join("agent_codex_templates.rs");
-    fs::write(out_path, out)?;
-    Ok(())
-}
-
-/// Parse `---` delimited YAML frontmatter from a markdown file.
-/// Returns (parsed frontmatter, body after second `---`).
-fn parse_agent_frontmatter(content: &str) -> Result<(AgentFrontmatter, &str), Box<dyn Error>> {
-    let content = content.strip_prefix("---").ok_or("missing opening ---")?;
-    let (yaml_block, rest) = content.split_once("---").ok_or("missing closing ---")?;
-    let fm: AgentFrontmatter = serde_yaml::from_str(yaml_block.trim())?;
-    let body = rest.trim_start_matches(['\n', '\r']);
-    Ok((fm, body))
-}
-
-// ---------------------------------------------------------------------------
-// Edit runtime codegen
-// ---------------------------------------------------------------------------
 
 fn render_edit_runtime(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
     let mut out = String::new();
@@ -643,10 +392,6 @@ fn runtime_set_expr(set: Option<&RuntimeSetRule>) -> Result<String, Box<dyn Erro
     let mode = match &set.mode {
         RuntimeSetMode::String => "SetMode::String".to_string(),
         RuntimeSetMode::Integer => "SetMode::Integer".to_string(),
-        RuntimeSetMode::OptionalString { empty_as_null } => format!(
-            "SetMode::OptionalString {{ empty_as_null: {} }}",
-            empty_as_null
-        ),
         RuntimeSetMode::Enum {
             allowed,
             invalid_msg,

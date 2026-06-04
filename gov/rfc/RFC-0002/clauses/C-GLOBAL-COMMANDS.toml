@@ -10,7 +10,7 @@ tags = ["cli"]
 
 [content]
 text = """
-The following commands operate across all resources and MUST remain at the global namespace level:
+The following commands operate at the project or CLI level and MUST remain at the global namespace level rather than under an artifact resource namespace:
 
 **1. `govctl init`**
 
@@ -42,7 +42,7 @@ Behavior:
 - Verifies cross-references
 - Validates the semantic correctness of the optional `[verification]` section in `gov/config.toml`, including that configured default guard IDs resolve
 - Scans source code for references (if enabled in config)
-- In repositories that have completed RFC/clause migration, if legacy JSON RFC or clause files are detected, MUST fail with a migration-required diagnostic that points to `govctl migrate`
+- If legacy JSON RFC or clause storage files are detected, MUST fail with a migration-required diagnostic that instructs users to run `govctl migrate` with a govctl version earlier than 0.9 before upgrading
 - Returns exit code 0 if valid, non-zero if errors
 - With `--deny-warnings`: treats warnings as errors
 
@@ -66,7 +66,7 @@ Generates markdown documentation from source-of-truth governance artifacts.
 Syntax: `govctl render [targets...] [--output-dir PATH] [--dry-run]`
 
 Behavior:
-- In repositories that have completed RFC/clause migration, renders RFCs from TOML to markdown (published)
+- Renders RFCs from TOML to markdown (published)
 - Renders ADRs from TOML to markdown (local only)
 - Renders work items from TOML to markdown (local only)
 - Generates CHANGELOG.md from releases
@@ -111,12 +111,13 @@ Syntax: `govctl migrate [--dry-run]`
 Behavior:
 - Reads the current schema version from `gov/config.toml` `[schema] version`
 - Runs all pending migration steps from the current version to the latest
-- Each step produces a set of file operations (writes and deletes) executed transactionally
+- Each step produces a set of file operations executed transactionally
 - Bumps `[schema] version` in `gov/config.toml` after successful migration
 - MUST leave the repository unchanged if any step fails
 - MUST be safe to run on an already-migrated repository and report a no-op result
 - MUST NOT perform heuristic project discovery or broad adoption tasks
 - MUST ensure all bundled JSON Schema files exist in `gov/schema/`, overwriting with the latest version regardless of schema version (per ADR-0035)
+- In govctl 0.9 and later, MUST NOT convert legacy JSON RFC or clause storage; repositories with those files MUST be migrated with a govctl version earlier than 0.9 before upgrading
 
 **8. `govctl verify`**
 
@@ -181,6 +182,19 @@ Behavior:
 - With `--check`: prints version comparison without downloading
 - Full specification in [[RFC-0002:C-SELF-UPDATE]]
 
+**12. `govctl loop`**
+
+Manages project-local loop execution state for driving work items through iterative rounds.
+
+Syntax: `govctl loop <subcommand> [arguments] [flags]`
+
+Behavior:
+- Operates on local execution state under `.govctl/loops/`, not on a governed artifact resource
+- Coordinates work items, verification guards, and local loop state according to [[RFC-0006]]
+- MUST NOT expose universal CRUD field-editing verbs for loop state
+- MUST keep work item lifecycle transitions routed through `govctl work` semantics
+- MUST use stable subcommand and argument semantics defined by [[RFC-0006:C-LOOP-COMMAND-SURFACE]]
+
 **Rationale:**
 
 These commands are global because they:
@@ -188,6 +202,7 @@ These commands are global because they:
 2. Don't fit the `<resource> <verb>` pattern semantically
 3. Are project-level operations, not resource-level
 4. Match user mental model of "project commands" vs "resource commands"
+5. May manage local execution state that coordinates governed resources without becoming a governed resource itself
 
 `govctl migrate` qualifies because it operates across the governance repository as a whole and changes multiple resource types in one coordinated step.
 
@@ -199,9 +214,12 @@ These commands are global because they:
 
 `govctl self-update` qualifies because it provides meta-information about the CLI itself and performs binary lifecycle management (criterion 3).
 
+`govctl loop` qualifies because it manages local execution state that coordinates work items and verification guards without making loop state a governed resource (criterion 5).
+
 **Future Additions:**
 
 New global commands MAY be added via RFC amendment. They MUST meet at least one criterion:
 1. Operate on multiple resource types
 2. Perform project-level initialization or cleanup
-3. Provide meta-information about the CLI itself"""
+3. Provide meta-information about the CLI itself
+4. Manage local execution state that coordinates governed resources without becoming a governed resource itself"""

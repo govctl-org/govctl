@@ -14,17 +14,10 @@ refs = [
 
 [content]
 description = "Fix guard execution so noisy commands and commands that spawn child processes do not incorrectly time out after the primary command exits successfully. The work focuses on `src/verification.rs` guard process management, `stdout`/`stderr` draining, timeout diagnostics, and regression coverage for noisy output or pipe backpressure."
-notes = ["GitHub issue: https://github.com/govctl-org/govctl/issues/15"]
-
-[[content.journal]]
-date = "2026-05-25"
-scope = "verification"
-content = "Reworked guard execution to drain `stdout` and `stderr` concurrently while the shell command runs, and to clean up the guard process group on timeout or after the primary shell exits so inherited pipe handles from child processes cannot block output collection. Timeout diagnostics now report whether the primary shell process was still running when timeout handling began. Added regression tests for a noisy guard that previously timed out under pipe backpressure and for the timeout diagnostic wording. Verified with `cargo test -q --test test_verify`, `cargo fmt --check`, and `govctl check`."
-
-[[content.journal]]
-date = "2026-05-25"
-scope = "verification"
-content = "After closing the work item, suppressed expected `kill` cleanup errors from process-group termination so successful guard runs do not leak cleanup noise to stderr. Re-verified with `cargo test -q --test test_verify`, `cargo run --quiet -- verify GUARD-GOVCTL-CHECK`, `cargo run --quiet -- verify GUARD-CARGO-TEST`, and `govctl check`."
+notes = [
+    "GitHub issue: https://github.com/govctl-org/govctl/issues/15",
+    "Guard execution must drain stdout and stderr concurrently while the command runs; sequential collection can deadlock or turn noisy successful commands into timeouts.",
+]
 
 [[content.acceptance_criteria]]
 text = "Drain guard `stdout` and `stderr` while the command is running so large uncaptured output cannot block successful commands"

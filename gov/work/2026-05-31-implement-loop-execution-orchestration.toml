@@ -1,0 +1,47 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-012"
+title = "Implement loop execution orchestration"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+refs = [
+    "RFC-0006",
+    "ADR-0044",
+    "ADR-0046",
+]
+
+[content]
+description = "Implement the first executable loop runner on top of the loop command surface. This slice coordinates queue-to-active transitions, guard verification, done transitions, failure handling, and loop-state updates while keeping round-by-round execution trace outside work item fields."
+
+[[content.acceptance_criteria]]
+text = "Loop runner transitions queued work items to active through govctl work move semantics"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Loop runner evaluates acceptance criteria and required guards before moving work items to done"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Loop runner records round counts statuses and failure or blocked outcomes in loop state"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Failed work items remain active while loop state records failure and propagates blocked dependents"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests cover success failure guard failure and resume behavior"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

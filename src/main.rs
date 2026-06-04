@@ -3,6 +3,7 @@
 use clap::Parser;
 use std::process::ExitCode;
 
+mod artifact_index;
 mod cli;
 mod cmd;
 mod command_router;
@@ -10,6 +11,8 @@ mod config;
 mod diagnostic;
 mod load;
 mod lock;
+mod loop_planner;
+mod loop_state;
 mod model;
 mod parse;
 mod render;
@@ -17,6 +20,7 @@ mod resource_plan;
 mod scan;
 mod schema;
 mod signature;
+mod status_counts;
 mod terminal_md;
 mod theme;
 mod ui;
@@ -31,7 +35,7 @@ mod tui;
 pub(crate) use cli::*;
 
 use config::Config;
-use diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel};
+use diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticResult, Diagnostics};
 
 fn main() -> ExitCode {
     let cli = Cli::parse();
@@ -67,19 +71,14 @@ fn main() -> ExitCode {
                 ExitCode::SUCCESS
             }
         }
-        Err(e) => {
-            // Try to extract Diagnostic for structured error output
-            if let Some(diag) = e.downcast_ref::<Diagnostic>() {
-                ui::diagnostic(diag);
-            } else {
-                ui::error(&e);
-            }
+        Err(diag) => {
+            ui::diagnostic(&diag);
             ExitCode::FAILURE
         }
     }
 }
 
-fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
+fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
     let config = Config::load(cli.config.as_deref())?;
     let op = write::WriteOp::from_dry_run(cli.dry_run);
 
@@ -100,11 +99,7 @@ fn run(cli: &Cli) -> anyhow::Result<Vec<Diagnostic>> {
             let gov_root = config.gov_root.as_path();
             if !op.is_preview() && !gov_root.exists() {
                 std::fs::create_dir_all(gov_root).map_err(|e| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0901IoError,
-                        format!("Failed to create gov root: {}", e),
-                        gov_root.display().to_string(),
-                    )
+                    Diagnostic::io_error("create gov root", e, gov_root.display().to_string())
                 })?;
             }
         }

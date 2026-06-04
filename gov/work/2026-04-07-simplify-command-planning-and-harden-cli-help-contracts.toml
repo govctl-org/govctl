@@ -10,16 +10,7 @@ completed = "2026-04-07"
 
 [content]
 description = "Final scope: replace stale command-router intermediate plans with the final command-planning shape, keep shared CLI command families where they reduce real duplication, and raise command help to a spec-grade contract for agent use."
-
-[[content.journal]]
-date = "2026-04-07"
-scope = "governance"
-content = "Created replacement WI to represent the final command-planning/help outcome before removing stale intermediate work items"
-
-[[content.journal]]
-date = "2026-04-07"
-scope = "governance"
-content = "Removed stale uncommitted intermediate WI files directly after confirming govctl cannot delete or cancel done work items; retained WI-2026-04-07-001/002 as meaningful final units and consolidated the rest into WI-2026-04-07-021."
+notes = ["Done work items are terminal in govctl; avoid creating stale intermediate work items, because completed items cannot be cancelled or deleted through normal lifecycle commands."]
 
 [[content.acceptance_criteria]]
 text = "command planning uses the final direct-to-plan structure without retaining stale intermediate router abstractions"

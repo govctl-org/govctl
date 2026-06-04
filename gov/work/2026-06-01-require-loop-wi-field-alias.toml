@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-212"
+title = "Require loop wi field alias"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+refs = ["RFC-0006"]
+
+[content]
+description = "Codify that loop field mutation must retain the short `wi` field alias for the canonical `work` field, while legacy names such as `work_items` and `root_work_items` remain unsupported."
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 requires the loop `wi` field alias for `work` scope mutation"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Loop tests continue to accept `wi` and reject `work_items`/`root_work_items`"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "govctl check and loop scope tests pass"
+status = "done"
+category = "chore"

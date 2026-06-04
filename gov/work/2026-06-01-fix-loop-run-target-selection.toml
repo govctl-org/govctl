@@ -1,0 +1,41 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-179"
+title = "Fix loop run target selection"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+refs = [
+    "RFC-0006",
+    "RFC-0002",
+]
+
+[content]
+description = "Clarify the loop CLI/API contract against RFC-0002 and RFC-0006, then align implementation and tests so loop commands have stable namespace, work-field scope mutation, resumption, and targeted execution semantics without positional argument overloading."
+
+[[content.acceptance_criteria]]
+text = "govctl check and relevant cargo tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC-0002 classifies loop as a project-level local execution-state command namespace"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 defines loop command-surface semantics without positional argument overloading"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "CLI help and routing distinguish loop work-field discovery, scope mutation, resume, and targeted run selectors"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Loop tests cover positional loop IDs and targeted execution"
+status = "done"
+category = "chore"

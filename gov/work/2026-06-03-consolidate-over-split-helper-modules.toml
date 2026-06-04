@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-03-013"
+title = "Consolidate over-split helper modules"
+status = "done"
+created = "2026-06-03"
+started = "2026-06-03"
+completed = "2026-06-03"
+
+[content]
+description = "Consolidate confirmed over-split source modules from the repository review while preserving behavior. Excludes loop round local-state storage, which needs a separate redesign."
+notes = ["Loop round local-state storage is intentionally excluded from this cleanup; it needs a separate redesign."]
+
+[[content.acceptance_criteria]]
+text = "Small CLI/tag-only helper modules are merged where they add no reusable boundary"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Edit target handlers no longer use thin get/remove micro modules"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Loop execution and validation micro helpers are consolidated without behavior changes"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "cargo test passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

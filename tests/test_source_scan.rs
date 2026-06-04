@@ -2,55 +2,57 @@
 
 mod common;
 
-use common::{init_project, normalize_output, run_commands, today};
+use common::{init_project_with_date, normalize_output, run_commands};
 use std::fs;
 
-/// Test: Source code scanning detects valid and invalid [[RFC-XXX:C-XXX]] references
 #[test]
 fn test_source_scan_detects_refs() -> common::TestResult {
-    let temp_dir = init_project()?;
-    let date = today();
+    let (temp_dir, date) = init_project_with_date()?;
 
     // Create RFC with a valid clause
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
 
     fs::write(
-        rfc_dir.join("rfc.json"),
-        r#"{
-  "rfc_id": "RFC-0001",
-  "title": "Test RFC",
-  "version": "1.0.0",
-  "status": "normative",
-  "phase": "stable",
-  "owners": ["@test"],
-  "created": "2026-01-17",
-  "sections": [
-    {
-      "title": "Specification",
-      "clauses": ["clauses/C-VALID.json"]
-    }
-  ],
-  "changelog": [
-    {
-      "version": "1.0.0",
-      "date": "2026-01-17",
-      "notes": "Initial release"
-    }
-  ]
-}"#,
+        rfc_dir.join("rfc.toml"),
+        r#"#:schema ../../schema/rfc.schema.json
+
+[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Test RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["@test"]
+created = "2026-01-17"
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-VALID.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-17"
+notes = "Initial release"
+"#,
     )?;
 
     fs::write(
-        rfc_dir.join("clauses/C-VALID.json"),
-        r#"{
-  "clause_id": "C-VALID",
-  "title": "Valid Clause",
-  "kind": "normative",
-  "status": "active",
-  "text": "This is a valid clause.",
-  "since": "1.0.0"
-}"#,
+        rfc_dir.join("clauses/C-VALID.toml"),
+        r#"#:schema ../../../schema/clause.schema.json
+
+[govctl]
+schema = 1
+id = "C-VALID"
+title = "Valid Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "This is a valid clause."
+"#,
     )?;
 
     // Create source file with references
@@ -80,6 +82,7 @@ fn main() {
     )?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    insta::assert_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    let normalized = normalize_output(&output, temp_dir.path(), &date)?;
+    crate::assert_current_test_snapshot!("test_source_scan", normalized);
     Ok(())
 }

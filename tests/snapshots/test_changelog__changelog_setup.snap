@@ -18,6 +18,8 @@ Created: gov/schema/adr.schema.json
 Created: gov/schema/work.schema.json
 Created: gov/schema/release.schema.json
 Created: gov/schema/guard.schema.json
+Created: gov/schema/loop-state.schema.json
+Created: gov/schema/loop-round.schema.json
 Created: .gitignore
 ✓ Project initialized
 hint: To install agent skills locally: govctl init-skills

@@ -111,16 +111,15 @@ pub const ARTIFACT_SCHEMA_TEMPLATES: &[SchemaTemplate] = &[
         filename: "guard.schema.json",
         content: include_str!("../gov/schema/guard.schema.json"),
     },
+    SchemaTemplate {
+        filename: "loop-state.schema.json",
+        content: include_str!("../gov/schema/loop-state.schema.json"),
+    },
+    SchemaTemplate {
+        filename: "loop-round.schema.json",
+        content: include_str!("../gov/schema/loop-round.schema.json"),
+    },
 ];
-
-pub fn validate_json_value(
-    kind: ArtifactSchema,
-    config: &Config,
-    artifact_path: &Path,
-    value: &Value,
-) -> Result<(), Diagnostic> {
-    validate_value(kind, config, artifact_path, value)
-}
 
 pub fn validate_toml_value(
     kind: ArtifactSchema,

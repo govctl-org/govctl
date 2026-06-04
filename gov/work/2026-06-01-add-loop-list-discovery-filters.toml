@@ -1,0 +1,33 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-099"
+title = "Add loop list discovery filters"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+refs = ["RFC-0006"]
+
+[content]
+description = "Add practical discovery filters to govctl loop list so agents and humans can find resumable local loop state without scanning every completed loop. This slice preserves existing table/plain/json fields and deterministic ordering while adding filter and limit behavior aligned with other list commands."
+
+[[content.acceptance_criteria]]
+text = "loop list accepts a filter argument for lifecycle states plus a resumable/open alias covering non-terminal loop states"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "loop list supports -n/--limit after filtering while preserving deterministic loop ID ordering"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "loop list tests cover lifecycle filtering, resumable/open aliases, and limit behavior"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and focused loop tests pass"
+status = "done"
+category = "chore"

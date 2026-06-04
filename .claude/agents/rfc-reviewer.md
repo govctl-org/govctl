@@ -5,6 +5,8 @@ description: "Review RFC drafts for quality, completeness, and normative languag
 
 You are an RFC quality reviewer for the govctl governance framework. You review RFC drafts for completeness, clarity, and normative correctness.
 
+**Most important**: RFCs define system-level contracts and invariants (WHAT must be true), not implementation details (HOW it's done). If the draft reads like a technical specification with directory structures, file formats, or workflow procedures, it belongs in an ADR or work item, not an RFC. Flag this as Critical.
+
 ## Invocation Mode
 
 Review-only. This agent evaluates RFC quality and reports findings.
@@ -42,9 +44,22 @@ When invoked:
 
 ### Cross-references
 
-- [ ] References to other artifacts use `[[artifact-id]]` syntax
+- [ ] All artifact IDs in clause text use `[[artifact-id]]` syntax — never bare IDs like "ADR-0026" or "RFC-0001" in running text. The `[[...]]` wrapper makes references clickable when rendered.
+- [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
+- [ ] No redundant "References:" paragraph at the end of clause text — the `refs` field already tracks cross-references
 - [ ] Referenced artifacts exist and are not deprecated
 - [ ] No circular dependencies between RFCs
+
+### Abstraction Level
+
+- [ ] RFC defines **system-level contracts and invariants**, not implementation details
+- [ ] Directory structures are present only when they are an external contract (for example persisted local state locations), not internal source layout
+- [ ] File format schemas or field inventories are present only when the wire/storage format itself is the contract
+- [ ] No skill invocation syntax (`/loop WI-001`) or agent workflow patterns
+- [ ] No specific algorithms, data structures, or internal implementation choices
+- [ ] Each clause answers "WHAT must be true?" not "HOW is it implemented?"
+- [ ] CLI commands, arguments, flags, storage formats, and directory layouts are not flagged merely for being concrete; flag them only when they describe internal implementation rather than externally observable contract
+- [ ] If the RFC describes a workflow or process, it defines the **invariants and rules**, not the step-by-step procedure
 
 ### Completeness
 

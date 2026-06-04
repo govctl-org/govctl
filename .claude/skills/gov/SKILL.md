@@ -37,12 +37,18 @@ govctl work new --active "<title>"
 govctl work move <WI-ID> <status>
 govctl work set <WI-ID> description "Scope and why"
 govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
-govctl work add <WI-ID> journal "Ran tests; fixed parser bug" --scope parser
 govctl work add <WI-ID> notes "Do not retry old fixture path; it fails because snapshots are stale"
 govctl work add <WI-ID> refs RFC-0001
 govctl work add <WI-ID> tags <tag>
+govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
 govctl tag new <tag>
 govctl tag list
+govctl loop list open
+govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]
+govctl loop run <LOOP-ID>
+govctl loop replan <LOOP-ID>
+govctl loop add <LOOP-ID> work <ROOT-WI-ID>
+govctl loop remove <LOOP-ID> work <ROOT-WI-ID>
 govctl rfc list
 govctl adr list
 govctl rfc new "<title>"
@@ -63,11 +69,12 @@ govctl render
 6. In source comments, reference artifacts with `[[artifact-id]]`.
 7. Use work item fields correctly:
    - `description`: task scope and why; set once, rarely change
-   - `journal`: execution log; append actions and outcomes
    - `notes`: durable learnings; record constraints, decisions, retry rules, and failure causes
-8. Avoid loops. If the same approach already failed, do not repeat it unchanged.
+8. Avoid retry cycles. If the same approach already failed, do not repeat it unchanged.
 9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
-10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description`, `journal`, or `notes`.
+10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description` or `notes`.
+11. Create work items for durable, reader-useful outcomes only. Do not create separate work items for mechanical helper extraction, fixture sharing, file moves, formatting, or cleanup substeps.
+12. Do not invent loop IDs. Omit `--id` when starting a loop; use the generated `LOOP-YYYY-MM-DD-NNN` ID printed by the command for later `run`, `show`, `replan`, `add`, or `remove`.
 
 ## Working Memory
 
@@ -76,17 +83,43 @@ The active work item is persistent working memory. Read it with `govctl work sho
 ### Read order
 
 1. `description` tells you the scope.
-2. `journal` tells you what was tried and what happened.
-3. `notes` tells you what to remember before the next attempt.
-4. `acceptance_criteria` tells you what must be true before closure.
+2. `notes` tells you what to remember before the next attempt.
+3. `acceptance_criteria` tells you what must be true before closure.
 
 ### Write rules
 
-- Add a `journal` entry after meaningful progress, verification, or failure.
 - Add a `notes` entry when you learn something future steps must obey.
-- On failure, write both when appropriate:
-  - `journal`: what you ran and what failed
-  - `notes`: why it failed, what not to retry, or what to try instead
+- Record execution trace in loop state when available.
+- On failure, put durable retry rules in `notes`.
+
+### Loop usage
+
+Use a loop only when a task has multiple independently meaningful work items. A loop coordinates durable work; it is not permission to split one cleanup/refactor into mechanical work-item fragments.
+
+1. Create or activate only the work items that represent durable outcomes a future reader should see.
+2. Add `depends_on` edges for hard execution ordering.
+3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
+4. Start one loop for the batch root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
+5. Run `govctl loop run <LOOP-ID>` to open a local round for ready work.
+6. Perform implementation, verification, and any explicit `govctl work move` commands yourself.
+7. Fill the opened `.govctl/loops/<LOOP-ID>/rounds/round-NNN.toml` summary evidence.
+8. Run `govctl loop run <LOOP-ID>` again to validate and close the round.
+
+When resuming after an interruption or inspecting current local execution state, run `govctl loop list open` first. Use the listed generated loop ID for `run`, `show`, `resume`, `add`, `remove`, or `replan`; do not guess a loop ID from memory.
+
+`govctl loop run` advances local round state only. It does not implement code, tick acceptance criteria, add notes, or move Work Items to `done`.
+
+If the scope changes during execution, keep the same loop identity:
+
+- Use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>` when newly discovered work belongs in the current batch.
+- Use `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>` when a root no longer belongs in the batch.
+- Use `govctl loop replan <LOOP-ID>` after dependency edits that should refresh the current closure.
+
+`work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
+
+Do not create scattered single-item loops for work that is part of one coherent batch.
+
+Do not create separate work items for low-level implementation slices such as helper moves, test fixture sharing, module normalization, comment cleanup, snapshot reshaping, or other changes whose only durable record should be the commit diff or one higher-level work item.
 
 ## Workflow
 
@@ -98,7 +131,7 @@ govctl status
 
 - Read `gov/config.toml`.
 - Classify the task:
-  - Doc-only: skip governance analysis, but still use a work item
+  - Doc-only: use `/quick` or `/spec` unless the user explicitly wants `/gov`
   - Bug fix: usually no new RFC if behavior is already specified
   - Feature: likely requires an RFC or ADR
   - Deprecation or removal: amend the governing RFC before implementation
@@ -112,7 +145,9 @@ govctl work list pending
 
 - Matching active item: use it
 - Matching queued item: `govctl work move <WI-ID> active`
-- No match: `govctl work new --active "<concise-title>"`
+- No match and the task has one durable outcome: `govctl work new --active "<concise-title>"`
+- No match and the task has multiple independently reviewable durable outcomes: create that small batch first, wire only hard `depends_on` edges, then start one generated-ID loop for the batch.
+- No match and the apparent split is only mechanical implementation steps: create at most one coarse work item, or route trivial cleanup to `/quick`.
 
 Then immediately:
 
@@ -176,10 +211,9 @@ Implementation rules:
 1. Keep changes focused.
 2. Follow RFC clauses and cite them in source comments when useful.
 3. After each substantive change, run the relevant validation.
-4. Update working memory as you go:
+4. Update durable working memory as you go:
 
 ```bash
-govctl work add <WI-ID> journal "Implemented X; govctl check passes" --scope <scope>
 govctl work add <WI-ID> notes "Do not retry Y; it fails because Z"
 ```
 
@@ -195,8 +229,8 @@ Run the relevant verification for the change:
 
 If a check fails:
 
-- Record the failed attempt in `journal`
-- Record the lesson or retry rule in `notes`
+- Record the failed attempt in loop state when available
+- Record the durable lesson or retry rule in `notes`
 - Change approach before retrying
 
 Do not continue until green.
@@ -248,12 +282,12 @@ govctl work move <WI-ID> done
 
 ### Otherwise recover and continue
 
-| Problem                       | Recovery                                                        |
-| ----------------------------- | --------------------------------------------------------------- |
-| `govctl check` fails          | Read diagnostics, fix, rerun                                    |
-| Tests fail                    | Debug, fix, rerun                                               |
-| `work move ... done` rejected | Add or tick acceptance criteria first                           |
-| Same failure repeats          | Read `notes`, then `journal`; record a new plan or stop and ask |
+| Problem                       | Recovery                                        |
+| ----------------------------- | ----------------------------------------------- |
+| `govctl check` fails          | Read diagnostics, fix, rerun                    |
+| Tests fail                    | Debug, fix, rerun                               |
+| `work move ... done` rejected | Add or tick acceptance criteria first           |
+| Same failure repeats          | Read `notes`; record a new plan or stop and ask |
 
 ## Commit Conventions
 
@@ -267,8 +301,10 @@ Use the `commit` skill for all raw VCS operations.
 
 - [ ] Environment validated; config read
 - [ ] Active work item exists
+- [ ] Work items represent durable outcomes, not mechanical substeps
+- [ ] Related durable work was batched into one loop where applicable
 - [ ] `govctl work show <WI-ID>` read before implementation
-- [ ] `description`, `journal`, and `notes` used correctly
+- [ ] `description` and `notes` used correctly
 - [ ] Governance analysis completed or explicitly skipped
 - [ ] Validation and tests passed
 - [ ] Acceptance criteria ticked

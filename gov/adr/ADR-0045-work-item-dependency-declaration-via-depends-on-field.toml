@@ -1,0 +1,77 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0045"
+title = "Work item dependency declaration via depends_on field"
+status = "accepted"
+date = "2026-05-31"
+refs = [
+    "RFC-0000:C-REFERENCE-HIERARCHY",
+    "RFC-0006",
+]
+
+[content]
+context = """
+Work items can depend on other work items, creating execution ordering constraints. The question: should dependencies be declared via a new `depends_on` field, or by reusing the existing `refs` field?
+
+Key considerations:
+- `refs` is already used for cross-referencing RFCs and ADRs (informational)
+- Dependencies are blocking ("cannot proceed until this completes")
+- Refs are informational ("I am aware of this artifact")
+- The loop needs to distinguish between hard dependencies and soft references
+- Work items may reference RFCs/ADRs they implement while also depending on other work items"""
+decision = """
+We will add a separate `depends_on` field to work items for declaring execution dependencies.
+
+Key design points:
+1. `depends_on` contains work item IDs that must complete successfully before this work item can start
+2. `refs` remains for informational cross-references (RFCs, ADRs, related work items)
+3. A work item can have both `refs` (I implement RFC-0001) and `depends_on` (I need WI-001 to finish first)
+4. Work item schemas include `depends_on` as an optional `[govctl]` metadata field
+5. The loop uses `depends_on` to resolve a transitive dependency closure before execution
+6. The loop uses `depends_on` for dependency ordering and failure propagation
+7. Cyclic dependencies and missing dependency IDs are detected and rejected at loop start
+
+This separates blocking dependencies from informational references, making intent explicit."""
+consequences = """
+### Positive
+
+- Explicit semantics: dependencies are clearly marked as blocking.
+- Loop planning can reliably distinguish dependencies from references.
+- Work items can reference what they implement and what they depend on without ambiguity.
+- Dependency closure gives agents and humans a deterministic view of the executable set.
+
+### Negative
+
+- Schema change required: work item JSON Schema must accept optional `govctl.depends_on`. Mitigation: the field is additive and optional.
+- Slightly more metadata for users to understand. Mitigation: `refs` remains informational and `depends_on` is used only for blocking execution dependencies.
+- Existing work items that used `refs` to imply dependencies may need manual cleanup. Mitigation: loops only treat `depends_on` as blocking, so legacy refs remain safe informational links.
+
+### Neutral
+
+- Aligns with RFC-0000:C-REFERENCE-HIERARCHY because `refs` stays informational.
+- No breaking changes to existing refs usage."""
+
+[[content.alternatives]]
+text = "Reuse refs field for all cross-references"
+status = "rejected"
+pros = [
+    "No schema change",
+    "Fewer fields",
+]
+cons = [
+    "Ambiguous semantics",
+    "Loop must guess dependency vs reference",
+    "Conflates informational and blocking relationships",
+]
+rejection_reason = "Ambiguous semantics; loop cannot distinguish hard dependencies from soft references"
+
+[[content.alternatives]]
+text = "Separate depends_on field for work item dependencies"
+status = "accepted"
+pros = [
+    "Explicit semantics",
+    "Clear intent",
+    "Allows both refs and depends_on",
+]
+cons = ["Schema change required"]

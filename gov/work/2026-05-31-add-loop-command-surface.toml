@@ -1,0 +1,47 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-011"
+title = "Add loop command surface"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+refs = [
+    "RFC-0006",
+    "ADR-0044",
+    "ADR-0046",
+]
+
+[content]
+description = "Add the user-facing loop command surface around the loop state and planning primitives. This slice should expose start/show/resume-style inspection and state-management commands without performing agent implementation work beyond validated lifecycle transitions required by RFC-0006."
+
+[[content.acceptance_criteria]]
+text = "CLI exposes loop start and loop show commands for explicit work item sets"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Loop start creates or reuses local loop state and reports loop ID status and planned work items"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Loop show renders persisted loop state including work item statuses dependency order and round counts"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Loop resume detects existing state for the same work item set or reports a clear diagnostic"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Help text snapshots and integration tests cover the loop command surface"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

@@ -10,11 +10,7 @@ completed = "2026-03-17"
 
 [content]
 description = "Remove govctl.schema field from all artifact structs, JSON schemas, and generated TOML. Per-artifact schema versioning is redundant; format evolution is tracked by project-level [schema] version in config.toml."
-
-[[content.journal]]
-date = "2026-03-17"
-scope = "schema-removal"
-content = "Removed govctl.schema from all 6 Meta structs (skip_serializing, allow(dead_code) for backward compat read). Removed from required in all JSON schemas (kept as optional property for old files). Removed release normalization. Updated v1->v2 migration to strip schema fields. All 313 tests pass."
+notes = ["Per-artifact govctl.schema is legacy compatibility data: readers may accept it, but writers should not serialize it or require it in schemas."]
 
 [[content.acceptance_criteria]]
 text = "govctl.schema field from AdrMeta, WorkItemMeta, GuardMeta, ReleasesMeta, RfcMeta, ClauseMeta"

@@ -16,12 +16,8 @@ pub enum NestedNodeKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-#[allow(dead_code)]
 pub enum NestedScalarMode {
     String,
-    OptionalString {
-        empty_as_null: bool,
-    },
     Integer,
     Enum {
         allowed: &'static [&'static str],
@@ -52,6 +48,12 @@ pub struct NestedRootRule {
     pub root: &'static str,
     pub content_path: &'static [&'static str],
     pub node: &'static NestedNodeRule,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct NestedStatusListSpec {
+    pub status_key: &'static str,
+    pub text_key: &'static str,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -157,6 +159,26 @@ pub fn nested_field_rule(
     }
 }
 
+pub fn nested_status_list_spec(node: &NestedNodeRule) -> Option<NestedStatusListSpec> {
+    if node.kind != NestedNodeKind::List {
+        return None;
+    }
+    let item = node.item?;
+    if item.kind != NestedNodeKind::Object {
+        return None;
+    }
+    let text_key = node.text_key?;
+    let status_key = item
+        .fields
+        .iter()
+        .find(|field| field.name == "status" && field.node.kind == NestedNodeKind::Scalar)?
+        .name;
+    Some(NestedStatusListSpec {
+        status_key,
+        text_key,
+    })
+}
+
 #[cfg(test)]
 pub fn nested_field_supports_verb(artifact: &str, root: &str, field: &str, verb: Verb) -> bool {
     nested_field_rule(artifact, root, field)
@@ -221,6 +243,18 @@ mod tests {
         assert_eq!(rule.node.kind, NestedNodeKind::Object);
         let child = nested_field_rule("guard", "check", "timeout_secs").ok_or("child exists")?;
         assert_eq!(child.node.kind, NestedNodeKind::Scalar);
+        Ok(())
+    }
+
+    #[test]
+    fn test_nested_status_list_spec() -> Result<(), Box<dyn std::error::Error>> {
+        let rule = nested_root_rule("adr", "alternatives").ok_or("rule should exist")?;
+        let spec = nested_status_list_spec(rule.node).ok_or("status list should exist")?;
+        assert_eq!(spec.status_key, "status");
+        assert_eq!(spec.text_key, "text");
+
+        let child = nested_field_rule("adr", "alternatives", "pros").ok_or("child exists")?;
+        assert_eq!(nested_status_list_spec(child.node), None);
         Ok(())
     }
 

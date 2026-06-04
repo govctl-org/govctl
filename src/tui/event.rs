@@ -2,7 +2,7 @@
 
 use super::app::{App, View};
 use super::ui;
-use anyhow::Result;
+use crate::diagnostic::DiagnosticResult;
 use crossterm::event::{self, Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 use ratatui::backend::CrosstermBackend;
 use ratatui::prelude::*;
@@ -13,12 +13,16 @@ use std::time::Duration;
 pub fn run_event_loop(
     terminal: &mut Terminal<CrosstermBackend<Stdout>>,
     app: &mut App,
-) -> Result<()> {
+) -> DiagnosticResult<()> {
     loop {
-        terminal.draw(|frame| ui::draw(frame, app))?;
+        terminal
+            .draw(|frame| ui::draw(frame, app))
+            .map_err(|err| super::terminal_error("draw TUI frame", err))?;
 
-        if event::poll(Duration::from_millis(100))?
-            && let Event::Key(key) = event::read()?
+        if event::poll(Duration::from_millis(100))
+            .map_err(|err| super::terminal_error("poll terminal event", err))?
+            && let Event::Key(key) =
+                event::read().map_err(|err| super::terminal_error("read terminal event", err))?
         {
             if key.kind != KeyEventKind::Press {
                 continue;

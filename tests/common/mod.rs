@@ -1,158 +1,59 @@
-//! Common test helpers for CLI snapshot tests.
+//! Common helpers shared across integration test binaries.
 
 #![allow(dead_code)] // Functions used across different test binaries
 
-use std::path::Path;
-use std::process::Command;
-use tempfile::TempDir;
+mod commands;
+mod fixtures;
+pub mod loop_helpers;
+mod snapshots;
+
+// Each integration test binary imports a different subset of this facade.
+#[allow(unused_imports)]
+pub use commands::{
+    command, format_command_output, run_commands, run_dynamic_commands, run_normalized_commands,
+    work_add_acceptance, work_add_dependency, work_add_field, work_delete_force, work_get_field,
+    work_list_all, work_move_done, work_new, work_new_active, work_remove_acceptance,
+    work_remove_dependency, work_set_field, work_show, work_tick_acceptance,
+    work_tick_acceptance_done,
+};
+#[allow(unused_imports)]
+pub use fixtures::{
+    append_verification_config, first_work_id, init_project, init_project_at, init_project_v1,
+    init_project_with_date, temp_dir_with_date, today, work_id, write_canonical_guarded_work_item,
+    write_guard, write_guard_with_timeout, write_guarded_work_item, write_minimal_rfc,
+};
+#[allow(unused_imports)]
+pub use snapshots::{
+    current_test_snapshot_name, named_snapshot_name, normalize_output, snapshot_path,
+};
 
 pub type TestResult = Result<(), Box<dyn std::error::Error>>;
 
-/// Get today's date in YYYY-MM-DD format (same as govctl uses)
-pub fn today() -> String {
-    chrono::Local::now().format("%Y-%m-%d").to_string()
+#[macro_export]
+macro_rules! with_test_snapshot_settings {
+    ($body:block) => {{
+        insta::with_settings!({
+            snapshot_path => $crate::common::snapshot_path(),
+            prepend_module_to_snapshot => false
+        }, $body);
+    }};
 }
 
-/// Normalize output for stable snapshots:
-/// - Replace temp directory paths with `<TEMPDIR>`
-/// - Replace today's date with `<DATE>`
-/// - Replace work item IDs (WI-YYYY-MM-DD-NNN) with WI-<DATE>-NNN
-/// - Replace ADR IDs with date component normalized
-pub fn normalize_output(output: &str, dir: &Path, date: &str) -> Result<String, regex::Error> {
-    let canonical = dir.canonicalize().unwrap_or_else(|_| dir.to_path_buf());
-    let canonical_str = canonical.display().to_string();
-    let dir_str = dir.display().to_string();
-    let mut normalized = output.replace(&canonical_str, "<TEMPDIR>");
-    normalized = normalized.replace(&dir_str, "<TEMPDIR>");
-    normalized = normalized.replace(date, "<DATE>");
-
-    // Replace work item IDs
-    let wi_pattern = regex::Regex::new(r"WI-\d{4}-\d{2}-\d{2}-(\d{3})")?;
-    normalized = wi_pattern
-        .replace_all(&normalized, "WI-<DATE>-$1")
-        .to_string();
-
-    // Replace ADR filenames with dates
-    let adr_file_pattern = regex::Regex::new(r"ADR-(\d{4})-")?;
-    normalized = adr_file_pattern
-        .replace_all(&normalized, "ADR-XXXX-")
-        .to_string();
-
-    // Replace signature hashes (date-dependent due to embedded dates in specs)
-    let sig_pattern = regex::Regex::new(r"sha256:[0-9a-f]{64}")?;
-    normalized = sig_pattern
-        .replace_all(&normalized, "sha256:<HASH>")
-        .to_string();
-
-    // Replace govctl version in JSON contexts to avoid snapshot churn on version bumps.
-    // Only replace inside double quotes to avoid corrupting semver strings in CHANGELOG fixtures.
-    let version = env!("CARGO_PKG_VERSION");
-    normalized = normalized.replace(&format!("\"{version}\""), "\"<VERSION>\"");
-
-    Ok(normalized)
+#[macro_export]
+macro_rules! assert_current_test_snapshot {
+    ($prefix:expr, $value:expr $(,)?) => {{
+        let snapshot_name =
+            $crate::common::current_test_snapshot_name($prefix, insta::_function_name!());
+        $crate::with_test_snapshot_settings!({
+            insta::assert_snapshot!(snapshot_name, $value);
+        });
+    }};
 }
 
-/// Run govctl commands in a directory and capture output.
-pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> Result<String, std::io::Error> {
-    let mut output = String::new();
-
-    for args in commands {
-        output.push_str(&format!("$ govctl {}\n", args.join(" ")));
-
-        let result = Command::new(env!("CARGO_BIN_EXE_govctl"))
-            .args(*args)
-            .current_dir(dir)
-            .env("NO_COLOR", "1")
-            .env("GOVCTL_DEFAULT_OWNER", "@test-user")
-            .output()?;
-
-        let stdout = String::from_utf8_lossy(&result.stdout);
-        let stderr = String::from_utf8_lossy(&result.stderr);
-
-        if !stdout.is_empty() {
-            output.push_str(&stdout);
-            if !stdout.ends_with('\n') {
-                output.push('\n');
-            }
-        }
-        if !stderr.is_empty() {
-            output.push_str(&stderr);
-            if !stderr.ends_with('\n') {
-                output.push('\n');
-            }
-        }
-
-        output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
-    }
-
-    Ok(output)
-}
-
-/// Run commands with dynamic String arguments (for work item IDs with dates)
-pub fn run_dynamic_commands(
-    dir: &Path,
-    commands: &[Vec<String>],
-) -> Result<String, std::io::Error> {
-    let mut output = String::new();
-
-    for args in commands {
-        let args_str: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-        output.push_str(&format!("$ govctl {}\n", args_str.join(" ")));
-
-        let result = Command::new(env!("CARGO_BIN_EXE_govctl"))
-            .args(&args_str)
-            .current_dir(dir)
-            .env("NO_COLOR", "1")
-            .env("GOVCTL_DEFAULT_OWNER", "@test-user")
-            .output()?;
-
-        let stdout = String::from_utf8_lossy(&result.stdout);
-        let stderr = String::from_utf8_lossy(&result.stderr);
-
-        if !stdout.is_empty() {
-            output.push_str(&stdout);
-            if !stdout.ends_with('\n') {
-                output.push('\n');
-            }
-        }
-        if !stderr.is_empty() {
-            output.push_str(&stderr);
-            if !stderr.ends_with('\n') {
-                output.push('\n');
-            }
-        }
-
-        output.push_str(&format!("exit: {}\n\n", result.status.code().unwrap_or(-1)));
-    }
-
-    Ok(output)
-}
-
-/// Initialize a govctl project in a temp directory.
-///
-/// If `schema_version` is provided, overrides the config schema version
-/// (used by migration tests to simulate older repositories).
-pub fn init_project_at(schema_version: Option<u32>) -> Result<TempDir, Box<dyn std::error::Error>> {
-    let temp_dir = TempDir::new()?;
-    let mut cmd = Command::new(env!("CARGO_BIN_EXE_govctl"));
-    cmd.args(["init"])
-        .current_dir(temp_dir.path())
-        .env("NO_COLOR", "1")
-        .env("GOVCTL_DEFAULT_OWNER", "@test-user");
-
-    if let Some(v) = schema_version {
-        cmd.env("GOVCTL_SCHEMA_VERSION", v.to_string());
-    }
-
-    let result = cmd.output()?;
-    assert!(result.status.success(), "govctl init failed");
-    Ok(temp_dir)
-}
-
-pub fn init_project() -> Result<TempDir, Box<dyn std::error::Error>> {
-    init_project_at(None)
-}
-
-pub fn init_project_v1() -> Result<TempDir, Box<dyn std::error::Error>> {
-    init_project_at(Some(1))
+#[macro_export]
+macro_rules! assert_normalized_command_snapshot {
+    ($prefix:expr, $dir:expr, $date:expr, $commands:expr $(,)?) => {{
+        let value = $crate::common::run_normalized_commands($dir, $date, $commands)?;
+        $crate::assert_current_test_snapshot!($prefix, value);
+    }};
 }

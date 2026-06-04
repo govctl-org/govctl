@@ -1,110 +1,180 @@
-# govctl Justfile - Development commands only
+# govctl Justfile — Development commands only
 # For governance operations, use: cargo run --quiet -- <command>
 
-set shell := ["bash", "-cu"]
+set shell := ["bash", "-euo", "pipefail", "-c"]
+set unstable
 
-# Default: show help
+# Show available commands
 default:
     @just --list
 
-# =============================================================================
-# Build & Development
-# =============================================================================
+# ---------------------------------------------------------------------------- #
+#                                 DEPENDENCIES                                 #
+# ---------------------------------------------------------------------------- #
+
+# Cargo: https://rust-lang.org
+_cargo := require("cargo")
+# cargo-edit: https://github.com/killercup/cargo-edit
+_cargo_set_version := require("cargo-set-version")
+# Nix (optional, for flake operations)
+# nix := require("nix")
+
+# ---------------------------------------------------------------------------- #
+#                                  CONSTANTS                                   #
+# ---------------------------------------------------------------------------- #
+
+# Internal: govctl binary invocation for development
+_govctl := "cargo run --quiet --"
+
+# ---------------------------------------------------------------------------- #
+#                                BUILD & TEST                                  #
+# ---------------------------------------------------------------------------- #
 
 # Build release binary
-build:
+[group("build")]
+@build:
     cargo build --release
+alias b := build
 
-# Run tests
-test:
+# Run all tests
+[group("test")]
+@test:
     cargo test
+alias t := test
 
 # Test coverage (summary)
-cov:
+[group("test")]
+@cov:
     cargo llvm-cov --summary-only
 
-# Test coverage (full report)
-cov-html:
+# Test coverage (full HTML report)
+[group("test")]
+@cov-html:
     cargo llvm-cov --html
-    @echo "Coverage report: target/llvm-cov/html/index.html"
+    @echo -e '{{ GREEN }}Coverage report:{{ NORMAL }} target/llvm-cov/html/index.html'
 
 # Test coverage (lcov format for CI)
-cov-lcov:
+[group("test")]
+@cov-lcov:
     cargo llvm-cov --lcov --output-path lcov.info
 
-# Update snapshots
-update-snapshots:
+# Update insta snapshots
+[group("test")]
+@update-snapshots:
     cargo insta test --accept
 
+# ---------------------------------------------------------------------------- #
+#                                   CHECKS                                     #
+# ---------------------------------------------------------------------------- #
+
 # Run clippy lints
-lint:
+[group("checks")]
+@lint:
     cargo clippy --all-targets
 
 # Format code
-fmt:
+[group("checks")]
+@fmt:
     cargo fmt
 
 # Pre-commit hooks (lint + format + test)
+[group("checks")]
 [unix]
-pre-commit:
+@pre-commit:
     @if command -v prek > /dev/null 2>&1; then prek run --all-files; else pre-commit run --all-files; fi
 
+# Pre-commit hooks (Windows)
+[group("checks")]
 [windows]
-pre-commit:
+@pre-commit:
     @where prek >nul 2>&1 && prek run --all-files || pre-commit run --all-files
 
-# =============================================================================
-# Quick Shortcuts
-# =============================================================================
+# Run lint + format check + tests
+[group("checks")]
+@check-all:
+    just _run-with-status lint
+    just _run-with-status fmt
+    just _run-with-status test
+    @echo ''
+    @echo -e '{{ GREEN }}All checks passed!{{ NORMAL }}'
+alias ca := check-all
+
+# ---------------------------------------------------------------------------- #
+#                                 GOVERNANCE                                   #
+# ---------------------------------------------------------------------------- #
 
 # Show governance status
-status:
-    cargo run --quiet -- status
+[group("gov")]
+@status:
+    {{ _govctl }} status
+alias s := status
 
-# Validate all governed documents
-check:
-    cargo run --quiet -- check
+# Validate all governed artifacts
+[group("gov")]
+@check:
+    {{ _govctl }} check
+alias c := check
 
-# Render RFCs to markdown
-render:
-    cargo run --quiet -- render
-
-# =============================================================================
-# Development Helpers
-# =============================================================================
-
-# Build with TUI feature
-build-tui:
-    cargo build --release --features tui
+# Render all RFCs, ADRs, and work items to markdown
+[group("gov")]
+@render:
+    {{ _govctl }} render
+alias r := render
 
 # Launch TUI dashboard
-tui:
-    cargo run --quiet --features tui -- tui
+[group("gov")]
+@tui:
+    cargo run --quiet -- tui
 
-# =============================================================================
-# Release Helpers
-# =============================================================================
+# ---------------------------------------------------------------------------- #
+#                                  RELEASE                                     #
+# ---------------------------------------------------------------------------- #
 
 # Update all dependencies (Cargo + Nix inputs)
-update-deps:
+[group("release")]
+@update-deps:
     cargo update
     nix flake update
 
-# Bump version everywhere: just bump 0.8.0
+# Bump version everywhere (Cargo, plugin manifests, releases, changelog)
+[group("release")]
 bump new_version:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    # 1. Update Cargo.toml
-    sed -i '' "s/^version = \".*\"/version = \"{{new_version}}\"/" Cargo.toml
-    cargo check --quiet 2>/dev/null || true  # refresh Cargo.lock
-    # 2. Stamp plugin manifests
-    jq --arg v "{{new_version}}" '.plugins[0].version = $v' .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
+    @printf 'Bump version to {{ new_version }}? [y/N] '; read -r answer; case "$answer" in y|Y|yes|YES|Yes) ;; *) echo 'Aborted'; exit 1;; esac
+    @just _run-with-status _bump-cargo {{ new_version }}
+    @just _run-with-status _bump-plugin {{ new_version }}
+    @just _run-with-status _bump-releases {{ new_version }}
+    @just _run-with-status _bump-changelog
+    @echo ''
+    @echo -e '{{ GREEN }}Bumped to {{ new_version }}{{ NORMAL }}'
+
+# ---------------------------------------------------------------------------- #
+#                              INTERNAL HELPERS                                #
+# ---------------------------------------------------------------------------- #
+
+# Run a recipe with formatted status output
+[private]
+@_run-with-status recipe *args:
+    @echo ''
+    @echo -e '{{ CYAN }}→ Running {{ recipe }}...{{ NORMAL }}'
+    just {{ recipe }} {{ args }}
+    @echo -e '{{ GREEN }}✓ {{ recipe }} completed{{ NORMAL }}'
+
+[private]
+_bump-cargo new_version:
+    {{ _cargo_set_version }} set-version "{{ new_version }}"
+    cargo check --quiet 2>/dev/null || true
+
+[private]
+_bump-plugin new_version:
+    jq --arg v "{{ new_version }}" '.plugins[0].version = $v' .claude-plugin/marketplace.json > .claude-plugin/marketplace.json.tmp
     mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
-    jq --arg v "{{new_version}}" '.version = $v' .claude/.claude-plugin/plugin.json > .claude/.claude-plugin/plugin.json.tmp
+    jq --arg v "{{ new_version }}" '.version = $v' .claude/.claude-plugin/plugin.json > .claude/.claude-plugin/plugin.json.tmp
     mv .claude/.claude-plugin/plugin.json.tmp .claude/.claude-plugin/plugin.json
-    # 3. flake.nix reads from Cargo.toml automatically
-    # 4. Update gov/releases.toml
-    cargo run --quiet -- release {{new_version}}
-    # 5. Render CHANGELOG.md
-    cargo run --quiet -- render changelog
-    echo "Bumped to {{new_version}}"
+
+[private]
+_bump-releases new_version:
+    {{ _govctl }} release {{ new_version }}
+
+[private]
+_bump-changelog:
+    {{ _govctl }} render changelog

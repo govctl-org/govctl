@@ -1,17 +1,22 @@
 //! Command implementations.
 
 pub mod check;
+pub(crate) mod confirmation;
 pub mod describe;
 pub mod edit;
 pub mod guard;
+pub(crate) mod guard_refs;
 pub mod lifecycle;
 pub mod list;
+pub mod loop_cmd;
 pub mod migrate;
 #[path = "move_.rs"]
 pub mod move_;
 pub mod new;
+pub(crate) mod output;
 pub mod render;
 pub mod self_update;
 pub mod status;
 pub mod tag;
 pub mod verify;
+pub(crate) mod work_lookup;

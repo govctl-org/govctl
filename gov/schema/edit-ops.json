@@ -18,7 +18,6 @@
         "description",
         "alternatives",
         "acceptance_criteria",
-        "journal",
         "notes"
       ]
     },
@@ -30,6 +29,7 @@
         "title",
         "date",
         "refs",
+        "depends_on",
         "tags",
         "superseded_by",
         "started",
@@ -245,6 +245,12 @@
     },
     {
       "artifact": "work",
+      "name": "depends_on",
+      "kind": "list",
+      "verbs": ["get", "add", "remove"]
+    },
+    {
+      "artifact": "work",
       "name": "tags",
       "kind": "list",
       "verbs": ["add", "remove", "get"]
@@ -261,7 +267,6 @@
       "kind": "list",
       "verbs": ["get", "add", "remove", "tick"]
     },
-    { "artifact": "work", "name": "journal", "kind": "list", "verbs": ["add"] },
     {
       "artifact": "work",
       "name": "notes",
@@ -559,6 +564,13 @@
     },
     {
       "artifact": "work",
+      "name": "depends_on",
+      "get": { "path": ["govctl", "depends_on"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["govctl", "depends_on"]
+    },
+    {
+      "artifact": "work",
       "name": "tags",
       "get": { "path": ["govctl", "tags"], "render": "csv_strings" },
       "set": null,
@@ -706,46 +718,6 @@
                   "verbs": ["get", "set"],
                   "set_mode": { "type": "string" }
                 }
-              }
-            }
-          ]
-        }
-      }
-    },
-    {
-      "artifact": "work",
-      "root": "journal",
-      "content_path": ["content", "journal"],
-      "node": {
-        "kind": "list",
-        "verbs": ["get", "add", "remove"],
-        "text_key": "content",
-        "item": {
-          "kind": "object",
-          "verbs": ["get"],
-          "fields": [
-            {
-              "name": "content",
-              "node": {
-                "kind": "scalar",
-                "verbs": ["get", "set"],
-                "set_mode": { "type": "string" }
-              }
-            },
-            {
-              "name": "date",
-              "node": {
-                "kind": "scalar",
-                "verbs": ["get", "set"],
-                "set_mode": { "type": "string" }
-              }
-            },
-            {
-              "name": "scope",
-              "node": {
-                "kind": "scalar",
-                "verbs": ["get", "set"],
-                "set_mode": { "type": "string" }
               }
             }
           ]

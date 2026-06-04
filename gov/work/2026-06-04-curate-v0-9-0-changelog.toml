@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-04-002"
+title = "Curate v0.9.0 changelog"
+status = "done"
+created = "2026-06-04"
+started = "2026-06-04"
+completed = "2026-06-04"
+
+[content]
+description = "Curate the mechanically generated v0.9.0 changelog into a human-readable release summary without changing code behavior."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes after changelog curation"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "v0.9.0 changelog is grouped into reader-facing release themes"
+status = "done"
+category = "chore"

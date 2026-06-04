@@ -1,0 +1,53 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-LOOP-STATE-STORAGE"
+title = "Loop State Storage"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["core"]
+
+[content]
+text = '''
+Loop execution state MUST be stored under `.govctl/loops/<loop-id>/`.
+
+A loop ID is local execution-state identity, not a governed resource ID. A generated loop ID MUST match `^LOOP-\d{4}-\d{2}-\d{2}-\d{3}$`. The date component MUST use ISO 8601 calendar date format `YYYY-MM-DD` for the local date when the ID is generated. The sequence component MUST be a three-digit positive sequence starting at `001` for each date. Implementations MUST choose the first available sequence for the date that does not collide with an existing `.govctl/loops/<loop-id>/` directory. Implementations MUST generate a loop ID when one is omitted. Implementations MUST reject explicit loop IDs that do not match the canonical loop ID pattern. A loop ID MUST NOT contain `/`, `\`, or `..` path traversal segments.
+
+Each loop directory MUST contain `state.toml` as its authoritative current-state file. The `state.toml` file MUST use the following top-level shape:
+
+```toml
+[loop]
+id = "<loop-id>"
+state = "pending|active|paused|completed|failed"
+work = ["WI-YYYY-MM-DD-NNN"]
+resolved = ["WI-YYYY-MM-DD-NNN"]
+current_round = 0
+next_action = "start|write_summary|continue|resolve_blocker|complete"
+
+[dependencies]
+"WI-YYYY-MM-DD-NNN" = ["WI-YYYY-MM-DD-NNN"]
+
+[items."WI-YYYY-MM-DD-NNN"]
+status = "pending|active|done|failed|blocked|cancelled"
+round_count = 0
+last_round = 0
+```
+
+The `loop.id` value MUST match the `<loop-id>` directory name. The `loop.state` value MUST be one of the loop lifecycle states defined by [[RFC-0006:C-LOOP-LIFECYCLE]]. The `loop.work` array MUST preserve the current explicit work item set for the loop. The `loop.resolved` array MUST contain the current resolved dependency closure and MUST include every `loop.work` entry. The `loop.work` and `loop.resolved` arrays MUST NOT contain duplicate Work Item IDs.
+
+The optional `loop.current_round` value records the latest loop-level round number known to state. The optional `loop.next_action` value records the next required human or agent action. Older state files that omit these fields MAY be upgraded in place when written.
+
+The `[dependencies]` table MUST contain one entry for each work item in `loop.resolved`. Each dependency entry MUST be an array of Work Item IDs. Each dependency ID MUST also appear in `loop.resolved`. Dependency arrays MUST NOT contain duplicate Work Item IDs.
+
+The `[items.<WI-ID>]` table MUST contain one entry for each work item in `loop.resolved`. Each item `status` MUST be one of the loop-level work item statuses defined by [[RFC-0006:C-WORK-ITEM-INTERACTION]]. Each `round_count` MUST be a non-negative integer. The optional `last_round` value records the last loop-level round that selected or updated the item.
+
+Loop state storage MUST be keyed by loop ID, not by work item ID. A multi-work-item loop MUST have one shared loop state root so dependency planning, failure propagation, and resumption use the same authoritative state.
+
+Loop round artifacts MUST be stored under `.govctl/loops/<loop-id>/rounds/round-NNN.toml`, where `NNN` is the three-digit loop-level round number. A round artifact MUST identify the loop ID, round number, selected work item IDs, round state, summary evidence, blockers, and note candidates. Round artifacts are local execution trace and MUST NOT be written to Work Item fields.
+
+Round artifacts MAY mention Work Item IDs when evidence applies to specific work, but the storage root is loop-level. Implementations MUST NOT require per-work-item round directories for the canonical state model.
+
+Loop state is local execution state, not a governed artifact. Deleting `.govctl/loops/` MUST NOT invalidate RFCs, ADRs, Work Items, Guards, or rendered governance projections, but MAY remove resumability and local execution trace.
+
+Rationale: A loop can drive multiple work items, so a per-work-item state root cannot represent the loop lifecycle, dependency graph, aggregate outcome, or round evidence. A single loop directory keeps execution state separate from Work Item files while preserving enough protocol state for resumption. Canonical generated loop IDs follow the existing artifact style of a type prefix, date, and sequence while avoiding collision-prone plain-text IDs.'''

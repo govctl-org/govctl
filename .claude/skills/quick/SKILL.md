@@ -11,21 +11,21 @@ Execute the lightweight workflow for: `$ARGUMENTS`
 
 Use this only for trivial, non-behavioral changes such as typos, comments, docs fixes, or small internal cleanup.
 
-**Outputs:** Completed trivial non-behavioral change, updated work item memory, and validation evidence.
+**Outputs:** Completed trivial non-behavioral change and validation evidence. Work-item updates are optional and only used when durable tracking already exists or is explicitly needed.
 
 Do not use this for new behavior, RFC-governed work, or architecture decisions. If the task stops being trivial, switch to `/gov`.
 
 ## Critical Rules
 
 1. Keep the fast path small. Do not invent governance work the change does not need.
-2. Still use a work item. `govctl check --has-active` is the gate before editing.
-3. Read the active work item with `govctl work show <WI-ID>`.
+2. Do not create work-item noise. For trivial cleanup, docs fixes, typos, comments, and small internal maintenance, prefer no work item unless a matching active/queued item already exists or the user explicitly asks for one.
+3. If using a work item, read it with `govctl work show <WI-ID>`.
 4. Use work item fields correctly:
    - `description`: scope and why
-   - `journal`: what you did and what happened
    - `notes`: constraints or lessons future steps must remember
 5. If the change becomes behavioral, ambiguous, or architectural, stop using `/quick` and switch to `/gov`.
 6. Use `/commit` for raw VCS operations. Do not embed `jj` or `git` procedures here.
+7. Do not create multiple work items for trivial cleanup batches. Use the commit diff as the record, or one coarse work item only when durable tracking is explicitly valuable.
 
 ## Workflow
 
@@ -38,17 +38,19 @@ govctl status
 - Confirm the change is still trivial and non-behavioral.
 - `/commit` will choose the raw VCS workflow if recording is needed.
 
-### 2. Resolve the work item
+### 2. Check optional work-item context
 
 ```bash
 govctl work list pending
 ```
 
-- Matching active item: use it
+- Matching active item that fits this exact cleanup: use it
 - Matching queued item: `govctl work move <WI-ID> active`
-- No match: `govctl work new --active "<concise-title>"`
+- No matching item: continue without a work item for trivial cleanup.
+- User explicitly wants tracking, or the cleanup has a durable reader-facing outcome: create at most one coarse work item.
+- Interrupted tracked batch work: run `govctl loop list open` before resuming so you use the persisted generated loop ID.
 
-Then:
+If using a work item:
 
 ```bash
 govctl work show <WI-ID>
@@ -65,13 +67,13 @@ The second criterion must be concrete and diff-specific. Examples:
 
 ### 3. Implement
 
-Before editing:
+If using a work item, verify the active gate before editing:
 
 ```bash
 govctl check --has-active
 ```
 
-Make the change. If code comments reference governance artifacts, use `[[artifact-id]]`.
+Otherwise, make the change without creating a work item. If code comments reference governance artifacts, use `[[artifact-id]]`.
 
 Run the relevant validation:
 
@@ -79,14 +81,14 @@ Run the relevant validation:
 govctl check
 ```
 
-Update working memory as needed:
+If using a work item, update work-item memory only when there is a durable lesson:
 
 ```bash
-govctl work add <WI-ID> journal "Updated docs; govctl check passes"
 govctl work add <WI-ID> notes "Do not use old command name in examples"
 ```
 
-For very small changes, `journal` may be enough. Add `notes` only when there is something future steps should remember.
+Add `notes` only when there is something future steps should remember. Transient execution progress belongs in loop state and round artifacts, not in work item fields.
+When a tracked cleanup batch gains or loses durable roots, use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>`, `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>`, or `govctl loop replan <LOOP-ID>` rather than creating a new loop for each small item. `wi` is accepted as a short alias for the loop `work` field, but examples should prefer `work`.
 
 ### 4. Record
 
@@ -94,11 +96,7 @@ Record the implementation change with `/commit`, typically using `docs(scope)`, 
 
 ### 5. Complete
 
-```bash
-govctl work tick <WI-ID> acceptance_criteria "govctl check passes" -s done
-govctl work tick <WI-ID> acceptance_criteria "<specific observable outcome>" -s done
-govctl work move <WI-ID> done
-```
+If a work item was used, tick matching criteria and move it to `done`. If no work item was used, skip this step.
 
 ### 6. Final record
 

@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-009"
+title = "Implement loop state persistence"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+refs = [
+    "RFC-0006",
+    "ADR-0044",
+    "ADR-0046",
+]
+
+[content]
+description = "Add local loop state storage under .govctl/loops/<loop-id>/ as the foundation for RFC-0006 execution state. This slice defines loop IDs, loop lifecycle state, per-work-item loop status, round counts, dependency graph persistence, and safe read/write helpers without running work-item execution rounds."
+
+[[content.acceptance_criteria]]
+text = "Loop state structs serialize and deserialize state.toml under .govctl/loops/<loop-id>"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Loop state tracks lifecycle status work item statuses dependency graph and round counts"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Loop state storage is local under .govctl and does not write execution trace to work item fields"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Tests cover loop state create load update and invalid transition cases"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

@@ -1,0 +1,107 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0043"
+title = "Redirect journal entries to local .govctl storage"
+status = "superseded"
+date = "2026-05-31"
+superseded_by = "ADR-0047"
+refs = [
+    "ADR-0032",
+    "ADR-0026",
+    "RFC-0000:C-WORK-DEF",
+]
+
+[content]
+context = """
+[[ADR-0026]] added a `journal` field to `WorkItemContent` for execution tracking. It was designed as an in-file array of structured entries (date, scope, content) within the work item TOML under `gov/work/`.
+
+The journal field serves two distinct purposes that are now in tension:
+
+1. **Execution trace** — round-by-round logs during iterative implementation loops (high frequency, high verbosity, ephemeral value after closure)
+2. **Institutional memory** — curated summaries of what was done and why (low frequency, concise, permanent value)
+
+The next-generation `/loop` skill requires the work item to drive an iterative execution cycle where each round produces structured journal entries, detailed round logs, and guard output files. Storing all of this in the work item TOML creates unacceptable noise: diff pollution, commit hygiene degradation, mixed concerns between plan/outcome and execution log, and unbounded size growth.
+
+The resolution is to separate execution state from governance artifacts. The `.govctl/` directory (a local, gitignored directory for execution state that is not durable governance) becomes the home for loop execution state, while the work item returns to being a pure outcome artifact.
+
+This is a **breaking schema change**: the `journal` field is removed from the work item TOML schema, and all existing journal entries (58 of 144 work items currently have them) must be extracted to the new location.
+
+**RFC conflict**: [[RFC-0000:C-WORK-DEF]] currently mandates `journal` as part of the `[content]` section. This ADR proposes removing that field, which directly contradicts the normative clause. The RFC clause MUST be amended as part of implementation — the implementing work item will track both the code changes and the clause amendment together.
+"""
+decision = """
+We will remove the `journal` field from `WorkItemContent` and redirect all journal operations to `.govctl/loops/<WI-ID>/journal.toml`.
+
+## Key invariants
+
+1. **Single source of truth**: Journal data lives exclusively in `.govctl/loops/<WI-ID>/journal.toml`. The work item TOML contains no journal entries.
+2. **CLI surface unchanged**: `govctl work add WI journal`, `govctl work show WI`, and `govctl work remove WI journal` continue to work identically from the user's perspective. Internally they read/write the journal file directly.
+3. **`.govctl/` is local state**: Created by `govctl init`, added to `.gitignore`, the `loops/` subdirectory created on-demand.
+4. **Automated migration**: A schema v2 → v3 migration step extracts inline journals from existing work items into the new location.
+5. **Backward compat**: During the transition, v2 work items with inline journals render read-only with a warning. `govctl check` emits a diagnostic prompting migration.
+6. **RFC amendment**: [[RFC-0000:C-WORK-DEF]] will be amended to remove `journal` from the `[content]` section, reflecting that journal is no longer a work item field.
+
+## What this does NOT specify
+
+The exact `journal.toml` schema, migration implementation steps, CLI command internals, and specific diagnostic codes are implementation details that belong in the implementing work item, not in this ADR.
+
+## Work item fields after this change
+
+| Field | Location | Purpose |
+|-------|----------|---------|
+| `description` | work item TOML | Task scope declaration |
+| `acceptance_criteria` | work item TOML | Completion criteria (scope contract) |
+| `notes` | work item TOML | Durable constraints, lessons, retry rules |
+| `journal` | `.govctl/loops/<WI-ID>/` | Execution process tracking (local, ephemeral) |"""
+consequences = """
+### Positive
+- Work items become pure outcome artifacts — clean diffs, no execution noise, smaller files
+- Journal operations gain a dedicated, structured storage with room for round metadata without schema churn on the work item itself
+- `.govctl/loops/` provides a natural home for future loop state (round logs, guard output files) without further breaking changes
+- Migration is automated via `govctl migrate` — same framework used for v1→v2
+
+### Negative
+- **Breaking schema change**: v2 work items with inline journal require `govctl migrate`. Mitigation: the migration step is automatic and idempotent; `govctl check` emits a warning for unmigrated items so users are prompted.
+- **Journal data is not version-controlled**: if `.govctl/` is deleted (e.g., `git clean -fdx`), execution history is lost. Mitigation: `govctl init` adds `.govctl/` to `.gitignore` automatically; the `notes` field captures durable learnings for cross-clone sharing; this ephemeral-by-design property is documented.
+- **Remote clones don't include journal history**: new contributors see work items without execution context. Mitigation: `notes` field carries durable learnings that survive cloning; the journal is a local development aid, not an institutional record.
+- **Large blast radius across the codebase**: changes touch model, render, edit, migrate, init, check, and schema layers. This increases regression risk and requires coordinated testing across the journal read/write paths.
+
+### Neutral
+- The `notes` field remains in the work item TOML as the sole durable, freeform text field — its role sharpens to "things future work must remember"
+- CLI surface is unchanged — `govctl work add WI journal` works identically from the user's perspective
+- The migration follows the existing versioned step framework from `cmd/migrate.rs`
+- `JournalEntry` struct is reused in the new location; only its storage path changes"""
+
+[[content.alternatives]]
+text = """
+Chosen: Remove journal from work item schema, redirect to .govctl/loops/
+
+See decision section for full rationale and key invariants."""
+status = "accepted"
+
+[[content.alternatives]]
+text = """
+Rejected: Dual-write — keep journal in work item for institutional memory, add .govctl/loops/ for execution trace
+
+Maintain `journal` in the work item TOML for curated, human-written summaries. Add `.govctl/loops/<WI-ID>/` for detailed round logs and guard output. Two layers of journaling.
+
+Rejected because:
+- Creates ambiguity: which journal is authoritative?
+- Requires agents to remember to write to both locations
+- The in-file journal still accumulates noise during active work
+- Duplicates the concept — "journal" means two different things depending on where it lives
+- Violates SSOT principle that the codebase already enforces elsewhere"""
+status = "rejected"
+
+[[content.alternatives]]
+text = """
+Rejected: Redirect journal to .govctl/, add a closure_summary field to work item
+
+Move journal to `.govctl/loops/`. Add a new `closure_summary` field to the work item that the loop skill writes at closure — a curated, committed summary of what happened.
+
+Rejected because:
+- `notes` already serves this purpose ("durable constraints, lessons, retry rules future steps must remember")
+- Adding a new field for closure summaries creates yet another text field with unclear boundaries
+- The journal itself, in `.govctl/loops/`, is available locally for anyone who needs the detail
+- Keeps the work item schema minimal — only fields with clear, distinct purposes"""
+status = "rejected"

@@ -23,11 +23,6 @@ Outcome:
 
 """
 
-[[content.journal]]
-date = "2026-04-21"
-scope = "governance"
-content = "ADR lifecycle maintenance complete. ADR-0001 superseded by ADR-0034. ADR-0006 and ADR-0017 refs updated. ADR-0016 kept as accepted (RFC absorption is not supersession). Source reference to ADR-0001 in render.rs updated. govctl check and cargo test pass clean."
-
 [[content.acceptance_criteria]]
 text = "ADR-0001 marked superseded_by ADR-0034"
 status = "done"

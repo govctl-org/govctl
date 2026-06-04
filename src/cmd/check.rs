@@ -1,7 +1,9 @@
 //! Check/lint command implementation.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{
+    Diagnostic, DiagnosticCode, DiagnosticLevel, DiagnosticResult, Diagnostics,
+};
 use crate::load::load_project_with_warnings;
 use crate::model::WorkItemStatus;
 use crate::parse::{load_guards_with_warnings, load_releases, load_work_items};
@@ -11,7 +13,7 @@ use crate::validate::{validate_project, validate_releases};
 use crate::verification;
 
 /// Validate all governed documents
-pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn check_all(config: &Config) -> DiagnosticResult<Diagnostics> {
     // Load project (with warnings for parse errors)
     let load_result = match load_project_with_warnings(config) {
         Ok(result) => result,
@@ -83,7 +85,13 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
 
     eprintln!();
 
-    if all_diagnostics.is_empty() {
+    let has_blocking_diagnostics = all_diagnostics.iter().any(|diag| {
+        matches!(
+            diag.level,
+            DiagnosticLevel::Error | DiagnosticLevel::Warning
+        )
+    });
+    if !has_blocking_diagnostics {
         ui::success("All checks passed");
     }
 
@@ -91,7 +99,7 @@ pub fn check_all(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
 }
 
 /// Fast-path: assert that at least one active work item exists.
-pub fn check_has_active(config: &Config) -> anyhow::Result<Vec<Diagnostic>> {
+pub fn check_has_active(config: &Config) -> DiagnosticResult<Diagnostics> {
     let items = load_work_items(config)?;
     let has_active = items
         .iter()

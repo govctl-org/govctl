@@ -21,16 +21,6 @@ Scope:
 2. Align skill `allowed-tools` with Claude Code official built-in tool names.
 3. Close workflow review gaps discovered by scenario-based review, including migration review ordering, compliance gates, and work-item handling for spec-only commits."""
 
-[[content.journal]]
-date = "2026-04-02"
-scope = "governance"
-content = """
-Completed the skills and agents governance cleanup in two follow-up commits:
-- `0fca8431` refactored skill prompts/tool metadata, introduced the spec-only workflow, aligned skill/agent taxonomy, and switched `allowed-tools` to Claude Code official names.
-- `201d0e11` closed scenario-review gaps around migration review order, compliance gates, quick-path acceptance criteria, init self-bootstrap behavior, and spec-only commit handling.
-
-Validation: `govctl check` passes after adding this work item."""
-
 [[content.acceptance_criteria]]
 text = "align skill allowed-tools with Claude Code official tool names"
 status = "done"

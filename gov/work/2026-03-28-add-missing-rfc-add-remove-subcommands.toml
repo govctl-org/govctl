@@ -12,11 +12,6 @@ refs = ["RFC-0002:C-CRUD-VERBS"]
 [content]
 description = "RFC-0002:C-CRUD-VERBS and ADR-0017 specify that all resources support add/remove verbs for array fields. RFC is missing these while ADR, work, and guard all have them."
 
-[[content.journal]]
-date = "2026-03-28"
-scope = "cli"
-content = "Added Add and Remove variants to RfcCommand enum in cli.rs, routed them through command_router.rs. Updated rfc set help text. All 164+integration tests pass, govctl check green, snapshots updated."
-
 [[content.acceptance_criteria]]
 text = "rfc add subcommand for array fields (refs, owners, sections)"
 status = "done"

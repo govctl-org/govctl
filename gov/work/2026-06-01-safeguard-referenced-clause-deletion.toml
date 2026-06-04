@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-182"
+title = "Safeguard referenced clause deletion"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+refs = ["RFC-0002"]
+
+[content]
+description = "Add the RFC-0002 deletion safeguard for clauses. Deleting a draft clause must be rejected when any RFC, ADR, work item, or guard references the clause ID, matching the existing work-item and guard deletion safeguards."
+
+[[content.acceptance_criteria]]
+text = "clause delete rejects deletion when another artifact references the clause ID"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "clause delete preserves existing draft-status and RFC section update behavior for unreferenced clauses"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "clause delete regression tests and govctl check pass"
+status = "done"
+category = "chore"

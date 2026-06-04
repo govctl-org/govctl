@@ -11,10 +11,6 @@ completed = "2026-04-08"
 [content]
 description = "Move the generated README hero image into assets/ and embed it near the top of README.md."
 
-[[content.journal]]
-date = "2026-04-08"
-content = "Moved the generated hero image into assets/readme-hero.png and embedded it near the top of README.md."
-
 [[content.acceptance_criteria]]
 text = "README displays the generated hero image from assets/readme-hero.png"
 status = "done"

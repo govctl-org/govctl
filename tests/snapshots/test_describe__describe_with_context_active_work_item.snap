@@ -1,7 +1,6 @@
 ---
 source: tests/test_describe.rs
-assertion_line: 130
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl work new Test task --active
 Created work item: gov/work/<DATE>-test-task.toml
@@ -61,7 +60,80 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "list rfc",
+      "name": "loop list",
+      "purpose": "List persisted local loop states",
+      "when_to_use": "To discover interrupted or resumable loops before selecting one by loop ID.",
+      "example": "govctl loop list open",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "loop start",
+      "purpose": "Start or reuse a loop for one or more explicit work items",
+      "when_to_use": "When beginning a local execution loop for a work item or batch of work items.",
+      "example": "govctl loop start WI-<DATE>-001",
+      "prerequisites": [
+        "govctl init"
+      ]
+    },
+    {
+      "name": "loop show",
+      "purpose": "Show persisted loop state",
+      "when_to_use": "To inspect loop state, resolved work items, dependencies, and round counts by loop ID.",
+      "example": "govctl loop show LOOP-2026-04-06-001",
+      "prerequisites": [
+        "Loop must exist"
+      ]
+    },
+    {
+      "name": "loop resume",
+      "purpose": "Resume or inspect an existing non-terminal loop",
+      "when_to_use": "After discovering a loop with loop list, use its loop ID to resume local execution state.",
+      "example": "govctl loop resume LOOP-2026-04-06-001",
+      "prerequisites": [
+        "Loop must exist"
+      ]
+    },
+    {
+      "name": "loop replan",
+      "purpose": "Recompute dependency closure for a loop's current work set",
+      "when_to_use": "After work item dependency files change and the existing loop needs a refreshed resolved plan.",
+      "example": "govctl loop replan LOOP-2026-04-06-001",
+      "prerequisites": [
+        "Loop must exist"
+      ]
+    },
+    {
+      "name": "loop add",
+      "purpose": "Add a work item to a loop's editable work field",
+      "when_to_use": "To expand an existing loop without creating a new loop ID.",
+      "example": "govctl loop add LOOP-2026-04-06-001 work WI-<DATE>-002",
+      "prerequisites": [
+        "Loop must exist",
+        "Work item must exist"
+      ]
+    },
+    {
+      "name": "loop remove",
+      "purpose": "Remove a work item from a loop's editable work field",
+      "when_to_use": "To narrow an existing loop while preserving completed work item lifecycle changes.",
+      "example": "govctl loop remove LOOP-2026-04-06-001 work WI-<DATE>-002",
+      "prerequisites": [
+        "Loop must exist"
+      ]
+    },
+    {
+      "name": "loop run",
+      "purpose": "Advance the local round protocol for an existing loop",
+      "when_to_use": "To open a round for ready work items or validate submitted round evidence by loop ID.",
+      "example": "govctl loop run LOOP-2026-04-06-001 --work WI-<DATE>-002",
+      "prerequisites": [
+        "Loop must exist"
+      ]
+    },
+    {
+      "name": "rfc list",
       "purpose": "List all RFCs with their status and phase",
       "when_to_use": "To see all specifications. Filter by status: 'govctl rfc list draft'.",
       "example": "govctl rfc list",
@@ -70,7 +142,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "list adr",
+      "name": "adr list",
       "purpose": "List all ADRs (Architecture Decision Records)",
       "when_to_use": "To see architectural decisions. Filter by status: 'govctl adr list accepted'.",
       "example": "govctl adr list",
@@ -79,7 +151,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "list work",
+      "name": "work list",
       "purpose": "List work items (defaults to pending: queue + active)",
       "when_to_use": "To see current task queue. Use 'govctl work list all' for everything.",
       "example": "govctl work list",
@@ -88,7 +160,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "new rfc",
+      "name": "rfc new",
       "purpose": "Create a new RFC (specification document)",
       "when_to_use": "Before implementing any new feature. RFCs define what must be built. No implementation without specification.",
       "example": "govctl rfc new \"Add caching layer\"",
@@ -97,7 +169,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "new adr",
+      "name": "adr new",
       "purpose": "Create a new ADR (Architecture Decision Record)",
       "when_to_use": "When making a significant design decision that should be documented. ADRs capture context, decision, and consequences.",
       "example": "govctl adr new \"Use Redis for caching\"",
@@ -106,16 +178,16 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "new work",
+      "name": "work new",
       "purpose": "Create a new work item",
       "when_to_use": "When starting a task. Use --active to immediately activate it.",
-      "example": "govctl work new --active \"Implement describe command\"",
+      "example": "govctl work new \"Implement describe command\" --active",
       "prerequisites": [
         "govctl init"
       ]
     },
     {
-      "name": "new clause",
+      "name": "clause new",
       "purpose": "Create a new clause within an RFC",
       "when_to_use": "When adding normative requirements to an RFC. Clauses are the atomic units of specification.",
       "example": "govctl clause new RFC-0001:C-CACHE-TTL \"Cache TTL Policy\" -s Specification -k normative",
@@ -124,7 +196,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "finalize",
+      "name": "rfc finalize",
       "purpose": "Transition RFC status to normative or deprecated",
       "when_to_use": "When an RFC spec is complete and ready for implementation. 'normative' makes it binding law.",
       "example": "govctl rfc finalize RFC-0001 normative",
@@ -133,7 +205,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "advance",
+      "name": "rfc advance",
       "purpose": "Advance RFC phase (spec → impl → test → stable)",
       "when_to_use": "After completing work for current phase. Phase discipline ensures proper workflow.",
       "example": "govctl rfc advance RFC-0001 impl",
@@ -143,7 +215,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "move",
+      "name": "work move",
       "purpose": "Move work item to new status (queue/active/done/cancelled)",
       "when_to_use": "To update task status. Use 'done' when complete, 'active' to start working.",
       "example": "govctl work move WI-<DATE>-001 done",
@@ -153,7 +225,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "accept",
+      "name": "adr accept",
       "purpose": "Accept an ADR (proposed → accepted)",
       "when_to_use": "When an architectural decision is approved.",
       "example": "govctl adr accept ADR-0001",
@@ -162,7 +234,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "set",
+      "name": "rfc set / adr set / work set / guard set / clause set",
       "purpose": "Set a field value on an artifact",
       "when_to_use": "To update artifact fields. Use --stdin for multi-line content.",
       "example": "govctl rfc set RFC-0001 title \"New Title\"",
@@ -171,7 +243,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "get",
+      "name": "rfc get / adr get / work get / guard get / clause get",
       "purpose": "Get a field value from an artifact",
       "when_to_use": "To read artifact data. Omit field name to show entire artifact.",
       "example": "govctl rfc get RFC-0001 status",
@@ -180,7 +252,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "add",
+      "name": "rfc add / adr add / work add / guard add",
       "purpose": "Add a value to an array field",
       "when_to_use": "To add items to refs, owners, acceptance_criteria, etc.",
       "example": "govctl work add WI-<DATE>-001 acceptance_criteria \"Tests pass\"",
@@ -189,7 +261,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "remove",
+      "name": "rfc remove / adr remove / work remove / guard remove",
       "purpose": "Remove a value from an array field",
       "when_to_use": "To remove items from array fields. Use --at for index, or pattern matching.",
       "example": "govctl rfc remove RFC-0001 owners \"@oldowner\"",
@@ -198,7 +270,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "tick",
+      "name": "work tick / adr tick",
       "purpose": "Mark a checklist item as done/pending/cancelled",
       "when_to_use": "To update acceptance criteria status on work items.",
       "example": "govctl work tick WI-<DATE>-001 acceptance_criteria \"Tests\" -s done",
@@ -207,7 +279,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "edit",
+      "name": "rfc edit / adr edit / work edit / guard edit / clause edit",
       "purpose": "Edit artifact fields via the canonical path-first surface",
       "when_to_use": "To update RFC, ADR, work item, guard, or clause content fields using `edit <ID> <path> --set/--add/--remove/--tick`.",
       "example": "govctl clause edit RFC-0001:C-SCOPE text --stdin",
@@ -226,15 +298,15 @@ $ govctl describe --context
     },
     {
       "name": "migrate",
-      "purpose": "Convert legacy JSON governance storage to current TOML formats",
-      "when_to_use": "When a repository still stores RFCs or clauses as JSON, or when releases.toml needs schema metadata normalization.",
+      "purpose": "Upgrade TOML governance storage to the current schema format",
+      "when_to_use": "When a TOML-based repository needs schema metadata normalization or bundled schema files refreshed.",
       "example": "govctl migrate",
       "prerequisites": [
         "govctl init"
       ]
     },
     {
-      "name": "bump",
+      "name": "rfc bump",
       "purpose": "Bump RFC version",
       "when_to_use": "When making changes to a normative RFC. Follows semver.",
       "example": "govctl rfc bump RFC-0001 --minor -m \"Add new clause\"",
@@ -252,16 +324,16 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "deprecate",
+      "name": "rfc deprecate / clause deprecate",
       "purpose": "Deprecate an artifact",
-      "when_to_use": "When an RFC, clause, or ADR is no longer relevant but kept for history.",
+      "when_to_use": "When an RFC or clause is no longer relevant but kept for history.",
       "example": "govctl rfc deprecate RFC-0001",
       "prerequisites": [
         "Artifact must exist"
       ]
     },
     {
-      "name": "supersede",
+      "name": "rfc supersede / adr supersede / clause supersede",
       "purpose": "Supersede an artifact with a replacement",
       "when_to_use": "When replacing an artifact with a newer version.",
       "example": "govctl rfc supersede RFC-0001 --by RFC-0010",
@@ -270,7 +342,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "show rfc",
+      "name": "rfc show",
       "purpose": "Show RFC content to stdout (no file written)",
       "when_to_use": "To read the full rendered RFC content. Use -o json for structured output.",
       "example": "govctl rfc show RFC-0001",
@@ -279,7 +351,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "show adr",
+      "name": "adr show",
       "purpose": "Show ADR content to stdout (no file written)",
       "when_to_use": "To read the full rendered ADR content. Use -o json for structured output.",
       "example": "govctl adr show ADR-0001",
@@ -288,7 +360,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "show work",
+      "name": "work show",
       "purpose": "Show work item content to stdout (no file written)",
       "when_to_use": "To read the full rendered work item content. Use -o json for structured output.",
       "example": "govctl work show WI-<DATE>-001",
@@ -297,7 +369,7 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "show clause",
+      "name": "clause show",
       "purpose": "Show clause content to stdout (no file written)",
       "when_to_use": "To read the clause text. Use -o json for structured output.",
       "example": "govctl clause show RFC-0001:C-SUMMARY",
@@ -314,7 +386,7 @@ $ govctl describe --context
       "stable: Bug fixes only, no new features"
     ],
     "typical_sequence": [
-      "govctl work new --active \"Feature Title\"",
+      "govctl work new \"Feature Title\" --active",
       "govctl rfc new \"Feature Title\"",
       "govctl clause new RFC-NNNN:C-REQUIREMENT \"Requirement\" -k normative",
       "govctl rfc finalize RFC-NNNN normative",

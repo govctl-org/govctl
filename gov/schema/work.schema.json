@@ -40,6 +40,13 @@
             "pattern": "^(RFC-\\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\\d{4}|WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3}))$"
           }
         },
+        "depends_on": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^WI-\\d{4}-\\d{2}-\\d{2}-(?:[a-f0-9]{4}(?:-\\d{3})?|\\d{3})$"
+          }
+        },
         "tags": {
           "type": "array",
           "items": {
@@ -59,27 +66,6 @@
       "properties": {
         "description": {
           "type": "string"
-        },
-        "journal": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "required": ["date", "content"],
-            "properties": {
-              "date": {
-                "type": "string",
-                "format": "date"
-              },
-              "scope": {
-                "type": "string"
-              },
-              "content": {
-                "type": "string",
-                "minLength": 1
-              }
-            },
-            "additionalProperties": false
-          }
         },
         "acceptance_criteria": {
           "type": "array",

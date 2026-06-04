@@ -189,10 +189,10 @@ For AI-assisted migration, use the `/migrate` skill to systematically discover u
 | ---------- | --------------------------------------------------- | ----------------------------------------------------- |
 | **What**   | Upgrade existing govctl artifacts to current format | Adopt govctl in an existing project                   |
 | **When**   | After updating govctl version                       | When starting governance in a brownfield repo         |
-| **Effect** | Rewrites TOML/JSON files in `gov/`                  | Discovers decisions, backfills ADRs, annotates source |
+| **Effect** | Rewrites TOML files in `gov/` and syncs schemas     | Discovers decisions, backfills ADRs, annotates source |
 | **Risk**   | Low — transactional, reversible                     | Medium — requires human review of generated ADRs      |
 
-Run `govctl migrate` when govctl tells you a migration is needed (error `E0505`). Use the `/migrate` skill when bringing a legacy project under governance for the first time.
+Run `govctl migrate` when govctl reports an outdated schema version. If a repository still contains legacy RFC or clause JSON storage, migrate it with govctl <0.9 before upgrading. Use the `/migrate` skill when bringing a legacy project under governance for the first time.
 
 ## Canonical Edit Surface
 
@@ -218,7 +218,7 @@ Nested object fields use dot-delimited paths:
 ```bash
 govctl adr edit ADR-0003 content.decision --set "We will use Redis"
 govctl adr edit ADR-0003 "content.alternatives[0].pros" --add "Low latency"
-govctl work edit WI-2026-01-17-001 "content.journal[0].scope" --set backend
+govctl work edit WI-2026-01-17-001 "content.acceptance_criteria[0].category" --set fixed
 ```
 
 ## CLI Self-Description

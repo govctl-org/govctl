@@ -16,7 +16,7 @@ It is responsible for work-item content quality and field semantics, not code ch
 
 ## Authority
 
-Work items track execution: what this task is doing, what happened, and what remains before closure.
+Work items track durable operational state: task scope, lifecycle, acceptance criteria, dependencies, references, and notes that should remain after closure.
 They are operational memory, not normative authority and not decision records.
 
 ## Quick Reference
@@ -25,9 +25,9 @@ They are operational memory, not normative authority and not decision records.
 govctl work new --active "<title>"
 govctl work set <WI-ID> description "Task scope description"
 govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
-govctl work add <WI-ID> journal "Progress update" --scope module
 govctl work add <WI-ID> notes "Key observation"
 govctl work add <WI-ID> refs RFC-NNNN
+govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
 govctl work add <WI-ID> tags <tag>
 govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 govctl work move <WI-ID> done
@@ -52,39 +52,16 @@ Replace the placeholder immediately. One paragraph explaining:
 - Why it's needed
 - Any relevant context
 
-**Important:** Description is for task scope, NOT execution tracking. Use `journal` for progress and outcomes, and `notes` for durable learnings.
+**Important:** Description is for task scope, NOT execution tracking. Use loop state and round artifacts for execution trace when available, and `notes` for durable learnings that belong on the work item.
 It must not introduce new product behavior requirements that are missing from the governing RFC or ADR.
 
-### Journal
+### Execution Trace
 
-**Purpose:** Execution process tracking — how the work is progressing.
+**Where execution information goes now:**
 
-Journal entries record progress updates, bug fixes, and verification results during execution. Each entry has:
-
-- `date` (required): ISO date "YYYY-MM-DD"
-- `scope` (optional): Topic/module identifier
-- `content` (required): Markdown text with details
-
-```bash
-# Add journal entry (date is auto-filled to today)
-govctl work add <WI-ID> journal "Added journal section rendering to work item output."
-
-# With scope (topic/module tag)
-govctl work add <WI-ID> journal "Fixed parser edge case" --scope parser
-
-# Multi-line via stdin
-govctl work add <WI-ID> journal --scope render --stdin <<'EOF'
-Completed the rendering pipeline.
-All snapshot tests updated.
-EOF
-```
-
-**When to add journal entries:**
-
-- After completing a significant chunk of work
-- When fixing bugs during implementation
-- After running verification gates
-- After a failed attempt that changed the next step
+- Round-by-round execution trace belongs in loop state and round artifacts.
+- Durable lessons, constraints, retry rules, and future-facing observations belong in `notes`.
+- Acceptance progress belongs in `acceptance_criteria` status.
 
 ### Notes
 
@@ -139,16 +116,40 @@ govctl work add <WI-ID> refs RFC-0001
 govctl work add <WI-ID> refs ADR-0023
 ```
 
+### Dependencies and Batches
+
+Create multiple work items only when each item is independently meaningful to future readers:
+
+- Each work item should represent a durable outcome, user-visible behavior, spec/ADR obligation, or independently reviewable deliverable.
+- Do not create work items for mechanical helper extraction, fixture sharing, file moves, module normalization, formatting, comment cleanup, snapshot reshaping, or other low-level execution steps.
+- For trivial cleanup or docs-only edits, no work item may be the right answer; follow the invoking workflow instead of inventing tracking.
+- For one coherent cleanup/refactor, prefer one coarse work item over many narrow slices.
+- Use `depends_on` only for hard execution ordering; keep `refs` for informational links.
+- Use one batch loop only when there are multiple durable work items; do not use loops to justify creating mechanical work-item fragments.
+- Let govctl generate the loop ID with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; use the returned `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
+- Use `govctl loop list open` to discover existing non-terminal loops before resuming interrupted batch work.
+
+If the batch scope changes after the loop starts, update the same loop:
+
+```bash
+govctl loop add <LOOP-ID> work <ROOT-WI-ID>
+govctl loop remove <LOOP-ID> work <ROOT-WI-ID>
+govctl loop replan <LOOP-ID>
+```
+
+`work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
+
+Do not hand-write descriptive loop IDs or encode time finer than the day in loop IDs.
+
 ## Field Semantics Summary
 
-| Field                 | Purpose                    | Update Pattern                                |
-| --------------------- | -------------------------- | --------------------------------------------- |
-| `description`         | Task scope declaration     | Define once, rarely change                    |
-| `journal`             | Execution process tracking | Append on each progress                       |
-| `notes`               | Durable learnings          | Add when future steps must remember something |
-| `acceptance_criteria` | Completion criteria        | Define then tick                              |
+| Field                 | Purpose                | Update Pattern                                |
+| --------------------- | ---------------------- | --------------------------------------------- |
+| `description`         | Task scope declaration | Define once, rarely change                    |
+| `notes`               | Durable learnings      | Add when future steps must remember something |
+| `acceptance_criteria` | Completion criteria    | Define then tick                              |
 
-**Per ADR-0026:** Keep description focused on "what", journal on "what happened", and notes on "what to remember next".
+**Per ADR-0047:** Keep description focused on "what", notes on durable "what to remember next", and execution trace outside the work item field surface.
 If you discover a missing requirement or unresolved design choice, stop and route that back to RFC/ADR work rather than inventing it inside the work item.
 
 ## Writing Rules
@@ -205,13 +206,14 @@ Keep `chore:` criteria for validation summaries, especially when the validation 
 
 ## Common Mistakes
 
-| Mistake                            | Fix                                                         |
-| ---------------------------------- | ----------------------------------------------------------- |
-| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                   |
-| Placeholder description left in    | Replace immediately with real description                   |
-| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"         |
-| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass" |
-| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                 |
-| Description used for tracking      | Use journal field for execution progress per ADR-0026       |
-| No journal entries for long task   | Add journal entries for significant progress updates        |
-| Work item invents new requirements | Move those requirements into an RFC or ADR first            |
+| Mistake                            | Fix                                                                                  |
+| ---------------------------------- | ------------------------------------------------------------------------------------ |
+| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                                            |
+| Placeholder description left in    | Replace immediately with real description                                            |
+| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"                                  |
+| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass"                          |
+| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                                          |
+| Description used for tracking      | Use loop state and round artifacts for execution trace or `notes` for durable memory |
+| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts     |
+| Mechanical substeps become WIs     | Use no WI or one coarse WI; leave helper/test/file-move details to the commit diff   |
+| Work item invents new requirements | Move those requirements into an RFC or ADR first                                     |

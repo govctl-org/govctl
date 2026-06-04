@@ -1,0 +1,39 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-LOOP-LIFECYCLE"
+title = "Loop Lifecycle"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = [
+    "lifecycle",
+    "core",
+]
+
+[content]
+text = """
+A loop MUST have exactly one of the following lifecycle states:
+
+1. **pending** — Initial state. The loop is defined but execution has not started.
+2. **active** — The loop is currently executing rounds on work items.
+3. **paused** — Execution stopped before a terminal outcome and may be resumed.
+4. **completed** — All work items in the resolved loop set reached non-failed terminal loop outcomes (`done` or `cancelled`) without any `failed` or `blocked` loop outcomes.
+5. **failed** — A failure condition was met (max rounds exceeded, critical error, failed work item, or blocked dependency chain).
+
+Valid transitions:
+- pending → active (loop execution begins)
+- active → paused (loop pauses for resumption)
+- paused → active (loop execution resumes)
+- active → completed (all work items finish without failed or blocked outcomes)
+- active → failed (failure condition met)
+- paused → failed (resumption detects unrecoverable state)
+
+Invalid transitions (MUST be rejected):
+- completed → any (terminal state)
+- failed → any (terminal state)
+- pending → completed (cannot complete without being active)
+- pending → failed (cannot fail without being active)
+- paused → completed (completion requires active execution)
+
+Rationale: The loop lifecycle provides clear semantics for tracking execution progress and enables resumption after interruption. A distinct `paused` state avoids overloading `pending`, which means execution has not started. Terminal states (completed, failed) indicate the loop has finished and cannot be restarted."""

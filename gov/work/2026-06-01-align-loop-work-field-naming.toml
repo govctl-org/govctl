@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-01-202"
+title = "Align loop work field naming"
+status = "done"
+created = "2026-06-01"
+started = "2026-06-01"
+completed = "2026-06-01"
+refs = ["RFC-0006"]
+
+[content]
+description = "Align loop field naming with the work item edit convention for the unreleased loop feature: the editable loop field is `work`, `wi` is accepted as a shorthand CLI alias, persisted loop state uses `work` for explicit scope and `resolved` for dependency closure, and no compatibility is retained for legacy state keys `root_work_items` or `work_items`."
+
+[[content.acceptance_criteria]]
+text = "Loop state storage uses `loop.work` for the editable work set and a separate non-editable resolved dependency closure field"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Loop tests, cargo test, clippy, and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Legacy loop state keys `root_work_items` and `work_items` are not accepted for the unreleased loop schema"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Loop add/remove help and behavior prefer `work`, accept `wi`, and reject `work_items` as a field name"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC-0006 storage and command text describe `work` with `wi` as a CLI alias and without `root_work_items` or `work_items` state keys"
+status = "done"
+category = "chore"

@@ -10,11 +10,7 @@ completed = "2026-03-17"
 
 [content]
 description = "Replace monolithic migrate with a versioned step pipeline driven by [schema] version in config.toml. Each step is a function from version N to N+1 producing Vec<FileOp>. Existing v0.5->v0.6 logic becomes step v1->v2."
-
-[[content.journal]]
-date = "2026-03-17"
-scope = "migrate"
-content = "Rewrote src/cmd/migrate.rs as versioned step pipeline: FileOp enum, MigrationStep struct with MIGRATIONS registry, generic stage/backup/commit engine, version bump to config.toml. Existing v0.5->v0.6 logic is plan_v1_to_v2. Added test_migrate_bumps_version_even_without_file_changes. All 313 tests pass."
+notes = ["The migrate command is intentionally a versioned step pipeline with a MIGRATIONS registry and stage/backup/commit flow; add future migrations as steps instead of ad hoc rewrites."]
 
 [[content.acceptance_criteria]]
 text = "MigrationStep struct + FileOp enum replace monolithic MigrationPlan"

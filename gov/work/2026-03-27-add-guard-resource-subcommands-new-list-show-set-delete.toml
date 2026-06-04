@@ -15,11 +15,6 @@ refs = [
 [content]
 description = "Implement guard as a first-class resource type in the CLI per RFC-0002 v0.5.0 amendment. Add govctl guard new/list/show/set/delete subcommands following the standard resource model pattern. Also create the guard-writer skill."
 
-[[content.journal]]
-date = "2026-03-27"
-scope = "cli"
-content = "Implemented all guard subcommands: new, list, show, get, set, add, remove, delete. Added Guard to ArtifactType, GuardTomlAdapter, GuardCommand CLI enum, canonical command routing, edit-ops.json rules. All tests pass, govctl check passes."
-
 [[content.acceptance_criteria]]
 text = "govctl guard new scaffolds guard TOML with hint about default_guards"
 status = "done"

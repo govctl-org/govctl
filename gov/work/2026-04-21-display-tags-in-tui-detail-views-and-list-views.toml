@@ -23,11 +23,6 @@ Changes needed:
 
 The render module (render.rs) is the shared pipeline for ADR/Work/Clause detail views in TUI, so adding tags there will automatically surface them in the TUI."""
 
-[[content.journal]]
-date = "2026-04-21"
-scope = "tui"
-content = "Added tags display to all TUI surfaces: render_adr/render_work_item/render_clause now emit '> **Tags:** `tag1`, `tag2`' in rendered markdown (surfacing in ADR/Work/Clause TUI detail views and file output); draw_rfc_detail shows tags in header with magenta styling; draw_rfc_list/draw_adr_list/draw_work_list have new Tags column. Tags are hidden when empty. govctl check and cargo test pass clean."
-
 [[content.acceptance_criteria]]
 text = "RFC detail view shows tags in header"
 status = "done"

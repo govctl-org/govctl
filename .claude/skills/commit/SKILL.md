@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "Commit changes with govctl integration — check work item status, update journal or notes, and run govctl check"
+description: "Commit changes with govctl integration — check work item status, update notes when needed, and run govctl check"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: [optional commit message hint]
 ---
@@ -18,15 +18,24 @@ Commit changes using the project's version control system, with govctl-aware che
 **CRITICAL: Steps MUST be executed in exact order. Do NOT skip ahead.**
 
 1. This is the only workflow that should issue raw `jj` or `git` commit commands.
-2. Do not perform RFC/ADR lifecycle verbs here, except work-item journal/notes/tick/move updates that belong to commit bookkeeping.
+2. Do not perform RFC/ADR lifecycle verbs here, except work-item notes/tick/move updates that belong to commit bookkeeping.
 3. Implementation-bearing commits should belong to an active work item.
 4. Spec-only governance commits may proceed without a work item only when the diff is limited to governance artifacts, rendered governance docs, embedded skill/agent templates, or related metadata.
 
-### Step 1: Detect VCS
+### Step 1: Detect VCS and Governance
 
-Run `jj root` first. If it succeeds, use **Jujutsu** — do NOT also check git. A jj-git colocated repo has both `.jj/` and `.git/`, so checking git would also succeed and cause you to use the wrong VCS. Only if `jj root` fails, run `git rev-parse --git-dir`. If that succeeds, use **Git**. If both fail, stop and inform user.
+**1a. Detect VCS.** Run `jj root` first. If it succeeds, use **Jujutsu** — do NOT also check git. A jj-git colocated repo has both `.jj/` and `.git/`, so checking git would also succeed and cause you to use the wrong VCS. Only if `jj root` fails, run `git rev-parse --git-dir`. If that succeeds, use **Git**. If both fail, stop and inform user.
 
 **CRITICAL:** Do NOT run `jj root` and `git rev-parse` in parallel. Run `jj root` first, and only proceed to git detection if jj is not found.
+
+**1b. Detect governance.** Check whether the current repository is governed by govctl:
+
+```bash
+test -f gov/config.toml || test -d gov
+```
+
+- **If governed** (exit 0): continue with Steps 2–7 as written below.
+- **If not governed** (exit 1): skip all govctl-specific steps (Steps 2–3 and 7). Proceed directly to Step 4 (Inspect Changes), then Step 5 (Compose Message), then Step 6 (Execute Commit) using plain VCS commands. Omit work-item tracking and `govctl check` entirely. Mention in your summary that no govctl governance was detected.
 
 ### Step 2: Govctl Pre-Commit Checks
 
@@ -51,7 +60,6 @@ govctl work list pending
 1. Determine whether the active work item actually matches this diff.
 2. If the diff is spec-only governance maintenance unrelated to the active work item, the commit may remain work-item-free even while another work item is active.
 3. If the active work item applies, then:
-   - Ask whether to add a `journal` entry documenting what was done and what happened
    - Ask whether any durable `notes` should be recorded
    - Check whether any acceptance criteria can be ticked:
      ```bash
@@ -144,16 +152,7 @@ git commit -m "<type>(<area>): <summary>"
 
 After successful commit, if work item exists:
 
-1. **Add journal entry** (if user confirmed in Step 3):
-
-   ```bash
-   govctl work add <WI-ID> journal "Committed <summary>; govctl check passes"
-   govctl work add <WI-ID> journal --scope <scope> --stdin <<'EOF'
-   <multi-line progress summary>
-   EOF
-   ```
-
-   Add notes only when there is a durable constraint, retry rule, or learning to preserve:
+1. **Add notes only when there is a durable constraint, retry rule, or learning to preserve**:
 
    ```bash
    govctl work add <WI-ID> notes "Do not retry X; it fails because Y"
@@ -174,7 +173,6 @@ After successful commit, if work item exists:
 govctl check                    # Validate all artifacts
 govctl work list pending        # List queued and active work items
 govctl work show <WI-ID>        # Show work item details
-govctl work add <WI-ID> journal "Progress update"
 govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
 
 # VCS commands
@@ -194,7 +192,7 @@ git diff --stat
 1. Detect active WI-XXXX
 2. govctl check → passes
 3. Confirm the active WI actually matches this diff
-4. If yes: ask about journal entry and criterion ticks
+4. If yes: ask about durable notes and criterion ticks
 5. If no, but diff is spec-only: proceed without attaching the commit to that WI
 6. If no and diff is implementation-bearing: switch/create the correct WI first
 7. Commit changes

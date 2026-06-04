@@ -1,0 +1,29 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SUMMARY"
+title = "Summary"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+tags = ["core"]
+
+[content]
+text = """
+This RFC defines the **loop execution model** for coordinating local agent execution rounds around one or more Work Items.
+
+A loop is a first-class local execution concept that tracks one or more Work Items through dependency-aware rounds of implementation, verification evidence collection, and refinement. Loops support:
+
+- **Single Work Item execution context**: Create resumable local round state for one Work Item
+- **Multi-Work Item batch execution context**: Coordinate several Work Items with dependency resolution and deterministic readiness ordering
+- **Failure and blocker propagation**: Represent failed, blocked, or cancelled loop-level outcomes without adding new Work Item lifecycle states
+- **Resumption**: Resume interrupted execution from loop state and round artifacts
+
+The loop model maintains clear separation between:
+
+- **Work Items**: Durable outcome artifacts that contain scope (`description`), success criteria (`acceptance_criteria`), durable memory (`notes`), references, dependencies, and verification policy
+- **Loop state**: Local execution state that tracks rounds, selected work, summary evidence, blockers, and next action
+
+This separation ensures Work Items remain clean outcome artifacts while enabling rich local execution traceability for debugging and resumption.
+
+Loops interact with Work Item lifecycle exclusively through existing `govctl work` semantics. `govctl loop run` advances local round state; it does not implement code, tick acceptance criteria, add notes, or mark Work Items done on behalf of the agent."""

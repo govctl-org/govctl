@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-02-058"
+title = "Prevent include-based test splits"
+status = "done"
+created = "2026-06-02"
+started = "2026-06-02"
+completed = "2026-06-02"
+
+[content]
+description = "Add a lightweight regression check that prevents `include!` from being used as a test-suite splitting mechanism under `tests/`. Keep generated-code include handling outside this work item unless a separate design decision changes it."
+
+[[content.acceptance_criteria]]
+text = "repository tests fail when `include!` is used under `tests/` for test-suite splitting"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "no test file under `tests/` contains `include!(` after the cleanup"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "no-include regression test, full tests, clippy, and govctl check pass"
+status = "done"
+category = "chore"

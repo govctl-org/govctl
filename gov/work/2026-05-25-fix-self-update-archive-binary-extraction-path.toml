@@ -19,11 +19,6 @@ notes = [
     "Latest checked release asset layout: govctl-v0.8.4-aarch64-apple-darwin/govctl inside govctl-v0.8.4-aarch64-apple-darwin.tar.gz.",
 ]
 
-[[content.journal]]
-date = "2026-05-25"
-scope = "self-update"
-content = 'Configured `govctl self-update` to pass `bin_path_in_archive = "govctl-v{{ version }}-{{ target }}/{{ bin }}"` to the `self_update` GitHub updater. Added regression coverage for Unix and Windows archive binary paths and for alignment with release workflow archive directories plus Cargo.toml cargo-binstall `bin-dir`. Verified with `cargo fmt --check`, `cargo test -q self_update`, and `govctl check`.'
-
 [[content.acceptance_criteria]]
 text = "Configure self-update extraction to use `govctl-v{{ version }}-{{ target }}/{{ bin }}` for Unix and Windows release archives"
 status = "done"

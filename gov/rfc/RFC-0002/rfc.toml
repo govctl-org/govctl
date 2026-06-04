@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.8.0"
+version = "0.9.0"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-04-13"
+updated = "2026-06-04"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "ca2304d86d19ee4b4947d84c5c218ab7d8f47e34eb30fd163e55c7c26f2a2399"
+signature = "19ba6bf36bcbad55cf36d2e7d56993ed9e8d67ed98c6fe598ceb9ad86007fecf"
 
 [[sections]]
 title = "Summary"
@@ -34,6 +34,12 @@ clauses = [
     "clauses/C-VERIFY-CONFIG.toml",
     "clauses/C-SELF-UPDATE.toml",
 ]
+
+[[changelog]]
+version = "0.9.0"
+date = "2026-06-04"
+notes = "Remove legacy JSON migration support"
+removed = ["govctl migrate no longer converts legacy RFC or clause JSON storage in v0.9 and later"]
 
 [[changelog]]
 version = "0.8.0"

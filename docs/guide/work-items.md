@@ -1,6 +1,6 @@
 # Working with Work Items
 
-Work Items track units of work from inception to completion. They provide an audit trail of what was done and when.
+Work Items track durable units of work from inception to completion, including scope, lifecycle state, acceptance criteria, references, dependencies, and durable notes. Round-by-round execution trace belongs in local loop state and round artifacts.
 
 > **See also:** [Tags](../guide/validation.md#controlled-vocabulary-tags), [TUI](../guide/getting-started.md#interactive-tui), [Canonical Edit](../guide/getting-started.md#canonical-edit-surface)
 
@@ -29,6 +29,7 @@ title = "Implement caching layer"
 status = "active"
 started = "2026-01-17"
 refs = ["RFC-0010", "ADR-0003"]
+depends_on = ["WI-2026-01-16-001"]
 
 [content]
 description = "Add Redis caching for the query endpoint."
@@ -43,21 +44,16 @@ category = "added"
 text = "govctl check passes"
 status = "pending"
 category = "chore"
-
-[[content.journal]]
-date = "2026-01-17"
-scope = "backend"
-content = "Implemented core logic"
 ```
 
 Work items contain:
 
 - **Title** — Brief description
 - **Description** — Task scope declaration
-- **Journal** — Execution tracking entries with date and scope (per [[ADR-0026]])
 - **Notes** — Durable learnings and constraints
 - **Acceptance Criteria** — Checkable completion criteria with changelog category
 - **Refs** — Links to related RFCs, ADRs, or external resources
+- **Depends On** — Blocking dependencies on other work items
 
 ## Status Lifecycle
 
@@ -112,6 +108,7 @@ EOF
 
 # Add to array fields
 govctl work edit WI-2026-01-17-001 refs --add RFC-0010
+govctl work edit WI-2026-01-17-001 depends_on --add WI-2026-01-16-001
 govctl work edit WI-2026-01-17-001 acceptance_criteria --add "fix: Handle edge case"
 
 # Remove by index
@@ -120,12 +117,6 @@ govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --remove
 # Tick checklist items
 govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
 govctl work edit WI-2026-01-17-001 content.acceptance_criteria[1] --tick cancelled
-
-# Nested journal fields
-govctl work edit WI-2026-01-17-001 "content.journal[0].scope" --set backend
-govctl work edit WI-2026-01-17-001 "content.journal[0].content" --stdin <<'EOF'
-Detailed progress update here
-EOF
 ```
 
 Path aliases are available for common fields:
@@ -134,10 +125,8 @@ Path aliases are available for common fields:
 | ------------- | ----------------------------------------- |
 | `description` | `content.description`                     |
 | `ac`          | `content.acceptance_criteria`             |
-| `journal`     | `content.journal`                         |
 | `notes`       | `content.notes`                           |
 | `category`    | `content.acceptance_criteria[i].category` |
-| `scope`       | `content.journal[i].scope`                |
 
 ### Tagging Work Items
 
@@ -153,23 +142,6 @@ Filter lists by tag:
 ```bash
 govctl work list --tag backend
 govctl work list --tag backend,performance
-```
-
-## Journal
-
-Track execution progress with dated journal entries:
-
-```bash
-govctl work add WI-2026-01-17-001 journal "Implemented core logic"
-
-# With scope tag
-govctl work add WI-2026-01-17-001 journal "Fixed edge case" --scope parser
-
-# Multi-line via stdin
-govctl work add WI-2026-01-17-001 journal --scope backend --stdin <<'EOF'
-Completed the API layer.
-All integration tests passing.
-EOF
 ```
 
 ## Per-Work-Item Guards
@@ -218,7 +190,7 @@ govctl work add WI-2026-01-17-001 notes "Do not retry the old validation path; i
 Nested path edits are also available for structured fields:
 
 ```bash
-govctl work edit WI-2026-01-17-001 "content.journal[0].scope" --set parser
+govctl work edit WI-2026-01-17-001 "content.acceptance_criteria[0].category" --set fixed
 ```
 
 ## Removing Items

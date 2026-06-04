@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-05-31-005"
+title = "Migrate durable legacy inline history to notes"
+status = "done"
+created = "2026-05-31"
+started = "2026-05-31"
+completed = "2026-05-31"
+
+[content]
+description = "Review legacy inline execution-history entries in this repository and preserve only durable takeaways as work-item notes. Transient execution logs should stay as historical render-only content unless they contain constraints, retry rules, or lessons useful for future maintenance."
+notes = ["Reviewed 58 work items with 86 legacy inline execution-history entries. Copied 17 durable takeaways into notes; transient implementation/status logs were left as render-only history."]
+
+[[content.acceptance_criteria]]
+text = "Durable takeaways are copied into notes without creating new legacy inline history"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Legacy inline execution-history entries are reviewed for durable takeaways"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

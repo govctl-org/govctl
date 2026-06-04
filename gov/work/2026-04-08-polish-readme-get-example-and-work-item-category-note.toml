@@ -11,10 +11,6 @@ completed = "2026-04-08"
 [content]
 description = "Tighten README and work item guide examples by adding a concrete get example and clarifying canonical changelog categories versus conventional-commit aliases."
 
-[[content.journal]]
-date = "2026-04-08"
-content = "Added a concrete get example to the README and clarified canonical work-item changelog categories versus accepted aliases."
-
 [[content.acceptance_criteria]]
 text = "README shows a concrete get example under core capabilities"
 status = "done"

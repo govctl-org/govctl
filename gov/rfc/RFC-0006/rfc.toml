@@ -1,0 +1,64 @@
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0006"
+title = "Loop Execution Model"
+version = "0.4.0"
+status = "normative"
+phase = "impl"
+owners = ["@govctl-org"]
+created = "2026-05-31"
+updated = "2026-06-03"
+signature = "8c414b17e2d0a1422a7e6b2a637a26978f3ce561018154276202ab40f37e42ca"
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-LOOP-DEFINITION.toml",
+    "clauses/C-LOOP-LIFECYCLE.toml",
+    "clauses/C-DEPENDENCY-SEMANTICS.toml",
+    "clauses/C-ROUND-EXECUTION.toml",
+    "clauses/C-WORK-ITEM-INTERACTION.toml",
+    "clauses/C-LOOP-RESUMPTION.toml",
+    "clauses/C-LOOP-STATE-STORAGE.toml",
+    "clauses/C-LOOP-SCOPE-MUTATION.toml",
+    "clauses/C-LOOP-LISTING.toml",
+    "clauses/C-LOOP-COMMAND-SURFACE.toml",
+]
+
+[[sections]]
+title = "Rationale"
+clauses = [
+    "clauses/C-UNIFIED-MODEL.toml",
+    "clauses/C-EXECUTION-STATE-SEPARATION.toml",
+    "clauses/C-DEPENDENCY-SEPARATION.toml",
+]
+
+[[changelog]]
+version = "0.4.0"
+date = "2026-06-03"
+notes = "Define loop command surface"
+added = ["Loop command surface defines canonical loop subcommands and argument roles"]
+changed = ["Loop run advances an existing local round protocol by LOOP-ID with explicit --work target selection"]
+
+[[changelog]]
+version = "0.3.0"
+date = "2026-06-01"
+notes = "Define loop listing discovery"
+added = ["Loop listing command discovers persisted local loop state"]
+
+[[changelog]]
+version = "0.2.0"
+date = "2026-06-01"
+notes = "Define loop scope mutation and canonical loop IDs"
+added = ["Loop scope mutation supports replan plus add/remove of the editable work field"]
+changed = ["Loop IDs use LOOP-YYYY-MM-DD-NNN canonical format"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-05-31"
+notes = "Initial draft"

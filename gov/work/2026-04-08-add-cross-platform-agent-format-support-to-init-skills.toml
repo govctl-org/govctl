@@ -12,11 +12,6 @@ refs = ["RFC-0002"]
 [content]
 description = "Add --format and --dir flags to init-skills for Codex CLI compatibility. build.rs generates Codex TOML agent templates at compile time from .claude/agents/*.md source of truth. RFC-0002 amended to v0.6.1."
 
-[[content.journal]]
-date = "2026-04-08"
-scope = "init-skills"
-content = "Implemented --format and --dir flags. build.rs codegen converts .claude/agents/*.md to Codex TOML at compile time using serde_yaml + toml crates. RFC-0002 amended to v0.6.1. All tests pass (192 unit + 20 integration suites)."
-
 [[content.acceptance_criteria]]
 text = "--format codex writes .toml agents with developer_instructions"
 status = "done"

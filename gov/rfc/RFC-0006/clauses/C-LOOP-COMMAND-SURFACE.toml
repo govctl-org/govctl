@@ -1,0 +1,62 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-LOOP-COMMAND-SURFACE"
+title = "Loop Command Surface"
+kind = "normative"
+status = "active"
+since = "0.4.0"
+
+[content]
+text = """
+Implementations that expose a `govctl loop` command MUST treat it as a project-level local execution-state command namespace as defined by [[RFC-0002:C-GLOBAL-COMMANDS]]. Loop state is not a governed artifact resource, so loop commands MUST NOT expose unrestricted resource CRUD field-editing verbs for arbitrary loop state. Loop commands MAY expose specified editable fields whose semantics are defined by this RFC.
+
+**Argument roles:**
+
+Loop command arguments MUST have stable roles:
+
+1. A positional `LOOP-ID` argument identifies an existing persisted local loop state directory.
+2. A `--id LOOP-ID` flag MAY be used only by commands that create a loop state, where it requests the ID to create or reuse.
+3. Positional `WI-ID...` arguments identify explicit loop `work` field values for loop creation or field mutation.
+4. Positional `WI-ID...` arguments MUST NOT mean an execution target subset.
+5. Execution target selection MUST use an explicit selector flag.
+6. Loop field mutation MUST use the same `add` and `remove` field-position shape used by governed artifact resources.
+
+**Canonical subcommands:**
+
+The canonical loop subcommands are:
+
+1. `loop list [filter]`: read persisted loop states. This command MUST be read-only.
+2. `loop show LOOP-ID`: read one persisted loop state by loop ID. This command MUST be read-only.
+3. `loop start [--id LOOP-ID] WI-ID...`: create or reuse a loop for an explicit `work` field set.
+4. `loop resume LOOP-ID`: select and display an existing non-terminal loop by loop ID. This command MUST be read-only and MUST NOT advance rounds.
+5. `loop run LOOP-ID [--work WI-ID ...] [--max-rounds N]`: advance the local round protocol for an existing loop state.
+6. `loop replan LOOP-ID`: recompute the dependency closure for the current explicit `work` field set.
+7. `loop add LOOP-ID work WI-ID`: add a Work Item ID to the loop's editable `work` field and replan.
+8. `loop remove LOOP-ID work WI-ID`: remove a Work Item ID from the loop's editable `work` field and replan.
+
+The `work` field is the only canonical user-facing field name for the loop's explicit work set. Implementations MUST accept `wi` as a shorthand alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID` while documenting the alias.
+
+**Discovery semantics:**
+
+`loop start [--id LOOP-ID] WI-ID...` MAY reuse an existing non-terminal loop with the same current explicit `work` field set instead of creating a new loop. If more than one non-terminal loop matches the requested work set, the implementation MUST reject the operation as ambiguous and require the caller to use `loop list` and then pass a positional `LOOP-ID` to the desired operation.
+
+`loop list [filter]` MUST support discovering loop state without requiring a caller to know a loop ID first per [[RFC-0006:C-LOOP-LISTING]]. Work-set discovery is a discovery behavior, not an execution selector.
+
+`loop run` MUST NOT start a new loop and MUST NOT discover a loop by positional Work Item IDs. It operates only on the positional `LOOP-ID` argument.
+
+**Run selection semantics:**
+
+The `--work WI-ID` flag selects execution targets inside the loop identified by the positional `LOOP-ID`. Implementations MUST reject duplicate `--work` values. Implementations MUST reject any `--work` value that is not a Work Item ID in the current `loop.resolved` array. These validations MUST complete before writing loop state.
+
+If no `--work` selector is provided, `loop run LOOP-ID` MUST consider every current work item in the loop's resolved dependency closure when opening a round, subject to dependency readiness.
+
+If one or more `--work` selectors are provided, `loop run LOOP-ID --work WI-ID...` MUST restrict the opened or advanced round to the selected target work items and their current in-loop transitive dependencies. The implementation MUST NOT select unrelated work items for that round. The implementation MAY update derived loop-level dependency outcomes, such as blocked dependents, when required to keep loop state consistent with [[RFC-0006:C-DEPENDENCY-SEMANTICS]].
+
+Targeted run selection MUST NOT replace, shrink, expand, or otherwise mutate the loop's editable `work` field. Scope changes MUST use `replan`, `add`, or `remove`.
+
+`loop run` MUST NOT silently perform repository implementation work, tick acceptance criteria, add Work Item notes, or move Work Items to `done`. Agents and humans MUST perform those operations through the existing Work Item and verification command surfaces. `loop run` records and validates local round evidence so those existing operations have resumable execution context.
+
+**Rationale:**
+
+The loop command namespace coordinates several governed resources but stores its own local execution state, so it is neither a governed artifact resource nor a simple single global command. Existing-loop operations use positional `LOOP-ID` arguments to match the rest of the CLI's noun/verb/object shape. Stable argument roles prevent hidden mode switches: positional work item IDs in `add` and `remove` are field values for the loop's `work` field, while `--work` is the explicit work-item execution selector. Keeping the field position visible preserves the CLI edit model while making loop-specific replanning a domain side effect of changing the field. Reusing `run` as the round-protocol advancement command preserves existing skill guidance while removing the misleading interpretation that govctl itself implements code."""
