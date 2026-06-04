@@ -23,6 +23,14 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::Verify { guard_ids, work } => {
             cmd::verify::verify(config, guard_ids, work.as_deref())
         }
+        BuiltinOp::Search {
+            query,
+            types,
+            tags,
+            limit,
+            output,
+            reindex,
+        } => cmd::search::search(config, query, types, tags, *limit, *output, *reindex),
         BuiltinOp::Describe { context } => cmd::describe::describe(config, *context),
         BuiltinOp::SelfUpdate { check } => cmd::self_update::self_update(*check),
         BuiltinOp::Completions { shell } => {

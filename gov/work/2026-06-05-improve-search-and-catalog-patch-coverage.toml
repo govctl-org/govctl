@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-05-001"
+title = "Improve search and catalog patch coverage"
+status = "done"
+created = "2026-06-05"
+started = "2026-06-05"
+completed = "2026-06-05"
+
+[content]
+description = "Improve meaningful regression coverage for the newly added artifact catalog and search implementation so Codecov patch coverage reflects real tested behavior rather than uncovered edge branches."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Targeted search and catalog tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Local coverage report identifies and exercises meaningful uncovered search and catalog branches"
+status = "done"
+category = "chore"

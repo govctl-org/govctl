@@ -29,25 +29,21 @@ fn adr_matches_lifecycle_lookup(entry: &AdrEntry, adr_id: &str) -> bool {
 }
 
 fn load_lifecycle_adr(config: &Config, adr_id: &str) -> DiagnosticResult<AdrEntry> {
+    if adr_id.starts_with("ADR-") {
+        // [[RFC-0002:C-LIFECYCLE-VERBS]]: ADR lifecycle verbs operate on
+        // existing ADR IDs; normalize catalog misses to the ADR not-found path.
+        return crate::artifact_catalog::load_adr_by_id(config, adr_id).map_err(|err| {
+            if err.code == DiagnosticCode::E0302AdrNotFound {
+                adr_not_found(adr_id)
+            } else {
+                err
+            }
+        });
+    }
+
     load_adrs(config)?
         .into_iter()
         .find(|entry| adr_matches_lifecycle_lookup(entry, adr_id))
-        .ok_or_else(|| adr_not_found(adr_id))
-}
-
-fn exact_adr<'a>(adrs: &'a [AdrEntry], adr_id: &str) -> Option<&'a AdrEntry> {
-    adrs.iter().find(|entry| entry.spec.govctl.id == adr_id)
-}
-
-fn require_replacement_adr(adrs: &[AdrEntry], by: &str) -> DiagnosticResult<()> {
-    exact_adr(adrs, by)
-        .map(|_| ())
-        .ok_or_else(|| replacement_adr_not_found(by))
-}
-
-fn take_exact_adr(adrs: Vec<AdrEntry>, adr_id: &str) -> DiagnosticResult<AdrEntry> {
-    adrs.into_iter()
-        .find(|entry| entry.spec.govctl.id == adr_id)
         .ok_or_else(|| adr_not_found(adr_id))
 }
 
@@ -151,11 +147,16 @@ pub(super) fn supersede_adr(
     by: &str,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    let adrs = load_adrs(config)?;
-
-    require_replacement_adr(&adrs, by)?;
-
-    let mut entry = take_exact_adr(adrs, adr_id)?;
+    // [[RFC-0002:C-LIFECYCLE-VERBS]] and [[RFC-0001:C-ADR-STATUS]]: ADR
+    // supersede requires `--by` to identify an existing replacement ADR.
+    match crate::artifact_catalog::load_adr_by_id(config, by) {
+        Ok(_) => {}
+        Err(err) if err.code == DiagnosticCode::E0302AdrNotFound => {
+            return Err(replacement_adr_not_found(by));
+        }
+        Err(err) => return Err(err),
+    }
+    let mut entry = load_lifecycle_adr(config, adr_id)?;
 
     if !is_valid_adr_transition(entry.spec.govctl.status, AdrStatus::Superseded) {
         return Err(Diagnostic::new(

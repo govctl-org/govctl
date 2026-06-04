@@ -1,0 +1,54 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0048"
+title = "Use local artifact catalog for direct lookup"
+status = "accepted"
+date = "2026-06-04"
+refs = [
+    "RFC-0002",
+    "RFC-0004",
+    "ADR-0039",
+]
+
+[content]
+context = """
+Many govctl commands that operate on one artifact currently load an entire artifact collection and then search in memory for the requested ID. This is simple and correct at small scale, but it makes common commands such as `work show`, `work edit`, `verify --work`, and loop execution pay full-directory scan and parse costs even when the filesystem layout or a small local index could identify the target path directly.
+
+The search feature planned by [[ADR-0039]] needs similar file freshness metadata. If search owns the only cache, core CLI lookup would become accidentally coupled to full-text search. If every command continues to scan independently, search does not solve the broader performance problem.
+
+The key constraint is authority: governed TOML artifacts remain the source of truth. Any cache used for lookup must be derived local state, and commands must still read and validate the target artifact before acting."""
+decision = """
+Use a project-local derived artifact catalog for direct artifact lookup.
+
+The catalog records artifact kind, ID, source path, and file freshness metadata. It is stored under `.govctl/` as local state and is not a governed artifact. Commands may use the catalog to find a candidate path for an ID, but the catalog never authorizes mutations by itself: the command must read the target file and verify that the artifact's stored ID matches the requested ID before it acts.
+
+The catalog is conceptually separate from full-text search. Search may reuse the catalog's path and freshness metadata, but search ranking, snippets, and FTS tables remain search-specific derived data.
+
+For artifact kinds with deterministic source paths, such as RFCs and clauses, commands should resolve paths directly and avoid the catalog when a simple path check is sufficient. For artifact kinds whose filenames are not fully determined by ID, such as work items and ADRs, commands should use the catalog first and fall back to a bounded collection rescan that repairs stale or missing catalog entries."""
+consequences = """
+### Positive
+
+- Single-artifact commands can avoid full collection scans in the common case.
+- Search can reuse shared freshness metadata without owning core CLI lookup.
+- Stale cache entries are recoverable because authoritative artifact content is still read from TOML.
+- The `.govctl/` local-state boundary keeps derived lookup state out of governed artifacts and rendered output.
+
+### Negative
+
+- Adds a local cache invalidation path that must be tested carefully.
+- Commands that use the catalog must verify ID/path agreement before mutation, or stale entries could become unsafe.
+- The first command after a branch switch or large artifact edit may still need a bounded rescan to repair catalog metadata.
+
+### Neutral
+
+- Full-project commands such as `check`, `status`, and bulk `render` still need broad loading. The catalog optimizes targeted lookup, not semantic validation."""
+
+[[content.alternatives]]
+text = "Derived local artifact catalog: Maintain a .govctl local-state catalog for ID-to-path lookup and freshness metadata, while still validating the target artifact before any read or mutation result is trusted."
+status = "accepted"
+
+[[content.alternatives]]
+text = "Keep full collection scans: Continue loading each whole artifact collection for single-ID commands and rely on search indexing only for search queries."
+status = "rejected"
+rejection_reason = "This preserves correctness but leaves the common single-artifact command path slow and lets search solve only one symptom instead of the shared lookup problem."

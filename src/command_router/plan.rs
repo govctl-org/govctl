@@ -57,6 +57,14 @@ pub enum BuiltinOp {
         guard_ids: Vec<String>,
         work: Option<String>,
     },
+    Search {
+        query: Vec<String>,
+        types: Vec<ListTarget>,
+        tags: Vec<String>,
+        limit: Option<usize>,
+        output: OutputFormat,
+        reindex: bool,
+    },
     Describe {
         context: bool,
     },
@@ -129,6 +137,11 @@ impl BuiltinOp {
             | Self::LoopList { .. }
             | Self::LoopShow { .. }
             | Self::LoopResume { .. } => true,
+            // [[RFC-0002:C-SEARCH-COMMAND]]: search may sync `.govctl/`
+            // derived local state but must not mutate governed artifacts or
+            // rendered docs; [[RFC-0004:C-DEFINITIONS]] keeps that outside the
+            // gov-root write-lock class.
+            Self::Search { .. } => true,
             #[cfg(feature = "tui")]
             Self::Tui => true,
             _ => false,

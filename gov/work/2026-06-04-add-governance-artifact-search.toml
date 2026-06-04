@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-04-006"
+title = "Add governance artifact search"
+status = "done"
+created = "2026-06-04"
+started = "2026-06-04"
+completed = "2026-06-04"
+refs = [
+    "RFC-0002",
+    "ADR-0039",
+    "ADR-0048",
+]
+depends_on = ["WI-2026-06-04-005"]
+
+[content]
+description = "Add a global govctl search command for ranked discovery across RFCs, clauses, ADRs, work items, and guards. Search should use the local artifact catalog metadata for freshness checks, store its derived full-text index under .govctl local state, and never return results from an index whose freshness cannot be established."
+
+[[content.acceptance_criteria]]
+text = "Search output supports table, JSON, and plain formats with stable result fields"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Search index sync updates changed artifacts, removes deleted artifacts, and refuses stale results when freshness cannot be established"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl search provides ranked search across RFCs, clauses, ADRs, work items, and guards"
+status = "done"
+category = "added"

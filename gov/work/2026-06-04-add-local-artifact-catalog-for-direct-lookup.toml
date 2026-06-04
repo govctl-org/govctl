@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-04-005"
+title = "Add local artifact catalog for direct lookup"
+status = "done"
+created = "2026-06-04"
+started = "2026-06-04"
+completed = "2026-06-04"
+refs = [
+    "ADR-0048",
+    "RFC-0004",
+]
+
+[content]
+description = "Add a project-local artifact locator/catalog so single-artifact commands can resolve IDs to paths without loading every artifact in the same collection. The catalog must remain a derived local cache: commands still read and validate the target artifact before acting, and stale catalog entries must trigger repair or fallback rather than becoming authority."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Single-artifact RFC, ADR, work item, guard, and clause lookup paths use direct path resolution or artifact catalog lookup instead of full collection scans where possible"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Stale or missing catalog entries are repaired or bypassed without operating on the wrong artifact"
+status = "done"
+category = "changed"

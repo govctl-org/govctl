@@ -1,19 +1,10 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::DiagnosticResult;
 use crate::model::GuardEntry;
-use crate::parse::{load_guards, load_work_items};
+use crate::parse::load_work_items;
 
 pub(crate) fn load_guard_by_id(config: &Config, id: &str) -> DiagnosticResult<GuardEntry> {
-    load_guards(config)?
-        .into_iter()
-        .find(|guard| guard.spec.govctl.id == id)
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1002GuardNotFound,
-                format!("Guard not found: {id}"),
-                id,
-            )
-        })
+    crate::artifact_catalog::load_guard_by_id(config, id)
 }
 
 pub(crate) fn guard_reference_blockers(

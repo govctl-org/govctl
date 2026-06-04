@@ -1,0 +1,38 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SEARCH-COMMAND"
+title = "Search Command"
+kind = "normative"
+status = "active"
+since = "0.10.1"
+
+[content]
+text = """
+`govctl search` searches governed artifacts by user-provided query text.
+
+Syntax:
+
+- `govctl search <query>... [--type <rfc|clause|adr|work|guard>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
+
+Behavior:
+
+- The command MUST operate at the global command namespace as an explicit [[RFC-0002:C-RESOURCE-MODEL]] exception listed in [[RFC-0002:C-GLOBAL-COMMANDS]], because it searches across multiple governed resource types and is project-level discovery rather than a resource-specific CRUD operation.
+- The command MUST search RFCs, clauses, ADRs, work items, and verification guards unless one or more `--type` filters are provided.
+- Positional `<query>...` values MUST be interpreted as user search terms by default, not as backend-specific raw query syntax.
+- The command MUST support artifact ID lookup as a search use case. A query containing an existing artifact ID SHOULD rank that artifact ahead of lower-confidence full-text matches.
+- The command MUST support `--tag <tag>` filters. When multiple tags are provided, returned artifacts MUST contain all requested tags.
+- The command MUST support `-n, --limit <limit>` and MUST apply a finite default limit when the flag is omitted.
+- The command MUST support `--reindex`, which forces a rebuild of any local derived search index before returning results.
+- The command MUST NOT modify governed artifact files or rendered documentation.
+- If the implementation persists a search index, it MUST store that index under `.govctl/` local state and MUST NOT store it under `gov/` or the rendered docs directory.
+- A persisted search index is derived local state and MUST NOT be treated as an authoritative artifact source. TOML governance artifacts remain the source of truth.
+- The command MUST establish index freshness before returning indexed results. If freshness cannot be established, the command MUST rebuild the index, perform an uncached authoritative scan, or return a diagnostic. It MUST NOT silently return stale indexed results.
+- Search index synchronization MAY mutate `.govctl/` local state. This local-state mutation MUST NOT require the RFC-0004 gov-root exclusive write lock because it does not mutate governed artifacts or rendered documentation.
+- Output rows MUST include at least artifact kind, artifact ID, title, source path, and a match snippet or equivalent human-readable context.
+- JSON output MUST expose stable result fields including `kind`, `id`, `title`, `path`, and `snippet`. It MAY include ranking score and status metadata.
+- Plain output MUST emit one artifact ID per line in result order.
+
+**Rationale:**
+
+Search is discovery across the governance corpus, not a resource-specific CRUD operation. Keeping indexes under `.govctl/` preserves the boundary between authoritative governed artifacts and disposable local execution or cache state. Requiring freshness before returning results prevents the local index from becoming a misleading second source of truth."""

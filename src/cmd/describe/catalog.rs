@@ -76,6 +76,13 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
             INIT_REQUIRED,
         ),
         command(
+            "search",
+            "Search governed artifacts across the project",
+            "To find RFCs, clauses, ADRs, work items, and guards by content or ID.",
+            "govctl search caching --type adr",
+            INIT_REQUIRED,
+        ),
+        command(
             "loop list",
             "List persisted local loop states",
             "To discover interrupted or resumable loops before selecting one by loop ID.",
