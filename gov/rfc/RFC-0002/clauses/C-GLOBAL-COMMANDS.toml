@@ -43,6 +43,8 @@ Behavior:
 - Validates the semantic correctness of the optional `[verification]` section in `gov/config.toml`, including that configured default guard IDs resolve
 - Scans source code for references (if enabled in config)
 - If legacy JSON RFC or clause storage files are detected, MUST fail with a migration-required diagnostic that instructs users to run `govctl migrate` with a govctl version earlier than 0.9 before upgrading
+- If any bundled JSON Schema file under `gov/schema/` is missing or differs from the current bundled schema, MUST report a schema-outdated diagnostic that instructs users to run `govctl migrate`
+- If any govctl-managed local-state `.gitignore` entry is missing or outdated, MUST report a project-support-outdated diagnostic that instructs users to run `govctl migrate`
 - Returns exit code 0 if valid, non-zero if errors
 - With `--deny-warnings`: treats warnings as errors
 
@@ -116,7 +118,8 @@ Behavior:
 - MUST leave the repository unchanged if any step fails
 - MUST be safe to run on an already-migrated repository and report a no-op result
 - MUST NOT perform heuristic project discovery or broad adoption tasks
-- MUST ensure all bundled JSON Schema files exist in `gov/schema/`, overwriting with the latest version regardless of schema version (per ADR-0035)
+- MUST ensure all bundled JSON Schema files exist in `gov/schema/`, overwriting with the latest version regardless of schema version
+- MUST ensure local govctl state ignore entries are present in `.gitignore`, including `.govctl.lock` and `.govctl/`, regardless of schema version
 - In govctl 0.9 and later, MUST NOT convert legacy JSON RFC or clause storage; repositories with those files MUST be migrated with a govctl version earlier than 0.9 before upgrading
 
 **8. `govctl verify`**
@@ -140,7 +143,7 @@ Behavior:
 
 **9. `govctl init-skills`**
 
-Installs agent skills and agents into the project's agent directory (per ADR-0035).
+Installs agent skills and agents into the project's agent directory.
 
 Syntax: `govctl init-skills [--force] [--format <claude|codex>] [--dir PATH]`
 

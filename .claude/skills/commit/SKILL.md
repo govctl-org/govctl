@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "Commit changes with govctl integration — check work item status, update notes when needed, and run govctl check"
+description: "Commit changes with govctl integration — check work item status, preserve durable notes only when needed, and run govctl check"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: [optional commit message hint]
 ---
@@ -18,7 +18,7 @@ Commit changes using the project's version control system, with govctl-aware che
 **CRITICAL: Steps MUST be executed in exact order. Do NOT skip ahead.**
 
 1. This is the only workflow that should issue raw `jj` or `git` commit commands.
-2. Do not perform RFC/ADR lifecycle verbs here, except work-item notes/tick/move updates that belong to commit bookkeeping.
+2. Do not perform RFC/ADR lifecycle verbs here, except work-item tick/move updates and rare durable notes that belong to commit bookkeeping.
 3. Implementation-bearing commits should belong to an active work item.
 4. Spec-only governance commits may proceed without a work item only when the diff is limited to governance artifacts, rendered governance docs, embedded skill/agent templates, or related metadata.
 
@@ -60,7 +60,7 @@ govctl work list pending
 1. Determine whether the active work item actually matches this diff.
 2. If the diff is spec-only governance maintenance unrelated to the active work item, the commit may remain work-item-free even while another work item is active.
 3. If the active work item applies, then:
-   - Ask whether any durable `notes` should be recorded
+   - Ask whether any closure-worthy durable `notes` should be recorded; skip notes for progress, validation output, review status, next actions, temporary blockers, or TODOs
    - Check whether any acceptance criteria can be ticked:
      ```bash
      govctl work show <WI-ID>
@@ -152,11 +152,13 @@ git commit -m "<type>(<area>): <summary>"
 
 After successful commit, if work item exists:
 
-1. **Add notes only when there is a durable constraint, retry rule, or learning to preserve**:
+1. **Add notes only when there is a closure-worthy durable constraint, retry rule, or learning to preserve after the work item is done**:
 
    ```bash
-   govctl work add <WI-ID> notes "Do not retry X; it fails because Y"
+   govctl work add <WI-ID> notes "Do not retry parser path X; it cannot preserve normalized arrays"
    ```
+
+   Do not add notes for commands run, tests passed, review findings addressed, current plans, next actions, or temporary blockers.
 
 2. **Tick acceptance criteria** (if applicable)
 
@@ -192,7 +194,7 @@ git diff --stat
 1. Detect active WI-XXXX
 2. govctl check → passes
 3. Confirm the active WI actually matches this diff
-4. If yes: ask about durable notes and criterion ticks
+4. If yes: ask about closure-worthy durable notes and criterion ticks
 5. If no, but diff is spec-only: proceed without attaching the commit to that WI
 6. If no and diff is implementation-bearing: switch/create the correct WI first
 7. Commit changes

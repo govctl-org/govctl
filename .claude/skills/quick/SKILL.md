@@ -22,7 +22,7 @@ Do not use this for new behavior, RFC-governed work, or architecture decisions. 
 3. If using a work item, read it with `govctl work show <WI-ID>`.
 4. Use work item fields correctly:
    - `description`: scope and why
-   - `notes`: constraints or lessons future steps must remember
+   - `notes`: closure-worthy durable constraints or lessons only
 5. If the change becomes behavioral, ambiguous, or architectural, stop using `/quick` and switch to `/gov`.
 6. Use `/commit` for raw VCS operations. Do not embed `jj` or `git` procedures here.
 7. Do not create multiple work items for trivial cleanup batches. Use the commit diff as the record, or one coarse work item only when durable tracking is explicitly valuable.
@@ -81,13 +81,13 @@ Run the relevant validation:
 govctl check
 ```
 
-If using a work item, update work-item memory only when there is a durable lesson:
+If using a work item, add a note only when there is a durable lesson that should remain useful after closure:
 
 ```bash
-govctl work add <WI-ID> notes "Do not use old command name in examples"
+govctl work add <WI-ID> notes "Do not use the old command name in generated examples; it was removed in v0.9"
 ```
 
-Add `notes` only when there is something future steps should remember. Transient execution progress belongs in loop state and round artifacts, not in work item fields.
+Do not write progress, command output, review status, current plans, next actions, temporary blockers, or TODOs to `notes`. Transient execution progress belongs in loop state and round artifacts, not in work item fields.
 When a tracked cleanup batch gains or loses durable roots, use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>`, `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>`, or `govctl loop replan <LOOP-ID>` rather than creating a new loop for each small item. `wi` is accepted as a short alias for the loop `work` field, but examples should prefer `work`.
 
 ### 4. Record

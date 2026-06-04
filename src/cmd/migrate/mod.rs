@@ -46,13 +46,40 @@ pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
 
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
     let schemas_synced = sync_schemas(config, op)?;
+    let gitignore_entries_synced =
+        crate::cmd::project_support::ensure_local_state_gitignore_entries(op)?;
 
     let current = config.schema.version;
     if current >= CURRENT_SCHEMA_VERSION {
-        if schemas_synced > 0 {
-            ui::success(format!(
-                "Synced {schemas_synced} schema file(s); already at schema version {CURRENT_SCHEMA_VERSION}"
-            ));
+        if schemas_synced > 0 || gitignore_entries_synced > 0 {
+            let mut parts = Vec::new();
+            if schemas_synced > 0 {
+                parts.push(format!("{schemas_synced} schema file(s)"));
+            }
+            if gitignore_entries_synced > 0 {
+                let label = if gitignore_entries_synced == 1 {
+                    "gitignore entry"
+                } else {
+                    "gitignore entries"
+                };
+                parts.push(format!("{gitignore_entries_synced} {label}"));
+            }
+            let message = if op.is_preview() {
+                format!(
+                    "Would sync {}; already at schema version {CURRENT_SCHEMA_VERSION}",
+                    parts.join(", ")
+                )
+            } else {
+                format!(
+                    "Synced {}; already at schema version {CURRENT_SCHEMA_VERSION}",
+                    parts.join(", ")
+                )
+            };
+            if op.is_preview() {
+                ui::info(message);
+            } else {
+                ui::success(message);
+            }
         } else {
             ui::info(format!(
                 "Repository already at schema version {CURRENT_SCHEMA_VERSION}"

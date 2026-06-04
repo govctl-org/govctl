@@ -5,7 +5,6 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostic
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, write_file};
-use std::path::PathBuf;
 
 mod artifacts;
 mod skills;
@@ -73,8 +72,8 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResu
         }
     }
 
-    // Ensure .gitignore contains local govctl state entries
-    ensure_gitignore_lock_entry(op)?;
+    // Ensure .gitignore contains local govctl state entries.
+    crate::cmd::project_support::ensure_local_state_gitignore_entries(op)?;
 
     if !op.is_preview() {
         ui::success("Project initialized");
@@ -84,46 +83,4 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResu
         );
     }
     Ok(vec![])
-}
-
-/// Ensure .gitignore contains local govctl state entries.
-fn ensure_gitignore_lock_entry(op: WriteOp) -> DiagnosticResult<()> {
-    const LOCAL_STATE_ENTRIES: &[&str] = &[".govctl.lock", ".govctl/"];
-    let gitignore_path = PathBuf::from(".gitignore");
-
-    if gitignore_path.exists() {
-        let content = std::fs::read_to_string(&gitignore_path).map_err(|err| {
-            Diagnostic::io_error("read .gitignore", err, gitignore_path.display().to_string())
-        })?;
-        let missing_entries: Vec<&str> = LOCAL_STATE_ENTRIES
-            .iter()
-            .copied()
-            .filter(|entry| !content.lines().any(|line| line.trim() == *entry))
-            .collect();
-
-        if missing_entries.is_empty() {
-            return Ok(());
-        }
-
-        let missing_content = missing_entries.join("\n");
-        let new_content = if content.ends_with('\n') {
-            format!("{content}{missing_content}\n")
-        } else {
-            format!("{content}\n{missing_content}\n")
-        };
-        write_file(&gitignore_path, &new_content, op, None)?;
-        if !op.is_preview() {
-            ui::info(format!(
-                "Added local govctl state entries to .gitignore: {}",
-                missing_entries.join(", ")
-            ));
-        }
-    } else {
-        let content = format!("# govctl local state\n{}\n", LOCAL_STATE_ENTRIES.join("\n"));
-        write_file(&gitignore_path, &content, op, None)?;
-        if !op.is_preview() {
-            ui::created_path(&gitignore_path);
-        }
-    }
-    Ok(())
 }

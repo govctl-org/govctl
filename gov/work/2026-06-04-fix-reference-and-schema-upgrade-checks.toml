@@ -1,0 +1,37 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-04-003"
+title = "Fix reference and schema upgrade checks"
+status = "done"
+created = "2026-06-04"
+started = "2026-06-04"
+completed = "2026-06-04"
+refs = [
+    "RFC-0000",
+    "RFC-0002",
+    "RFC-0006",
+]
+
+[content]
+description = "Fix two 0.9 validation gaps: governed RFC/ADR text must not be able to evade reference hierarchy checks by removing [[...]], and govctl check must prompt migration when bundled schema files such as work.schema.json are stale even if config schema version is current."
+
+[[content.acceptance_criteria]]
+text = "govctl check rejects invalid RFC/ADR hierarchy references even when the artifact ID appears as bare governed text"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check reports stale bundled schema files and tells users to run govctl migrate"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "targeted validation tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

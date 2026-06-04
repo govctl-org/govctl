@@ -80,13 +80,13 @@ VALID FIELDS:
   Array fields (use 'add'/'remove' instead):
     - refs: Cross-references to RFCs/ADRs
     - depends_on: Blocking dependencies on other work items
-    - notes: Ad-hoc key points (short strings)
+    - notes: Durable constraints or retry rules (short strings)
     - acceptance_criteria: Completion criteria with category
 
 FIELD SEMANTICS:
   - description: Task scope - define once, rarely change
   - depends_on: Work item IDs that must complete before this item starts
-  - notes: Ad-hoc points - add anytime, keep concise
+  - notes: Closure-worthy durable context only; do not store progress, commands run, next actions, temporary blockers, or TODOs
 
 EXAMPLES:
     govctl work set WI-001 description \"New description\"
@@ -104,13 +104,13 @@ Use dedicated verbs instead of `set` for:
 VALID ARRAY FIELDS:
     - refs: Cross-references to RFCs/ADRs (e.g., \"RFC-0001\", \"ADR-0002\")
     - depends_on: Blocking dependencies on work items (e.g., \"WI-2026-04-06-001\")
-    - notes: Ad-hoc key points (short strings)
+    - notes: Durable constraints or retry rules (short strings)
     - acceptance_criteria: Completion criteria with category prefix
 
 FIELD SEMANTICS:
   - description: Task scope - define once, rarely change
   - depends_on: Work item IDs only; cyclic dependencies are rejected
-  - notes: Ad-hoc points - add anytime, keep concise
+  - notes: Closure-worthy durable context only; do not store progress, commands run, next actions, temporary blockers, or TODOs
 
 ACCEPTANCE CRITERIA FORMAT:
     Use category prefix for changelog generation:
@@ -123,7 +123,7 @@ EXAMPLES:
     govctl work add WI-001 refs RFC-0001
     govctl work add WI-001 depends_on WI-2026-04-06-002
     govctl work add WI-001 acceptance_criteria \"add: Implement feature\"
-    govctl work add WI-001 notes \"Remember to test edge cases\"
+    govctl work add WI-001 notes \"Do not retry parser path X; it cannot preserve normalized arrays\"
 ")]
     Add(WorkAddArgs),
     /// Remove value from work item array field

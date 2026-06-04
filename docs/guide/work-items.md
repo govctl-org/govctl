@@ -181,11 +181,13 @@ Waivers are per-work-item only. They do not disable the guard globally, and they
 
 ## Notes
 
-Add durable notes for future steps:
+Add closure-worthy durable notes for constraints or retry rules that should remain useful after the work item is done:
 
 ```bash
 govctl work add WI-2026-01-17-001 notes "Do not retry the old validation path; it fails on missing refs"
 ```
+
+Do not use notes for progress updates, commands run, validation output, current plans, next actions, temporary blockers, or TODOs. Put transient execution trace in local loop state and round artifacts instead.
 
 Nested path edits are also available for structured fields:
 

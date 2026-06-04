@@ -14,6 +14,7 @@ pub mod migrate;
 pub mod move_;
 pub mod new;
 pub(crate) mod output;
+pub(crate) mod project_support;
 pub mod render;
 pub mod self_update;
 pub mod status;

@@ -4,6 +4,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 pub(super) enum ReferenceSurface {
     StructuredRef,
     BracketLink,
+    BareText,
 }
 
 /// Enforce [[RFC-0000:C-REFERENCE-HIERARCHY]] across refs and inline links.
@@ -50,11 +51,17 @@ fn hierarchy_message(
         ("RFC", ReferenceSurface::BracketLink) => format!(
             "RFC '{owner_id}' links to [[{target_id}]], but RFCs are higher authority than ADRs and Work Items — remove this link (the ADR or Work Item should reference the RFC, not the other way around)"
         ),
+        ("RFC", ReferenceSurface::BareText) => format!(
+            "RFC '{owner_id}' mentions {target_id}, but RFCs are higher authority than ADRs and Work Items — remove or rephrase this mention (the ADR or Work Item should reference the RFC, not the other way around)"
+        ),
         ("ADR", ReferenceSurface::StructuredRef) => format!(
             "ADR '{owner_id}' references {target_id}, but ADRs are higher authority than Work Items — remove this reference (the Work Item should reference the ADR, not the other way around)"
         ),
         ("ADR", ReferenceSurface::BracketLink) => format!(
             "ADR '{owner_id}' links to [[{target_id}]], but ADRs are higher authority than Work Items — remove this link (the Work Item should reference the ADR, not the other way around)"
+        ),
+        ("ADR", ReferenceSurface::BareText) => format!(
+            "ADR '{owner_id}' mentions {target_id}, but ADRs are higher authority than Work Items — remove or rephrase this mention (the Work Item should reference the ADR, not the other way around)"
         ),
         _ => unreachable!("only RFC and ADR hierarchy violations are diagnosable"),
     }
@@ -175,6 +182,19 @@ mod tests {
                 format!(
                     "ADR 'ADR-0001' links to [[{target_id}]], but ADRs are higher authority than Work Items — remove this link (the Work Item should reference the ADR, not the other way around)"
                 )
+            );
+        }
+    }
+
+    #[test]
+    fn bare_text_diagnostic_names_the_plain_identifier() {
+        let result = check_ref_hierarchy("RFC-0001", "ADR-0001", "f", ReferenceSurface::BareText);
+
+        assert!(result.is_err(), "RFC to ADR bare mention should fail");
+        if let Err(err) = result {
+            assert_eq!(
+                err.message,
+                "RFC 'RFC-0001' mentions ADR-0001, but RFCs are higher authority than ADRs and Work Items — remove or rephrase this mention (the ADR or Work Item should reference the RFC, not the other way around)"
             );
         }
     }

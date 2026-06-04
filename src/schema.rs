@@ -1,7 +1,7 @@
 //! Runtime JSON Schema validation for governance artifacts.
 
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, Diagnostics};
 use serde_json::Value;
 use std::borrow::Cow;
 use std::io::ErrorKind;
@@ -120,6 +120,35 @@ pub const ARTIFACT_SCHEMA_TEMPLATES: &[SchemaTemplate] = &[
         content: include_str!("../gov/schema/loop-round.schema.json"),
     },
 ];
+
+// Implements [[RFC-0002:C-GLOBAL-COMMANDS]]: check reports stale bundled schemas
+// with W0110 so users can refresh project support files via `govctl migrate`.
+pub fn installed_schema_diagnostics(config: &Config) -> Diagnostics {
+    let mut diagnostics = Vec::new();
+    for template in ARTIFACT_SCHEMA_TEMPLATES {
+        let path = config.schema_dir().join(template.filename);
+        let display = config.display_path(&path).display().to_string();
+        match std::fs::read_to_string(&path) {
+            Ok(existing) if existing == template.content => {}
+            Ok(_) => diagnostics.push(stale_schema_diagnostic(&display)),
+            Err(err) if err.kind() == ErrorKind::NotFound => {
+                diagnostics.push(stale_schema_diagnostic(&display));
+            }
+            Err(err) => diagnostics.push(Diagnostic::io_error("read schema file", err, display)),
+        }
+    }
+    diagnostics
+}
+
+fn stale_schema_diagnostic(display_path: &str) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::W0110SchemaOutdated,
+        format!(
+            "Bundled schema file '{display_path}' is missing or outdated. Run `govctl migrate` to refresh bundled schemas."
+        ),
+        display_path,
+    )
+}
 
 pub fn validate_toml_value(
     kind: ArtifactSchema,

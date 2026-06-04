@@ -176,3 +176,74 @@ unexpected = "should fail schema validation"
     assert!(output.contains("guard.schema.json"), "output: {}", output);
     Ok(())
 }
+
+#[test]
+fn test_check_reports_stale_schema_file_even_when_schema_version_is_current() -> common::TestResult
+{
+    let temp_dir = init_project()?;
+
+    fs::write(
+        temp_dir.path().join("gov/schema/work.schema.json"),
+        r#"{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["govctl", "content"],
+  "properties": {
+    "govctl": {
+      "type": "object",
+      "required": ["id", "title", "status"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "status": { "type": "string" },
+        "created": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "content": {
+      "type": "object",
+      "properties": {
+        "description": { "type": "string" }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
+"#,
+    )?;
+
+    fs::write(
+        temp_dir.path().join("gov/work/2026-01-01-dependency.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Dependency field"
+status = "queue"
+created = "2026-01-01"
+depends_on = ["WI-2026-01-01-002"]
+
+[content]
+description = "Work description"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("warning[W0110]"), "output: {}", output);
+    assert!(output.contains("work.schema.json"), "output: {}", output);
+    assert!(output.contains("govctl migrate"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_check_reports_missing_local_state_gitignore_entry() -> common::TestResult {
+    let temp_dir = init_project()?;
+    fs::write(temp_dir.path().join(".gitignore"), ".govctl.lock\n")?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("warning[W0111]"), "output: {}", output);
+    assert!(output.contains(".gitignore"), "output: {}", output);
+    assert!(output.contains(".govctl/"), "output: {}", output);
+    assert!(output.contains("govctl migrate"), "output: {}", output);
+    Ok(())
+}

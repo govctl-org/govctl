@@ -30,7 +30,8 @@ When invoked:
 
 ### Working Memory Fields
 
-- [ ] `notes`, if present, record durable learnings, constraints, decisions, or retry rules
+- [ ] `notes`, if present, record closure-worthy durable learnings, constraints, decisions, or retry rules
+- [ ] `notes` do not contain progress updates, commands run, validation output, review status, current plans, next actions, temporary blockers, hypotheses, or "remember to do X" TODOs
 - [ ] Missing `notes` is acceptable for very small work items
 
 ### Acceptance Criteria
@@ -86,4 +87,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", description fields that were abused as execution logs, work items that invent requirements locally, and batches split into mechanical noise. Flag those as Critical.
+The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", description or notes fields that were abused as execution logs, work items that invent requirements locally, and batches split into mechanical noise. Flag those as Critical.
