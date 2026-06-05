@@ -6,8 +6,21 @@ fn breadcrumb(app: &App) -> String {
     match app.view {
         View::Dashboard => "Dashboard".to_string(),
         View::RfcList => "Dashboard > RFCs".to_string(),
+        View::ClauseList => "Dashboard > Clauses".to_string(),
         View::AdrList => "Dashboard > ADRs".to_string(),
         View::WorkList => "Dashboard > Work".to_string(),
+        View::GuardList => "Dashboard > Guards".to_string(),
+        View::ReleaseList => "Dashboard > Releases".to_string(),
+        View::TagList => "Dashboard > Tags".to_string(),
+        View::Search => "Dashboard > Search".to_string(),
+        View::LoopList => "Dashboard > Loops".to_string(),
+        View::LoopDetail(idx) => app
+            .supplement
+            .loops
+            .get(idx)
+            .map(|entry| format!("Dashboard > Loops > {}", entry.id))
+            .unwrap_or_else(|| "Dashboard > Loops".to_string()),
+        View::DiagnosticList => "Dashboard > Diagnostics".to_string(),
         View::RfcDetail(idx) => app
             .index
             .rfcs
@@ -26,6 +39,12 @@ fn breadcrumb(app: &App) -> String {
             .get(idx)
             .map(|item| format!("Dashboard > Work > {}", item.meta().id))
             .unwrap_or_else(|| "Dashboard > Work".to_string()),
+        View::GuardDetail(idx) => app
+            .supplement
+            .guards
+            .get(idx)
+            .map(|guard| format!("Dashboard > Guards > {}", guard.meta().id))
+            .unwrap_or_else(|| "Dashboard > Guards".to_string()),
         View::ClauseDetail(rfc_idx, clause_idx) => app
             .index
             .rfcs
@@ -44,12 +63,24 @@ fn breadcrumb(app: &App) -> String {
 fn header_status(app: &mut App) -> String {
     match app.view {
         View::Dashboard => format!(
-            "RFC {} | ADR {} | Work {}",
+            "RFC {} | ADR {} | Work {} | Guard {} | Loop {} | Diag {}",
             app.index.rfcs.len(),
             app.index.adrs.len(),
-            app.index.work_items.len()
+            app.index.work_items.len(),
+            app.supplement.guards.len(),
+            app.supplement.loops.len(),
+            app.supplement.diagnostics.len()
         ),
-        View::RfcList | View::AdrList | View::WorkList => {
+        View::RfcList
+        | View::ClauseList
+        | View::AdrList
+        | View::WorkList
+        | View::GuardList
+        | View::ReleaseList
+        | View::TagList
+        | View::Search
+        | View::LoopList
+        | View::DiagnosticList => {
             let total = app.list_total_len();
             let shown = app.list_len();
             let mut parts = vec![format!("Shown {}/{}", shown, total)];
@@ -61,8 +92,26 @@ fn header_status(app: &mut App) -> String {
             } else if app.filter_active() {
                 parts.push(format!("Filter: {}", app.filter_query));
             }
+            if app.view == View::Search {
+                if app.search_mode {
+                    parts.push(format!("Query: {}_", app.search_query));
+                } else if !app.search_query.is_empty() {
+                    parts.push(format!("Query: {}", app.search_query));
+                }
+            }
             parts.join(" | ")
         }
+        View::LoopDetail(idx) => app
+            .current_loop_state(idx)
+            .map(|state| {
+                format!(
+                    "{} | round {} | {}",
+                    state.loop_meta.state.as_str(),
+                    state.loop_meta.current_round,
+                    state.loop_meta.next_action.as_str()
+                )
+            })
+            .unwrap_or_else(|| "invalid loop state".to_string()),
         _ => String::new(),
     }
 }
@@ -92,12 +141,52 @@ impl<'a> Header<'a> {
 fn bindings_for_view(view: View) -> &'static [&'static str] {
     match view {
         View::Dashboard => &[
-            "1/r", "RFCs", "2/a", "ADRs", "3/w", "Work", "?", "Help", "q", "Quit",
+            "r",
+            "RFCs",
+            "c",
+            "Clauses",
+            "a",
+            "ADRs",
+            "w",
+            "Work",
+            "s",
+            "Search",
+            "l",
+            "Loops",
+            "d",
+            "Diagnostics",
+            "?",
+            "Help",
+            "q",
+            "Quit",
         ],
-        View::RfcList | View::AdrList | View::WorkList => &[
+        View::RfcList
+        | View::ClauseList
+        | View::AdrList
+        | View::WorkList
+        | View::GuardList
+        | View::ReleaseList
+        | View::TagList
+        | View::LoopList
+        | View::DiagnosticList => &[
             "j/k", "Navigate", "Enter", "View", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?",
             "Help", "q", "Quit",
         ],
+        View::Search => &[
+            "e//",
+            "Edit Query",
+            "Enter",
+            "View",
+            "j/k",
+            "Navigate",
+            "Esc",
+            "Back",
+            "?",
+            "Help",
+            "q",
+            "Quit",
+        ],
+        View::LoopDetail(_) => &["j/k", "Select", "Esc", "Back", "?", "Help", "q", "Quit"],
         View::RfcDetail(_) => &[
             "j/k",
             "Navigate",
@@ -110,7 +199,10 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
             "q",
             "Quit",
         ],
-        View::AdrDetail(_) | View::WorkDetail(_) | View::ClauseDetail(_, _) => &[
+        View::AdrDetail(_)
+        | View::WorkDetail(_)
+        | View::GuardDetail(_)
+        | View::ClauseDetail(_, _) => &[
             "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
         ],
     }

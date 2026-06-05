@@ -1,7 +1,10 @@
 use super::super::super::app::{App, View};
 use super::super::test_support::{adr, clause, project_index, render_app, rfc, work_item};
 use super::*;
+use crate::loop_state::{LoopState, LoopWorkItemStatus};
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
+use crate::tui::data::TuiLoopEntry;
+use std::collections::BTreeMap;
 
 #[test]
 fn detail_viewport_footer_status_clamps_scroll() {
@@ -41,6 +44,33 @@ fn detail_renderers_draw_expected_content() -> Result<(), Box<dyn std::error::Er
     assert!(rendered.iter().any(|line| line.contains("C-TEST")));
     assert!(rendered.iter().any(|line| line.contains("Clause text")));
 
+    Ok(())
+}
+
+#[test]
+fn loop_detail_renders_dag_and_inspector_on_narrow_viewport()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut app = App::new(detail_project_index());
+    app.view = View::LoopDetail(0);
+    app.loop_selected = 1;
+    app.supplement.loops.push(TuiLoopEntry {
+        id: "LOOP-2026-06-06-001".to_string(),
+        state: Some(sample_loop_state()?),
+        diagnostic: None,
+    });
+
+    let (_, rendered) = render_app(72, 24, app, |frame, app| {
+        draw_loop(frame, app, frame.area(), 0);
+    })?;
+
+    assert!(rendered.iter().any(|line| line.contains("Dependency DAG")));
+    assert!(rendered.iter().any(|line| line.contains("Selected Work")));
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("WI-2026-06-06-002"))
+    );
+    assert!(rendered.iter().any(|line| line.contains("Status:")));
     Ok(())
 }
 
@@ -91,4 +121,24 @@ fn detail_project_index() -> crate::model::ProjectIndex {
             &["cleanup"],
         )],
     )
+}
+
+fn sample_loop_state() -> crate::diagnostic::DiagnosticResult<LoopState> {
+    let mut dependencies = BTreeMap::new();
+    dependencies.insert("WI-2026-06-06-001".to_string(), vec![]);
+    dependencies.insert(
+        "WI-2026-06-06-002".to_string(),
+        vec!["WI-2026-06-06-001".to_string()],
+    );
+    let mut state = LoopState::new(
+        "LOOP-2026-06-06-001",
+        vec!["WI-2026-06-06-002".to_string()],
+        vec![
+            "WI-2026-06-06-001".to_string(),
+            "WI-2026-06-06-002".to_string(),
+        ],
+        dependencies,
+    )?;
+    state.set_item_status("WI-2026-06-06-002", LoopWorkItemStatus::Active)?;
+    Ok(state)
 }

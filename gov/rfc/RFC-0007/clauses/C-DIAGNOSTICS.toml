@@ -1,0 +1,22 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-DIAGNOSTICS"
+title = "Diagnostics view"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+TUI v2 MUST provide a diagnostics view that presents project check diagnostics to a human.
+
+The diagnostics view MUST show diagnostic severity, code, message, and target context when those fields are available.
+
+The diagnostics view SHOULD group or filter diagnostics by severity and artifact target.
+
+When a diagnostic target corresponds to an artifact that TUI v2 can display, selecting the diagnostic SHOULD navigate to that artifact's detail view or an equivalent contextual view.
+
+The diagnostics view MUST NOT automatically apply migrations, edit artifacts, render documents, or run mutation commands to resolve diagnostics.
+
+**Rationale:** `govctl check` is the central safety signal for governed work. TUI v2 should make those diagnostics easier for a human to triage without turning validation into an implicit repair workflow."""

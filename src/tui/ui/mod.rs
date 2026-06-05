@@ -64,12 +64,44 @@ fn draw_content(frame: &mut Frame, app: &mut App, area: Rect) -> Option<DetailVi
             lists::draw_rfc(frame, app, area);
             None
         }
+        View::ClauseList => {
+            lists::draw_clause(frame, app, area);
+            None
+        }
         View::AdrList => {
             lists::draw_adr(frame, app, area);
             None
         }
         View::WorkList => {
             lists::draw_work(frame, app, area);
+            None
+        }
+        View::GuardList => {
+            lists::draw_guard(frame, app, area);
+            None
+        }
+        View::ReleaseList => {
+            lists::draw_release(frame, app, area);
+            None
+        }
+        View::TagList => {
+            lists::draw_tag(frame, app, area);
+            None
+        }
+        View::Search => {
+            lists::draw_search(frame, app, area);
+            None
+        }
+        View::LoopList => {
+            lists::draw_loop(frame, app, area);
+            None
+        }
+        View::LoopDetail(idx) => {
+            detail::draw_loop(frame, app, area, idx);
+            None
+        }
+        View::DiagnosticList => {
+            lists::draw_diagnostics(frame, app, area);
             None
         }
         View::RfcDetail(idx) => {
@@ -84,6 +116,7 @@ fn draw_content(frame: &mut Frame, app: &mut App, area: Rect) -> Option<DetailVi
             // Implements [[RFC-0003:C-DETAIL]]
             Some(detail::draw_work(frame, app, area, idx))
         }
+        View::GuardDetail(idx) => Some(detail::draw_guard(frame, app, area, idx)),
         View::ClauseDetail(rfc_idx, clause_idx) => {
             // Implements [[RFC-0003:C-DETAIL]]
             Some(detail::draw_clause(frame, app, area, rfc_idx, clause_idx))

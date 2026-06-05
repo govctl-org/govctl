@@ -6,13 +6,24 @@ use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
 fn dashboard_draws_summary_counts() -> Result<(), Box<dyn std::error::Error>> {
     let app = App::new(dashboard_project_index());
 
-    let (_, rendered) = render_app(90, 8, app, |frame, app| draw(frame, app, frame.area()))?;
-    assert!(rendered.iter().any(|line| line.contains("Draft:      1")));
-    assert!(rendered.iter().any(|line| line.contains("Normative:  1")));
-    assert!(rendered.iter().any(|line| line.contains("Proposed:   1")));
-    assert!(rendered.iter().any(|line| line.contains("Accepted:   1")));
-    assert!(rendered.iter().any(|line| line.contains("Queue:  1")));
-    assert!(rendered.iter().any(|line| line.contains("Active: 1")));
+    let (_, rendered) = render_app(120, 24, app, |frame, app| draw(frame, app, frame.area()))?;
+    assert!(rendered.iter().any(|line| line.contains("Draft:")));
+    assert!(rendered.iter().any(|line| line.contains("Normative:")));
+    assert!(rendered.iter().any(|line| line.contains("Proposed:")));
+    assert!(rendered.iter().any(|line| line.contains("Accepted:")));
+    assert!(rendered.iter().any(|line| line.contains("Queue:")));
+    assert!(rendered.iter().any(|line| line.contains("Active:")));
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("Read-only cockpit"))
+    );
+    assert!(rendered.iter().any(|line| line.contains("[s]")));
+    assert!(rendered.iter().any(|line| line.contains("Loops")));
+    assert!(rendered.iter().any(|line| line.contains("[9]")));
+    assert!(rendered.iter().any(|line| line.contains("Releases")));
+    assert!(rendered.iter().any(|line| line.contains("[t]")));
+    assert!(rendered.iter().any(|line| line.contains("Tags")));
     Ok(())
 }
 

@@ -1,0 +1,38 @@
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0007"
+title = "TUI v2 read-only cockpit"
+version = "0.1.0"
+status = "normative"
+phase = "test"
+owners = ["@govctl-org"]
+created = "2026-06-06"
+updated = "2026-06-06"
+refs = [
+    "RFC-0003",
+    "RFC-0006",
+    "RFC-0002",
+]
+tags = ["tui"]
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-READ-ONLY.toml",
+    "clauses/C-COCKPIT-VIEWS.toml",
+    "clauses/C-LOOP-VIEWS.toml",
+    "clauses/C-LOOP-DAG.toml",
+    "clauses/C-SEARCH.toml",
+    "clauses/C-DIAGNOSTICS.toml",
+    "clauses/C-HUMAN-UX.toml",
+]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-06-06"
+notes = "Initial draft"

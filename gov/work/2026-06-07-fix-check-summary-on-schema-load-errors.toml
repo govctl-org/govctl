@@ -1,0 +1,27 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-07-001"
+title = "Fix check summary on schema load errors"
+status = "done"
+created = "2026-06-07"
+started = "2026-06-07"
+completed = "2026-06-07"
+
+[content]
+description = "Fix the check command regression where schema/load failures print a successful-looking checked summary before diagnostics, causing CI snapshot failures and confusing output."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check no longer prints a checked-count summary before schema/load diagnostics"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "failing RFC/clause wire-format snapshot tests pass"
+status = "done"
+category = "chore"

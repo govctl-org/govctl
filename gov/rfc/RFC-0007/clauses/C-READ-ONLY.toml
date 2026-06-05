@@ -1,0 +1,22 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-READ-ONLY"
+title = "Read-only cockpit boundary"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+TUI v2 MUST be read-only for governed project state in its first implementation phase.
+
+TUI v2 MUST NOT create, edit, delete, move, finalize, accept, reject, supersede, deprecate, render, or otherwise mutate governed artifacts.
+
+TUI v2 MUST NOT mutate persisted loop state or round artifacts under `.govctl/loops/`.
+
+TUI v2 MAY refresh disposable derived local indexes under `.govctl/` only when doing so follows the freshness and local-state rules defined by [[RFC-0002:C-SEARCH-COMMAND]].
+
+When TUI v2 presents an operation that would mutate state, it MUST present it as a suggested CLI command or help text rather than executing it.
+
+**Rationale:** The CLI already owns mutation semantics, dry-run behavior, diagnostics, lock handling, and lifecycle gates. Keeping the first TUI v2 phase read-only gives humans a richer project cockpit without creating a second, weaker edit model."""

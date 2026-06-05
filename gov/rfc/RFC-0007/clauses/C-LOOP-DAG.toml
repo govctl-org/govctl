@@ -1,0 +1,24 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-LOOP-DAG"
+title = "Loop dependency DAG visualization"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+TUI v2 MUST render a selected loop's dependency graph as a visual DAG derived from the loop state's `dependencies` table.
+
+The DAG view MUST represent every work item in the loop state's resolved work set unless viewport constraints require an explicit neighborhood or layer-limited fallback.
+
+The DAG view MUST distinguish loop-level item statuses such as `pending`, `active`, `done`, `failed`, `blocked`, and `cancelled` using readable text and semantic styling.
+
+The DAG view MUST make the selected work item visually distinct and MUST show its direct dependencies and direct dependents when that information is available.
+
+The DAG layout MUST be deterministic for the same loop state.
+
+When the graph is too large or the terminal viewport is too small for a full DAG, TUI v2 MUST degrade to a readable representation that still exposes ordering, dependencies, selected item context, and hidden item counts.
+
+**Rationale:** A plain topological list is not enough for humans to understand batch execution. A visual DAG exposes why work is ready, blocked, or downstream of another item while still allowing terminal-size fallbacks."""

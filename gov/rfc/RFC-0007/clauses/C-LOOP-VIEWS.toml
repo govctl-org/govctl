@@ -1,0 +1,24 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-LOOP-VIEWS"
+title = "Loop state views"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+TUI v2 MUST provide a loop list view that discovers persisted loop states according to [[RFC-0006:C-LOOP-LISTING]].
+
+Each listed loop MUST show the loop ID, lifecycle state, editable `work` roots, resolved work item count, aggregate round count, and next action when those values are present in valid loop state.
+
+TUI v2 MUST provide a loop inspector for a selected loop.
+
+The loop inspector MUST show the selected loop's lifecycle state, current round, next action, editable `work` roots, resolved work set, loop-level item statuses, round counts, and dependency information.
+
+If a loop state file is invalid, TUI v2 MUST present a readable diagnostic for that loop and MUST NOT treat invalid loop state as authoritative.
+
+TUI v2 MUST NOT repair, replan, resume, run, or otherwise mutate loop state while rendering loop views.
+
+**Rationale:** Loop state is local but highly useful to humans resuming or auditing work. The TUI should expose this state directly while preserving [[RFC-0006]] ownership of loop execution semantics."""

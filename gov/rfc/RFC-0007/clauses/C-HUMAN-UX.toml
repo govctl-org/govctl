@@ -1,0 +1,24 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-HUMAN-UX"
+title = "Human-first terminal UX"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+TUI v2 MUST optimize rendered screens for human comprehension rather than machine parsing.
+
+TUI v2 MUST use consistent semantic styling for artifact kind, lifecycle status, phase, diagnostic severity, loop item status, selection, and muted secondary information.
+
+TUI v2 MUST preserve keyboard-only navigation across all primary views.
+
+TUI v2 MUST expose view-specific key bindings through persistent footer text, help overlay, or an equivalent discoverable mechanism.
+
+TUI v2 MUST avoid layouts where essential text overlaps, truncates without context, or becomes unreadable on common narrow terminal widths.
+
+When a terminal is too small for the preferred layout, TUI v2 MUST fall back to a simpler readable layout rather than preserving a broken multi-pane layout.
+
+**Rationale:** A human-facing terminal UI succeeds when state, hierarchy, and next steps are quickly legible. Visual polish should come from semantic consistency and resilient layout, not from decorative complexity."""

@@ -4,6 +4,8 @@
 //! RFCs, ADRs, and Work Items.
 
 mod app;
+mod dag;
+mod data;
 mod event;
 mod ui;
 
@@ -54,7 +56,7 @@ pub fn run(config: &Config) -> DiagnosticResult<()> {
         Terminal::new(backend).map_err(|err| terminal_error("initialize terminal", err))?;
 
     // Create app state
-    let mut app = App::new(index);
+    let mut app = App::with_project(config.clone(), index);
 
     // Run event loop
     let result = event::run_event_loop(&mut terminal, &mut app);

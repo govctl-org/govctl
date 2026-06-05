@@ -1,4 +1,5 @@
 use super::{App, View};
+use crate::diagnostic::DiagnosticLevel;
 
 fn fields_match_normalized_query(query: &str, fields: &[&str]) -> bool {
     fields
@@ -11,12 +12,20 @@ impl App {
     pub fn list_total_len(&self) -> usize {
         match self.view {
             View::RfcList => self.index.rfcs.len(),
+            View::ClauseList => self.supplement.clauses.len(),
             View::AdrList => self.index.adrs.len(),
             View::WorkList => self.index.work_items.len(),
+            View::GuardList => self.supplement.guards.len(),
+            View::ReleaseList => self.supplement.releases.len(),
+            View::TagList => self.supplement.tags.len(),
+            View::Search => self.search_results.len(),
+            View::LoopList => self.supplement.loops.len(),
+            View::DiagnosticList => self.supplement.diagnostics.len(),
             _ => 0,
         }
     }
 
+    // Implements [[RFC-0007:C-COCKPIT-VIEWS]]: cached list indices follow view data.
     pub(super) fn invalidate_indices(&mut self) {
         self.indices_dirty = true;
     }
@@ -44,6 +53,32 @@ impl App {
                             rfc.rfc.title.as_str(),
                             rfc.rfc.status.as_ref(),
                             rfc.rfc.phase.as_ref(),
+                        ],
+                    ) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::ClauseList => self
+                .supplement
+                .clauses
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, entry)| {
+                    if !has_query {
+                        return Some(idx);
+                    }
+                    let clause = &entry.clause.spec;
+                    if fields_match_normalized_query(
+                        &query,
+                        &[
+                            entry.rfc_id.as_str(),
+                            clause.clause_id.as_str(),
+                            clause.title.as_str(),
+                            clause.status.as_ref(),
+                            clause.kind.as_ref(),
                         ],
                     ) {
                         Some(idx)
@@ -86,6 +121,135 @@ impl App {
                         &query,
                         &[meta.id.as_str(), meta.title.as_str(), meta.status.as_ref()],
                     ) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::GuardList => self
+                .supplement
+                .guards
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, guard)| {
+                    if !has_query {
+                        return Some(idx);
+                    }
+                    let meta = guard.meta();
+                    if fields_match_normalized_query(
+                        &query,
+                        &[
+                            meta.id.as_str(),
+                            meta.title.as_str(),
+                            guard.spec.check.command.as_str(),
+                        ],
+                    ) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::ReleaseList => self
+                .supplement
+                .releases
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, release)| {
+                    if !has_query
+                        || fields_match_normalized_query(
+                            &query,
+                            &[release.version.as_str(), release.date.as_str()],
+                        )
+                    {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::TagList => self
+                .supplement
+                .tags
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, tag)| {
+                    if !has_query || fields_match_normalized_query(&query, &[tag.name.as_str()]) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::Search => self
+                .search_results
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, result)| {
+                    if !has_query
+                        || fields_match_normalized_query(
+                            &query,
+                            &[
+                                result.kind.as_str(),
+                                result.id.as_str(),
+                                result.title.as_str(),
+                                result.snippet.as_str(),
+                            ],
+                        )
+                    {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::LoopList => self
+                .supplement
+                .loops
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, entry)| {
+                    if !has_query {
+                        return Some(idx);
+                    }
+                    let state = entry
+                        .state
+                        .as_ref()
+                        .map(|state| state.loop_meta.state.as_str())
+                        .unwrap_or("invalid");
+                    let work = entry
+                        .state
+                        .as_ref()
+                        .map(|state| state.loop_meta.work.join(" "))
+                        .unwrap_or_default();
+                    if fields_match_normalized_query(
+                        &query,
+                        &[entry.id.as_str(), state, work.as_str()],
+                    ) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::DiagnosticList => self
+                .supplement
+                .diagnostics
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, diagnostic)| {
+                    if !has_query
+                        || fields_match_normalized_query(
+                            &query,
+                            &[
+                                diagnostic.code.code(),
+                                diagnostic_level_label(diagnostic.level),
+                                diagnostic.message.as_str(),
+                                diagnostic.file.as_str(),
+                            ],
+                        )
+                    {
                         Some(idx)
                     } else {
                         None
@@ -157,6 +321,14 @@ impl App {
             self.selected = len - 1;
         }
         self.table_state.select(Some(self.selected));
+    }
+}
+
+fn diagnostic_level_label(level: DiagnosticLevel) -> &'static str {
+    match level {
+        DiagnosticLevel::Error => "error",
+        DiagnosticLevel::Warning => "warning",
+        DiagnosticLevel::Info => "info",
     }
 }
 

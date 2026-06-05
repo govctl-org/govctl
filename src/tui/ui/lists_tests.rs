@@ -1,7 +1,12 @@
 use super::super::super::app::View;
 use super::super::test_support::{adr, project_index, render_app, rfc, work_item};
 use super::*;
+use crate::cmd::search::SearchResult;
+use crate::diagnostic::{Diagnostic, DiagnosticCode};
+use crate::loop_state::LoopState;
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
+use crate::tui::data::TuiLoopEntry;
+use std::collections::BTreeMap;
 
 #[test]
 fn list_renderers_draw_table_rows() -> Result<(), Box<dyn std::error::Error>> {
@@ -26,6 +31,66 @@ fn list_renderers_draw_table_rows() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+#[test]
+fn cockpit_list_renderers_draw_search_loop_and_diagnostic_rows()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut app = App::new(list_project_index());
+    app.view = View::Search;
+    app.search_results.push(SearchResult {
+        kind: "rfc".to_string(),
+        id: "RFC-0001".to_string(),
+        title: "RFC title".to_string(),
+        path: "gov/rfc/RFC-0001/rfc.toml".to_string(),
+        snippet: "human cockpit".to_string(),
+        score: None,
+        status: Some("normative".to_string()),
+    });
+    let rendered = render_list_app(app, draw_search)?;
+    assert!(rendered.iter().any(|line| line.contains("human cockpit")));
+
+    let mut app = App::new(list_project_index());
+    app.view = View::LoopList;
+    app.supplement.loops.push(TuiLoopEntry {
+        id: "LOOP-2026-06-06-001".to_string(),
+        state: Some(loop_state()?),
+        diagnostic: None,
+    });
+    let rendered = render_list_app(app, draw_loop)?;
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("LOOP-2026-06-06-001"))
+    );
+    assert!(rendered.iter().any(|line| line.contains("continue")));
+
+    let mut app = App::new(list_project_index());
+    app.view = View::DiagnosticList;
+    app.supplement.diagnostics.push(Diagnostic::new(
+        DiagnosticCode::E0901IoError,
+        "diagnostic for humans",
+        "gov/work/WI-2026-01-01-001.toml",
+    ));
+    let rendered = render_list_app(app, draw_diagnostics)?;
+    assert!(rendered.iter().any(|line| line.contains("E0901")));
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("diagnostic for humans"))
+    );
+
+    let mut app = App::new(list_project_index());
+    app.view = View::Search;
+    app.search_error = Some(Diagnostic::new(
+        DiagnosticCode::E0806InvalidPattern,
+        "invalid search syntax",
+        "search",
+    ));
+    let rendered = render_list_app(app, draw_search)?;
+    assert!(rendered.iter().any(|line| line.contains("Search failed")));
+    assert!(rendered.iter().any(|line| line.contains("E0806")));
+    Ok(())
+}
+
 fn render_list(
     view: View,
     draw: fn(&mut Frame, &mut App, Rect),
@@ -34,6 +99,14 @@ fn render_list(
     app.view = view;
 
     let (_, rendered) = render_app(110, 8, app, |frame, app| draw(frame, app, frame.area()))?;
+    Ok(rendered)
+}
+
+fn render_list_app(
+    app: App,
+    draw: fn(&mut Frame, &mut App, Rect),
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let (_, rendered) = render_app(120, 10, app, |frame, app| draw(frame, app, frame.area()))?;
     Ok(rendered)
 }
 
@@ -59,4 +132,18 @@ fn list_project_index() -> crate::model::ProjectIndex {
             &["cleanup"],
         )],
     )
+}
+
+fn loop_state() -> crate::diagnostic::DiagnosticResult<LoopState> {
+    let work_id = "WI-2026-06-06-001";
+    let mut dependencies = BTreeMap::new();
+    dependencies.insert(work_id.to_string(), Vec::new());
+    let mut state = LoopState::new(
+        "LOOP-2026-06-06-001",
+        vec![work_id.to_string()],
+        vec![work_id.to_string()],
+        dependencies,
+    )?;
+    state.loop_meta.next_action = crate::loop_state::LoopNextAction::Continue;
+    Ok(state)
 }
