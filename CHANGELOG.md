@@ -10,6 +10,11 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Changed
+
+- Writer skills include matching authority tests and examples so authors avoid boundary drift before review (WI-2026-06-07-005)
+- Reviewer agents include explicit boundary probes and boundary finding output for RFC, ADR, and Work Item reviews (WI-2026-06-07-005)
+
 ## [0.9.3] - 2026-06-07
 
 0.9.3 ships the first TUI v2 read-only cockpit. The TUI now gives humans a

@@ -67,6 +67,24 @@ EOF
 
 ## Writing Rules
 
+### Authority Test
+
+Before adding a requirement to an RFC clause, apply these checks:
+
+- **Observable contract:** A user, script, stored artifact, integration point, or validator can observe whether the sentence is true.
+- **Implementation independence:** The sentence remains valid if the implementation language, source module layout, helper names, or private data structures change.
+- **Right destination:** Design rationale belongs in an ADR; task scope belongs in a Work Item; transient execution evidence belongs in loop state, round artifacts, or the final response.
+- **External representation only:** CLI syntax, storage paths, schemas, and wire formats belong in RFCs only when they are part of the public or persisted contract.
+
+Examples:
+
+| Statement                                                                                     | Destination                       |
+| --------------------------------------------------------------------------------------------- | --------------------------------- |
+| `The search command MUST refresh stale derived indexes before querying.`                      | RFC                               |
+| `We will use SQLite FTS5 for the derived search index because it avoids an external service.` | ADR                               |
+| `changed: Update the search command to refresh stale indexes before returning results`        | Work Item                         |
+| `Implement this in sync_search_index with manifest rows.`                                     | Work Item or code review, not RFC |
+
 ### RFC 2119 Keywords
 
 Use these keywords in ALL CAPS in normative clauses:
@@ -140,6 +158,8 @@ Clause text should contain only the specification prose, rationale, and `[[...]]
 | Missing cross-references                       | Add `[[RFC-NNNN]]` or `[[ADR-NNNN]]` links                            |
 | Rust/TS type layout in the clause              | Rewrite it as semantic requirements or an external contract           |
 | Work-plan language in the clause               | Move execution details to a work item                                 |
+| Design rationale in the clause                 | Move the "why this approach" discussion to an ADR                     |
+| Current progress or validation output          | Move transient evidence to loop state, round artifacts, or response   |
 | Including `Since:` in clause text              | Don't — the renderer adds it from the `since` field automatically     |
 | Including clause heading in text               | Don't — the renderer generates `### [RFC:C-NAME] Title` from metadata |
 

@@ -53,6 +53,10 @@ When invoked:
 ### Abstraction Level
 
 - [ ] RFC defines **system-level contracts and invariants**, not implementation details
+- [ ] For each normative sentence, ask: is this externally observable by a user, script, stored artifact, or integration point?
+- [ ] For each concrete mechanism, ask: would the requirement remain valid if the implementation language, module layout, helper names, or private data structures changed?
+- [ ] Design choices that explain _why this mechanism_ belong in an ADR unless the mechanism itself is the external contract
+- [ ] Execution sequencing, rollout steps, and "what this task will do next" belong in a work item, loop round evidence, or the final response
 - [ ] Directory structures are present only when they are an external contract (for example persisted local state locations), not internal source layout
 - [ ] File format schemas or field inventories are present only when the wire/storage format itself is the contract
 - [ ] No skill invocation syntax (`/loop WI-001`) or agent workflow patterns
@@ -70,6 +74,8 @@ When invoked:
 - [ ] Draft stays at the specification level; execution logs or task-progress notes are not mixed into the RFC
 - [ ] Draft does not embed language-specific implementation structure (`struct`, `enum`, field inventories, helper signatures) unless those details are themselves the external contract
 - [ ] Draft defines obligations, not implementation representation choices
+- [ ] Any text that reads like "we will use X because..." is either rewritten as an externally visible obligation or moved to an ADR
+- [ ] Any text that reads like "implement/update/test this file/function" is moved to a work item or loop evidence
 
 ## Output Contract
 
@@ -82,6 +88,11 @@ Critical (must fix before finalization):
 Warnings (should fix):
 - [issue description]
 
+Boundary Findings:
+- RFC text that belongs in ADR: [clause and sentence, or "none"]
+- RFC text that belongs in Work Item / loop evidence: [clause and sentence, or "none"]
+- Normative text that is not externally observable or testable: [clause and sentence, or "none"]
+
 Suggestions (consider improving):
 - [improvement idea]
 
@@ -91,3 +102,5 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 If no findings exist, say so explicitly and still include the overall status.
 
 Focus on substance, not style. Flag real problems — missing requirements, untestable clauses, vague normative language, implementation-detail leakage, or workflow chatter mixed into the spec. Don't nitpick formatting.
+
+When boundary drift appears, name the destination artifact explicitly: "move to ADR" for design rationale or implementation choice, "move to Work Item" for execution scope, and "move to loop evidence/final response" for transient progress.

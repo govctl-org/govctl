@@ -118,6 +118,22 @@ govctl clause show RFC-0000:C-SCOPE
 govctl tui
 ```
 
+## Search Artifacts
+
+Search looks across RFCs, clauses, ADRs, work items, and verification guards:
+
+```bash
+govctl search cache
+govctl search "schema migration" --type rfc --type adr
+govctl search RFC-0002 --output json
+govctl search cli --tag validation -n 5
+govctl search loop --reindex
+```
+
+Search keeps any persisted index under `.govctl/` as disposable local state.
+Artifacts under `gov/` remain authoritative; `--reindex` forces a rebuild before
+returning results.
+
 ## Validate Everything
 
 ```bash
@@ -125,6 +141,13 @@ govctl check
 ```
 
 This validates all governance artifacts against JSON schemas, phase rules, cross-references, and source code annotations.
+
+## Recommended Workflow
+
+Before using govctl on non-trivial work, read the
+[Recommended Workflows](./recommended-workflows.md) guide. It explains when to
+use RFCs, ADRs, Work Items, execution loops, reviewer agents, and verification
+guards together.
 
 ## Render to Markdown
 
@@ -136,32 +159,42 @@ Generates human-readable markdown in `docs/`.
 
 ## Interactive TUI
 
-govctl includes an optional interactive terminal dashboard:
+govctl includes an optional read-only terminal cockpit:
 
 ```bash
 govctl tui
 ```
 
+The cockpit is for human inspection: overview, artifact lists, search, loop
+state and dependency DAGs, guards, releases, tags, and check diagnostics.
+State-changing operations remain CLI commands.
+
 ### TUI Keyboard Shortcuts
 
-| Key        | Action                                   |
-| ---------- | ---------------------------------------- |
-| `1` / `r`  | View RFCs                                |
-| `2` / `a`  | View ADRs                                |
-| `3` / `w`  | View Work Items                          |
-| `j` / `↓`  | Navigate down                            |
-| `k` / `↑`  | Navigate up                              |
-| `Enter`    | Open detail view                         |
-| `Esc`      | Go back                                  |
-| `/`        | Filter list (type query, Enter to apply) |
-| `g`        | Jump to top                              |
-| `G`        | Jump to bottom                           |
-| `Ctrl+d`   | Scroll half page down (detail view)      |
-| `Ctrl+u`   | Scroll half page up (detail view)        |
-| `PageDown` | Scroll page down (detail view)           |
-| `PageUp`   | Scroll page up (detail view)             |
-| `?`        | Toggle help overlay                      |
-| `q`        | Quit                                     |
+| Key                   | Action                                  |
+| --------------------- | --------------------------------------- |
+| `1` / `r`             | RFC list                                |
+| `2` / `c`             | Clause list                             |
+| `3` / `a`             | ADR list                                |
+| `4` / `w`             | Work item list                          |
+| `5` / `g`             | Guard list                              |
+| `6` / `s`             | Search view                             |
+| `7` / `l`             | Loop list and loop DAG inspector        |
+| `8` / `d`             | Diagnostics view                        |
+| `9`                   | Release list                            |
+| `t`                   | Tag list                                |
+| `j` / `↓`             | Navigate down                           |
+| `k` / `↑`             | Navigate up                             |
+| `Enter`               | Open selected detail or search result   |
+| `Esc`                 | Go back or leave input mode             |
+| `/`                   | Filter lists; edit query in search view |
+| `e`                   | Edit query in search view               |
+| `n` / `p`             | Next/previous filtered match            |
+| `g` / `G`             | Jump to top/bottom in lists             |
+| `Ctrl+d` / `u`        | Scroll half page in detail views        |
+| `PageDown` / `PageUp` | Scroll page in detail views             |
+| `?`                   | Toggle help overlay                     |
+| `q`                   | Quit                                    |
 
 ## Cutting a Release
 

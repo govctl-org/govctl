@@ -1,0 +1,29 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-07-005"
+title = "Strengthen artifact boundary review guidance"
+status = "done"
+created = "2026-06-07"
+started = "2026-06-07"
+completed = "2026-06-07"
+refs = ["ADR-0024"]
+tags = ["skills-agents"]
+
+[content]
+description = "Strengthen the distributed reviewer and writer guidance so agents consistently flag RFC/ADR/Work Item authority-boundary drift, especially RFC prose that smuggles implementation design, ADR prose that creates normative obligations, and work-item criteria that invent product behavior without governing refs."
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Writer skills include matching authority tests and examples so authors avoid boundary drift before review"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Reviewer agents include explicit boundary probes and boundary finding output for RFC, ADR, and Work Item reviews"
+status = "done"
+category = "changed"

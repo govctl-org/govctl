@@ -246,6 +246,25 @@ govctl status
 
 Shows RFC/ADR/work item counts by status, phase breakdown, and active work items.
 
+## Search
+
+```bash
+govctl search cache
+govctl search "work item" --type work
+govctl search RFC-0002 --output json
+govctl search migration --tag cli -n 5
+govctl search cache --reindex
+```
+
+Search is project-wide discovery across RFCs, clauses, ADRs, work items, and
+verification guards. Use repeated `--type` flags to restrict artifact kinds and
+repeated `--tag` flags to require all listed tags.
+
+Supported output formats are `table` (default), `json`, and `plain`. If govctl
+persists a search index, it lives under `.govctl/` as derived local state. The
+command establishes index freshness before returning results; `--reindex`
+forces a full rebuild.
+
 ## CLI Self-Description
 
 govctl provides a machine-readable command catalog for agent discoverability:
@@ -298,11 +317,16 @@ This upgrades TOML artifact file formats (e.g., adding `#:schema` headers or nor
 
 These are related but serve different purposes:
 
-|            | `govctl migrate`                                    | `/migrate` skill                                      |
-| ---------- | --------------------------------------------------- | ----------------------------------------------------- |
-| **What**   | Upgrade existing govctl artifacts to current format | Adopt govctl in an existing project                   |
-| **When**   | After updating govctl version                       | When starting governance in a brownfield repo         |
-| **Effect** | Rewrites TOML files in `gov/` and syncs schemas     | Discovers decisions, backfills ADRs, annotates source |
-| **Risk**   | Low — transactional, reversible                     | Medium — requires human review of generated ADRs      |
+|            | `govctl migrate`                                                           | `/migrate` skill                                      |
+| ---------- | -------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **What**   | Upgrade existing govctl artifacts to current format                        | Adopt govctl in an existing project                   |
+| **When**   | After updating govctl version                                              | When starting governance in a brownfield repo         |
+| **Effect** | Syncs TOML artifacts, schemas, and govctl local-state `.gitignore` entries | Discovers decisions, backfills ADRs, annotates source |
+| **Risk**   | Low — transactional, reversible                                            | Medium — requires human review of generated ADRs      |
 
-Run `govctl migrate` when govctl reports an outdated schema version. If a repository still contains legacy RFC or clause JSON storage, migrate it with govctl <0.9 before upgrading. Use the `/migrate` skill when bringing a legacy project under governance for the first time.
+Run `govctl migrate` when govctl reports an outdated schema version, missing or
+stale bundled schema files, or missing govctl-managed local-state `.gitignore`
+entries such as `.govctl.lock` and `.govctl/`. If a repository still contains
+legacy RFC or clause JSON storage, migrate it with govctl <0.9 before
+upgrading. Use the `/migrate` skill when bringing a legacy project under
+governance for the first time.

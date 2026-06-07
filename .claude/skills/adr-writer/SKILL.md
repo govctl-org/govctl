@@ -193,6 +193,25 @@ Link to artifacts that constrained or informed the decision. Use plain IDs (not 
 
 ## Writing Rules
 
+### Authority Test
+
+Before adding ADR content, apply these checks:
+
+- **Decision layer:** The ADR explains why one approach was chosen over alternatives.
+- **No new obligations:** New externally visible behavior, validation rules, lifecycle rules, storage contracts, or compatibility rules belong in an RFC.
+- **Referenced requirements:** If the decision implements or interprets a requirement, link the governing RFC clause in `refs` where practical.
+- **No execution memory:** Task scope, acceptance criteria, progress, validation output, and next actions belong in Work Items, loop state, round artifacts, or final responses.
+- **Careful keywords:** `MUST`, `SHOULD`, and `MAY` in ADR prose should describe constraints on the decision, not create product requirements.
+
+Examples:
+
+| Statement                                                                                                             | Destination                     |
+| --------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| `We will use SQLite FTS5 for the derived search index because it keeps search local and avoids a service dependency.` | ADR                             |
+| `The search command MUST refresh stale derived indexes before querying.`                                              | RFC                             |
+| `changed: Add stale-index refresh to search execution`                                                                | Work Item                       |
+| `Round 2 failed because the test fixture still used stale schema data.`                                               | Loop evidence or final response |
+
 ### Quality Checklist
 
 - **Context is complete.** Problem statement, constraints, and options are all present.
@@ -256,3 +275,5 @@ Content fields should contain only the body prose and `[[...]]` references.
 | Missing refs                          | Link to RFCs/ADRs that constrain the decision            |
 | ADR turns into a mini-RFC             | Move obligation details into an RFC                      |
 | ADR turns into a task plan            | Move execution detail into a work item                   |
+| ADR invents new product requirements  | Draft or amend the governing RFC first                   |
+| ADR records current progress          | Move transient execution details to loop evidence        |

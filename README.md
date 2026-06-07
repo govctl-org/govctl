@@ -186,6 +186,39 @@ govctl clause edit RFC-0002:C-CRUD-VERBS text --stdin
 
 This is not the product's identity. It is the low-level tool agents use to update governed artifacts precisely and consistently.
 
+### Project-wide search
+
+Use `govctl search` to find governed artifacts across RFCs, clauses, ADRs,
+work items, and guards:
+
+```bash
+govctl search cache
+govctl search RFC-0002 --output json
+govctl search migration --type rfc --type adr --tag cli -n 5
+```
+
+Search uses a disposable local index under `.govctl/`. The TOML artifacts remain
+the source of truth, and `--reindex` forces a fresh rebuild when needed.
+
+### Execution loops and dependencies
+
+Work items can declare hard execution dependencies with `depends_on`; keep
+informational links in `refs`.
+
+```bash
+govctl work edit WI-2026-01-17-002 depends_on --add WI-2026-01-17-001
+govctl check
+```
+
+For multi-work-item implementation batches, use a generated local loop ID and
+record round evidence in `.govctl/loops/` instead of work item notes:
+
+```bash
+govctl loop list open
+govctl loop start WI-2026-01-17-001 WI-2026-01-17-002
+govctl loop run <LOOP-ID>
+```
+
 ### Verification guards
 
 Guards are executable checks that run when work reaches completion gates.
@@ -225,7 +258,9 @@ In govctl `0.9` and later, RFC and clause artifacts are TOML-only. `govctl migra
 govctl tui
 ```
 
-Browse RFCs, ADRs, work items, and guards with styled rendering in the terminal.
+Open the read-only cockpit for project overview, artifact browsing, search,
+loop-state inspection with dependency DAG context, guards, releases, tags, and
+`govctl check` diagnostics. Mutation remains owned by CLI commands.
 
 ## Who This Is For
 

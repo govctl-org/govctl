@@ -47,6 +47,7 @@ cat > "$SUMMARY" << 'EOF'
 # User Guide
 
 - [Getting Started](./guide/getting-started.md)
+- [Recommended Workflows](./guide/recommended-workflows.md)
 - [Working with RFCs](./guide/rfcs.md)
 - [Working with ADRs](./guide/adrs.md)
 - [Working with Work Items](./guide/work-items.md)

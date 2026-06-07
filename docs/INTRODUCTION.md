@@ -54,4 +54,5 @@ Phases cannot be skipped. This discipline ensures specifications precede impleme
 
 1. Read [RFC-0000](./rfc/RFC-0000.md) to understand the governance model
 2. Follow the [Getting Started guide](./guide/getting-started.md) to install and initialize
-3. Learn about [RFCs](./guide/rfcs.md), [ADRs](./guide/adrs.md), and [Work Items](./guide/work-items.md)
+3. Read the [Recommended Workflows guide](./guide/recommended-workflows.md) to choose the right path for each change
+4. Learn about [RFCs](./guide/rfcs.md), [ADRs](./guide/adrs.md), and [Work Items](./guide/work-items.md)

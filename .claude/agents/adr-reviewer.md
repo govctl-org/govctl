@@ -35,6 +35,10 @@ When invoked:
 - [ ] Decision is proportional to the problem (not over-engineered)
 - [ ] Decision explains the chosen approach and why, without turning into a normative mini-RFC
 - [ ] Decision reads like the conclusion of the evaluated alternatives, not a premature answer with alternatives filled in afterward
+- [ ] ADR does not introduce externally visible obligations that should be RFC clauses
+- [ ] If `MUST`, `SHOULD`, or `MAY` appears in ADR prose, it describes a decision constraint or consequence, not a new system requirement
+- [ ] If the decision depends on a product behavior requirement, that requirement is present in a referenced RFC rather than invented locally
+- [ ] Implementation notes state guardrails for applying the decision, not a task-by-task execution plan
 
 ### Consequences Honesty
 
@@ -59,6 +63,14 @@ When invoked:
 - [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
 - [ ] No redundant "References:" paragraph at the end of content fields — the `refs` field already tracks cross-references; repeating them as prose is noise
 - [ ] ADR does not drift into task planning, progress-log implementation updates, or closure checklists
+- [ ] ADR references the RFC clause that establishes the obligation when the decision implements or interprets a requirement
+
+### Authority Boundary
+
+- [ ] Normative product behavior belongs in RFCs; ADRs may interpret or choose an approach for already stated obligations
+- [ ] Design rationale, rejected alternatives, and consequences belong in ADRs
+- [ ] Execution scope, acceptance criteria, and progress belong in Work Items or loop evidence
+- [ ] Any sentence that would be invalidated by changing only the current implementation task should not be in the ADR
 
 ## Output Contract
 
@@ -71,6 +83,11 @@ Critical (must fix before accepting):
 Warnings (should fix):
 - [issue description]
 
+Boundary Findings:
+- ADR text that belongs in RFC: [field and sentence, or "none"]
+- ADR text that belongs in Work Item / loop evidence: [field and sentence, or "none"]
+- RFC obligation assumed but not referenced: [missing requirement, or "none"]
+
 Suggestions (consider improving):
 - [improvement idea]
 
@@ -79,4 +96,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failure modes are an empty or dishonest Negative section, ADRs that drift into execution tracking, ADRs that try to act like mini-RFCs, and ADRs that jump straight to a decision without first documenting the alternatives discussion. If the review finds any of those, flag them as Critical.
+The most common failure modes are an empty or dishonest Negative section, ADRs that drift into execution tracking, ADRs that try to act like mini-RFCs, ADRs that invent unreferenced product obligations, and ADRs that jump straight to a decision without first documenting the alternatives discussion. If the review finds any of those, flag them as Critical.

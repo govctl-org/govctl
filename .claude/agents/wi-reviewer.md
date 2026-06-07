@@ -41,6 +41,10 @@ When invoked:
 - [ ] Each criterion is specific and testable — can be marked done/not-done without ambiguity
 - [ ] At least one `chore:` criterion for validation (e.g., "chore: govctl check passes")
 - [ ] No duplicate or overlapping criteria
+- [ ] Criteria describe completion evidence for this task, not standalone product requirements
+- [ ] Criteria that mention new user-visible behavior, CLI behavior, storage format, validation rule, compatibility rule, or lifecycle rule are backed by RFC/ADR refs
+- [ ] Criteria do not smuggle design choices that should be ADR decisions
+- [ ] Criteria do not record current plans, next steps, commands run, or temporary review status
 
 ### Category Correctness
 
@@ -68,6 +72,13 @@ When invoked:
 - [ ] If reviewing a related set, the set is not over-split into many low-value work items whose details belong in one higher-level work item, loop evidence, or the commit diff
 - [ ] Changelog-visible categories are not used for internal cleanup that should remain `chore:`
 
+### Authority Boundary
+
+- [ ] Work items track execution scope and closure criteria; they are not authority for product behavior
+- [ ] Missing requirements are escalated to RFC work instead of being hidden in description or acceptance criteria
+- [ ] Missing design choices are escalated to ADR work instead of being hidden in description, notes, or acceptance criteria
+- [ ] Transient execution details belong in loop state, round artifacts, or the final response, not work item fields
+
 ## Output Contract
 
 ```
@@ -79,6 +90,12 @@ Critical (must fix):
 Warnings (should fix):
 - [issue description]
 
+Boundary Findings:
+- Work Item text that belongs in RFC: [field and sentence, or "none"]
+- Work Item text that belongs in ADR: [field and sentence, or "none"]
+- Transient text that belongs in loop evidence/final response: [field and sentence, or "none"]
+- Acceptance criteria without governing authority: [criterion, or "none"]
+
 Suggestions (consider improving):
 - [improvement idea]
 
@@ -87,4 +104,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", description or notes fields that were abused as execution logs, work items that invent requirements locally, and batches split into mechanical noise. Flag those as Critical.
+The most common failures: placeholder descriptions left unchanged, vague acceptance criteria like "Feature works", description/notes/criteria abused as execution logs, work items that invent requirements locally, work items that hide design decisions, and batches split into mechanical noise. Flag those as Critical.

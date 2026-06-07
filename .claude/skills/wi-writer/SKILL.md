@@ -155,6 +155,25 @@ If you discover a missing requirement or unresolved design choice, stop and rout
 
 ## Writing Rules
 
+### Authority Test
+
+Before adding description, notes, or acceptance criteria, apply these checks:
+
+- **Task scope:** Work item fields describe what this task must complete, not the product contract itself.
+- **Governing refs:** New user-visible behavior, CLI behavior, storage format, validation rule, compatibility rule, or lifecycle rule must be backed by RFC/ADR refs.
+- **Design destination:** If the text explains why a design option was chosen, move it to an ADR.
+- **Execution destination:** If the text records progress, commands run, validation output, review status, temporary blockers, hypotheses, or next actions, move it to loop state, round artifacts, or the final response.
+- **Durability:** Keep notes only when the fact should remain useful after the work item is closed.
+
+Examples:
+
+| Statement                                                                           | Destination                        |
+| ----------------------------------------------------------------------------------- | ---------------------------------- |
+| `changed: Reviewer agents include boundary findings for RFC/ADR/WI authority drift` | Work Item                          |
+| `The reviewer MUST emit Boundary Findings for every artifact review.`               | RFC, if this is a product contract |
+| `We will keep review policy in agent prompts rather than deterministic check code.` | ADR                                |
+| `Ran govctl check; next fix rfc-reviewer wording.`                                  | Loop evidence or final response    |
+
 ### Acceptance Criteria Quality
 
 Each criterion should be:

@@ -128,6 +128,45 @@ Path aliases are available for common fields:
 | `notes`       | `content.notes`                           |
 | `category`    | `content.acceptance_criteria[i].category` |
 
+## Dependencies and Execution Loops
+
+Use `depends_on` for hard execution ordering between work items. Keep `refs` for
+informational links to RFCs, ADRs, clauses, guards, or related work.
+
+```bash
+govctl work edit WI-2026-01-17-002 depends_on --add WI-2026-01-17-001
+govctl check
+```
+
+`govctl check` validates dependency targets and rejects dependency cycles. A
+work item should only depend on another work item when the dependent work cannot
+start until the blocker has completed.
+
+For a batch with multiple independently meaningful work items, create one local
+execution loop and let govctl generate the loop ID:
+
+```bash
+govctl loop list open
+govctl loop start WI-2026-01-17-001 WI-2026-01-17-002
+govctl loop run <LOOP-ID>
+```
+
+Loop state and round evidence live under `.govctl/loops/<LOOP-ID>/`. `loop run`
+opens or validates local rounds; it does not implement code, tick acceptance
+criteria, add notes, or move work items to `done`.
+
+When batch scope changes, keep the same loop identity:
+
+```bash
+govctl loop add <LOOP-ID> work WI-2026-01-17-003
+govctl loop remove <LOOP-ID> work WI-2026-01-17-002
+govctl loop replan <LOOP-ID>
+```
+
+Use work item `notes` only for durable lessons or constraints. Put transient
+execution trace, failed attempts, blockers, next actions, and round summaries in
+loop state and round artifacts.
+
 ### Tagging Work Items
 
 Once tags are registered in the project vocabulary, apply them to work items:
