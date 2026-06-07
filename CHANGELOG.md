@@ -10,20 +10,35 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-06-07
+
+0.9.3 ships the first TUI v2 read-only cockpit. The TUI now gives humans a
+denser project overview, artifact discovery, loop-state inspection with DAG
+context, search, and diagnostics while keeping all mutation owned by the CLI.
+
 ### Added
 
-- RFC-0007 specifies TUI v2 read-only cockpit, loop DAG, search, diagnostics, and human-first UX obligations (WI-2026-06-06-001)
-- Accepted ADR records the TUI v2 read-only cockpit architecture and rejects full CRUD editing for the first phase (WI-2026-06-06-001)
-- TUI dashboard provides human navigation to overview, artifact browsing, search, loops, and diagnostics (WI-2026-06-06-001)
-- TUI loop views list persisted loops and render selected loop dependency DAGs from loop state (WI-2026-06-06-001)
-- TUI search view lets humans query governance artifacts and jump from results to detail views (WI-2026-06-06-001)
-- TUI diagnostics view presents govctl check diagnostics grouped for human review without mutating project state (WI-2026-06-06-001)
+- Added the TUI v2 cockpit, with dashboard navigation across overview,
+  artifact browsing, search, loops, and diagnostics.
+- Added loop views that list persisted loop states and render selected loop
+  dependency DAGs with item status, selected-work context, and readable
+  terminal-size fallbacks.
+- Added TUI search and diagnostics views so users can find governed artifacts
+  and triage `govctl check` output from the cockpit without mutating project
+  state.
+- Added RFC and ADR coverage for the TUI v2 architecture, including the
+  read-only boundary, responsibility separation, and the decision to defer full
+  CRUD editing.
 
 ### Fixed
 
-- govctl check no longer prints a checked-count summary before schema/load diagnostics (WI-2026-06-07-001)
-- TUI cockpit keeps list ordering, search cache, loop diagnostics, DAG fallback, and ops summaries consistent (WI-2026-06-07-002)
-- TUI no longer enables mouse capture without handling mouse events (WI-2026-06-07-004)
+- `govctl check` now reports schema and load diagnostics directly instead of
+  printing a successful-looking checked-count summary first.
+- TUI cockpit state now stays consistent after sorted supplement loading, empty
+  search submissions, loop-state read failures, DAG fallback/error handling,
+  and ops summary rendering.
+- TUI no longer enables mouse capture when it does not handle mouse events,
+  preserving normal terminal selection and copy behavior.
 
 ## [0.9.2] - 2026-06-05
 

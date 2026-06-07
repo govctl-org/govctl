@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo.svg" alt="govctl logo" width="120" height="120">
+  <img src="https://raw.githubusercontent.com/govctl-org/govctl/main/assets/logo.svg" alt="govctl logo" width="120" height="120">
 </p>
 
 <h1 align="center">govctl</h1>
@@ -19,7 +19,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/readme-hero.png" alt="govctl hero illustration showing AI coding workflows flowing through RFCs, ADRs, work items, and guards into reviewed delivery" width="1200">
+  <img src="https://raw.githubusercontent.com/govctl-org/govctl/main/assets/readme-hero.png" alt="govctl hero illustration showing AI coding workflows flowing through RFCs, ADRs, work items, and guards into reviewed delivery" width="1200">
 </p>
 
 ---
