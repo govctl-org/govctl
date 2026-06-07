@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-07-003"
+title = "Improve TUI testability and coverage"
+status = "done"
+created = "2026-06-07"
+started = "2026-06-07"
+completed = "2026-06-07"
+refs = ["RFC-0007"]
+
+[content]
+description = "Improve TUI testability and coverage by extracting key dispatch from terminal IO and adding focused render/dispatch tests for TUI chrome, help, lists, and navigation paths."
+
+[[content.acceptance_criteria]]
+text = "TUI key dispatch is testable without terminal IO"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "TUI chrome, help, and list renderers have focused coverage"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and TUI tests pass"
+status = "done"
+category = "chore"

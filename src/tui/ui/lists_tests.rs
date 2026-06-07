@@ -4,8 +4,11 @@ use super::*;
 use crate::cmd::search::SearchResult;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::loop_state::LoopState;
-use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
-use crate::tui::data::TuiLoopEntry;
+use crate::model::{
+    AdrStatus, GuardCheck, GuardEntry, GuardMeta, GuardSpec, Release, RfcPhase, RfcStatus,
+    WorkItemStatus,
+};
+use crate::tui::data::{TuiClauseEntry, TuiLoopEntry, TuiTagSummary};
 use std::collections::BTreeMap;
 
 #[test]
@@ -91,6 +94,74 @@ fn cockpit_list_renderers_draw_search_loop_and_diagnostic_rows()
     Ok(())
 }
 
+#[test]
+fn supplemental_list_renderers_draw_clause_guard_release_and_tag_rows()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut app = App::new(list_project_index());
+    app.view = View::ClauseList;
+    app.supplement.clauses.push(TuiClauseEntry {
+        rfc_id: "RFC-0001".to_string(),
+        clause: super::super::test_support::clause("C-LIST", "Clause row", "Clause body"),
+    });
+    let rendered = render_list_app(app, draw_clause)?;
+    assert!(rendered.iter().any(|line| line.contains("C-LIST")));
+    assert!(rendered.iter().any(|line| line.contains("Clause row")));
+
+    let mut app = App::new(list_project_index());
+    app.view = View::GuardList;
+    app.supplement.guards.push(guard_entry());
+    let rendered = render_list_app(app, draw_guard)?;
+    assert!(rendered.iter().any(|line| line.contains("GUARD-LIST")));
+    assert!(rendered.iter().any(|line| line.contains("cargo test")));
+
+    let mut app = App::new(list_project_index());
+    app.view = View::ReleaseList;
+    app.supplement.releases.push(Release {
+        version: "0.9.2".to_string(),
+        date: "2026-06-05".to_string(),
+        refs: vec!["WI-2026-01-01-001".to_string()],
+    });
+    let rendered = render_list_app(app, draw_release)?;
+    assert!(rendered.iter().any(|line| line.contains("0.9.2")));
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("WI-2026-01-01-001"))
+    );
+
+    let mut app = App::new(list_project_index());
+    app.view = View::TagList;
+    app.supplement.tags.push(TuiTagSummary {
+        name: "release".to_string(),
+        count: 3,
+    });
+    let rendered = render_list_app(app, draw_tag)?;
+    assert!(rendered.iter().any(|line| line.contains("release")));
+    assert!(rendered.iter().any(|line| line.contains("3")));
+    Ok(())
+}
+
+#[test]
+fn loop_list_renderer_draws_invalid_loop_diagnostic() -> Result<(), Box<dyn std::error::Error>> {
+    let mut app = App::new(list_project_index());
+    app.view = View::LoopList;
+    app.supplement.loops.push(TuiLoopEntry {
+        id: "LOOP-2026-06-06-002".to_string(),
+        state: None,
+        diagnostic: Some(Diagnostic::new(
+            DiagnosticCode::E1201LoopStateInvalid,
+            "bad loop state",
+            ".govctl/loops/LOOP-2026-06-06-002/state.toml",
+        )),
+    });
+
+    let rendered = render_list_app(app, draw_loop)?;
+
+    assert!(rendered.iter().any(|line| line.contains("invalid")));
+    assert!(rendered.iter().any(|line| line.contains("bad loop state")));
+    Ok(())
+}
+
 fn render_list(
     view: View,
     draw: fn(&mut Frame, &mut App, Rect),
@@ -146,4 +217,18 @@ fn loop_state() -> crate::diagnostic::DiagnosticResult<LoopState> {
     )?;
     state.loop_meta.next_action = crate::loop_state::LoopNextAction::Continue;
     Ok(state)
+}
+
+fn guard_entry() -> GuardEntry {
+    GuardEntry {
+        spec: GuardSpec {
+            govctl: GuardMeta::new("GUARD-LIST", "Guard row"),
+            check: GuardCheck {
+                command: "cargo test".to_string(),
+                timeout_secs: 30,
+                pattern: None,
+            },
+        },
+        path: "gov/guard/GUARD-LIST.toml".into(),
+    }
 }

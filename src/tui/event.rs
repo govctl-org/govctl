@@ -24,55 +24,7 @@ pub fn run_event_loop(
             && let Event::Key(key) =
                 event::read().map_err(|err| super::terminal_error("read terminal event", err))?
         {
-            if key.kind != KeyEventKind::Press {
-                continue;
-            }
-
-            if matches!(key.code, KeyCode::Char('?')) {
-                app.show_help = !app.show_help;
-                continue;
-            }
-
-            if app.show_help {
-                if matches!(key.code, KeyCode::Esc) {
-                    app.show_help = false;
-                }
-                continue;
-            }
-
-            match app.view {
-                View::Dashboard => handle_dashboard_keys(app, key),
-                View::RfcList
-                | View::ClauseList
-                | View::AdrList
-                | View::WorkList
-                | View::GuardList
-                | View::ReleaseList
-                | View::TagList
-                | View::LoopList
-                | View::DiagnosticList => {
-                    if app.filter_mode {
-                        handle_filter_input(app, key);
-                    } else {
-                        handle_list_keys(app, key);
-                    }
-                }
-                View::Search => {
-                    if app.search_mode {
-                        handle_search_input(app, key);
-                    } else if app.filter_mode {
-                        handle_filter_input(app, key);
-                    } else {
-                        handle_search_keys(app, key);
-                    }
-                }
-                View::LoopDetail(_) => handle_loop_detail_keys(app, key),
-                View::RfcDetail(_) => handle_rfc_detail_keys(app, key),
-                View::AdrDetail(_)
-                | View::WorkDetail(_)
-                | View::GuardDetail(_)
-                | View::ClauseDetail(_, _) => handle_detail_keys(app, key),
-            }
+            handle_key(app, key);
         }
 
         if app.should_quit {
@@ -80,6 +32,60 @@ pub fn run_event_loop(
         }
     }
     Ok(())
+}
+
+pub(super) fn handle_key(app: &mut App, key: KeyEvent) {
+    if key.kind != KeyEventKind::Press {
+        return;
+    }
+
+    if matches!(key.code, KeyCode::Char('?')) {
+        app.show_help = !app.show_help;
+        return;
+    }
+
+    if app.show_help {
+        if matches!(key.code, KeyCode::Esc) {
+            app.show_help = false;
+        }
+        return;
+    }
+
+    match app.view {
+        View::Dashboard => handle_dashboard_keys(app, key),
+        View::RfcList
+        | View::ClauseList
+        | View::AdrList
+        | View::WorkList
+        | View::GuardList
+        | View::ReleaseList
+        | View::TagList
+        | View::LoopList
+        | View::DiagnosticList => {
+            if app.filter_mode {
+                handle_filter_input(app, key);
+            } else {
+                handle_list_keys(app, key);
+            }
+        }
+        View::Search => {
+            if app.search_mode {
+                handle_search_input(app, key);
+            } else if app.filter_mode {
+                handle_filter_input(app, key);
+            } else {
+                handle_search_keys(app, key);
+            }
+        }
+        View::LoopDetail(_) => handle_loop_detail_keys(app, key),
+        View::RfcDetail(_) => handle_rfc_detail_keys(app, key),
+        View::AdrDetail(_)
+        | View::WorkDetail(_)
+        | View::GuardDetail(_)
+        | View::ClauseDetail(_, _) => {
+            handle_detail_keys(app, key);
+        }
+    }
 }
 
 fn is_ctrl(key: &KeyEvent) -> bool {
@@ -225,5 +231,153 @@ fn handle_filter_input(app: &mut App, key: KeyEvent) {
         KeyCode::Backspace => app.pop_filter_char(),
         KeyCode::Char(ch) => app.push_filter_char(ch),
         _ => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{
+        ClauseEntry, ClauseKind, ClauseSpec, ClauseStatus, ProjectIndex, RfcIndex, RfcPhase,
+        RfcSpec, RfcStatus, WorkItemContent, WorkItemEntry, WorkItemMeta, WorkItemSpec,
+        WorkItemStatus, WorkItemVerification,
+    };
+    use std::path::PathBuf;
+
+    #[test]
+    fn handle_key_routes_dashboard_and_help_overlay() {
+        let mut app = App::new(ProjectIndex::default());
+
+        handle_key(&mut app, key(KeyCode::Char('s')));
+        assert_eq!(app.view, View::Search);
+        assert!(app.search_mode);
+
+        handle_key(&mut app, key(KeyCode::Char('?')));
+        assert!(app.show_help);
+        handle_key(&mut app, key(KeyCode::Char('q')));
+        assert!(!app.should_quit);
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert!(!app.show_help);
+    }
+
+    #[test]
+    fn handle_key_routes_list_filter_and_selection() {
+        let mut app = App::new(project_index());
+        app.go_to(View::WorkList);
+
+        handle_key(&mut app, key(KeyCode::Char('j')));
+        assert_eq!(app.selected, 1);
+        handle_key(&mut app, key(KeyCode::Char('g')));
+        assert_eq!(app.selected, 0);
+        handle_key(&mut app, key(KeyCode::Char('G')));
+        assert_eq!(app.selected, 1);
+        handle_key(&mut app, key(KeyCode::Char('/')));
+        assert!(app.filter_mode);
+        handle_key(&mut app, key(KeyCode::Char('a')));
+        assert_eq!(app.filter_query, "a");
+        handle_key(&mut app, key(KeyCode::Backspace));
+        assert!(app.filter_query.is_empty());
+        handle_key(&mut app, key(KeyCode::Enter));
+        assert!(!app.filter_mode);
+        handle_key(&mut app, key(KeyCode::Enter));
+        assert_eq!(app.view, View::WorkDetail(1));
+    }
+
+    #[test]
+    fn handle_key_routes_search_modes() {
+        let mut app = App::new(ProjectIndex::default());
+        app.go_to(View::Search);
+
+        handle_key(&mut app, key(KeyCode::Char('e')));
+        assert!(app.search_mode);
+        handle_key(&mut app, key(KeyCode::Char('r')));
+        handle_key(&mut app, key(KeyCode::Char('f')));
+        assert_eq!(app.search_query, "rf");
+        handle_key(&mut app, key(KeyCode::Backspace));
+        assert_eq!(app.search_query, "r");
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert!(!app.search_mode);
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.view, View::Dashboard);
+    }
+
+    #[test]
+    fn handle_key_routes_detail_loop_and_rfc_detail_keys() {
+        let mut app = App::new(project_index());
+        app.view = View::WorkDetail(0);
+        app.content_height = 6;
+
+        handle_key(&mut app, key(KeyCode::Char('j')));
+        assert_eq!(app.scroll, 1);
+        handle_key(&mut app, ctrl_key(KeyCode::Char('d')));
+        assert_eq!(app.scroll, 4);
+        handle_key(&mut app, key(KeyCode::Esc));
+        assert_eq!(app.view, View::WorkList);
+
+        app.view = View::RfcDetail(0);
+        handle_key(&mut app, key(KeyCode::Enter));
+        assert_eq!(app.view, View::ClauseDetail(0, 0));
+    }
+
+    fn key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::NONE)
+    }
+
+    fn ctrl_key(code: KeyCode) -> KeyEvent {
+        KeyEvent::new(code, KeyModifiers::CONTROL)
+    }
+
+    fn project_index() -> ProjectIndex {
+        ProjectIndex {
+            rfcs: vec![RfcIndex {
+                rfc: RfcSpec {
+                    rfc_id: "RFC-0001".to_string(),
+                    title: "RFC".to_string(),
+                    version: "0.1.0".to_string(),
+                    status: RfcStatus::Normative,
+                    phase: RfcPhase::Impl,
+                    owners: vec![],
+                    created: "2026-06-07".to_string(),
+                    updated: None,
+                    supersedes: None,
+                    refs: vec![],
+                    tags: vec![],
+                    sections: vec![],
+                    changelog: vec![],
+                    signature: None,
+                },
+                clauses: vec![ClauseEntry {
+                    spec: ClauseSpec {
+                        clause_id: "C-TEST".to_string(),
+                        title: "Clause".to_string(),
+                        kind: ClauseKind::Normative,
+                        status: ClauseStatus::Active,
+                        text: "Clause text".to_string(),
+                        anchors: vec![],
+                        superseded_by: None,
+                        since: None,
+                        tags: vec![],
+                    },
+                    path: PathBuf::from("gov/rfc/RFC-0001/clauses/C-TEST.toml"),
+                }],
+                path: PathBuf::from("gov/rfc/RFC-0001/rfc.toml"),
+            }],
+            adrs: vec![],
+            work_items: vec![
+                work_item("WI-2026-06-07-001", "Alpha"),
+                work_item("WI-2026-06-07-002", "Beta"),
+            ],
+        }
+    }
+
+    fn work_item(id: &str, title: &str) -> WorkItemEntry {
+        WorkItemEntry {
+            spec: WorkItemSpec {
+                govctl: WorkItemMeta::new(id, title, WorkItemStatus::Active),
+                content: WorkItemContent::default(),
+                verification: WorkItemVerification::default(),
+            },
+            path: PathBuf::from(format!("gov/work/{id}.toml")),
+        }
     }
 }

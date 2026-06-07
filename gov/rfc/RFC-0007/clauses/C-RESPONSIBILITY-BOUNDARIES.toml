@@ -1,0 +1,28 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-RESPONSIBILITY-BOUNDARIES"
+title = "TUI responsibility boundaries"
+kind = "normative"
+status = "active"
+since = "0.2.0"
+
+[content]
+text = """
+TUI v2 MUST keep terminal I/O, input dispatch, data loading, and rendering as separate responsibilities.
+
+The terminal adapter MUST be limited to terminal lifecycle, event polling, event reading, frame drawing, and shutdown handling.
+
+Input dispatch MUST translate keyboard input into in-memory TUI state transitions.
+
+Input dispatch MUST NOT perform filesystem I/O, database access, command execution, terminal drawing, or governed artifact mutation.
+
+Renderers MUST read already-loaded TUI state and draw frames.
+
+Renderers MUST NOT load project artifacts, refresh indexes, execute commands, mutate governed state, or mutate persisted loop state.
+
+Data-loading code MUST convert filesystem, schema, search-index, and loop-state failures into visible diagnostic state rather than hiding them from the cockpit.
+
+New primary views or key-routing behavior SHOULD be covered by focused state-transition tests, renderer tests using a terminal test backend, or both.
+
+**Rationale:** These boundaries keep TUI v2 human-facing, read-only, and testable without creating a second hidden execution model beside the CLI."""

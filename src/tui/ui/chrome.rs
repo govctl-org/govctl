@@ -248,3 +248,148 @@ impl<'a> Footer<'a> {
         .render(frame, area);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::super::test_support::{adr, clause, project_index, render_app, rfc, work_item};
+    use super::*;
+    use crate::loop_state::LoopState;
+    use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
+    use crate::tui::data::TuiLoopEntry;
+    use std::collections::BTreeMap;
+
+    #[test]
+    fn breadcrumb_covers_primary_and_detail_views() -> Result<(), Box<dyn std::error::Error>> {
+        let mut app = chrome_app()?;
+
+        for (view, expected) in [
+            (View::Dashboard, "Dashboard"),
+            (View::RfcList, "Dashboard > RFCs"),
+            (View::ClauseList, "Dashboard > Clauses"),
+            (View::AdrList, "Dashboard > ADRs"),
+            (View::WorkList, "Dashboard > Work"),
+            (View::GuardList, "Dashboard > Guards"),
+            (View::ReleaseList, "Dashboard > Releases"),
+            (View::TagList, "Dashboard > Tags"),
+            (View::Search, "Dashboard > Search"),
+            (View::LoopList, "Dashboard > Loops"),
+            (View::DiagnosticList, "Dashboard > Diagnostics"),
+            (View::RfcDetail(0), "Dashboard > RFCs > RFC-0001"),
+            (View::AdrDetail(0), "Dashboard > ADRs > ADR-0001"),
+            (View::WorkDetail(0), "Dashboard > Work > WI-2026-01-01-001"),
+            (
+                View::ClauseDetail(0, 0),
+                "Dashboard > RFCs > RFC-0001 > C-TEST",
+            ),
+            (
+                View::LoopDetail(0),
+                "Dashboard > Loops > LOOP-2026-06-07-001",
+            ),
+        ] {
+            app.view = view;
+            assert_eq!(breadcrumb(&app), expected);
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn header_status_covers_dashboard_list_search_and_loop()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut app = chrome_app()?;
+
+        assert!(header_status(&mut app).contains("RFC 1"));
+
+        app.go_to(View::RfcList);
+        assert!(header_status(&mut app).contains("Shown 1/1"));
+        app.enter_filter_mode();
+        app.filter_query = "rfc".to_string();
+        assert!(header_status(&mut app).contains("Filter: /rfc_"));
+
+        app.go_to(View::Search);
+        app.search_query = "work".to_string();
+        app.enter_search_mode();
+        assert!(header_status(&mut app).contains("Query: work_"));
+
+        app.view = View::LoopDetail(0);
+        assert!(header_status(&mut app).contains("start"));
+        app.view = View::LoopDetail(99);
+        assert_eq!(header_status(&mut app), "invalid loop state");
+        Ok(())
+    }
+
+    #[test]
+    fn footer_bindings_cover_all_view_groups() {
+        for view in [
+            View::Dashboard,
+            View::RfcList,
+            View::Search,
+            View::LoopDetail(0),
+            View::RfcDetail(0),
+            View::WorkDetail(0),
+        ] {
+            let line = keybind_line(bindings_for_view(view));
+            assert!(line.width() > 0);
+        }
+    }
+
+    #[test]
+    fn header_and_footer_render_visible_chrome() -> Result<(), Box<dyn std::error::Error>> {
+        let mut app = chrome_app()?;
+        app.view = View::RfcList;
+
+        let (_, rendered) = render_app(100, 6, app, |frame, app| {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Length(3), Constraint::Length(3)])
+                .split(frame.area());
+            Header::new(app).render(frame, chunks[0]);
+            Footer::new(app.view, Some("status")).render(frame, chunks[1]);
+        })?;
+
+        assert!(rendered.iter().any(|line| line.contains("govctl")));
+        assert!(
+            rendered
+                .iter()
+                .any(|line| line.contains("Dashboard > RFCs"))
+        );
+        assert!(rendered.iter().any(|line| line.contains("status")));
+        Ok(())
+    }
+
+    fn chrome_app() -> Result<App, Box<dyn std::error::Error>> {
+        let mut rfc = rfc(
+            "RFC-0001",
+            "RFC title",
+            RfcStatus::Normative,
+            RfcPhase::Impl,
+            &[],
+        );
+        rfc.clauses
+            .push(clause("C-TEST", "Clause title", "Clause text"));
+        let mut app = App::new(project_index(
+            vec![rfc],
+            vec![adr("ADR-0001", "ADR title", AdrStatus::Accepted, &[])],
+            vec![work_item(
+                "WI-2026-01-01-001",
+                "Work title",
+                WorkItemStatus::Active,
+                &[],
+            )],
+        ));
+
+        let work_id = "WI-2026-06-07-001";
+        let mut dependencies = BTreeMap::new();
+        dependencies.insert(work_id.to_string(), Vec::new());
+        app.supplement.loops.push(TuiLoopEntry {
+            id: "LOOP-2026-06-07-001".to_string(),
+            state: Some(LoopState::new(
+                "LOOP-2026-06-07-001",
+                vec![work_id.to_string()],
+                vec![work_id.to_string()],
+                dependencies,
+            )?),
+            diagnostic: None,
+        });
+        Ok(app)
+    }
+}
