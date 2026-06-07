@@ -1,0 +1,24 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SEARCH"
+title = "TUI search"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+TUI v2 MUST provide a search view for governed artifacts.
+
+The search view MUST interpret query text according to [[RFC-0002:C-SEARCH-COMMAND]] rather than exposing backend-specific raw query syntax.
+
+The search view SHOULD support artifact type filtering and tag filtering when the terminal interaction model can expose those filters clearly.
+
+Search results MUST show at least artifact kind, ID, title, and enough snippet or metadata context for a human to choose a result.
+
+Selecting a search result MUST navigate to the corresponding TUI detail view when that artifact kind is supported by TUI v2.
+
+Search result loading MUST follow the read-only boundary in [[RFC-0007:C-READ-ONLY]].
+
+**Rationale:** Search is the fastest way for humans to recover context in a large governed repository. Reusing the CLI search contract prevents TUI search from drifting into a separate discovery model."""

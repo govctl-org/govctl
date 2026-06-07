@@ -4,6 +4,8 @@
 //! RFCs, ADRs, and Work Items.
 
 mod app;
+mod dag;
+mod data;
 mod event;
 mod ui;
 
@@ -11,7 +13,6 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticLevel, DiagnosticResult};
 use crate::load::load_project;
 use crossterm::{
-    event::{DisableMouseCapture, EnableMouseCapture},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
@@ -47,26 +48,22 @@ pub fn run(config: &Config) -> DiagnosticResult<()> {
     // Setup terminal
     enable_raw_mode().map_err(|err| terminal_error("enable raw mode", err))?;
     let mut stdout = std::io::stdout();
-    execute!(stdout, EnterAlternateScreen, EnableMouseCapture)
+    execute!(stdout, EnterAlternateScreen)
         .map_err(|err| terminal_error("enter alternate screen", err))?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal =
         Terminal::new(backend).map_err(|err| terminal_error("initialize terminal", err))?;
 
     // Create app state
-    let mut app = App::new(index);
+    let mut app = App::with_project(config.clone(), index);
 
     // Run event loop
     let result = event::run_event_loop(&mut terminal, &mut app);
 
     // Restore terminal
     disable_raw_mode().map_err(|err| terminal_error("disable raw mode", err))?;
-    execute!(
-        terminal.backend_mut(),
-        LeaveAlternateScreen,
-        DisableMouseCapture
-    )
-    .map_err(|err| terminal_error("leave alternate screen", err))?;
+    execute!(terminal.backend_mut(), LeaveAlternateScreen)
+        .map_err(|err| terminal_error("leave alternate screen", err))?;
     terminal
         .show_cursor()
         .map_err(|err| terminal_error("show cursor", err))?;

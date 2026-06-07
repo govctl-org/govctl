@@ -57,21 +57,37 @@ pub fn search(
     output: OutputFormat,
     reindex: bool,
 ) -> DiagnosticResult<Diagnostics> {
+    let results = search_results(config, query, type_filters, tag_filters, limit, reindex)?;
+    print_results(&results, output);
+    Ok(vec![])
+}
+
+/// Return search results for read-only callers such as the TUI. Implements
+/// [[RFC-0007:C-SEARCH]], [[RFC-0007:C-READ-ONLY]], and
+/// [[RFC-0002:C-SEARCH-COMMAND]].
+pub(crate) fn search_results(
+    config: &Config,
+    query: &[String],
+    type_filters: &[ListTarget],
+    tag_filters: &[String],
+    limit: Option<usize>,
+    reindex: bool,
+) -> DiagnosticResult<Vec<SearchResult>> {
     let terms = query_terms(query)?;
     let kinds = kinds_for_filters(type_filters);
     let connection = open_search_index(config)?;
+    // Implements [[RFC-0007:C-READ-ONLY]] via disposable derived-index refresh.
     sync_search_index(config, &connection, &kinds, reindex)?;
 
-    let results = query_index(
+    // Implements [[RFC-0007:C-SEARCH]] using [[RFC-0002:C-SEARCH-COMMAND]] semantics.
+    query_index(
         config,
         &connection,
         &terms,
         &kinds,
         tag_filters,
         limit.unwrap_or(DEFAULT_LIMIT),
-    )?;
-    print_results(&results, output);
-    Ok(vec![])
+    )
 }
 
 fn query_terms(query: &[String]) -> DiagnosticResult<Vec<String>> {

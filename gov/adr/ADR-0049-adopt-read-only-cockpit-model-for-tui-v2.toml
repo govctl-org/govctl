@@ -1,0 +1,105 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0049"
+title = "Adopt read-only cockpit model for TUI v2"
+status = "accepted"
+date = "2026-06-06"
+refs = [
+    "RFC-0007",
+    "RFC-0003",
+    "RFC-0006",
+    "RFC-0002",
+]
+tags = ["tui"]
+
+[content]
+context = """
+TUI v2 needs to become more useful and more readable for humans working in a governed repository.
+
+### Problem Statement
+
+The current TUI is primarily a dashboard plus RFC/ADR/work item browser. It does not expose newer governance concepts such as project-wide search, persisted loop state, dependency DAGs, or check diagnostics. At the same time, govctl already has a mature CLI mutation model for edits, lifecycle transitions, dry-run behavior, diagnostics, and write locking.
+
+### Constraints
+
+- [[RFC-0003]] defines the existing TUI browsing baseline.
+- [[RFC-0007]] defines TUI v2 behavior for a read-only cockpit.
+- [[RFC-0002]] owns CLI resource and search semantics.
+- [[RFC-0006]] owns loop state and loop execution semantics.
+- First-phase TUI v2 must serve humans, not agents or machine parsing.
+
+### Options Considered
+
+We considered keeping the current TUI and adding isolated views, building a full CRUD TUI editor, and building a read-only human cockpit with loop DAG visualization."""
+decision = """
+We will **build TUI v2 as a read-only human cockpit with loop DAG visualization**.
+
+The first phase of TUI v2 will focus on human understanding: project overview, artifact browsing, search, persisted loop state, dependency DAGs, and diagnostics. It will not implement artifact editing, lifecycle transitions, loop execution, migration, rendering, or other mutations.
+
+### Implementation Notes
+
+- TUI v2 may show suggested CLI commands for mutating workflows, but it must not execute those mutations.
+- Loop DAG rendering should use persisted loop state from [[RFC-0006]] rather than recomputing a separate execution model.
+- Search behavior should reuse [[RFC-0002:C-SEARCH-COMMAND]] semantics instead of introducing TUI-only query behavior.
+- Responsive terminal layouts should degrade to readable simpler views rather than preserving broken multi-pane layouts."""
+consequences = """
+### Positive
+
+- TUI v2 gets a coherent product shape instead of another set of isolated list/detail additions.
+- Humans can inspect project state, search context, loop progress, DAG dependencies, and diagnostics from one terminal surface.
+- The existing CLI remains the single mutation authority for artifact edits, lifecycle transitions, loop execution, rendering, dry-run, and locking.
+- The loop DAG view makes dependency readiness and blocked downstream work understandable without reading raw state files.
+
+### Negative
+
+- Users who want a full terminal editor must still switch to CLI commands for mutations. Mitigation: TUI v2 can display suggested commands without executing them.
+- Visual DAG layout adds complexity that simple lists do not have. Mitigation: keep the layout deterministic, test the data model separately from widget rendering, and provide readable fallbacks for large graphs or narrow terminals.
+- Search and diagnostics views may expose more information than fits comfortably on small terminals. Mitigation: prioritize stable summaries, selected-item inspectors, and responsive single-column fallbacks.
+
+### Neutral
+
+- This decision does not prevent future write-capable TUI workflows. It requires those workflows to be designed later against the existing edit model, dry-run behavior, diagnostics, and write-lock rules.
+- Disposable `.govctl` search/catalog index refresh remains acceptable when governed by the existing search freshness contract; persisted loop state remains read-only in the TUI."""
+
+[[content.alternatives]]
+text = "Keep current TUI and add isolated feature views"
+status = "rejected"
+pros = [
+    "Smallest incremental change",
+    "Low initial implementation risk",
+]
+cons = [
+    "Leaves dashboard/list/detail as the organizing model",
+    "Makes search, loops, and diagnostics feel bolted on",
+    "Does not establish a coherent human cockpit information architecture",
+]
+rejection_reason = "This would continue the existing pattern of isolated TUI additions rather than solving the product shape problem."
+
+[[content.alternatives]]
+text = "Build a full interactive CRUD TUI editor"
+status = "rejected"
+pros = [
+    "Provides one integrated terminal surface for browsing and editing",
+    "Could be attractive for humans who prefer TUI workflows",
+]
+cons = [
+    "Duplicates CLI edit, lifecycle, dry-run, diagnostics, and lock semantics",
+    "Raises risk of a weaker parallel mutation model",
+    "Greatly expands first-phase scope before the cockpit model is proven",
+]
+rejection_reason = "First-phase TUI v2 should not create a second mutation surface parallel to the governed CLI."
+
+[[content.alternatives]]
+text = "Build a read-only human cockpit with loop DAG visualization"
+status = "accepted"
+pros = [
+    "Creates one coherent product shape for overview, browsing, search, loops, and diagnostics",
+    "Preserves CLI ownership of mutations and lifecycle gates",
+    "Makes loop dependency state understandable to humans through a visual DAG",
+    "Can be implemented and tested incrementally without weakening artifact authority",
+]
+cons = [
+    "Users still need to run CLI commands for edits and lifecycle transitions",
+    "DAG layout and responsive terminal rendering add UI complexity",
+]

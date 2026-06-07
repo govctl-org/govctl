@@ -1,0 +1,23 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-07-004"
+title = "Remove unused TUI mouse capture"
+status = "done"
+created = "2026-06-07"
+started = "2026-06-07"
+completed = "2026-06-07"
+refs = ["RFC-0007"]
+
+[content]
+description = "Remove unused mouse capture from the read-only TUI so terminal selection and copy behavior are not intercepted when no mouse events are handled."
+
+[[content.acceptance_criteria]]
+text = "govctl check and TUI tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "TUI no longer enables mouse capture without handling mouse events"
+status = "done"
+category = "fixed"

@@ -1,0 +1,23 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-07-002"
+title = "Fix TUI cockpit review findings"
+status = "done"
+created = "2026-06-07"
+started = "2026-06-07"
+completed = "2026-06-07"
+refs = ["RFC-0007"]
+
+[content]
+description = "Fix verified TUI cockpit review findings: sorted supplement loading, stale search cache invalidation, loop-state IO diagnostics, DAG fallback/error visibility, ops totals, and RFC-0007 traceability comments."
+
+[[content.acceptance_criteria]]
+text = "TUI tests and govctl check pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "TUI cockpit keeps list ordering, search cache, loop diagnostics, DAG fallback, and ops summaries consistent"
+status = "done"
+category = "fixed"

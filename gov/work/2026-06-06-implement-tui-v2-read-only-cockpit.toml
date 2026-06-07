@@ -1,0 +1,59 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-06-001"
+title = "Implement TUI v2 read-only cockpit"
+status = "done"
+created = "2026-06-06"
+started = "2026-06-06"
+completed = "2026-06-06"
+refs = [
+    "RFC-0003",
+    "RFC-0006",
+    "RFC-0002",
+    "RFC-0007",
+    "ADR-0049",
+]
+
+[content]
+description = "Implement TUI v2 as a human-first, read-only project cockpit. The work updates the TUI specification, records the architectural decision to avoid first-phase write operations, and implements richer navigation for project overview, artifact discovery, loop state with dependency DAG visualization, diagnostics, and searchable governance context."
+
+[[content.acceptance_criteria]]
+text = "RFC-0007 specifies TUI v2 read-only cockpit, loop DAG, search, diagnostics, and human-first UX obligations"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Accepted ADR records the TUI v2 read-only cockpit architecture and rejects full CRUD editing for the first phase"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "TUI dashboard provides human navigation to overview, artifact browsing, search, loops, and diagnostics"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "TUI loop views list persisted loops and render selected loop dependency DAGs from loop state"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "TUI search view lets humans query governance artifacts and jump from results to detail views"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "TUI diagnostics view presents govctl check diagnostics grouped for human review without mutating project state"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Focused TUI tests cover loop DAG layout/rendering, loop list loading, search navigation, diagnostics presentation, and responsive rendering"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and cargo test pass"
+status = "done"
+category = "chore"

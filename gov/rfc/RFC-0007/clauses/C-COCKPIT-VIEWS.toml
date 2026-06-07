@@ -1,0 +1,22 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-COCKPIT-VIEWS"
+title = "Cockpit view model"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+TUI v2 MUST provide a top-level human navigation model with visible entry points for overview, artifact browsing, search, loops, and diagnostics.
+
+The overview view MUST summarize at least RFCs, ADRs, work items, and verification guards when those artifacts are available.
+
+The artifact browsing views MUST preserve the existing RFC, ADR, and Work Item browsing capabilities required by [[RFC-0003]].
+
+The artifact browsing views SHOULD include verification guards, clauses, releases, and tags when those data sources can be loaded without violating [[RFC-0007:C-READ-ONLY]].
+
+The current view, selection context, active filter or query, and primary key bindings MUST remain visible or discoverable without leaving the TUI.
+
+**Rationale:** A cockpit should orient a human before asking them to drill into details. The top-level model makes newer governance concepts discoverable while preserving the older RFC/ADR/Work browsing workflows."""

@@ -56,8 +56,41 @@ impl App {
                 self.clause_list_state = ListState::default().with_selected(Some(0));
                 View::RfcDetail(real_idx)
             }
+            View::ClauseList => self
+                .supplement
+                .clauses
+                .get(real_idx)
+                .and_then(|entry| {
+                    self.index
+                        .rfcs
+                        .iter()
+                        .position(|rfc| rfc.rfc.rfc_id == entry.rfc_id)
+                        .and_then(|rfc_idx| {
+                            self.index.rfcs[rfc_idx]
+                                .clauses
+                                .iter()
+                                .position(|clause| {
+                                    clause.spec.clause_id == entry.clause.spec.clause_id
+                                })
+                                .map(|clause_idx| View::ClauseDetail(rfc_idx, clause_idx))
+                        })
+                })
+                .unwrap_or(View::ClauseList),
             View::AdrList => View::AdrDetail(real_idx),
             View::WorkList => View::WorkDetail(real_idx),
+            View::GuardList => View::GuardDetail(real_idx),
+            View::Search => {
+                self.enter_search_result_at(real_idx);
+                return;
+            }
+            View::LoopList => {
+                self.loop_selected = 0;
+                View::LoopDetail(real_idx)
+            }
+            View::DiagnosticList => {
+                self.enter_diagnostic_target_at(real_idx);
+                return;
+            }
             _ => return,
         };
         self.scroll = 0;
@@ -70,7 +103,18 @@ impl App {
             View::RfcDetail(_) => View::RfcList,
             View::AdrDetail(_) => View::AdrList,
             View::WorkDetail(_) => View::WorkList,
-            View::RfcList | View::AdrList | View::WorkList => View::Dashboard,
+            View::GuardDetail(_) => View::GuardList,
+            View::LoopDetail(_) => View::LoopList,
+            View::RfcList
+            | View::ClauseList
+            | View::AdrList
+            | View::WorkList
+            | View::GuardList
+            | View::ReleaseList
+            | View::TagList
+            | View::Search
+            | View::LoopList
+            | View::DiagnosticList => View::Dashboard,
             View::Dashboard => {
                 self.should_quit = true;
                 View::Dashboard
@@ -90,7 +134,19 @@ impl App {
         self.table_state = TableState::default().with_selected(Some(0));
         self.scroll = 0;
         self.invalidate_indices();
-        if matches!(self.view, View::RfcList | View::AdrList | View::WorkList) {
+        if matches!(
+            self.view,
+            View::RfcList
+                | View::ClauseList
+                | View::AdrList
+                | View::WorkList
+                | View::GuardList
+                | View::ReleaseList
+                | View::TagList
+                | View::Search
+                | View::LoopList
+                | View::DiagnosticList
+        ) {
             self.filter_mode = false;
             self.clear_filter();
         } else {
@@ -188,5 +244,23 @@ impl App {
                 self.scroll = 0;
             }
         }
+    }
+
+    pub fn loop_item_count(&self) -> usize {
+        match self.view {
+            View::LoopDetail(idx) => self.current_loop_order(idx).len(),
+            _ => 0,
+        }
+    }
+
+    pub fn loop_item_next(&mut self) {
+        let len = self.loop_item_count();
+        if len > 0 && self.loop_selected < len - 1 {
+            self.loop_selected += 1;
+        }
+    }
+
+    pub fn loop_item_prev(&mut self) {
+        self.loop_selected = self.loop_selected.saturating_sub(1);
     }
 }

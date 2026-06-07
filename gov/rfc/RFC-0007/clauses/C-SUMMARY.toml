@@ -1,0 +1,18 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SUMMARY"
+title = "Summary"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+This RFC defines TUI v2 as a human-first, read-only cockpit for understanding a governed project.
+
+TUI v2 builds on the baseline browsing behavior in [[RFC-0003]], the global search contract in [[RFC-0002:C-SEARCH-COMMAND]], and the loop state model in [[RFC-0006]]. It focuses on project overview, artifact discovery, loop state visualization, diagnostics, and readable navigation.
+
+**Scope:** This RFC covers externally visible TUI behavior and interaction constraints. It does not specify private Rust module layout, ratatui widget internals, or a full interactive artifact editor.
+
+**Rationale:** The existing TUI is useful for browsing RFCs, ADRs, and work items, but it does not expose newer governance concepts such as search, loop local state, dependency DAGs, guards, releases, or check diagnostics. TUI v2 should help a human understand project state quickly without creating a second mutation surface parallel to the CLI."""

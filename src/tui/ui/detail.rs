@@ -3,9 +3,10 @@ use super::{
     components::{ClauseListRow, SelectableList, StatusText},
     phase_style, rounded_block, wrapped_line_count,
 };
+use crate::tui::dag::dag_lines;
 use ratatui::{
     prelude::*,
-    widgets::{Paragraph, Wrap},
+    widgets::{List, ListItem, Paragraph, Wrap},
 };
 use std::borrow::Cow;
 
@@ -255,6 +256,179 @@ pub(super) fn draw_work(
     let markdown = crate::render::render_work_item(item).unwrap_or_default();
     let title = format!("📌 {}", item.meta().id);
     MarkdownDetailPanel::new(&title, Color::Yellow, app.scroll, &markdown).render(frame, area)
+}
+
+// Implements [[RFC-0007:C-COCKPIT-VIEWS]]: guard artifacts are browsable read-only.
+pub(super) fn draw_guard(
+    frame: &mut Frame,
+    app: &mut App,
+    area: Rect,
+    idx: usize,
+) -> DetailViewport {
+    let Some(guard) = app.supplement.guards.get(idx) else {
+        return DetailViewport::new(0);
+    };
+    let meta = guard.meta();
+    let mut markdown = format!(
+        "# {}\n\n**ID:** {}\n\n**Command:** `{}`\n\n**Timeout:** {} seconds\n",
+        meta.title, meta.id, guard.spec.check.command, guard.spec.check.timeout_secs
+    );
+    if let Some(pattern) = &guard.spec.check.pattern {
+        markdown.push_str(&format!("\n**Pattern:** `{pattern}`\n"));
+    }
+    if !meta.refs.is_empty() {
+        markdown.push_str(&format!("\n**References:** {}\n", meta.refs.join(", ")));
+    }
+    if !meta.tags.is_empty() {
+        markdown.push_str(&format!("\n**Tags:** `{}`\n", meta.tags.join("`, `")));
+    }
+    let title = format!("Guard {}", meta.id);
+    MarkdownDetailPanel::new(&title, Color::LightBlue, app.scroll, &markdown).render(frame, area)
+}
+
+// Implements [[RFC-0007:C-LOOP-VIEWS]] and [[RFC-0007:C-LOOP-DAG]].
+pub(super) fn draw_loop(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
+    let Some(entry) = app.supplement.loops.get(idx) else {
+        return;
+    };
+    let Some(state) = entry.state.as_ref() else {
+        let message = entry
+            .diagnostic
+            .as_ref()
+            .map(|diag| diag.to_string())
+            .unwrap_or_else(|| "Invalid loop state".to_string());
+        frame.render_widget(
+            Paragraph::new(message)
+                .wrap(Wrap { trim: false })
+                .block(rounded_block("Loop").border_style(Style::default().fg(Color::Red))),
+            area,
+        );
+        return;
+    };
+
+    let selected = app.selected_loop_work_id(idx);
+    let chunks = if area.width >= 110 {
+        Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(58), Constraint::Percentage(42)])
+            .split(area)
+    } else {
+        Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Percentage(60), Constraint::Percentage(40)])
+            .split(area)
+    };
+
+    let max_lines = chunks[0].height.saturating_sub(2) as usize;
+    let dag_items = match dag_lines(state, selected.as_deref(), max_lines) {
+        Ok(lines) => lines
+            .into_iter()
+            .map(|line| {
+                let style = if line.hidden {
+                    Style::default().fg(Color::DarkGray)
+                } else if line.selected {
+                    Style::default().fg(Color::Cyan).bold()
+                } else {
+                    Style::default()
+                };
+                ListItem::new(Line::from(Span::styled(line.text, style)))
+            })
+            .collect::<Vec<_>>(),
+        Err(diagnostic) => vec![ListItem::new(Line::from(Span::styled(
+            format!(
+                "DAG unavailable for {} (selected: {}, max lines: {}): {}",
+                state.loop_meta.id,
+                selected.as_deref().unwrap_or("-"),
+                max_lines,
+                diagnostic
+            ),
+            Style::default().fg(Color::Red),
+        )))],
+    };
+    let dag = List::new(dag_items)
+        .block(rounded_block("Dependency DAG").border_style(Style::default().fg(Color::Yellow)));
+    frame.render_widget(dag, chunks[0]);
+
+    let inspector = loop_inspector_lines(state, selected.as_deref());
+    frame.render_widget(
+        Paragraph::new(inspector)
+            .wrap(Wrap { trim: false })
+            .block(rounded_block("Selected Work").border_style(Style::default().fg(Color::Cyan))),
+        chunks[1],
+    );
+}
+
+// Implements [[RFC-0007:C-LOOP-VIEWS]]: selected loop work inspector.
+fn loop_inspector_lines<'a>(
+    state: &'a crate::loop_state::LoopState,
+    selected: Option<&'a str>,
+) -> Vec<Line<'a>> {
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled("Loop: ", Style::default().fg(Color::DarkGray)),
+            Span::raw(state.loop_meta.id.clone()),
+        ]),
+        Line::from(vec![
+            Span::styled("State: ", Style::default().fg(Color::DarkGray)),
+            Span::raw(state.loop_meta.state.as_str()),
+        ]),
+        Line::from(vec![
+            Span::styled("Next:  ", Style::default().fg(Color::DarkGray)),
+            Span::raw(state.loop_meta.next_action.as_str()),
+        ]),
+        Line::from(vec![
+            Span::styled("Work:  ", Style::default().fg(Color::DarkGray)),
+            Span::raw(state.loop_meta.work.join(", ")),
+        ]),
+        Line::from(""),
+    ];
+
+    let Some(work_id) = selected else {
+        lines.push(Line::from("No work item selected"));
+        return lines;
+    };
+    lines.push(Line::from(vec![
+        Span::styled("ID:     ", Style::default().fg(Color::DarkGray)),
+        Span::styled(work_id.to_string(), Style::default().bold()),
+    ]));
+    if let Some(item) = state.items.get(work_id) {
+        lines.push(Line::from(vec![
+            Span::styled("Status: ", Style::default().fg(Color::DarkGray)),
+            Span::raw(item.status.as_str()),
+        ]));
+        lines.push(Line::from(vec![
+            Span::styled("Rounds: ", Style::default().fg(Color::DarkGray)),
+            Span::raw(format!("{} (last {})", item.round_count, item.last_round)),
+        ]));
+    }
+    let deps = state
+        .dependencies
+        .get(work_id)
+        .filter(|deps| !deps.is_empty())
+        .map(|deps| deps.join(", "))
+        .unwrap_or_else(|| "-".to_string());
+    lines.push(Line::from(vec![
+        Span::styled("Needs:  ", Style::default().fg(Color::DarkGray)),
+        Span::raw(deps),
+    ]));
+    let dependents = state
+        .dependencies
+        .iter()
+        .filter_map(|(candidate, deps)| {
+            deps.iter()
+                .any(|dep| dep == work_id)
+                .then_some(candidate.clone())
+        })
+        .collect::<Vec<_>>();
+    lines.push(Line::from(vec![
+        Span::styled("Feeds:  ", Style::default().fg(Color::DarkGray)),
+        Span::raw(if dependents.is_empty() {
+            "-".to_string()
+        } else {
+            dependents.join(", ")
+        }),
+    ]));
+    lines
 }
 
 pub(super) fn draw_clause(

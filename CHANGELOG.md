@@ -10,6 +10,21 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- RFC-0007 specifies TUI v2 read-only cockpit, loop DAG, search, diagnostics, and human-first UX obligations (WI-2026-06-06-001)
+- Accepted ADR records the TUI v2 read-only cockpit architecture and rejects full CRUD editing for the first phase (WI-2026-06-06-001)
+- TUI dashboard provides human navigation to overview, artifact browsing, search, loops, and diagnostics (WI-2026-06-06-001)
+- TUI loop views list persisted loops and render selected loop dependency DAGs from loop state (WI-2026-06-06-001)
+- TUI search view lets humans query governance artifacts and jump from results to detail views (WI-2026-06-06-001)
+- TUI diagnostics view presents govctl check diagnostics grouped for human review without mutating project state (WI-2026-06-06-001)
+
+### Fixed
+
+- govctl check no longer prints a checked-count summary before schema/load diagnostics (WI-2026-06-07-001)
+- TUI cockpit keeps list ordering, search cache, loop diagnostics, DAG fallback, and ops summaries consistent (WI-2026-06-07-002)
+- TUI no longer enables mouse capture without handling mouse events (WI-2026-06-07-004)
+
 ## [0.9.2] - 2026-06-05
 
 0.9.2 focuses on discovery and lookup performance. It adds a project-wide

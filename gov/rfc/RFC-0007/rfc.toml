@@ -1,0 +1,46 @@
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0007"
+title = "TUI v2 read-only cockpit"
+version = "0.2.0"
+status = "normative"
+phase = "test"
+owners = ["@govctl-org"]
+created = "2026-06-06"
+updated = "2026-06-07"
+refs = [
+    "RFC-0003",
+    "RFC-0006",
+    "RFC-0002",
+]
+tags = ["tui"]
+signature = "e281def7edbba823ed931af760b3830cef9aa2b77049ebc4f6d0faebb24f9491"
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-READ-ONLY.toml",
+    "clauses/C-RESPONSIBILITY-BOUNDARIES.toml",
+    "clauses/C-COCKPIT-VIEWS.toml",
+    "clauses/C-LOOP-VIEWS.toml",
+    "clauses/C-LOOP-DAG.toml",
+    "clauses/C-SEARCH.toml",
+    "clauses/C-DIAGNOSTICS.toml",
+    "clauses/C-HUMAN-UX.toml",
+]
+
+[[changelog]]
+version = "0.2.0"
+date = "2026-06-07"
+notes = "Specify TUI responsibility boundaries"
+added = ["Require terminal I/O, input dispatch, data loading, and rendering to remain separate testable responsibilities"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-06-06"
+notes = "Initial draft"
