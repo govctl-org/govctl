@@ -23,6 +23,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 - govctl check no longer prints a checked-count summary before schema/load diagnostics (WI-2026-06-07-001)
 - TUI cockpit keeps list ordering, search cache, loop diagnostics, DAG fallback, and ops summaries consistent (WI-2026-06-07-002)
+- TUI no longer enables mouse capture without handling mouse events (WI-2026-06-07-004)
 
 ## [0.9.2] - 2026-06-05
 
