@@ -102,16 +102,41 @@ fn test_release_metadata_uses_matching_archive_layout() -> Result<(), Box<dyn st
 
     let manifest_path = format!("{}/Cargo.toml", env!("CARGO_MANIFEST_DIR"));
     let manifest: toml::Value = toml::from_str(&std::fs::read_to_string(manifest_path)?)?;
-    let bin_dir = manifest
+    let binstall = manifest
         .get("package")
         .and_then(|package| package.get("metadata"))
         .and_then(|metadata| metadata.get("binstall"))
-        .and_then(|binstall| binstall.get("bin-dir"))
+        .ok_or("missing package.metadata.binstall")?;
+    let pkg_url = binstall
+        .get("pkg-url")
+        .and_then(toml::Value::as_str)
+        .ok_or("missing package.metadata.binstall.pkg-url")?;
+    assert_eq!(
+        pkg_url,
+        "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.tar.gz"
+    );
+    let pkg_fmt = binstall
+        .get("pkg-fmt")
+        .and_then(toml::Value::as_str)
+        .ok_or("missing package.metadata.binstall.pkg-fmt")?;
+    assert_eq!(pkg_fmt, "tgz");
+    let bin_dir = binstall
+        .get("bin-dir")
         .and_then(toml::Value::as_str)
         .ok_or("missing package.metadata.binstall.bin-dir")?;
     assert_eq!(
         bin_dir,
         "govctl-v{ version }-{ target }/{ bin }{ binary-ext }"
+    );
+    let windows_pkg_url = binstall
+        .get("overrides")
+        .and_then(|overrides| overrides.get("x86_64-pc-windows-msvc"))
+        .and_then(|windows| windows.get("pkg-url"))
+        .and_then(toml::Value::as_str)
+        .ok_or("missing package.metadata.binstall.overrides.x86_64-pc-windows-msvc.pkg-url")?;
+    assert_eq!(
+        windows_pkg_url,
+        "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.zip"
     );
 
     let release_workflow = std::fs::read_to_string(format!(
