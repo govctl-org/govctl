@@ -16,10 +16,10 @@ use crate::loop_state::{
     LoopLifecycleState, LoopState, load_loop_state, validate_loop_id, write_loop_state_with_op,
 };
 use crate::write::WriteOp;
-use output::{LoopListEntry, print_loop, print_loop_list};
+use output::{LoopListEntry, print_loop, print_loop_list, print_loop_with_plan};
 use state::{
     canonical_loop_ids, ensure_loop_not_terminal, ensure_work_values, find_reusable_loop,
-    generated_loop_id,
+    generated_loop_id, loop_plan_status, loop_plan_status_from_work_items,
 };
 
 pub fn start(
@@ -54,7 +54,8 @@ pub fn start(
 
 pub fn show(config: &Config, loop_id: &str) -> DiagnosticResult<Diagnostics> {
     let state = load_loop_state(config, loop_id)?;
-    print_loop("Loop", &state)?;
+    let plan_status = loop_plan_status(config, &state);
+    print_loop_with_plan("Loop", &state, plan_status.as_str())?;
     Ok(vec![])
 }
 
@@ -74,9 +75,17 @@ pub fn list(
     if let Some(limit) = limit {
         states.truncate(limit);
     }
+    let all_work_items = crate::parse::load_work_items(config).ok();
     let entries = states
         .iter()
-        .map(LoopListEntry::from_state)
+        .map(|state| {
+            let plan_status = all_work_items
+                .as_deref()
+                .map_or(state::LoopPlanStatus::Stale, |work_items| {
+                    loop_plan_status_from_work_items(state, work_items)
+                });
+            LoopListEntry::from_state(state, plan_status.as_str())
+        })
         .collect::<Vec<_>>();
     print_loop_list(&entries, output);
     Ok(vec![])

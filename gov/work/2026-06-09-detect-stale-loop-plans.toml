@@ -1,0 +1,33 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-09-001"
+title = "Detect stale loop plans"
+status = "done"
+created = "2026-06-09"
+started = "2026-06-09"
+completed = "2026-06-09"
+refs = ["RFC-0006"]
+
+[content]
+description = "Detect when persisted loop execution plans no longer match the current Work Item dependency closure, and guide users to replan without binding loops to VCS revisions."
+
+[[content.acceptance_criteria]]
+text = "loop run rejects stale stored dependency closures before opening new work"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "loop list and show expose stale loop plans without mutating local state"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "regression tests cover stale dependency closure detection and replan repair"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

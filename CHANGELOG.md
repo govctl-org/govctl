@@ -10,15 +10,21 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- loop list and show expose stale loop plans without mutating local state (WI-2026-06-09-001)
+
 ### Changed
 
 - Writer skills include matching authority tests and examples so authors avoid boundary drift before review (WI-2026-06-07-005)
 - Reviewer agents include explicit boundary probes and boundary finding output for RFC, ADR, and Work Item reviews (WI-2026-06-07-005)
+- init-skills installs full skill directory bundles, including bundled references and assets (WI-2026-06-08-002)
 
 ### Fixed
 
 - cargo-binstall Windows override resolves to govctl-v{ version }-{ target }.zip (WI-2026-06-08-001)
 - cargo-binstall Unix pkg-url resolves to govctl-v{ version }-{ target }.tar.gz (WI-2026-06-08-001)
+- loop run rejects stale stored dependency closures before opening new work (WI-2026-06-09-001)
 
 ## [0.9.3] - 2026-06-07
 

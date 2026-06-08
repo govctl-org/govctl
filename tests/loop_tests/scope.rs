@@ -199,3 +199,64 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
     );
     Ok(())
 }
+
+#[test]
+fn test_loop_run_rejects_stale_dependency_plan_until_replanned() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let dependency_id = format!("WI-{date}-002");
+    let loop_id = loop_id(&date, 1);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Root"),
+            work_new("Dependency"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            work_add_dependency(&root_id, &dependency_id),
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+
+    let stale_output =
+        run_dynamic_commands(temp_dir.path(), &[loop_run_with_max_rounds(&loop_id, "2")])?;
+    assert!(stale_output.contains("error[E1201]"), "{stale_output}");
+    assert!(
+        stale_output.contains(&format!("Loop '{loop_id}' is stale")),
+        "{stale_output}"
+    );
+    assert!(
+        stale_output.contains(&format!("govctl loop replan {loop_id}")),
+        "{stale_output}"
+    );
+
+    let repaired_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            loop_replan(&loop_id),
+            loop_run_with_max_rounds(&loop_id, "2"),
+        ],
+    )?;
+    assert!(
+        repaired_output.contains(&format!("Replanned loop {loop_id}")),
+        "{repaired_output}"
+    );
+    assert!(
+        repaired_output.contains(&format!("Opened round 1 for loop {loop_id}")),
+        "{repaired_output}"
+    );
+
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    let state: toml::Value = toml::from_str(&state_toml)?;
+    assert_eq!(
+        loop_resolved(&state)?,
+        vec![root_id.clone(), dependency_id.clone()]
+    );
+    assert_eq!(loop_item_status(&state_toml, &dependency_id)?, "active");
+    assert_eq!(loop_item_status(&state_toml, &root_id)?, "pending");
+    Ok(())
+}

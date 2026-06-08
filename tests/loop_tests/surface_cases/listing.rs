@@ -33,8 +33,8 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
         ],
     )?;
 
-    let first_plain = format!("{first_loop}\tpending\t{first_root}\t1\t0\tstart");
-    let second_plain = format!("{second_loop}\tpending\t{second_root}\t1\t0\tstart");
+    let first_plain = format!("{first_loop}\tpending\tfresh\t{first_root}\t1\t0\tstart");
+    let second_plain = format!("{second_loop}\tpending\tfresh\t{second_root}\t1\t0\tstart");
     assert!(output.contains(&first_plain), "{output}");
     assert!(output.contains(&second_plain), "{output}");
     assert!(
@@ -57,6 +57,7 @@ fn test_loop_list_plain_and_json_are_stable() -> common::TestResult {
     );
     assert_eq!(loops[0]["id"], first_loop);
     assert_eq!(loops[0]["state"], "pending");
+    assert_eq!(loops[0]["plan"], "fresh");
     assert_eq!(loops[0]["work"][0], first_root);
     assert_eq!(loops[0]["items"], 1);
     assert_eq!(loops[0]["rounds"], 0);
@@ -182,7 +183,7 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
         run_dynamic_commands(temp_dir.path(), &[loop_list(&["paused", "-o", "plain"])])?;
     assert!(
         paused_output.contains(&format!(
-            "{paused_loop}\tpaused\t{paused_root}\t1\t1\tresolve_blocker"
+            "{paused_loop}\tpaused\tfresh\t{paused_root}\t1\t1\tresolve_blocker"
         )),
         "{paused_output}"
     );
@@ -195,7 +196,7 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
     )?;
     assert!(
         limited_output.contains(&format!(
-            "{pending_loop}\tpending\t{pending_root}\t1\t0\tstart"
+            "{pending_loop}\tpending\tfresh\t{pending_root}\t1\t0\tstart"
         )),
         "{limited_output}"
     );
@@ -218,5 +219,45 @@ fn test_loop_list_reports_invalid_canonical_state() -> common::TestResult {
     assert!(output.contains("error[E1202]"), "{output}");
     assert!(output.contains("Failed to read loop state"), "{output}");
     assert!(output.contains(&loop_id), "{output}");
+    Ok(())
+}
+
+#[test]
+fn test_loop_show_and_list_report_stale_dependency_plan() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let dependency_id = format!("WI-{date}-002");
+    let loop_id = loop_id(&date, 1);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Root"),
+            work_new("Dependency"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            work_add_dependency(&root_id, &dependency_id),
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+
+    let show_output = run_dynamic_commands(temp_dir.path(), &[loop_show(&loop_id)])?;
+    assert!(show_output.contains("Plan status: stale"), "{show_output}");
+
+    let plain_output = run_dynamic_commands(temp_dir.path(), &[loop_list(&["-o", "plain"])])?;
+    assert!(
+        plain_output.contains(&format!(
+            "{loop_id}\tpending\tstale\t{root_id}\t1\t0\tstart"
+        )),
+        "{plain_output}"
+    );
+
+    let json_output = run_dynamic_commands(temp_dir.path(), &[loop_list(&["-o", "json"])])?;
+    let json_start = json_output.find("[\n").ok_or("missing JSON list output")?;
+    let json_end = json_output[json_start..]
+        .find("\nexit:")
+        .ok_or("missing JSON command terminator")?
+        + json_start;
+    let loops: serde_json::Value = serde_json::from_str(&json_output[json_start..json_end])?;
+    assert_eq!(loops[0]["plan"], "stale", "{json_output}");
     Ok(())
 }

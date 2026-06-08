@@ -14,7 +14,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 // Project-local assets installed by `govctl init-skills`.
-// Plugin/global-only skills such as `init` are intentionally omitted.
+// Plugin/global-only skills such as `init` are intentionally omitted. [[RFC-0002:C-GLOBAL-COMMANDS]]
 const DISTRIBUTED_SKILL_DIRS: &[&str] = &[
     "discuss",
     "gov",

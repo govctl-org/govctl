@@ -138,6 +138,13 @@ fn test_release_metadata_uses_matching_archive_layout() -> Result<(), Box<dyn st
         windows_pkg_url,
         "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.zip"
     );
+    let windows_pkg_fmt = binstall
+        .get("overrides")
+        .and_then(|overrides| overrides.get("x86_64-pc-windows-msvc"))
+        .and_then(|windows| windows.get("pkg-fmt"))
+        .and_then(toml::Value::as_str)
+        .ok_or("missing package.metadata.binstall.overrides.x86_64-pc-windows-msvc.pkg-fmt")?;
+    assert_eq!(windows_pkg_fmt, "zip");
 
     let release_workflow = std::fs::read_to_string(format!(
         "{}/.github/workflows/release.yml",

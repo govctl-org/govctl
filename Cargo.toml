@@ -99,6 +99,7 @@ insta = { version = "1", features = ["yaml"] }
 regex = "1"
 chrono = "0.4"
 
+# [[ADR-0041]] governs package.metadata.binstall archive naming, including the Windows override in package.metadata.binstall.overrides.x86_64-pc-windows-msvc.
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.tar.gz"
 bin-dir = "govctl-v{ version }-{ target }/{ bin }{ binary-ext }"

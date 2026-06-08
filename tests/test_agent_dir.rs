@@ -31,6 +31,11 @@ fn test_init_skills_excludes_plugin_only_init_skill() -> common::TestResult {
 
     run_commands(temp_dir.path(), &[&["init-skills"]])?;
 
+    let init_dir = temp_dir.path().join(".claude/skills/init");
+    assert!(
+        !init_dir.exists(),
+        "init is a plugin/global onboarding skill, not a project-local init-skills asset"
+    );
     let init_skill = temp_dir.path().join(".claude/skills/init/SKILL.md");
     assert!(
         !init_skill.exists(),
