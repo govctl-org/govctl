@@ -150,8 +150,9 @@ Syntax: `govctl init-skills [--force] [--format <claude|codex>] [--dir PATH]`
 Behavior:
 - `--dir` overrides the output directory for this invocation. Resolution order: `--dir` flag > `agent_dir` from config > format-implied default (`.claude` for claude, `.codex` for codex)
 - `--format` selects the output format for agent definitions (default `claude`):
-  - `claude`: skills as `skills/*/SKILL.md`, agents as `agents/*.md` with YAML frontmatter (compatible with Claude Code, Cursor, Windsurf, and similar editors)
-  - `codex`: skills as `skills/*/SKILL.md` (same format), agents as `agents/*.toml` with `developer_instructions` field (compatible with Codex CLI)
+  - `claude`: skills as full `skills/*/` bundles rooted at `SKILL.md`, agents as `agents/*.md` with YAML frontmatter (compatible with Claude Code, Cursor, Windsurf, and similar editors)
+  - `codex`: skills as full `skills/*/` bundles rooted at `SKILL.md` (same format), agents as `agents/*.toml` with `developer_instructions` field (compatible with Codex CLI)
+- Skill bundle resources under directories such as `references/`, `assets/`, and `scripts/` MUST be installed with their parent skill; agent output remains format-specific
 - Skips files that already exist unless `--force` is used
 - Reports created/updated/skipped counts
 - This command is separate from `init` because plugin users receive skills globally and do not need local copies

@@ -1,0 +1,29 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-08-002"
+title = "Support bundled skill installation"
+status = "done"
+created = "2026-06-08"
+started = "2026-06-08"
+completed = "2026-06-08"
+refs = [
+    "ADR-0024",
+    "ADR-0028",
+    "ADR-0035",
+    "RFC-0002",
+]
+tags = ["skills-agents"]
+
+[content]
+description = "Support skill directory bundles so init-skills installs all files under explicitly distributed skill roots instead of relying on SKILL.md-only template entries."
+
+[[content.acceptance_criteria]]
+text = "init-skills installs full skill directory bundles, including bundled references and assets"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "govctl check and relevant tests pass"
+status = "done"
+category = "chore"
