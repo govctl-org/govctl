@@ -94,12 +94,12 @@ The active work item is durable outcome context. Read it with `govctl work show 
 
 ### Loop usage
 
-Use a loop only when a task has multiple independently meaningful work items. A loop coordinates durable work; it is not permission to split one cleanup/refactor into mechanical work-item fragments.
+Use a loop for non-trivial governed execution that needs local execution memory. This includes single-Work-Item work now that transient journal-style execution trace belongs in loop state and round artifacts. Multi-Work-Item loops add dependency and batch coordination; they are not permission to split one cleanup/refactor into mechanical work-item fragments.
 
 1. Create or activate only the work items that represent durable outcomes a future reader should see.
 2. Add `depends_on` edges for hard execution ordering.
 3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
-4. Start one loop for the batch root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
+4. Start one loop for the root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
 5. Run `govctl loop run <LOOP-ID>` to open a local round for ready work.
 6. Perform implementation, verification, and any explicit `govctl work move` commands yourself.
 7. Fill the opened `.govctl/loops/<LOOP-ID>/rounds/round-NNN.toml` summary evidence.
@@ -117,7 +117,7 @@ If the scope changes during execution, keep the same loop identity:
 
 `work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
 
-Do not create scattered single-item loops for work that is part of one coherent batch.
+Do not create multiple scattered loops for work that belongs in one coherent execution session.
 
 Do not create separate work items for low-level implementation slices such as helper moves, test fixture sharing, module normalization, comment cleanup, snapshot reshaping, or other changes whose only durable record should be the commit diff or one higher-level work item.
 
@@ -145,7 +145,7 @@ govctl work list pending
 
 - Matching active item: use it
 - Matching queued item: `govctl work move <WI-ID> active`
-- No match and the task has one durable outcome: `govctl work new --active "<concise-title>"`
+- No match and the task has one durable outcome: `govctl work new --active "<concise-title>"`, then start a loop if the work is non-trivial
 - No match and the task has multiple independently reviewable durable outcomes: create that small batch first, wire only hard `depends_on` edges, then start one generated-ID loop for the batch.
 - No match and the apparent split is only mechanical implementation steps: create at most one coarse work item, or route trivial cleanup to `/quick`.
 

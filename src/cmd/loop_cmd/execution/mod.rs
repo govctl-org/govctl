@@ -1,6 +1,7 @@
 use super::output::print_loop;
 use super::state::{
-    ensure_loop_not_terminal, ensure_unique_work_item_ids, loop_dependencies, loop_item_state,
+    ensure_loop_not_terminal, ensure_loop_plan_fresh, ensure_unique_work_item_ids,
+    loop_dependencies, loop_item_state,
 };
 use crate::cmd::work_lookup::load_work_item_by_id;
 use crate::config::Config;
@@ -129,6 +130,9 @@ fn open_round(
     max_rounds: u32,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
+    // Implements [[RFC-0006:C-ROUND-EXECUTION]] by rejecting stale cached plans
+    // before selecting new round work from current Work Item dependencies.
+    ensure_loop_plan_fresh(config, state)?;
     reflect_terminal_work_statuses(config, state)?;
     propagate_blocked_outcomes(state)?;
 

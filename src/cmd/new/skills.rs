@@ -5,59 +5,9 @@ use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, write_file};
 
-/// Skill templates: (relative_path, content) pairs.
-/// Source of truth: .claude/skills/; embedded at compile time.
-/// Per ADR-0028, all workflow commands are now skills for cross-platform compatibility.
-const SKILL_TEMPLATES: &[(&str, &str)] = &[
-    (
-        "skills/discuss/SKILL.md",
-        include_str!("../../../.claude/skills/discuss/SKILL.md"),
-    ),
-    (
-        "skills/gov/SKILL.md",
-        include_str!("../../../.claude/skills/gov/SKILL.md"),
-    ),
-    (
-        "skills/quick/SKILL.md",
-        include_str!("../../../.claude/skills/quick/SKILL.md"),
-    ),
-    (
-        "skills/spec/SKILL.md",
-        include_str!("../../../.claude/skills/spec/SKILL.md"),
-    ),
-    (
-        "skills/rfc-writer/SKILL.md",
-        include_str!("../../../.claude/skills/rfc-writer/SKILL.md"),
-    ),
-    (
-        "skills/adr-writer/SKILL.md",
-        include_str!("../../../.claude/skills/adr-writer/SKILL.md"),
-    ),
-    (
-        "skills/wi-writer/SKILL.md",
-        include_str!("../../../.claude/skills/wi-writer/SKILL.md"),
-    ),
-    (
-        "skills/guard-writer/SKILL.md",
-        include_str!("../../../.claude/skills/guard-writer/SKILL.md"),
-    ),
-    (
-        "skills/commit/SKILL.md",
-        include_str!("../../../.claude/skills/commit/SKILL.md"),
-    ),
-    (
-        "skills/migrate/SKILL.md",
-        include_str!("../../../.claude/skills/migrate/SKILL.md"),
-    ),
-    (
-        "skills/decision-analysis/SKILL.md",
-        include_str!("../../../.claude/skills/decision-analysis/SKILL.md"),
-    ),
-    (
-        "skills/detach/SKILL.md",
-        include_str!("../../../.claude/skills/detach/SKILL.md"),
-    ),
-];
+// Skill bundle assets are generated recursively from .claude/skills/** by build.rs.
+// Implements [[RFC-0002:C-GLOBAL-COMMANDS]] and [[ADR-0028]].
+include!(concat!(env!("OUT_DIR"), "/skill_assets.rs"));
 
 /// Agent templates: (relative_path, content) pairs.
 /// Source of truth: .claude/agents/; embedded at compile time.
@@ -130,7 +80,7 @@ pub fn sync_skills(
     let mut synced = 0;
     let mut skipped = 0;
 
-    for (rel_path, template) in SKILL_TEMPLATES.iter().chain(agent_templates.iter()) {
+    for (rel_path, template) in SKILL_ASSETS.iter().chain(agent_templates.iter()) {
         let path = agent_dir.join(rel_path);
         let display_path = config.display_path(&path);
 

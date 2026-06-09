@@ -26,6 +26,25 @@ fn test_default_agent_dir() -> common::TestResult {
 }
 
 #[test]
+fn test_init_skills_excludes_plugin_only_init_skill() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    run_commands(temp_dir.path(), &[&["init-skills"]])?;
+
+    let init_dir = temp_dir.path().join(".claude/skills/init");
+    assert!(
+        !init_dir.exists(),
+        "init is a plugin/global onboarding skill, not a project-local init-skills asset"
+    );
+    let init_skill = temp_dir.path().join(".claude/skills/init/SKILL.md");
+    assert!(
+        !init_skill.exists(),
+        "init is a plugin/global onboarding skill, not a project-local init-skills asset"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
     let temp_dir = init_project()?;
 

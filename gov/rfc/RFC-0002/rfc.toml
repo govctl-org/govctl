@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.10.1"
+version = "0.10.2"
 status = "normative"
 phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-06-04"
+updated = "2026-06-08"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "681093335724498e211e93fb519c9e16f9990da7986a2f50db914b9e60e88339"
+signature = "dd126a9195850f89dbb0ba90abee032ce072eb83017a465fd798276b9a7dbd3f"
 
 [[sections]]
 title = "Summary"
@@ -35,6 +35,12 @@ clauses = [
     "clauses/C-SELF-UPDATE.toml",
     "clauses/C-SEARCH-COMMAND.toml",
 ]
+
+[[changelog]]
+version = "0.10.2"
+date = "2026-06-08"
+notes = "Clarify init-skills skill bundle installation"
+changed = ["init-skills installs full skill bundles rooted at SKILL.md, including bundled references/assets/scripts"]
 
 [[changelog]]
 version = "0.10.1"

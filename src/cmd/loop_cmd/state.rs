@@ -1,9 +1,11 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::loop_planner::replan_loop_state;
 use crate::loop_state::{
     LoopItemState, LoopLifecycleState, LoopState, load_loop_state, loop_state_path,
     loop_state_root, validate_loop_id,
 };
+use crate::model::WorkItemEntry;
 use std::collections::BTreeSet;
 
 pub(super) fn find_reusable_loop(
@@ -186,6 +188,86 @@ pub(super) fn ensure_loop_not_terminal(state: &LoopState, action: &str) -> Diagn
         ));
     }
     Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(super) enum LoopPlanStatus {
+    Fresh,
+    Stale,
+}
+
+impl LoopPlanStatus {
+    pub(super) fn as_str(self) -> &'static str {
+        match self {
+            Self::Fresh => "fresh",
+            Self::Stale => "stale",
+        }
+    }
+}
+
+pub(super) fn loop_plan_status(config: &Config, state: &LoopState) -> LoopPlanStatus {
+    if current_plan_matches_state(config, state).unwrap_or(false) {
+        LoopPlanStatus::Fresh
+    } else {
+        LoopPlanStatus::Stale
+    }
+}
+
+pub(super) fn loop_plan_status_from_work_items(
+    state: &LoopState,
+    all_work_items: &[WorkItemEntry],
+) -> LoopPlanStatus {
+    if current_plan_matches_work_items(state, all_work_items).unwrap_or(false) {
+        LoopPlanStatus::Fresh
+    } else {
+        LoopPlanStatus::Stale
+    }
+}
+
+pub(super) fn ensure_loop_plan_fresh(config: &Config, state: &LoopState) -> DiagnosticResult<()> {
+    match current_plan_matches_state(config, state) {
+        Ok(true) => Ok(()),
+        Ok(false) => Err(stale_loop_plan_diagnostic(
+            state,
+            "stored dependency closure no longer matches current Work Item files",
+        )),
+        Err(err) => Err(stale_loop_plan_diagnostic(
+            state,
+            format!(
+                "current Work Item dependency closure cannot be resolved ({})",
+                err.message
+            ),
+        )),
+    }
+}
+
+// Implements [[RFC-0006:C-DEPENDENCY-SEMANTICS]] and
+// [[RFC-0006:C-LOOP-SCOPE-MUTATION]] by treating stored scope as a cached plan.
+fn current_plan_matches_state(config: &Config, state: &LoopState) -> DiagnosticResult<bool> {
+    let all_work_items = crate::parse::load_work_items(config)?;
+    current_plan_matches_work_items(state, &all_work_items)
+}
+
+fn current_plan_matches_work_items(
+    state: &LoopState,
+    all_work_items: &[WorkItemEntry],
+) -> DiagnosticResult<bool> {
+    let plan = replan_loop_state(state, &state.loop_meta.work, all_work_items)?;
+    Ok(plan.state.loop_meta.resolved == state.loop_meta.resolved
+        && plan.state.dependencies == state.dependencies)
+}
+
+fn stale_loop_plan_diagnostic(state: &LoopState, reason: impl AsRef<str>) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E1201LoopStateInvalid,
+        format!(
+            "Loop '{}' is stale: {}. Run `govctl loop replan {}` before opening another round.",
+            state.loop_meta.id,
+            reason.as_ref(),
+            state.loop_meta.id
+        ),
+        state.loop_meta.id.clone(),
+    )
 }
 
 pub(super) fn generated_loop_id(config: &Config) -> DiagnosticResult<String> {

@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-08-001"
+title = "Fix cargo-binstall Unix asset suffix"
+status = "done"
+created = "2026-06-08"
+started = "2026-06-08"
+completed = "2026-06-08"
+refs = [
+    "ADR-0041",
+    "RFC-0002",
+]
+
+[content]
+description = "Align cargo-binstall metadata with the actual GitHub Release asset names: Unix release archives are uploaded as .tar.gz files while cargo-binstall pkg-fmt remains tgz for extraction semantics, so the metadata must not expand to .tgz URLs."
+
+[[content.acceptance_criteria]]
+text = "release metadata regression tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo-binstall Windows override resolves to govctl-v{ version }-{ target }.zip"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "cargo-binstall Unix pkg-url resolves to govctl-v{ version }-{ target }.tar.gz"
+status = "done"
+category = "fixed"

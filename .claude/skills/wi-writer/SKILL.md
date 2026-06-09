@@ -126,7 +126,8 @@ Create multiple work items only when each item is independently meaningful to fu
 - For trivial cleanup or docs-only edits, no work item may be the right answer; follow the invoking workflow instead of inventing tracking.
 - For one coherent cleanup/refactor, prefer one coarse work item over many narrow slices.
 - Use `depends_on` only for hard execution ordering; keep `refs` for informational links.
-- Use one batch loop only when there are multiple durable work items; do not use loops to justify creating mechanical work-item fragments.
+- Use a loop for non-trivial governed execution that needs local execution memory, including single-work-item execution after journal-style trace moved out of Work Item fields.
+- Use one multi-work-item loop only when there are multiple durable work items; do not use loops to justify creating mechanical work-item fragments.
 - Let govctl generate the loop ID with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; use the returned `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
 - Use `govctl loop list open` to discover existing non-terminal loops before resuming interrupted batch work.
 

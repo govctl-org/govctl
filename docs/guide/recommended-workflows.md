@@ -120,8 +120,8 @@ Moving to `done` runs verification guards when verification is enabled.
 
 ## When To Use Loops
 
-Use a loop when execution is bigger than one simple Work Item or when you need
-resumable local round evidence.
+Use a loop when non-trivial execution needs resumable local round evidence,
+including single-Work-Item work.
 
 Good loop use cases:
 
@@ -159,6 +159,10 @@ govctl loop add LOOP-YYYY-MM-DD-NNN work WI-YYYY-MM-DD-003
 govctl loop remove LOOP-YYYY-MM-DD-NNN work WI-YYYY-MM-DD-002
 govctl loop replan LOOP-YYYY-MM-DD-NNN
 ```
+
+If `loop show` or `loop list` reports a stale plan, the current Work Item
+dependency closure differs from the stored loop plan. Run `govctl loop replan
+LOOP-YYYY-MM-DD-NNN` before opening another round.
 
 Loop state is local execution memory under `.govctl/loops/`. Work Items remain
 the durable task record.
