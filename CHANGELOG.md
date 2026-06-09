@@ -10,21 +10,33 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-06-09
+
+0.9.4 is a workflow hygiene and distribution patch. It tightens agent guidance
+around artifact authority boundaries, installs complete skill bundles for local
+agents, fixes cargo-binstall release metadata, and makes stale loop plans
+visible before agents keep working from outdated dependency state.
+
 ### Added
 
-- loop list and show expose stale loop plans without mutating local state (WI-2026-06-09-001)
+- `govctl loop show` and `govctl loop list` now report whether a persisted loop
+  plan is fresh or stale against current Work Item dependencies.
 
 ### Changed
 
-- Writer skills include matching authority tests and examples so authors avoid boundary drift before review (WI-2026-06-07-005)
-- Reviewer agents include explicit boundary probes and boundary finding output for RFC, ADR, and Work Item reviews (WI-2026-06-07-005)
-- init-skills installs full skill directory bundles, including bundled references and assets (WI-2026-06-08-002)
+- Distributed writer skills and reviewer agents now make RFC, ADR, and Work Item
+  authority boundaries more explicit, so agents put requirements, decisions,
+  and execution tracking in the right artifacts.
+- `init-skills` now installs full skill directory bundles, including bundled
+  references and assets, while still excluding plugin/global-only onboarding
+  skills.
 
 ### Fixed
 
-- cargo-binstall Windows override resolves to govctl-v{ version }-{ target }.zip (WI-2026-06-08-001)
-- cargo-binstall Unix pkg-url resolves to govctl-v{ version }-{ target }.tar.gz (WI-2026-06-08-001)
-- loop run rejects stale stored dependency closures before opening new work (WI-2026-06-09-001)
+- `govctl loop run` now rejects stale stored dependency closures before opening
+  another round and points users to `govctl loop replan`.
+- cargo-binstall metadata now matches the actual GitHub Release assets for both
+  Unix `.tar.gz` archives and Windows `.zip` archives.
 
 ## [0.9.3] - 2026-06-07
 
