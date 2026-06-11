@@ -15,8 +15,9 @@ It does not edit artifacts, execute lifecycle verbs, create work items, or perfo
 When invoked:
 
 1. Read the rendered ADR using `govctl adr show <ADR-ID>` (never read the raw TOML file — use the rendered markdown)
-2. Evaluate against the checklist below
-3. Report findings organized by severity
+2. Run or inspect `govctl check` diagnostics when evaluating source-sensitive reference syntax
+3. Evaluate against the checklist below
+4. Report findings organized by severity
 
 ## Review Checklist
 
@@ -58,7 +59,8 @@ When invoked:
 ### References
 
 - [ ] Links to related RFCs/ADRs that constrained or informed the decision
-- [ ] All artifact IDs in prose use `[[artifact-id]]` syntax — never bare IDs like "ADR-0026" or "RFC-0001" in running text. The `[[...]]` wrapper makes references clickable when rendered.
+- [ ] Source-sensitive inline reference syntax is backed by `govctl check` diagnostics. Do not infer raw `[[artifact-id]]` usage from rendered output alone.
+- [ ] If `govctl check` reports `W0112` for this ADR, flag the corresponding known artifact ID as needing `[[artifact-id]]` syntax. If no source diagnostics are available, report raw reference syntax as not assessed rather than guessing from rendered IDs.
 - [ ] `refs` field uses plain IDs (not `[[...]]` syntax)
 - [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
 - [ ] No redundant "References:" paragraph at the end of content fields — the `refs` field already tracks cross-references; repeating them as prose is noise

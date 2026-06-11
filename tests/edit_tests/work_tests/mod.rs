@@ -5,3 +5,4 @@ mod fields;
 mod identity;
 mod journal;
 mod references;
+mod verification;

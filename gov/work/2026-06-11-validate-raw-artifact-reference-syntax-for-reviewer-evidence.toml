@@ -1,0 +1,35 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-11-001"
+title = "Validate raw artifact reference syntax for reviewer evidence"
+status = "done"
+created = "2026-06-11"
+started = "2026-06-11"
+completed = "2026-06-11"
+refs = [
+    "ADR-0024",
+    "RFC-0000:C-REFERENCE-HIERARCHY",
+]
+tags = [
+    "skills-agents",
+    "validation",
+]
+
+[content]
+description = "Add source-sensitive validation for bare known artifact IDs in governed prose so reviewer agents can rely on deterministic diagnostics instead of inferring raw reference syntax from rendered output. Update reviewer guidance to distinguish rendered review evidence from raw-source validation evidence."
+
+[[content.acceptance_criteria]]
+text = "reviewer agents no longer judge raw reference syntax from rendered output alone"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check warns when reviewable governed prose contains a known artifact ID outside [[...]] syntax"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl check and cargo test pass"
+status = "done"
+category = "chore"

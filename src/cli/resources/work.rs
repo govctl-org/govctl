@@ -30,11 +30,13 @@ EXAMPLES:
 VALID FIELDS:
     - title, description, status, completed_at, refs, depends_on
     - notes, acceptance_criteria
+    - verification.required_guards, verification.waivers
 
 EXAMPLES:
     govctl work get WI-2026-04-06-001
     govctl work get WI-2026-04-06-001 description
     govctl work get WI-2026-04-06-001 acceptance_criteria[0].status
+    govctl work get WI-2026-04-06-001 verification.required_guards
 ")]
     Get(CommonGetArgs),
     /// Show rendered work item content
@@ -68,6 +70,7 @@ EXAMPLES:
     govctl work edit WI-2026-04-06-001 depends_on --add WI-2026-04-06-002
     govctl work edit WI-2026-04-06-001 content.acceptance_criteria --add \"add: Implement feature X\"
     govctl work edit WI-2026-04-06-001 content.acceptance_criteria[0] --tick done
+    govctl work edit WI-2026-04-06-001 verification.required_guards --add GUARD-CARGO-TEST
 ")]
     Edit(WorkEditArgs),
     /// Set work item field value

@@ -73,7 +73,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResu
     }
 
     // Ensure .gitignore contains local govctl state entries.
-    crate::cmd::project_support::ensure_local_state_gitignore_entries(op)?;
+    crate::cmd::project_support::ensure_local_state_gitignore_entries(config, op)?;
 
     if !op.is_preview() {
         ui::success("Project initialized");

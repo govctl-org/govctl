@@ -16,7 +16,8 @@ When invoked:
 
 1. Read the rendered work item using `govctl work show <WI-ID>` (never read the raw TOML file — use the rendered markdown)
 2. Use the rendered acceptance-criteria category labels such as `added:`, `fixed:`, `changed:`, and `chore:` as the source of truth for category checks
-3. Report findings organized by severity
+3. Run or inspect `govctl check` diagnostics when evaluating source-sensitive reference syntax
+4. Report findings organized by severity
 
 ## Review Checklist
 
@@ -56,7 +57,8 @@ When invoked:
 
 ### References
 
-- [ ] All artifact IDs in description and notes use `[[artifact-id]]` syntax — never bare IDs like "ADR-0026" or "RFC-0001" in running text
+- [ ] Source-sensitive inline reference syntax is backed by `govctl check` diagnostics. Do not infer raw `[[artifact-id]]` usage from rendered output alone.
+- [ ] If `govctl check` reports `W0112` for this Work Item, flag the corresponding known artifact ID as needing `[[artifact-id]]` syntax. If no source diagnostics are available, report raw reference syntax as not assessed rather than guessing from rendered IDs.
 - [ ] `refs` field uses clause-level precision where applicable (e.g., `RFC-0000:C-WORK-DEF` not just `RFC-0000`)
 - [ ] No redundant "References:" paragraph at the end of content fields — the `refs` field already tracks cross-references
 - [ ] If implementing an RFC, the RFC ID is in refs

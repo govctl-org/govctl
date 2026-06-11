@@ -780,6 +780,60 @@
       }
     },
     {
+      "artifact": "work",
+      "root": "verification",
+      "content_path": ["verification"],
+      "node": {
+        "kind": "object",
+        "verbs": ["get"],
+        "fields": [
+          {
+            "name": "required_guards",
+            "node": {
+              "kind": "list",
+              "verbs": ["get", "set", "add", "remove"],
+              "text_key": null,
+              "item": {
+                "kind": "scalar",
+                "verbs": ["get", "set"],
+                "set_mode": { "type": "string" }
+              }
+            }
+          },
+          {
+            "name": "waivers",
+            "node": {
+              "kind": "list",
+              "verbs": ["get", "remove"],
+              "text_key": "guard",
+              "item": {
+                "kind": "object",
+                "verbs": ["get"],
+                "fields": [
+                  {
+                    "name": "guard",
+                    "node": {
+                      "kind": "scalar",
+                      "verbs": ["get", "set"],
+                      "set_mode": { "type": "string" }
+                    }
+                  },
+                  {
+                    "name": "reason",
+                    "node": {
+                      "kind": "scalar",
+                      "verbs": ["get", "set"],
+                      "set_mode": { "type": "string" }
+                    }
+                  }
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
       "artifact": "guard",
       "root": "check",
       "content_path": ["check"],

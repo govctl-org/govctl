@@ -85,7 +85,7 @@ pub(crate) fn collect_diagnostics(
         ));
     }
     all_diagnostics.extend(installed_schema_diagnostics(config));
-    all_diagnostics.extend(crate::cmd::project_support::local_state_gitignore_diagnostics());
+    all_diagnostics.extend(crate::cmd::project_support::local_state_gitignore_diagnostics(config));
 
     // Load project (with warnings for parse errors)
     let load_result = match load_project_with_warnings(config) {

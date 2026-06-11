@@ -19,9 +19,11 @@ Options:
 VALID FIELDS:
     - title, description, status, completed_at, refs, depends_on
     - notes, acceptance_criteria
+    - verification.required_guards, verification.waivers
 
 EXAMPLES:
     govctl work get WI-<DATE>-001
     govctl work get WI-<DATE>-001 description
     govctl work get WI-<DATE>-001 acceptance_criteria[0].status
+    govctl work get WI-<DATE>-001 verification.required_guards
 exit: 0

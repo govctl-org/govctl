@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-12-002"
+title = "Raise patch coverage for PR 26"
+status = "done"
+created = "2026-06-12"
+started = "2026-06-12"
+completed = "2026-06-12"
+refs = [
+    "RFC-0000",
+    "RFC-0002",
+]
+
+[content]
+description = "Add focused regression coverage for the PR #26 Codecov patch gaps in bracket reference validation and project support .gitignore handling, without changing user-visible behavior."
+
+[[content.acceptance_criteria]]
+text = "Bracket reference validation patch paths are covered by focused tests"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Project support .gitignore patch paths are covered by focused tests"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and relevant coverage tests pass"
+status = "done"
+category = "chore"

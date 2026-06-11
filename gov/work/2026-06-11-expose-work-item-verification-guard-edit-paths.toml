@@ -1,0 +1,37 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-11-002"
+title = "Expose work item verification guard edit paths"
+status = "done"
+created = "2026-06-11"
+started = "2026-06-11"
+completed = "2026-06-11"
+refs = [
+    "RFC-0001:C-GATE-CONDITIONS",
+    "RFC-0000:C-WORK-DEF",
+    "ADR-0037",
+]
+
+[content]
+description = "Expose Work Item verification guard fields through the canonical path-first edit surface so agents and users can add, remove, and inspect per-work-item guard requirements without hand-editing TOML."
+
+[[content.acceptance_criteria]]
+text = "work edit supports adding and removing verification.required_guards"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "work get can inspect verification.required_guards"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "work edit supports verification.waivers guard and reason fields"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check and targeted edit tests pass"
+status = "done"
+category = "chore"

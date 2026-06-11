@@ -152,6 +152,8 @@ pub enum DiagnosticCode {
     W0109WorkNoActive,
     W0110SchemaOutdated,
     W0111ProjectSupportOutdated,
+    /// Known artifact ID appears in governed prose without [[...]] syntax.
+    W0112BareArtifactReference,
 
     // Informational diagnostics (I04xx)
     I0401WorkLegacyInlineHistory,
@@ -186,6 +188,7 @@ mod tests {
         assert_eq!(DiagnosticCode::E1201LoopStateInvalid.code(), "E1201");
         assert_eq!(DiagnosticCode::W0101RfcNoChangelog.code(), "W0101");
         assert_eq!(DiagnosticCode::W0111ProjectSupportOutdated.code(), "W0111");
+        assert_eq!(DiagnosticCode::W0112BareArtifactReference.code(), "W0112");
         assert_eq!(DiagnosticCode::I0401WorkLegacyInlineHistory.code(), "I0401");
     }
 
@@ -205,6 +208,10 @@ mod tests {
         );
         assert_eq!(
             DiagnosticCode::W0111ProjectSupportOutdated.level(),
+            DiagnosticLevel::Warning
+        );
+        assert_eq!(
+            DiagnosticCode::W0112BareArtifactReference.level(),
             DiagnosticLevel::Warning
         );
         assert_eq!(

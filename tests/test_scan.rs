@@ -81,6 +81,33 @@ fn test_scan_valid_rfc_reference() -> common::TestResult {
 }
 
 #[test]
+fn test_scan_uses_project_root_when_run_from_subdirectory() -> common::TestResult {
+    let (temp_dir, _) = init_source_scan_project()?;
+
+    create_normative_rfc(temp_dir.path(), "RFC-0001", "Test RFC")?;
+    write_main_rs(
+        temp_dir.path(),
+        "// Implements [[RFC-0001]]\nfn main() {}\n",
+    )?;
+
+    let docs_dir = temp_dir.path().join("docs");
+    fs::create_dir_all(&docs_dir)?;
+    let output = run_commands(&docs_dir, &[&["check"]])?;
+
+    assert!(
+        output.contains("  1 source files scanned"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("  1 references found"),
+        "output: {}",
+        output
+    );
+    Ok(())
+}
+
+#[test]
 fn test_scan_valid_clause_reference() -> common::TestResult {
     let (temp_dir, date) = init_source_scan_project()?;
 

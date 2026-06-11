@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-12-001"
+title = "Fix subdirectory check path handling"
+status = "done"
+created = "2026-06-12"
+started = "2026-06-12"
+completed = "2026-06-12"
+refs = [
+    "RFC-0002",
+    "ADR-0009",
+]
+
+[content]
+description = "Fix govctl check so running from a project subdirectory still uses project-root paths for local support files and source scanning, preventing false .gitignore warnings and preserving source reference validation."
+
+[[content.acceptance_criteria]]
+text = "check from a subdirectory does not emit W0111 when the project root .gitignore contains local-state entries"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "source scanning during check is project-root relative even when invoked from a subdirectory"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "focused regression tests and govctl check pass"
+status = "done"
+category = "chore"

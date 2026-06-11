@@ -61,8 +61,10 @@ pub fn scan_source_refs(config: &Config, index: &ProjectIndex) -> ScanResult {
         }
     };
 
-    // Walk from current directory, filter by include/exclude
-    let files = WalkDir::new(".")
+    let project_root = config.project_root();
+
+    // Walk from project root, filter by project-relative include/exclude globs.
+    let files = WalkDir::new(project_root)
         .follow_links(false)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -70,8 +72,7 @@ pub fn scan_source_refs(config: &Config, index: &ProjectIndex) -> ScanResult {
 
     for entry in files {
         let path = entry.path();
-        // Strip leading "./" for glob matching
-        let match_path = path.strip_prefix("./").unwrap_or(path);
+        let match_path = path.strip_prefix(project_root).unwrap_or(path);
 
         // Check include/exclude
         if !include_set.is_match(match_path) || exclude_set.is_match(match_path) {
