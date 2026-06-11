@@ -47,7 +47,7 @@ pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
     let schemas_synced = sync_schemas(config, op)?;
     let gitignore_entries_synced =
-        crate::cmd::project_support::ensure_local_state_gitignore_entries(op)?;
+        crate::cmd::project_support::ensure_local_state_gitignore_entries(config, op)?;
 
     let current = config.schema.version;
     if current >= CURRENT_SCHEMA_VERSION {

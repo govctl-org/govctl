@@ -10,6 +10,19 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- govctl check warns when reviewable governed prose contains a known artifact ID outside [[...]] syntax (WI-2026-06-11-001)
+
+### Fixed
+
+- reviewer agents no longer judge raw reference syntax from rendered output alone (WI-2026-06-11-001)
+- work edit supports adding and removing verification.required_guards (WI-2026-06-11-002)
+- work get can inspect verification.required_guards (WI-2026-06-11-002)
+- work edit supports verification.waivers guard and reason fields (WI-2026-06-11-002)
+- check from a subdirectory does not emit W0111 when the project root .gitignore contains local-state entries (WI-2026-06-12-001)
+- source scanning during check is project-root relative even when invoked from a subdirectory (WI-2026-06-12-001)
+
 ## [0.9.4] - 2026-06-09
 
 0.9.4 is a workflow hygiene and distribution patch. It tightens agent guidance

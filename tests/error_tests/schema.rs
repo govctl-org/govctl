@@ -247,3 +247,30 @@ fn test_check_reports_missing_local_state_gitignore_entry() -> common::TestResul
     assert!(output.contains("govctl migrate"), "output: {}", output);
     Ok(())
 }
+
+#[test]
+fn test_check_uses_root_gitignore_when_run_from_subdirectory() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let docs_dir = temp_dir.path().join("docs");
+    fs::create_dir_all(&docs_dir)?;
+    fs::write(docs_dir.join(".gitignore"), "book/\n")?;
+
+    let output = run_commands(&docs_dir, &[&["check"]])?;
+    assert!(!output.contains("warning[W0111]"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_check_reports_gitignore_read_error() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let gitignore_path = temp_dir.path().join(".gitignore");
+    fs::remove_file(&gitignore_path)?;
+    fs::create_dir(&gitignore_path)?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error"), "output: {}", output);
+    assert!(output.contains("read .gitignore"), "output: {}", output);
+    assert!(output.contains(".gitignore"), "output: {}", output);
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    Ok(())
+}

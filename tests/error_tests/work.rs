@@ -112,6 +112,87 @@ category = "chore"
 }
 
 #[test]
+fn test_work_acceptance_and_notes_plain_text_known_rfc_reference_warns() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_minimal_rfc(temp_dir.path(), "RFC-0001", "Known RFC")?;
+
+    fs::write(
+        temp_dir
+            .path()
+            .join("gov/work/2026-01-01-bare-reference-fields.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Bare Reference Fields"
+status = "active"
+created = "2026-01-01"
+started = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+description = "Work description."
+notes = ["Keep RFC-0001 in mind for closure."]
+
+[[content.acceptance_criteria]]
+text = "Complete the RFC-0001 follow-up"
+status = "pending"
+category = "chore"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert_eq!(
+        output.matches("warning[W0112]").count(),
+        2,
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Artifact 'WI-2026-01-01-001' mentions known artifact ID RFC-0001"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_done_work_plain_text_known_rfc_reference_is_allowed() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_minimal_rfc(temp_dir.path(), "RFC-0001", "Known RFC")?;
+
+    fs::write(
+        temp_dir
+            .path()
+            .join("gov/work/2026-01-01-done-bare-reference.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Done Bare Reference"
+status = "done"
+created = "2026-01-01"
+started = "2026-01-01"
+completed = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+description = "This completed work followed RFC-0001."
+notes = ["RFC-0001 remains useful historical context."]
+
+[[content.acceptance_criteria]]
+text = "Completed the RFC-0001 follow-up"
+status = "done"
+category = "chore"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(!output.contains("warning[W0112]"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
 fn test_check_rejects_unknown_work_dependency() -> common::TestResult {
     let temp_dir = init_project()?;
 

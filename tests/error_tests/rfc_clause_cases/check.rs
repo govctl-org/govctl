@@ -338,6 +338,50 @@ consequences = "Consequences"
 }
 
 #[test]
+fn test_proposed_adr_alternative_plain_text_known_rfc_references_warn() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_minimal_rfc(temp_dir.path(), "RFC-0001", "Known RFC")?;
+
+    write_adr_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Decision"
+status = "proposed"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Context"
+decision = "Decision"
+consequences = "Consequences"
+
+[[content.alternatives]]
+text = "This alternative follows RFC-0001."
+pros = ["RFC-0001 gives this option clear authority."]
+cons = ["RFC-0001 adds migration pressure."]
+rejection_reason = "Rejected after comparing with RFC-0001."
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert_eq!(
+        output.matches("warning[W0112]").count(),
+        4,
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("Artifact 'ADR-0001' mentions known artifact ID RFC-0001"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
 fn test_adr_bracketed_known_rfc_reference_does_not_warn() -> common::TestResult {
     let temp_dir = init_project()?;
 

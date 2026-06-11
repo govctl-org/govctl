@@ -96,6 +96,35 @@ fn test_init_appends_to_existing_gitignore() -> common::TestResult {
 }
 
 #[test]
+fn test_init_appends_to_existing_gitignore_without_trailing_newline() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
+
+    let gitignore_path = temp_dir.path().join(".gitignore");
+    fs::write(&gitignore_path, "target/")?;
+
+    let output = run_commands(temp_dir.path(), &[&["init"]])?;
+    assert!(output.contains("Project initialized"));
+
+    let content = fs::read_to_string(&gitignore_path)?;
+    assert_eq!(content, "target/\n.govctl.lock\n.govctl/\n");
+    Ok(())
+}
+
+#[test]
+fn test_init_reports_gitignore_read_error() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
+
+    fs::create_dir(temp_dir.path().join(".gitignore"))?;
+
+    let output = run_commands(temp_dir.path(), &[&["init"]])?;
+    assert!(output.contains("error"), "output: {}", output);
+    assert!(output.contains("read .gitignore"), "output: {}", output);
+    assert!(output.contains(".gitignore"), "output: {}", output);
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
 fn test_init_no_duplicate_gitignore_entry() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 

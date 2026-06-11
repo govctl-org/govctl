@@ -56,6 +56,14 @@ impl Config {
         }
     }
 
+    /// Project root directory, derived as the parent of `gov/`.
+    pub fn project_root(&self) -> &Path {
+        self.gov_root
+            .parent()
+            .filter(|path| !path.as_os_str().is_empty())
+            .unwrap_or_else(|| Path::new("."))
+    }
+
     pub fn rfc_dir(&self) -> PathBuf {
         self.gov_root.join("rfc")
     }
@@ -116,10 +124,8 @@ impl Config {
 
     /// Path for user-facing display: relative to project root when under it.
     pub fn display_path(&self, path: &Path) -> PathBuf {
-        self.gov_root
-            .parent()
-            .and_then(|root| path.strip_prefix(root).ok())
+        path.strip_prefix(self.project_root())
             .map(PathBuf::from)
-            .unwrap_or_else(|| path.to_path_buf())
+            .unwrap_or_else(|_| path.to_path_buf())
     }
 }
