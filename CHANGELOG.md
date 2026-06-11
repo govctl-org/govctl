@@ -10,18 +10,30 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-06-12
+
+0.9.5 is a reviewer-evidence and compatibility patch. It gives reviewer agents
+source-level diagnostics for raw artifact IDs, fills out the work-item
+verification edit surface, and fixes project-root path handling when `check` is
+run from a subdirectory.
+
 ### Added
 
-- govctl check warns when reviewable governed prose contains a known artifact ID outside [[...]] syntax (WI-2026-06-11-001)
+- `govctl check` now warns with `W0112` when reviewable governed prose
+  mentions a known artifact ID without `[[...]]` inline reference syntax, so
+  reviewers can rely on source diagnostics instead of rendered markdown.
 
 ### Fixed
 
-- reviewer agents no longer judge raw reference syntax from rendered output alone (WI-2026-06-11-001)
-- work edit supports adding and removing verification.required_guards (WI-2026-06-11-002)
-- work get can inspect verification.required_guards (WI-2026-06-11-002)
-- work edit supports verification.waivers guard and reason fields (WI-2026-06-11-002)
-- check from a subdirectory does not emit W0111 when the project root .gitignore contains local-state entries (WI-2026-06-12-001)
-- source scanning during check is project-root relative even when invoked from a subdirectory (WI-2026-06-12-001)
+- Reviewer agent guidance now treats raw reference syntax as source-sensitive
+  and defers to `govctl check` diagnostics rather than inferring syntax from
+  rendered output.
+- Work-item verification fields are now available through the canonical
+  get/edit surface, including `verification.required_guards` add/remove support
+  and `verification.waivers` guard/reason updates.
+- `govctl check` now resolves project-support files and source scanning from
+  the project root even when invoked from a subdirectory, avoiding false
+  `W0111` warnings and missed source references.
 
 ## [0.9.4] - 2026-06-09
 
