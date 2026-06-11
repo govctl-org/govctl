@@ -3,19 +3,19 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.3.2"
+version = "1.3.3"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-06-04"
+updated = "2026-06-11"
 tags = [
     "core",
     "schema",
     "validation",
     "lifecycle",
 ]
-signature = "496196ed1073947f867c6730c56c34da58f1b045bf939d98b7804511f8feea9a"
+signature = "ba16714af2ca8c1b32b812963d4b02da4c67a647eafc1c88b03fa622085b1205"
 
 [[sections]]
 title = "Summary"
@@ -49,6 +49,12 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.3.3"
+date = "2026-06-11"
+notes = "Clarify inline reference validation"
+changed = ["Project validation should warn on known artifact IDs in governed prose that are not written with inline reference syntax"]
 
 [[changelog]]
 version = "1.3.2"

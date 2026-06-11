@@ -3,7 +3,7 @@
 //! Implements validation per [[RFC-0000]] and [[RFC-0001]]:
 //! - [[ADR-0003]] signature verification for rendered projections
 //! - [[ADR-0010]] placeholder description detection
-//! - [[RFC-0000:C-REFERENCE-HIERARCHY]] structured refs and [[...]] link targets
+//! - [[RFC-0000:C-REFERENCE-HIERARCHY]] structured refs, [[...]] link targets, and bare known IDs
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -103,7 +103,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         .diagnostics
         .extend(validate_work_dependencies(index, config));
 
-    // [[...]] in RFC/ADR governed text — [[RFC-0000:C-REFERENCE-HIERARCHY]]
+    // Inline reference syntax in governed prose — [[RFC-0000:C-REFERENCE-HIERARCHY]]
     validate_bracket_reference_hierarchy(index, config, &mut result);
 
     // Validate work item descriptions

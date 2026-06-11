@@ -10,7 +10,8 @@ pub(super) fn level(code: &DiagnosticCode) -> DiagnosticLevel {
         | DiagnosticCode::W0108WorkPlaceholderDescription
         | DiagnosticCode::W0109WorkNoActive
         | DiagnosticCode::W0110SchemaOutdated
-        | DiagnosticCode::W0111ProjectSupportOutdated => DiagnosticLevel::Warning,
+        | DiagnosticCode::W0111ProjectSupportOutdated
+        | DiagnosticCode::W0112BareArtifactReference => DiagnosticLevel::Warning,
         DiagnosticCode::I0401WorkLegacyInlineHistory => DiagnosticLevel::Info,
         _ => DiagnosticLevel::Error,
     }
@@ -138,6 +139,7 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::W0109WorkNoActive => "W0109",
         DiagnosticCode::W0110SchemaOutdated => "W0110",
         DiagnosticCode::W0111ProjectSupportOutdated => "W0111",
+        DiagnosticCode::W0112BareArtifactReference => "W0112",
         // I04xx - Work Item info
         DiagnosticCode::I0401WorkLegacyInlineHistory => "I0401",
     }

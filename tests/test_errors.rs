@@ -2,7 +2,9 @@
 
 mod common;
 
-use common::{init_project, init_project_with_date, normalize_output, run_commands};
+use common::{
+    init_project, init_project_with_date, normalize_output, run_commands, write_minimal_rfc,
+};
 use std::fs;
 
 macro_rules! assert_error_snapshot {

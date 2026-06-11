@@ -261,6 +261,149 @@ text = "This RFC mentions ADR-9999 as a nonexistent example."
 }
 
 #[test]
+fn test_proposed_adr_plain_text_known_rfc_reference_warns() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Known RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TEST.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "Specification."
+"#,
+    )?;
+
+    write_adr_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Decision"
+status = "proposed"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Context"
+decision = "This decision follows RFC-0001."
+consequences = "Consequences"
+"#,
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["check"], &["check", "--deny-warnings"]],
+    )?;
+    assert!(output.contains("warning[W0112]"), "output: {}", output);
+    assert!(output.contains("use [[RFC-0001]]"), "output: {}", output);
+    assert!(output.contains("$ govctl check\n"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    assert!(
+        output.contains("$ govctl check --deny-warnings\n"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("exit: 1"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_adr_bracketed_known_rfc_reference_does_not_warn() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Known RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Overview"
+clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TEST.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TEST"
+title = "Test Clause"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "Specification."
+"#,
+    )?;
+
+    write_adr_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Decision"
+status = "accepted"
+date = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+context = "Context"
+decision = "This decision follows [[RFC-0001]]."
+consequences = "Consequences"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(!output.contains("warning[W0112]"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
 fn test_rfc_changelog_plain_text_adr_reference_is_allowed() -> common::TestResult {
     let temp_dir = init_project()?;
 

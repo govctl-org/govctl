@@ -30,11 +30,23 @@ Implementations MUST validate these rules during project validation (for example
 
 - Work Item `refs` entries and `[[...]]` link targets MAY identify any artifact type.
 
-This clause only defines the RFC/ADR/Work Item authority hierarchy. It does not impose additional target-kind restrictions for artifact types outside that hierarchy.
+Known artifact-ID mentions in reviewable governed RFC clause text, governed ADR content fields, and governed Work Item prose SHOULD use `[[artifact-id]]` inline reference syntax. This inline syntax expectation does not apply to structured `refs` field entries.
+
+For this inline syntax warning, reviewable governed prose means draft RFC clause text, proposed ADR content fields, and Work Item description, notes, and acceptance criteria for Work Items that are not `done`.
+
+Project validation SHOULD report a warning when a known artifact ID appears in reviewable governed prose outside `[[...]]` inline reference syntax.
+
+Project validation MAY omit this inline syntax warning for accepted, stable, deprecated, superseded, done, or otherwise historical artifacts.
+
+Unknown artifact-ID-shaped text MAY appear as an example without being treated as an artifact reference.
+
+This clause only defines the RFC/ADR/Work Item authority hierarchy and inline reference syntax expectations. It does not impose additional target-kind restrictions for artifact types outside that hierarchy.
 
 **Rationale:**
 
 This hierarchy prevents circular dependencies and maintains clear authority chains. An RFC that links to or names an ADR or Work Item as a governed reference inverts the dependency direction — lower layers become authorities over the specification.
+
+Inline reference syntax makes artifact links explicit in source while allowing rendered projections to remain human-readable. A validation warning gives reviewers source-level evidence for raw reference syntax without requiring them to infer it from rendered output. Limiting this warning to reviewable artifacts avoids forcing historical backfill before existing accepted or completed artifacts can pass normal project validation.
 
 **Prose outside governed reference surfaces:**
 

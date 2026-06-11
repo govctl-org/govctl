@@ -73,6 +73,45 @@ category = "added"
 }
 
 #[test]
+fn test_work_plain_text_known_rfc_reference_warns() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_minimal_rfc(temp_dir.path(), "RFC-0001", "Known RFC")?;
+
+    fs::write(
+        temp_dir
+            .path()
+            .join("gov/work/2026-01-01-bare-reference.toml"),
+        r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Bare Reference"
+status = "queue"
+created = "2026-01-01"
+refs = ["RFC-0001"]
+
+[content]
+description = "This work follows RFC-0001."
+
+[[content.acceptance_criteria]]
+text = "Use [[RFC-0001]] in bracketed form here"
+status = "pending"
+category = "chore"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("warning[W0112]"), "output: {}", output);
+    assert!(
+        output.contains("Artifact 'WI-2026-01-01-001' mentions known artifact ID RFC-0001"),
+        "output: {}",
+        output
+    );
+    assert!(output.contains("use [[RFC-0001]]"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+    Ok(())
+}
+
+#[test]
 fn test_check_rejects_unknown_work_dependency() -> common::TestResult {
     let temp_dir = init_project()?;
 

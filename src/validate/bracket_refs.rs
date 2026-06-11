@@ -3,7 +3,7 @@ use super::reference_hierarchy::{ReferenceSurface, check_ref_hierarchy};
 use crate::artifact_index::artifact_ref_ids;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::ProjectIndex;
+use crate::model::{AdrStatus, ProjectIndex, RfcStatus, WorkItemStatus};
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -15,7 +15,7 @@ struct ReferenceScanner {
     known_ids: HashSet<String>,
 }
 
-/// Validate references in RFC and ADR content per [[RFC-0000:C-REFERENCE-HIERARCHY]].
+/// Validate inline references in governed prose per [[RFC-0000:C-REFERENCE-HIERARCHY]].
 pub(super) fn validate_bracket_reference_hierarchy(
     index: &ProjectIndex,
     config: &Config,
@@ -52,6 +52,7 @@ pub(super) fn validate_bracket_reference_hierarchy(
     for rfc in &index.rfcs {
         let rfc_path = config.display_path(&rfc.path).display().to_string();
         let rid = rfc.rfc.rfc_id.as_str();
+        let warn_on_bare_text = rfc.rfc.status == RfcStatus::Draft;
         for clause in &rfc.clauses {
             let clause_path = config.display_path(&clause.path).display().to_string();
             scan_rfc_reference_hierarchy(
@@ -60,12 +61,13 @@ pub(super) fn validate_bracket_reference_hierarchy(
                 rid,
                 &clause_path,
                 true,
+                warn_on_bare_text,
                 result,
             );
         }
         for entry in &rfc.rfc.changelog {
             if let Some(ref notes) = entry.notes {
-                scan_rfc_reference_hierarchy(&scanner, notes, rid, &rfc_path, false, result);
+                scan_rfc_reference_hierarchy(&scanner, notes, rid, &rfc_path, false, false, result);
             }
             for line in entry
                 .added
@@ -76,7 +78,7 @@ pub(super) fn validate_bracket_reference_hierarchy(
                 .chain(entry.fixed.iter())
                 .chain(entry.security.iter())
             {
-                scan_rfc_reference_hierarchy(&scanner, line, rid, &rfc_path, false, result);
+                scan_rfc_reference_hierarchy(&scanner, line, rid, &rfc_path, false, false, result);
             }
         }
     }
@@ -84,21 +86,99 @@ pub(super) fn validate_bracket_reference_hierarchy(
     for adr in &index.adrs {
         let adr_path = config.display_path(&adr.path).display().to_string();
         let aid = adr.meta().id.as_str();
+        let warn_on_bare_text = adr.meta().status == AdrStatus::Proposed;
         let c = &adr.spec.content;
-        scan_adr_reference_hierarchy(&scanner, &c.context, aid, &adr_path, result);
-        scan_adr_reference_hierarchy(&scanner, &c.decision, aid, &adr_path, result);
-        scan_adr_reference_hierarchy(&scanner, &c.consequences, aid, &adr_path, result);
+        scan_adr_reference_hierarchy(
+            &scanner,
+            &c.context,
+            aid,
+            &adr_path,
+            warn_on_bare_text,
+            result,
+        );
+        scan_adr_reference_hierarchy(
+            &scanner,
+            &c.decision,
+            aid,
+            &adr_path,
+            warn_on_bare_text,
+            result,
+        );
+        scan_adr_reference_hierarchy(
+            &scanner,
+            &c.consequences,
+            aid,
+            &adr_path,
+            warn_on_bare_text,
+            result,
+        );
         for alt in &c.alternatives {
-            scan_adr_reference_hierarchy(&scanner, &alt.text, aid, &adr_path, result);
+            scan_adr_reference_hierarchy(
+                &scanner,
+                &alt.text,
+                aid,
+                &adr_path,
+                warn_on_bare_text,
+                result,
+            );
             for p in &alt.pros {
-                scan_adr_reference_hierarchy(&scanner, p, aid, &adr_path, result);
+                scan_adr_reference_hierarchy(
+                    &scanner,
+                    p,
+                    aid,
+                    &adr_path,
+                    warn_on_bare_text,
+                    result,
+                );
             }
             for cons in &alt.cons {
-                scan_adr_reference_hierarchy(&scanner, cons, aid, &adr_path, result);
+                scan_adr_reference_hierarchy(
+                    &scanner,
+                    cons,
+                    aid,
+                    &adr_path,
+                    warn_on_bare_text,
+                    result,
+                );
             }
             if let Some(ref rr) = alt.rejection_reason {
-                scan_adr_reference_hierarchy(&scanner, rr, aid, &adr_path, result);
+                scan_adr_reference_hierarchy(
+                    &scanner,
+                    rr,
+                    aid,
+                    &adr_path,
+                    warn_on_bare_text,
+                    result,
+                );
             }
+        }
+    }
+
+    for work in &index.work_items {
+        let work_path = config.display_path(&work.path).display().to_string();
+        let wid = work.meta().id.as_str();
+        let warn_on_bare_text = work.meta().status != WorkItemStatus::Done;
+        let content = &work.spec.content;
+        scan_work_reference_syntax(
+            &scanner,
+            &content.description,
+            wid,
+            &work_path,
+            warn_on_bare_text,
+            result,
+        );
+        for criterion in &content.acceptance_criteria {
+            scan_work_reference_syntax(
+                &scanner,
+                &criterion.text,
+                wid,
+                &work_path,
+                warn_on_bare_text,
+                result,
+            );
+        }
+        for note in &content.notes {
+            scan_work_reference_syntax(&scanner, note, wid, &work_path, warn_on_bare_text, result);
         }
     }
 }
@@ -109,9 +189,18 @@ fn scan_rfc_reference_hierarchy(
     rfc_id: &str,
     path: &str,
     scan_bare_text: bool,
+    warn_on_bare_text: bool,
     result: &mut ValidationResult,
 ) {
-    scan_reference_hierarchy(scanner, text, rfc_id, path, scan_bare_text, result);
+    scan_reference_hierarchy(
+        scanner,
+        text,
+        rfc_id,
+        path,
+        scan_bare_text,
+        warn_on_bare_text,
+        result,
+    );
 }
 
 fn scan_adr_reference_hierarchy(
@@ -119,9 +208,29 @@ fn scan_adr_reference_hierarchy(
     text: &str,
     adr_id: &str,
     path: &str,
+    warn_on_bare_text: bool,
     result: &mut ValidationResult,
 ) {
-    scan_reference_hierarchy(scanner, text, adr_id, path, true, result);
+    scan_reference_hierarchy(scanner, text, adr_id, path, true, warn_on_bare_text, result);
+}
+
+fn scan_work_reference_syntax(
+    scanner: &ReferenceScanner,
+    text: &str,
+    work_id: &str,
+    path: &str,
+    warn_on_bare_text: bool,
+    result: &mut ValidationResult,
+) {
+    scan_reference_hierarchy(
+        scanner,
+        text,
+        work_id,
+        path,
+        true,
+        warn_on_bare_text,
+        result,
+    );
 }
 
 fn scan_reference_hierarchy(
@@ -130,6 +239,7 @@ fn scan_reference_hierarchy(
     owner_id: &str,
     path: &str,
     scan_bare_text: bool,
+    warn_on_bare_text: bool,
     result: &mut ValidationResult,
 ) {
     let mut bracket_ranges = Vec::new();
@@ -166,12 +276,24 @@ fn scan_reference_hierarchy(
         if !scanner.known_ids.contains(target) {
             continue;
         }
-        if let Err(diagnostic) =
-            check_ref_hierarchy(owner_id, target, path, ReferenceSurface::BareText)
-        {
-            result.diagnostics.push(diagnostic);
+        match check_ref_hierarchy(owner_id, target, path, ReferenceSurface::BareText) {
+            Ok(()) if warn_on_bare_text => result
+                .diagnostics
+                .push(bare_artifact_reference_warning(owner_id, target, path)),
+            Ok(()) => {}
+            Err(diagnostic) => result.diagnostics.push(diagnostic),
         }
     }
+}
+
+fn bare_artifact_reference_warning(owner_id: &str, target: &str, path: &str) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::W0112BareArtifactReference,
+        format!(
+            "Artifact '{owner_id}' mentions known artifact ID {target} without [[...]] inline reference syntax (hint: use [[{target}]])"
+        ),
+        path,
+    )
 }
 
 #[cfg(test)]
@@ -222,6 +344,7 @@ mod tests {
             "RFC-0001",
             "f",
             true,
+            true,
             &mut result,
         );
 
@@ -243,6 +366,51 @@ mod tests {
             "This mentions ADR-0001 only as an example shape.",
             "RFC-0001",
             "f",
+            true,
+            true,
+            &mut result,
+        );
+
+        assert!(result.diagnostics.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn bare_known_rfc_in_adr_text_warns() -> DiagnosticResult<()> {
+        let mut known_ids = HashSet::new();
+        known_ids.insert("RFC-0001".to_string());
+        let mut result = ValidationResult::default();
+
+        scan_reference_hierarchy(
+            &scanner(known_ids)?,
+            "This follows RFC-0001.",
+            "ADR-0001",
+            "f",
+            true,
+            true,
+            &mut result,
+        );
+
+        assert_eq!(result.diagnostics.len(), 1);
+        assert_eq!(
+            result.diagnostics[0].code,
+            DiagnosticCode::W0112BareArtifactReference
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn bracketed_known_rfc_in_adr_text_does_not_warn() -> DiagnosticResult<()> {
+        let mut known_ids = HashSet::new();
+        known_ids.insert("RFC-0001".to_string());
+        let mut result = ValidationResult::default();
+
+        scan_reference_hierarchy(
+            &scanner(known_ids)?,
+            "This follows [[RFC-0001]].",
+            "ADR-0001",
+            "f",
+            true,
             true,
             &mut result,
         );
