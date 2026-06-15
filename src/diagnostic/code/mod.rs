@@ -27,6 +27,7 @@ pub enum DiagnosticCode {
     E0111RfcNoChangelog,
     /// RFC refs or [[...]] targets ADR/WI — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
     E0112RfcReferenceHierarchy,
+    E0113RfcBumpNoAmendment,
 
     // Clause errors (E02xx)
     E0201ClauseSchemaInvalid,

@@ -30,6 +30,31 @@ const SIGNATURE_VERSION: u32 = 1;
 /// # Errors
 /// Returns a diagnostic if an RFC or clause cannot be serialized for signature input.
 pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
+    compute_rfc_signature_with_filter(rfc, |map| {
+        map.remove("signature");
+    })
+}
+
+/// Compute SHA-256 signature for RFC amendment detection.
+///
+/// This signature intentionally ignores bump bookkeeping fields. It answers:
+/// "Has RFC or clause content changed since the last recorded amendment
+/// baseline?" rather than "Would the rendered projection change?"
+///
+/// # Errors
+/// Returns a diagnostic if an RFC or clause cannot be serialized for signature input.
+pub fn compute_rfc_content_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
+    compute_rfc_signature_with_filter(rfc, |map| {
+        map.remove("signature");
+        map.remove("version");
+        map.remove("changelog");
+    })
+}
+
+fn compute_rfc_signature_with_filter(
+    rfc: &RfcIndex,
+    filter_rfc_fields: impl FnOnce(&mut serde_json::Map<String, Value>),
+) -> Result<String, Diagnostic> {
     let mut hasher = signature_hasher("rfc");
 
     let mut rfc_json = signature_value(
@@ -39,7 +64,7 @@ pub fn compute_rfc_signature(rfc: &RfcIndex) -> Result<String, Diagnostic> {
         &rfc.rfc.rfc_id,
     )?;
     if let Value::Object(ref mut map) = rfc_json {
-        map.remove("signature");
+        filter_rfc_fields(map);
     }
     update_canonical_json(&mut hasher, &rfc_json);
 
@@ -173,15 +198,27 @@ fn hex_encode(bytes: &[u8]) -> String {
 /// Returns `true` if the current content signature differs from the stored signature,
 /// indicating the RFC has been modified but not yet bumped to a new version.
 ///
-/// Returns `false` if signatures match (clean state) or if no signature is stored (legacy RFC).
+/// Returns `false` if signatures match (clean state) or if no signature is stored.
+/// Stored signatures created before content-only signatures are accepted as a
+/// legacy clean baseline when the full rendered-projection signature still matches.
 pub fn is_rfc_amended(rfc: &RfcIndex) -> bool {
     let Some(stored_sig) = &rfc.rfc.signature else {
         return false;
     };
 
-    let Ok(current_sig) = compute_rfc_signature(rfc) else {
+    let Ok(current_content_sig) = compute_rfc_content_signature(rfc) else {
         return false;
     };
+    if stored_sig == &current_content_sig {
+        return false;
+    }
 
-    stored_sig != &current_sig
+    let Ok(current_full_sig) = compute_rfc_signature(rfc) else {
+        return false;
+    };
+    if stored_sig == &current_full_sig {
+        return false;
+    }
+
+    true
 }

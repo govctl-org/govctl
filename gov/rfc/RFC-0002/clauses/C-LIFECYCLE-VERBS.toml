@@ -6,7 +6,10 @@ title = "Resource-Specific Lifecycle Verbs"
 kind = "normative"
 status = "active"
 since = "0.1.0"
-tags = ["cli", "lifecycle"]
+tags = [
+    "cli",
+    "lifecycle",
+]
 
 [content]
 text = """
@@ -26,6 +29,10 @@ Resource-specific lifecycle verbs implement state transitions defined in [[RFC-0
    - Version bumping per semantic versioning
    - Updates changelog automatically
    - Optional: `--change <description>` for additional changelog entries
+   - MUST reject a version bump when the RFC has a stored amendment signature and no RFC or clause content has changed since that signature
+   - MUST treat version, changelog, and signature metadata as bump bookkeeping, not RFC content changes
+   - MAY establish a baseline amendment signature for RFCs that do not yet have one
+   - `--change` alone MUST remain changelog-only and MUST NOT make a later version bump valid
 
 4. `govctl rfc supersede <id> --by <replacement-id>`
    - Marks RFC as superseded by another RFC

@@ -1,0 +1,28 @@
+---
+source: tests/lifecycle_tests/rfc_cases/bump.rs
+expression: snapshot
+---
+$ govctl rfc new Test RFC
+Created RFC: gov/rfc/RFC-0001/rfc.toml
+  Clauses dir: gov/rfc/RFC-0001/clauses
+exit: 0
+
+$ govctl rfc finalize RFC-0001 normative
+Finalized RFC-0001 to status: normative
+exit: 0
+
+$ govctl rfc bump RFC-0001 --patch --summary Establish baseline
+Bumped RFC-0001 to 0.1.1
+exit: 0
+
+$ govctl rfc bump RFC-0001 --patch --summary Empty bump
+error[E0113]: RFC version bump requires RFC or clause content changes since the last bump (RFC-0001)
+exit: 1
+
+$ govctl rfc list
+┌──────────┬─────────┬───────────┬───────┬──────────┐
+│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title    │
+╞══════════╪═════════╪═══════════╪═══════╪══════════╡
+│ RFC-0001 ┆ 0.1.1   ┆ normative ┆ spec  ┆ Test RFC │
+└──────────┴─────────┴───────────┴───────┴──────────┘
+exit: 0

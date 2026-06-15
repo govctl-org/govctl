@@ -1,0 +1,37 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-15-002"
+title = "Reject empty RFC bumps"
+status = "done"
+created = "2026-06-15"
+started = "2026-06-15"
+completed = "2026-06-15"
+refs = [
+    "RFC-0002",
+    "ADR-0016",
+]
+tags = ["lifecycle"]
+
+[content]
+description = "Reject RFC version bumps when the RFC has no content amendment since its stored amendment signature. RFC content changes include RFC body metadata covered by the content signature and clauses; bump bookkeeping such as version, changelog, and signature must not by itself justify another bump. Preserve baseline bumps for RFCs without a stored signature."
+
+[[content.acceptance_criteria]]
+text = "rfc bump rejects a version bump when no RFC or clause content changed"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "changelog-only updates do not make a later version bump valid"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFC or clause content amendments still allow the next version bump"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "lifecycle tests and governance checks pass"
+status = "done"
+category = "chore"

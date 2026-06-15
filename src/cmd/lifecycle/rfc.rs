@@ -22,9 +22,10 @@ pub fn bump(
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let mut rfc = read_rfc(config, &rfc_path)?;
-
-    match (level, summary, changes.is_empty()) {
+    let refresh_signature_after_write = match (level, summary, changes.is_empty()) {
         (Some(lvl), Some(sum), _) => {
+            ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
+
             let new_version = bump_rfc_version(&mut rfc, lvl, sum)?;
             if !op.is_preview() {
                 ui::version_bumped(rfc_id, &new_version);
@@ -52,12 +53,15 @@ pub fn bump(
             ));
         }
         (None, _, false) => {
+            let refresh_signature_after_write =
+                should_refresh_signature_after_changelog_only(config, &rfc_path)?;
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
                 if !op.is_preview() {
                     ui::changelog_change_added(rfc_id, &rfc.version, change);
                 }
             }
+            refresh_signature_after_write
         }
         (None, Some(_), true) => {
             return Err(Diagnostic::new(
@@ -73,9 +77,12 @@ pub fn bump(
                 rfc_id,
             ));
         }
-    }
+    };
 
     write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
+    if refresh_signature_after_write {
+        refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
+    }
     Ok(vec![])
 }
 
@@ -176,10 +183,35 @@ fn refresh_rfc_signature_best_effort(
     op: WriteOp,
 ) -> DiagnosticResult<()> {
     if let Ok(rfc_index) = crate::load::load_rfc(config, rfc_path)
-        && let Ok(sig) = crate::signature::compute_rfc_signature(&rfc_index)
+        && let Ok(sig) = crate::signature::compute_rfc_content_signature(&rfc_index)
     {
         rfc.signature = Some(sig);
         write_lifecycle_rfc(config, rfc_path, rfc, op)?;
     }
     Ok(())
+}
+
+fn ensure_rfc_has_content_amendment(
+    config: &Config,
+    rfc_path: &Path,
+    rfc_id: &str,
+) -> DiagnosticResult<()> {
+    let rfc_index = crate::load::load_rfc(config, rfc_path)?;
+    if rfc_index.rfc.signature.is_none() || crate::signature::is_rfc_amended(&rfc_index) {
+        return Ok(());
+    }
+
+    Err(Diagnostic::new(
+        DiagnosticCode::E0113RfcBumpNoAmendment,
+        "RFC version bump requires RFC or clause content changes since the last bump",
+        rfc_id,
+    ))
+}
+
+fn should_refresh_signature_after_changelog_only(
+    config: &Config,
+    rfc_path: &Path,
+) -> DiagnosticResult<bool> {
+    let rfc_index = crate::load::load_rfc(config, rfc_path)?;
+    Ok(rfc_index.rfc.signature.is_some() && !crate::signature::is_rfc_amended(&rfc_index))
 }
