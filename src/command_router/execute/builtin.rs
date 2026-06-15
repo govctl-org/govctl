@@ -72,7 +72,6 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::LoopRun {
             loop_id,
             target_work_ids,
-            max_rounds,
-        } => cmd::loop_cmd::run(config, loop_id, target_work_ids, *max_rounds, op),
+        } => cmd::loop_cmd::run(config, loop_id, target_work_ids, op),
     }
 }

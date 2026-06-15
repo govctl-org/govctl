@@ -1,8 +1,8 @@
 use crate::common;
 use crate::common::loop_helpers::{
     loop_add_field, loop_add_wi, loop_add_work, loop_id, loop_item_round_count, loop_item_status,
-    loop_item_table, loop_remove_wi, loop_remove_work, loop_replan, loop_resolved,
-    loop_run_with_max_rounds, loop_start_with_id, loop_work,
+    loop_item_table, loop_remove_wi, loop_remove_work, loop_replan, loop_resolved, loop_run,
+    loop_start_with_id, loop_work,
 };
 use crate::common::{
     init_project_with_date, run_dynamic_commands, work_add_acceptance, work_add_dependency,
@@ -134,7 +134,7 @@ fn test_loop_scope_add_remove_and_replan_preserve_current_state() -> common::Tes
             work_new("Original"),
             work_add_acceptance(&original_id, "add: unfinished"),
             loop_start_with_id(&loop_id, &[&original_id]),
-            loop_run_with_max_rounds(&loop_id, "2"),
+            loop_run(&loop_id),
             work_new("Dependency"),
             work_new("New root"),
             work_add_dependency(&new_root_id, &new_dependency_id),
@@ -218,8 +218,7 @@ fn test_loop_run_rejects_stale_dependency_plan_until_replanned() -> common::Test
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
 
-    let stale_output =
-        run_dynamic_commands(temp_dir.path(), &[loop_run_with_max_rounds(&loop_id, "2")])?;
+    let stale_output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
     assert!(stale_output.contains("error[E1201]"), "{stale_output}");
     assert!(
         stale_output.contains(&format!("Loop '{loop_id}' is stale")),
@@ -232,10 +231,7 @@ fn test_loop_run_rejects_stale_dependency_plan_until_replanned() -> common::Test
 
     let repaired_output = run_dynamic_commands(
         temp_dir.path(),
-        &[
-            loop_replan(&loop_id),
-            loop_run_with_max_rounds(&loop_id, "2"),
-        ],
+        &[loop_replan(&loop_id), loop_run(&loop_id)],
     )?;
     assert!(
         repaired_output.contains(&format!("Replanned loop {loop_id}")),

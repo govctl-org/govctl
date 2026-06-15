@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0006"
 title = "Loop Execution Model"
-version = "0.4.0"
+version = "0.5.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-05-31"
-updated = "2026-06-03"
-signature = "8c414b17e2d0a1422a7e6b2a637a26978f3ce561018154276202ab40f37e42ca"
+updated = "2026-06-15"
+signature = "68bcdf220d7340985bc16432930ac4600bd1254f2a6cd9af53f2a45b571533ab"
 
 [[sections]]
 title = "Summary"
@@ -36,6 +36,16 @@ clauses = [
     "clauses/C-UNIFIED-MODEL.toml",
     "clauses/C-EXECUTION-STATE-SEPARATION.toml",
     "clauses/C-DEPENDENCY-SEPARATION.toml",
+]
+
+[[changelog]]
+version = "0.5.0"
+date = "2026-06-15"
+notes = "Remove loop max-rounds budget from the round protocol"
+changed = ["round_count is audit metadata and cannot drive failure semantics"]
+removed = [
+    "loop run --max-rounds retry-budget argument",
+    "max_rounds from new loop round artifacts",
 ]
 
 [[changelog]]

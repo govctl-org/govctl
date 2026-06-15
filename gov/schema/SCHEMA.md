@@ -332,7 +332,6 @@ last_round = 1
 [round]
 loop_id = "LOOP-2026-01-17-001"
 round_number = 1
-max_rounds = 2
 status = "open"
 work = ["WI-2026-01-17-002"]
 
@@ -357,7 +356,6 @@ note_candidates = []
 | `items.<WI-ID>.round_count` | yes      | integer | Number of executed rounds for the work item                                 |
 | `items.<WI-ID>.last_round`  | no       | integer | Last loop-level round that selected the work item                           |
 | `round.round_number`        | yes      | integer | One-based loop-level round number                                           |
-| `round.max_rounds`          | yes      | integer | Per-item round limit used when the round opened                             |
 | `round.status`              | yes      | enum    | `open` \| `submitted` \| `closed`                                           |
 | `round.work`                | yes      | array   | Work Item IDs selected for the round                                        |
 | `summary.actions`           | yes      | array   | Actions performed during the round                                          |

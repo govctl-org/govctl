@@ -131,7 +131,6 @@ fn test_lock_disposition_requires_lock_for_mutating_commands()
         global(Op::Builtin(BuiltinOp::LoopRun {
             loop_id: "LOOP-2026-04-07-001".to_string(),
             target_work_ids: vec![],
-            max_rounds: 1,
         }))
         .lock_disposition(),
         LockDisposition::GovRootExclusive

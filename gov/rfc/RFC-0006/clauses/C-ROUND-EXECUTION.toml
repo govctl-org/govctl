@@ -25,7 +25,7 @@ Each round MUST have one of these local round states:
 2. **submitted** — the round summary evidence has been provided but has not yet been incorporated into authoritative loop state.
 3. **closed** — govctl has validated the round evidence and updated loop state.
 
-`govctl loop run LOOP-ID` MUST advance the local round protocol. It MUST NOT implement repository changes itself. It MUST NOT mark a Work Item `done` directly merely because loop-local criteria appear satisfied. Work Item lifecycle transitions remain owned by `govctl work move` per [[RFC-0002:C-LIFECYCLE-VERBS]].
+`govctl loop run LOOP-ID` MUST advance exactly one local round-protocol step. It MUST NOT implement repository changes itself. It MUST NOT mark a Work Item `done` directly merely because loop-local criteria appear satisfied. Work Item lifecycle transitions remain owned by `govctl work move` per [[RFC-0002:C-LIFECYCLE-VERBS]].
 
 **Opening a round:**
 
@@ -38,7 +38,7 @@ When no open round exists, `loop run` MUST:
 5. Write a summary skeleton that records where the agent MUST provide actions, changed paths, verification evidence, blockers, and note candidates.
 6. Display the round artifact path and the next required agent action.
 
-Opening a round MAY update loop-local item statuses and round counters, but MUST NOT write transient execution trace into Work Item files.
+Opening a round MAY update loop-local item statuses and round counters, but MUST NOT write transient execution trace into Work Item files. Round counters are audit metadata only and MUST NOT control selection, failure, or dependency propagation.
 
 **Closing a round:**
 
@@ -56,4 +56,6 @@ If blockers prevent progress, `loop run` MUST keep the loop non-terminal and rec
 
 If the relevant Work Items have already reached terminal Work Item lifecycle states through `govctl work move`, `loop run` MUST reflect those lifecycle states in loop-local item status and MAY mark the loop completed when every current resolved item is terminal without failed or blocked loop outcomes.
 
-Rationale: govctl can coordinate local execution state, Work Item metadata, dependency readiness, and verification evidence, but the agent performs implementation work. This keeps loop execution trace in local loop artifacts, preserves Work Items as durable outcome artifacts, and reuses existing `notes`, `depends_on`, `verify`, and `work move` mechanisms instead of inventing parallel systems."""
+`loop run` MUST NOT infer loop failure, Work Item failure, or dependency blockage from the number of rounds opened or closed for a Work Item.
+
+Rationale: govctl can coordinate local execution state, Work Item metadata, dependency readiness, and verification evidence, but the agent performs implementation work. This keeps loop execution trace in local loop artifacts, preserves Work Items as durable outcome artifacts, and reuses existing `notes`, `depends_on`, `verify`, and `work move` mechanisms instead of inventing parallel systems. Retry budgets and repeated-invocation limits belong to callers such as skills, scripts, or humans because they decide how much autonomous execution is appropriate."""

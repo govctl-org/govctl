@@ -120,7 +120,6 @@ pub enum BuiltinOp {
     LoopRun {
         loop_id: String,
         target_work_ids: Vec<String>,
-        max_rounds: u32,
     },
 }
 

@@ -121,6 +121,47 @@ round_count = 0
 }
 
 #[test]
+fn test_loop_round_load_tolerates_legacy_max_rounds() -> TestResult {
+    let temp_dir = tempfile::TempDir::new()?;
+    let config = test_config(temp_dir.path());
+    let loop_id = "LOOP-2026-05-31-007";
+    let work_id = "WI-2026-05-31-001";
+    let round_dir = temp_dir
+        .path()
+        .join(format!(".govctl/loops/{loop_id}/rounds"));
+    std::fs::create_dir_all(&round_dir)?;
+    std::fs::write(
+        round_dir.join("round-001.toml"),
+        format!(
+            r#"[round]
+loop_id = "{loop_id}"
+round_number = 1
+max_rounds = 1
+status = "open"
+work = ["{work_id}"]
+
+[summary]
+actions = []
+changed_paths = []
+verification = []
+blockers = []
+note_candidates = []
+"#
+        ),
+    )?;
+
+    let record = load_loop_round_record(&config, loop_id, 1)?;
+    assert_eq!(record.round_meta.loop_id, loop_id);
+    assert_eq!(record.round_meta.round_number, 1);
+    assert_eq!(record.round_meta.work, vec![work_id.to_string()]);
+
+    write_loop_round_record(&config, &record, WriteOp::Execute)?;
+    let rewritten = std::fs::read_to_string(round_dir.join("round-001.toml"))?;
+    assert!(!rewritten.contains("max_rounds"), "{rewritten}");
+    Ok(())
+}
+
+#[test]
 fn test_loop_state_updates_lifecycle_item_status_and_round_count() -> TestResult {
     let temp_dir = tempfile::TempDir::new()?;
     let config = test_config(temp_dir.path());

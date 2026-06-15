@@ -111,7 +111,6 @@ pub enum DiagnosticCode {
     E1208LoopResumeAmbiguous,
     E1209LoopWorkMismatch,
     E1210LoopExecutionFailed,
-    E1211LoopInvalidMaxRounds,
 
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,

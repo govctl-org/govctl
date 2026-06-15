@@ -10,6 +10,15 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Changed
+
+- loop run does not fail loops or work items from round_count alone (WI-2026-06-15-001)
+
+### Removed
+
+- [RFC-0006](docs/rfc/RFC-0006.md) removes max-rounds as a loop run argument and failure condition (WI-2026-06-15-001)
+- loop run no longer accepts --max-rounds or stores max_rounds in new round artifacts (WI-2026-06-15-001)
+
 ## [0.9.5] - 2026-06-12
 
 0.9.5 is a reviewer-evidence and compatibility patch. It gives reviewer agents

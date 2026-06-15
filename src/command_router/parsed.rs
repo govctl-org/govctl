@@ -111,11 +111,9 @@ fn plan_loop_command(command: &LoopCommand) -> CommandPlan {
         LoopCommand::Run {
             id,
             target_work_ids,
-            max_rounds,
         } => BuiltinOp::LoopRun {
             loop_id: id.clone(),
             target_work_ids: target_work_ids.clone(),
-            max_rounds: *max_rounds,
         },
     };
     global(Op::Builtin(op))

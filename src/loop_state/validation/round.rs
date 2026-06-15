@@ -13,12 +13,6 @@ pub(in crate::loop_state) fn validate_loop_round_record(
             "loop round record round_number must be at least 1",
         ));
     }
-    if round.max_rounds == 0 {
-        return Err(invalid_state(
-            &round.loop_id,
-            "loop round record max_rounds must be at least 1",
-        ));
-    }
     if round.work.is_empty() {
         return Err(invalid_state(
             &round.loop_id,

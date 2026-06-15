@@ -71,10 +71,6 @@ pub fn loop_run(loop_id: &str) -> Vec<String> {
     command(&["loop", "run", loop_id])
 }
 
-pub fn loop_run_with_max_rounds(loop_id: &str, max_rounds: &str) -> Vec<String> {
-    command(&["loop", "run", loop_id, "--max-rounds", max_rounds])
-}
-
 pub fn loop_run_target(loop_id: &str, work_id: &str) -> Vec<String> {
     command(&["loop", "run", loop_id, "--work", work_id])
 }

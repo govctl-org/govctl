@@ -101,7 +101,6 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E1208LoopResumeAmbiguous => "E1208",
         DiagnosticCode::E1209LoopWorkMismatch => "E1209",
         DiagnosticCode::E1210LoopExecutionFailed => "E1210",
-        DiagnosticCode::E1211LoopInvalidMaxRounds => "E1211",
         // E08xx - CLI/Command
         DiagnosticCode::E0801MissingRequiredArg => "E0801",
         DiagnosticCode::E0802ConflictingArgs => "E0802",
