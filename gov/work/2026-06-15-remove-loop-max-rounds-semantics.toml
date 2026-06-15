@@ -11,7 +11,7 @@ refs = ["RFC-0006"]
 tags = ["lifecycle"]
 
 [content]
-description = "Remove the loop max-rounds execution budget from [[RFC-0006]] and the implementation so loop rounds remain audit checkpoints only. govctl must no longer accept or persist max-rounds, and loop failure must not be inferred from round count alone."
+description = "Remove max-rounds handling from the loop command surface and implementation per [[RFC-0006:C-LOOP-COMMAND-SURFACE]], keeping round counts as audit-oriented execution metadata covered by [[RFC-0006:C-LOOP-LIFECYCLE]]."
 
 [[content.acceptance_criteria]]
 text = "[[RFC-0006]] removes max-rounds as a loop run argument and failure condition"

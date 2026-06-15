@@ -325,6 +325,16 @@ consequences = "Consequences"
         &[&["check"], &["check", "--deny-warnings"]],
     )?;
     assert!(output.contains("warning[W0112]"), "output: {}", output);
+    assert!(
+        output.contains("content.decision line 1"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("context: \"This decision follows RFC-0001.\""),
+        "output: {}",
+        output
+    );
     assert!(output.contains("use [[RFC-0001]]"), "output: {}", output);
     assert!(output.contains("$ govctl check\n"), "output: {}", output);
     assert!(output.contains("exit: 0"), "output: {}", output);
@@ -372,8 +382,24 @@ rejection_reason = "Rejected after comparing with RFC-0001."
         "output: {}",
         output
     );
+    assert!(output.contains("Artifact 'ADR-0001'"), "output: {}", output);
     assert!(
-        output.contains("Artifact 'ADR-0001' mentions known artifact ID RFC-0001"),
+        output.contains("content.alternatives[0].text line 1"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("content.alternatives[0].pros[0] line 1"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("content.alternatives[0].cons[0] line 1"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("content.alternatives[0].rejection_reason line 1"),
         "output: {}",
         output
     );

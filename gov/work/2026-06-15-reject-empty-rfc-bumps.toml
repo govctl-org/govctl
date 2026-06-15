@@ -14,7 +14,7 @@ refs = [
 tags = ["lifecycle"]
 
 [content]
-description = "Reject RFC version bumps when the RFC has no content amendment since its stored amendment signature. RFC content changes include RFC body metadata covered by the content signature and clauses; bump bookkeeping such as version, changelog, and signature must not by itself justify another bump. Preserve baseline bumps for RFCs without a stored signature."
+description = "Implement and test RFC bump validation for empty amendments according to [[RFC-0002:C-LIFECYCLE-VERBS]], with regression coverage for the affected changelog and lifecycle paths."
 
 [[content.acceptance_criteria]]
 text = "rfc bump rejects a version bump when no RFC or clause content changed"

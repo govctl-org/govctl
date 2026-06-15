@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-15-003"
+title = "Report bare reference warning source"
+status = "done"
+created = "2026-06-15"
+started = "2026-06-15"
+completed = "2026-06-15"
+refs = [
+    "RFC-0000",
+    "RFC-0002",
+]
+tags = ["validation"]
+
+[content]
+description = "Implement diagnostic traceability for W0112 bare-reference warnings in support of the inline reference syntax validation defined by [[RFC-0000:C-REFERENCE-HIERARCHY]], with focused tests for the emitted source details."
+
+[[content.acceptance_criteria]]
+text = "W0112 bare reference warnings include the scanned artifact field and line"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "W0112 diagnostics include a short matched-text context for quick root-cause lookup"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "reference warning tests and govctl check pass"
+status = "done"
+category = "chore"

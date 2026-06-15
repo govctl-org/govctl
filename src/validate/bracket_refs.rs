@@ -15,6 +15,12 @@ struct ReferenceScanner {
     known_ids: HashSet<String>,
 }
 
+#[derive(Clone, Copy)]
+struct TextSource<'a> {
+    path: &'a str,
+    field: &'a str,
+}
+
 /// Validate inline references in governed prose per [[RFC-0000:C-REFERENCE-HIERARCHY]].
 pub(super) fn validate_bracket_reference_hierarchy(
     index: &ProjectIndex,
@@ -55,30 +61,60 @@ pub(super) fn validate_bracket_reference_hierarchy(
         let warn_on_bare_text = rfc.rfc.status == RfcStatus::Draft;
         for clause in &rfc.clauses {
             let clause_path = config.display_path(&clause.path).display().to_string();
+            let field = format!("{} content.text", clause.spec.clause_id);
             scan_rfc_reference_hierarchy(
                 &scanner,
                 &clause.spec.text,
                 rid,
-                &clause_path,
+                TextSource {
+                    path: &clause_path,
+                    field: &field,
+                },
                 true,
                 warn_on_bare_text,
                 result,
             );
         }
-        for entry in &rfc.rfc.changelog {
+        for (entry_index, entry) in rfc.rfc.changelog.iter().enumerate() {
             if let Some(ref notes) = entry.notes {
-                scan_rfc_reference_hierarchy(&scanner, notes, rid, &rfc_path, false, false, result);
+                let field = format!("changelog[{entry_index}].notes");
+                scan_rfc_reference_hierarchy(
+                    &scanner,
+                    notes,
+                    rid,
+                    TextSource {
+                        path: &rfc_path,
+                        field: &field,
+                    },
+                    false,
+                    false,
+                    result,
+                );
             }
-            for line in entry
-                .added
-                .iter()
-                .chain(entry.changed.iter())
-                .chain(entry.deprecated.iter())
-                .chain(entry.removed.iter())
-                .chain(entry.fixed.iter())
-                .chain(entry.security.iter())
-            {
-                scan_rfc_reference_hierarchy(&scanner, line, rid, &rfc_path, false, false, result);
+            let changelog_sections = [
+                ("added", &entry.added),
+                ("changed", &entry.changed),
+                ("deprecated", &entry.deprecated),
+                ("removed", &entry.removed),
+                ("fixed", &entry.fixed),
+                ("security", &entry.security),
+            ];
+            for (section, lines) in changelog_sections {
+                for (line_index, line) in lines.iter().enumerate() {
+                    let field = format!("changelog[{entry_index}].{section}[{line_index}]");
+                    scan_rfc_reference_hierarchy(
+                        &scanner,
+                        line,
+                        rid,
+                        TextSource {
+                            path: &rfc_path,
+                            field: &field,
+                        },
+                        false,
+                        false,
+                        result,
+                    );
+                }
             }
         }
     }
@@ -92,7 +128,10 @@ pub(super) fn validate_bracket_reference_hierarchy(
             &scanner,
             &c.context,
             aid,
-            &adr_path,
+            TextSource {
+                path: &adr_path,
+                field: "content.context",
+            },
             warn_on_bare_text,
             result,
         );
@@ -100,7 +139,10 @@ pub(super) fn validate_bracket_reference_hierarchy(
             &scanner,
             &c.decision,
             aid,
-            &adr_path,
+            TextSource {
+                path: &adr_path,
+                field: "content.decision",
+            },
             warn_on_bare_text,
             result,
         );
@@ -108,45 +150,64 @@ pub(super) fn validate_bracket_reference_hierarchy(
             &scanner,
             &c.consequences,
             aid,
-            &adr_path,
+            TextSource {
+                path: &adr_path,
+                field: "content.consequences",
+            },
             warn_on_bare_text,
             result,
         );
-        for alt in &c.alternatives {
+        for (alt_index, alt) in c.alternatives.iter().enumerate() {
+            let alt_text_field = format!("content.alternatives[{alt_index}].text");
             scan_adr_reference_hierarchy(
                 &scanner,
                 &alt.text,
                 aid,
-                &adr_path,
+                TextSource {
+                    path: &adr_path,
+                    field: &alt_text_field,
+                },
                 warn_on_bare_text,
                 result,
             );
-            for p in &alt.pros {
+            for (pro_index, p) in alt.pros.iter().enumerate() {
+                let pro_field = format!("content.alternatives[{alt_index}].pros[{pro_index}]");
                 scan_adr_reference_hierarchy(
                     &scanner,
                     p,
                     aid,
-                    &adr_path,
+                    TextSource {
+                        path: &adr_path,
+                        field: &pro_field,
+                    },
                     warn_on_bare_text,
                     result,
                 );
             }
-            for cons in &alt.cons {
+            for (con_index, cons) in alt.cons.iter().enumerate() {
+                let con_field = format!("content.alternatives[{alt_index}].cons[{con_index}]");
                 scan_adr_reference_hierarchy(
                     &scanner,
                     cons,
                     aid,
-                    &adr_path,
+                    TextSource {
+                        path: &adr_path,
+                        field: &con_field,
+                    },
                     warn_on_bare_text,
                     result,
                 );
             }
             if let Some(ref rr) = alt.rejection_reason {
+                let rejection_field = format!("content.alternatives[{alt_index}].rejection_reason");
                 scan_adr_reference_hierarchy(
                     &scanner,
                     rr,
                     aid,
-                    &adr_path,
+                    TextSource {
+                        path: &adr_path,
+                        field: &rejection_field,
+                    },
                     warn_on_bare_text,
                     result,
                 );
@@ -163,22 +224,40 @@ pub(super) fn validate_bracket_reference_hierarchy(
             &scanner,
             &content.description,
             wid,
-            &work_path,
+            TextSource {
+                path: &work_path,
+                field: "content.description",
+            },
             warn_on_bare_text,
             result,
         );
-        for criterion in &content.acceptance_criteria {
+        for (criterion_index, criterion) in content.acceptance_criteria.iter().enumerate() {
+            let criterion_field = format!("content.acceptance_criteria[{criterion_index}].text");
             scan_work_reference_syntax(
                 &scanner,
                 &criterion.text,
                 wid,
-                &work_path,
+                TextSource {
+                    path: &work_path,
+                    field: &criterion_field,
+                },
                 warn_on_bare_text,
                 result,
             );
         }
-        for note in &content.notes {
-            scan_work_reference_syntax(&scanner, note, wid, &work_path, warn_on_bare_text, result);
+        for (note_index, note) in content.notes.iter().enumerate() {
+            let note_field = format!("content.notes[{note_index}]");
+            scan_work_reference_syntax(
+                &scanner,
+                note,
+                wid,
+                TextSource {
+                    path: &work_path,
+                    field: &note_field,
+                },
+                warn_on_bare_text,
+                result,
+            );
         }
     }
 }
@@ -187,7 +266,7 @@ fn scan_rfc_reference_hierarchy(
     scanner: &ReferenceScanner,
     text: &str,
     rfc_id: &str,
-    path: &str,
+    source: TextSource<'_>,
     scan_bare_text: bool,
     warn_on_bare_text: bool,
     result: &mut ValidationResult,
@@ -196,7 +275,7 @@ fn scan_rfc_reference_hierarchy(
         scanner,
         text,
         rfc_id,
-        path,
+        source,
         scan_bare_text,
         warn_on_bare_text,
         result,
@@ -207,18 +286,26 @@ fn scan_adr_reference_hierarchy(
     scanner: &ReferenceScanner,
     text: &str,
     adr_id: &str,
-    path: &str,
+    source: TextSource<'_>,
     warn_on_bare_text: bool,
     result: &mut ValidationResult,
 ) {
-    scan_reference_hierarchy(scanner, text, adr_id, path, true, warn_on_bare_text, result);
+    scan_reference_hierarchy(
+        scanner,
+        text,
+        adr_id,
+        source,
+        true,
+        warn_on_bare_text,
+        result,
+    );
 }
 
 fn scan_work_reference_syntax(
     scanner: &ReferenceScanner,
     text: &str,
     work_id: &str,
-    path: &str,
+    source: TextSource<'_>,
     warn_on_bare_text: bool,
     result: &mut ValidationResult,
 ) {
@@ -226,7 +313,7 @@ fn scan_work_reference_syntax(
         scanner,
         text,
         work_id,
-        path,
+        source,
         true,
         warn_on_bare_text,
         result,
@@ -237,7 +324,7 @@ fn scan_reference_hierarchy(
     scanner: &ReferenceScanner,
     text: &str,
     owner_id: &str,
-    path: &str,
+    source: TextSource<'_>,
     scan_bare_text: bool,
     warn_on_bare_text: bool,
     result: &mut ValidationResult,
@@ -252,7 +339,7 @@ fn scan_reference_hierarchy(
         };
         let target = m.as_str();
         if let Err(diagnostic) =
-            check_ref_hierarchy(owner_id, target, path, ReferenceSurface::BracketLink)
+            check_ref_hierarchy(owner_id, target, source.path, ReferenceSurface::BracketLink)
         {
             result.diagnostics.push(diagnostic);
         }
@@ -276,24 +363,59 @@ fn scan_reference_hierarchy(
         if !scanner.known_ids.contains(target) {
             continue;
         }
-        match check_ref_hierarchy(owner_id, target, path, ReferenceSurface::BareText) {
-            Ok(()) if warn_on_bare_text => result
-                .diagnostics
-                .push(bare_artifact_reference_warning(owner_id, target, path)),
+        match check_ref_hierarchy(owner_id, target, source.path, ReferenceSurface::BareText) {
+            Ok(()) if warn_on_bare_text => result.diagnostics.push(
+                bare_artifact_reference_warning(owner_id, target, source, text, m.start()),
+            ),
             Ok(()) => {}
             Err(diagnostic) => result.diagnostics.push(diagnostic),
         }
     }
 }
 
-fn bare_artifact_reference_warning(owner_id: &str, target: &str, path: &str) -> Diagnostic {
+fn bare_artifact_reference_warning(
+    owner_id: &str,
+    target: &str,
+    source: TextSource<'_>,
+    text: &str,
+    match_start: usize,
+) -> Diagnostic {
+    let (line, context) = source_line_context(text, match_start);
     Diagnostic::new(
         DiagnosticCode::W0112BareArtifactReference,
         format!(
-            "Artifact '{owner_id}' mentions known artifact ID {target} without [[...]] inline reference syntax (hint: use [[{target}]])"
+            "Artifact '{owner_id}' {field} line {line} mentions known artifact ID {target} without [[...]] inline reference syntax (hint: use [[{target}]]; context: \"{context}\")",
+            field = source.field,
         ),
-        path,
+        source.path,
     )
+}
+
+fn source_line_context(text: &str, byte_offset: usize) -> (usize, String) {
+    let line = text[..byte_offset].bytes().filter(|b| *b == b'\n').count() + 1;
+    let line_start = text[..byte_offset].rfind('\n').map_or(0, |idx| idx + 1);
+    let line_end = text[byte_offset..]
+        .find('\n')
+        .map_or(text.len(), |idx| byte_offset + idx);
+    let context = collapse_context_whitespace(&text[line_start..line_end]);
+    (line, truncate_context(&context))
+}
+
+fn collapse_context_whitespace(line: &str) -> String {
+    line.split_whitespace().collect::<Vec<_>>().join(" ")
+}
+
+fn truncate_context(context: &str) -> String {
+    const MAX_CONTEXT_CHARS: usize = 120;
+    let mut out = String::new();
+    for (count, ch) in context.chars().enumerate() {
+        if count == MAX_CONTEXT_CHARS {
+            out.push_str("...");
+            break;
+        }
+        out.push(ch);
+    }
+    out.replace('"', "\\\"")
 }
 
 #[cfg(test)]
@@ -342,7 +464,10 @@ mod tests {
             &scanner(known_ids)?,
             "This mentions ADR-0001 without brackets.",
             "RFC-0001",
-            "f",
+            TextSource {
+                path: "f",
+                field: "content.text",
+            },
             true,
             true,
             &mut result,
@@ -365,7 +490,10 @@ mod tests {
             &scanner(known_ids)?,
             "This mentions ADR-0001 only as an example shape.",
             "RFC-0001",
-            "f",
+            TextSource {
+                path: "f",
+                field: "content.text",
+            },
             true,
             true,
             &mut result,
@@ -383,9 +511,12 @@ mod tests {
 
         scan_reference_hierarchy(
             &scanner(known_ids)?,
-            "This follows RFC-0001.",
+            "Intro line.\nThis follows RFC-0001.",
             "ADR-0001",
-            "f",
+            TextSource {
+                path: "f",
+                field: "content.decision",
+            },
             true,
             true,
             &mut result,
@@ -395,6 +526,20 @@ mod tests {
         assert_eq!(
             result.diagnostics[0].code,
             DiagnosticCode::W0112BareArtifactReference
+        );
+        assert!(
+            result.diagnostics[0]
+                .message
+                .contains("content.decision line 2"),
+            "message: {}",
+            result.diagnostics[0].message
+        );
+        assert!(
+            result.diagnostics[0]
+                .message
+                .contains("context: \"This follows RFC-0001.\""),
+            "message: {}",
+            result.diagnostics[0].message
         );
         Ok(())
     }
@@ -409,7 +554,10 @@ mod tests {
             &scanner(known_ids)?,
             "This follows [[RFC-0001]].",
             "ADR-0001",
-            "f",
+            TextSource {
+                path: "f",
+                field: "content.decision",
+            },
             true,
             true,
             &mut result,
