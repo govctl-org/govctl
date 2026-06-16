@@ -1142,7 +1142,7 @@ dependencies = [
 
 [[package]]
 name = "govctl"
-version = "0.9.5"
+version = "0.10.0"
 dependencies = [
  "ansi-to-tui",
  "chrono",

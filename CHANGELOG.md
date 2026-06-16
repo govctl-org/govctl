@@ -10,22 +10,33 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-06-17
+
+0.10.0 tightens loop execution semantics and governance validation. Loop rounds
+now behave strictly as audit checkpoints rather than retry budgets, RFC bumps
+reject empty amendments, and bare-reference warnings point reviewers to the
+source prose that needs attention.
+
 ### Changed
 
-- loop run does not fail loops or work items from round_count alone (WI-2026-06-15-001)
+- `govctl loop run` no longer treats `round_count` as a failure signal for
+  loops, work items, or dependency readiness.
 
 ### Removed
 
-- [RFC-0006](docs/rfc/RFC-0006.md) removes max-rounds as a loop run argument and failure condition (WI-2026-06-15-001)
-- loop run no longer accepts --max-rounds or stores max_rounds in new round artifacts (WI-2026-06-15-001)
+- Removed `--max-rounds` from `govctl loop run` and stopped persisting
+  `max_rounds` in new round artifacts. Repeated execution limits now belong to
+  callers rather than govctl loop state.
 
 ### Fixed
 
-- rfc bump rejects a version bump when no RFC or clause content changed (WI-2026-06-15-002)
-- changelog-only updates do not make a later version bump valid (WI-2026-06-15-002)
-- RFC or clause content amendments still allow the next version bump (WI-2026-06-15-002)
-- W0112 bare reference warnings include the scanned artifact field and line (WI-2026-06-15-003)
-- W0112 diagnostics include a short matched-text context for quick root-cause lookup (WI-2026-06-15-003)
+- `govctl rfc bump` now rejects empty version bumps when no RFC or clause
+  content changed since the stored amendment signature.
+- Changelog-only updates no longer make a later RFC version bump valid, while
+  actual RFC or clause content amendments still permit the next bump.
+- `W0112` bare-reference diagnostics now include the scanned artifact field,
+  field-local line, and short source context so reviewers can locate raw
+  artifact IDs quickly.
 
 ## [0.9.5] - 2026-06-12
 

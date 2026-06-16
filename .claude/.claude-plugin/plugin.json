@@ -1,5 +1,5 @@
 {
   "name": "govctl",
-  "version": "0.9.5",
+  "version": "0.10.0",
   "description": "Governed workflow skills, reviewer agents, and enforcement hooks for govctl"
 }
