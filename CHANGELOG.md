@@ -10,6 +10,23 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Changed
+
+- loop run does not fail loops or work items from round_count alone (WI-2026-06-15-001)
+
+### Removed
+
+- [RFC-0006](docs/rfc/RFC-0006.md) removes max-rounds as a loop run argument and failure condition (WI-2026-06-15-001)
+- loop run no longer accepts --max-rounds or stores max_rounds in new round artifacts (WI-2026-06-15-001)
+
+### Fixed
+
+- rfc bump rejects a version bump when no RFC or clause content changed (WI-2026-06-15-002)
+- changelog-only updates do not make a later version bump valid (WI-2026-06-15-002)
+- RFC or clause content amendments still allow the next version bump (WI-2026-06-15-002)
+- W0112 bare reference warnings include the scanned artifact field and line (WI-2026-06-15-003)
+- W0112 diagnostics include a short matched-text context for quick root-cause lookup (WI-2026-06-15-003)
+
 ## [0.9.5] - 2026-06-12
 
 0.9.5 is a reviewer-evidence and compatibility patch. It gives reviewer agents

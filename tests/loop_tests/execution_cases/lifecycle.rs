@@ -55,7 +55,7 @@ fn test_loop_run_opens_round_without_mutating_work_item() -> common::TestResult 
     let round: toml::Value = toml::from_str(&round_toml)?;
     assert_eq!(round["round"]["loop_id"].as_str(), Some(loop_id.as_str()));
     assert_eq!(round["round"]["round_number"].as_integer(), Some(1));
-    assert_eq!(round["round"]["max_rounds"].as_integer(), Some(1));
+    assert!(round["round"].get("max_rounds").is_none(), "{round_toml}");
     assert_eq!(round["round"]["status"].as_str(), Some("open"));
     assert_eq!(round["round"]["work"][0].as_str(), Some(root_id.as_str()));
     assert!(
@@ -167,7 +167,7 @@ fn test_loop_run_closes_submitted_round_and_reflects_done_work() -> common::Test
 }
 
 #[test]
-fn test_loop_run_closes_blocked_round_as_paused_then_honors_max_rounds() -> common::TestResult {
+fn test_loop_run_closes_blocked_round_as_paused_then_opens_next_round() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let loop_id = loop_id(&date, 1);
@@ -210,9 +210,15 @@ fn test_loop_run_closes_blocked_round_as_paused_then_honors_max_rounds() -> comm
 
     let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
     assert!(
-        output.contains(&format!("Failed loop {loop_id}")),
+        output.contains(&format!("Opened round 2 for loop {loop_id}")),
         "{output}"
     );
-    assert!(output.contains("maximum rounds reached (1)"), "{output}");
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("current_round = 2"), "{state_toml}");
+    assert_eq!(loop_item_round_count(&state_toml, &root_id)?, 2);
     Ok(())
 }

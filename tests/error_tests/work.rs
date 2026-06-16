@@ -90,7 +90,10 @@ created = "2026-01-01"
 refs = ["RFC-0001"]
 
 [content]
-description = "This work follows RFC-0001."
+description = """
+Intro line.
+This work follows RFC-0001.
+"""
 
 [[content.acceptance_criteria]]
 text = "Use [[RFC-0001]] in bracketed form here"
@@ -102,7 +105,17 @@ category = "chore"
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("warning[W0112]"), "output: {}", output);
     assert!(
-        output.contains("Artifact 'WI-2026-01-01-001' mentions known artifact ID RFC-0001"),
+        output.contains("Artifact 'WI-2026-01-01-001' content.description line 2"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("content.description line 2"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("context: \"This work follows RFC-0001.\""),
         "output: {}",
         output
     );
@@ -148,7 +161,17 @@ category = "chore"
         output
     );
     assert!(
-        output.contains("Artifact 'WI-2026-01-01-001' mentions known artifact ID RFC-0001"),
+        output.contains("Artifact 'WI-2026-01-01-001'"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("content.notes[0] line 1"),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains("content.acceptance_criteria[0].text line 1"),
         "output: {}",
         output
     );

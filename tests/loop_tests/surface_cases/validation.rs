@@ -25,6 +25,34 @@ fn test_loop_start_rejects_plain_text_loop_id() -> common::TestResult {
 }
 
 #[test]
+fn test_loop_run_rejects_removed_max_rounds_flag() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Root"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            command(&["loop", "run", &loop_id, "--max-rounds", "2"]),
+        ],
+    )?;
+
+    assert!(
+        output.contains("unexpected argument '--max-rounds'"),
+        "{output}"
+    );
+    assert!(
+        !temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/rounds/round-001.toml"))
+            .exists()
+    );
+    Ok(())
+}
+
+#[test]
 fn test_loop_schemas_reject_invalid_calendar_dates() -> common::TestResult {
     let temp_dir = init_project()?;
     let invalid_state = r#"
@@ -45,7 +73,6 @@ round_count = 0
 [round]
 loop_id = "LOOP-2026-02-31-001"
 round_number = 1
-max_rounds = 1
 status = "open"
 work = ["WI-2026-02-28-001"]
 

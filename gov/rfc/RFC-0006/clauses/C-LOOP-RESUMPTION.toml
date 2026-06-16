@@ -14,10 +14,10 @@ A loop MAY be paused and resumed across CLI invocations or agent sessions.
 
 If a loop implementation supports resumption, it MUST:
 
-1. Persist loop state using the storage contract defined by [[RFC-0006:C-LOOP-STATE-STORAGE]]
-2. Resume existing loop operations by positional `LOOP-ID` as defined by [[RFC-0006:C-LOOP-COMMAND-SURFACE]]
-3. Resume from the last recorded state and open round artifact rather than starting fresh when the requested loop state exists and is non-terminal
-4. Reject operations that require a non-terminal loop when the loop is terminal
+1. Persist loop state using the storage contract defined by [[RFC-0006:C-LOOP-STATE-STORAGE]].
+2. Resume existing loop operations by positional `LOOP-ID` as defined by [[RFC-0006:C-LOOP-COMMAND-SURFACE]].
+3. Resume from the last recorded state and open round artifact rather than starting fresh when the requested loop state exists and is non-terminal.
+4. Reject operations that require a non-terminal loop when the loop is terminal.
 
 **Discovery semantics:**
 
@@ -31,18 +31,19 @@ A stored loop matches a requested work set when its current editable `work` fiel
 
 When resuming a loop:
 
-- Work items in `done` loop state MUST NOT be selected for new round work
-- Work items in `active` loop state MAY be selected again only through the local round protocol
-- Work items in `blocked`, `failed`, or `cancelled` loop state MUST remain terminal for dependency planning unless an explicit scope mutation recomputes a dependency-derived `blocked` outcome
-- Work items in `pending` loop state MAY be selected in dependency order when opening a round unless an explicit run selector narrows execution per [[RFC-0006:C-LOOP-COMMAND-SURFACE]]
-- If `loop.current_round` points at an open round artifact, `loop run` MUST validate or reject that artifact before opening another round
+- Work items in `done` loop state MUST NOT be selected for new round work.
+- Work items in `active` loop state MAY be selected again only through the local round protocol.
+- Work items in `blocked`, `failed`, or `cancelled` loop state MUST remain terminal for dependency planning unless an explicit scope mutation recomputes a dependency-derived `blocked` outcome.
+- Work items in `pending` loop state MAY be selected in dependency order when opening a round unless an explicit run selector narrows execution per [[RFC-0006:C-LOOP-COMMAND-SURFACE]].
+- If `loop.current_round` points at an open round artifact, `loop run` MUST validate or reject that artifact before opening another round.
+- Prior round counts MUST NOT prevent a non-terminal work item from being selected again when it is otherwise ready.
 
 **State preservation:**
 
 The loop state MUST preserve:
 
 - Execution status of each current work item (pending, active, done, failed, blocked, cancelled)
-- Round count for each current work item
+- Round count for each current work item as audit metadata
 - Last selected round for each current work item when known
 - Current editable `work` field values
 - Dependency graph at last planning time
@@ -55,4 +56,4 @@ The loop state MAY preserve:
 - Guard execution result summaries
 - Agent context and decision history inside local round artifacts
 
-Rationale: Resumption enables long-running multi-WI loops to survive agent session boundaries without losing progress. Positional loop IDs provide precise lookup that matches the CLI's noun/verb/object shape. Work-set matching remains a discovery convenience for start/list workflows, not an execution command mode. By persisting state independently of work item files, we maintain the separation between execution state and governed artifacts. Scope mutation makes the stored work set current rather than historical, so discovery continues to match the loop the user intends to resume."""
+Rationale: Resumption enables long-running multi-WI loops to survive agent session boundaries without losing progress. Positional loop IDs provide precise lookup that matches the CLI's noun/verb/object shape. Work-set matching remains a discovery convenience for start/list workflows, not an execution command mode. By persisting state independently of work item files, govctl maintains the separation between execution state and governed artifacts. Scope mutation makes the stored work set current rather than historical, so discovery continues to match the loop the user intends to resume. Round counts remain useful for audit and display without becoming hidden retry policy."""

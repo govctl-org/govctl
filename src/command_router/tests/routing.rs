@@ -122,7 +122,6 @@ fn test_loop_commands_route_to_builtin_ops() -> Result<(), Box<dyn std::error::E
         &Commands::Loop {
             command: crate::LoopCommand::Run {
                 id: "LOOP-2026-06-02-001".to_string(),
-                max_rounds: 2,
                 target_work_ids: vec!["WI-2026-06-02-058".to_string()],
             },
         },
@@ -133,7 +132,6 @@ fn test_loop_commands_route_to_builtin_ops() -> Result<(), Box<dyn std::error::E
         Op::Builtin(BuiltinOp::LoopRun {
             loop_id: ref id,
             target_work_ids: ref work,
-            max_rounds: 2,
         }) if id == "LOOP-2026-06-02-001" && work == &vec!["WI-2026-06-02-058".to_string()]
     ));
 

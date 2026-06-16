@@ -30,10 +30,12 @@ The canonical loop subcommands are:
 2. `loop show LOOP-ID`: read one persisted loop state by loop ID. This command MUST be read-only.
 3. `loop start [--id LOOP-ID] WI-ID...`: create or reuse a loop for an explicit `work` field set.
 4. `loop resume LOOP-ID`: select and display an existing non-terminal loop by loop ID. This command MUST be read-only and MUST NOT advance rounds.
-5. `loop run LOOP-ID [--work WI-ID ...] [--max-rounds N]`: advance the local round protocol for an existing loop state.
+5. `loop run LOOP-ID [--work WI-ID ...]`: advance the local round protocol for an existing loop state.
 6. `loop replan LOOP-ID`: recompute the dependency closure for the current explicit `work` field set.
 7. `loop add LOOP-ID work WI-ID`: add a Work Item ID to the loop's editable `work` field and replan.
 8. `loop remove LOOP-ID work WI-ID`: remove a Work Item ID from the loop's editable `work` field and replan.
+
+`loop run` MUST NOT accept a maximum-rounds argument or any other caller retry-budget argument. Repeated execution limits belong to callers and MUST NOT be persisted in loop state or round artifacts.
 
 The `work` field is the only canonical user-facing field name for the loop's explicit work set. Implementations MUST accept `wi` as a shorthand alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID` while documenting the alias.
 
@@ -59,4 +61,4 @@ Targeted run selection MUST NOT replace, shrink, expand, or otherwise mutate the
 
 **Rationale:**
 
-The loop command namespace coordinates several governed resources but stores its own local execution state, so it is neither a governed artifact resource nor a simple single global command. Existing-loop operations use positional `LOOP-ID` arguments to match the rest of the CLI's noun/verb/object shape. Stable argument roles prevent hidden mode switches: positional work item IDs in `add` and `remove` are field values for the loop's `work` field, while `--work` is the explicit work-item execution selector. Keeping the field position visible preserves the CLI edit model while making loop-specific replanning a domain side effect of changing the field. Reusing `run` as the round-protocol advancement command preserves existing skill guidance while removing the misleading interpretation that govctl itself implements code."""
+The loop command namespace coordinates several governed resources but stores its own local execution state, so it is neither a governed artifact resource nor a simple single global command. Existing-loop operations use positional `LOOP-ID` arguments to match the rest of the CLI's noun/verb/object shape. Stable argument roles prevent hidden mode switches: positional work item IDs in `add` and `remove` are field values for the loop's `work` field, while `--work` is the explicit work-item execution selector. Keeping the field position visible preserves the CLI edit model while making loop-specific replanning a domain side effect of changing the field. Reusing `run` as the round-protocol advancement command preserves existing skill guidance while removing the misleading interpretation that govctl itself implements code. Excluding retry-budget flags keeps the command surface small and leaves autonomous execution policy to callers."""

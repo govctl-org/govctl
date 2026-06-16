@@ -1,7 +1,7 @@
 use super::output::print_loop;
 use super::state::{
     ensure_loop_not_terminal, ensure_loop_plan_fresh, ensure_unique_work_item_ids,
-    loop_dependencies, loop_item_state,
+    loop_dependencies,
 };
 use crate::cmd::work_lookup::load_work_item_by_id;
 use crate::config::Config;
@@ -20,22 +20,12 @@ pub fn run(
     config: &Config,
     loop_id: &str,
     target_work_ids: &[String],
-    max_rounds: u32,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    if max_rounds == 0 {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1211LoopInvalidMaxRounds,
-            "Loop max rounds must be at least 1",
-            "loop",
-        ));
-    }
-
     let mut state = state_for_run(config, loop_id, target_work_ids)?;
     ensure_loop_not_terminal(&state, "run")?;
 
     println!("Running loop {}", state.loop_meta.id);
-    println!("Max rounds: {max_rounds}");
     if !target_work_ids.is_empty() {
         println!("Targets: {}", target_work_ids.join(", "));
     }
@@ -45,7 +35,7 @@ pub fn run(
         Some(record) if record.round_meta.status != LoopRoundStatus::Closed => {
             close_round(config, &mut state, record, target_work_ids, op)
         }
-        _ => open_round(config, &mut state, target_work_ids, max_rounds, op),
+        _ => open_round(config, &mut state, target_work_ids, op),
     }
 }
 
@@ -127,7 +117,6 @@ fn open_round(
     config: &Config,
     state: &mut LoopState,
     target_work_ids: &[String],
-    max_rounds: u32,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     // Implements [[RFC-0006:C-ROUND-EXECUTION]] by rejecting stale cached plans
@@ -136,22 +125,17 @@ fn open_round(
     reflect_terminal_work_statuses(config, state)?;
     propagate_blocked_outcomes(state)?;
 
-    let ready_work = ready_work_for_round(state, target_work_ids, max_rounds)?;
-    if ready_work.failures.is_empty() && !ready_work.selected.is_empty() {
+    let ready_work = ready_work_for_round(state, target_work_ids)?;
+    if !ready_work.is_empty() {
         let round_number = next_round_number(state)?;
         state.loop_meta.current_round = round_number;
         state.loop_meta.next_action = LoopNextAction::WriteSummary;
-        for work_id in &ready_work.selected {
+        for work_id in &ready_work {
             state.set_item_status(work_id, LoopWorkItemStatus::Active)?;
             state.record_item_round(work_id, round_number)?;
         }
 
-        let record = LoopRoundRecord::open(
-            state.loop_meta.id.clone(),
-            round_number,
-            max_rounds,
-            ready_work.selected,
-        );
+        let record = LoopRoundRecord::open(state.loop_meta.id.clone(), round_number, ready_work);
         write_loop_round_record(config, &record, op)?;
         write_loop_state_with_op(config, state, op)?;
         print_opened_round(config, &record)?;
@@ -166,7 +150,7 @@ fn open_round(
     if state.loop_meta.state == LoopLifecycleState::Failed {
         return Err(Diagnostic::new(
             DiagnosticCode::E1210LoopExecutionFailed,
-            loop_failure_message(state, &ready_work.failures),
+            loop_failure_message(state),
             state.loop_meta.id.clone(),
         ));
     }
@@ -212,7 +196,7 @@ fn close_round(
     if state.loop_meta.state == LoopLifecycleState::Failed {
         return Err(Diagnostic::new(
             DiagnosticCode::E1210LoopExecutionFailed,
-            loop_failure_message(state, &[]),
+            loop_failure_message(state),
             state.loop_meta.id.clone(),
         ));
     }
@@ -242,19 +226,12 @@ fn validate_open_round_target_selector(
     Ok(())
 }
 
-struct ReadyWork {
-    selected: Vec<String>,
-    failures: Vec<String>,
-}
-
 fn ready_work_for_round(
     state: &mut LoopState,
     target_work_ids: &[String],
-    max_rounds: u32,
-) -> DiagnosticResult<ReadyWork> {
+) -> DiagnosticResult<Vec<String>> {
     let selected_work_ids = selected_execution_set(state, target_work_ids)?;
     let mut selected = Vec::new();
-    let mut failures = Vec::new();
 
     for work_id in topological_order_for_state(state)? {
         propagate_blocked_outcomes(state)?;
@@ -272,18 +249,11 @@ fn ready_work_for_round(
                 continue;
             }
         }
-
-        let current_rounds = loop_item_state(state, &work_id)?.round_count;
-        if current_rounds >= max_rounds {
-            state.set_item_status(&work_id, LoopWorkItemStatus::Failed)?;
-            failures.push(format!("{work_id}: maximum rounds reached ({max_rounds})"));
-            continue;
-        }
         selected.push(work_id);
     }
 
     propagate_blocked_outcomes(state)?;
-    Ok(ReadyWork { selected, failures })
+    Ok(selected)
 }
 
 fn selected_execution_set(
@@ -438,18 +408,6 @@ fn print_final_state(state: &LoopState) -> DiagnosticResult<()> {
     }
 }
 
-fn loop_failure_message(state: &LoopState, failures: &[String]) -> String {
-    if failures.is_empty() {
-        format!("Loop '{}' failed", state.loop_meta.id)
-    } else {
-        format!(
-            "Loop '{}' failed:\n{}",
-            state.loop_meta.id,
-            failures
-                .iter()
-                .map(|failure| format!("  - {failure}"))
-                .collect::<Vec<_>>()
-                .join("\n")
-        )
-    }
+fn loop_failure_message(state: &LoopState) -> String {
+    format!("Loop '{}' failed", state.loop_meta.id)
 }

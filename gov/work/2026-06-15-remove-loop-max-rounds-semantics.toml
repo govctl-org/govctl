@@ -1,0 +1,39 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-15-001"
+title = "Remove loop max-rounds semantics"
+status = "done"
+created = "2026-06-15"
+started = "2026-06-15"
+completed = "2026-06-15"
+refs = ["RFC-0006"]
+tags = ["lifecycle"]
+
+[content]
+description = "Remove max-rounds handling from the loop command surface and implementation per [[RFC-0006:C-LOOP-COMMAND-SURFACE]], keeping round counts as audit-oriented execution metadata covered by [[RFC-0006:C-LOOP-LIFECYCLE]]."
+
+[[content.acceptance_criteria]]
+text = "[[RFC-0006]] removes max-rounds as a loop run argument and failure condition"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "loop run no longer accepts --max-rounds or stores max_rounds in new round artifacts"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "loop tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "loop run does not fail loops or work items from round_count alone"
+status = "done"
+category = "changed"

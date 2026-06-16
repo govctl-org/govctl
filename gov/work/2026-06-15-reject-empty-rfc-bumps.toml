@@ -1,0 +1,37 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-15-002"
+title = "Reject empty RFC bumps"
+status = "done"
+created = "2026-06-15"
+started = "2026-06-15"
+completed = "2026-06-15"
+refs = [
+    "RFC-0002",
+    "ADR-0016",
+]
+tags = ["lifecycle"]
+
+[content]
+description = "Implement and test RFC bump validation for empty amendments according to [[RFC-0002:C-LIFECYCLE-VERBS]], with regression coverage for the affected changelog and lifecycle paths."
+
+[[content.acceptance_criteria]]
+text = "rfc bump rejects a version bump when no RFC or clause content changed"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "changelog-only updates do not make a later version bump valid"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFC or clause content amendments still allow the next version bump"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "lifecycle tests and governance checks pass"
+status = "done"
+category = "chore"

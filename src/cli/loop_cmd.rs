@@ -121,7 +121,6 @@ NOTES:
     #[command(after_help = "\
 EXAMPLES:
     govctl loop run LOOP-2026-04-06-001
-    govctl loop run LOOP-2026-04-06-001 --max-rounds 2
     govctl loop run LOOP-2026-04-06-001 --work WI-2026-04-06-002
 
 NOTES:
@@ -133,9 +132,6 @@ NOTES:
     Run {
         /// Loop ID
         id: String,
-        /// Maximum rounds each work item may run before loop-level failure
-        #[arg(long, default_value_t = 1)]
-        max_rounds: u32,
         /// Work item IDs to target inside an existing explicit loop
         #[arg(long = "work", value_name = "WI-ID")]
         target_work_ids: Vec<String>,

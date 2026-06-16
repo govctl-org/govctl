@@ -27,6 +27,7 @@ pub enum DiagnosticCode {
     E0111RfcNoChangelog,
     /// RFC refs or [[...]] targets ADR/WI — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
     E0112RfcReferenceHierarchy,
+    E0113RfcBumpNoAmendment,
 
     // Clause errors (E02xx)
     E0201ClauseSchemaInvalid,
@@ -111,7 +112,6 @@ pub enum DiagnosticCode {
     E1208LoopResumeAmbiguous,
     E1209LoopWorkMismatch,
     E1210LoopExecutionFailed,
-    E1211LoopInvalidMaxRounds,
 
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,

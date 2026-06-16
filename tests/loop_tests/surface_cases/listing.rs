@@ -120,7 +120,7 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
             work_new("Paused"),
             work_add_acceptance(&paused_root, "add: waiting"),
             loop_start_with_id(&paused_loop, &[&paused_root]),
-            loop_run_with_max_rounds(&paused_loop, "2"),
+            loop_run(&paused_loop),
         ],
     )?;
     assert!(setup_output.contains("exit: 0"), "{setup_output}");
@@ -136,7 +136,7 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
     let setup_output = run_dynamic_commands(
         temp_dir.path(),
         &[
-            loop_run_with_max_rounds(&paused_loop, "2"),
+            loop_run(&paused_loop),
             work_new_active("Completed"),
             work_add_acceptance(&completed_root, "add: ready"),
             work_tick_acceptance_done(&completed_root, "ready"),
