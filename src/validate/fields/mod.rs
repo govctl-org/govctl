@@ -34,7 +34,7 @@ enum FieldValidation {
     None,
     /// Must be valid semver (e.g., "1.2.3").
     Semver,
-    /// Must be a valid clause reference within same RFC, target must be active.
+    /// Must be a valid clause reference to a distinct, active target.
     ClauseSupersededBy,
     /// Must be a valid artifact reference (RFC-xxx, ADR-xxx, etc.).
     ArtifactRef,
@@ -93,23 +93,22 @@ fn validate_semver(value: &str) -> DiagnosticResult<()> {
     Ok(())
 }
 
-fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> DiagnosticResult<()> {
-    if target.is_empty() {
-        return Ok(());
-    }
-
-    let (source_rfc, source_clause) = ctx.artifact_id.split_once(':').ok_or_else(|| {
+pub(crate) fn normalize_clause_supersession_target(
+    source_id: &str,
+    target: &str,
+) -> DiagnosticResult<String> {
+    let (source_rfc, source_clause) = source_id.split_once(':').ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
-            format!("Invalid clause ID format: {}", ctx.artifact_id),
-            ctx.artifact_id,
+            format!("Invalid clause ID format: {source_id}"),
+            source_id,
         )
     })?;
     if source_rfc.is_empty() || source_clause.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
-            format!("Invalid clause ID format: {}", ctx.artifact_id),
-            ctx.artifact_id,
+            format!("Invalid clause ID format: {source_id}"),
+            source_id,
         ));
     }
 
@@ -118,7 +117,6 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> Diagn
     } else {
         format!("{source_rfc}:{target}")
     };
-
     let (target_rfc, target_clause) = full_target.split_once(':').ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0210ClauseInvalidIdFormat,
@@ -134,13 +132,21 @@ fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> Diagn
         ));
     }
 
-    if target_rfc != source_rfc {
+    Ok(full_target)
+}
+
+fn validate_clause_superseded_by(ctx: &ValidationContext, target: &str) -> DiagnosticResult<()> {
+    if target.is_empty() {
+        return Ok(());
+    }
+
+    let full_target = normalize_clause_supersession_target(ctx.artifact_id, target)?;
+
+    if full_target == ctx.artifact_id {
         return Err(Diagnostic::new(
-            DiagnosticCode::E0206ClauseSupersededByUnknown,
-            format!(
-                "superseded_by must reference a clause in the same RFC (got {target_rfc}, expected {source_rfc})"
-            ),
-            target,
+            DiagnosticCode::E0212ClauseSupersessionCycle,
+            format!("Cannot supersede a clause with itself: {}", ctx.artifact_id),
+            ctx.artifact_id,
         ));
     }
 

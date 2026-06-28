@@ -29,6 +29,7 @@ use tags::validate_artifact_tags;
 use work_items::{validate_work_item_descriptions, validate_work_item_legacy_inline_history};
 
 pub use artifact_refs::validate_artifact_ref_edit;
+pub(crate) use fields::normalize_clause_supersession_target;
 pub use fields::{ArtifactKind, validate_field};
 pub use lifecycle::{
     is_valid_adr_transition, is_valid_phase_transition, is_valid_status_transition,

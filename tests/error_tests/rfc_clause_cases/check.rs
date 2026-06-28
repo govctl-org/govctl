@@ -1,11 +1,19 @@
 use super::*;
 
-fn rfc_dir(project_dir: &std::path::Path) -> std::path::PathBuf {
-    project_dir.join("gov/rfc/RFC-0001")
+fn rfc_dir_for(project_dir: &std::path::Path, rfc_id: &str) -> std::path::PathBuf {
+    project_dir.join("gov/rfc").join(rfc_id)
 }
 
 fn write_rfc_toml(project_dir: &std::path::Path, content: &str) -> common::TestResult {
-    let rfc_dir = rfc_dir(project_dir);
+    write_rfc_toml_for(project_dir, "RFC-0001", content)
+}
+
+fn write_rfc_toml_for(
+    project_dir: &std::path::Path,
+    rfc_id: &str,
+    content: &str,
+) -> common::TestResult {
+    let rfc_dir = rfc_dir_for(project_dir, rfc_id);
     fs::create_dir_all(rfc_dir.join("clauses"))?;
     fs::write(rfc_dir.join("rfc.toml"), content)?;
     Ok(())
@@ -16,7 +24,16 @@ fn write_clause_toml(
     file_name: &str,
     content: &str,
 ) -> common::TestResult {
-    let rfc_dir = rfc_dir(project_dir);
+    write_clause_toml_for(project_dir, "RFC-0001", file_name, content)
+}
+
+fn write_clause_toml_for(
+    project_dir: &std::path::Path,
+    rfc_id: &str,
+    file_name: &str,
+    content: &str,
+) -> common::TestResult {
+    let rfc_dir = rfc_dir_for(project_dir, rfc_id);
     fs::create_dir_all(rfc_dir.join("clauses"))?;
     fs::write(rfc_dir.join("clauses").join(file_name), content)?;
     Ok(())
@@ -92,6 +109,226 @@ text = "This is the new clause."
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert_error_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[test]
+fn test_superseded_clause_without_replacement_check() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Missing Replacement Test"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Clauses"
+clauses = ["clauses/C-OLD.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-OLD.toml",
+        r#"[govctl]
+schema = 1
+id = "C-OLD"
+title = "Old Clause"
+kind = "normative"
+status = "superseded"
+since = "1.0.0"
+
+[content]
+text = "This clause is superseded."
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(
+        output.contains("error[E0213]: Superseded clause 'C-OLD' has no superseded_by target"),
+        "output: {output}"
+    );
+    assert!(output.ends_with("exit: 1\n\n"), "output: {output}");
+    Ok(())
+}
+
+#[test]
+fn test_clause_supersession_cycle_check() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Supersession Cycle Test"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Clauses"
+clauses = ["clauses/C-ONE.toml", "clauses/C-TWO.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-ONE.toml",
+        r#"[govctl]
+schema = 1
+id = "C-ONE"
+title = "Clause One"
+kind = "normative"
+status = "superseded"
+superseded_by = "C-TWO"
+since = "1.0.0"
+
+[content]
+text = "Clause one."
+"#,
+    )?;
+
+    write_clause_toml(
+        temp_dir.path(),
+        "C-TWO.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TWO"
+title = "Clause Two"
+kind = "normative"
+status = "superseded"
+superseded_by = "C-ONE"
+since = "1.0.0"
+
+[content]
+text = "Clause two."
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0212]"), "output: {output}");
+    assert!(
+        output.contains("Clause supersession cycle detected"),
+        "output: {output}"
+    );
+    assert!(output.ends_with("exit: 1\n\n"), "output: {output}");
+    Ok(())
+}
+
+#[test]
+fn test_cross_rfc_clause_supersession_cycle_check() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    write_rfc_toml_for(
+        temp_dir.path(),
+        "RFC-0001",
+        r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "First RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Clauses"
+clauses = ["clauses/C-ONE.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+    write_rfc_toml_for(
+        temp_dir.path(),
+        "RFC-0002",
+        r#"[govctl]
+schema = 1
+id = "RFC-0002"
+title = "Second RFC"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["test@example.com"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Clauses"
+clauses = ["clauses/C-TWO.toml"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+added = ["Initial release"]
+"#,
+    )?;
+    write_clause_toml_for(
+        temp_dir.path(),
+        "RFC-0001",
+        "C-ONE.toml",
+        r#"[govctl]
+schema = 1
+id = "C-ONE"
+title = "Clause One"
+kind = "normative"
+status = "superseded"
+superseded_by = "RFC-0002:C-TWO"
+since = "1.0.0"
+
+[content]
+text = "Clause one."
+"#,
+    )?;
+    write_clause_toml_for(
+        temp_dir.path(),
+        "RFC-0002",
+        "C-TWO.toml",
+        r#"[govctl]
+schema = 1
+id = "C-TWO"
+title = "Clause Two"
+kind = "normative"
+status = "superseded"
+superseded_by = "RFC-0001:C-ONE"
+since = "1.0.0"
+
+[content]
+text = "Clause two."
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0212]"), "output: {output}");
+    assert!(
+        output.contains(
+            "Clause supersession cycle detected: RFC-0001:C-ONE -> RFC-0002:C-TWO -> RFC-0001:C-ONE"
+        ),
+        "output: {output}"
+    );
+    assert!(output.ends_with("exit: 1\n\n"), "output: {output}");
     Ok(())
 }
 

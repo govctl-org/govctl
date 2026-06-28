@@ -1,0 +1,41 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-28-003"
+title = "Harden clause supersession validation"
+status = "done"
+created = "2026-06-28"
+started = "2026-06-28"
+completed = "2026-06-28"
+refs = [
+    "RFC-0001:C-CLAUSE-STATUS",
+    "ADR-0050",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+tags = [
+    "lifecycle",
+    "validation",
+]
+
+[content]
+description = "Harden `clause supersession graph` validation against `stack exhaustion` and strengthen lifecycle coverage for governed transitions."
+
+[[content.acceptance_criteria]]
+text = "validation completes for an acyclic supersession graph with 20,000 direct edges without stack overflow"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "same-RFC and qualified cross-RFC supersession tests persist the direct replacement edge"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "deprecated sources succeed while invalid targets and repeated transitions are rejected without replacing a persisted edge"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

@@ -249,3 +249,98 @@ fn test_bump_nonexistent_rfc() -> common::TestResult {
     assert_lifecycle_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
+
+#[test]
+fn test_bump_rejects_malformed_unlisted_clause_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let original_rfc = fs::read_to_string(&rfc_path)?;
+    fs::write(
+        temp_dir
+            .path()
+            .join("gov/rfc/RFC-0001/clauses/C-BROKEN.toml"),
+        "not valid TOML [",
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--patch",
+            "--summary",
+            "Rejected bump",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0201]"), "output: {output}");
+    assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
+    assert_eq!(fs::read_to_string(rfc_path)?, original_rfc);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_failed_bump_preserves_files_without_success_output() -> common::TestResult {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-PENDING",
+                "Pending Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let clause_path = temp_dir
+        .path()
+        .join("gov/rfc/RFC-0001/clauses/C-PENDING.toml");
+    let original_rfc = fs::read_to_string(&rfc_path)?;
+    let original_clause = fs::read_to_string(&clause_path)?;
+    let clauses_dir = clause_path
+        .parent()
+        .ok_or("pending clause path has no parent directory")?;
+    let original_dir_permissions = fs::metadata(clauses_dir)?.permissions();
+    let mut unwritable_dir_permissions = original_dir_permissions.clone();
+    unwritable_dir_permissions.set_mode(original_dir_permissions.mode() & !0o222);
+    fs::set_permissions(clauses_dir, unwritable_dir_permissions)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--patch",
+            "--summary",
+            "Rejected bump",
+        ]],
+    );
+    fs::set_permissions(clauses_dir, original_dir_permissions)?;
+    let output = output?;
+
+    assert!(output.contains("error[E0901]"), "output: {output}");
+    assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
+    assert!(!output.contains("Added change:"), "output: {output}");
+    assert!(
+        !output.contains("Set C-PENDING.since ="),
+        "output: {output}"
+    );
+    assert_eq!(fs::read_to_string(rfc_path)?, original_rfc);
+    assert_eq!(fs::read_to_string(clause_path)?, original_clause);
+    Ok(())
+}

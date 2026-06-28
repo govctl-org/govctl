@@ -1,0 +1,46 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-28-004"
+title = "Harden clause lifecycle review paths"
+status = "done"
+created = "2026-06-28"
+started = "2026-06-28"
+completed = "2026-06-28"
+refs = [
+    "RFC-0001:C-CLAUSE-STATUS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+    "ADR-0050",
+]
+tags = [
+    "lifecycle",
+    "validation",
+]
+
+[content]
+description = "Propagate `clause` scan failures and align `same-RFC` replacement lookup with existing `superseded_by` validation while tightening review coverage and ADR boundaries."
+
+[[content.acceptance_criteria]]
+text = "malformed clause TOML blocks RFC bump and finalize before mutation"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "same-RFC shorthand replacement resolves and persists the direct edge"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "cycle diagnostics and failed-bump output assertions cover stable codes and success-only messages"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR-0050 remains focused on rationale and consequences"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"

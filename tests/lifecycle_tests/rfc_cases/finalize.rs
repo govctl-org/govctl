@@ -83,6 +83,31 @@ fn test_finalize_nonexistent_rfc() -> common::TestResult {
 }
 
 #[test]
+fn test_finalize_rejects_malformed_unlisted_clause_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let original_rfc = fs::read_to_string(&rfc_path)?;
+    fs::write(
+        temp_dir
+            .path()
+            .join("gov/rfc/RFC-0001/clauses/C-BROKEN.toml"),
+        "not valid TOML [",
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "finalize", "RFC-0001", "normative"]],
+    )?;
+
+    assert!(output.contains("error[E0201]"), "output: {output}");
+    assert!(!output.contains("Finalized RFC-0001"), "output: {output}");
+    assert_eq!(fs::read_to_string(rfc_path)?, original_rfc);
+    Ok(())
+}
+
+#[test]
 fn test_finalize_legacy_json_rfc_requires_migrate() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 

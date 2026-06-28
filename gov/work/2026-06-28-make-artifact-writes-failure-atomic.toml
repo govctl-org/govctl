@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-28-002"
+title = "Make artifact writes failure-atomic"
+status = "done"
+created = "2026-06-28"
+started = "2026-06-28"
+completed = "2026-06-28"
+refs = [
+    "RFC-0002:C-LIFECYCLE-VERBS",
+    "RFC-0004:C-CONCURRENT-WRITE",
+    "RFC-0004:C-SCOPE",
+]
+tags = ["safety"]
+
+[content]
+description = "Implement byte-for-byte restoration for normally returned lifecycle failures and explicit `rollback`-failure diagnostics."
+
+[[content.acceptance_criteria]]
+text = "lifecycle artifact write failures preserve prior file contents"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "multi-artifact RFC lifecycle failures restore every file changed earlier in the operation"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "rollback failure diagnostics identify incomplete restoration"
+status = "done"
+category = "fixed"

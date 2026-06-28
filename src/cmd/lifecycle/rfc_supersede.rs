@@ -4,7 +4,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostic
 use crate::model::RfcStatus;
 use crate::ui;
 use crate::validate::is_valid_status_transition;
-use crate::write::{WriteOp, read_rfc, today, write_rfc};
+use crate::write::{WriteOp, read_rfc, today, with_file_transaction, write_rfc};
 
 pub(super) fn supersede_rfc(
     config: &Config,
@@ -33,17 +33,23 @@ pub(super) fn supersede_rfc(
     replacement.supersedes = Some(rfc_id.to_string());
     replacement.updated = Some(today);
 
-    write_rfc(
-        &rfc_path,
-        &source,
+    with_file_transaction(
+        &[rfc_path.as_path(), replacement_path.as_path()],
         op,
-        Some(&config.display_path(&rfc_path)),
-    )?;
-    write_rfc(
-        &replacement_path,
-        &replacement,
-        op,
-        Some(&config.display_path(&replacement_path)),
+        || {
+            write_rfc(
+                &rfc_path,
+                &source,
+                op,
+                Some(&config.display_path(&rfc_path)),
+            )?;
+            write_rfc(
+                &replacement_path,
+                &replacement,
+                op,
+                Some(&config.display_path(&replacement_path)),
+            )
+        },
     )?;
 
     if !op.is_preview() {

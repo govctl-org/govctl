@@ -40,6 +40,8 @@ pub enum DiagnosticCode {
     E0209ClauseAlreadySuperseded,
     E0210ClauseInvalidIdFormat,
     E0211ClauseStillReferenced,
+    E0212ClauseSupersessionCycle,
+    E0213ClauseSupersededByMissing,
 
     // ADR errors (E03xx)
     E0301AdrSchemaInvalid,

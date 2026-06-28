@@ -70,9 +70,14 @@ Resource-specific lifecycle verbs implement state transitions defined in [[RFC-0
 
 1. All lifecycle verbs MUST validate transitions per [[RFC-0001]]
 2. All lifecycle verbs MUST update timestamp fields where applicable
-3. All lifecycle verbs MUST be atomic (no partial state changes)
-4. All lifecycle verbs MUST support global `--dry-run` flag
-5. Invalid transitions MUST error with clear explanation of valid transitions
+3. Except for the rollback-failure path in requirement 4, a lifecycle invocation that handles an error and completes through govctl's normal error path with a non-zero exit status MUST restore every governed artifact changed by that invocation byte-for-byte before returning
+4. If an I/O or storage error prevents complete restoration, the invocation MUST return a non-zero exit status
+5. The rollback-failure diagnostic MUST contain the term `rollback`
+6. The rollback-failure diagnostic MUST state that governed-artifact restoration may be incomplete
+7. The restoration baseline is the artifact content observed after the invocation acquires its exclusive write scope under [[RFC-0004:C-SCOPE]] and before its first governed-artifact mutation
+8. Unexpected process termination before normal error completion, host failure, and the rollback-failure path in requirement 4 are outside the lifecycle atomicity guarantee
+9. All lifecycle verbs MUST support global `--dry-run` flag
+10. Invalid transitions MUST error with clear explanation of valid transitions
 
 **Rationale:**
 
@@ -82,4 +87,4 @@ Lifecycle verbs are resource-specific because:
 - Work items have gate conditions (acceptance criteria)
 - Each resource has different valid transitions
 
-Scoping these verbs to resources makes their applicability explicit and prevents confusion."""
+Scoping these verbs to resources makes their applicability explicit and prevents confusion. Lifecycle atomicity defines the byte content observed when an invocation completes through its normal error path; it does not require a crash-recovery subsystem for the flat-file artifact store."""

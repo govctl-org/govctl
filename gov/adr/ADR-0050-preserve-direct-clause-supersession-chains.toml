@@ -1,0 +1,89 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0050"
+title = "Preserve direct clause supersession chains"
+status = "accepted"
+date = "2026-06-28"
+refs = [
+    "RFC-0001:C-CLAUSE-STATUS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+tags = [
+    "lifecycle",
+    "validation",
+]
+
+[content]
+context = """
+[[RFC-0001:C-CLAUSE-STATUS]] records the clause that replaced a superseded clause. Existing validation interpreted that reference as a permanently active destination, so a valid `A -> B` replacement became invalid after `B` was replaced by `C`.
+
+### Problem Statement
+
+The stored relation needs an unambiguous meaning that supports repeated clause evolution without rewriting or invalidating prior history.
+
+### Constraints
+
+- Supersession history must remain auditable.
+- A lifecycle transition should update only the clause being transitioned.
+- Malformed references and cycles must remain detectable.
+- Qualified clause IDs already provide an unambiguous representation for cross-RFC references.
+
+### Options Considered
+
+The discussion considered preserving direct historical edges, flattening all predecessors to the latest replacement, and retaining the active-target invariant that prevents chains."""
+decision = """
+We will preserve each `superseded_by` value as the direct replacement selected when its source clause was superseded. Later replacements extend the chain instead of rewriting earlier clauses because:
+
+1. **Auditability:** Direct edges retain the exact sequence of clause evolution.
+2. **Write locality:** Each transition changes only its source clause instead of rewriting every predecessor.
+3. **Composability:** The same relation represents repeated and cross-RFC replacement without a second storage model.
+
+This separates two concerns: transition-time eligibility determines whether a new replacement edge may be created, while repository validation determines whether persisted history is structurally sound. Cross-RFC replacements use qualified clause IDs so the edge remains unambiguous."""
+consequences = """
+### Positive
+
+- Historical provenance remains intact across any number of replacements.
+- Superseding a clause requires only a local write to that clause.
+- The same model supports both same-RFC and qualified cross-RFC replacements.
+
+### Negative
+
+- Resolving the latest replacement can require following multiple direct edges.
+- Malformed direct-edge histories can contain cycles or unresolved references.
+
+### Neutral
+
+- A chain may end at a clause that is no longer active; this describes history rather than asserting that an active replacement currently exists."""
+
+[[content.alternatives]]
+text = "Preserve each direct replacement as a historical edge and resolve later replacements by traversing the chain"
+status = "accepted"
+pros = [
+    "Retains the exact sequence of clause evolution",
+    "Each transition changes only its source clause",
+]
+cons = [
+    "Consumers that need the latest replacement must traverse the chain",
+    "Validation must detect self-references and cycles",
+]
+
+[[content.alternatives]]
+text = "Flatten predecessors to the newest replacement whenever another clause is superseded"
+status = "rejected"
+pros = ["A stored reference always points directly to the latest replacement"]
+cons = [
+    "Destroys the direct replacement history",
+    "Requires multi-file rewrites for one lifecycle transition",
+]
+rejection_reason = "The simpler lookup does not justify loss of provenance, wider writes, and additional merge conflicts"
+
+[[content.alternatives]]
+text = "Require every stored replacement target to remain active and disallow supersession chains"
+status = "rejected"
+pros = ["Keeps validation and lookup limited to one edge"]
+cons = [
+    "A later replacement invalidates previously valid history",
+    "Prevents normal repeated evolution of a clause contract",
+]
+rejection_reason = "It creates the issue being addressed and conflates transition-time eligibility with historical validity"

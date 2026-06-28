@@ -1,5 +1,5 @@
 use super::paths::require_rfc_toml_path;
-use super::rfc_clause_versions::fill_pending_clause_versions;
+use super::rfc_clause_versions::{fill_pending_clause_versions, rfc_update_paths};
 use crate::FinalizeStatus;
 use crate::cmd::edit;
 use crate::config::Config;
@@ -7,7 +7,9 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostic
 use crate::model::{RfcPhase, RfcSpec, RfcStatus};
 use crate::ui;
 use crate::validate::{is_valid_phase_transition, is_valid_status_transition};
-use crate::write::{BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_rfc};
+use crate::write::{
+    BumpLevel, WriteOp, add_changelog_change, bump_rfc_version, read_rfc, with_file_transaction,
+};
 use std::path::Path;
 
 /// Bump RFC version
@@ -27,21 +29,30 @@ pub fn bump(
             ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
 
             let new_version = bump_rfc_version(&mut rfc, lvl, sum)?;
-            if !op.is_preview() {
-                ui::version_bumped(rfc_id, &new_version);
-            }
 
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
-                if !op.is_preview() {
-                    ui::sub_info(format!("Added change: {change}"));
-                }
             }
 
-            write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
+            let paths = rfc_update_paths(config, &rfc_path)?;
+            let path_refs: Vec<_> = paths.iter().map(std::path::PathBuf::as_path).collect();
+            let updated_clause_ids = with_file_transaction(&path_refs, op, || {
+                write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
+                let updated_clause_ids =
+                    fill_pending_clause_versions(config, &rfc_path, &new_version, op)?;
+                refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
+                Ok(updated_clause_ids)
+            })?;
 
-            fill_pending_clause_versions(config, &rfc_path, &new_version, op)?;
-            refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
+            if !op.is_preview() {
+                ui::version_bumped(rfc_id, &new_version);
+                for change in changes {
+                    ui::sub_info(format!("Added change: {change}"));
+                }
+                for clause_id in updated_clause_ids {
+                    ui::sub_info(format!("Set {clause_id}.since = {new_version}"));
+                }
+            }
 
             return Ok(vec![]);
         }
@@ -57,9 +68,6 @@ pub fn bump(
                 should_refresh_signature_after_changelog_only(config, &rfc_path)?;
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
-                if !op.is_preview() {
-                    ui::changelog_change_added(rfc_id, &rfc.version, change);
-                }
             }
             refresh_signature_after_write
         }
@@ -79,9 +87,17 @@ pub fn bump(
         }
     };
 
-    write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
-    if refresh_signature_after_write {
-        refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
+    with_file_transaction(&[rfc_path.as_path()], op, || {
+        write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
+        if refresh_signature_after_write {
+            refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
+        }
+        Ok(())
+    })?;
+    if !op.is_preview() {
+        for change in changes {
+            ui::changelog_change_added(rfc_id, &rfc.version, change);
+        }
     }
     Ok(vec![])
 }
@@ -114,11 +130,17 @@ pub fn finalize(
         ));
     }
 
-    edit::set_field_direct(config, rfc_id, "status", target_status.as_ref(), op)?;
-
-    fill_pending_clause_versions(config, &rfc_path, &rfc.version, op)?;
+    let paths = rfc_update_paths(config, &rfc_path)?;
+    let path_refs: Vec<_> = paths.iter().map(std::path::PathBuf::as_path).collect();
+    let updated_clause_ids = with_file_transaction(&path_refs, op, || {
+        edit::set_field_direct(config, rfc_id, "status", target_status.as_ref(), op)?;
+        fill_pending_clause_versions(config, &rfc_path, &rfc.version, op)
+    })?;
 
     if !op.is_preview() {
+        for clause_id in updated_clause_ids {
+            ui::sub_info(format!("Set {clause_id}.since = {}", rfc.version));
+        }
         ui::finalized(rfc_id, target_status.as_ref());
     }
     Ok(vec![])
