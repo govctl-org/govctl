@@ -10,6 +10,26 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.10.1] - 2026-06-29
+
+0.10.1 is a lifecycle correctness and write-safety patch. Clause supersession
+now preserves direct history across replacement chains, validates replacement
+targets consistently, and avoids partial updates when lifecycle commands fail.
+
+### Fixed
+
+- Clause supersession now preserves direct replacement history, so chains such
+  as `A -> B -> C` remain valid after B is superseded or deprecated.
+- `govctl clause supersede` now accepts active same-RFC shorthand and qualified
+  cross-RFC replacements while rejecting missing, self-referential, and cyclic
+  targets.
+- Supersession validation now handles very large acyclic graphs without
+  exhausting the call stack.
+- RFC bump and finalize operations now stop before making changes when a
+  pending clause cannot be read or parsed.
+- Lifecycle writes are now failure-atomic: failed multi-file operations restore
+  earlier changes, and diagnostics report any incomplete rollback.
+
 ## [0.10.0] - 2026-06-17
 
 0.10.0 tightens loop execution semantics and governance validation. Loop rounds

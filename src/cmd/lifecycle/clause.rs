@@ -4,6 +4,7 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::ClauseStatus;
 use crate::ui;
+use crate::validate::{ArtifactKind, normalize_clause_supersession_target, validate_field};
 use crate::write::{WriteOp, read_clause, write_clause};
 
 pub(super) fn deprecate_clause(
@@ -43,7 +44,8 @@ pub(super) fn supersede_clause(
     by: &str,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    require_replacement_clause_toml_path(config, by)?;
+    let replacement_id = normalize_clause_supersession_target(clause_id, by)?;
+    require_replacement_clause_toml_path(config, &replacement_id)?;
 
     let clause_path = require_clause_toml_path(config, clause_id)?;
     let mut clause = read_clause(config, &clause_path)?;
@@ -55,6 +57,8 @@ pub(super) fn supersede_clause(
             clause_id,
         ));
     }
+
+    validate_field(config, clause_id, ArtifactKind::Clause, "superseded_by", by)?;
 
     clause.status = ClauseStatus::Superseded;
     clause.superseded_by = Some(by.to_string());

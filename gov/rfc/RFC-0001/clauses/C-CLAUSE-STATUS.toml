@@ -25,6 +25,25 @@ Invalid transitions (MUST be rejected):
 - deprecated → active (no resurrection)
 - superseded → any (superseded is terminal)
 
-When a clause is superseded:
-- The `superseded_by` field MUST be set to the ID of the replacing clause
-- The replacing clause SHOULD have a `since` field indicating the version it was introduced"""
+A clause supersession transition has the following preconditions:
+- The replacing clause MUST exist.
+- The replacing clause MUST be active when the transition is performed.
+- The replacing clause MUST be different from the clause being superseded.
+- A replacing clause in another RFC MUST be identified by its qualified `RFC-NNNN:C-NAME` ID.
+
+The transition MUST be rejected if any required precondition is not satisfied.
+
+After a successful clause supersession transition:
+- The source clause status MUST be `superseded`.
+- The source clause `superseded_by` field MUST identify the direct replacing clause selected for that transition.
+- The replacing clause SHOULD have a `since` field indicating the version it was introduced.
+
+Every populated `superseded_by` field defines a directed edge from its source clause to its target clause. The clause supersession graph consists of these edges across every RFC in the governed project.
+
+Repository validation MUST reject an edge whose target clause does not exist. Repository validation MUST NOT reject an existing edge solely because its target clause was later deprecated or superseded.
+
+If clause A identifies clause B as its direct replacement and B is later replaced by clause C, B MUST identify C as its direct replacement. Clause A MUST continue to identify B. The clause supersession graph MUST NOT contain a cycle. Repository validation MUST reject a graph that contains a cycle.
+
+**Rationale:**
+
+Transition-time checks ensure that a newly selected replacement is in effect. Persisted edges record historical direct replacements, so later clause evolution does not invalidate or erase prior provenance. Qualified IDs allow the same model to represent unambiguous replacements across RFC boundaries."""

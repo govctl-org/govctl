@@ -1,0 +1,55 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-06-28-001"
+title = "Support clause supersession chains"
+status = "done"
+created = "2026-06-28"
+started = "2026-06-28"
+completed = "2026-06-28"
+refs = [
+    "ADR-0050",
+    "RFC-0001:C-CLAUSE-STATUS",
+]
+tags = [
+    "lifecycle",
+    "validation",
+]
+
+[content]
+description = "Correct clause supersession validation so historical replacement chains remain valid while malformed or cyclic links are rejected, aligning lifecycle checks with [[RFC-0001:C-CLAUSE-STATUS]]."
+
+[[content.acceptance_criteria]]
+text = "clause supersession chains remain valid after an intermediate replacement is superseded"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "clause supersession validation rejects missing, self-referential, and cyclic targets"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "focused lifecycle and validation tests pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "clause supersession accepts a qualified active replacement from another RFC"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "direct supersession history preserves A to B when B is later replaced by C"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "persisted supersession history remains valid after its target is deprecated"
+status = "done"
+category = "fixed"

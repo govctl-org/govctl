@@ -10,5 +10,5 @@ Checked:
   0 work items
   0 verification guards
 
-error[E0207]: Clause 'C-OLD' superseded by 'C-NONEXISTENT' which is not active (gov/rfc/RFC-0001/clauses/C-OLD.toml)
+error[E0206]: Clause 'C-OLD' superseded by unknown clause 'C-NONEXISTENT' (gov/rfc/RFC-0001/clauses/C-OLD.toml)
 exit: 1

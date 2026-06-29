@@ -3,17 +3,17 @@
 [govctl]
 id = "RFC-0001"
 title = "Lifecycle State Machines"
-version = "0.3.0"
+version = "0.4.2"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-03-17"
+updated = "2026-06-28"
 tags = [
     "core",
     "lifecycle",
 ]
-signature = "a914b5def2a5a95e84ae3fd0d26f81b166e1fc218b204a9aabf3a948ae662bbc"
+signature = "9bf9e3a853547590af3b22db2ad5c8ae4296dae6b79fe652a8a2cea9ba5085a1"
 
 [[sections]]
 title = "Summary"
@@ -29,6 +29,29 @@ clauses = [
     "clauses/C-CLAUSE-STATUS.toml",
     "clauses/C-GATE-CONDITIONS.toml",
 ]
+
+[[changelog]]
+version = "0.4.2"
+date = "2026-06-28"
+notes = "Split direct-edge preservation requirements"
+changed = ["Express B-to-C insertion and A-to-B preservation as separate testable obligations"]
+
+[[changelog]]
+version = "0.4.1"
+date = "2026-06-28"
+notes = "Clarify clause supersession validation boundaries"
+added = ["Define project-wide direct-edge graph semantics and explicit rejection behavior for missing targets and cycles"]
+changed = [
+    "Separate transition-time replacement checks from persisted graph validation",
+    "Document the distinct-target rule and preserve historical edges after target status changes",
+]
+
+[[changelog]]
+version = "0.4.0"
+date = "2026-06-28"
+notes = "Define direct clause supersession chains"
+added = ["Require active transition targets, qualified cross-RFC references, and acyclic supersession graphs"]
+changed = ["Treat superseded_by as a persistent direct replacement edge"]
 
 [[changelog]]
 version = "0.3.0"
