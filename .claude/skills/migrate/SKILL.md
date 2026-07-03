@@ -2,7 +2,7 @@
 name: migrate
 description: "Adopt govctl in an existing project. Discovers undocumented decisions, backfills ADRs/RFCs, annotates source code. Use when: (1) Project has no governance yet, (2) User mentions migrate, adopt, onboard, or brownfield"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional scope hint, e.g. "focus on database decisions"]
+argument-hint: '[optional scope hint, e.g. "focus on database decisions"]'
 ---
 
 # /migrate — Adopt govctl in an Existing Project

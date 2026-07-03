@@ -2,7 +2,7 @@
 name: wi-writer
 description: "Write well-structured work items with proper acceptance criteria. Use when: (1) Creating work items, (2) Adding acceptance criteria, (3) User mentions work item, task, WI, or ticket"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional work-item topic]
+argument-hint: "[optional work-item topic]"
 ---
 
 # Work Item Writer

@@ -2,7 +2,7 @@
 name: guard-writer
 description: "Write well-structured Verification Guards. Use when: (1) Creating a new guard, (2) Editing guard check commands or patterns, (3) User mentions guard, verification, or check"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional guard topic]
+argument-hint: "[optional guard topic]"
 ---
 
 # Guard Writer

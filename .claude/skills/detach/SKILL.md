@@ -2,7 +2,7 @@
 name: detach
 description: "Remove govctl governance from a project. Archives artifacts, removes skills/agents, strips code references. Use when: (1) User wants to stop using govctl, (2) User mentions detach, opt-out, remove governance, or uninstall"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional scope hint]
+argument-hint: "[optional scope hint]"
 ---
 
 # /detach — Remove govctl Governance
