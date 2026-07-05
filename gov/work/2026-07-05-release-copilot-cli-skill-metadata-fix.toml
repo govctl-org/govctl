@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-05-001"
+title = "Release Copilot CLI skill metadata fix"
+status = "done"
+created = "2026-07-05"
+started = "2026-07-05"
+completed = "2026-07-05"
+
+[content]
+description = "Record the Agent Skill metadata compatibility fix merged in PR #33 and prepare it for the 0.10.2 patch release."
+
+[[content.acceptance_criteria]]
+text = "Bundled Agent Skills load correctly in GitHub Copilot CLI 1.0.65+ by encoding argument-hint metadata as strings"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "PR #33 CI and govctl check pass"
+status = "done"
+category = "chore"

@@ -10,6 +10,16 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.10.2] - 2026-07-05
+
+0.10.2 restores compatibility between the bundled Agent Skills and GitHub
+Copilot CLI 1.0.65+ by correcting `argument-hint` metadata types.
+
+### Fixed
+
+- Quoted bracket-style `argument-hint` values so YAML parsers read them as
+  strings and load the affected skills correctly.
+
 ## [0.10.1] - 2026-06-29
 
 0.10.1 is a lifecycle correctness and write-safety patch. Clause supersession
