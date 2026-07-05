@@ -2,7 +2,7 @@
 name: rfc-writer
 description: "Write well-structured RFCs with normative clauses. Use when: (1) Creating a new RFC, (2) Adding or editing RFC clauses, (3) User mentions RFC, specification, or normative requirements"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional RFC topic]
+argument-hint: "[optional RFC topic]"
 ---
 
 # RFC Writer

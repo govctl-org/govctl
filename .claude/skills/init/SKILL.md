@@ -2,7 +2,7 @@
 name: init
 description: "Set up govctl in the current project. Installs the binary if missing, initializes governance structure."
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional setup scope]
+argument-hint: "[optional setup scope]"
 ---
 
 # /init - Set Up Govctl

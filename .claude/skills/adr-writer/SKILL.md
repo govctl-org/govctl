@@ -2,7 +2,7 @@
 name: adr-writer
 description: "Write effective Architecture Decision Records. Use when: (1) Creating a new ADR, (2) Recording a design decision, (3) User mentions ADR, decision, trade-off, or alternatives"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional ADR topic]
+argument-hint: "[optional ADR topic]"
 ---
 
 # ADR Writer

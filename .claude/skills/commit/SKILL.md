@@ -2,7 +2,7 @@
 name: commit
 description: "Commit changes with govctl integration — check work item status, preserve durable notes only when needed, and run govctl check"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
-argument-hint: [optional commit message hint]
+argument-hint: "[optional commit message hint]"
 ---
 
 # /commit — Commit with Govctl Integration
