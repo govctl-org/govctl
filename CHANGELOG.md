@@ -10,37 +10,43 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-07-16
+
+0.11.0 makes lifecycle corrections explicit and failure-safe. RFC amendments
+restart their implementation lifecycle, unreleased work can be reopened, and an
+accidental latest local release cut can be undone without rewriting history.
+
 ### Added
 
-- Proposed ADR checks and acceptance reject renderer-owned headings with field-and-heading diagnostics, including under `--force` (WI-2026-07-15-003)
-- Projection validation ignores fenced-code headings and preserves historical terminal ADR compatibility (WI-2026-07-15-003)
-- CLI support implements the governed latest-release correction flow (WI-2026-07-15-005)
+- Added `govctl release undo <expected-version>` to retract only the newest
+  local release cut, with guarded version matching and rollback-safe writes.
+- ADR validation now rejects renderer-owned headings in proposed ADR source and
+  reports the conflicting field and heading, including under `--force`.
 
 ### Changed
 
-- Detected content amendment bumps start the new RFC version at `spec`, while signature baselines and changelog-only updates preserve phase (WI-2026-07-15-001)
-- Unreleased `done` Work Items can return to `active`, while release-referenced items remain `done` (WI-2026-07-15-002)
-- RFC finalize exposes only the normative target while deprecation remains a separate verb (WI-2026-07-15-004)
-- Release governance artifacts define the correction boundary for the latest local release cut (WI-2026-07-15-005)
-- Reviewed ADRs retain decision rationale without task execution sections (WI-2026-07-15-006)
+- Content-changing `govctl rfc bump` operations now start the new RFC version at
+  `spec`; phase-only, changelog-only, and signature-baseline updates preserve
+  the current phase.
+- Unreleased `done` Work Items can return to `active`, while Work Items already
+  referenced by a release remain immutable.
+- `govctl rfc finalize` now exposes only the `normative` target; deprecation
+  remains a separate lifecycle operation.
 
 ### Fixed
 
-- RFC bump failure paths preserve the original RFC and clause files (WI-2026-07-15-001)
-- RFC lifecycle commands reject forbidden deprecated and implementation phase combinations (WI-2026-07-15-001)
-- Schema migration converts legacy RFC signatures into content-only amendment baselines without changing RFC versions, phases, or changelogs (WI-2026-07-15-001)
-- Project validation rejects Work Item IDs referenced by multiple releases (WI-2026-07-15-002)
-- ADR writer and reviewer guidance assign each rendered section to one authoring surface (WI-2026-07-15-003)
-- Existing ADR sources render without duplicated alternatives sections (WI-2026-07-15-003)
-- ADR projection conflicts normalize formatted artifact titles by visible CommonMark text (WI-2026-07-15-003)
-- Lifecycle command write failures preserve governed artifact bytes (WI-2026-07-15-004)
-- Phase-only RFC advancement remains outside amendment detection after legacy signature normalization (WI-2026-07-15-004)
-- RFC and Clause invalid-transition diagnostics identify valid targets or terminal states (WI-2026-07-15-004)
-- Release creation and schema validation reject invalid dates and missing refs (WI-2026-07-15-004)
-- Work Item schema and serialization checks match required scalars and omitted empty-list semantics (WI-2026-07-15-004)
-- Release correction failure paths preserve release and Work Item data (WI-2026-07-15-005)
-- Legacy release version syntax remains supported alongside latest-release undo (WI-2026-07-15-005)
-- ADR placeholder context emits a dedicated diagnostic code (WI-2026-07-15-006)
+- Failed lifecycle mutations now preserve the original RFC, Clause, Work Item,
+  and release data instead of leaving partial multi-file updates.
+- Legacy RFC signature migration now establishes content-only amendment
+  baselines without changing versions, phases, or changelog history.
+- Release validation now rejects invalid dates, missing Work Item references,
+  and Work Item IDs assigned to more than one release.
+- RFC and Clause transition errors now identify valid next states or explain
+  when the artifact is terminal.
+- ADR projection checks now ignore headings inside fenced code blocks, compare
+  formatted titles by visible text, and preserve historical terminal ADRs.
+- ADR placeholder context now uses its own `W0113` warning instead of the
+  missing-reference warning code.
 
 ## [0.10.2] - 2026-07-05
 
