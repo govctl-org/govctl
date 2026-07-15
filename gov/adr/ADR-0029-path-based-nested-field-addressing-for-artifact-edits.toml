@@ -38,13 +38,7 @@ What is missing is direct nested addressing, for example: update only the second
 - Preserve resource-first command architecture from [[RFC-0002]].
 - Preserve verb semantics from [[ADR-0017]] instead of replacing everything with a new universal verb.
 - Reuse existing array matching behavior from [[ADR-0007]] where possible.
-- Keep backward compatibility for existing scripts and habits.
-
-### Options Considered
-
-- Option 1: Keep current field-only operations and rely on manual TOML edits for nested changes.
-- Option 2: Introduce a new universal `edit` command with JSONPath-like syntax.
-- Option 3: Keep current verbs, but allow a path expression in the field position for nested addressing."""
+- Keep backward compatibility for existing scripts and habits."""
 decision = """
 We will **introduce path-based nested field addressing as an additive capability**, while keeping existing resource-scoped verbs (`set`, `add`, `remove`, `tick`) defined in [[ADR-0017]].
 

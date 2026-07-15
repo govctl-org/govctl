@@ -39,13 +39,7 @@ This increases code volume, review difficulty, and risk of behavioral drift betw
 - Preserve index and matcher semantics from [[ADR-0007]] (0-based indexing, negative indices from end, existing conflict diagnostics).
 - Preserve user-facing path syntax and compatibility promises from [[ADR-0029]] and [[ADR-0030]].
 - Respect storage decisions from [[ADR-0001]]: ADR/Work artifacts remain TOML at rest unless separately decided.
-- Keep deterministic diagnostics and stable error codes for automation scripts.
-
-### Options Considered
-
-- Option A: Continue incremental cleanup of current architecture.
-- Option B: Standardize internal editing on JSON only (convert TOML at boundaries, no dedicated TOML adapter contract).
-- Option C: Introduce a single SSOT-driven semantic edit engine with explicit JSON/TOML adapters."""
+- Keep deterministic diagnostics and stable error codes for automation scripts."""
 decision = """
 We will adopt **Option C: a single SSOT-driven semantic edit engine with explicit format adapters**.
 
@@ -76,21 +70,7 @@ Field-token acceptance is strict:
 - Existing path syntax and legacy forms from [[ADR-0029]] remain supported during migration.
 - Canonical names take precedence over aliases on conflict.
 - Documentation will prefer canonical path syntax; legacy forms are compatibility-only.
-- Legacy form deprecation warnings begin after full V2 parity is reached.
-
-### Migration Plan
-
-1. **Phase 1 (foundation):** Introduce V2 SSOT, parser, typed `EditPlan`, and adapter interfaces behind feature-gated path.
-2. **Phase 2 (shadow mode):** Run V1 and V2 for ADR/Work operations; compare planned ops and rendered outcomes in tests.
-3. **Phase 3 (cutover):** Switch ADR/Work to V2, then RFC/Clause.
-4. **Phase 4 (cleanup):** Remove V1 dispatch branches, remove hand-written artifact/field/verb matches, tighten lint/test gates.
-
-### Completion Criteria
-
-V2 is considered complete only when:
-- adding a new editable field requires SSOT changes only (no manual dispatch branching)
-- JSON and TOML share one semantic engine
-- compatibility test suite for legacy paths passes in V2 mode"""
+- Legacy form deprecation warnings begin after full V2 parity is reached."""
 consequences = """
 ### Positive
 

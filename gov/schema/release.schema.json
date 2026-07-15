@@ -19,7 +19,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["version", "date"],
+        "required": ["version", "date", "refs"],
         "properties": {
           "version": {
             "type": "string",

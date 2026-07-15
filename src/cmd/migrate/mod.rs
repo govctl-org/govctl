@@ -13,13 +13,18 @@ use std::fs;
 mod ops;
 mod releases;
 mod rewrite;
+mod rfc_signatures;
 
 use ops::{FileOp, execute_ops, preview_ops};
 use releases::plan_release_upgrade;
 use rewrite::plan_toml_rewrites;
+use rfc_signatures::plan_rfc_signature_upgrade;
 
 /// Latest schema version. Bump when adding a new migration step.
-pub const CURRENT_SCHEMA_VERSION: u32 = 2;
+pub const CURRENT_SCHEMA_VERSION: u32 = 3;
+
+/// First schema version whose RFC signatures are content-only amendment baselines.
+pub const RFC_CONTENT_SIGNATURE_SCHEMA_VERSION: u32 = 3;
 
 /// A versioned migration step.
 struct MigrationStep {
@@ -30,12 +35,20 @@ struct MigrationStep {
 }
 
 /// All registered migrations, ordered by version.
-const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
-    from: 1,
-    to: 2,
-    name: "structured wire format and schema headers",
-    plan_fn: plan_v1_to_v2,
-}];
+const MIGRATIONS: &[MigrationStep] = &[
+    MigrationStep {
+        from: 1,
+        to: 2,
+        name: "structured wire format and schema headers",
+        plan_fn: plan_v1_to_v2,
+    },
+    MigrationStep {
+        from: 2,
+        to: 3,
+        name: "RFC amendment content signatures",
+        plan_fn: plan_v2_to_v3,
+    },
+];
 
 // =============================================================================
 // Public API
@@ -213,4 +226,12 @@ fn plan_v1_to_v2(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
     ops.extend(rewrite_ops);
 
     Ok(ops)
+}
+
+// =============================================================================
+// v2 -> v3: RFC amendment content signatures
+// =============================================================================
+
+fn plan_v2_to_v3(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
+    plan_rfc_signature_upgrade(config)
 }

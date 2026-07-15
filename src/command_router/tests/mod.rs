@@ -2,7 +2,10 @@ use super::*;
 use crate::diagnostic::DiagnosticCode;
 use crate::model::WorkItemStatus;
 use crate::resource_plan::ToPlan;
-use crate::{ClauseCommand, Commands, EditActionArgs, TickStatus, WorkTickStatus};
+use crate::{
+    ClauseCommand, Commands, EditActionArgs, ReleaseArgs, ReleaseCommand, TickStatus,
+    WorkTickStatus,
+};
 use clap::{Parser, error::ErrorKind};
 
 mod clause_edit;

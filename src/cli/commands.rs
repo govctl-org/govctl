@@ -3,8 +3,36 @@ use super::{
     AdrCommand, ClauseCommand, GuardCommand, ListTarget, LoopCommand, OutputFormat, RenderTarget,
     RfcCommand, SkillFormat, TagCommand, WorkCommand,
 };
-use clap::Subcommand;
+use clap::{Args, Subcommand};
 use std::path::PathBuf;
+
+#[derive(Subcommand)]
+pub(crate) enum ReleaseCommand {
+    /// Undo the newest local release cut
+    Undo {
+        /// Version expected at the head of the release history
+        expected_version: String,
+    },
+}
+
+#[derive(Args)]
+#[command(
+    arg_required_else_help = true,
+    args_conflicts_with_subcommands = true,
+    subcommand_precedence_over_arg = true
+)]
+pub(crate) struct ReleaseArgs {
+    /// Version number (semver, e.g., 0.2.0)
+    #[arg(value_name = "VERSION")]
+    pub(crate) version: Option<String>,
+
+    /// Release date (defaults to the host's local date)
+    #[arg(long, requires = "version")]
+    pub(crate) date: Option<String>,
+
+    #[command(subcommand)]
+    pub(crate) command: Option<ReleaseCommand>,
+}
 
 #[derive(Subcommand)]
 pub(crate) enum Commands {
@@ -171,15 +199,9 @@ pub(crate) enum Commands {
         command: GuardCommand,
     },
 
-    /// Cut a release (collect unreleased work items into a version)
+    /// Manage local release cuts
     #[command(after_help = help::RELEASE)]
-    Release {
-        /// Version number (semver, e.g., 0.2.0)
-        version: String,
-        /// Release date (defaults to today)
-        #[arg(long)]
-        date: Option<String>,
-    },
+    Release(ReleaseArgs),
 
     /// Output machine-readable CLI metadata for agents
     #[command(after_help = help::DESCRIBE)]

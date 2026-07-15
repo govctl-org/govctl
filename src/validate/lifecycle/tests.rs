@@ -197,12 +197,15 @@ fn test_work_status_invalid_queue_to_done() {
 }
 
 #[test]
-fn test_work_status_invalid_done_transitions() {
-    // Done is terminal.
-    assert!(!is_valid_work_transition(
+fn test_work_status_done_to_active() {
+    assert!(is_valid_work_transition(
         WorkItemStatus::Done,
         WorkItemStatus::Active
     ));
+}
+
+#[test]
+fn test_work_status_invalid_done_transitions() {
     assert!(!is_valid_work_transition(
         WorkItemStatus::Done,
         WorkItemStatus::Queue

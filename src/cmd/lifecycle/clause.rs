@@ -18,14 +18,14 @@ pub(super) fn deprecate_clause(
     if clause.status == ClauseStatus::Deprecated {
         return Err(Diagnostic::new(
             DiagnosticCode::E0208ClauseAlreadyDeprecated,
-            "Clause is already deprecated",
+            "Clause is already deprecated. Valid transition from deprecated: superseded via `clause supersede`",
             clause_id,
         ));
     }
     if clause.status == ClauseStatus::Superseded {
         return Err(Diagnostic::new(
             DiagnosticCode::E0209ClauseAlreadySuperseded,
-            "Clause is superseded, cannot deprecate",
+            "Clause is superseded, cannot deprecate. Superseded is terminal; there are no valid transitions",
             clause_id,
         ));
     }
@@ -53,7 +53,7 @@ pub(super) fn supersede_clause(
     if clause.status == ClauseStatus::Superseded {
         return Err(Diagnostic::new(
             DiagnosticCode::E0209ClauseAlreadySuperseded,
-            "Clause is already superseded",
+            "Clause is already superseded. Superseded is terminal; there are no valid transitions",
             clause_id,
         ));
     }

@@ -210,7 +210,7 @@ $ govctl describe --context
     },
     {
       "name": "rfc finalize",
-      "purpose": "Transition RFC status to normative or deprecated",
+      "purpose": "Transition a draft RFC to normative status",
       "when_to_use": "When an RFC spec is complete and ready for implementation. 'normative' makes it binding law.",
       "example": "govctl rfc finalize RFC-0001 normative",
       "prerequisites": [
@@ -328,12 +328,12 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "release",
-      "purpose": "Cut a release (collect unreleased work items)",
-      "when_to_use": "When releasing a new version. Collects done work items into changelog.",
+      "name": "release / release undo",
+      "purpose": "Create or correct the newest local release cut",
+      "when_to_use": "To group done Work Items under a version or correct an accidental newest cut.",
       "example": "govctl release 0.2.0",
       "prerequisites": [
-        "Done work items exist"
+        "Cut requires unreleased done Work Items; undo requires a matching newest version"
       ]
     },
     {

@@ -13,7 +13,6 @@ tags = ["cli"]
 
 [content]
 context = """
-
 The global `govctl render` command currently has an `--rfc-id` flag for rendering a single RFC, but no equivalent flags for ADRs or work items. This creates an asymmetry in the CLI.
 
 ### Problem Statement
@@ -25,12 +24,6 @@ When users want to render a single artifact, the current options are:
 | RFC | `govctl render rfc --rfc-id RFC-0001` | ✅ Yes |
 | ADR | (none) | ❌ No |
 | Work Item | (none) | ❌ No |
-
-### Options Considered
-
-1. **Add `--adr-id` and `--work-id` flags** — Proliferates flags on global command
-2. **Add resource-scoped render verbs** — Clean separation of bulk vs single
-3. **Leave as-is** — Accept asymmetry
 
 ### Constraints
 

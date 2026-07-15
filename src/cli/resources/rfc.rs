@@ -147,20 +147,19 @@ NOTES:
         #[arg(short = 'c', long = "change")]
         changes: Vec<String>,
     },
-    /// Finalize RFC status (draft → normative or deprecated)
+    /// Finalize RFC status (draft → normative)
     #[command(after_help = "\
 EXAMPLES:
     govctl rfc finalize RFC-0001 normative
-    govctl rfc finalize RFC-0001 deprecated
 
 NOTES:
-    - Finalize is used once the RFC leaves draft state.
+    - Use `deprecate` for normative → deprecated.
     - Use `advance` to move phase after finalization.
 ")]
     Finalize {
         /// RFC ID
         id: String,
-        /// Target status
+        /// Target status (`normative`)
         #[arg(value_enum)]
         status: FinalizeStatus,
     },

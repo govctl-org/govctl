@@ -10,7 +10,7 @@ tags = ["cli"]
 
 [content]
 text = """
-The govctl CLI MUST use a resource-first command structure of the form:
+The govctl CLI MUST use a resource-first command structure. Except for the stable release-creation form defined below, resource operations MUST use:
 
 ```
 govctl <resource> <verb> [arguments] [flags]
@@ -36,7 +36,13 @@ The resource-first structure (noun-first) provides several advantages over verb-
 
 Global command exceptions are governed by [[RFC-0002:C-GLOBAL-COMMANDS]]. A command MAY remain at the global namespace when it operates across multiple resource types, performs project-level or CLI-level work, or manages local execution state that coordinates governed resources without becoming a governed artifact resource.
 
-Resource-specific CRUD, field-editing, and lifecycle operations MUST remain resource-first unless an RFC explicitly defines a global command exception.
+Resource-specific CRUD, field-editing, and lifecycle operations MUST remain resource-first unless an RFC explicitly defines an alternative grammar.
+
+Release creation is a stable alternative grammar. Implementations MUST support `govctl release <version> [--date <YYYY-MM-DD>]`.
+
+Release correction is a resource-first operation. Implementations MUST support `govctl release undo <expected-version>`.
+
+Both release forms MUST coexist. The token `undo` selects correction because it is not a valid semantic version; a semantic-version token selects release creation.
 
 **Implementation Note:**
 

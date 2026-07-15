@@ -139,3 +139,31 @@ fn test_accept_succeeds_with_complete_adr() -> common::TestResult {
     assert_adr_gate_snapshot!(normalized);
     Ok(())
 }
+
+#[test]
+fn test_accept_force_does_not_bypass_projection_ownership() -> common::TestResult {
+    let normalized = run_gate_commands(&[
+        &["adr", "new", "Test ADR"],
+        &[
+            "adr",
+            "set",
+            "ADR-0001",
+            "context",
+            "### Options Considered",
+        ],
+        &["adr", "accept", "ADR-0001", "--force"],
+        &["adr", "get", "ADR-0001", "status"],
+    ])?;
+
+    assert!(normalized.contains("error[E0307]"), "{normalized}");
+    assert!(normalized.contains("content.context"), "{normalized}");
+    assert!(
+        normalized.contains("heading 'Options Considered'"),
+        "{normalized}"
+    );
+    assert!(
+        normalized.contains("$ govctl adr get ADR-0001 status\nproposed"),
+        "{normalized}"
+    );
+    Ok(())
+}

@@ -3,19 +3,19 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.3.3"
+version = "1.5.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-06-11"
+updated = "2026-07-15"
 tags = [
     "core",
     "schema",
     "validation",
     "lifecycle",
 ]
-signature = "ba16714af2ca8c1b32b812963d4b02da4c67a647eafc1c88b03fa622085b1205"
+signature = "a8dbcc3587e2f2f2b548c3cf33a3a684c0f5b329c12eeb8433b4f491dc6541d7"
 
 [[sections]]
 title = "Summary"
@@ -36,7 +36,10 @@ clauses = ["clauses/C-CLAUSE-DEF.toml"]
 
 [[sections]]
 title = "ADR Specification"
-clauses = ["clauses/C-ADR-DEF.toml"]
+clauses = [
+    "clauses/C-ADR-DEF.toml",
+    "clauses/C-ADR-PROJECTION-OWNERSHIP.toml",
+]
 
 [[sections]]
 title = "Work Item Specification"
@@ -49,6 +52,35 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.5.0"
+date = "2026-07-15"
+notes = "Define guarded correction for local release cuts"
+added = ["Define guarded newest-release correction and canonical changelog projection"]
+changed = ["Define Releases as local version-cut records"]
+
+[[changelog]]
+version = "1.4.2"
+date = "2026-07-15"
+notes = "Clarify optional Work Item verification lists"
+changed = ["Define omitted verification guard and waiver lists as empty"]
+
+[[changelog]]
+version = "1.4.1"
+date = "2026-07-15"
+notes = "Clarify Work Item serialized field requirements"
+changed = ["Allow empty Work Item list fields to be omitted while requiring created metadata and completion criteria"]
+
+[[changelog]]
+version = "1.4.0"
+date = "2026-07-15"
+notes = "Clarify lifecycle and ADR projection boundaries"
+added = ["Define ADR projection ownership validation"]
+changed = [
+    "Scope RFC phase to each version",
+    "Freeze Work Items at unique release membership",
+]
 
 [[changelog]]
 version = "1.3.3"

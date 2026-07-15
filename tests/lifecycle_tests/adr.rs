@@ -1,5 +1,8 @@
 use super::*;
 
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt;
+
 // ============================================================================
 // ADR Accept/Reject Tests
 // ============================================================================
@@ -237,5 +240,31 @@ fn test_accept_nonexistent_adr() -> common::TestResult {
 
     let output = run_commands(temp_dir.path(), &[&["adr", "accept", "ADR-9999"]])?;
     assert_lifecycle_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_reject_adr_write_failure_preserves_source_bytes() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["adr", "new", "Atomic ADR"]])?;
+
+    let adr_dir = temp_dir.path().join("gov/adr");
+    let adr_path = std::fs::read_dir(&adr_dir)?
+        .next()
+        .ok_or("missing ADR")??
+        .path();
+    let original = std::fs::read(&adr_path)?;
+    let original_permissions = std::fs::metadata(&adr_dir)?.permissions();
+    let mut unwritable = original_permissions.clone();
+    unwritable.set_mode(original_permissions.mode() & !0o222);
+    std::fs::set_permissions(&adr_dir, unwritable)?;
+
+    let output = run_commands(temp_dir.path(), &[&["adr", "reject", "ADR-0001"]]);
+    std::fs::set_permissions(&adr_dir, original_permissions)?;
+    let output = output?;
+
+    assert!(output.contains("error[E0901]"), "output: {output}");
+    assert_eq!(std::fs::read(adr_path)?, original);
     Ok(())
 }

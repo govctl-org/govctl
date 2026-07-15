@@ -12,7 +12,6 @@ refs = [
 ]
 tags = ["schema"]
 
-
 [content]
 context = """
 We have two goals that now need to be balanced more carefully.
@@ -30,11 +29,7 @@ We have two goals that now need to be balanced more carefully.
 - Preserve the canonical edit-surface work already captured in [[ADR-0037]].
 - Preserve the discussion-oriented alternative model from [[ADR-0027]].
 - Avoid a repository-wide ADR migration for a change that is not yet merged.
-- Keep the ADR schema simple enough that humans and agents can both use it reliably.
-
-### Options Considered
-
-We considered keeping the full ADR-0036 redesign, keeping the current ADR schema and workflow, and adopting a smaller additive field for the selected option only."""
+- Keep the ADR schema simple enough that humans and agents can both use it reliably."""
 decision = """
 We will **keep the current ADR schema discussion-oriented and avoid the broad schema/migration redesign from [[ADR-0036]]** because:
 

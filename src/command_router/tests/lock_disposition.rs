@@ -124,6 +124,13 @@ fn test_lock_disposition_is_lock_free_for_inspect_commands()
 fn test_lock_disposition_requires_lock_for_mutating_commands()
 -> Result<(), Box<dyn std::error::Error>> {
     assert_eq!(
+        global(Op::Builtin(BuiltinOp::ReleaseUndo {
+            expected_version: "0.2.0".to_string(),
+        }))
+        .lock_disposition(),
+        LockDisposition::GovRootExclusive
+    );
+    assert_eq!(
         global(Op::Builtin(BuiltinOp::Init { force: false })).lock_disposition(),
         LockDisposition::GovRootExclusive
     );

@@ -1,6 +1,6 @@
 ---
-source: tests/test_lifecycle.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/clause.rs
+expression: snapshot
 ---
 $ govctl rfc new Supersede Then Deprecate RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -23,5 +23,5 @@ Superseded clause: RFC-0001:C-OLD
 exit: 0
 
 $ govctl clause deprecate RFC-0001:C-OLD --force
-error[E0209]: Clause is superseded, cannot deprecate (RFC-0001:C-OLD)
+error[E0209]: Clause is superseded, cannot deprecate. Superseded is terminal; there are no valid transitions (RFC-0001:C-OLD)
 exit: 1

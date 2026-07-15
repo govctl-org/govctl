@@ -4,7 +4,7 @@ use crate::cmd::verify;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{ChecklistStatus, WorkItemStatus};
-use crate::parse::{load_work_item, write_work_item};
+use crate::parse::{load_releases, load_work_item, write_work_item};
 use crate::ui;
 use crate::validate::is_valid_work_transition;
 use crate::write::{WriteOp, today};
@@ -34,16 +34,34 @@ pub fn move_item(
     let mut entry = load_work_item(config, &work_path)?;
 
     let work_id = &entry.spec.govctl.id;
-    if !is_valid_work_transition(entry.spec.govctl.status, status) {
+    let previous_status = entry.spec.govctl.status;
+    if !is_valid_work_transition(previous_status, status) {
         return Err(Diagnostic::new(
             DiagnosticCode::E0403WorkInvalidTransition,
             format!(
-                "Invalid transition: {} -> {}",
+                "Invalid transition: {} -> {}. Valid transitions from {}: {}",
                 entry.spec.govctl.status.as_ref(),
-                status.as_ref()
+                status.as_ref(),
+                entry.spec.govctl.status.as_ref(),
+                valid_work_targets(previous_status)
             ),
             work_id,
         ));
+    }
+
+    if previous_status == WorkItemStatus::Done && status == WorkItemStatus::Active {
+        let releases = load_releases(config)?;
+        if releases
+            .releases
+            .iter()
+            .any(|release| release.refs.iter().any(|id| id == work_id))
+        {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0403WorkInvalidTransition,
+                "Cannot reopen a Work Item referenced by a release. Released Work Items have no valid transition away from done.",
+                work_id,
+            ));
+        }
     }
 
     // Validate acceptance criteria before marking done
@@ -94,16 +112,19 @@ pub fn move_item(
     entry.spec.govctl.status = status;
 
     // Update dates
-    match status {
-        WorkItemStatus::Active => {
+    match (previous_status, status) {
+        (WorkItemStatus::Queue, WorkItemStatus::Active) => {
             if entry.spec.govctl.started.is_none() {
                 entry.spec.govctl.started = Some(today());
             }
         }
-        WorkItemStatus::Done | WorkItemStatus::Cancelled => {
+        (WorkItemStatus::Done, WorkItemStatus::Active) => {
+            entry.spec.govctl.completed = None;
+        }
+        (_, WorkItemStatus::Done | WorkItemStatus::Cancelled) => {
             entry.spec.govctl.completed = Some(today());
         }
-        WorkItemStatus::Queue => {}
+        _ => {}
     }
 
     write_work_item(
@@ -122,6 +143,15 @@ pub fn move_item(
     }
 
     Ok(vec![])
+}
+
+fn valid_work_targets(status: WorkItemStatus) -> &'static str {
+    match status {
+        WorkItemStatus::Queue => "active, cancelled",
+        WorkItemStatus::Active => "done, cancelled",
+        WorkItemStatus::Done => "active when no release references the Work Item",
+        WorkItemStatus::Cancelled => "none (cancelled is terminal)",
+    }
 }
 
 /// Find work item by partial name or ID

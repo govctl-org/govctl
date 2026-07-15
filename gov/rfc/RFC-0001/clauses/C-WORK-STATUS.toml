@@ -14,22 +14,34 @@ A Work Item MUST have exactly one of the following status values:
 
 1. **queue** — Initial state. The work item is defined but not yet started.
 2. **active** — The work item is currently being worked on.
-3. **done** — The work item is complete. All acceptance criteria are satisfied, and any required verification guards have passed or been explicitly waived.
+3. **done** — The work item is complete and eligible for release. All acceptance criteria are satisfied, and any required verification guards have passed or been explicitly waived.
 4. **cancelled** — The work item was abandoned. No further work will be done.
 
-Valid transitions (via `move` command):
+Valid transitions via the `move` command are:
 - queue → active (start work)
 - queue → cancelled (abandon before starting)
 - active → done (complete work)
 - active → cancelled (abandon in progress)
+- done → active when no release references the Work Item (correct a pre-release completion)
 
-Invalid transitions (MUST be rejected):
-- done → any (done is terminal)
-- cancelled → any (cancelled is terminal)
+The following transitions MUST be rejected:
+- done → active when any release references the Work Item
+- done → queue or cancelled
+- cancelled → any (`cancelled` is terminal)
 - queue → done (cannot complete without being active)
 - active → queue (no "un-start")
 
+Release membership is derived from `releases[].refs`; it does not add another Work Item status. A released Work Item MUST remain `done`.
+
 Timestamp behavior:
-- queue → active: Sets `started` date if not already set
-- active → done: Sets `completed` date
-- active → cancelled: Sets `completed` date"""
+- queue → active: Sets `started` if it is not already set
+- active → done: Sets `completed`
+- active → cancelled: Sets `completed`
+- done → active: Preserves `started` and removes `completed`
+
+Returning a Work Item to `done` after reopening MUST apply the same acceptance-criteria and verification-guard gates as any other active → done transition.
+
+Reopening a Work Item MUST NOT mutate existing loop state or round artifacts. Existing loop-local `done`, `failed`, and `cancelled` outcomes remain terminal according to [[RFC-0006:C-WORK-ITEM-INTERACTION]], [[RFC-0006:C-LOOP-RESUMPTION]], and [[RFC-0006:C-LOOP-SCOPE-MUTATION]]. A reopened Work Item can be executed through a new loop or explicit non-terminal loop scope according to those clauses.
+
+**Rationale:**
+Completion remains correctable until release membership freezes the lifecycle record. Clearing `completed` on reopening keeps status and timestamp semantics consistent, while release membership prevents the same Work Item ID from re-entering later release collection. Keeping loop outcomes separate preserves existing execution audit history."""

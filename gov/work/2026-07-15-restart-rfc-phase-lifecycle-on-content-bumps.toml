@@ -1,0 +1,43 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-15-001"
+title = "Restart RFC phase lifecycle on content bumps"
+status = "done"
+created = "2026-07-15"
+started = "2026-07-15"
+completed = "2026-07-15"
+refs = [
+    "ADR-0051",
+    "RFC-0000:C-PHASE-LIFECYCLE",
+    "RFC-0001:C-RFC-PHASE",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+
+[content]
+description = "Implement and test lifecycle handling for versioned RFC content amendments, including phase state and rollback behavior, following the amended lifecycle specifications."
+
+[[content.acceptance_criteria]]
+text = "Detected content amendment bumps start the new RFC version at `spec`, while signature baselines and changelog-only updates preserve phase"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC bump failure paths preserve the original RFC and clause files"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "`cargo test --test test_lifecycle` and `cargo run --quiet -- check` pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "RFC lifecycle commands reject forbidden deprecated and implementation phase combinations"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Schema migration converts legacy RFC signatures into content-only amendment baselines without changing RFC versions, phases, or changelogs"
+status = "done"
+category = "fixed"

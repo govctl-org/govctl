@@ -5,11 +5,11 @@ id = "RFC-0006"
 title = "Loop Execution Model"
 version = "0.5.0"
 status = "normative"
-phase = "impl"
+phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-05-31"
 updated = "2026-06-15"
-signature = "68bcdf220d7340985bc16432930ac4600bd1254f2a6cd9af53f2a45b571533ab"
+signature = "7a83e5455d89c552aaf6dc6b955dd52d1a82126eb8fe49eee7f670c3749772a0"
 
 [[sections]]
 title = "Summary"

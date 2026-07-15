@@ -1,6 +1,6 @@
 ---
-source: tests/test_changelog.rs
-expression: "normalize_output(&setup_output, dir, &date)"
+source: tests/changelog_tests/release_workflow.rs
+expression: value
 ---
 $ govctl init
 Created: gov

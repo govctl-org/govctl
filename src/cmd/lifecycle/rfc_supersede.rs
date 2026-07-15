@@ -1,7 +1,7 @@
 use super::paths::{require_replacement_rfc_toml_path, require_rfc_toml_path};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::model::RfcStatus;
+use crate::model::{RfcPhase, RfcStatus};
 use crate::ui;
 use crate::validate::is_valid_status_transition;
 use crate::write::{WriteOp, read_rfc, today, with_file_transaction, write_rfc};
@@ -68,8 +68,20 @@ fn validate_supersede_transition(
         return Err(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
             format!(
-                "Invalid RFC transition: {} -> deprecated",
-                source.status.as_ref()
+                "Invalid RFC transition: {} -> deprecated. Valid transition from {}: {}",
+                source.status.as_ref(),
+                source.status.as_ref(),
+                valid_rfc_status_targets(source.status)
+            ),
+            rfc_id,
+        ));
+    }
+    if matches!(source.phase, RfcPhase::Impl | RfcPhase::Test) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0104RfcInvalidTransition,
+            format!(
+                "Cannot supersede an RFC while phase is {}. Advance the current version to stable first.",
+                source.phase.as_ref()
             ),
             rfc_id,
         ));
@@ -77,7 +89,9 @@ fn validate_supersede_transition(
     if replacement.status == RfcStatus::Deprecated {
         return Err(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
-            format!("Replacement RFC is deprecated: {by}"),
+            format!(
+                "Replacement RFC is deprecated: {by}. Valid replacement statuses: draft, normative"
+            ),
             by,
         ));
     }
@@ -89,7 +103,7 @@ fn validate_supersede_transition(
         return Err(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
             format!(
-                "Replacement RFC already supersedes {}",
+                "Replacement RFC already supersedes {}. Use a replacement RFC without another supersedes relationship",
                 replacement.supersedes.as_deref().unwrap_or_default()
             ),
             by,
@@ -97,4 +111,12 @@ fn validate_supersede_transition(
     }
 
     Ok(())
+}
+
+fn valid_rfc_status_targets(status: RfcStatus) -> &'static str {
+    match status {
+        RfcStatus::Draft => "normative via `rfc finalize`",
+        RfcStatus::Normative => "deprecated via `rfc deprecate` or `rfc supersede`",
+        RfcStatus::Deprecated => "none (deprecated is terminal)",
+    }
 }

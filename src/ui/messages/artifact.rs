@@ -154,12 +154,27 @@ pub fn release_created(version: &str, date: &str, work_item_count: usize) {
             "Created release {} ({}) with {} work items",
             version.cyan().bold(),
             date,
-            work_item_count.to_string().green()
+            work_item_count.green()
         );
     } else {
         eprintln!(
             "Created release {} ({}) with {} work items",
             version, date, work_item_count
+        );
+    }
+}
+
+pub fn release_undone(version: &str, work_item_count: usize) {
+    if use_colors() {
+        eprintln!(
+            "Undid release {} ({} work items are now unreleased)",
+            version.cyan().bold(),
+            work_item_count.green()
+        );
+    } else {
+        eprintln!(
+            "Undid release {} ({} work items are now unreleased)",
+            version, work_item_count
         );
     }
 }

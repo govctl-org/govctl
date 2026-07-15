@@ -1,0 +1,33 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-ADR-PROJECTION-OWNERSHIP"
+title = "ADR Projection Ownership"
+kind = "normative"
+status = "active"
+since = "1.4.0"
+
+[content]
+text = """
+ADR source fields and rendered projections MUST have one canonical owner for each semantic section.
+
+The ADR renderer owns the artifact title and the fixed `Context`, `Decision`, `Consequences`, and `Alternatives Considered` section headings. The structured `refs` field owns the rendered reference inventory. Structured `content.alternatives` entries own their generated alternative headings and trade-off labels.
+
+ADR content fields MUST contain section body prose rather than reproducing renderer-owned structure.
+
+A conflicting heading is a Markdown heading recognized by CommonMark parsing outside a code block whose visible text, after surrounding whitespace is removed, matches one of the following using ASCII case-insensitive comparison:
+
+- the rendered artifact title `<ADR-ID>: <title>`;
+- `Context`, `Decision`, `Consequences`, `References`, `Alternatives Considered`, or the semantic alias `Options Considered`;
+- a heading generated for a structured alternative: its `text`, followed by ` (accepted)` or ` (rejected)` when that status suffix applies.
+
+Project validation MUST inspect `content.context`, `content.decision`, and `content.consequences` in proposed ADRs for conflicting headings. Project validation MUST report a validation error for each conflict. Each diagnostic MUST identify the content field. Each diagnostic MUST identify the conflicting visible heading text.
+
+ADR acceptance MUST apply the same projection-ownership validation before changing status. A force option that bypasses alternatives-completeness checks MUST NOT bypass projection-ownership validation.
+
+Project validation MAY omit projection-ownership diagnostics for ADRs that are no longer proposed so that historical artifacts do not become invalid solely because govctl gained this validation.
+
+Inline references that support nearby prose remain valid. This clause does not prohibit contextual `[[...]]` references inside content fields.
+
+**Rationale:**
+A single owner for each rendered section prevents structurally valid source fields from producing duplicated or contradictory human-readable ADRs. CommonMark heading events distinguish actual headings from examples in fenced code blocks and normalize inline formatting to visible text. Acceptance-time enforcement prevents a proposed violation from escaping validation by becoming historical."""

@@ -77,6 +77,111 @@ fn test_bump_major_version() -> common::TestResult {
 }
 
 #[test]
+fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "--text",
+                "Original normative behavior.",
+            ],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--patch",
+                "--summary",
+                "Establish baseline",
+            ],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "--text",
+                "Updated normative behavior.",
+            ],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--patch",
+                "--summary",
+                "Release amendment",
+            ],
+            &["rfc", "get", "RFC-0001", "phase"],
+        ],
+    )?;
+
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 phase\nspec"),
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_signature_baseline_and_changelog_only_update_preserve_stable_phase() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--patch",
+                "--summary",
+                "Establish baseline",
+            ],
+            &["rfc", "get", "RFC-0001", "phase"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--change",
+                "fixed: Add changelog note",
+            ],
+            &["rfc", "get", "RFC-0001", "phase"],
+        ],
+    )?;
+
+    assert_eq!(
+        output
+            .matches("$ govctl rfc get RFC-0001 phase\nstable")
+            .count(),
+        2,
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_bump_requires_summary() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 

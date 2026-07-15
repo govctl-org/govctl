@@ -1,0 +1,104 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0051"
+title = "Scope terminal lifecycle states to revision and release boundaries"
+status = "accepted"
+date = "2026-07-15"
+refs = [
+    "ADR-0014",
+    "ADR-0016",
+    "RFC-0000:C-PHASE-LIFECYCLE",
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0000:C-RELEASE-DEF",
+    "RFC-0001:C-RFC-PHASE",
+    "RFC-0001:C-WORK-STATUS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+tags = [
+    "lifecycle",
+    "release",
+]
+
+[content]
+context = """
+[[RFC-0001]] v0.4.2 treated `stable` as terminal for an RFC, while [[ADR-0016]] allowed a normative RFC to evolve through versioned amendments. A content-bearing version bump therefore left the RFC marked `stable` even though the new revision had not passed implementation and test gates.
+
+[[RFC-0001]] v0.4.2 also treated `done` as terminal for a Work Item. That prevented correcting a mistaken completion before release. [[ADR-0014]] records release membership separately but describes every completed Work Item as immutable; this decision narrows that consequence by moving the immutability boundary from completion to release membership.
+
+### Problem Statement
+
+The terminal boundaries were attached to long-lived artifact identities instead of the revisions and release records they actually close. We need lifecycle semantics that preserve phase discipline and release history without introducing parallel version or reopening state machines.
+
+### Constraints
+
+- RFC amendments must continue to use the existing semantic version and changelog model.
+- Phase progression within one RFC version must remain ordered.
+- Released work must not re-enter the unreleased changelog under the same Work Item ID.
+- Existing `phase`, Work Item `status`, timestamps, and release references should remain the storage model."""
+decision = """
+We will **scope terminal lifecycle states to the revision or release record they complete while retaining the existing stored fields**.
+
+For RFCs, `phase` describes the current version. A content-bearing version bump starts a new phase progression at `spec`; `stable` remains terminal only within the version that reached it. Changelog-only bookkeeping does not start a new phase progression.
+
+For Work Items, `done` represents a release-ready completion judgment. An unreleased done item may return to `active` so that judgment can be corrected. Once a release references the Work Item, release membership freezes that lifecycle record and later problems are represented by a new Work Item.
+
+This approach was chosen because:
+
+1. **Phase accuracy:** Each amended RFC version passes through the existing gates instead of inheriting an earlier version's `stable` result.
+2. **Release integrity:** A Work Item cannot re-enter a later release under an ID already frozen in release history.
+3. **Minimal state:** Existing phase, status, timestamp, and release-reference fields are sufficient; no parallel lifecycle representation is needed.
+
+This decision narrows [[ADR-0014]] only with respect to when Work Item immutability begins: release-referenced Work Items remain immutable lifecycle records, while completed but unreleased Work Items may be reopened."""
+consequences = """
+### Positive
+
+- Each RFC amendment re-enters the same visible phase discipline without a second version-state representation.
+- Pre-release Work Item mistakes can be corrected without fragmenting one unit of work across duplicate items.
+- Existing schemas, status values, and resource-first commands remain sufficient.
+- Release references provide a deterministic boundary for preserving published history.
+
+### Negative
+
+- Even an editorial content bump restarts the RFC at `spec`. The friction is bounded to the existing sequential phase transitions, which remain automation-compatible and require no additional state.
+- Reopening a Work Item requires reading release membership before changing its status. Release references are local canonical data, so the check adds no external dependency.
+- The original completion date is no longer present in the current Work Item after reopening; version control retains that history.
+- Historical RFC phase progression remains in version control rather than an artifact-local phase log; adding a second history model was rejected as disproportionate.
+
+### Neutral
+
+- Existing loop records remain local execution history and are not reopened when a Work Item returns to `active`.
+- Problems found after release continue as new Work Items that can reference the released item."""
+
+[[content.alternatives]]
+text = "Keep stable and done terminal for the lifetime of their artifacts"
+status = "rejected"
+pros = ["Preserves the current state machines unchanged"]
+cons = [
+    "RFC phase becomes stale after a stable RFC is amended",
+    "Mistaken Work Item completion requires a duplicate follow-up before release",
+]
+rejection_reason = "Artifact-lifetime terminality conflicts with versioned RFC evolution and creates unnecessary Work Items for pre-release corrections"
+
+[[content.alternatives]]
+text = "Add persistent per-version phase records and explicit reopened or released Work Item states"
+status = "rejected"
+pros = ["Makes every historical lifecycle transition explicit in artifact data"]
+cons = [
+    "Introduces two additional state models and migration requirements",
+    "Duplicates history already available from changelogs, release references, and version control",
+]
+rejection_reason = "The additional storage and transition surface is disproportionate to the two lifecycle corrections"
+
+[[content.alternatives]]
+text = "Reuse the current phase and status fields, with RFC bumps and release membership as lifecycle boundaries"
+status = "accepted"
+pros = [
+    "Preserves the existing artifact schemas and command vocabulary",
+    "Restarts phase discipline for each amended RFC version",
+    "Allows pre-release correction while keeping released Work Items frozen",
+]
+cons = [
+    "Historical RFC phase transitions remain in version control rather than artifact-local records",
+    "Work Item mutability depends on a lookup in release references",
+]

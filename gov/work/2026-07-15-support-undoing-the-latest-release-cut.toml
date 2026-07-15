@@ -1,0 +1,50 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-15-005"
+title = "Support undoing the latest release cut"
+status = "done"
+created = "2026-07-15"
+started = "2026-07-15"
+completed = "2026-07-15"
+refs = [
+    "RFC-0000:C-RELEASE-DEF",
+    "RFC-0001:C-WORK-STATUS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+    "ADR-0014",
+    "ADR-0051",
+]
+tags = [
+    "release",
+    "lifecycle",
+    "cli",
+    "safety",
+]
+
+[content]
+description = "Amend the release governance model and implement a guarded recovery path for correcting an accidental latest local release cut, with CLI, atomic-write, changelog, and lifecycle coverage."
+
+[[content.acceptance_criteria]]
+text = "Release governance artifacts define the correction boundary for the latest local release cut"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "CLI support implements the governed latest-release correction flow"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Release correction failure paths preserve release and Work Item data"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused regression tests cover release correction, lifecycle interaction, and concurrent-state rejection"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Legacy release version syntax remains supported alongside latest-release undo"
+status = "done"
+category = "fixed"

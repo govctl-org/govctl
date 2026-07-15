@@ -38,6 +38,7 @@ pub fn is_valid_work_transition(from: WorkItemStatus, to: WorkItemStatus) -> boo
         (from, to),
         (WorkItemStatus::Queue, WorkItemStatus::Active)
             | (WorkItemStatus::Active, WorkItemStatus::Done)
+            | (WorkItemStatus::Done, WorkItemStatus::Active)
             | (WorkItemStatus::Queue, WorkItemStatus::Cancelled)
             | (WorkItemStatus::Active, WorkItemStatus::Cancelled)
     )

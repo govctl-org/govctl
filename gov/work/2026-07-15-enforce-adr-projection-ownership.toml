@@ -1,0 +1,51 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-15-003"
+title = "Enforce ADR projection ownership"
+status = "done"
+created = "2026-07-15"
+started = "2026-07-15"
+completed = "2026-07-15"
+refs = [
+    "ADR-0003",
+    "ADR-0024",
+    "ADR-0027",
+    "ADR-0042",
+    "RFC-0000:C-ADR-DEF",
+    "ADR-0052",
+    "RFC-0000:C-ADR-PROJECTION-OWNERSHIP",
+]
+
+[content]
+description = "Align ADR authoring and review guidance with rendered projection ownership, add deterministic project validation for conflicting headings, and update existing ADR sources to produce non-duplicated projections."
+
+[[content.acceptance_criteria]]
+text = "ADR writer and reviewer guidance assign each rendered section to one authoring surface"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Proposed ADR checks and acceptance reject renderer-owned headings with field-and-heading diagnostics, including under `--force`"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Projection validation ignores fenced-code headings and preserves historical terminal ADR compatibility"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Existing ADR sources render without duplicated alternatives sections"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "`cargo test --test test_errors --test test_adr_gates`, `cargo run --quiet -- render all`, and `cargo run --quiet -- check` pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "ADR projection conflicts normalize formatted artifact titles by visible CommonMark text"
+status = "done"
+category = "fixed"

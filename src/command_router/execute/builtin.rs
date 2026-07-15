@@ -45,6 +45,9 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::ReleaseCut { version, date } => {
             cmd::lifecycle::cut_release(config, version, date.as_deref(), op)
         }
+        BuiltinOp::ReleaseUndo { expected_version } => {
+            cmd::lifecycle::undo_release(config, expected_version, op)
+        }
         BuiltinOp::TagNew { tag } => cmd::tag::tag_new(config, tag, op),
         BuiltinOp::TagDelete { tag } => cmd::tag::tag_delete(config, tag, op),
         BuiltinOp::TagList { output } => cmd::tag::tag_list(config, *output),

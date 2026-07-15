@@ -36,13 +36,7 @@ It does not decide broader CLI command architecture, which remains governed by [
 - Maintain resource-first and verb-separated CLI semantics from [[RFC-0002]] and [[ADR-0017]].
 - Keep compatibility commitments from [[ADR-0029]] for legacy dotted prefixes and short aliases.
 - Preserve deterministic diagnostic behavior (`E0814` to `E0818`) for automation and tests.
-- Keep parser dependency and complexity proportionate to grammar size.
-
-### Options Considered
-
-- Option 1: Keep manual parser and harden it.
-- Option 2: Use a parser combinator library (`winnow`) with a typed AST.
-- Option 3: Use a PEG/grammar generator approach (`pest`/similar)."""
+- Keep parser dependency and complexity proportionate to grammar size."""
 decision = """
 We will adopt **`winnow`-based strict parsing with a typed `FieldPath` AST**, replacing the ad-hoc character-walk parser for path expressions.
 

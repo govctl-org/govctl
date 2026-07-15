@@ -65,13 +65,15 @@ Behavior:
 
 Generates markdown documentation from source-of-truth governance artifacts.
 
-Syntax: `govctl render [targets...] [--output-dir PATH] [--dry-run]`
+Syntax: `govctl render [targets...] [--dry-run] [--force]`
 
 Behavior:
 - Renders RFCs from TOML to markdown (published)
 - Renders ADRs from TOML to markdown (local only)
 - Renders work items from TOML to markdown (local only)
 - Generates CHANGELOG.md from releases
+- For changelog rendering without `--force`: updates the unreleased section and adds missing releases while preserving existing released sections
+- For changelog rendering with `--force`: regenerates the complete changelog from current canonical release data and Work Items
 - Default: renders RFCs only
 - With targets: `rfc`, `adr`, `work`, `changelog`, `all`
 - MUST validate before rendering

@@ -1,6 +1,5 @@
 //! Lifecycle command implementations.
 
-use crate::FinalizeStatus;
 use crate::cmd::confirmation::confirm_destructive_action;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
@@ -14,7 +13,7 @@ mod rfc;
 mod rfc_clause_versions;
 mod rfc_supersede;
 pub use adr::{accept_adr, reject_adr, validate_adr_completeness};
-pub use release::cut_release;
+pub use release::{cut_release, undo_release};
 pub use rfc::{advance, bump, finalize};
 
 /// Deprecate an artifact
@@ -38,7 +37,7 @@ pub fn deprecate(
     if id.contains(':') {
         clause::deprecate_clause(config, id, op)
     } else if id.starts_with("RFC-") {
-        finalize(config, id, FinalizeStatus::Deprecated, op)
+        rfc::deprecate_rfc(config, id, op)
     } else if id.starts_with("ADR-") {
         Err(Diagnostic::new(
             DiagnosticCode::E0305AdrCannotDeprecate,

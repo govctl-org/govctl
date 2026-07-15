@@ -32,13 +32,7 @@ Finally, existing repositories already contain JSON RFC and clause files. If we 
 - Preserve the normative meaning of existing governance artifacts and references under [[RFC-0000]] and [[RFC-0002]].
 - Keep normal operation simple: after migration, the main load/edit/render paths should be TOML-only.
 - Respect [[ADR-0032]] by keeping this migration command narrow and deterministic. This is not a heuristic project-adoption workflow.
-- Preserve auditability and deterministic failures for automation and agent workflows.
-
-### Options Considered
-
-- Keep the mixed JSON/TOML storage model and improve adapters further.
-- Standardize all governance artifacts on JSON instead.
-- Standardize all governance artifacts on TOML with an explicit repository migration step."""
+- Preserve auditability and deterministic failures for automation and agent workflows."""
 decision = """
 We will **use TOML as the canonical on-disk source-of-truth format for governance artifacts** because it removes a persistent storage-format special case, matches the existing direction of ADR/work/release storage, and gives humans a format they can read and edit without carrying JSON-only baggage forward.
 
@@ -47,16 +41,7 @@ We will **use TOML as the canonical on-disk source-of-truth format for governanc
 3. **One compatibility boundary:** Legacy JSON support and deterministic TOML shape upgrades will exist only inside a migration command that converts existing JSON RFC and clause files to TOML and applies govctl-managed structural upgrades such as release-file metadata normalization.
 4. **One validation model:** RFC, clause, ADR, work item, and release artifacts will each have a corresponding machine-readable JSON Schema, and generated or edited TOML will be validated against that schema after parsing and normalization.
 
-### Implementation Notes
-
-- RFC and clause definitions should converge on the same `[govctl]` metadata pattern already used by ADRs and work items, including a required `schema` field.
-- `gov/releases.toml` should stop being a schema-less special case. It should carry explicit file-level metadata, including a required `schema` field, alongside the `[[releases]]` collection.
-- The schema contract should be explicit rather than implied: one JSON Schema file per artifact type, stored under `gov/schema/`, with the TOML `govctl.schema` field selecting the corresponding version.
-- The migration command should be narrow by design: convert legacy JSON governance files already recognized by govctl. It must not become a general project-discovery tool or overlap with the broader migration skill from [[ADR-0032]].
-- Post-migration normal operation should not keep a permanent dual-read compatibility layer. Legacy JSON handling belongs in the migration path, not in every loader and writer.
-- Before migration, normal commands should fail with an explicit migration-required diagnostic rather than guessing or partially operating on mixed-format repositories.
-- The migration command should rewrite only govctl-managed storage references. Arbitrary repo docs, tests, and scripts remain user-owned follow-up changes.
-- If accepted, this decision supersedes the storage split recorded in [[ADR-0001]]."""
+This decision supersedes the storage split recorded in [[ADR-0001]]."""
 consequences = """
 ### Positive
 

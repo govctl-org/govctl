@@ -2,8 +2,7 @@ use super::LoadResult;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
-use crate::ui;
-use crate::write::WriteOp;
+use crate::write::{WriteOp, write_file};
 use serde::Serialize;
 use serde::de::DeserializeOwned;
 use std::path::Path;
@@ -94,16 +93,5 @@ where
     })?;
     let content = with_schema_header(schema, &body);
 
-    match op {
-        WriteOp::Execute => {
-            std::fs::write(path, &content).map_err(|e| {
-                Diagnostic::io_error("write TOML file", e, diagnostic_path.display().to_string())
-            })?;
-        }
-        WriteOp::Preview => {
-            ui::dry_run_file_preview(diagnostic_path, &content);
-        }
-    }
-
-    Ok(())
+    write_file(path, &content, op, Some(diagnostic_path))
 }
