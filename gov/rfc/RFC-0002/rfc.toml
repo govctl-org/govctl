@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.10.4"
+version = "0.12.1"
 status = "normative"
-phase = "test"
+phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-06-28"
+updated = "2026-07-15"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "6a1b4f4f096cd9cd0d9b260e77ad08daf0a0a04874eab8953b4b78a1e8e5a1b7"
+signature = "373fa81463fff75133a749849c8cbb8038507b84e55294bb8e29ebe56607dc82"
 
 [[sections]]
 title = "Summary"
@@ -35,6 +35,34 @@ clauses = [
     "clauses/C-SELF-UPDATE.toml",
     "clauses/C-SEARCH-COMMAND.toml",
 ]
+
+[[changelog]]
+version = "0.12.1"
+date = "2026-07-15"
+notes = "Restore stable release creation syntax"
+fixed = ["Preserve govctl release <version> alongside release undo"]
+
+[[changelog]]
+version = "0.12.0"
+date = "2026-07-15"
+notes = "Make release commands consistently resource-first"
+added = ["Add guarded release undo"]
+changed = [
+    "Replace the legacy no-verb release syntax with release cut",
+    "Exclude release records from universal CRUD verbs",
+]
+
+[[changelog]]
+version = "0.11.1"
+date = "2026-07-15"
+notes = "Align RFC lifecycle verb definitions"
+changed = ["Separate RFC finalization from deprecation in the lifecycle command contract"]
+
+[[changelog]]
+version = "0.11.0"
+date = "2026-07-15"
+notes = "Align lifecycle command semantics"
+changed = ["Align lifecycle verbs with version-scoped phases and pre-release Work Item reopening"]
 
 [[changelog]]
 version = "0.10.4"

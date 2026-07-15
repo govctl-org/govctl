@@ -55,6 +55,46 @@ fn test_supersede_rfc() -> common::TestResult {
 }
 
 #[test]
+fn test_supersede_rejects_impl_phase_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Old RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "new", "New RFC"],
+            &["rfc", "finalize", "RFC-0002", "normative"],
+            &[
+                "rfc",
+                "supersede",
+                "RFC-0001",
+                "--by",
+                "RFC-0002",
+                "--force",
+            ],
+            &["rfc", "get", "RFC-0001", "status"],
+            &["rfc", "get", "RFC-0002", "supersedes"],
+        ],
+    )?;
+
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(
+        output.contains("Advance the current version to stable first"),
+        "output: {output}"
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 status\nnormative"),
+        "output: {output}"
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0002 supersedes\n\nexit: 0"),
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_supersede_nonexistent_rfc() -> common::TestResult {
     let temp_dir = init_project()?;
 

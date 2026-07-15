@@ -6,7 +6,7 @@ mod help;
 mod loop_cmd;
 mod resources;
 
-pub(crate) use commands::Commands;
+pub(crate) use commands::{Commands, ReleaseArgs, ReleaseCommand};
 pub(crate) use common::*;
 pub(crate) use loop_cmd::LoopCommand;
 pub(crate) use resources::*;

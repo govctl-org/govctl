@@ -620,11 +620,13 @@ fn test_supersede_clause_rejects_repeated_transition() -> common::TestResult {
     )?;
 
     assert!(
-        output.contains("Clause is already superseded"),
+        output.contains(
+            "Clause is already superseded. Superseded is terminal; there are no valid transitions"
+        ),
         "output: {output}"
     );
     assert!(
-        output.contains("error[E0209]: Clause is already superseded (RFC-0001:C-OLD)\nexit: 1"),
+        output.contains("error[E0209]: Clause is already superseded. Superseded is terminal; there are no valid transitions (RFC-0001:C-OLD)\nexit: 1"),
         "output: {output}"
     );
     assert!(

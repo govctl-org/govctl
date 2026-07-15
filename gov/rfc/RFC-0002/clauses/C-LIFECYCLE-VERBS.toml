@@ -2,7 +2,7 @@
 
 [govctl]
 id = "C-LIFECYCLE-VERBS"
-title = "Resource-Specific Lifecycle Verbs"
+title = "Resource-Specific Lifecycle Operations"
 kind = "normative"
 status = "active"
 since = "0.1.0"
@@ -13,32 +13,39 @@ tags = [
 
 [content]
 text = """
-Resource-specific lifecycle verbs implement state transitions defined in [[RFC-0001]]. These verbs MUST be scoped to their resource namespace.
+Resource-specific lifecycle and constrained-mutation operations implement state transitions defined in [[RFC-0001]] or mutation defined by their resource contract. These operations MUST be scoped to their resource namespace.
 
-**RFC Lifecycle Verbs:**
+**RFC Lifecycle Operations:**
 
-1. `govctl rfc finalize <id> <normative|deprecated>`
-   - Implements [[RFC-0001:C-RFC-STATUS]] transitions
-   - draft → normative or draft → deprecated
+1. `govctl rfc finalize <id> normative`
+   - Implements the draft → normative transition in [[RFC-0001:C-RFC-STATUS]]
 
-2. `govctl rfc advance <id> <spec|impl|test|stable>`
+2. `govctl rfc deprecate <id>`
+   - Implements the normative → deprecated transition in [[RFC-0001:C-RFC-STATUS]]
+
+3. `govctl rfc advance <id> <spec|impl|test|stable>`
    - Implements [[RFC-0001:C-RFC-PHASE]] transitions
-   - Forward-only phase progression
+   - Forward-only phase progression within the current RFC version
+   - MUST reject phase progression while a stored amendment signature differs from current amendment content as defined by [[RFC-0000:C-PHASE-LIFECYCLE]]
 
-3. `govctl rfc bump <id> <patch|minor|major> -m <message>`
+4. `govctl rfc bump <id> <patch|minor|major> -m <message>`
    - Version bumping per semantic versioning
    - Updates changelog automatically
    - Optional: `--change <description>` for additional changelog entries
-   - MUST reject a version bump when the RFC has a stored amendment signature and no RFC or clause content has changed since that signature
-   - MUST treat version, changelog, and signature metadata as bump bookkeeping, not RFC content changes
+   - MUST reject a version bump when the RFC has a stored amendment signature and no amendment content has changed since that signature
+   - MUST exclude RFC `version`, `phase`, `changelog`, and `signature` fields from amendment comparison
+   - MUST set phase to `spec` when the bump releases a detected RFC or clause content amendment
    - MAY establish a baseline amendment signature for RFCs that do not yet have one
-   - `--change` alone MUST remain changelog-only and MUST NOT make a later version bump valid
+   - MUST preserve phase when establishing a baseline amendment signature without a detected content amendment
+   - `--change` alone MUST remain changelog-only
+   - `--change` alone MUST preserve phase
+   - `--change` alone MUST NOT make a later version bump valid
 
-4. `govctl rfc supersede <id> --by <replacement-id>`
+5. `govctl rfc supersede <id> --by <replacement-id>`
    - Marks RFC as superseded by another RFC
    - Both RFCs must exist
 
-**ADR Lifecycle Verbs:**
+**ADR Lifecycle Operations:**
 
 1. `govctl adr accept <id>`
    - Implements [[RFC-0001:C-ADR-STATUS]] proposed → accepted
@@ -50,14 +57,26 @@ Resource-specific lifecycle verbs implement state transitions defined in [[RFC-0
    - Implements [[RFC-0001:C-ADR-STATUS]] accepted → superseded
    - Both ADRs must exist
 
-**Work Lifecycle Verbs:**
+**Work Lifecycle Operations:**
 
 1. `govctl work move <id> <queue|active|done|cancelled>`
    - Implements [[RFC-0001:C-WORK-STATUS]] transitions
-   - Validates gate conditions (e.g., acceptance criteria for done)
-   - Updates timestamp fields automatically
+   - Validates gate conditions when entering `done`
+   - MUST reject done → active when any release references the Work Item
+   - queue → active MUST set `started` when it is absent
+   - active → done MUST set `completed`
+   - active → cancelled MUST set `completed`
+   - done → active MUST preserve `started`
+   - done → active MUST remove `completed`
+   - done → active MUST NOT mutate loop state or round artifacts governed by [[RFC-0006:C-WORK-ITEM-INTERACTION]]
 
-**Clause Lifecycle Verbs:**
+**Release Lifecycle Operations:**
+
+1. The CLI MUST support `govctl release <version> [--date <YYYY-MM-DD>]`. The operation MUST create the newest local release entry according to [[RFC-0000:C-RELEASE-DEF]].
+
+2. The CLI MUST support `govctl release undo <expected-version>`. The operation MUST correct the newest local release entry according to [[RFC-0000:C-RELEASE-DEF]].
+
+**Clause Lifecycle Operations:**
 
 1. `govctl clause deprecate <id>`
    - Implements [[RFC-0001:C-CLAUSE-STATUS]] active → deprecated
@@ -68,23 +87,24 @@ Resource-specific lifecycle verbs implement state transitions defined in [[RFC-0
 
 **Consistency Requirements:**
 
-1. All lifecycle verbs MUST validate transitions per [[RFC-0001]]
-2. All lifecycle verbs MUST update timestamp fields where applicable
+1. All lifecycle operations MUST validate transitions per [[RFC-0001]] or their resource definition
+2. All lifecycle operations MUST update timestamp fields where applicable
 3. Except for the rollback-failure path in requirement 4, a lifecycle invocation that handles an error and completes through govctl's normal error path with a non-zero exit status MUST restore every governed artifact changed by that invocation byte-for-byte before returning
 4. If an I/O or storage error prevents complete restoration, the invocation MUST return a non-zero exit status
 5. The rollback-failure diagnostic MUST contain the term `rollback`
 6. The rollback-failure diagnostic MUST state that governed-artifact restoration may be incomplete
 7. The restoration baseline is the artifact content observed after the invocation acquires its exclusive write scope under [[RFC-0004:C-SCOPE]] and before its first governed-artifact mutation
 8. Unexpected process termination before normal error completion, host failure, and the rollback-failure path in requirement 4 are outside the lifecycle atomicity guarantee
-9. All lifecycle verbs MUST support global `--dry-run` flag
+9. All lifecycle operations MUST support global `--dry-run` flag
 10. Invalid transitions MUST error with clear explanation of valid transitions
 
 **Rationale:**
 
-Lifecycle verbs are resource-specific because:
+Lifecycle operations are resource-specific because:
 - RFCs have status AND phase (two dimensions of state)
 - ADRs can be rejected (not applicable to RFCs)
-- Work items have gate conditions (acceptance criteria)
+- Work Items have gate conditions (acceptance criteria)
+- Release correction has a newest-entry and expected-version boundary
 - Each resource has different valid transitions
 
-Scoping these verbs to resources makes their applicability explicit and prevents confusion. Lifecycle atomicity defines the byte content observed when an invocation completes through its normal error path; it does not require a crash-recovery subsystem for the flat-file artifact store."""
+Scoping these operations to resources makes their applicability explicit and prevents confusion. Lifecycle atomicity defines the byte content observed when an invocation completes through its normal error path; it does not require a crash-recovery subsystem for the flat-file artifact store."""

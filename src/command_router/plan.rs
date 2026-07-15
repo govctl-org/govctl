@@ -80,6 +80,9 @@ pub enum BuiltinOp {
         version: String,
         date: Option<String>,
     },
+    ReleaseUndo {
+        expected_version: String,
+    },
     TagNew {
         tag: String,
     },

@@ -10,6 +10,36 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- Proposed ADR checks and acceptance reject renderer-owned headings with field-and-heading diagnostics, including under `--force` (WI-2026-07-15-003)
+- Projection validation ignores fenced-code headings and preserves historical terminal ADR compatibility (WI-2026-07-15-003)
+- CLI support implements the governed latest-release correction flow (WI-2026-07-15-005)
+
+### Changed
+
+- Detected content amendment bumps start the new RFC version at `spec`, while signature baselines and changelog-only updates preserve phase (WI-2026-07-15-001)
+- Unreleased `done` Work Items can return to `active`, while release-referenced items remain `done` (WI-2026-07-15-002)
+- RFC finalize exposes only the normative target while deprecation remains a separate verb (WI-2026-07-15-004)
+- Release governance artifacts define the correction boundary for the latest local release cut (WI-2026-07-15-005)
+
+### Fixed
+
+- RFC bump failure paths preserve the original RFC and clause files (WI-2026-07-15-001)
+- RFC lifecycle commands reject forbidden deprecated and implementation phase combinations (WI-2026-07-15-001)
+- Schema migration converts legacy RFC signatures into content-only amendment baselines without changing RFC versions, phases, or changelogs (WI-2026-07-15-001)
+- Project validation rejects Work Item IDs referenced by multiple releases (WI-2026-07-15-002)
+- ADR writer and reviewer guidance assign each rendered section to one authoring surface (WI-2026-07-15-003)
+- Existing ADR sources render without duplicated alternatives sections (WI-2026-07-15-003)
+- ADR projection conflicts normalize formatted artifact titles by visible CommonMark text (WI-2026-07-15-003)
+- Lifecycle command write failures preserve governed artifact bytes (WI-2026-07-15-004)
+- Phase-only RFC advancement remains outside amendment detection after legacy signature normalization (WI-2026-07-15-004)
+- RFC and Clause invalid-transition diagnostics identify valid targets or terminal states (WI-2026-07-15-004)
+- Release creation and schema validation reject invalid dates and missing refs (WI-2026-07-15-004)
+- Work Item schema and serialization checks match required scalars and omitted empty-list semantics (WI-2026-07-15-004)
+- Release correction failure paths preserve release and Work Item data (WI-2026-07-15-005)
+- Legacy release version syntax remains supported alongside latest-release undo (WI-2026-07-15-005)
+
 ## [0.10.2] - 2026-07-05
 
 0.10.2 restores compatibility between the bundled Agent Skills and GitHub

@@ -276,10 +276,7 @@ fn test_migrate_bumps_version_even_without_file_changes() -> TestResult {
     let temp_dir = init_project_v1()?;
     let expected_version = latest_schema_version()?;
 
-    // Create artifacts using govctl (already in new format with headers)
-    run_commands(temp_dir.path(), &[&["rfc", "new", "New Format RFC"]])?;
-
-    // Config says version = 1, but files are already in v2 format
+    // An empty project has no artifact rewrites, but still advances its schema version.
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
     assert!(config.contains("version = 1"));
 
@@ -295,6 +292,100 @@ fn test_migrate_bumps_version_even_without_file_changes() -> TestResult {
         config.contains(&format!("version = {expected_version}")),
         "config should now be version {expected_version}: {}",
         config
+    );
+
+    Ok(())
+}
+
+#[test]
+fn test_migrate_rebaselines_legacy_rfc_signatures_without_bump() -> TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Legacy signature RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "--text",
+                "Stable normative behavior.",
+            ],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    let original_version = rfc["govctl"]["version"].clone();
+    let original_phase = rfc["govctl"]["phase"].clone();
+    let original_changelog = rfc.get("changelog").cloned();
+    rfc.get_mut("govctl")
+        .and_then(toml::Value::as_table_mut)
+        .ok_or("RFC govctl section is not a table")?
+        .insert("signature".to_string(), toml::Value::String("0".repeat(64)));
+    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config["schema"]["version"] = toml::Value::Integer(2);
+    fs::write(&config_path, toml::to_string_pretty(&config)?)?;
+
+    let blocked = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--patch",
+                "--summary",
+                "Must migrate first",
+            ],
+        ],
+    )?;
+    assert_eq!(blocked.matches("error[E0505]").count(), 2, "{blocked}");
+    assert!(blocked.contains("Run `govctl migrate`"), "{blocked}");
+
+    let migrated = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        migrated.contains("v2 -> v3: RFC amendment content signatures"),
+        "{migrated}"
+    );
+
+    let migrated_rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    assert_eq!(migrated_rfc["govctl"]["version"], original_version);
+    assert_eq!(migrated_rfc["govctl"]["phase"], original_phase);
+    assert_eq!(migrated_rfc.get("changelog").cloned(), original_changelog);
+    assert_ne!(
+        migrated_rfc["govctl"]["signature"].as_str(),
+        Some("0000000000000000000000000000000000000000000000000000000000000000")
+    );
+    assert_eq!(current_schema_version(temp_dir.path())?, 3);
+
+    let advanced = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &["rfc", "get", "RFC-0001", "phase"],
+        ],
+    )?;
+    assert!(
+        advanced.contains("$ govctl rfc get RFC-0001 phase\nstable"),
+        "{advanced}"
     );
 
     Ok(())

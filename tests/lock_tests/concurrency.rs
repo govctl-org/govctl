@@ -203,3 +203,59 @@ fn test_concurrent_tick_commands_persist_all_acceptance_criteria_updates() -> co
     );
     Ok(())
 }
+
+#[test]
+fn test_release_undo_reads_head_after_waiting_for_lock() -> common::TestResult {
+    let temp_dir = init_project()?;
+    create_config_with_timeout(temp_dir.path(), 5)?;
+
+    let releases_path = temp_dir.path().join("gov/releases.toml");
+    fs::write(
+        &releases_path,
+        r#"[[releases]]
+version = "0.1.0"
+date = "2026-01-01"
+refs = ["WI-2026-01-01-001"]
+"#,
+    )?;
+
+    let lock = OpenOptions::new()
+        .create(true)
+        .read(true)
+        .write(true)
+        .open(temp_dir.path().join("gov/.govctl.lock"))?;
+    lock.lock_exclusive()?;
+
+    let child = Command::new(env!("CARGO_BIN_EXE_govctl"))
+        .args(["release", "undo", "0.1.0"])
+        .current_dir(temp_dir.path())
+        .env("NO_COLOR", "1")
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()?;
+
+    thread::sleep(Duration::from_millis(100));
+    let updated = r#"[[releases]]
+version = "0.2.0"
+date = "2026-01-02"
+refs = ["WI-2026-01-02-001"]
+
+[[releases]]
+version = "0.1.0"
+date = "2026-01-01"
+refs = ["WI-2026-01-01-001"]
+"#;
+    fs::write(&releases_path, updated)?;
+    FileExt::unlock(&lock)?;
+
+    let output = child.wait_with_output()?;
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("error[E0709]"), "stderr: {stderr}");
+    assert!(
+        stderr.contains("newest release is 0.2.0"),
+        "stderr: {stderr}"
+    );
+    assert_eq!(fs::read_to_string(releases_path)?, updated);
+    Ok(())
+}

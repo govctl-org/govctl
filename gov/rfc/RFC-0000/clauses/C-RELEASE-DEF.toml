@@ -6,11 +6,14 @@ title = "Release Definition"
 kind = "normative"
 status = "active"
 since = "1.0.2"
-tags = ["core", "release"]
+tags = [
+    "core",
+    "release",
+]
 
 [content]
 text = """
-A Release tracks a published version and the set of work items included in that version.
+A Release is a local version-cut record that groups completed Work Items under a semantic version. A Release records local governance state; it is not proof that Git tags, hosted releases, packages, or other external artifacts were published.
 
 Release data MUST be stored as a TOML file at `gov/releases.toml` containing:
 - `[[releases]]` array with entries containing: `version`, `date`, `refs`
@@ -21,11 +24,33 @@ Each `releases[].version` MUST be a valid semantic version.
 
 Each `releases[].date` MUST use ISO 8601 calendar date format `YYYY-MM-DD`.
 
-Each `releases[].refs` entry MUST reference an existing Work Item ID.
+Each `releases[].refs` entry MUST reference an existing Work Item ID whose status is `done`.
 
-A release entry has no lifecycle and MUST be treated as immutable once created.
+A Work Item ID MUST appear in the `refs` of at most one release.
+
+A release cut MUST include every Work Item whose status is `done` and which is not referenced by an existing release. It MUST reject the cut without modifying governed artifacts when no such Work Item exists.
+
+When a release cut omits `--date`, it MUST use the current calendar date in the host's local timezone.
+
+Release entries MUST be stored newest-first. Release creation MUST prepend the new entry to the `releases` array.
+
+A Work Item referenced by any release MUST remain `done`. Lifecycle commands MUST reject transitions away from `done` for that Work Item.
+
+Project validation MUST report a release reference to a Work Item whose status is not `done`.
+
+Project validation MUST report a Work Item ID referenced by more than one release.
+
+A release entry has no persistent lifecycle status. An existing entry MUST remain immutable except when the newest entry is removed through the guarded latest-release correction defined below.
+
+The latest-release correction MUST require an expected version. The correction MUST reject an empty release history or an expected version that does not exactly match the newest entry's version without modifying governed artifacts.
+
+A successful latest-release correction MUST remove only the newest release entry. It MUST NOT mutate the referenced Work Items; those items remain `done` and become unreleased because no release references them.
+
+The latest-release correction MUST mutate only canonical release data. It MUST NOT create, remove, or modify `CHANGELOG.md`, Git tags, hosted releases, or published packages.
+
+After a latest-release correction, `govctl render changelog --force` MUST derive release membership only from the current canonical release entries. The full projection MUST omit release versions absent from canonical release data and MUST classify as unreleased every `done` Work Item not referenced by a current release.
 
 Implementations MUST define a machine-readable JSON Schema for the release file structure and MUST validate `gov/releases.toml` against that schema during project validation.
 
 **Rationale:**
-Releases are first-class governance artifacts because changelog generation and release membership depend on them. Giving releases a defined TOML structure and required JSON Schema removes the remaining schema-less storage special case."""
+Release membership is the immutability boundary for a completed Work Item while its release entry exists. Unique membership and a frozen `done` status preserve release history. Restricting correction to the newest entry restores the immediately preceding local state without permitting arbitrary history rewriting, while the expected-version check rejects stale operator intent."""

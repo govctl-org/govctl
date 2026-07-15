@@ -29,7 +29,6 @@ impl Default for ReleasesMeta {
 pub struct Release {
     pub version: String,
     pub date: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub refs: Vec<String>,
 }
 

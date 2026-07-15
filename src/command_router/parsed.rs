@@ -1,6 +1,6 @@
 use super::{BuiltinOp, CommandPlan, Op, global};
-use crate::diagnostic::DiagnosticResult;
-use crate::{Commands, LoopCommand, TagCommand};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::{Commands, LoopCommand, ReleaseArgs, ReleaseCommand, TagCommand};
 
 impl CommandPlan {
     pub fn from_parsed(cmd: &Commands, global_dry_run: bool) -> DiagnosticResult<Self> {
@@ -65,13 +65,29 @@ impl CommandPlan {
             Commands::Work { command } => command.to_plan(),
             Commands::Guard { command } => command.to_plan(),
             Commands::Loop { command } => Ok(plan_loop_command(command)),
-            Commands::Release { version, date } => Ok(global(Op::Builtin(BuiltinOp::ReleaseCut {
-                version: version.clone(),
-                date: date.clone(),
-            }))),
+            Commands::Release(args) => plan_release_command(args),
             Commands::Tag { command } => Ok(plan_tag_command(command)),
         }
     }
+}
+
+fn plan_release_command(args: &ReleaseArgs) -> DiagnosticResult<CommandPlan> {
+    let op = match &args.command {
+        Some(ReleaseCommand::Undo { expected_version }) => BuiltinOp::ReleaseUndo {
+            expected_version: expected_version.clone(),
+        },
+        None => BuiltinOp::ReleaseCut {
+            version: args.version.clone().ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E0801MissingRequiredArg,
+                    "release requires a version or the undo command",
+                    "release command",
+                )
+            })?,
+            date: args.date.clone(),
+        },
+    };
+    Ok(global(Op::Builtin(op)))
 }
 
 fn plan_loop_command(command: &LoopCommand) -> CommandPlan {

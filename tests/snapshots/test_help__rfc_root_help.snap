@@ -1,7 +1,6 @@
 ---
 source: tests/test_help.rs
-assertion_line: 22
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: normalized
 ---
 $ govctl rfc --help
 RFC operations
@@ -18,7 +17,7 @@ Commands:
   add        Add value to RFC array field
   remove     Remove value from RFC array field
   bump       Bump RFC version
-  finalize   Finalize RFC status (draft → normative or deprecated)
+  finalize   Finalize RFC status (draft → normative)
   advance    Advance RFC phase
   deprecate  Deprecate RFC
   supersede  Supersede RFC

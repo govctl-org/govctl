@@ -189,7 +189,7 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
         ),
         command(
             "rfc finalize",
-            "Transition RFC status to normative or deprecated",
+            "Transition a draft RFC to normative status",
             "When an RFC spec is complete and ready for implementation. 'normative' makes it binding law.",
             "govctl rfc finalize RFC-0001 normative",
             &["RFC must be in draft status"],
@@ -282,11 +282,11 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
             RFC_EXISTS,
         ),
         command(
-            "release",
-            "Cut a release (collect unreleased work items)",
-            "When releasing a new version. Collects done work items into changelog.",
+            "release / release undo",
+            "Create or correct the newest local release cut",
+            "To group done Work Items under a version or correct an accidental newest cut.",
             "govctl release 0.2.0",
-            &["Done work items exist"],
+            &["Cut requires unreleased done Work Items; undo requires a matching newest version"],
         ),
         command(
             "rfc deprecate / clause deprecate",

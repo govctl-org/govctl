@@ -47,6 +47,7 @@ pub fn compute_rfc_content_signature(rfc: &RfcIndex) -> Result<String, Diagnosti
     compute_rfc_signature_with_filter(rfc, |map| {
         map.remove("signature");
         map.remove("version");
+        map.remove("phase");
         map.remove("changelog");
     })
 }

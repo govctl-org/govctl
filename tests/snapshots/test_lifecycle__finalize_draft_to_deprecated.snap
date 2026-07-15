@@ -1,6 +1,6 @@
 ---
-source: tests/test_lifecycle.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/rfc_cases/finalize.rs
+expression: snapshot
 ---
 $ govctl rfc new Obsolete RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -8,8 +8,11 @@ Created RFC: gov/rfc/RFC-0001/rfc.toml
 exit: 0
 
 $ govctl rfc finalize RFC-0001 deprecated
-error[E0104]: Invalid status transition: draft -> deprecated (RFC-0001)
-exit: 1
+error: invalid value 'deprecated' for '<STATUS>'
+  [possible values: normative]
+
+For more information, try '--help'.
+exit: 2
 
 $ govctl rfc list
 ┌──────────┬─────────┬────────┬───────┬──────────────┐

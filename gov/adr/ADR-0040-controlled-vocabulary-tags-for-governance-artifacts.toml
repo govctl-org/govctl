@@ -11,7 +11,6 @@ refs = [
 ]
 tags = ["schema"]
 
-
 [content]
 context = """
 As the govctl artifact corpus grows (currently 200+ artifacts), finding related artifacts by domain becomes difficult. Users resort to `grep` or memorizing IDs.
@@ -25,11 +24,7 @@ There is no structured way to answer "show me everything related to caching" or 
 - [[RFC-0002:C-RESOURCES]] defines the field surface for each artifact type — adding `tags` requires a schema amendment
 - [[RFC-0002:C-CRUD-VERBS]] governs how fields are mutated — tags must follow existing `add`/`remove` verb semantics
 - Tags must be diffable and reviewable in PRs (no hidden state)
-- The system should prevent tag sprawl — typos and near-duplicates degrade signal
-
-### Options Considered
-
-Two tagging models: controlled vocabulary (registry-first) vs. free-form (tag-on-use). See alternatives for analysis."""
+- The system should prevent tag sprawl — typos and near-duplicates degrade signal"""
 decision = """
 We will use a **controlled-vocabulary tag system** where tags must be registered in a project-level allowed list before any artifact can reference them.
 

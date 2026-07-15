@@ -21,14 +21,19 @@ pub fn bump(
     changes: &[String],
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
+    require_rfc_content_signature_schema(config, rfc_id)?;
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let mut rfc = read_rfc(config, &rfc_path)?;
     let refresh_signature_after_write = match (level, summary, changes.is_empty()) {
         (Some(lvl), Some(sum), _) => {
-            ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
+            let releases_content_amendment =
+                ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
 
             let new_version = bump_rfc_version(&mut rfc, lvl, sum)?;
+            if releases_content_amendment {
+                rfc.phase = RfcPhase::Spec;
+            }
 
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
@@ -109,22 +114,53 @@ pub fn finalize(
     status: FinalizeStatus,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
+    match status {
+        FinalizeStatus::Normative => {
+            transition_rfc_status(config, rfc_id, RfcStatus::Normative, op)
+        }
+    }
+}
+
+pub(super) fn deprecate_rfc(
+    config: &Config,
+    rfc_id: &str,
+    op: WriteOp,
+) -> DiagnosticResult<Diagnostics> {
+    transition_rfc_status(config, rfc_id, RfcStatus::Deprecated, op)
+}
+
+fn transition_rfc_status(
+    config: &Config,
+    rfc_id: &str,
+    target_status: RfcStatus,
+    op: WriteOp,
+) -> DiagnosticResult<Diagnostics> {
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let rfc = read_rfc(config, &rfc_path)?;
-
-    let target_status = match status {
-        FinalizeStatus::Normative => RfcStatus::Normative,
-        FinalizeStatus::Deprecated => RfcStatus::Deprecated,
-    };
 
     if !is_valid_status_transition(rfc.status, target_status) {
         return Err(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
             format!(
-                "Invalid status transition: {} -> {}",
+                "Invalid status transition: {} -> {}. Valid transition from {}: {}",
                 rfc.status.as_ref(),
-                target_status.as_ref()
+                target_status.as_ref(),
+                rfc.status.as_ref(),
+                valid_rfc_status_targets(rfc.status)
+            ),
+            rfc_id,
+        ));
+    }
+
+    if target_status == RfcStatus::Deprecated
+        && matches!(rfc.phase, RfcPhase::Impl | RfcPhase::Test)
+    {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0104RfcInvalidTransition,
+            format!(
+                "Cannot deprecate an RFC while phase is {}. Advance the current version to stable first.",
+                rfc.phase.as_ref()
             ),
             rfc_id,
         ));
@@ -153,17 +189,19 @@ pub fn advance(
     phase: RfcPhase,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
+    require_rfc_content_signature_schema(config, rfc_id)?;
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let rfc = read_rfc(config, &rfc_path)?;
 
-    // Check status constraint: cannot advance to impl+ without normative status
-    if rfc.status == RfcStatus::Draft && phase != RfcPhase::Spec {
+    // Phase/status combinations are constrained by [[RFC-0000:C-PHASE-LIFECYCLE]].
+    if rfc.status != RfcStatus::Normative && phase != RfcPhase::Spec {
         return Err(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
             format!(
-                "Cannot advance to {} while status is draft. Finalize to normative first.",
-                phase.as_ref()
+                "Cannot advance to {} while status is {}. Only normative RFCs can enter implementation phases.",
+                phase.as_ref(),
+                rfc.status.as_ref()
             ),
             rfc_id,
         ));
@@ -173,20 +211,81 @@ pub fn advance(
         return Err(Diagnostic::new(
             DiagnosticCode::E0104RfcInvalidTransition,
             format!(
-                "Invalid phase transition: {} -> {}",
+                "Invalid phase transition: {} -> {}. Valid transition from {}: {}",
                 rfc.phase.as_ref(),
-                phase.as_ref()
+                phase.as_ref(),
+                rfc.phase.as_ref(),
+                valid_rfc_phase_targets(rfc.phase)
             ),
             rfc_id,
         ));
     }
 
-    edit::set_field_direct(config, rfc_id, "phase", phase.as_ref(), op)?;
+    let rfc_index = crate::load::load_rfc(config, &rfc_path)?;
+    let migrated_signature = if let Some(stored_signature) = &rfc_index.rfc.signature {
+        let current_signature = crate::signature::compute_rfc_content_signature(&rfc_index)?;
+        if stored_signature == &current_signature {
+            None
+        } else if crate::signature::compute_rfc_signature(&rfc_index)
+            .is_ok_and(|legacy| stored_signature == &legacy)
+        {
+            Some(current_signature)
+        } else {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0114RfcPendingAmendment,
+                "Cannot advance phase while RFC or clause content has an unversioned amendment. Release it with `govctl rfc bump` first.",
+                rfc_id,
+            ));
+        }
+    } else {
+        None
+    };
+
+    let mut updated_rfc = rfc;
+    if let Some(signature) = migrated_signature {
+        updated_rfc.signature = Some(signature);
+    }
+    updated_rfc.phase = phase;
+    write_lifecycle_rfc(config, &rfc_path, &updated_rfc, op)?;
 
     if !op.is_preview() {
         ui::phase_advanced(rfc_id, phase.as_ref());
     }
     Ok(vec![])
+}
+
+fn valid_rfc_status_targets(status: RfcStatus) -> &'static str {
+    match status {
+        RfcStatus::Draft => "normative",
+        RfcStatus::Normative => "deprecated",
+        RfcStatus::Deprecated => "none (deprecated is terminal)",
+    }
+}
+
+fn valid_rfc_phase_targets(phase: RfcPhase) -> &'static str {
+    match phase {
+        RfcPhase::Spec => "impl",
+        RfcPhase::Impl => "test",
+        RfcPhase::Test => "stable",
+        RfcPhase::Stable => "none (stable is terminal for the current version)",
+    }
+}
+
+fn require_rfc_content_signature_schema(config: &Config, rfc_id: &str) -> DiagnosticResult<()> {
+    // Older schemas require the explicit migration path in [[RFC-0002:C-GLOBAL-COMMANDS]].
+    let required = crate::cmd::migrate::RFC_CONTENT_SIGNATURE_SCHEMA_VERSION;
+    if config.schema.version >= required {
+        return Ok(());
+    }
+
+    Err(Diagnostic::new(
+        DiagnosticCode::E0505MigrationRequired,
+        format!(
+            "RFC amendment signatures require schema version {required} (found {}). Run `govctl migrate` before bumping or advancing RFCs.",
+            config.schema.version
+        ),
+        rfc_id,
+    ))
 }
 
 fn write_lifecycle_rfc(
@@ -217,10 +316,13 @@ fn ensure_rfc_has_content_amendment(
     config: &Config,
     rfc_path: &Path,
     rfc_id: &str,
-) -> DiagnosticResult<()> {
+) -> DiagnosticResult<bool> {
     let rfc_index = crate::load::load_rfc(config, rfc_path)?;
-    if rfc_index.rfc.signature.is_none() || crate::signature::is_rfc_amended(&rfc_index) {
-        return Ok(());
+    if rfc_index.rfc.signature.is_none() {
+        return Ok(false);
+    }
+    if crate::signature::is_rfc_amended(&rfc_index) {
+        return Ok(true);
     }
 
     Err(Diagnostic::new(

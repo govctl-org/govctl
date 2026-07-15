@@ -27,11 +27,7 @@ The current TUI is primarily a dashboard plus RFC/ADR/work item browser. It does
 - [[RFC-0007]] defines TUI v2 behavior for a read-only cockpit.
 - [[RFC-0002]] owns CLI resource and search semantics.
 - [[RFC-0006]] owns loop state and loop execution semantics.
-- First-phase TUI v2 must serve humans, not agents or machine parsing.
-
-### Options Considered
-
-We considered keeping the current TUI and adding isolated views, building a full CRUD TUI editor, and building a read-only human cockpit with loop DAG visualization."""
+- First-phase TUI v2 must serve humans, not agents or machine parsing."""
 decision = """
 We will **build TUI v2 as a read-only human cockpit with loop DAG visualization**.
 

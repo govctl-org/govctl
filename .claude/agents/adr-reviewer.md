@@ -15,9 +15,10 @@ It does not edit artifacts, execute lifecycle verbs, create work items, or perfo
 When invoked:
 
 1. Read the rendered ADR using `govctl adr show <ADR-ID>` (never read the raw TOML file — use the rendered markdown)
-2. Run or inspect `govctl check` diagnostics when evaluating source-sensitive reference syntax
-3. Evaluate against the checklist below
-4. Report findings organized by severity
+2. Run or inspect `govctl check` diagnostics for source-sensitive references and projection ownership
+3. If rendered structure is duplicated or `E0307` is reported, inspect the owning field with `govctl adr get <ADR-ID> <context|decision|consequences>`
+4. Evaluate against the checklist below
+5. Report findings organized by severity
 
 ## Review Checklist
 
@@ -55,6 +56,14 @@ When invoked:
 - [ ] Historical backfill ADRs may omit rejected alternatives only if the ADR states they were not recoverable
 - [ ] Rejected alternatives have a rejection reason
 - [ ] Alternatives are genuinely different approaches (not strawmen)
+
+### Projection Ownership
+
+- [ ] The rendered title, Context, Decision, Consequences, and Alternatives sections each appear once
+- [ ] Free-form content does not add `Options Considered`, `Alternatives Considered`, or another renderer-owned heading
+- [ ] The structured `alternatives` field is the only options inventory
+- [ ] Content does not repeat the generated reference inventory as a heading or standalone list
+- [ ] Any `E0307` diagnostic is Critical and is fixed before acceptance; `--force` is not a projection-ownership bypass
 
 ### References
 
@@ -98,4 +107,4 @@ Overall: [PASS / NEEDS WORK / MAJOR ISSUES]
 
 If no findings exist, say so explicitly and still include the overall status.
 
-The most common failure modes are an empty or dishonest Negative section, ADRs that drift into execution tracking, ADRs that try to act like mini-RFCs, ADRs that invent unreferenced product obligations, and ADRs that jump straight to a decision without first documenting the alternatives discussion. If the review finds any of those, flag them as Critical.
+The most common failure modes are an empty or dishonest Negative section, duplicated renderer-owned structure, ADRs that drift into execution tracking, ADRs that try to act like mini-RFCs, ADRs that invent unreferenced product obligations, and ADRs that jump straight to a decision without first documenting the alternatives discussion. If the review finds any of those, flag them as Critical.

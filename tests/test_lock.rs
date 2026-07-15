@@ -5,8 +5,9 @@
 mod common;
 
 use common::{init_project, run_commands, today};
+use fs2::FileExt;
 use serde_json::Value;
-use std::fs;
+use std::fs::{self, OpenOptions};
 use std::process::Command;
 use std::sync::{Arc, Barrier};
 use std::thread;

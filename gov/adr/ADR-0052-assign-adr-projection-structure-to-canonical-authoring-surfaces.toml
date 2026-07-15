@@ -1,0 +1,94 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0052"
+title = "Assign ADR projection structure to canonical authoring surfaces"
+status = "accepted"
+date = "2026-07-15"
+refs = [
+    "RFC-0000:C-ADR-PROJECTION-OWNERSHIP",
+    "ADR-0003",
+    "ADR-0024",
+    "ADR-0027",
+    "ADR-0042",
+]
+tags = ["validation"]
+
+[content]
+context = """
+The ADR model combines free-form Markdown content fields with structured metadata and alternatives that the renderer projects into a human-readable document. Existing authoring guidance allowed an options subsection in free-form context even though the renderer independently emitted the same discussion from structured alternatives. For example, a context field containing `### Options Considered` rendered alongside the generated `## Alternatives Considered` inventory.
+
+### Problem Statement
+
+When one semantic section can be authored through both prose and structured fields, a source artifact can remain schema-valid while its rendered projection repeats or contradicts itself. Writer prompts and isolated review can reduce this risk but cannot guarantee that it is caught before acceptance.
+
+### Constraints
+
+- [[RFC-0000:C-ADR-PROJECTION-OWNERSHIP]] defines the observable validation and acceptance behavior.
+- Structured alternatives remain the discussion-oriented model established by [[ADR-0027]].
+- Rendered Markdown remains a projection of authoritative TOML under [[ADR-0003]].
+- Historical ADRs in external repositories must not require semantic rewriting merely to adopt a newer govctl release.
+- Inline references in explanatory prose remain useful and are distinct from a generated reference inventory."""
+decision = """
+We will **assign every rendered ADR section to one canonical authoring surface and enforce that boundary before acceptance**.
+
+Free-form `context`, `decision`, and `consequences` fields own their explanatory body prose. Structured `refs` and `content.alternatives` own reference and option inventories, while the renderer owns the surrounding document headings and labels.
+
+A deterministic validator will inspect Markdown headings outside fenced code blocks. It will reject conflicts in proposed ADRs and in the acceptance path, where the existing force option remains limited to alternatives completeness. Historical terminal ADRs retain compatibility, while repositories may clean legacy duplication without changing the stored schema.
+
+This approach was chosen because:
+
+1. **Deterministic prevention:** Authoring and isolated review remain useful, but a machine gate prevents the known conflict from reaching acceptance.
+2. **Single semantic owner:** Structured alternatives remain the options inventory instead of competing with free-form context.
+3. **Proportional structure:** Heading-aware validation preserves useful prose and examples without expanding the ADR schema.
+4. **Historical compatibility:** Enforcement closes new violations without requiring semantic rewrites of accepted external ADRs.
+
+Writer and reviewer guidance will mirror the same ownership boundary so agents receive one rule at authoring, review, and validation time."""
+consequences = """
+### Positive
+
+- Schema-valid ADR sources can no longer introduce new duplicate renderer-owned sections and still pass acceptance.
+- Writer, reviewer, validator, and renderer use the same ownership model.
+- Heading-aware parsing preserves code examples and inline references.
+- Existing external ADR history remains adoptable without semantic migration.
+
+### Negative
+
+- Validation must understand enough Markdown structure to distinguish headings from fenced examples; the parser is intentionally limited to heading and fence recognition rather than general Markdown rendering.
+- Historical ADR duplication is not automatically eliminated outside repositories that choose to clean it; compatibility is preferred over heuristic rewriting.
+- A small set of heading names becomes unavailable for author-defined subsections; the diagnostic directs authors to the corresponding structured field or renderer-owned section.
+
+### Neutral
+
+- The ADR schema and renderer output format remain unchanged.
+- The existing alternatives-first acceptance gate remains responsible for deliberation completeness.
+- Repository-local cleanup of accepted ADR prose is editorial and does not alter prior decisions."""
+
+[[content.alternatives]]
+text = "Rely on writer and reviewer guidance only"
+status = "rejected"
+pros = ["No validation or migration work"]
+cons = [
+    "The same contradictory guidance can recur",
+    "Review remains probabilistic",
+]
+rejection_reason = "The failure mode already passed both authoring and review guidance"
+
+[[content.alternatives]]
+text = "Reject projection conflicts in every ADR status immediately"
+status = "rejected"
+pros = ["Applies one invariant uniformly to the whole repository"]
+cons = [
+    "Existing external repositories can fail after upgrading",
+    "Historical prose may require subjective rewriting",
+]
+rejection_reason = "Uniform enforcement does not justify retroactive compatibility breakage"
+
+[[content.alternatives]]
+text = "Enforce canonical ownership for proposed ADRs and acceptance while preserving historical compatibility"
+status = "accepted"
+pros = [
+    "Prevents new conflicts at deterministic gates",
+    "Keeps structured alternatives as the sole options inventory",
+]
+cons = ["Historical ADRs can retain legacy duplication until intentionally cleaned"]

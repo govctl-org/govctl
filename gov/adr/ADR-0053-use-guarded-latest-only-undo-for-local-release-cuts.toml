@@ -1,0 +1,104 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0053"
+title = "Use guarded latest-only undo for local release cuts"
+status = "accepted"
+date = "2026-07-15"
+refs = [
+    "ADR-0014",
+    "ADR-0051",
+    "RFC-0000:C-RELEASE-DEF",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+    "RFC-0004:C-SCOPE",
+]
+tags = [
+    "release",
+    "lifecycle",
+    "safety",
+]
+
+[content]
+context = """
+[[ADR-0014]] models a release cut as a new entry prepended to `gov/releases.toml`, and [[ADR-0051]] uses release membership as the boundary that freezes completed Work Items. An accidental local cut therefore freezes its members even when the release record has not been used for an external publication.
+
+The release command records governance data only. It does not create or remove Git tags, hosted releases, or published packages. A correction mechanism should recover the immediately preceding local governance state without implying that external publication can be reversed.
+
+### Problem Statement
+
+We need a narrow way to correct the most recent accidental local release cut while preserving older release history and detecting stale operator intent.
+
+### Constraints
+
+- Existing release entries form a newest-first local history.
+- Released Work Items remain frozen for as long as their release reference exists.
+- Correction must not introduce release states, tombstones, or external-service side effects.
+- The normal gov-root write lock and atomic file write remain the concurrency and persistence boundary."""
+decision = """
+We will **correct an accidental local release cut by removing only the newest release entry after matching an operator-supplied expected version** because:
+
+1. **Head-only correction:** Removing the newest entry restores the immediately preceding local release history without selecting or rewriting an older entry.
+2. **Stale-intent rejection:** The expected version makes operator intent explicit and prevents delayed automation from undoing a newer release.
+3. **Bounded meaning:** The operation changes local governance data only and does not claim to retract externally published software.
+
+This decision narrows [[ADR-0051]] only with respect to the lifetime of release membership: a Work Item is frozen while a release entry references it. Removing the newest entry through this correction removes that membership boundary but does not reopen or otherwise mutate the Work Item.
+
+Git tags, hosted releases, packages, and other publication systems remain outside govctl's release correction."""
+consequences = """
+### Positive
+
+- An accidental latest cut can be corrected without creating replacement Work Items.
+- Older release history cannot be selected or rewritten by the correction command.
+- Version matching makes stale invocations fail instead of undoing a newer release.
+- Existing locking, release storage, and atomic-write mechanisms remain sufficient.
+
+### Negative
+
+- Once another release is cut, the earlier entry can no longer be corrected through this operation. The older record remains intact, and any corrective implementation is tracked by a new Work Item and later release rather than by rewriting history.
+- Local correction does not retract anything already published externally, so operators must handle those systems separately.
+- The canonical release file retains no tombstone for the removed cut. Version-control history is the audit trail for the cut and correction.
+
+### Neutral
+
+- Work Items referenced by the removed entry remain completed but become unreleased.
+- No persistent release lifecycle state is introduced."""
+
+[[content.alternatives]]
+text = "Keep every release entry immutable and represent mistakes with later Work Items"
+status = "rejected"
+pros = ["Preserves the existing append-only interpretation"]
+cons = ["Cannot correct an accidental local cut before publication"]
+rejection_reason = "It keeps an operational mistake frozen even when no later local release depends on it"
+
+[[content.alternatives]]
+text = "Allow deletion of any release entry"
+status = "rejected"
+pros = ["Can correct any selected local release record"]
+cons = [
+    "Rewrites non-head history and can invalidate every later release boundary",
+    "Makes stale or mistaken target selection more destructive",
+]
+rejection_reason = "Arbitrary historical deletion breaks the head-only rollback boundary and can invalidate later release history"
+
+[[content.alternatives]]
+text = "Remove only the newest local release when its expected version matches"
+status = "accepted"
+pros = [
+    "Restores the immediately preceding local state without rewriting older history",
+    "Uses the expected version as an explicit stale-intent guard",
+]
+cons = ["Cannot correct an older release after another release has been cut"]
+
+[[content.alternatives]]
+text = "Remove the newest local release without requiring its expected version"
+status = "rejected"
+pros = ["Uses the smallest possible command input"]
+cons = ["A delayed or repeated invocation can remove a newer release than the operator intended"]
+rejection_reason = "Position alone cannot detect stale operator or automation intent"
+
+[[content.alternatives]]
+text = "Retain corrected releases with a retracted status or tombstone"
+status = "rejected"
+pros = ["Preserves an artifact-local audit trail of the cut and correction"]
+cons = ["Adds persistent release states and requires changelog and Work Item semantics for retracted membership"]
+rejection_reason = "Version-control history provides the required audit trail without adding a second release lifecycle model"

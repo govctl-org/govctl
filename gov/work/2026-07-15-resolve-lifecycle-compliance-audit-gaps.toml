@@ -1,0 +1,53 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-15-004"
+title = "Resolve lifecycle compliance audit gaps"
+status = "done"
+created = "2026-07-15"
+started = "2026-07-15"
+completed = "2026-07-15"
+refs = [
+    "RFC-0000:C-PHASE-LIFECYCLE",
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0000:C-RELEASE-DEF",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+
+[content]
+description = "Implement and test corrections for lifecycle, storage, and diagnostic conformance gaps identified during the lifecycle redesign audit."
+
+[[content.acceptance_criteria]]
+text = "Lifecycle command write failures preserve governed artifact bytes"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Phase-only RFC advancement remains outside amendment detection after legacy signature normalization"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFC and Clause invalid-transition diagnostics identify valid targets or terminal states"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFC finalize exposes only the normative target while deprecation remains a separate verb"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Release creation and schema validation reject invalid dates and missing refs"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Work Item schema and serialization checks match required scalars and omitted empty-list semantics"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "cargo test --all-features --quiet, cargo run --quiet -- check, and just pre-commit pass"
+status = "done"
+category = "chore"

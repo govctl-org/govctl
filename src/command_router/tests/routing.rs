@@ -19,6 +19,50 @@ fn test_self_update_routes_to_builtin_op() -> Result<(), Box<dyn std::error::Err
 }
 
 #[test]
+fn test_release_commands_route_to_builtin_ops() -> Result<(), Box<dyn std::error::Error>> {
+    let cut = CommandPlan::from_parsed(
+        &Commands::Release(ReleaseArgs {
+            version: Some("0.2.0".to_string()),
+            date: Some("2026-07-15".to_string()),
+            command: None,
+        }),
+        false,
+    )?;
+    assert!(matches!(
+        cut.op,
+        Op::Builtin(BuiltinOp::ReleaseCut {
+            ref version,
+            date: Some(ref date),
+        }) if version == "0.2.0" && date == "2026-07-15"
+    ));
+
+    let undo = CommandPlan::from_parsed(
+        &Commands::Release(ReleaseArgs {
+            version: None,
+            date: None,
+            command: Some(ReleaseCommand::Undo {
+                expected_version: "0.2.0".to_string(),
+            }),
+        }),
+        false,
+    )?;
+    assert!(matches!(
+        undo.op,
+        Op::Builtin(BuiltinOp::ReleaseUndo {
+            ref expected_version,
+        }) if expected_version == "0.2.0"
+    ));
+    Ok(())
+}
+
+#[test]
+fn test_release_creation_and_undo_syntaxes_parse() {
+    assert!(crate::Cli::try_parse_from(["govctl", "release", "0.2.0"]).is_ok());
+    assert!(crate::Cli::try_parse_from(["govctl", "release", "undo", "0.2.0"]).is_ok());
+    assert!(crate::Cli::try_parse_from(["govctl", "release", "cut", "0.2.0"]).is_err());
+}
+
+#[test]
 fn test_target_resolves_get_and_edit_to_same_field_target() -> Result<(), Box<dyn std::error::Error>>
 {
     let get = crate::AdrCommand::Get(crate::CommonGetArgs {

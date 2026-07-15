@@ -7,7 +7,7 @@
   "properties": {
     "govctl": {
       "type": "object",
-      "required": ["id", "title", "status"],
+      "required": ["id", "title", "status", "created"],
       "properties": {
         "id": {
           "type": "string",

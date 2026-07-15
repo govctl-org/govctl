@@ -7,8 +7,9 @@
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::ProjectIndex;
+use crate::model::{AdrStatus, ProjectIndex};
 
+mod adr_projection;
 mod artifact_refs;
 mod bracket_refs;
 mod fields;
@@ -21,6 +22,7 @@ mod tags;
 mod work_dependencies;
 mod work_items;
 
+use adr_projection::validate_adr_projection_ownership;
 use artifact_refs::validate_artifact_refs;
 use bracket_refs::validate_bracket_reference_hierarchy;
 use rfc::{validate_clause_references, validate_rfc};
@@ -28,6 +30,7 @@ use signatures::validate_rfc_signatures;
 use tags::validate_artifact_tags;
 use work_items::{validate_work_item_descriptions, validate_work_item_legacy_inline_history};
 
+pub(crate) use adr_projection::validate_adr_projection_ownership as validate_adr_projection;
 pub use artifact_refs::validate_artifact_ref_edit;
 pub(crate) use fields::normalize_clause_supersession_target;
 pub use fields::{ArtifactKind, validate_field};
@@ -91,8 +94,14 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
                     "ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)",
                     adr.meta().id
                 ),
-                adr_path_display,
+                adr_path_display.clone(),
             ));
+        }
+
+        if adr.meta().status == AdrStatus::Proposed {
+            result
+                .diagnostics
+                .extend(validate_adr_projection_ownership(adr, adr_path_display));
         }
     }
 

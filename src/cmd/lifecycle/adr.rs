@@ -5,7 +5,7 @@ use crate::model::{AdrEntry, AdrStatus, AlternativeStatus};
 use crate::parse::load_adrs;
 use crate::parse::write_adr;
 use crate::ui;
-use crate::validate::is_valid_adr_transition;
+use crate::validate::{is_valid_adr_transition, validate_adr_projection};
 use crate::write::WriteOp;
 
 fn adr_not_found(adr_id: &str) -> Diagnostic {
@@ -98,11 +98,23 @@ pub fn accept_adr(
         return Err(Diagnostic::new(
             DiagnosticCode::E0303AdrInvalidTransition,
             format!(
-                "Invalid ADR transition: {} -> accepted",
-                entry.spec.govctl.status.as_ref()
+                "Invalid ADR transition: {} -> accepted. Valid transitions from {}: {}",
+                entry.spec.govctl.status.as_ref(),
+                entry.spec.govctl.status.as_ref(),
+                valid_adr_targets(entry.spec.govctl.status)
             ),
             adr_id,
         ));
+    }
+
+    if let Some(diagnostic) = validate_adr_projection(
+        &entry,
+        config.display_path(&entry.path).display().to_string(),
+    )
+    .into_iter()
+    .next()
+    {
+        return Err(diagnostic);
     }
 
     // Implements [[ADR-0042]]: validate alternatives completeness before acceptance
@@ -126,8 +138,10 @@ pub fn reject_adr(config: &Config, adr_id: &str, op: WriteOp) -> DiagnosticResul
         return Err(Diagnostic::new(
             DiagnosticCode::E0303AdrInvalidTransition,
             format!(
-                "Invalid ADR transition: {} -> rejected",
-                entry.spec.govctl.status.as_ref()
+                "Invalid ADR transition: {} -> rejected. Valid transitions from {}: {}",
+                entry.spec.govctl.status.as_ref(),
+                entry.spec.govctl.status.as_ref(),
+                valid_adr_targets(entry.spec.govctl.status)
             ),
             adr_id,
         ));
@@ -162,8 +176,10 @@ pub(super) fn supersede_adr(
         return Err(Diagnostic::new(
             DiagnosticCode::E0303AdrInvalidTransition,
             format!(
-                "Invalid ADR transition: {} -> superseded",
-                entry.spec.govctl.status.as_ref()
+                "Invalid ADR transition: {} -> superseded. Valid transitions from {}: {}",
+                entry.spec.govctl.status.as_ref(),
+                entry.spec.govctl.status.as_ref(),
+                valid_adr_targets(entry.spec.govctl.status)
             ),
             adr_id,
         ));
@@ -182,4 +198,13 @@ pub(super) fn supersede_adr(
         ui::superseded("ADR", adr_id, by);
     }
     Ok(vec![])
+}
+
+fn valid_adr_targets(status: AdrStatus) -> &'static str {
+    match status {
+        AdrStatus::Proposed => "accepted, rejected",
+        AdrStatus::Accepted => "superseded",
+        AdrStatus::Rejected => "none (rejected is terminal)",
+        AdrStatus::Superseded => "none (superseded is terminal)",
+    }
 }

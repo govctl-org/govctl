@@ -5,7 +5,7 @@ id = "RFC-0007"
 title = "TUI v2 read-only cockpit"
 version = "0.2.0"
 status = "normative"
-phase = "test"
+phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-06-06"
 updated = "2026-06-07"
@@ -15,7 +15,7 @@ refs = [
     "RFC-0002",
 ]
 tags = ["tui"]
-signature = "e281def7edbba823ed931af760b3830cef9aa2b77049ebc4f6d0faebb24f9491"
+signature = "12693d8406d5289c411931c5e8737de238e9d727b6f313fc1ba94f72e45d97c0"
 
 [[sections]]
 title = "Summary"

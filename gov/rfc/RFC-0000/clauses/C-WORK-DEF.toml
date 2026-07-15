@@ -10,13 +10,16 @@ tags = ["core"]
 
 [content]
 text = """
-A Work Item tracks a unit of work from inception to completion.
+A Work Item tracks a unit of work from inception through a release-eligible completion. Release membership freezes its lifecycle status.
 
 Every Work Item MUST be stored as a TOML file containing:
-- `[govctl]` section with: `id`, `title`, `status`, `created`, `refs`
-- optional `[govctl]` fields: `started`, `completed`
-- `[content]` section with: `description`, `acceptance_criteria`, `notes`
+- `[govctl]` section with required fields: `id`, `title`, `status`, `created`
+- optional `[govctl]` fields: `started`, `completed`, `refs`
+- `[content]` section with required field: `description`
+- optional `[content]` fields: `acceptance_criteria`, `notes`
 - optional `[verification]` section with: `required_guards`, `waivers`
+
+Omitted list-valued fields `refs`, `acceptance_criteria`, `notes`, `verification.required_guards`, and `verification.waivers` MUST be interpreted as empty lists.
 
 Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 
@@ -34,17 +37,29 @@ Waiver entries MUST reference only guards that appear in the work item's effecti
 
 A waiver MUST suppress only the named guard. A Work Item MUST NOT disable the verification system globally.
 
-Work Item status lifecycle:
+Work Item status transitions:
 
-    queue → active → done
-        ↘        ↘ cancelled
+    queue → active
+    queue → cancelled
+    active → done
+    active → cancelled
+    done → active (unreleased only)
 
 **queue**: Planned but not started.
 
 **active**: Currently in progress. Only one active item recommended per focus area.
 
-**done**: Completed. All acceptance criteria met, and any required verification guards have passed or been explicitly waived.
+**done**: Completed and eligible for release. All acceptance criteria met, and any required verification guards have passed or been explicitly waived.
 
 **cancelled**: Abandoned from queue or active. Reason documented in notes.
 
-A Work Item MUST NOT transition to done if any acceptance_criteria are pending."""
+A Work Item MUST contain at least one acceptance criterion before it transitions to done.
+
+A Work Item MUST NOT transition to done if any acceptance criteria are pending.
+
+A done Work Item that is not referenced by a release MUST be allowed to return to active. This transition MUST preserve `started` and remove `completed`.
+
+A Work Item referenced by a release MUST remain done.
+
+**Rationale:**
+An unreleased completion is a correctable judgment. Release membership supplies the immutable lifecycle boundary without adding another persisted Work Item status. Omitting empty list fields keeps the TOML representation minimal without changing the logical data model."""

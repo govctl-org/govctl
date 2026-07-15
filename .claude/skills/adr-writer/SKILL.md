@@ -76,10 +76,6 @@ What specific issue are we addressing?
 ### Constraints
 
 What existing RFCs, ADRs, or technical limitations restrict our options?
-
-### Options Considered
-
-Brief overview (details go in the alternatives field).
 ```
 
 **Key principle:** A reader 6 months from now must understand _why_ this decision was needed without asking anyone.
@@ -214,7 +210,7 @@ Examples:
 
 ### Quality Checklist
 
-- **Context is complete.** Problem statement, constraints, and options are all present.
+- **Context is complete.** Problem statement, constraints, and decision drivers are present.
 - **Alternatives come first.** The discussion is visible in `alternatives` before the final decision prose settles the issue.
 - **Decision is decisive.** Starts with "We will..." — not "We might..." or "We could...".
 - **Consequences are honest.** Negative section is non-empty with mitigations.
@@ -251,6 +247,15 @@ decision = "Use `HashMap<String, Vec<ClauseSpec>>` for clause storage"
 
 ## Rendering Rules
 
+Each semantic section has one canonical authoring surface:
+
+| Content                                             | Canonical owner                       |
+| --------------------------------------------------- | ------------------------------------- |
+| ADR title, metadata, and fixed section headings     | Renderer                              |
+| Reference inventory                                 | `refs`                                |
+| Options, statuses, pros/cons, and rejection reasons | `content.alternatives`                |
+| Explanatory body prose and allowed subsections      | `context`, `decision`, `consequences` |
+
 The renderer auto-generates structural elements from TOML metadata. **Do NOT include these in content fields:**
 
 - `## Context`, `## Decision`, `## Consequences` headings — auto-generated for each section
@@ -260,12 +265,14 @@ The renderer auto-generates structural elements from TOML metadata. **Do NOT inc
 - ADR title (`# ADR-NNNN: Title`) — auto-generated from metadata
 
 Content fields should contain only the body prose and `[[...]]` references.
+Use structured alternatives as the only options inventory; do not add an `Options Considered` or `Alternatives Considered` subsection to prose. `govctl check` and `govctl adr accept` enforce this boundary for proposed ADRs per [[RFC-0000:C-ADR-PROJECTION-OWNERSHIP]].
 
 ## Common Mistakes
 
 | Mistake                               | Fix                                                      |
 | ------------------------------------- | -------------------------------------------------------- |
 | `## Context` in content field         | Don't — the renderer adds section headings automatically |
+| `### Options Considered` in context   | Use structured `content.alternatives` only               |
 | Empty Negative section                | Every decision has trade-offs — document them            |
 | Decision written before alternatives  | Add and evaluate alternatives first; then write decision |
 | No alternatives for a new ADR         | Add at least one rejected option                         |

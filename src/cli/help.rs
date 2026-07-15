@@ -159,10 +159,12 @@ START HERE:
 pub(super) const RELEASE: &str = r#"EXAMPLES:
     govctl release 0.2.0
     govctl release 0.2.0 --date 2026-04-07
+    govctl release undo 0.2.0
 
 NOTES:
-    - Collects unreleased completed work items into a versioned release.
-    - Use a semver version string.
+    - A version argument collects unreleased completed work items into a release.
+    - `undo` removes only the newest local release when its version matches.
+    - Undo does not modify CHANGELOG.md or external publication systems.
 "#;
 
 pub(super) const DESCRIBE: &str = r#"EXAMPLES:

@@ -16,7 +16,7 @@ govctl is a governance CLI that manages six artifact types:
 - **Clauses**: Individual requirements within RFCs
 - **ADRs**: Architectural Decision Records documenting design choices
 - **Work Items**: Units of work tracking implementation progress
-- **Releases**: Published versions and the work items included in each version
+- **Releases**: Local version-cut records and the Work Items included in each version
 - **Verification Guards**: Reusable executable checks that turn completion requirements into auditable pass/fail gates
 
-All artifacts follow explicit lifecycle states, phase gates, or immutability rules to ensure disciplined development."""
+All artifacts follow explicit lifecycle states, phase gates, or constrained mutation rules to ensure disciplined development."""

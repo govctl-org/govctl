@@ -28,6 +28,7 @@ pub enum DiagnosticCode {
     /// RFC refs or [[...]] targets ADR/WI — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
     E0112RfcReferenceHierarchy,
     E0113RfcBumpNoAmendment,
+    E0114RfcPendingAmendment,
 
     // Clause errors (E02xx)
     E0201ClauseSchemaInvalid,
@@ -51,6 +52,7 @@ pub enum DiagnosticCode {
     E0305AdrCannotDeprecate,
     /// ADR refs or [[...]] targets WI-* — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
     E0306AdrReferenceHierarchy,
+    E0307AdrProjectionConflict,
 
     // Work Item errors (E04xx)
     E0401WorkSchemaInvalid,
@@ -82,6 +84,10 @@ pub enum DiagnosticCode {
     E0703ReleaseNoUnreleasedItems,
     E0704ReleaseSchemaInvalid,
     E0705ReleaseRefNotFound,
+    E0706ReleaseWorkNotDone,
+    E0707ReleaseWorkDuplicate,
+    E0708ReleaseHistoryEmpty,
+    E0709ReleaseLatestMismatch,
 
     // Verification Guard errors (E10xx)
     E1001GuardSchemaInvalid,
@@ -183,6 +189,7 @@ mod tests {
         assert_eq!(DiagnosticCode::E0401WorkSchemaInvalid.code(), "E0401");
         assert_eq!(DiagnosticCode::E0501ConfigInvalid.code(), "E0501");
         assert_eq!(DiagnosticCode::E0701ReleaseInvalidSemver.code(), "E0701");
+        assert_eq!(DiagnosticCode::E0709ReleaseLatestMismatch.code(), "E0709");
         assert_eq!(DiagnosticCode::E0801MissingRequiredArg.code(), "E0801");
         assert_eq!(DiagnosticCode::E0901IoError.code(), "E0901");
         assert_eq!(DiagnosticCode::E1001GuardSchemaInvalid.code(), "E1001");

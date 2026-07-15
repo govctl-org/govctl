@@ -32,13 +32,7 @@ Finally, existing repositories already contain JSON RFC and clause files. If we 
 - Preserve the normative meaning of existing governance artifacts and references under [[RFC-0000]] and [[RFC-0002]].
 - Keep normal operation simple: after migration, the main load/edit/render paths should be TOML-only.
 - Respect [[ADR-0032]] by keeping this migration command narrow and deterministic. This is not a heuristic project-adoption workflow.
-- Preserve auditability and deterministic failures for automation and agent workflows.
-
-### Options Considered
-
-- Keep the mixed JSON/TOML storage model and improve adapters further.
-- Standardize all governance artifacts on JSON instead.
-- Standardize all governance artifacts on TOML with an explicit repository migration step."""
+- Preserve auditability and deterministic failures for automation and agent workflows."""
 decision = """
 We will **use TOML as the canonical on-disk source-of-truth format for governance artifacts** because it removes a persistent storage-format special case, matches the existing direction of ADR/work/release storage, and gives humans a format they can read and edit without carrying JSON-only baggage forward.
 

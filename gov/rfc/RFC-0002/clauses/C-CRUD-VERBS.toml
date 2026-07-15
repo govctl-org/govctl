@@ -13,7 +13,9 @@ tags = [
 
 [content]
 text = """
-All resource types MUST support the following CRUD (Create, Read, Update, Delete) verbs where applicable:
+All resource types MUST support the following CRUD (Create, Read, Update, Delete) verbs where applicable.
+
+Release records MUST NOT expose universal CRUD verbs. Their constrained creation and correction commands are defined by [[RFC-0002:C-LIFECYCLE-VERBS]].
 
 **1. `new` - Create Resource**
 
@@ -21,7 +23,7 @@ Syntax: `govctl <resource> new <arguments>`
 
 Creates a new instance of the resource. Required arguments vary by resource type but typically include a title or primary identifier.
 
-MUST support for: rfc, adr, work, clause, release, guard
+MUST support for: rfc, adr, work, clause, guard
 Behavior:
 - Generates unique ID if not provided
 - Initializes resource with default values
@@ -36,13 +38,13 @@ Syntax: `govctl <resource> list [filter] [--tag <tag>[,<tag>...]]`
 
 Lists all instances of the resource type. Optional filter narrows results.
 
-MUST support for: rfc, adr, work, clause, release, guard
+MUST support for: rfc, adr, work, clause, guard
 Behavior:
 - Returns tabular output by default
 - Supports filtering (exact match or substring)
 - Sorted by ID (lexicographic order)
 - MUST respect [[RFC-0002:C-OUTPUT-FORMAT]] flags
-- With `--tag`: filters results to artifacts that carry ALL specified tags. MUST support comma-separated tag values. Applies to rfc, clause, adr, work, and guard (releases do not carry tags).
+- With `--tag`: filters results to artifacts that carry ALL specified tags. MUST support comma-separated tag values. Applies to rfc, clause, adr, work, and guard.
 
 **3. `get` - Read Resource**
 
@@ -87,26 +89,26 @@ MUST NOT support for: rfc, adr (use lifecycle verbs instead)
 **Deletion Safety Constraints:**
 
 For guards:
-- MUST verify no work items reference the guard ID in `verification.required_guards` or `verification.waivers[*].guard` before deletion
+- MUST verify no Work Items reference the guard ID in `verification.required_guards` or `verification.waivers[*].guard` before deletion
 - MUST verify the guard is not listed in `verification.default_guards` in `gov/config.toml` before deletion
 - MUST error with list of referencing artifacts/config if any references exist
 
 For clauses:
 - MUST only allow deletion if containing RFC is in `draft` status
 - MUST verify no other artifacts reference the clause ID before deletion
-- MUST error with list of referencing artifacts if references exist
+- MUST error with list of referencing artifacts if any references exist
 
-For work items:
+For Work Items:
 - MUST only allow deletion if status is `queue`
-- MUST verify no other artifacts reference the work item ID before deletion
-- MUST error with list of referencing artifacts if references exist
+- MUST verify no other artifacts reference the Work Item ID before deletion
+- MUST error with list of referencing artifacts if any references exist
 
 **General Deletion Behavior:**
 - SHOULD require confirmation unless `--force` flag provided
 - MUST be atomic (either fully succeeds or fully fails)
 
 **Rationale:**
-Permanent deletion breaks referential integrity. These constraints ensure deletions are safe and don't leave dangling references in the governance graph.
+Permanent deletion breaks referential integrity. These constraints ensure deletions are safe and do not leave dangling references in the governance graph. Release mutation is narrower than universal CRUD because only the newest local cut can be corrected.
 
 **Consistency Requirements:**
 
@@ -119,4 +121,4 @@ Permanent deletion breaks referential integrity. These constraints ensure deleti
 
 - MUST NOT use different verb names for the same operation (e.g., "show" vs "get")
 - MUST NOT reorder arguments between resource types (ID always comes before field)
-- MUST NOT have resource-specific flags for universal operations. Flags that filter by a cross-resource metadata field (e.g., `--tag`) are permitted on resources that carry that field and silently ignored or unavailable on resources that do not."""
+- MUST NOT have resource-specific flags for universal operations. Flags that filter by a cross-resource metadata field (e.g., `--tag`) are permitted on resources that carry that field."""

@@ -1,6 +1,6 @@
 ---
-source: tests/test_lifecycle.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/clause.rs
+expression: snapshot
 ---
 $ govctl rfc new Deprecate Twice RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -17,5 +17,5 @@ Deprecated clause: RFC-0001:C-ONE
 exit: 0
 
 $ govctl clause deprecate RFC-0001:C-ONE --force
-error[E0208]: Clause is already deprecated (RFC-0001:C-ONE)
+error[E0208]: Clause is already deprecated. Valid transition from deprecated: superseded via `clause supersede` (RFC-0001:C-ONE)
 exit: 1

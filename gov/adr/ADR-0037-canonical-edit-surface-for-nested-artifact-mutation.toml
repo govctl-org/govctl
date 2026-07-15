@@ -34,13 +34,7 @@ The current CLI surface is still too shape-dependent for reliable agent use:
 - Preserve the SSOT-driven engine direction from [[ADR-0031]].
 - Keep a stable migration path for existing human users and scripts.
 - Make the canonical mutation interface regular enough that agents can synthesize commands from field paths without artifact-specific guessing.
-- Avoid introducing a new batch-specific input language unless single-operation ergonomics prove insufficient.
-
-### Options Considered
-
-- Option A: Keep `set/add/remove/tick` as the only mutation interface and continue expanding path support.
-- Option B: Introduce a canonical `edit` command with path-first operation flags, and keep existing verbs as compatibility sugar.
-- Option C: Replace existing verbs completely with a JSONPatch-like or DSL-heavy mutation language."""
+- Avoid introducing a new batch-specific input language unless single-operation ergonomics prove insufficient."""
 decision = """
 We will introduce a **canonical path-oriented edit surface** for governed artifact mutation:
 

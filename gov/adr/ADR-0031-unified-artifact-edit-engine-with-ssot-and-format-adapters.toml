@@ -39,13 +39,7 @@ This increases code volume, review difficulty, and risk of behavioral drift betw
 - Preserve index and matcher semantics from [[ADR-0007]] (0-based indexing, negative indices from end, existing conflict diagnostics).
 - Preserve user-facing path syntax and compatibility promises from [[ADR-0029]] and [[ADR-0030]].
 - Respect storage decisions from [[ADR-0001]]: ADR/Work artifacts remain TOML at rest unless separately decided.
-- Keep deterministic diagnostics and stable error codes for automation scripts.
-
-### Options Considered
-
-- Option A: Continue incremental cleanup of current architecture.
-- Option B: Standardize internal editing on JSON only (convert TOML at boundaries, no dedicated TOML adapter contract).
-- Option C: Introduce a single SSOT-driven semantic edit engine with explicit JSON/TOML adapters."""
+- Keep deterministic diagnostics and stable error codes for automation scripts."""
 decision = """
 We will adopt **Option C: a single SSOT-driven semantic edit engine with explicit format adapters**.
 

@@ -33,6 +33,7 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0111RfcNoChangelog => "E0111",
         DiagnosticCode::E0112RfcReferenceHierarchy => "E0112",
         DiagnosticCode::E0113RfcBumpNoAmendment => "E0113",
+        DiagnosticCode::E0114RfcPendingAmendment => "E0114",
         // E02xx - Clause
         DiagnosticCode::E0201ClauseSchemaInvalid => "E0201",
         DiagnosticCode::E0202ClauseNotFound => "E0202",
@@ -53,6 +54,7 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0304AdrRefNotFound => "E0304",
         DiagnosticCode::E0305AdrCannotDeprecate => "E0305",
         DiagnosticCode::E0306AdrReferenceHierarchy => "E0306",
+        DiagnosticCode::E0307AdrProjectionConflict => "E0307",
         // E04xx - Work Item
         DiagnosticCode::E0401WorkSchemaInvalid => "E0401",
         DiagnosticCode::E0402WorkNotFound => "E0402",
@@ -80,6 +82,10 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0703ReleaseNoUnreleasedItems => "E0703",
         DiagnosticCode::E0704ReleaseSchemaInvalid => "E0704",
         DiagnosticCode::E0705ReleaseRefNotFound => "E0705",
+        DiagnosticCode::E0706ReleaseWorkNotDone => "E0706",
+        DiagnosticCode::E0707ReleaseWorkDuplicate => "E0707",
+        DiagnosticCode::E0708ReleaseHistoryEmpty => "E0708",
+        DiagnosticCode::E0709ReleaseLatestMismatch => "E0709",
         // E10xx - Verification Guard
         DiagnosticCode::E1001GuardSchemaInvalid => "E1001",
         DiagnosticCode::E1002GuardNotFound => "E1002",

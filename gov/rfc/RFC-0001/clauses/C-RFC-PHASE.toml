@@ -10,21 +10,28 @@ tags = ["lifecycle"]
 
 [content]
 text = """
-An RFC MUST have exactly one of the following phase values:
+An RFC MUST have exactly one of the following phase values. The phase describes conformance work for the RFC's current version:
 
 1. **spec** — Specification phase. The RFC text is being written. No implementation work.
-2. **impl** — Implementation phase. Code is being written to conform to the RFC.
-3. **test** — Testing phase. Implementation is complete; tests are being written and validated.
-4. **stable** — Stable phase. Implementation and tests are complete. No further changes expected.
+2. **impl** — Implementation phase. Code is being written to conform to the current RFC version.
+3. **test** — Testing phase. Implementation is complete; tests are being written and validated against the current RFC version.
+4. **stable** — Stable phase. Implementation and tests for the current RFC version are complete.
 
-Valid transitions (forward only, via `advance` command):
+Within one RFC version, valid transitions are forward only via the `advance` command:
 - spec → impl
 - impl → test
 - test → stable
 
-Invalid transitions (MUST be rejected):
+Within one RFC version, the following transitions MUST be rejected:
 - Any backward transition (e.g., impl → spec)
 - Any skip (e.g., spec → test, spec → stable)
-- stable → any (stable is terminal for phase)
+- stable → any (`stable` is terminal for that version)
 
-Rationale: Phase discipline ensures specification precedes implementation, and testing validates implementation before stabilization."""
+A version bump that releases a detected RFC or clause content amendment MUST start the new RFC version in `spec`, regardless of the prior version's phase. This starts a new version lifecycle and is not a backward transition within one version.
+
+A changelog-only update MUST preserve the current phase. Establishing an amendment signature baseline without a detected content amendment MUST also preserve the current phase.
+
+Amendment content and bookkeeping fields are defined by [[RFC-0000:C-PHASE-LIFECYCLE]]. When an RFC has a stored amendment signature and its amendment content differs from that signature, `advance` MUST reject phase progression until the amendment is released by a version bump.
+
+**Rationale:**
+Scoping phase to the current RFC version preserves ordered specification, implementation, and testing gates while allowing the RFC itself to evolve through versioned amendments."""

@@ -1,0 +1,49 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-15-002"
+title = "Reopen unreleased completed work items"
+status = "done"
+created = "2026-07-15"
+started = "2026-07-15"
+completed = "2026-07-15"
+refs = [
+    "ADR-0051",
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0000:C-RELEASE-DEF",
+    "RFC-0001:C-WORK-STATUS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+
+[content]
+description = "Implement and test correction of unreleased Work Item completion through the existing lifecycle command surface, including release lookup and timestamp handling, following the amended lifecycle specifications."
+
+[[content.acceptance_criteria]]
+text = "Unreleased `done` Work Items can return to `active`, while release-referenced items remain `done`"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Reopening tests preserve `started`, remove `completed`, and reject release-referenced items"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Reopening failure paths preserve the original Work Item file"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`cargo test --test test_move` and `cargo run --quiet -- check` pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Project validation rejects Work Item IDs referenced by multiple releases"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Reopening leaves existing loop-local terminal outcomes unchanged"
+status = "done"
+category = "chore"

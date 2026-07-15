@@ -29,3 +29,17 @@ fn test_work_get_help_restores_resource_specific_examples() {
         "help: {help}"
     );
 }
+
+#[test]
+fn test_release_help_exposes_creation_and_undo() {
+    let err = match crate::Cli::try_parse_from(["govctl", "release", "--help"]) {
+        Ok(_) => unreachable!("help should exit"),
+        Err(err) => err,
+    };
+    assert_eq!(err.kind(), ErrorKind::DisplayHelp);
+    let help = err.to_string();
+    assert!(help.contains("[VERSION]"), "help: {help}");
+    assert!(help.contains("undo"), "help: {help}");
+    assert!(help.contains("govctl release 0.2.0"), "help: {help}");
+    assert!(help.contains("govctl release undo 0.2.0"), "help: {help}");
+}

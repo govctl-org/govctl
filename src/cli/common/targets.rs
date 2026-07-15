@@ -77,7 +77,6 @@ pub(crate) enum RenderTarget {
 #[derive(ValueEnum, Clone, Copy, Debug)]
 pub(crate) enum FinalizeStatus {
     Normative,
-    Deprecated,
 }
 
 /// Output format for agent definitions in `init-skills`.

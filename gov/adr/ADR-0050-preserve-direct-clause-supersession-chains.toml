@@ -27,11 +27,7 @@ The stored relation needs an unambiguous meaning that supports repeated clause e
 - Supersession history must remain auditable.
 - A lifecycle transition should update only the clause being transitioned.
 - Malformed references and cycles must remain detectable.
-- Qualified clause IDs already provide an unambiguous representation for cross-RFC references.
-
-### Options Considered
-
-The discussion considered preserving direct historical edges, flattening all predecessors to the latest replacement, and retaining the active-target invariant that prevents chains."""
+- Qualified clause IDs already provide an unambiguous representation for cross-RFC references."""
 decision = """
 We will preserve each `superseded_by` value as the direct replacement selected when its source clause was superseded. Later replacements extend the chain instead of rewriting earlier clauses because:
 
