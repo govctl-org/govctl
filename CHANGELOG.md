@@ -22,6 +22,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Unreleased `done` Work Items can return to `active`, while release-referenced items remain `done` (WI-2026-07-15-002)
 - RFC finalize exposes only the normative target while deprecation remains a separate verb (WI-2026-07-15-004)
 - Release governance artifacts define the correction boundary for the latest local release cut (WI-2026-07-15-005)
+- Reviewed ADRs retain decision rationale without task execution sections (WI-2026-07-15-006)
 
 ### Fixed
 
@@ -39,6 +40,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Work Item schema and serialization checks match required scalars and omitted empty-list semantics (WI-2026-07-15-004)
 - Release correction failure paths preserve release and Work Item data (WI-2026-07-15-005)
 - Legacy release version syntax remains supported alongside latest-release undo (WI-2026-07-15-005)
+- ADR placeholder context emits a dedicated diagnostic code (WI-2026-07-15-006)
 
 ## [0.10.2] - 2026-07-05
 

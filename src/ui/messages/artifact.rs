@@ -154,7 +154,7 @@ pub fn release_created(version: &str, date: &str, work_item_count: usize) {
             "Created release {} ({}) with {} work items",
             version.cyan().bold(),
             date,
-            work_item_count.to_string().green()
+            work_item_count.green()
         );
     } else {
         eprintln!(
@@ -169,7 +169,7 @@ pub fn release_undone(version: &str, work_item_count: usize) {
         eprintln!(
             "Undid release {} ({} work items are now unreleased)",
             version.cyan().bold(),
-            work_item_count.to_string().green()
+            work_item_count.green()
         );
     } else {
         eprintln!(

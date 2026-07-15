@@ -89,7 +89,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         // Validate content is not placeholder
         if adr.spec.content.context.contains("Describe the context") {
             result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::W0103AdrNoRefs,
+                DiagnosticCode::W0113AdrPlaceholderContext,
                 format!(
                     "ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)",
                     adr.meta().id

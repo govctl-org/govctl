@@ -13,5 +13,5 @@ Checked:
   1 references found
 
 warning[W0103]: ADR has no artifact references (hint: `govctl adr add ADR-0001 refs RFC-XXXX`) (gov/adr/ADR-XXXX-test-decision.toml)
-warning[W0103]: ADR has placeholder context (hint: `govctl adr set ADR-0001 context "..."`) (gov/adr/ADR-XXXX-test-decision.toml)
+warning[W0113]: ADR has placeholder context (hint: `govctl adr set ADR-0001 context "..."`) (gov/adr/ADR-XXXX-test-decision.toml)
 exit: 0

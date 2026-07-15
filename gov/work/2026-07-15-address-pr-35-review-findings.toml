@@ -1,0 +1,42 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-15-006"
+title = "Address PR 35 review findings"
+status = "done"
+created = "2026-07-15"
+started = "2026-07-15"
+completed = "2026-07-15"
+refs = [
+    "RFC-0000:C-ADR-PROJECTION-OWNERSHIP",
+    "ADR-0031",
+    "ADR-0034",
+    "ADR-0049",
+]
+tags = [
+    "validation",
+    "cli",
+]
+
+[content]
+description = "Verify and address actionable CodeRabbit findings from PR 35 across validation diagnostics, ADR authoring boundaries, and release message formatting."
+
+[[content.acceptance_criteria]]
+text = "ADR placeholder context emits a dedicated diagnostic code"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Reviewed ADRs retain decision rationale without task execution sections"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Release messages avoid unnecessary count allocations"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Review findings are verified against current code and valid changes pass focused validation"
+status = "done"
+category = "chore"
