@@ -10,26 +10,42 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-07-16
+
+0.12.0 completes the current-version RFC authoring model. Normative RFCs can be
+refined throughout `spec` and sealed on entry to `impl` without a bookkeeping
+bump, while current changelog corrections remain version-preserving operations.
+
 ### Added
 
-- RFC edit and get paths expose only the changelog entry matching the current RFC version, with summary and category mutations (WI-2026-07-16-001)
+- Added `govctl rfc get <id> changelog` to expose the unique changelog entry
+  matching the RFC's current version as a single object.
+- Added controlled current-changelog editing for summaries and categorized
+  changes without exposing historical entries or lifecycle-owned fields.
 
 ### Changed
 
-- Lifecycle RFC clauses document current-version spec authoring, implementation-entry sealing, and current-changelog correction boundaries (WI-2026-07-16-001)
-- Change-only rfc bump --change uses current-version resolution and CLI help documents its no-version-bump behavior (WI-2026-07-16-001)
-- Lifecycle RFC clauses define version-changing bump eligibility and preserve changelog-only correction behavior (WI-2026-07-16-002)
-- Hand-authored RFC guide documents the draft finalization and normative bump boundary (WI-2026-07-16-002)
-- Lifecycle rollback specification defines target path existence and byte-content restoration boundaries (WI-2026-07-16-003)
+- RFC and Clause content can now be refined throughout `spec`; advancing to
+  `impl` seals the final current-version content as the implementation baseline.
+- Version-changing `govctl rfc bump` operations now require normative status.
+  Draft RFCs use finalization as their publication boundary, and deprecated RFCs
+  remain terminal.
+- `govctl rfc bump --change` without a bump level is explicitly changelog-only
+  and preserves the RFC version, phase, changelog date, and amendment signature.
+- Clause `since` assignment now follows the RFC lifecycle: draft Clauses are
+  assigned at finalization, normative `spec` Clauses at creation, and later
+  Clauses at the next content-changing bump.
 
 ### Fixed
 
-- RFC and Clause edits made in spec can advance to impl without another version bump (WI-2026-07-16-001)
-- RFC changelog editing rejects historical entries and lifecycle-owned version and date fields (WI-2026-07-16-001)
-- Clause creation assigns since immediately only for normative spec RFCs, while draft and non-spec amendments remain pending for finalize or bump (WI-2026-07-16-001)
-- Entering impl seals the current content signature and rejects unresolved pending Clause versions without rewriting them (WI-2026-07-16-001)
-- Version-changing bump rejects draft and deprecated RFCs without mutation (WI-2026-07-16-002)
-- Draft Clause `since` remains absent after rejected version bumps and is assigned by normative finalization (WI-2026-07-16-002)
+- RFC and Clause edits made during `spec` no longer require an empty follow-up
+  bump before the RFC can advance to `impl`.
+- Current-changelog operations resolve entries by version and reject missing,
+  duplicate, historical, or lifecycle-owned targets without mutation.
+- Entering `impl` now rejects unresolved pending Clause versions instead of
+  silently rewriting their provenance.
+- Failed lifecycle mutations restore governed-file path existence and byte
+  content across create, delete, and overwrite operations.
 
 ## [0.11.0] - 2026-07-16
 
