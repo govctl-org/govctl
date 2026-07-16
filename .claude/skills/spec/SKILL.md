@@ -105,9 +105,10 @@ For ADR work:
 For RFC work:
 
 - Edit clauses with `govctl clause edit`
-- If the RFC is draft and ready to become normative, ask permission before `govctl rfc finalize <RFC-ID> normative`
+- If the RFC is draft, do not bump it; when ready, ask permission before `govctl rfc finalize <RFC-ID> normative`
 - If a normative RFC is in `spec`, edit the current version candidate directly; do not bump it again for those edits
 - If a normative RFC is in `impl`, `test`, or `stable`, an RFC or Clause edit creates an unversioned amendment; after review, ask permission before using `govctl rfc bump` to release it as the next version in `spec`
+- If the RFC is deprecated, do not edit or version-bump it
 - Use `govctl rfc edit <RFC-ID> changelog.*` for current-version changelog corrections; these do not change version, phase, or the sealed content signature
 
 Semver guidance for RFC amendments:
@@ -171,7 +172,7 @@ If the task grows into implementation work, stop here and hand off to `/gov`.
 1. Inspect the RFC phase with `govctl rfc show <RFC-ID>`
 2. Edit the clause text with `govctl clause edit`
 3. Run **rfc-reviewer**
-4. If the RFC was already in `spec`, keep the same version; otherwise ask permission, then run `govctl rfc bump <RFC-ID> --patch -m "Clarify wording"`
+4. For a draft RFC, keep the version and finalize when ready; for a normative RFC already in `spec`, keep the current version; for a normative RFC in `impl`, `test`, or `stable`, ask permission, then run `govctl rfc bump <RFC-ID> --patch -m "Clarify wording"`
 5. Run `govctl check` and `govctl render`
 
 ### Prepare a deprecation plan without implementation

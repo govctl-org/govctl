@@ -83,9 +83,12 @@ If behavior is unspecified or ambiguous, escalate. Do not invent.
 draft → normative → deprecated
 ```
 
-- **draft**: Under discussion. Implementation MUST NOT depend on draft RFCs.
+Status and phase rules derive from [[RFC-0000:C-STATUS-LIFECYCLE]],
+[[RFC-0000:C-PHASE-LIFECYCLE]], and [[RFC-0002:C-LIFECYCLE-VERBS]].
+
+- **draft**: Under discussion. Implementation MUST NOT depend on draft RFCs. Finalization is the initial publication boundary; version-changing bumps are forbidden.
 - **normative**: Binding. Content in `spec` is the current version candidate; entry to `impl` seals that version as the implementation baseline. Later amendments start a new version lifecycle through a version bump per [[ADR-0016]].
-- **deprecated**: Superseded. No new work permitted.
+- **deprecated**: Superseded. No new work or version-changing bump is permitted.
 
 Reverse transitions are forbidden.
 
@@ -102,6 +105,9 @@ Reverse transitions are forbidden.
 Within one version, phase transitions are forward-only. A content-changing bump
 after `impl`, `test`, or `stable` starts the next version in `spec`; it is not a
 backward transition of the sealed version.
+
+Clause version assignment follows [[RFC-0000:C-CLAUSE-DEF]] and
+[[RFC-0002:C-LIFECYCLE-VERBS]].
 
 Clause `since` is lifecycle-owned. Draft clauses receive it at finalization,
 clauses created in a normative RFC already in `spec` receive the current version

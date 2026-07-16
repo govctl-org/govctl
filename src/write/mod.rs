@@ -511,6 +511,29 @@ mod tests {
         Ok(())
     }
 
+    #[test]
+    fn file_transaction_restores_deleted_file_after_failure()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("artifact.toml");
+        std::fs::write(&path, "original")?;
+
+        let result = with_file_transaction(&[path.as_path()], WriteOp::Execute, || {
+            std::fs::remove_file(&path).map_err(|err| {
+                Diagnostic::io_error("delete file", err, path.display().to_string())
+            })?;
+            Err::<(), _>(Diagnostic::new(
+                crate::diagnostic::DiagnosticCode::E0903UnexpectedError,
+                "injected failure after deletion",
+                path.display().to_string(),
+            ))
+        });
+
+        assert!(result.is_err());
+        assert_eq!(std::fs::read_to_string(path)?, "original");
+        Ok(())
+    }
+
     #[cfg(unix)]
     #[test]
     fn file_transaction_reports_rollback_failure() -> Result<(), Box<dyn std::error::Error>> {

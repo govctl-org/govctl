@@ -18,6 +18,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 - Lifecycle RFC clauses document current-version spec authoring, implementation-entry sealing, and current-changelog correction boundaries (WI-2026-07-16-001)
 - Change-only rfc bump --change uses current-version resolution and CLI help documents its no-version-bump behavior (WI-2026-07-16-001)
+- Lifecycle RFC clauses define version-changing bump eligibility and preserve changelog-only correction behavior (WI-2026-07-16-002)
+- Hand-authored RFC guide documents the draft finalization and normative bump boundary (WI-2026-07-16-002)
+- Lifecycle rollback specification defines target path existence and byte-content restoration boundaries (WI-2026-07-16-003)
 
 ### Fixed
 
@@ -25,6 +28,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 - RFC changelog editing rejects historical entries and lifecycle-owned version and date fields (WI-2026-07-16-001)
 - Clause creation assigns since immediately only for normative spec RFCs, while draft and non-spec amendments remain pending for finalize or bump (WI-2026-07-16-001)
 - Entering impl seals the current content signature and rejects unresolved pending Clause versions without rewriting them (WI-2026-07-16-001)
+- Version-changing bump rejects draft and deprecated RFCs without mutation (WI-2026-07-16-002)
+- Draft Clause `since` remains absent after rejected version bumps and is assigned by normative finalization (WI-2026-07-16-002)
 
 ## [0.11.0] - 2026-07-16
 

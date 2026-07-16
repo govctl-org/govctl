@@ -139,16 +139,24 @@ Only include representation details when they are themselves the external contra
 
 ## Phase-Aware Authoring
 
-Before editing an existing normative RFC, inspect its phase:
+These rules summarize [[RFC-0000:C-STATUS-LIFECYCLE]],
+[[RFC-0000:C-PHASE-LIFECYCLE]], and [[RFC-0002:C-LIFECYCLE-VERBS]].
 
+Before editing an RFC, inspect its status and phase:
+
+- A draft RFC is published initially through finalization; do not version-bump it.
 - In `spec`, RFC and Clause edits refine the current version candidate and do not require another version bump.
-- In `impl`, `test`, or `stable`, RFC or Clause edits create an unversioned amendment. The `/spec` or `/gov` workflow must release it with a version bump before further phase progression.
+- In `impl`, `test`, or `stable`, edits that change RFC or Clause content create an unversioned amendment. Lifecycle-owned metadata updates performed by dedicated verbs and current-version changelog-only corrections are exempt. The `/spec` or `/gov` workflow must release qualifying amendments with a version bump before further phase progression.
 - Entry from `spec` to `impl` seals the final RFC and Clause content as that version's implementation baseline.
+- A deprecated RFC cannot start another version lifecycle.
 
 This helper writes specification content but does not perform lifecycle verbs.
 Use `/spec` or `/gov` for bump and advance decisions.
 
 ## Clause Version Assignment
+
+Clause version assignment follows [[RFC-0000:C-CLAUSE-DEF]] and
+[[RFC-0002:C-LIFECYCLE-VERBS]].
 
 Clause `since` is lifecycle-owned; do not write it into clause text or try to set
 it through the generic edit surface:

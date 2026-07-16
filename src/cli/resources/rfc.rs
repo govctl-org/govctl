@@ -131,6 +131,7 @@ EXAMPLES:
     govctl rfc bump RFC-0001 -c \"fix: Correct current-version wording\"
 
 NOTES:
+    - Version-changing bumps require normative RFC status; finalize a draft first.
     - Choose one of `--patch`, `--minor`, or `--major` when releasing a content amendment.
     - `--change` without a bump level updates the current changelog entry without changing version.
     - Use `-m/--summary` for a release summary and `-c/--change` for detailed entries.

@@ -62,8 +62,8 @@ commands or automatic assignment instead:
 
 ```bash
 # Lifecycle-managed fields use dedicated verbs
-govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
 govctl rfc finalize RFC-0010 normative
+govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
 
 # Correct metadata for the current RFC version only
 govctl rfc get RFC-0010 changelog
@@ -84,6 +84,11 @@ govctl clause edit RFC-0010:C-SCOPE text --stdin <<'EOF'
 New clause text here
 EOF
 ```
+
+Finalization is the initial publication boundary for a draft RFC. A
+version-changing bump requires normative status, so draft and deprecated RFCs
+are rejected. Changelog-only corrections do not change the version and remain
+available through either `rfc edit ... changelog` or `rfc bump --change`.
 
 ## Working with Clauses
 
@@ -226,7 +231,9 @@ do not affect the sealed baseline.
 
 ## Versioning
 
-RFCs use semantic versioning:
+RFCs use semantic versioning after normative finalization. Draft RFCs remain on
+their initial version while they are authored, and deprecated RFCs cannot start
+a new version lifecycle:
 
 ```bash
 # Bump version with changelog entry

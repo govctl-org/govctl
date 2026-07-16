@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.13.0"
+version = "0.13.2"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "8242e784a13b698482afb54a215c799dc65bb36fb705f84fb33e563cb997b475"
+signature = "a0a0d520c414eb9a74584ca0d5ca954a2928e4330316b35771151641c7fe98c0"
 
 [[sections]]
 title = "Summary"
@@ -35,6 +35,18 @@ clauses = [
     "clauses/C-SELF-UPDATE.toml",
     "clauses/C-SEARCH-COMMAND.toml",
 ]
+
+[[changelog]]
+version = "0.13.2"
+date = "2026-07-16"
+notes = "Clarify lifecycle rollback restoration state"
+changed = ["Define rollback over target path existence and byte content"]
+
+[[changelog]]
+version = "0.13.1"
+date = "2026-07-16"
+notes = "Reject version-changing bumps for non-normative RFCs"
+fixed = ["Restrict version-changing RFC bump to normative status"]
 
 [[changelog]]
 version = "0.13.0"

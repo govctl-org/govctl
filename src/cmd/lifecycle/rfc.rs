@@ -29,6 +29,19 @@ pub fn bump(
     let mut rfc = read_rfc(config, &rfc_path)?;
     let refresh_signature_after_write = match (level, summary, changes.is_empty()) {
         (Some(lvl), Some(sum), _) => {
+            // [[RFC-0002:C-LIFECYCLE-VERBS]] reserves version-changing bumps for
+            // RFC lineages that have crossed the normative publication boundary.
+            if rfc.status != RfcStatus::Normative {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0104RfcInvalidTransition,
+                    format!(
+                        "Cannot bump RFC version while status={}. Version-changing bumps require normative RFC status.",
+                        rfc.status.as_ref()
+                    ),
+                    rfc_id,
+                ));
+            }
+
             let releases_content_amendment =
                 ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
 

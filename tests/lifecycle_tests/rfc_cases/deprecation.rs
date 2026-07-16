@@ -48,16 +48,21 @@ fn test_deprecate_rfc_preserves_pending_clause_version() -> common::TestResult {
     let clause_path = temp_dir
         .path()
         .join("gov/rfc/RFC-0001/clauses/C-PENDING.toml");
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
     let before = fs::read(&clause_path)?;
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "deprecate", "RFC-0001", "--force"]],
     )?;
 
+    assert!(!output.contains("error["), "output: {output}");
+    assert!(output.ends_with("exit: 0\n\n"), "output: {output}");
     assert!(!output.contains("Set C-PENDING.since"), "output: {output}");
     assert_eq!(fs::read(&clause_path)?, before);
     let clause: toml::Value = toml::from_str(&fs::read_to_string(&clause_path)?)?;
     assert!(clause["govctl"].get("since").is_none());
+    let rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    assert_eq!(rfc["govctl"]["status"].as_str(), Some("deprecated"));
     Ok(())
 }
 

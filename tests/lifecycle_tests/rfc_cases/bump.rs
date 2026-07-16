@@ -77,6 +77,131 @@ fn test_bump_major_version() -> common::TestResult {
 }
 
 #[test]
+fn test_version_bump_rejects_draft_and_preserves_pending_clause() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Draft RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-PENDING",
+                "Pending Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let clause_path = temp_dir
+        .path()
+        .join("gov/rfc/RFC-0001/clauses/C-PENDING.toml");
+    let rfc_before = fs::read(&rfc_path)?;
+    let clause_before = fs::read(&clause_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--patch",
+            "--summary",
+            "Must be rejected",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(
+        output.contains("Version-changing bumps require normative RFC status"),
+        "output: {output}"
+    );
+    assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
+    assert!(!output.contains("Set C-PENDING.since"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    assert_eq!(fs::read(&clause_path)?, clause_before);
+    let clause: toml::Value = toml::from_str(&fs::read_to_string(&clause_path)?)?;
+    assert!(clause["govctl"].get("since").is_none());
+    Ok(())
+}
+
+#[test]
+fn test_version_bump_rejects_deprecated_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Deprecated RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "deprecate", "RFC-0001", "--force"],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let before = fs::read(&rfc_path)?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--patch",
+            "--summary",
+            "Must be rejected",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(output.contains("status=deprecated"), "output: {output}");
+    assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, before);
+    Ok(())
+}
+
+#[test]
+fn test_changelog_only_bump_remains_available_for_non_normative_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Draft RFC"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--change",
+                "fix: Draft changelog correction",
+            ],
+            &["rfc", "new", "Deprecated RFC"],
+            &["rfc", "finalize", "RFC-0002", "normative"],
+            &["rfc", "deprecate", "RFC-0002", "--force"],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0002",
+                "--change",
+                "fix: Deprecated changelog correction",
+            ],
+        ],
+    )?;
+
+    assert!(!output.contains("error["), "output: {output}");
+    assert!(
+        output.contains("Added change to RFC-0001 v0.1.0"),
+        "output: {output}"
+    );
+    assert!(
+        output.contains("Added change to RFC-0002 v0.1.0"),
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
     let temp_dir = init_project()?;
 
@@ -564,7 +689,13 @@ fn test_bump_nonexistent_rfc() -> common::TestResult {
 #[test]
 fn test_bump_rejects_malformed_unlisted_clause_without_mutation() -> common::TestResult {
     let temp_dir = init_project()?;
-    run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+        ],
+    )?;
 
     let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
     let original_rfc = fs::read_to_string(&rfc_path)?;
@@ -603,6 +734,10 @@ fn test_failed_bump_preserves_files_without_success_output() -> common::TestResu
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
             &[
                 "clause",
                 "new",

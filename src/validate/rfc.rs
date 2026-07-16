@@ -32,6 +32,8 @@ pub(super) fn validate_rfc(rfc: &RfcIndex, config: &Config, result: &mut Validat
         ));
     }
 
+    // [[RFC-0000:C-RFC-DEF]] requires exactly one changelog entry for the
+    // RFC's current version.
     let current_changelog_count = rfc
         .rfc
         .changelog

@@ -61,10 +61,10 @@ pub(in crate::cmd::edit) fn get(
 ) -> DiagnosticResult<()> {
     let loaded = RfcTomlAdapter::load(config, id)?;
     let doc = current_changelog_doc(&loaded.data, id)?;
-    render_target_from_doc(ArtifactType::Rfc, &doc, target, id, NestedGetMode::Allow)?;
 
     let root_only = target.path().segments.len() == 1 && target.path().segments[0].index.is_none();
     if !root_only {
+        render_target_from_doc(ArtifactType::Rfc, &doc, target, id, NestedGetMode::Allow)?;
         return Err(Diagnostic::new(
             DiagnosticCode::E0804FieldNotEditable,
             "RFC changelog get supports only the current-entry root path",
