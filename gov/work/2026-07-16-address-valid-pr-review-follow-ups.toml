@@ -1,0 +1,40 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-16-003"
+title = "Clarify rollback restoration and lifecycle regression coverage"
+status = "done"
+created = "2026-07-16"
+started = "2026-07-16"
+completed = "2026-07-16"
+refs = [
+    "RFC-0002:C-LIFECYCLE-VERBS",
+    "RFC-0000:C-RFC-DEF",
+]
+tags = [
+    "lifecycle",
+    "testing",
+]
+
+[content]
+description = "Clarify lifecycle rollback restoration boundaries and strengthen regression coverage and source traceability for RFC lifecycle validation."
+
+[[content.acceptance_criteria]]
+text = "Lifecycle rollback specification defines target path existence and byte-content restoration boundaries"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC deprecation regression test verifies a successful exit and the `deprecated` status"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Current-changelog validation cites its governing RFC clause"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "`just pre-commit` passes"
+status = "done"
+category = "chore"

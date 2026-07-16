@@ -14,6 +14,21 @@ pub(super) fn rfc_update_paths(config: &Config, rfc_path: &Path) -> DiagnosticRe
     Ok(paths)
 }
 
+pub(super) fn pending_clause_ids(
+    config: &Config,
+    rfc_path: &Path,
+) -> DiagnosticResult<Vec<String>> {
+    let mut clause_ids = Vec::new();
+    for path in clause_toml_paths(rfc_path)? {
+        let clause = read_clause(config, &path)?;
+        if clause.since.is_none() {
+            clause_ids.push(clause.clause_id);
+        }
+    }
+    clause_ids.sort();
+    Ok(clause_ids)
+}
+
 fn clause_toml_paths(rfc_path: &Path) -> DiagnosticResult<Vec<PathBuf>> {
     let clauses_dir = rfc_path
         .parent()
@@ -59,8 +74,7 @@ fn clause_toml_paths(rfc_path: &Path) -> DiagnosticResult<Vec<PathBuf>> {
 
 /// Update pending clauses (since: null) with the given version.
 ///
-/// Clauses are created with `since: None` and filled in when the RFC
-/// is bumped or finalized.
+/// Pending clauses are filled in when the RFC is bumped or finalized.
 pub(super) fn fill_pending_clause_versions(
     config: &Config,
     rfc_path: &Path,

@@ -28,7 +28,7 @@ EXAMPLES:
     /// Get RFC metadata or specific field
     #[command(after_help = "\
 VALID FIELDS:
-    - title, version, status, phase, owners, refs
+    - title, version, status, phase, owners, refs, changelog
 
 EXAMPLES:
     govctl rfc get RFC-0001
@@ -67,9 +67,14 @@ NOTES:
     /// Canonical path-first edit entrypoint
     #[command(after_help = "\
 EXAMPLES:
-    govctl rfc edit RFC-0001 version --set 1.2.0
+    govctl rfc edit RFC-0001 changelog.summary --set \"Clarify retry behavior\"
+    govctl rfc edit RFC-0001 changelog.fixed --add \"Correct timeout wording\"
+    govctl rfc edit RFC-0001 changelog.fixed[0] --remove
     govctl rfc edit RFC-0001 refs --add RFC-0002
-    govctl rfc edit RFC-0001 refs[0] --remove
+
+NOTES:
+    - Changelog edits apply only to the entry matching the RFC's current version.
+    - RFC and changelog version/date fields are lifecycle-owned.
 ")]
     Edit(CommonEditArgs),
     /// Set RFC field value
@@ -122,10 +127,13 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl rfc bump RFC-0001 --patch -m \"Clarify examples\"
-    govctl rfc bump RFC-0001 --minor -c \"changed: New normative clause\"
+    govctl rfc bump RFC-0001 --minor -m \"Add a normative clause\" -c \"change: Define the new behavior\"
+    govctl rfc bump RFC-0001 -c \"fix: Correct current-version wording\"
 
 NOTES:
-    - Exactly one of `--patch`, `--minor`, or `--major` must be chosen.
+    - Version-changing bumps require normative RFC status; finalize a draft first.
+    - Choose one of `--patch`, `--minor`, or `--major` when releasing a content amendment.
+    - `--change` without a bump level updates the current changelog entry without changing version.
     - Use `-m/--summary` for a release summary and `-c/--change` for detailed entries.
 ")]
     Bump {

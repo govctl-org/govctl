@@ -2,7 +2,7 @@ use super::adapter::{
     AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, TomlAdapter,
     WorkTomlAdapter,
 };
-use super::doc_target::add_doc_simple_list_field;
+use super::doc_target::{add_doc_simple_list_field, rfc_changelog};
 use super::engine as edit_engine;
 use super::refs::{is_refs_target, validate_ref_edit};
 use super::rules as edit_rules;
@@ -182,15 +182,21 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
             }
             WorkTomlAdapter::write(config, &entry, op)?;
         }
-        ArtifactType::Rfc => add_doc_simple_list_field::<RfcTomlAdapter>(
-            config,
-            id,
-            target,
-            value,
-            op,
-            ArtifactType::Rfc,
-            "RFC fields do not support nested paths for add",
-        )?,
+        ArtifactType::Rfc => {
+            if rfc_changelog::is_target(target) {
+                rfc_changelog::add(config, id, target, value, op)?;
+            } else {
+                add_doc_simple_list_field::<RfcTomlAdapter>(
+                    config,
+                    id,
+                    target,
+                    value,
+                    op,
+                    ArtifactType::Rfc,
+                    "RFC fields do not support nested paths for add",
+                )?;
+            }
+        }
         ArtifactType::Clause => add_doc_simple_list_field::<ClauseTomlAdapter>(
             config,
             id,

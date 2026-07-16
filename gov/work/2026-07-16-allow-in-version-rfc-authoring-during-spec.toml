@@ -1,0 +1,80 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-16-001"
+title = "Allow in-version RFC authoring during spec"
+status = "done"
+created = "2026-07-16"
+started = "2026-07-16"
+completed = "2026-07-16"
+refs = [
+    "RFC-0000:C-RFC-DEF",
+    "RFC-0000:C-PHASE-LIFECYCLE",
+    "RFC-0001:C-RFC-PHASE",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+    "ADR-0004",
+    "ADR-0016",
+    "ADR-0031",
+    "ADR-0051",
+    "RFC-0000:C-CLAUSE-DEF",
+    "RFC-0000:C-STATUS-LIFECYCLE",
+    "RFC-0001:C-GATE-CONDITIONS",
+]
+tags = [
+    "lifecycle",
+    "editing",
+    "cli",
+]
+
+[content]
+description = "Amend the RFC lifecycle specification and implement the corresponding authoring flow for continuing current-version RFC work in `spec`, sealing version state on entry to `impl`, and maintaining current-version changelog metadata through `rfc edit`."
+
+[[content.acceptance_criteria]]
+text = "Lifecycle RFC clauses document current-version spec authoring, implementation-entry sealing, and current-changelog correction boundaries"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "RFC and Clause edits made in spec can advance to impl without another version bump"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFC edit and get paths expose only the changelog entry matching the current RFC version, with summary and category mutations"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "RFC changelog editing rejects historical entries and lifecycle-owned version and date fields"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Change-only rfc bump --change uses current-version resolution and CLI help documents its no-version-bump behavior"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "0.11.0 release notes document the current spec-phase rebump limitation"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused lifecycle and edit tests plus project verification guards pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Clause creation assigns since immediately only for normative spec RFCs, while draft and non-spec amendments remain pending for finalize or bump"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Entering impl seals the current content signature and rejects unresolved pending Clause versions without rewriting them"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "AGENTS.md, the spec, gov, and rfc-writer skills, and docs/guide/rfcs.md reflect in-version spec authoring, sealed implementation baselines, and automatic Clause version assignment"
+status = "done"
+category = "chore"

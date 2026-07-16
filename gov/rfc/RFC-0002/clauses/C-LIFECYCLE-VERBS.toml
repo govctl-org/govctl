@@ -18,57 +18,97 @@ Resource-specific lifecycle and constrained-mutation operations implement state 
 **RFC Lifecycle Operations:**
 
 1. `govctl rfc finalize <id> normative`
-   - Implements the draft → normative transition in [[RFC-0001:C-RFC-STATUS]]
+   - Implements the draft -> normative transition in [[RFC-0001:C-RFC-STATUS]].
+   - Assigns the RFC's current version to pending clauses as defined by [[RFC-0000:C-CLAUSE-DEF]].
 
 2. `govctl rfc deprecate <id>`
-   - Implements the normative → deprecated transition in [[RFC-0001:C-RFC-STATUS]]
+   - Implements the normative -> deprecated transition in [[RFC-0001:C-RFC-STATUS]].
 
 3. `govctl rfc advance <id> <spec|impl|test|stable>`
-   - Implements [[RFC-0001:C-RFC-PHASE]] transitions
-   - Forward-only phase progression within the current RFC version
-   - MUST reject phase progression while a stored amendment signature differs from current amendment content as defined by [[RFC-0000:C-PHASE-LIFECYCLE]]
+   - Implements [[RFC-0001:C-RFC-PHASE]] transitions.
+   - Phase progression MUST be forward-only within the current RFC version.
+   - A `spec` -> `impl` transition MUST require normative RFC status.
+   - A `spec` -> `impl` transition MUST reject every pending clause.
+   - A `spec` -> `impl` transition MUST NOT assign clause version metadata.
+   - A `spec` -> `impl` transition MUST replace the stored amendment signature with a signature of the current amendment content.
+   - A later phase transition MUST reject amendment content that differs from the stored signature.
 
 4. `govctl rfc bump <id> <patch|minor|major> -m <message>`
-   - Version bumping per semantic versioning
-   - Updates changelog automatically
-   - Optional: `--change <description>` for additional changelog entries
-   - MUST reject a version bump when the RFC has a stored amendment signature and no amendment content has changed since that signature
-   - MUST exclude RFC `version`, `phase`, `changelog`, and `signature` fields from amendment comparison
-   - MUST set phase to `spec` when the bump releases a detected RFC or clause content amendment
-   - MAY establish a baseline amendment signature for RFCs that do not yet have one
-   - MUST preserve phase when establishing a baseline amendment signature without a detected content amendment
-   - `--change` alone MUST remain changelog-only
-   - `--change` alone MUST preserve phase
-   - `--change` alone MUST NOT make a later version bump valid
+   - The version-changing form MUST require normative RFC status.
+   - Rejection for draft or deprecated RFC status MUST occur without mutation.
+   - Version bumping MUST follow semantic versioning.
+   - A version bump MUST update the changelog automatically.
+   - A version bump MAY include `--change <description>` for additional changelog entries.
+   - A version bump MUST be rejected when the RFC has a stored amendment signature and no amendment content has changed since that signature.
+   - Amendment comparison MUST exclude RFC `version`, `phase`, `changelog`, and `signature` fields.
+   - A bump that releases detected RFC or clause content MUST set phase to `spec`.
+   - A bump MUST assign its new version to pending clauses as defined by [[RFC-0000:C-CLAUSE-DEF]].
+   - A bump MAY establish a baseline amendment signature for an RFC that does not yet have one.
+   - Establishing a baseline without a detected content amendment MUST preserve phase.
+   - `--change` without a bump level MUST remain a changelog-only operation.
+   - The normative-status requirement for version-changing bumps MUST NOT apply to `--change` without a bump level.
+   - `--change` without a bump level MUST resolve the unique current changelog entry by matching the entry version to the RFC version.
+   - `--change` without a bump level MUST reject zero or multiple current entries without mutation.
+   - `--change` without a bump level MUST preserve the RFC version.
+   - `--change` without a bump level MUST preserve the current changelog date.
+   - `--change` without a bump level MUST preserve phase.
+   - `--change` without a bump level MUST preserve the amendment signature.
+   - `--change` without a bump level MUST NOT make a later version bump valid.
+   - A change prefixed by `add:`, `change:`, `deprecate:`, `remove:`, `fix:`, or `security:` MUST be appended to the corresponding changelog category.
+   - A change without a category prefix MUST be appended to `added`.
+   - An unknown category prefix MUST be rejected.
 
-5. `govctl rfc supersede <id> --by <replacement-id>`
-   - Marks RFC as superseded by another RFC
-   - Both RFCs must exist
+5. RFC current-version changelog access
+   - `govctl rfc get <id> changelog` MUST expose only the unique changelog entry whose version matches the RFC's current version.
+   - The field result MUST be one object rather than an array.
+   - The object MUST contain `version`, `date`, `summary`, `added`, `changed`, `deprecated`, `removed`, `fixed`, and `security` fields.
+   - `summary` MAY be a string or null.
+   - Each categorized field MUST be an array of strings.
+   - Full-resource retrieval and RFC rendering MAY include historical changelog entries.
+   - Indexed changelog get paths MUST be rejected.
+   - Nested changelog get paths MUST be rejected.
+   - `govctl rfc edit <id> changelog.summary --set <value>` MUST update the current entry's summary.
+   - `govctl rfc edit <id> changelog.<category> --add <value>` MUST append to one of `added`, `changed`, `deprecated`, `removed`, `fixed`, or `security`.
+   - `govctl rfc edit <id> changelog.<category>[<index>] --remove` MUST remove an indexed item from the current category.
+   - Current-entry resolution MUST match by version.
+   - Current-entry resolution MUST NOT depend on changelog array position.
+   - Current-changelog operations MUST reject zero or multiple current entries without mutation.
+   - Changelog editing MUST reject historical entry selection.
+   - Changelog editing MUST reject changelog `version` and `date` paths.
+   - RFC editing MUST reject the top-level RFC `version` path.
+   - Changelog editing MUST preserve the RFC version.
+   - Changelog editing MUST preserve phase.
+   - Changelog editing MUST preserve the amendment signature.
+   - Changelog editing MUST preserve the current changelog date.
+
+6. `govctl rfc supersede <id> --by <replacement-id>`
+   - Marks RFC as superseded by another RFC.
+   - Both RFCs must exist.
 
 **ADR Lifecycle Operations:**
 
 1. `govctl adr accept <id>`
-   - Implements [[RFC-0001:C-ADR-STATUS]] proposed → accepted
+   - Implements [[RFC-0001:C-ADR-STATUS]] proposed -> accepted.
 
 2. `govctl adr reject <id>`
-   - Implements [[RFC-0001:C-ADR-STATUS]] proposed → rejected
+   - Implements [[RFC-0001:C-ADR-STATUS]] proposed -> rejected.
 
 3. `govctl adr supersede <id> --by <replacement-id>`
-   - Implements [[RFC-0001:C-ADR-STATUS]] accepted → superseded
-   - Both ADRs must exist
+   - Implements [[RFC-0001:C-ADR-STATUS]] accepted -> superseded.
+   - Both ADRs must exist.
 
 **Work Lifecycle Operations:**
 
 1. `govctl work move <id> <queue|active|done|cancelled>`
-   - Implements [[RFC-0001:C-WORK-STATUS]] transitions
-   - Validates gate conditions when entering `done`
-   - MUST reject done → active when any release references the Work Item
-   - queue → active MUST set `started` when it is absent
-   - active → done MUST set `completed`
-   - active → cancelled MUST set `completed`
-   - done → active MUST preserve `started`
-   - done → active MUST remove `completed`
-   - done → active MUST NOT mutate loop state or round artifacts governed by [[RFC-0006:C-WORK-ITEM-INTERACTION]]
+   - Implements [[RFC-0001:C-WORK-STATUS]] transitions.
+   - Validates gate conditions when entering `done`.
+   - MUST reject done -> active when any release references the Work Item.
+   - queue -> active MUST set `started` when it is absent.
+   - active -> done MUST set `completed`.
+   - active -> cancelled MUST set `completed`.
+   - done -> active MUST preserve `started`.
+   - done -> active MUST remove `completed`.
+   - done -> active MUST NOT mutate loop state or round artifacts governed by [[RFC-0006:C-WORK-ITEM-INTERACTION]].
 
 **Release Lifecycle Operations:**
 
@@ -78,33 +118,37 @@ Resource-specific lifecycle and constrained-mutation operations implement state 
 
 **Clause Lifecycle Operations:**
 
-1. `govctl clause deprecate <id>`
-   - Implements [[RFC-0001:C-CLAUSE-STATUS]] active → deprecated
+1. `govctl clause new <id> <title>`
+   - MUST assign or defer `since` according to the parent RFC status and phase rules in [[RFC-0000:C-CLAUSE-DEF]].
 
-2. `govctl clause supersede <id> --by <replacement-id>`
-   - Implements [[RFC-0001:C-CLAUSE-STATUS]] active/deprecated → superseded
-   - Both clauses must exist
+2. `govctl clause deprecate <id>`
+   - Implements [[RFC-0001:C-CLAUSE-STATUS]] active -> deprecated.
+
+3. `govctl clause supersede <id> --by <replacement-id>`
+   - Implements [[RFC-0001:C-CLAUSE-STATUS]] active/deprecated -> superseded.
+   - Both clauses must exist.
 
 **Consistency Requirements:**
 
-1. All lifecycle operations MUST validate transitions per [[RFC-0001]] or their resource definition
-2. All lifecycle operations MUST update timestamp fields where applicable
-3. Except for the rollback-failure path in requirement 4, a lifecycle invocation that handles an error and completes through govctl's normal error path with a non-zero exit status MUST restore every governed artifact changed by that invocation byte-for-byte before returning
-4. If an I/O or storage error prevents complete restoration, the invocation MUST return a non-zero exit status
-5. The rollback-failure diagnostic MUST contain the term `rollback`
-6. The rollback-failure diagnostic MUST state that governed-artifact restoration may be incomplete
-7. The restoration baseline is the artifact content observed after the invocation acquires its exclusive write scope under [[RFC-0004:C-SCOPE]] and before its first governed-artifact mutation
-8. Unexpected process termination before normal error completion, host failure, and the rollback-failure path in requirement 4 are outside the lifecycle atomicity guarantee
-9. All lifecycle operations MUST support global `--dry-run` flag
-10. Invalid transitions MUST error with clear explanation of valid transitions
+1. All lifecycle operations MUST validate transitions per [[RFC-0001]] or their resource definition.
+2. All lifecycle operations MUST update timestamp fields where applicable.
+3. Except for the rollback-failure path in requirement 4, before a lifecycle invocation exits with a non-zero status, it MUST restore each governed-artifact path it created, deleted, or wrote to the path-existence state observed at baseline and, when that path existed at baseline, to its baseline byte content.
+4. If an I/O or storage error prevents complete restoration, the invocation MUST return a non-zero exit status.
+5. The rollback-failure diagnostic MUST contain the term `rollback`.
+6. The rollback-failure diagnostic MUST state that governed-artifact restoration may be incomplete.
+7. For each governed-artifact path covered by requirement 3, the restoration baseline is whether its resolved path existed and, when it existed, its artifact byte content observed after the invocation acquires its exclusive write scope under [[RFC-0004:C-SCOPE]] and before its first governed-artifact mutation.
+8. Unexpected process termination before restoration completes, host failure, and the rollback-failure path in requirement 4 are outside the lifecycle atomicity guarantee.
+9. Permissions, ownership, timestamps, and other filesystem metadata are outside the lifecycle atomicity guarantee.
+10. All lifecycle operations MUST support global `--dry-run` flag.
+11. Invalid transitions MUST error with clear explanation of valid transitions.
 
 **Rationale:**
 
 Lifecycle operations are resource-specific because:
-- RFCs have status AND phase (two dimensions of state)
-- ADRs can be rejected (not applicable to RFCs)
-- Work Items have gate conditions (acceptance criteria)
-- Release correction has a newest-entry and expected-version boundary
-- Each resource has different valid transitions
+- RFCs have status AND phase (two dimensions of state).
+- ADRs can be rejected (not applicable to RFCs).
+- Work Items have gate conditions (acceptance criteria).
+- Release correction has a newest-entry and expected-version boundary.
+- Each resource has different valid transitions.
 
-Scoping these operations to resources makes their applicability explicit and prevents confusion. Lifecycle atomicity defines the byte content observed when an invocation completes through its normal error path; it does not require a crash-recovery subsystem for the flat-file artifact store."""
+Scoping these operations to resources makes their applicability explicit and prevents confusion. Lifecycle atomicity defines path existence and byte content for the non-zero exits covered by requirement 3; it does not require filesystem-metadata restoration or a crash-recovery subsystem for the flat-file artifact store."""

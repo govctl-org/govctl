@@ -29,6 +29,7 @@ pub enum DiagnosticCode {
     E0112RfcReferenceHierarchy,
     E0113RfcBumpNoAmendment,
     E0114RfcPendingAmendment,
+    E0115RfcCurrentChangelogInvalid,
 
     // Clause errors (E02xx)
     E0201ClauseSchemaInvalid,
@@ -151,6 +152,8 @@ pub enum DiagnosticCode {
     E0903UnexpectedError,
 
     // Warnings (W01xx)
+    /// Retained for compatibility with diagnostics emitted before current-entry validation.
+    #[allow(dead_code)]
     W0101RfcNoChangelog,
     W0102ClauseNoSince,
     W0103AdrNoRefs,

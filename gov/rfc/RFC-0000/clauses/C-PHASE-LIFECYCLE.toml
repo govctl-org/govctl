@@ -15,27 +15,35 @@ tags = [
 text = """
 RFC phase describes the current RFC version and follows this lifecycle within that version:
 
-    spec → impl → test → stable
+    spec -> impl -> test -> stable
 
-**spec**: Defining the current version. No implementation work permitted.
+**spec**: Authoring the current version candidate. Implementation work against that candidate MUST NOT begin.
 
-**impl**: Building what the current version specifies.
+**impl**: Building what the sealed current version specifies.
 
-**test**: Verifying implementation against the current version.
+**test**: Verifying implementation against the sealed current version.
 
-**stable**: Implementation and tests for the current version are complete.
+**stable**: Implementation and tests for the sealed current version are complete.
 
 Phase rules:
-- Phases within one version MUST proceed in order; skipping is FORBIDDEN
-- Each phase transition requires the previous phase gate to pass
-- `stable` is terminal for one RFC version, not for the RFC across later version bumps
-- A version bump that releases a detected content amendment MUST start the new version at `spec`
-- Changelog-only updates and signature-baseline bookkeeping without a detected content amendment MUST preserve phase
-- Phase progression MUST be rejected while a detected content amendment remains unversioned
-- draft + stable is FORBIDDEN (cannot stabilize unratified work)
-- deprecated + impl/test is FORBIDDEN (no new work on deprecated specs)
+- Phases within one version MUST proceed in order.
+- Phase transitions MUST NOT skip a phase.
+- Each phase transition MUST satisfy the preceding phase gate.
+- `stable` MUST be terminal for one RFC version.
+- A later version bump MAY start another phase lifecycle for the RFC.
+- A version bump that releases a detected content amendment MUST start the new version at `spec`.
+- Only a normative RFC MAY advance from `spec` to `impl`.
+- While phase is `spec`, RFC and clause content belongs to the current version candidate and MAY change without another version bump.
+- The `spec` -> `impl` transition MUST replace the stored amendment signature with a signature of the current RFC and clause content.
+- The `spec` -> `impl` transition MUST reject pending clauses as defined by [[RFC-0000:C-CLAUSE-DEF]].
+- Changelog-only updates MUST preserve phase.
+- Changelog-only updates MUST NOT change the amendment signature.
+- In `impl`, `test`, or `stable`, content that differs from the stored amendment signature is an unversioned amendment.
+- An unversioned amendment MUST be released by a version bump before further phase progression.
+- A draft RFC MUST NOT enter `stable`.
+- A deprecated RFC MUST NOT enter `impl` or `test`.
 
-For amendment detection, RFC content is the canonical RFC and clause data other than RFC `version`, `phase`, `changelog`, and `signature` fields. Those four fields are lifecycle or bump bookkeeping and MUST be excluded from amendment comparison. An RFC without a stored amendment signature has no comparison baseline; establishing its first baseline MUST NOT by itself be treated as a detected content amendment.
+For amendment detection, RFC content is the canonical RFC and clause data other than RFC `version`, `phase`, `changelog`, and `signature` fields. Those four fields are lifecycle or changelog bookkeeping and MUST be excluded from amendment comparison. A stored signature is the sealed content baseline for the current version after it enters `impl`. While the version remains in `spec`, establishing or replacing that baseline MUST NOT be treated as a content amendment. While the version remains in `spec`, establishing or replacing that baseline MUST NOT require another version bump.
 
 **Rationale:**
-Scoping phase to one version lets later amendments reuse the existing ordered gates. Defining the comparison surface prevents phase progression and release bookkeeping from recursively appearing as new content amendments."""
+Scoping phase to one version lets later amendments reuse the existing ordered gates. The `spec` phase is the mutable authoring boundary for that version, and entry into `impl` seals the exact contract that implementation follows. Defining the comparison surface prevents phase progression and changelog bookkeeping from recursively appearing as new content amendments."""

@@ -119,9 +119,9 @@ fn test_advance_nonexistent_rfc() -> common::TestResult {
 }
 
 #[test]
-fn test_advance_rejects_unversioned_content_amendment() -> common::TestResult {
+fn test_advance_seals_content_edits_made_during_spec() -> common::TestResult {
     let temp_dir = init_project()?;
-    let output = run_commands(
+    run_commands(
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
@@ -151,6 +151,16 @@ fn test_advance_rejects_unversioned_content_amendment() -> common::TestResult {
                 "--summary",
                 "Establish baseline",
             ],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let before: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    let baseline_signature = before["govctl"]["signature"].as_str().map(str::to_string);
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
             &[
                 "clause",
                 "edit",
@@ -158,7 +168,71 @@ fn test_advance_rejects_unversioned_content_amendment() -> common::TestResult {
                 "--text",
                 "Amended normative behavior.",
             ],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Amended Test RFC",
+            ],
             &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "get", "RFC-0001", "phase"],
+            &["rfc", "get", "RFC-0001", "title"],
+        ],
+    )?;
+
+    assert!(!output.contains("error[E0114]"), "output: {output}");
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 phase\nimpl"),
+        "output: {output}"
+    );
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 title\nAmended Test RFC"),
+        "output: {output}"
+    );
+    let after: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    assert_ne!(
+        after["govctl"]["signature"].as_str().map(str::to_string),
+        baseline_signature
+    );
+    Ok(())
+}
+
+#[test]
+fn test_advance_after_impl_rejects_unversioned_content_amendment() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-TEST",
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "--text",
+                "Original normative behavior.",
+            ],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-TEST",
+                "--text",
+                "Unversioned implementation-phase amendment.",
+            ],
+            &["rfc", "advance", "RFC-0001", "test"],
             &["rfc", "get", "RFC-0001", "phase"],
         ],
     )?;
@@ -166,9 +240,48 @@ fn test_advance_rejects_unversioned_content_amendment() -> common::TestResult {
     assert!(output.contains("error[E0114]"), "output: {output}");
     assert!(output.contains("unversioned amendment"), "output: {output}");
     assert!(
-        output.contains("$ govctl rfc get RFC-0001 phase\nspec"),
+        output.contains("$ govctl rfc get RFC-0001 phase\nimpl"),
         "output: {output}"
     );
+    Ok(())
+}
+
+#[test]
+fn test_advance_to_impl_rejects_pending_clause_versions_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-PENDING",
+                "Pending Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let clause_path = temp_dir
+        .path()
+        .join("gov/rfc/RFC-0001/clauses/C-PENDING.toml");
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    rfc["govctl"]["status"] = toml::Value::String("normative".to_string());
+    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+    let rfc_before = fs::read(&rfc_path)?;
+    let clause_before = fs::read(&clause_path)?;
+
+    let output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-0001", "impl"]])?;
+
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(output.contains("C-PENDING"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    assert_eq!(fs::read(&clause_path)?, clause_before);
     Ok(())
 }
 

@@ -2,6 +2,7 @@ use super::super::{
     adapter::DocAdapter, deserialize_edit_doc, engine as edit_engine, refs,
     runtime as edit_runtime, serialize_edit_doc, unexpected_edit_state,
 };
+use super::rfc_changelog;
 use super::{DocTargetKind, SetDocRequest, require_simple_field};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
@@ -18,6 +19,10 @@ pub(in crate::cmd::edit) fn set_rfc_field<A>(
 where
     A: DocAdapter<Data = crate::model::RfcSpec>,
 {
+    if rfc_changelog::is_target(target) {
+        return rfc_changelog::set(config, id, target, value, op);
+    }
+
     let request = SetDocRequest {
         config,
         id,

@@ -54,6 +54,11 @@ created = "2026-01-01"
 
 [[sections]]
 title = "Summary"
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial version"
 "#,
     )?;
 
@@ -83,6 +88,11 @@ created = "2026-01-01"
 [[sections]]
 title = "Spec"
 clauses = ["clauses/C-TEST.toml"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial version"
 "#,
     )?;
 
@@ -259,6 +269,11 @@ created = "2026-01-01"
 
 [[sections]]
 title = "Summary"
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial version"
 "#,
     )?;
 
@@ -284,6 +299,11 @@ created = "2026-01-01"
 [[sections]]
 title = "Spec"
 clauses = ["clauses/C-FLAT.toml"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial version"
 "#,
     )?;
 

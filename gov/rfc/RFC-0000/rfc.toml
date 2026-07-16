@@ -3,19 +3,19 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.5.0"
+version = "1.6.1"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-07-15"
+updated = "2026-07-16"
 tags = [
     "core",
     "schema",
     "validation",
     "lifecycle",
 ]
-signature = "a8dbcc3587e2f2f2b548c3cf33a3a684c0f5b329c12eeb8433b4f491dc6541d7"
+signature = "8225ff5173cd4af351f8ff01bff00baa3bda2a239b0c41f76799c68b1f210048"
 
 [[sections]]
 title = "Summary"
@@ -52,6 +52,18 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.6.1"
+date = "2026-07-16"
+notes = "Clarify Clause version assignment at RFC publication boundaries"
+fixed = ["Keep draft Clause versions pending until normative finalization"]
+
+[[changelog]]
+version = "1.6.0"
+date = "2026-07-16"
+notes = "Define current-version RFC authoring and changelog invariants"
+changed = ["Defined spec-phase sealing, Clause version assignment, and current changelog ownership"]
 
 [[changelog]]
 version = "1.5.0"

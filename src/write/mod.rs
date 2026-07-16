@@ -17,7 +17,10 @@ mod changelog;
 
 pub use artifact::{read_clause, read_rfc, write_clause, write_rfc};
 pub use artifact_normalize::{normalize_clause_value, normalize_rfc_value};
-pub use changelog::{BumpLevel, ParsedChange, add_changelog_change, bump_rfc_version, today};
+pub use changelog::{
+    BumpLevel, ParsedChange, add_changelog_change, bump_rfc_version, current_changelog_entry,
+    current_changelog_entry_mut, today,
+};
 
 pub fn parse_changelog_change(change: &str) -> DiagnosticResult<ParsedChange> {
     changelog::parse_changelog_change(change)
@@ -505,6 +508,29 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(std::fs::read_to_string(first)?, "first-original");
         assert_eq!(std::fs::read_to_string(second)?, "second-original");
+        Ok(())
+    }
+
+    #[test]
+    fn file_transaction_restores_deleted_file_after_failure()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let dir = tempfile::tempdir()?;
+        let path = dir.path().join("artifact.toml");
+        std::fs::write(&path, "original")?;
+
+        let result = with_file_transaction(&[path.as_path()], WriteOp::Execute, || {
+            std::fs::remove_file(&path).map_err(|err| {
+                Diagnostic::io_error("delete file", err, path.display().to_string())
+            })?;
+            Err::<(), _>(Diagnostic::new(
+                crate::diagnostic::DiagnosticCode::E0903UnexpectedError,
+                "injected failure after deletion",
+                path.display().to_string(),
+            ))
+        });
+
+        assert!(result.is_err());
+        assert_eq!(std::fs::read_to_string(path)?, "original");
         Ok(())
     }
 

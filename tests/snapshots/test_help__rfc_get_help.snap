@@ -1,7 +1,6 @@
 ---
 source: tests/test_help.rs
-assertion_line: 13
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: normalized
 ---
 $ govctl rfc get --help
 Get RFC metadata or specific field
@@ -18,7 +17,7 @@ Options:
   -h, --help             Print help
 
 VALID FIELDS:
-    - title, version, status, phase, owners, refs
+    - title, version, status, phase, owners, refs, changelog
 
 EXAMPLES:
     govctl rfc get RFC-0001

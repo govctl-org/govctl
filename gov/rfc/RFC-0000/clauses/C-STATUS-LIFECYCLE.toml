@@ -6,21 +6,27 @@ title = "RFC Status Lifecycle"
 kind = "normative"
 status = "active"
 since = "1.0.0"
-tags = ["core", "lifecycle"]
+tags = [
+    "core",
+    "lifecycle",
+]
 
 [content]
 text = """
 RFC status follows this lifecycle:
 
-    draft → normative → deprecated
+    draft -> normative -> deprecated
 
 **draft**: Under discussion. Implementation MUST NOT depend on draft RFCs.
 
-**normative**: Frozen and ratified. Implementation MUST conform to normative RFCs.
+**normative**: The RFC lineage is ratified. A normative version in `impl`, `test`, or `stable` is sealed, and implementation MUST conform to that sealed version. A normative version in `spec` is a controlled authoring candidate and MUST NOT be used as an implementation conformance baseline. The most recently sealed version remains the implementation baseline until the current `spec` version enters `impl`.
 
 **deprecated**: Superseded or obsolete. Implementation SHOULD migrate away.
 
 Transition rules:
-- draft → normative: Requires explicit finalization
-- normative → deprecated: Requires a superseding RFC or explicit deprecation
-- Reverse transitions are FORBIDDEN"""
+- The draft -> normative transition MUST require explicit finalization.
+- The normative -> deprecated transition MUST require a superseding RFC or explicit deprecation.
+- Reverse status transitions MUST be rejected.
+
+**Rationale:**
+Normative status ratifies the RFC lineage, while phase identifies whether its current version is still being authored or has been sealed for implementation. This distinction permits controlled current-version authoring without presenting mutable `spec` content as a binding implementation contract."""

@@ -2,10 +2,12 @@ use super::write_new_artifact_toml;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::split_clause_id;
-use crate::model::{ClauseKind, ClauseSpec, ClauseStatus, ClauseWire, RfcWire, SectionSpec};
+use crate::model::{
+    ClauseKind, ClauseSpec, ClauseStatus, ClauseWire, RfcPhase, RfcStatus, RfcWire, SectionSpec,
+};
 use crate::schema::ArtifactSchema;
 use crate::ui;
-use crate::write::WriteOp;
+use crate::write::{WriteOp, with_file_transaction};
 
 pub(super) fn create(
     config: &Config,
@@ -34,6 +36,19 @@ pub(super) fn create(
 
     let mut rfc = crate::write::read_rfc(config, &rfc_path)?;
 
+    if rfc.status == RfcStatus::Deprecated {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0104RfcInvalidTransition,
+            format!("Cannot create a clause in deprecated RFC: {rfc_id}"),
+            clause_id,
+        ));
+    }
+
+    let since = match (rfc.status, rfc.phase) {
+        (RfcStatus::Normative, RfcPhase::Spec) => Some(rfc.version.clone()),
+        _ => None,
+    };
+
     let clause = ClauseSpec {
         clause_id: clause_name.to_string(),
         title: title.to_string(),
@@ -42,22 +57,13 @@ pub(super) fn create(
         text: "TODO: Add clause text here.".to_string(),
         anchors: vec![],
         superseded_by: None,
-        since: None, // Will be set by rfc bump
+        since,
         tags: vec![],
     };
 
     let clause_path = config.clause_source_path(rfc_id, clause_name, "toml");
 
-    let wire: ClauseWire = clause.into();
-    write_new_artifact_toml(
-        config,
-        &clause_path,
-        &wire,
-        ArtifactSchema::Clause,
-        DiagnosticCode::E0201ClauseSchemaInvalid,
-        "clause",
-        op,
-    )?;
+    let clause_wire: ClauseWire = clause.into();
 
     let clause_rel_path = format!("clauses/{clause_name}.toml");
     if let Some(sec) = rfc.sections.iter_mut().find(|s| s.title == section) {
@@ -71,16 +77,27 @@ pub(super) fn create(
         });
     }
 
-    let wire: RfcWire = rfc.into();
-    write_new_artifact_toml(
-        config,
-        &rfc_path,
-        &wire,
-        ArtifactSchema::Rfc,
-        DiagnosticCode::E0101RfcSchemaInvalid,
-        "RFC",
-        op,
-    )?;
+    let rfc_wire: RfcWire = rfc.into();
+    with_file_transaction(&[clause_path.as_path(), rfc_path.as_path()], op, || {
+        write_new_artifact_toml(
+            config,
+            &clause_path,
+            &clause_wire,
+            ArtifactSchema::Clause,
+            DiagnosticCode::E0201ClauseSchemaInvalid,
+            "clause",
+            op,
+        )?;
+        write_new_artifact_toml(
+            config,
+            &rfc_path,
+            &rfc_wire,
+            ArtifactSchema::Rfc,
+            DiagnosticCode::E0101RfcSchemaInvalid,
+            "RFC",
+            op,
+        )
+    })?;
 
     if !op.is_preview() {
         ui::created("clause", &config.display_path(&clause_path));

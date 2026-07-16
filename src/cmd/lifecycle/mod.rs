@@ -14,6 +14,7 @@ mod rfc_clause_versions;
 mod rfc_supersede;
 pub use adr::{accept_adr, reject_adr, validate_adr_completeness};
 pub use release::{cut_release, undo_release};
+pub(crate) use rfc::require_changelog_update_ready;
 pub use rfc::{advance, bump, finalize};
 
 /// Deprecate an artifact

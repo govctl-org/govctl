@@ -2,7 +2,7 @@ use super::ArtifactType;
 use super::adapter::{
     AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, WorkTomlAdapter,
 };
-use super::doc_target::get_doc_field;
+use super::doc_target::{get_doc_field, rfc_changelog};
 use super::engine as edit_engine;
 use super::toml_target::get_toml_field;
 use crate::config::Config;
@@ -24,13 +24,23 @@ pub fn get_field(
             plan.target.as_ref(),
             ArtifactType::WorkItem,
         )?,
-        ArtifactType::Rfc => get_doc_field::<RfcTomlAdapter>(
-            config,
-            id,
-            plan.target.as_ref(),
-            ArtifactType::Rfc,
-            "RFC fields do not support nested paths",
-        )?,
+        ArtifactType::Rfc => {
+            if let Some(target) = plan
+                .target
+                .as_ref()
+                .filter(|target| rfc_changelog::is_target(target))
+            {
+                rfc_changelog::get(config, id, target)?;
+            } else {
+                get_doc_field::<RfcTomlAdapter>(
+                    config,
+                    id,
+                    plan.target.as_ref(),
+                    ArtifactType::Rfc,
+                    "RFC fields do not support nested paths",
+                )?;
+            }
+        }
         ArtifactType::Clause => get_doc_field::<ClauseTomlAdapter>(
             config,
             id,

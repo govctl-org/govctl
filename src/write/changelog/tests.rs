@@ -1,5 +1,39 @@
 use super::*;
-use crate::model::ChangelogCategory;
+use crate::diagnostic::DiagnosticCode;
+use crate::model::{ChangelogCategory, ChangelogEntry, RfcPhase, RfcSpec, RfcStatus};
+
+fn changelog_entry(version: &str) -> ChangelogEntry {
+    ChangelogEntry {
+        version: version.to_string(),
+        date: "2026-07-16".to_string(),
+        notes: Some(format!("Version {version}")),
+        added: vec![],
+        changed: vec![],
+        deprecated: vec![],
+        removed: vec![],
+        fixed: vec![],
+        security: vec![],
+    }
+}
+
+fn test_rfc() -> RfcSpec {
+    RfcSpec {
+        rfc_id: "RFC-0001".to_string(),
+        title: "Test RFC".to_string(),
+        version: "0.2.0".to_string(),
+        status: RfcStatus::Normative,
+        phase: RfcPhase::Spec,
+        owners: vec![],
+        created: "2026-07-16".to_string(),
+        updated: None,
+        supersedes: None,
+        refs: vec![],
+        tags: vec![],
+        sections: vec![],
+        changelog: vec![changelog_entry("0.1.0"), changelog_entry("0.2.0")],
+        signature: None,
+    }
+}
 
 #[test]
 fn test_parse_changelog_no_prefix() -> Result<(), Box<dyn std::error::Error>> {
@@ -128,4 +162,26 @@ fn test_parse_changelog_conventional_commit_aliases() -> Result<(), Box<dyn std:
     let r = parse_changelog_change("build: update dependencies")?;
     assert_eq!(r.category, ChangelogCategory::Chore);
     Ok(())
+}
+
+#[test]
+fn add_change_resolves_current_entry_by_version() -> Result<(), Box<dyn std::error::Error>> {
+    let mut rfc = test_rfc();
+
+    add_changelog_change(&mut rfc, "fix: current version")?;
+
+    assert!(rfc.changelog[0].fixed.is_empty());
+    assert_eq!(rfc.changelog[1].fixed, ["current version"]);
+    Ok(())
+}
+
+#[test]
+fn current_entry_resolution_rejects_duplicate_matches() {
+    let mut rfc = test_rfc();
+    rfc.changelog.push(changelog_entry("0.2.0"));
+
+    let error = add_changelog_change(&mut rfc, "fix: ambiguous").unwrap_err();
+
+    assert_eq!(error.code, DiagnosticCode::E0115RfcCurrentChangelogInvalid);
+    assert!(error.message.contains("found 2"));
 }

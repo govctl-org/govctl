@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "aliases": [
     { "alias": "ac", "canonical": "acceptance_criteria" },
     { "alias": "alt", "canonical": "alternatives" },
@@ -653,6 +653,79 @@
     }
   ],
   "nested_rules": [
+    {
+      "artifact": "rfc",
+      "root": "changelog",
+      "content_path": ["changelog"],
+      "node": {
+        "kind": "object",
+        "verbs": ["get"],
+        "fields": [
+          {
+            "name": "summary",
+            "node": {
+              "kind": "scalar",
+              "verbs": ["set"],
+              "set_mode": { "type": "string" }
+            }
+          },
+          {
+            "name": "added",
+            "node": {
+              "kind": "list",
+              "verbs": ["add", "remove"],
+              "text_key": null,
+              "item": { "kind": "scalar", "verbs": ["remove"] }
+            }
+          },
+          {
+            "name": "changed",
+            "node": {
+              "kind": "list",
+              "verbs": ["add", "remove"],
+              "text_key": null,
+              "item": { "kind": "scalar", "verbs": ["remove"] }
+            }
+          },
+          {
+            "name": "deprecated",
+            "node": {
+              "kind": "list",
+              "verbs": ["add", "remove"],
+              "text_key": null,
+              "item": { "kind": "scalar", "verbs": ["remove"] }
+            }
+          },
+          {
+            "name": "removed",
+            "node": {
+              "kind": "list",
+              "verbs": ["add", "remove"],
+              "text_key": null,
+              "item": { "kind": "scalar", "verbs": ["remove"] }
+            }
+          },
+          {
+            "name": "fixed",
+            "node": {
+              "kind": "list",
+              "verbs": ["add", "remove"],
+              "text_key": null,
+              "item": { "kind": "scalar", "verbs": ["remove"] }
+            }
+          },
+          {
+            "name": "security",
+            "node": {
+              "kind": "list",
+              "verbs": ["add", "remove"],
+              "text_key": null,
+              "item": { "kind": "scalar", "verbs": ["remove"] }
+            }
+          }
+        ]
+      }
+    },
     {
       "artifact": "adr",
       "root": "alternatives",

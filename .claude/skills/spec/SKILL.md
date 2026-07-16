@@ -26,6 +26,7 @@ Use this workflow for spec-only governance work: refine or accept ADRs, clarify 
 7. Validate with `govctl check`, and run `govctl render` when rendered docs should change.
 8. Use `/commit` for raw VCS operations. This workflow defines what to record, not how to invoke VCS directly.
 9. Do not let RFCs absorb implementation structure or let ADRs absorb work-item execution details. Preserve artifact roles while editing.
+10. Do not bump an RFC again merely because its current version is already in `spec`; edits there belong to that version candidate.
 
 ## Quick Reference
 
@@ -47,6 +48,8 @@ govctl adr accept <ADR-ID>
 
 govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
 govctl rfc bump <RFC-ID> --patch -m "Clarify clause wording"
+govctl rfc get <RFC-ID> changelog
+govctl rfc edit <RFC-ID> changelog.summary --set "Clarify current version"
 govctl rfc finalize <RFC-ID> normative
 
 govctl check
@@ -81,6 +84,10 @@ govctl rfc show <RFC-ID>
 govctl adr show <ADR-ID>
 ```
 
+Before editing a normative RFC, inspect its current phase. The phase determines
+whether the edit remains in the current version candidate or must be released as
+a new version.
+
 For artifact editing conventions, follow the appropriate writer skill:
 
 - RFC changes -> **rfc-writer**
@@ -98,8 +105,11 @@ For ADR work:
 For RFC work:
 
 - Edit clauses with `govctl clause edit`
-- If the RFC is draft and ready to become normative, ask permission before `govctl rfc finalize <RFC-ID> normative`
-- If amending an existing normative RFC, ask permission before `govctl rfc bump`
+- If the RFC is draft, do not bump it; when ready, ask permission before `govctl rfc finalize <RFC-ID> normative`
+- If a normative RFC is in `spec`, edit the current version candidate directly; do not bump it again for those edits
+- If a normative RFC is in `impl`, `test`, or `stable`, an RFC or Clause edit creates an unversioned amendment; after review, ask permission before using `govctl rfc bump` to release it as the next version in `spec`
+- If the RFC is deprecated, do not edit or version-bump it
+- Use `govctl rfc edit <RFC-ID> changelog.*` for current-version changelog corrections; these do not change version, phase, or the sealed content signature
 
 Semver guidance for RFC amendments:
 
@@ -107,7 +117,9 @@ Semver guidance for RFC amendments:
 - `--minor`: additive requirement or newly specified behavior
 - `--major`: breaking or incompatible requirement change
 
-Every RFC bump must include a changelog summary via `-m`.
+Every version-changing RFC bump must include a changelog summary via `-m`.
+`--change` without a bump level is changelog-only and cannot release an RFC or
+Clause content amendment.
 
 ### 4. Review and validate
 
@@ -157,10 +169,11 @@ If the task grows into implementation work, stop here and hand off to `/gov`.
 
 ### Clarify an RFC without changing behavior
 
-1. Edit the clause text with `govctl clause edit`
-2. Run **rfc-reviewer**
-3. Ask permission, then run `govctl rfc bump <RFC-ID> --patch -m "Clarify wording"`
-4. Run `govctl check` and `govctl render`
+1. Inspect the RFC phase with `govctl rfc show <RFC-ID>`
+2. Edit the clause text with `govctl clause edit`
+3. Run **rfc-reviewer**
+4. For a draft RFC, keep the version and finalize when ready; for a normative RFC already in `spec`, keep the current version; for a normative RFC in `impl`, `test`, or `stable`, ask permission, then run `govctl rfc bump <RFC-ID> --patch -m "Clarify wording"`
+5. Run `govctl check` and `govctl render`
 
 ### Prepare a deprecation plan without implementation
 

@@ -1,5 +1,7 @@
 use super::paths::require_rfc_toml_path;
-use super::rfc_clause_versions::{fill_pending_clause_versions, rfc_update_paths};
+use super::rfc_clause_versions::{
+    fill_pending_clause_versions, pending_clause_ids, rfc_update_paths,
+};
 use crate::FinalizeStatus;
 use crate::cmd::edit;
 use crate::config::Config;
@@ -27,6 +29,19 @@ pub fn bump(
     let mut rfc = read_rfc(config, &rfc_path)?;
     let refresh_signature_after_write = match (level, summary, changes.is_empty()) {
         (Some(lvl), Some(sum), _) => {
+            // [[RFC-0002:C-LIFECYCLE-VERBS]] reserves version-changing bumps for
+            // RFC lineages that have crossed the normative publication boundary.
+            if rfc.status != RfcStatus::Normative {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0104RfcInvalidTransition,
+                    format!(
+                        "Cannot bump RFC version while status={}. Version-changing bumps require normative RFC status.",
+                        rfc.status.as_ref()
+                    ),
+                    rfc_id,
+                ));
+            }
+
             let releases_content_amendment =
                 ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
 
@@ -68,20 +83,19 @@ pub fn bump(
                 rfc_id,
             ));
         }
-        (None, _, false) => {
-            let refresh_signature_after_write =
-                should_refresh_signature_after_changelog_only(config, &rfc_path)?;
-            for change in changes {
-                add_changelog_change(&mut rfc, change)?;
-            }
-            refresh_signature_after_write
-        }
-        (None, Some(_), true) => {
+        (None, Some(_), _) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0108RfcBumpRequiresSummary,
                 "Bump level (--patch/--minor/--major) required when providing --summary",
                 rfc_id,
             ));
+        }
+        (None, None, false) => {
+            require_changelog_update_ready(config, &rfc_path, rfc_id)?;
+            for change in changes {
+                add_changelog_change(&mut rfc, change)?;
+            }
+            false
         }
         (None, None, true) => {
             return Err(Diagnostic::new(
@@ -166,12 +180,17 @@ fn transition_rfc_status(
         ));
     }
 
-    let paths = rfc_update_paths(config, &rfc_path)?;
-    let path_refs: Vec<_> = paths.iter().map(std::path::PathBuf::as_path).collect();
-    let updated_clause_ids = with_file_transaction(&path_refs, op, || {
+    let updated_clause_ids = if target_status == RfcStatus::Normative {
+        let paths = rfc_update_paths(config, &rfc_path)?;
+        let path_refs: Vec<_> = paths.iter().map(std::path::PathBuf::as_path).collect();
+        with_file_transaction(&path_refs, op, || {
+            edit::set_field_direct(config, rfc_id, "status", target_status.as_ref(), op)?;
+            fill_pending_clause_versions(config, &rfc_path, &rfc.version, op)
+        })?
+    } else {
         edit::set_field_direct(config, rfc_id, "status", target_status.as_ref(), op)?;
-        fill_pending_clause_versions(config, &rfc_path, &rfc.version, op)
-    })?;
+        Vec::new()
+    };
 
     if !op.is_preview() {
         for clause_id in updated_clause_ids {
@@ -221,9 +240,26 @@ pub fn advance(
         ));
     }
 
+    let seals_current_version = rfc.phase == RfcPhase::Spec && phase == RfcPhase::Impl;
+    if seals_current_version {
+        let pending_clause_ids = pending_clause_ids(config, &rfc_path)?;
+        if !pending_clause_ids.is_empty() {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0104RfcInvalidTransition,
+                format!(
+                    "Cannot advance to impl while Clause versions are pending: {}",
+                    pending_clause_ids.join(", ")
+                ),
+                rfc_id,
+            ));
+        }
+    }
+
     let rfc_index = crate::load::load_rfc(config, &rfc_path)?;
-    let migrated_signature = if let Some(stored_signature) = &rfc_index.rfc.signature {
-        let current_signature = crate::signature::compute_rfc_content_signature(&rfc_index)?;
+    let current_signature = crate::signature::compute_rfc_content_signature(&rfc_index)?;
+    let next_signature = if seals_current_version {
+        Some(current_signature)
+    } else if let Some(stored_signature) = &rfc_index.rfc.signature {
         if stored_signature == &current_signature {
             None
         } else if crate::signature::compute_rfc_signature(&rfc_index)
@@ -242,7 +278,7 @@ pub fn advance(
     };
 
     let mut updated_rfc = rfc;
-    if let Some(signature) = migrated_signature {
+    if let Some(signature) = next_signature {
         updated_rfc.signature = Some(signature);
     }
     updated_rfc.phase = phase;
@@ -317,6 +353,10 @@ fn ensure_rfc_has_content_amendment(
     rfc_path: &Path,
     rfc_id: &str,
 ) -> DiagnosticResult<bool> {
+    if !pending_clause_ids(config, rfc_path)?.is_empty() {
+        return Ok(true);
+    }
+
     let rfc_index = crate::load::load_rfc(config, rfc_path)?;
     if rfc_index.rfc.signature.is_none() {
         return Ok(false);
@@ -332,10 +372,28 @@ fn ensure_rfc_has_content_amendment(
     ))
 }
 
-fn should_refresh_signature_after_changelog_only(
+pub(crate) fn require_changelog_update_ready(
     config: &Config,
     rfc_path: &Path,
-) -> DiagnosticResult<bool> {
+    rfc_id: &str,
+) -> DiagnosticResult<()> {
+    require_rfc_content_signature_schema(config, rfc_id)?;
     let rfc_index = crate::load::load_rfc(config, rfc_path)?;
-    Ok(rfc_index.rfc.signature.is_some() && !crate::signature::is_rfc_amended(&rfc_index))
+    let Some(stored_signature) = &rfc_index.rfc.signature else {
+        return Ok(());
+    };
+    let content_signature = crate::signature::compute_rfc_content_signature(&rfc_index)?;
+    if stored_signature == &content_signature {
+        return Ok(());
+    }
+    if crate::signature::compute_rfc_signature(&rfc_index)
+        .is_ok_and(|legacy| stored_signature == &legacy)
+    {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0505MigrationRequired,
+            "Cannot update the changelog while the RFC has a legacy amendment signature. Migrate the repository signature baseline first.",
+            rfc_id,
+        ));
+    }
+    Ok(())
 }

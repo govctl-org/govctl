@@ -30,5 +30,17 @@ Clause kinds:
 
 Deprecation is a lifecycle state (in `status`), not a document kind.
 
+The `since` field identifies the first RFC version that contains the clause. A clause whose `since` field is absent is a pending clause.
+
+Clause creation and version assignment MUST follow these rules:
+- A new clause in a draft RFC MUST be pending.
+- Finalizing a draft RFC as normative MUST assign the RFC's current version to every pending clause.
+- A new clause in a normative RFC whose phase is `spec` MUST set `since` to the RFC's current version.
+- A new clause in a normative RFC whose phase is `impl`, `test`, or `stable` MUST be pending.
+- A version bump of a normative RFC MUST assign the new RFC version to every pending clause.
+- Creating a clause in a deprecated RFC MUST be rejected.
+
+Advancing a normative RFC from `spec` to `impl` MUST reject every pending clause. That transition MUST NOT assign clause version metadata. That transition MUST NOT rewrite existing clause version metadata.
+
 **Rationale:**
-This aligns clause storage with RFC, ADR, Work Item, and Release storage while removing the legacy JSON compatibility path from normal operation."""
+A clause can record its version immediately only after that target version is known. Initial draft clauses receive a version only at finalization, amendments created outside `spec` receive a version at the next normative RFC bump, and clauses added to an already-open normative `spec` version can safely use the current version. This preserves version provenance without making phase advancement own clause metadata."""

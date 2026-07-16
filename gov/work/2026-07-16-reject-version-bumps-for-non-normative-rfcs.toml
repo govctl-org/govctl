@@ -1,0 +1,50 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-16-002"
+title = "Reject version bumps for non-normative RFCs"
+status = "done"
+created = "2026-07-16"
+started = "2026-07-16"
+completed = "2026-07-16"
+refs = [
+    "RFC-0000:C-CLAUSE-DEF",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+tags = [
+    "lifecycle",
+    "cli",
+]
+
+[content]
+description = "Amend lifecycle specification and implementation so version-changing RFC bump eligibility aligns with the draft finalization boundary, with focused regression coverage."
+
+[[content.acceptance_criteria]]
+text = "Lifecycle RFC clauses define version-changing bump eligibility and preserve changelog-only correction behavior"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Version-changing bump rejects draft and deprecated RFCs without mutation"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Draft Clause `since` remains absent after rejected version bumps and is assigned by normative finalization"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Hand-authored RFC guide documents the draft finalization and normative bump boundary"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "The RFC bump lifecycle test module and `just pre-commit` pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Agent skills enforce the draft finalization and normative bump boundary"
+status = "done"
+category = "chore"
