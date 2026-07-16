@@ -137,6 +137,27 @@ Only include representation details when they are themselves the external contra
 | Specification | normative   | MUST/SHOULD/MAY requirements |
 | Rationale     | informative | Extended explanation         |
 
+## Phase-Aware Authoring
+
+Before editing an existing normative RFC, inspect its phase:
+
+- In `spec`, RFC and Clause edits refine the current version candidate and do not require another version bump.
+- In `impl`, `test`, or `stable`, RFC or Clause edits create an unversioned amendment. The `/spec` or `/gov` workflow must release it with a version bump before further phase progression.
+- Entry from `spec` to `impl` seals the final RFC and Clause content as that version's implementation baseline.
+
+This helper writes specification content but does not perform lifecycle verbs.
+Use `/spec` or `/gov` for bump and advance decisions.
+
+## Clause Version Assignment
+
+Clause `since` is lifecycle-owned; do not write it into clause text or try to set
+it through the generic edit surface:
+
+- A Clause created in a draft RFC remains pending until RFC finalization assigns the current version.
+- A Clause created in a normative RFC already in `spec` receives the current RFC version immediately.
+- A Clause created in `impl`, `test`, or `stable` remains pending until a content-changing RFC bump assigns the next version.
+- A deprecated RFC does not accept new Clauses.
+
 ## Rendering Rules
 
 The renderer auto-generates structural elements. **Do NOT include these in clause `text`:**

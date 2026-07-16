@@ -144,6 +144,11 @@ created = "2026-01-01"
 
 [[sections]]
 title = "Specification"
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-01-01"
+notes = "Initial version"
 "#
     );
     fs::write(rfc_dir.join("rfc.toml"), content)?;

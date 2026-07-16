@@ -50,7 +50,8 @@ The `gov/` directory is authoritative for governance artifacts. Rendered project
 RFCs are constitutional law. Code that conflicts with a normative RFC is a bug.
 
 - No silent deviation: fix the code or propose an RFC amendment
-- Normative RFCs MAY be amended: version bump + changelog per [[ADR-0016]]
+- Normative RFC content MAY continue changing without another bump while its current version remains in `spec`
+- Content changed after entry to `impl` is an unversioned amendment and MUST be released by a version bump before further phase progression
 - Cite RFC clauses when implementing invariants
 
 ### Law 2: Phase Discipline
@@ -83,7 +84,7 @@ draft → normative → deprecated
 ```
 
 - **draft**: Under discussion. Implementation MUST NOT depend on draft RFCs.
-- **normative**: Binding. Implementation MUST conform to current version. Spec MAY evolve via version bumps with changelog entries per [[ADR-0016]].
+- **normative**: Binding. Content in `spec` is the current version candidate; entry to `impl` seals that version as the implementation baseline. Later amendments start a new version lifecycle through a version bump per [[ADR-0016]].
 - **deprecated**: Superseded. No new work permitted.
 
 Reverse transitions are forbidden.
@@ -92,12 +93,20 @@ Reverse transitions are forbidden.
 
 | Status \ Phase | spec | impl | test | stable |
 | -------------- | ---- | ---- | ---- | ------ |
-| draft          | ✅   | ⚠️   | ⚠️   | ❌     |
+| draft          | ✅   | ❌   | ❌   | ❌     |
 | normative      | ✅   | ✅   | ✅   | ✅     |
 | deprecated     | ✅   | ❌   | ❌   | ✅     |
 
-- ⚠️ = experimental, gates are soft warnings
 - ❌ = forbidden
+
+Within one version, phase transitions are forward-only. A content-changing bump
+after `impl`, `test`, or `stable` starts the next version in `spec`; it is not a
+backward transition of the sealed version.
+
+Clause `since` is lifecycle-owned. Draft clauses receive it at finalization,
+clauses created in a normative RFC already in `spec` receive the current version
+immediately, and clauses created while a normative RFC is in `impl`, `test`, or
+`stable` remain pending until a content bump assigns the next version.
 
 ---
 
@@ -167,6 +176,8 @@ govctl loop replan LOOP-YYYY-MM-DD-NNN
 
 # Viewing artifacts (styled markdown to stdout)
 govctl rfc show RFC-0001        # Show RFC
+govctl rfc get RFC-0001 changelog
+govctl rfc edit RFC-0001 changelog.summary --set "Clarify current version"
 govctl adr show ADR-0001        # Show ADR
 govctl work show WI-ID          # Show work item
 govctl clause show RFC-0001:C-X # Show clause

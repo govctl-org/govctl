@@ -27,7 +27,13 @@ Format evolution is tracked by the project-level `[schema] version` in `gov/conf
 
 Entries in `sections[].clauses` MUST reference clause TOML files by relative path (for example `clauses/C-EXAMPLE.toml`).
 
+The RFC `version` field is lifecycle-owned. Resource editing operations MUST NOT modify the RFC `version` field.
+
+An RFC MUST have exactly one current changelog entry whose `version` equals the RFC's current version. Other changelog entries are historical versions. Validation MUST reject an RFC with zero current changelog entries. Validation MUST reject an RFC with multiple current changelog entries. Current-changelog field operations MUST reject either invalid state without mutation.
+
+The current entry's summary and categorized changes MAY be corrected without changing the RFC version or phase. Changelog `version` fields are lifecycle-owned. Changelog `date` fields are lifecycle-owned. Resource editing operations MUST NOT modify either lifecycle-owned field. Resource editing operations MUST NOT modify any historical changelog entry.
+
 Implementations MUST reject legacy RFC JSON storage files (`rfc.json`) during normal operations. The diagnostic MUST instruct users to migrate those repositories with a govctl version earlier than 0.9 before upgrading to a TOML-only govctl release.
 
 **Rationale:**
-This removes the last storage-format split from RFC handling while preserving a clear upgrade path for repositories that still contain legacy JSON sources."""
+The current changelog entry describes the current RFC version and may need refinement while that version is authored. Matching by version avoids relying on array position. Keeping version identity, dates, and historical entries lifecycle-owned preserves version provenance."""

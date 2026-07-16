@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.12.1"
+version = "0.13.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-15"
+updated = "2026-07-16"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "373fa81463fff75133a749849c8cbb8038507b84e55294bb8e29ebe56607dc82"
+signature = "8242e784a13b698482afb54a215c799dc65bb36fb705f84fb33e563cb997b475"
 
 [[sections]]
 title = "Summary"
@@ -35,6 +35,12 @@ clauses = [
     "clauses/C-SELF-UPDATE.toml",
     "clauses/C-SEARCH-COMMAND.toml",
 ]
+
+[[changelog]]
+version = "0.13.0"
+date = "2026-07-16"
+notes = "Specify current-version changelog editing and RFC sealing"
+added = ["Defined current changelog access and in-version spec authoring lifecycle operations"]
 
 [[changelog]]
 version = "0.12.1"

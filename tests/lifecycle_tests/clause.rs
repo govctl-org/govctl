@@ -28,6 +28,162 @@ fn test_deprecate_legacy_json_clause_requires_migrate() -> common::TestResult {
     assert_lifecycle_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
+
+// ============================================================================
+// Clause Version Assignment Tests
+// ============================================================================
+
+#[test]
+fn test_clause_new_assigns_since_only_for_normative_spec_rfc() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-DRAFT",
+                "Draft Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let clause_dir = temp_dir.path().join("gov/rfc/RFC-0001/clauses");
+    let draft_before: toml::Value =
+        toml::from_str(&fs::read_to_string(clause_dir.join("C-DRAFT.toml"))?)?;
+    assert!(draft_before["govctl"].get("since").is_none());
+
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-SPEC",
+                "Spec Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let draft_after: toml::Value =
+        toml::from_str(&fs::read_to_string(clause_dir.join("C-DRAFT.toml"))?)?;
+    let spec_clause: toml::Value =
+        toml::from_str(&fs::read_to_string(clause_dir.join("C-SPEC.toml"))?)?;
+    assert_eq!(draft_after["govctl"]["since"].as_str(), Some("0.1.0"));
+    assert_eq!(spec_clause["govctl"]["since"].as_str(), Some("0.1.0"));
+
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-IMPL",
+                "Implementation Amendment",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let impl_clause: toml::Value =
+        toml::from_str(&fs::read_to_string(clause_dir.join("C-IMPL.toml"))?)?;
+    assert!(impl_clause["govctl"].get("since").is_none());
+    Ok(())
+}
+
+#[test]
+fn test_clause_new_rejects_deprecated_rfc_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "deprecate", "RFC-0001", "--force"],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let before = fs::read(&rfc_path)?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "clause",
+            "new",
+            "RFC-0001:C-REJECTED",
+            "Rejected Clause",
+            "-s",
+            "Specification",
+            "-k",
+            "normative",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(output.contains("deprecated RFC"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, before);
+    assert!(
+        !temp_dir
+            .path()
+            .join("gov/rfc/RFC-0001/clauses/C-REJECTED.toml")
+            .exists()
+    );
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_clause_new_rfc_write_failure_rolls_back_created_clause() -> common::TestResult {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
+
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let rfc_path = rfc_dir.join("rfc.toml");
+    let clause_path = rfc_dir.join("clauses/C-ROLLBACK.toml");
+    let original_rfc = fs::read(&rfc_path)?;
+    let original_permissions = fs::metadata(&rfc_dir)?.permissions();
+    let mut unwritable_permissions = original_permissions.clone();
+    unwritable_permissions.set_mode(original_permissions.mode() & !0o222);
+    fs::set_permissions(&rfc_dir, unwritable_permissions)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "clause",
+            "new",
+            "RFC-0001:C-ROLLBACK",
+            "Rollback Clause",
+            "-s",
+            "Specification",
+            "-k",
+            "normative",
+        ]],
+    );
+    fs::set_permissions(&rfc_dir, original_permissions)?;
+    let output = output?;
+
+    assert!(output.contains("error[E0901]"), "output: {output}");
+    assert!(!output.contains("Created clause"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, original_rfc);
+    assert!(!clause_path.exists());
+    Ok(())
+}
 // ============================================================================
 // Clause Supersede Tests
 // ============================================================================

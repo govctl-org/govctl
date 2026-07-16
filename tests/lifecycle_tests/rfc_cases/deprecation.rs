@@ -22,6 +22,46 @@ fn test_deprecate_normative_rfc() -> common::TestResult {
 }
 
 #[test]
+fn test_deprecate_rfc_preserves_pending_clause_version() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Old RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-PENDING",
+                "Pending Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let clause_path = temp_dir
+        .path()
+        .join("gov/rfc/RFC-0001/clauses/C-PENDING.toml");
+    let before = fs::read(&clause_path)?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "deprecate", "RFC-0001", "--force"]],
+    )?;
+
+    assert!(!output.contains("Set C-PENDING.since"), "output: {output}");
+    assert_eq!(fs::read(&clause_path)?, before);
+    let clause: toml::Value = toml::from_str(&fs::read_to_string(&clause_path)?)?;
+    assert!(clause["govctl"].get("since").is_none());
+    Ok(())
+}
+
+#[test]
 fn test_supersede_rfc() -> common::TestResult {
     let temp_dir = init_project()?;
 

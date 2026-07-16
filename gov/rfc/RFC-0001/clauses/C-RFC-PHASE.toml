@@ -12,26 +12,32 @@ tags = ["lifecycle"]
 text = """
 An RFC MUST have exactly one of the following phase values. The phase describes conformance work for the RFC's current version:
 
-1. **spec** — Specification phase. The RFC text is being written. No implementation work.
-2. **impl** — Implementation phase. Code is being written to conform to the current RFC version.
-3. **test** — Testing phase. Implementation is complete; tests are being written and validated against the current RFC version.
-4. **stable** — Stable phase. Implementation and tests for the current RFC version are complete.
+1. **spec** - Specification phase. The current version candidate is being written. Implementation work against that candidate is not permitted.
+2. **impl** - Implementation phase. Code is being written to conform to the sealed current version.
+3. **test** - Testing phase. Implementation is complete; tests are being written and validated against the sealed current version.
+4. **stable** - Stable phase. Implementation and tests for the sealed current version are complete.
 
 Within one RFC version, valid transitions are forward only via the `advance` command:
-- spec → impl
-- impl → test
-- test → stable
+- spec -> impl
+- impl -> test
+- test -> stable
 
 Within one RFC version, the following transitions MUST be rejected:
-- Any backward transition (e.g., impl → spec)
-- Any skip (e.g., spec → test, spec → stable)
-- stable → any (`stable` is terminal for that version)
+- Any backward transition (for example, impl -> spec)
+- Any skip (for example, spec -> test or spec -> stable)
+- stable -> any (`stable` is terminal for that version)
 
 A version bump that releases a detected RFC or clause content amendment MUST start the new RFC version in `spec`, regardless of the prior version's phase. This starts a new version lifecycle and is not a backward transition within one version.
 
-A changelog-only update MUST preserve the current phase. Establishing an amendment signature baseline without a detected content amendment MUST also preserve the current phase.
+Only a normative RFC MAY advance from `spec` to `impl`. A normative RFC's current `spec` content is an authoring candidate rather than an implementation conformance baseline. The most recently sealed version remains the implementation baseline until the current candidate enters `impl`.
 
-Amendment content and bookkeeping fields are defined by [[RFC-0000:C-PHASE-LIFECYCLE]]. When an RFC has a stored amendment signature and its amendment content differs from that signature, `advance` MUST reject phase progression until the amendment is released by a version bump.
+RFC and clause content MAY change while the current version remains in `spec`. Such changes belong to the current version. Such changes MUST NOT require another version bump. Advancing from `spec` to `impl` MUST seal the current amendment content as the version's stored signature. The transition MUST reject every pending clause defined by [[RFC-0000:C-CLAUSE-DEF]].
+
+After the current version enters `impl`, amendment content that differs from the stored signature MUST be treated as an unversioned amendment. Phase progression MUST reject that amendment until a version bump releases it and starts the next version in `spec`.
+
+Changelog-only updates MUST preserve the current phase. Changelog-only updates MUST preserve the current signature. Establishing or replacing the signature while sealing a `spec` version MUST preserve the selected RFC version.
+
+Amendment content and bookkeeping fields are defined by [[RFC-0000:C-PHASE-LIFECYCLE]].
 
 **Rationale:**
-Scoping phase to the current RFC version preserves ordered specification, implementation, and testing gates while allowing the RFC itself to evolve through versioned amendments."""
+Scoping phase to the current RFC version preserves ordered specification, implementation, and testing gates while allowing the RFC itself to evolve through versioned amendments. Treating `spec` as the current version's mutable authoring boundary avoids version inflation, while sealing at `impl` gives implementation a precise contract."""

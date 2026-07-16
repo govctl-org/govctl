@@ -198,6 +198,32 @@ fn test_bump_requires_summary() -> common::TestResult {
 }
 
 #[test]
+fn test_changelog_only_bump_rejects_summary_without_level() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let before = fs::read(&rfc_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--summary",
+            "Must not be ignored",
+            "--change",
+            "fix: Must not be recorded",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0108]"), "output: {output}");
+    assert!(output.contains("Bump level"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, before);
+    Ok(())
+}
+
+#[test]
 fn test_bump_with_change() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
@@ -211,6 +237,186 @@ fn test_bump_with_change() -> common::TestResult {
         ],
     )?;
     assert_lifecycle_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[test]
+fn test_bump_change_resolves_reordered_current_entry_without_version_change() -> common::TestResult
+{
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    let current = rfc["changelog"]
+        .as_array()
+        .and_then(|entries| entries.first())
+        .cloned()
+        .ok_or("missing current changelog entry")?;
+    let mut historical = current;
+    historical["version"] = toml::Value::String("0.0.1".to_string());
+    historical["date"] = toml::Value::String("2026-01-01".to_string());
+    historical["notes"] = toml::Value::String("Historical summary".to_string());
+    rfc["changelog"]
+        .as_array_mut()
+        .ok_or("changelog is not an array")?
+        .insert(0, historical);
+    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+    let before: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--change",
+            "fix: Current-only correction",
+        ]],
+    )?;
+
+    assert!(
+        output.contains("Added change to RFC-0001 v0.1.0"),
+        "output: {output}"
+    );
+    let after: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    for field in ["version", "phase", "signature"] {
+        assert_eq!(after["govctl"][field], before["govctl"][field]);
+    }
+    assert_eq!(after["changelog"][0], before["changelog"][0]);
+    assert_eq!(
+        after["changelog"][1]["date"],
+        before["changelog"][1]["date"]
+    );
+    assert_eq!(
+        after["changelog"][1]["fixed"]
+            .as_array()
+            .and_then(|items| items.first())
+            .and_then(toml::Value::as_str),
+        Some("Current-only correction")
+    );
+    Ok(())
+}
+
+#[test]
+fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Legacy signature RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "render", "RFC-0001"],
+        ],
+    )?;
+
+    let rendered = fs::read_to_string(temp_dir.path().join("docs/rfc/RFC-0001.md"))?;
+    let legacy_signature = rendered
+        .lines()
+        .find_map(|line| {
+            line.trim()
+                .strip_prefix("<!-- SIGNATURE: sha256:")
+                .and_then(|value| value.strip_suffix(" -->"))
+        })
+        .ok_or("missing rendered RFC signature")?;
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    rfc["govctl"]
+        .as_table_mut()
+        .ok_or("RFC metadata is not a table")?
+        .insert(
+            "signature".to_string(),
+            toml::Value::String(legacy_signature.to_string()),
+        );
+    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+    let before = fs::read(&rfc_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--change",
+            "fix: Must not rewrite signature",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0505]"), "output: {output}");
+    assert!(
+        output.contains("legacy amendment signature"),
+        "output: {output}"
+    );
+    assert_eq!(fs::read(&rfc_path)?, before);
+    Ok(())
+}
+
+#[test]
+fn test_baseline_bump_with_pending_clause_restarts_at_spec() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    rfc["govctl"]["phase"] = toml::Value::String("stable".to_string());
+    rfc["govctl"]
+        .as_table_mut()
+        .ok_or("RFC metadata is not a table")?
+        .remove("signature");
+    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+    run_commands(
+        temp_dir.path(),
+        &[&[
+            "clause",
+            "new",
+            "RFC-0001:C-PENDING",
+            "Pending Clause",
+            "-s",
+            "Specification",
+            "-k",
+            "normative",
+        ]],
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--patch",
+                "--summary",
+                "Release pending clause",
+            ],
+            &["rfc", "get", "RFC-0001", "phase"],
+            &["clause", "get", "RFC-0001:C-PENDING", "since"],
+        ],
+    )?;
+
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 phase\nspec"),
+        "output: {output}"
+    );
+    assert!(
+        output.contains("$ govctl clause get RFC-0001:C-PENDING since\n0.1.1"),
+        "output: {output}"
+    );
     Ok(())
 }
 

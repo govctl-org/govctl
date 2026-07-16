@@ -35,6 +35,7 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0112RfcReferenceHierarchy => "E0112",
         DiagnosticCode::E0113RfcBumpNoAmendment => "E0113",
         DiagnosticCode::E0114RfcPendingAmendment => "E0114",
+        DiagnosticCode::E0115RfcCurrentChangelogInvalid => "E0115",
         // E02xx - Clause
         DiagnosticCode::E0201ClauseSchemaInvalid => "E0201",
         DiagnosticCode::E0202ClauseNotFound => "E0202",

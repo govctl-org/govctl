@@ -12,6 +12,7 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
 
+pub(super) mod rfc_changelog;
 mod set;
 
 pub(super) use set::{set_clause_field, set_rfc_field};

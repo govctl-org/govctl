@@ -217,7 +217,7 @@ mod tests {
     fn test_nested_rule_lookup() -> Result<(), Box<dyn std::error::Error>> {
         let rule = nested_root_rule("adr", "alternatives").ok_or("rule should exist")?;
         assert_eq!(rule.node.kind, NestedNodeKind::List);
-        assert_eq!(EDIT_RULES_VERSION, 2);
+        assert_eq!(EDIT_RULES_VERSION, 3);
         Ok(())
     }
 
@@ -243,6 +243,26 @@ mod tests {
         assert_eq!(rule.node.kind, NestedNodeKind::Object);
         let child = nested_field_rule("guard", "check", "timeout_secs").ok_or("child exists")?;
         assert_eq!(child.node.kind, NestedNodeKind::Scalar);
+        Ok(())
+    }
+
+    #[test]
+    fn test_rfc_current_changelog_rule_lookup() -> Result<(), Box<dyn std::error::Error>> {
+        let rule = nested_root_rule("rfc", "changelog").ok_or("rule should exist")?;
+        assert_eq!(rule.node.kind, NestedNodeKind::Object);
+        assert!(rule.node.verbs.contains(&"get"));
+        assert!(nested_field_supports_verb(
+            "rfc",
+            "changelog",
+            "summary",
+            Verb::Set
+        ));
+        assert!(!nested_field_supports_verb(
+            "rfc",
+            "changelog",
+            "summary",
+            Verb::Get
+        ));
         Ok(())
     }
 

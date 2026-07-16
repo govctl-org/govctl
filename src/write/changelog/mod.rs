@@ -132,30 +132,65 @@ pub fn bump_rfc_version(
 pub fn add_changelog_change(rfc: &mut RfcSpec, change: &str) -> DiagnosticResult<()> {
     let parsed = parse_changelog_change(change)?;
 
-    if let Some(entry) = rfc.changelog.first_mut() {
-        match parsed.category {
-            ChangelogCategory::Added => entry.added.push(parsed.message),
-            ChangelogCategory::Changed => entry.changed.push(parsed.message),
-            ChangelogCategory::Deprecated => entry.deprecated.push(parsed.message),
-            ChangelogCategory::Removed => entry.removed.push(parsed.message),
-            ChangelogCategory::Fixed => entry.fixed.push(parsed.message),
-            ChangelogCategory::Security => entry.security.push(parsed.message),
-            ChangelogCategory::Chore => {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0809ChoreNotAllowed,
-                    "'chore:' category is not valid for RFC changelogs (use for work items only)",
-                    "changelog",
-                ));
-            }
+    let entry = current_changelog_entry_mut(rfc)?;
+    match parsed.category {
+        ChangelogCategory::Added => entry.added.push(parsed.message),
+        ChangelogCategory::Changed => entry.changed.push(parsed.message),
+        ChangelogCategory::Deprecated => entry.deprecated.push(parsed.message),
+        ChangelogCategory::Removed => entry.removed.push(parsed.message),
+        ChangelogCategory::Fixed => entry.fixed.push(parsed.message),
+        ChangelogCategory::Security => entry.security.push(parsed.message),
+        ChangelogCategory::Chore => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0809ChoreNotAllowed,
+                "'chore:' category is not valid for RFC changelogs (use for work items only)",
+                "changelog",
+            ));
         }
-    } else {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0111RfcNoChangelog,
-            "No changelog entry exists. Bump version first.",
-            "rfc",
-        ));
     }
     Ok(())
+}
+
+/// Resolve the unique changelog entry for the RFC's current version.
+///
+/// Implements [[RFC-0000:C-RFC-DEF]].
+pub fn current_changelog_entry(rfc: &RfcSpec) -> DiagnosticResult<&ChangelogEntry> {
+    let index = current_changelog_index(rfc)?;
+    Ok(&rfc.changelog[index])
+}
+
+/// Resolve the unique mutable changelog entry for the RFC's current version.
+pub fn current_changelog_entry_mut(rfc: &mut RfcSpec) -> DiagnosticResult<&mut ChangelogEntry> {
+    let index = current_changelog_index(rfc)?;
+    Ok(&mut rfc.changelog[index])
+}
+
+fn current_changelog_index(rfc: &RfcSpec) -> DiagnosticResult<usize> {
+    let matching: Vec<_> = rfc
+        .changelog
+        .iter()
+        .enumerate()
+        .filter_map(|(index, entry)| (entry.version == rfc.version).then_some(index))
+        .collect();
+
+    if let [index] = matching.as_slice() {
+        return Ok(*index);
+    }
+
+    let code = if matching.is_empty() {
+        DiagnosticCode::E0111RfcNoChangelog
+    } else {
+        DiagnosticCode::E0115RfcCurrentChangelogInvalid
+    };
+    Err(Diagnostic::new(
+        code,
+        format!(
+            "RFC must contain exactly one changelog entry for current version {} (found {})",
+            rfc.version,
+            matching.len()
+        ),
+        &rfc.rfc_id,
+    ))
 }
 
 /// Get today's date in ISO format

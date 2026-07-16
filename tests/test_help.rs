@@ -25,6 +25,16 @@ fn test_rfc_root_help() -> common::TestResult {
 }
 
 #[test]
+fn test_rfc_edit_help() -> common::TestResult {
+    assert_help_snapshot!(&["rfc", "edit", "--help"])
+}
+
+#[test]
+fn test_rfc_bump_help() -> common::TestResult {
+    assert_help_snapshot!(&["rfc", "bump", "--help"])
+}
+
+#[test]
 fn test_adr_get_help() -> common::TestResult {
     assert_help_snapshot!(&["adr", "get", "--help"])
 }

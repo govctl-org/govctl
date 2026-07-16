@@ -32,10 +32,24 @@ pub(super) fn validate_rfc(rfc: &RfcIndex, config: &Config, result: &mut Validat
         ));
     }
 
-    if rfc.rfc.changelog.is_empty() {
+    let current_changelog_count = rfc
+        .rfc
+        .changelog
+        .iter()
+        .filter(|entry| entry.version == rfc.rfc.version)
+        .count();
+    if current_changelog_count != 1 {
+        let code = if current_changelog_count == 0 {
+            DiagnosticCode::E0111RfcNoChangelog
+        } else {
+            DiagnosticCode::E0115RfcCurrentChangelogInvalid
+        };
         result.diagnostics.push(Diagnostic::new(
-            DiagnosticCode::W0101RfcNoChangelog,
-            "RFC has no changelog entries (hint: run `govctl rfc bump`)",
+            code,
+            format!(
+                "RFC must contain exactly one changelog entry for current version {} (found {})",
+                rfc.rfc.version, current_changelog_count
+            ),
             rfc_path_display.clone(),
         ));
     }

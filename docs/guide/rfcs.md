@@ -56,12 +56,20 @@ govctl rfc list --tag caching,api
 
 ## Canonical Edit Surface
 
-All RFC and clause fields are accessible through path-based editing:
+Editable RFC and Clause fields use path-based operations. Lifecycle-owned fields
+such as RFC versions, changelog dates, and Clause `since` values use dedicated
+commands or automatic assignment instead:
 
 ```bash
 # Lifecycle-managed fields use dedicated verbs
 govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
 govctl rfc finalize RFC-0010 normative
+
+# Correct metadata for the current RFC version only
+govctl rfc get RFC-0010 changelog
+govctl rfc edit RFC-0010 changelog.summary --set "Clarify edge-case behavior"
+govctl rfc edit RFC-0010 changelog.fixed --add "Correct timeout wording"
+govctl rfc edit RFC-0010 changelog.fixed[0] --remove
 
 # Add to array fields
 govctl rfc edit RFC-0010 refs --add RFC-0001
@@ -107,6 +115,12 @@ text = """
 The system MUST validate all inputs."""
 ```
 
+`since` is assigned when the target version is known. Clauses created in a
+draft RFC remain pending until finalization. Clauses created in a normative RFC
+already in `spec` receive the current RFC version immediately. Clauses created
+in `impl`, `test`, or `stable` remain pending until the content amendment is
+released by an RFC version bump.
+
 ### Edit Clause Text
 
 ```bash
@@ -133,7 +147,7 @@ govctl clause delete RFC-0010:C-MISTAKE -f
 
 **Safety:** Deletion is only allowed when:
 
-- The RFC status is `draft` (normative RFCs are immutable)
+- The RFC status is `draft`
 - No other artifacts reference the clause
 
 For normative RFCs, use `govctl clause deprecate RFC-0010:C-OLD` instead.
@@ -168,14 +182,16 @@ When the spec is complete and approved:
 govctl rfc finalize RFC-0010 normative
 ```
 
-This makes the RFC binding — implementation must conform to it.
+This ratifies the RFC lineage. While its current version remains in `spec`, that
+content is still an authoring candidate. The version becomes the implementation
+baseline when it advances to `impl`.
 
 ### Deprecate
 
 When an RFC is superseded or obsolete:
 
 ```bash
-govctl rfc finalize RFC-0010 deprecated
+govctl rfc deprecate RFC-0010
 ```
 
 ## Phase Lifecycle
@@ -197,7 +213,16 @@ govctl rfc advance RFC-0010 stable  # Tested, ready for production
 Phase transitions are gated:
 
 - `spec → impl` requires `status = normative`
+- `spec → impl` requires every Clause to have a resolved `since` version
+- `spec → impl` seals the current RFC and Clause content signature
 - Each phase has invariants that must be satisfied
+
+The sealed signature is a content baseline, not a file lock. A code-only defect
+found during `impl` can be fixed without changing the RFC. If RFC or Clause
+content must change, edit it and then release that amendment with a patch,
+minor, or major bump. The bump starts the new version in `spec`; phase
+progression rejects the amendment until that happens. Changelog-only corrections
+do not affect the sealed baseline.
 
 ## Versioning
 
@@ -209,6 +234,22 @@ govctl rfc bump RFC-0010 --patch -m "Fix typo in clause C-SCOPE"
 govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
 govctl rfc bump RFC-0010 --major -m "Breaking change to API contract"
 ```
+
+A content-changing bump starts the new version in `spec`. RFC and Clause content
+can continue changing during that `spec` phase without another version bump;
+advancing to `impl` seals the final content for the version.
+
+Use change-only bump syntax to append categorized metadata without changing the
+RFC version:
+
+```bash
+govctl rfc bump RFC-0010 --change "fix: Correct current-version wording"
+```
+
+Current-version changelog correction always resolves the entry whose version
+matches the RFC version, regardless of array order. Historical entries and all
+RFC/changelog version and date fields are not editable through the resource
+edit surface.
 
 ## Listing and Viewing
 

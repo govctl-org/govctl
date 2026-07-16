@@ -89,7 +89,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["adr", "work", "guard"]
+          "enum": ["rfc", "adr", "work", "guard"]
         },
         "root": {
           "type": "string",

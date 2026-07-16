@@ -48,6 +48,66 @@ fn write_adr_toml(project_dir: &std::path::Path, content: &str) -> common::TestR
 }
 
 #[test]
+fn test_rfc_check_rejects_missing_current_changelog_entry() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+id = "RFC-0001"
+title = "Missing Current Changelog"
+version = "1.0.0"
+status = "draft"
+phase = "spec"
+owners = ["@test"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0111]"), "output: {output}");
+    assert!(output.contains("found 0"), "output: {output}");
+    Ok(())
+}
+
+#[test]
+fn test_rfc_check_rejects_duplicate_current_changelog_entries() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_rfc_toml(
+        temp_dir.path(),
+        r#"[govctl]
+id = "RFC-0001"
+title = "Duplicate Current Changelog"
+version = "1.0.0"
+status = "draft"
+phase = "spec"
+owners = ["@test"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-01"
+notes = "First"
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-01-02"
+notes = "Duplicate"
+"#,
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(output.contains("error[E0115]"), "output: {output}");
+    assert!(output.contains("found 2"), "output: {output}");
+    Ok(())
+}
+
+#[test]
 fn test_broken_superseded_check() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 

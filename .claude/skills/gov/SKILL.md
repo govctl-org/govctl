@@ -200,11 +200,19 @@ govctl check --has-active
 For RFC-governed work, verify the RFC state:
 
 - `draft/spec`: ask permission, then finalize and advance to `impl`
-- `normative/spec`: ask permission, then advance to `impl`
-- `normative/impl+`: proceed
+- `normative/spec`: continue authoring the current version without another bump; ask permission before advancing to `impl`, which seals its RFC and Clause content
+- `normative/impl+`: proceed against the sealed current-version baseline
 - `deprecated`: stop
 
-If implementation reveals a spec bug, do not silently deviate. Amend the RFC per [[ADR-0016]] or stop and ask.
+If implementation reveals a spec bug, do not silently deviate:
+
+- A code-only implementation defect does not require an RFC edit or bump.
+- Editing RFC or Clause content after entry to `impl` creates an unversioned amendment. Do not advance to `test` while it exists.
+- Release that amendment with an appropriate patch, minor, or major `govctl rfc bump`; the new version starts in `spec`.
+- Continue authoring that new version in `spec` without another bump, then advance to `impl` to seal the corrected baseline.
+- A current-version changelog correction uses `govctl rfc edit <RFC-ID> changelog.*` and does not affect the sealed content baseline.
+
+Ask before the lifecycle-owned bump unless the user already granted full authority.
 
 Implementation rules:
 
