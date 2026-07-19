@@ -211,6 +211,8 @@ If implementation reveals a spec bug, do not silently deviate:
 - Release that amendment on the normative RFC with an appropriate patch, minor, or major `govctl rfc bump`; the new version starts in `spec`.
 - Continue authoring that new version in `spec` without another bump, then advance to `impl` to seal the corrected baseline.
 - A current-version changelog correction uses `govctl rfc edit <RFC-ID> changelog.*` and does not affect the sealed content baseline.
+- If an RFC in `impl`, `test`, or `stable` has no sealed signature, stop lifecycle mutation. Run migration, or restore a consistent known-good baseline comprising the RFC TOML and its complete Clause TOML set from version-control history; do not reconstruct it from possibly amended content. See [[RFC-0000:C-PHASE-LIFECYCLE]].
+- For a Clause introduced in the current normative `spec` candidate whose `since` equals the RFC version, use `govctl clause delete`; it scans all governed artifacts and reports every referrer before allowing deletion. Inherited Clauses use deprecate or supersede. See [[RFC-0000:C-CLAUSE-DEF]].
 
 Ask before the lifecycle-owned bump unless the user already granted full authority.
 

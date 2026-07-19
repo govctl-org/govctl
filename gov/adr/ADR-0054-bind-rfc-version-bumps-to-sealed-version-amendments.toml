@@ -1,0 +1,85 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0054"
+title = "Bind RFC version bumps to sealed-version amendments"
+status = "accepted"
+date = "2026-07-20"
+refs = [
+    "ADR-0016",
+    "ADR-0051",
+    "RFC-0000:C-STATUS-LIFECYCLE",
+    "RFC-0000:C-PHASE-LIFECYCLE",
+    "RFC-0000:C-CLAUSE-DEF",
+    "RFC-0001:C-RFC-PHASE",
+    "RFC-0002:C-CRUD-VERBS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+
+[content]
+context = """
+Before this decision, the RFC lifecycle treated `spec` as an open authoring candidate and assigned new Clauses to that current version, while version-changing bump validation still permitted another bump from `spec` when candidate content differed from the stored signature. The abandoned candidate then remained in changelog history, and Clauses first created there retained its version in `since` even if no implementation baseline was ever sealed.
+
+The pre-amendment deletion rules also prohibited Clause deletion from every normative RFC regardless of phase. A Clause created accidentally in an open `spec` candidate therefore could not be removed, which encouraged artificial deprecation or supersession records solely to correct authoring mistakes.
+
+The lifecycle needed one unambiguous version boundary without making `since` directly editable or adding persistent candidate-version state."""
+decision = """
+We will refine [[ADR-0016]] and [[ADR-0051]] by treating `spec` as the single open authoring candidate for the RFC's current version. Normal version-changing bumps open a new lifecycle only from a version that has already entered `impl`, `test`, or `stable` and has a sealed amendment signature. Entry from `spec` to `impl` establishes that signature; a missing signature in a later phase is rejected as an untrustworthy baseline rather than inferred by bumping.
+
+A Clause first introduced in the open current candidate may be removed before sealing when no other artifact references it. Clauses inherited from an earlier version continue to use deprecation or supersession so established history remains intact. Direct `since` editing and automatic rewriting across ordinary bumps remain outside the model.
+
+This option was selected because:
+
+1. The existing `phase`, RFC `version`, and Clause `since` fields identify the open candidate without another persistent state model.
+2. One bump boundary per version prevents unsealed intermediate candidates from appearing as compatibility history.
+3. Candidate-only deletion corrects authoring mistakes without weakening the history of Clauses inherited from sealed versions.
+
+If changing an open candidate's semantic-version level becomes a recurring need, it will be considered separately rather than overloading bump semantics now."""
+consequences = """
+### Positive
+
+- Each version has one authoring interval and one implementation baseline.
+- Clause `since` values cannot become stranded on an abandoned intermediate candidate through normal lifecycle commands.
+- Accidental current-candidate Clauses can be removed without creating false deprecation or supersession history.
+- Existing status, phase, version, signature, changelog, and Clause metadata remain sufficient.
+
+### Negative
+
+- A user cannot issue another version-changing bump while an RFC is already in `spec`. Candidate scope must remain within the selected compatibility level; incompatible additions can be deferred to the next version.
+- A semantic-version level chosen too early cannot be changed through ordinary lifecycle commands. An unpublished candidate can be corrected in version control before it becomes shared history.
+- Clause deletion must distinguish candidate-only Clauses from inherited Clauses. The existing `phase == spec` and `since == current version` condition provides that boundary and requires focused regression coverage.
+- A normative RFC missing its sealed signature after `spec` cannot bump or advance. The repository must restore that baseline through its migration or version-control history rather than guessing it from possibly amended content.
+
+### Neutral
+
+- Changelog-only correction remains independent of the version lifecycle.
+- `since` remains lifecycle-owned and unavailable through generic editing."""
+
+[[content.alternatives]]
+text = "Keep spec-phase rebumping and record abandoned candidates as historical versions"
+status = "rejected"
+pros = ["Requires no command or storage changes"]
+cons = [
+    "Leaves unsealed candidates indistinguishable from implemented version history",
+    "Encourages artificial Clause supersession to repair authoring attribution",
+]
+rejection_reason = "Unsealed candidates are authoring state, not useful compatibility history, and synthetic supersession records misrepresent requirement evolution"
+
+[[content.alternatives]]
+text = "Treat spec as one open candidate and permit removal of Clauses introduced only in that candidate"
+status = "accepted"
+pros = [
+    "Uses the existing phase and since fields",
+    "Keeps one bump boundary per version lifecycle",
+]
+cons = ["Version level cannot be changed in place after the candidate is opened"]
+
+[[content.alternatives]]
+text = "Add explicit candidate retargeting or next-version state"
+status = "rejected"
+pros = ["Allows an open candidate version level to change without abandoned versions"]
+cons = [
+    "Adds lifecycle commands and metadata for an uncommon correction",
+    "Weakens the simple meaning of lifecycle-owned version fields",
+]
+rejection_reason = "The additional state and command surface is disproportionate when candidate scope can be completed before selecting the next version"

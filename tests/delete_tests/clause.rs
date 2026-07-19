@@ -141,22 +141,91 @@ fn test_delete_clause_success_draft() -> TestResult {
 }
 
 #[test]
+fn test_delete_clause_success_current_normative_spec_candidate() -> TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+
+    write_rfc_fixture(
+        temp_dir.path(),
+        "Normative spec RFC",
+        "1.1.0",
+        "normative",
+        "spec",
+        &[
+            ("C-KEEP", "Keep This Clause", "This clause will remain."),
+            (
+                "C-DELETE",
+                "Delete This Clause",
+                "This candidate Clause references [[RFC-0001:C-DELETE]] itself.",
+            ),
+        ],
+        r#"added = ["Current candidate"]"#,
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["clause", "delete", "RFC-0001:C-DELETE", "-f"],
+            &["clause", "list", "RFC-0001"],
+            &["check"],
+        ],
+    )?;
+    assert_delete_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[test]
+fn test_delete_clause_rejects_inherited_normative_spec_clause() -> TestResult {
+    let (temp_dir, _) = init_project_with_date()?;
+    let rfc_dir = write_rfc_fixture(
+        temp_dir.path(),
+        "Normative spec RFC",
+        "1.1.0",
+        "normative",
+        "spec",
+        &[(
+            "C-INHERITED",
+            "Inherited Clause",
+            "This clause was introduced in an earlier version.",
+        )],
+        r#"added = ["Current candidate"]"#,
+    )?;
+    let clause_path = rfc_dir.join("clauses/C-INHERITED.toml");
+    let mut clause: toml::Value = toml::from_str(&fs::read_to_string(&clause_path)?)?;
+    clause["govctl"]["since"] = toml::Value::String("1.0.0".to_string());
+    fs::write(&clause_path, toml::to_string_pretty(&clause)?)?;
+    let rfc_before = fs::read(rfc_dir.join("rfc.toml"))?;
+    let clause_before = fs::read(&clause_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["clause", "delete", "RFC-0001:C-INHERITED", "-f"]],
+    )?;
+
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(output.contains("version=1.1.0"), "output: {output}");
+    assert!(output.contains("clause since=1.0.0"), "output: {output}");
+    assert_eq!(fs::read(rfc_dir.join("rfc.toml"))?, rfc_before);
+    assert_eq!(fs::read(&clause_path)?, clause_before);
+    Ok(())
+}
+
+#[test]
 fn test_delete_clause_safeguard_referenced_by_artifacts() -> TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let work_id = first_work_id(&date);
 
     let rfc_dir = write_rfc_fixture(
         temp_dir.path(),
-        "Draft RFC",
+        "Normative spec RFC",
         "0.1.0",
-        "draft",
+        "normative",
         "spec",
         &[(
             "C-DELETE",
             "Referenced Clause",
             "This clause is still referenced.",
         )],
-        r#"notes = "Initial draft""#,
+        r#"added = ["Current candidate"]"#,
     )?;
 
     let commands: Vec<Vec<String>> = vec![
@@ -189,5 +258,96 @@ fn test_delete_clause_safeguard_referenced_by_artifacts() -> TestResult {
         "referenced clause should remain on disk"
     );
 
+    Ok(())
+}
+
+#[test]
+fn test_delete_clause_reports_inline_and_supersession_referrers() -> TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let work_id = first_work_id(&date);
+
+    let rfc_dir = write_rfc_fixture(
+        temp_dir.path(),
+        "Normative spec RFC",
+        "0.1.0",
+        "normative",
+        "spec",
+        &[(
+            "C-DELETE",
+            "Referenced Clause",
+            "This clause is still referenced.",
+        )],
+        r#"added = ["Current candidate"]"#,
+    )?;
+
+    let commands: Vec<Vec<String>> = vec![
+        command(&[
+            "clause",
+            "new",
+            "RFC-0001:C-OLD",
+            "Old Clause",
+            "-s",
+            "Specification",
+            "-k",
+            "normative",
+        ]),
+        command(&[
+            "clause",
+            "supersede",
+            "RFC-0001:C-OLD",
+            "--by",
+            "C-DELETE",
+            "--force",
+        ]),
+        command(&["rfc", "new", "Inline RFC"]),
+        command(&[
+            "clause",
+            "new",
+            "RFC-0002:C-INLINE",
+            "Inline Clause",
+            "-s",
+            "Specification",
+            "-k",
+            "normative",
+        ]),
+        command(&[
+            "clause",
+            "edit",
+            "RFC-0002:C-INLINE",
+            "text",
+            "--set",
+            "Uses [[RFC-0001:C-DELETE]].",
+        ]),
+        command(&["adr", "new", "Inline ADR"]),
+        command(&[
+            "adr",
+            "edit",
+            "ADR-0001",
+            "content.context",
+            "--set",
+            "Uses [[RFC-0001:C-DELETE]].",
+        ]),
+        work_new("Inline work item"),
+        command(&[
+            "work",
+            "edit",
+            &work_id,
+            "description",
+            "--set",
+            "Uses [[RFC-0001:C-DELETE]].",
+        ]),
+        command(&["clause", "delete", "RFC-0001:C-DELETE", "-f"]),
+    ];
+
+    let output = run_dynamic_commands(temp_dir.path(), &commands)?;
+    assert!(output.contains("error[E0211]"), "output: {output}");
+    assert!(output.contains("RFC-0001:C-OLD"), "output: {output}");
+    assert!(output.contains("RFC-0002:C-INLINE"), "output: {output}");
+    assert!(output.contains("ADR-0001"), "output: {output}");
+    assert!(output.contains(&work_id), "output: {output}");
+    assert!(
+        rfc_dir.join("clauses/C-DELETE.toml").exists(),
+        "referenced clause should remain on disk"
+    );
     Ok(())
 }

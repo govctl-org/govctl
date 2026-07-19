@@ -27,11 +27,11 @@ Within one RFC version, the following transitions MUST be rejected:
 - Any skip (for example, spec -> test or spec -> stable)
 - stable -> any (`stable` is terminal for that version)
 
-A version bump that releases a detected RFC or clause content amendment MUST start the new RFC version in `spec`, regardless of the prior version's phase. This starts a new version lifecycle and is not a backward transition within one version.
+A version bump that releases a detected RFC or clause content amendment MUST start the new RFC version in `spec`, regardless of the prior version's phase. This starts a new version lifecycle and is not a backward transition within one version. Version-changing bump eligibility MUST follow [[RFC-0000:C-PHASE-LIFECYCLE]].
 
 Only a normative RFC MAY advance from `spec` to `impl`. A normative RFC's current `spec` content is an authoring candidate rather than an implementation conformance baseline. The most recently sealed version remains the implementation baseline until the current candidate enters `impl`.
 
-RFC and clause content MAY change while the current version remains in `spec`. Such changes belong to the current version. Such changes MUST NOT require another version bump. Advancing from `spec` to `impl` MUST seal the current amendment content as the version's stored signature. The transition MUST reject every pending clause defined by [[RFC-0000:C-CLAUSE-DEF]].
+RFC and clause content MAY change while the current version remains in `spec`. Such changes belong to the current version. Such changes MUST NOT require another version bump. Advancing from `spec` to `impl` MUST set or replace the current version's stored signature with the current amendment content. The transition MUST reject every pending clause defined by [[RFC-0000:C-CLAUSE-DEF]].
 
 After the current version enters `impl`, amendment content that differs from the stored signature MUST be treated as an unversioned amendment. Phase progression MUST reject that amendment until a version bump releases it and starts the next version in `spec`.
 

@@ -30,20 +30,22 @@ Phase rules:
 - Phase transitions MUST NOT skip a phase.
 - Each phase transition MUST satisfy the preceding phase gate.
 - `stable` MUST be terminal for one RFC version.
-- A later version bump MAY start another phase lifecycle for the RFC.
+- A version-changing bump MUST be rejected while the current version remains in `spec`.
+- A later version-changing bump MAY start another phase lifecycle only when the current version is in `impl`, `test`, or `stable`.
 - A version bump that releases a detected content amendment MUST start the new version at `spec`.
 - Only a normative RFC MAY advance from `spec` to `impl`.
 - While phase is `spec`, RFC and clause content belongs to the current version candidate and MAY change without another version bump.
-- The `spec` -> `impl` transition MUST replace the stored amendment signature with a signature of the current RFC and clause content.
+- The `spec` -> `impl` transition MUST set or replace the stored amendment signature with a signature of the current RFC and clause content.
 - The `spec` -> `impl` transition MUST reject pending clauses as defined by [[RFC-0000:C-CLAUSE-DEF]].
 - Changelog-only updates MUST preserve phase.
 - Changelog-only updates MUST NOT change the amendment signature.
 - In `impl`, `test`, or `stable`, content that differs from the stored amendment signature is an unversioned amendment.
 - An unversioned amendment MUST be released by a version bump before further phase progression.
+- A normative RFC in `impl`, `test`, or `stable` MUST have a stored amendment signature. A version-changing bump or later phase progression MUST reject a missing signature without mutation and MUST leave pending clauses unchanged.
 - A draft RFC MUST NOT enter `stable`.
 - A deprecated RFC MUST NOT enter `impl` or `test`.
 
 For amendment detection, RFC content is the canonical RFC and clause data other than RFC `version`, `phase`, `changelog`, and `signature` fields. Those four fields are lifecycle or changelog bookkeeping and MUST be excluded from amendment comparison. A stored signature is the sealed content baseline for the current version after it enters `impl`. While the version remains in `spec`, establishing or replacing that baseline MUST NOT be treated as a content amendment. While the version remains in `spec`, establishing or replacing that baseline MUST NOT require another version bump.
 
 **Rationale:**
-Scoping phase to one version lets later amendments reuse the existing ordered gates. The `spec` phase is the mutable authoring boundary for that version, and entry into `impl` seals the exact contract that implementation follows. Defining the comparison surface prevents phase progression and changelog bookkeeping from recursively appearing as new content amendments."""
+Scoping phase to one version lets later amendments reuse the existing ordered gates. The `spec` phase is the mutable authoring boundary for that version, and entry into `impl` seals the exact contract that implementation follows. Defining the comparison surface prevents phase progression and changelog bookkeeping from recursively appearing as new content amendments. Rejecting another version-changing bump from `spec` prevents an unsealed candidate from becoming compatibility history. A missing signature outside `spec` cannot establish a trustworthy amendment baseline through a version change; it requires migration or restoration of the sealed baseline."""

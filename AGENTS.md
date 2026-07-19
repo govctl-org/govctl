@@ -52,6 +52,7 @@ RFCs are constitutional law. Code that conflicts with a normative RFC is a bug.
 - No silent deviation: fix the code or propose an RFC amendment
 - Normative RFC content MAY continue changing without another bump while its current version remains in `spec`
 - Content changed after entry to `impl` is an unversioned amendment and MUST be released by a version bump before further phase progression
+- Version-changing bumps open a new candidate only from `impl`, `test`, or `stable`; they MUST NOT be used to retarget an open `spec` candidate
 - Cite RFC clauses when implementing invariants
 
 ### Law 2: Phase Discipline
@@ -106,6 +107,10 @@ Within one version, phase transitions are forward-only. A content-changing bump
 after `impl`, `test`, or `stable` starts the next version in `spec`; it is not a
 backward transition of the sealed version.
 
+Entry from `spec` to `impl` sets or replaces the sealed content signature. If an
+RFC already in `impl`, `test`, or `stable` has no sealed signature, do not bump or
+advance it; run migration or restore the baseline from version-control history.
+
 Clause version assignment follows [[RFC-0000:C-CLAUSE-DEF]] and
 [[RFC-0002:C-LIFECYCLE-VERBS]].
 
@@ -113,6 +118,9 @@ Clause `since` is lifecycle-owned. Draft clauses receive it at finalization,
 clauses created in a normative RFC already in `spec` receive the current version
 immediately, and clauses created while a normative RFC is in `impl`, `test`, or
 `stable` remain pending until a content bump assigns the next version.
+An unreferenced Clause introduced in the current normative `spec` candidate may
+be deleted while `since` equals the RFC version. Inherited Clauses must be
+deprecated or superseded.
 
 ---
 

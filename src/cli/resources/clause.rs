@@ -143,6 +143,11 @@ Use dedicated verbs instead of `set` for:
 EXAMPLES:
     govctl clause delete RFC-0001:C-SCOPE
     govctl clause delete RFC-0001:C-SCOPE --force
+
+NOTES:
+    - Draft Clauses may be deleted when unreferenced.
+    - A normative spec Clause may be deleted only when its since version equals the RFC's current version.
+    - Inherited or sealed Clauses must be deprecated or superseded instead.
 ")]
     Delete(CommonDeleteArgs),
     /// Deprecate clause

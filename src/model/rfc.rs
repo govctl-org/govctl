@@ -24,8 +24,8 @@ pub struct RfcSpec {
     pub sections: Vec<SectionSpec>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub changelog: Vec<ChangelogEntry>,
-    /// Content signature for amendment detection per [[ADR-0016]]
-    /// SHA-256 hash of canonical RFC content at last released version
+    /// Sealed content signature for amendment detection per [[ADR-0016]].
+    /// Set when the current version advances from spec to impl.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signature: Option<String>,
 }

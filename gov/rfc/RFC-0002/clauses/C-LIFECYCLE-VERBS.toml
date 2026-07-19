@@ -30,12 +30,14 @@ Resource-specific lifecycle and constrained-mutation operations implement state 
    - A `spec` -> `impl` transition MUST require normative RFC status.
    - A `spec` -> `impl` transition MUST reject every pending clause.
    - A `spec` -> `impl` transition MUST NOT assign clause version metadata.
-   - A `spec` -> `impl` transition MUST replace the stored amendment signature with a signature of the current amendment content.
+   - A `spec` -> `impl` transition MUST set or replace the stored amendment signature with a signature of the current amendment content.
    - A later phase transition MUST reject amendment content that differs from the stored signature.
 
 4. `govctl rfc bump <id> <patch|minor|major> -m <message>`
    - The version-changing form MUST require normative RFC status.
-   - Rejection for draft or deprecated RFC status MUST occur without mutation.
+   - The version-changing form MUST enforce the source-phase and stored-signature eligibility in [[RFC-0000:C-PHASE-LIFECYCLE]].
+   - Rejection for draft or deprecated RFC status, phase `spec`, or a missing sealed signature MUST occur without mutation.
+   - Missing-signature rejection outside `spec` MUST leave pending clauses unchanged and MUST instruct the user to migrate the repository or restore its sealed baseline.
    - Version bumping MUST follow semantic versioning.
    - A version bump MUST update the changelog automatically.
    - A version bump MAY include `--change <description>` for additional changelog entries.
@@ -43,10 +45,8 @@ Resource-specific lifecycle and constrained-mutation operations implement state 
    - Amendment comparison MUST exclude RFC `version`, `phase`, `changelog`, and `signature` fields.
    - A bump that releases detected RFC or clause content MUST set phase to `spec`.
    - A bump MUST assign its new version to pending clauses as defined by [[RFC-0000:C-CLAUSE-DEF]].
-   - A bump MAY establish a baseline amendment signature for an RFC that does not yet have one.
-   - Establishing a baseline without a detected content amendment MUST preserve phase.
    - `--change` without a bump level MUST remain a changelog-only operation.
-   - The normative-status requirement for version-changing bumps MUST NOT apply to `--change` without a bump level.
+   - The normative-status and source-phase requirements for version-changing bumps MUST NOT apply to `--change` without a bump level.
    - `--change` without a bump level MUST resolve the unique current changelog entry by matching the entry version to the RFC version.
    - `--change` without a bump level MUST reject zero or multiple current entries without mutation.
    - `--change` without a bump level MUST preserve the RFC version.

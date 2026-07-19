@@ -86,9 +86,10 @@ EOF
 ```
 
 Finalization is the initial publication boundary for a draft RFC. A
-version-changing bump requires normative status, so draft and deprecated RFCs
-are rejected. Changelog-only corrections do not change the version and remain
-available through either `rfc edit ... changelog` or `rfc bump --change`.
+version-changing bump opens the next candidate from a normative RFC in `impl`,
+`test`, or `stable`; draft, deprecated, and already-open `spec` RFCs are rejected.
+Changelog-only corrections do not change the version and remain available
+through either `rfc edit ... changelog` or `rfc bump --change`.
 
 ## Working with Clauses
 
@@ -144,18 +145,22 @@ govctl clause edit RFC-0010:C-SCOPE text --stdin < clause-text.md
 
 ### Delete a Clause
 
-Accidentally created clauses can be deleted from **draft** RFCs only:
+Accidentally created clauses can be deleted before they become part of a sealed
+version:
 
 ```bash
 govctl clause delete RFC-0010:C-MISTAKE -f
 ```
 
-**Safety:** Deletion is only allowed when:
+**Safety:** Deletion is only allowed when no artifact references the Clause and
+either:
 
-- The RFC status is `draft`
-- No other artifacts reference the clause
+- The RFC status is `draft`; or
+- The RFC is `normative/spec` and the Clause `since` equals the current RFC version.
 
-For normative RFCs, use `govctl clause deprecate RFC-0010:C-OLD` instead.
+The second case identifies a Clause introduced only in the open candidate.
+Inherited Clauses and all Clauses in sealed phases use `govctl clause deprecate`
+or `govctl clause supersede` instead.
 
 ### List Clauses
 
@@ -220,6 +225,7 @@ Phase transitions are gated:
 - `spec → impl` requires `status = normative`
 - `spec → impl` requires every Clause to have a resolved `since` version
 - `spec → impl` seals the current RFC and Clause content signature
+- `impl → test` and `test → stable` require that sealed signature to remain present
 - Each phase has invariants that must be satisfied
 
 The sealed signature is a content baseline, not a file lock. A code-only defect
@@ -227,7 +233,9 @@ found during `impl` can be fixed without changing the RFC. If RFC or Clause
 content must change, edit it and then release that amendment with a patch,
 minor, or major bump. The bump starts the new version in `spec`; phase
 progression rejects the amendment until that happens. Changelog-only corrections
-do not affect the sealed baseline.
+do not affect the sealed baseline. If a sealed-phase RFC has no signature, bump
+and later phase progression stop without changing files; run `govctl migrate` or
+restore the baseline from version-control history instead of guessing it.
 
 ## Versioning
 
@@ -242,9 +250,10 @@ govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
 govctl rfc bump RFC-0010 --major -m "Breaking change to API contract"
 ```
 
-A content-changing bump starts the new version in `spec`. RFC and Clause content
-can continue changing during that `spec` phase without another version bump;
-advancing to `impl` seals the final content for the version.
+A content-changing bump starts the new version in `spec` only from `impl`, `test`,
+or `stable`. RFC and Clause content can continue changing during that `spec` phase
+without another version bump; a second version-changing bump is rejected.
+Advancing to `impl` seals the final content for the version.
 
 Use change-only bump syntax to append categorized metadata without changing the
 RFC version:

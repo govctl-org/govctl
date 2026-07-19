@@ -33,19 +33,14 @@ fn test_rfc_amendment_tracking() -> common::TestResult {
         ],
     )?;
 
-    // Finalize and bump to set baseline signature
+    // Enter implementation to seal the initial version baseline.
     let baseline = run_commands(
         temp_dir.path(),
         &[
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--minor",
-                "--summary",
-                "Establish baseline with signature",
-            ],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
             &["rfc", "list"],
         ],
     )?;

@@ -1,7 +1,7 @@
 ---
-source: tests/test_delete.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/delete_tests/clause.rs
+expression: value
 ---
 $ govctl clause delete RFC-0001:C-LOCKED -f
-error[E0110]: Cannot delete clause: RFC-0001 is normative. Only draft RFCs allow clause deletion. (RFC-0001:C-LOCKED)
+error[E0104]: Cannot delete clause from RFC-0001 while status=normative, phase=stable, version=1.0.0, and clause since=1.0.0. Clause deletion is limited to draft RFCs or Clauses introduced in the current normative spec candidate. (RFC-0001:C-LOCKED)
 exit: 1

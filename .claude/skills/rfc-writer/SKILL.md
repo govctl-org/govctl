@@ -148,6 +148,7 @@ Before editing an RFC, inspect its status and phase:
 - In `spec`, RFC and Clause edits refine the current version candidate and do not require another version bump.
 - In `impl`, `test`, or `stable`, edits that change RFC or Clause content create an unversioned amendment. Lifecycle-owned metadata updates performed by dedicated verbs and current-version changelog-only corrections are exempt. The `/spec` or `/gov` workflow must release qualifying amendments with a version bump before further phase progression.
 - Entry from `spec` to `impl` seals the final RFC and Clause content as that version's implementation baseline.
+- A version-changing bump is not available in `spec`; it opens the next candidate only from `impl`, `test`, or `stable` after an amendment.
 - A deprecated RFC cannot start another version lifecycle.
 
 This helper writes specification content but does not perform lifecycle verbs.
@@ -164,6 +165,7 @@ it through the generic edit surface:
 - A Clause created in a draft RFC remains pending until RFC finalization assigns the current version.
 - A Clause created in a normative RFC already in `spec` receives the current RFC version immediately.
 - A Clause created in `impl`, `test`, or `stable` remains pending until a content-changing RFC bump assigns the next version.
+- An unreferenced Clause introduced in the current normative `spec` candidate may be deleted while its `since` equals the RFC version; inherited Clauses must be deprecated or superseded.
 - A deprecated RFC does not accept new Clauses.
 
 ## Rendering Rules

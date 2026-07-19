@@ -1,12 +1,12 @@
-use super::adapter::{DocAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter};
+use super::adapter::{ClauseTomlAdapter, DocAdapter, RfcTomlAdapter, TomlAdapter, WorkTomlAdapter};
 use super::delete_referrers::{clause_deletion_referrers, work_item_deletion_referrers};
 use crate::cmd::confirmation::confirm_destructive_action;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::load::split_clause_id;
-use crate::model::RfcStatus;
+use crate::model::{RfcPhase, RfcStatus};
 use crate::ui;
-use crate::write::{WriteOp, delete_file};
+use crate::write::{WriteOp, delete_file, with_file_transaction};
 use std::path::Path;
 
 pub fn delete_clause(
@@ -24,25 +24,28 @@ pub fn delete_clause(
     })?;
 
     let mut rfc_loaded = RfcTomlAdapter::load(config, rfc_id)?;
-    if rfc_loaded.data.status != RfcStatus::Draft {
+    let clause_loaded = ClauseTomlAdapter::load(config, clause_id)?;
+    // [[RFC-0000:C-CLAUSE-DEF]] limits normative deletion to the open candidate.
+    let is_current_candidate_clause = rfc_loaded.data.status == RfcStatus::Normative
+        && rfc_loaded.data.phase == RfcPhase::Spec
+        && clause_loaded.data.since.as_deref() == Some(rfc_loaded.data.version.as_str());
+    if rfc_loaded.data.status != RfcStatus::Draft && !is_current_candidate_clause {
+        let since = clause_loaded.data.since.as_deref().unwrap_or("pending");
         return Err(Diagnostic::new(
-            DiagnosticCode::E0110RfcInvalidId,
+            DiagnosticCode::E0104RfcInvalidTransition,
             format!(
-                "Cannot delete clause: {} is {}. Only draft RFCs allow clause deletion.",
+                "Cannot delete clause from {} while status={}, phase={}, version={}, and clause since={}. Clause deletion is limited to draft RFCs or Clauses introduced in the current normative spec candidate.",
                 rfc_id,
-                rfc_loaded.data.status.as_ref()
+                rfc_loaded.data.status.as_ref(),
+                rfc_loaded.data.phase.as_ref(),
+                rfc_loaded.data.version,
+                since,
             ),
             clause_id,
         ));
     }
 
-    let clause_path = crate::load::find_clause_toml(config, clause_id).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0202ClauseNotFound,
-            format!("Clause not found: {}", clause_id),
-            clause_id,
-        )
-    })?;
+    let clause_path = clause_loaded.path;
 
     let clause_file_name = clause_path
         .file_name()
@@ -79,14 +82,19 @@ pub fn delete_clause(
         ));
     }
 
-    crate::write::write_rfc(
-        &rfc_loaded.path,
-        &rfc_loaded.data,
+    with_file_transaction(
+        &[rfc_loaded.path.as_path(), clause_path.as_path()],
         op,
-        Some(&config.display_path(&rfc_loaded.path)),
+        || {
+            crate::write::write_rfc(
+                &rfc_loaded.path,
+                &rfc_loaded.data,
+                op,
+                Some(&config.display_path(&rfc_loaded.path)),
+            )?;
+            delete_file(&clause_path, op, Some(&config.display_path(&clause_path)))
+        },
     )?;
-
-    delete_file(&clause_path, op, Some(&config.display_path(&clause_path)))?;
 
     if !op.is_preview() {
         ui::success(format!("Deleted clause {}", clause_id));

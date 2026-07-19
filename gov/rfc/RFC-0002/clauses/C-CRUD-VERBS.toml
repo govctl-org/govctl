@@ -94,9 +94,8 @@ For guards:
 - MUST error with list of referencing artifacts/config if any references exist
 
 For clauses:
-- MUST only allow deletion if containing RFC is in `draft` status
-- MUST verify no other artifacts reference the clause ID before deletion
-- MUST error with list of referencing artifacts if any references exist
+- MUST enforce the deletion eligibility and referential-integrity requirements in [[RFC-0000:C-CLAUSE-DEF]]
+- MUST error with the list of referencing artifact IDs when references prevent deletion
 
 For Work Items:
 - MUST only allow deletion if status is `queue`
