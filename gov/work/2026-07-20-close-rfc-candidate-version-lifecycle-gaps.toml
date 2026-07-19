@@ -1,0 +1,53 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-20-001"
+title = "Close RFC candidate-version lifecycle gaps"
+status = "done"
+created = "2026-07-20"
+started = "2026-07-20"
+completed = "2026-07-20"
+refs = [
+    "ADR-0054",
+    "RFC-0000",
+    "RFC-0001",
+    "RFC-0002",
+    "RFC-0000:C-PHASE-LIFECYCLE",
+    "RFC-0000:C-CLAUSE-DEF",
+    "RFC-0001:C-RFC-PHASE",
+    "RFC-0002:C-CRUD-VERBS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+
+[content]
+description = "Align `RFC` candidate authoring with one version boundary and add safe correction for newly introduced candidate `Clause` artifacts, preventing stranded candidate-version metadata and synthetic supersession records while updating implementation, tests, and agent-facing guidance."
+
+[[content.acceptance_criteria]]
+text = "Lifecycle RFC clauses define `spec` as one open candidate and the deletion boundary for unreferenced Clauses introduced in the current version, including inherited-Clause rejection"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Version-changing rfc bump rejects spec-phase RFCs and later-phase RFCs without a sealed signature without mutation; later phase progression likewise rejects a missing signature"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Normative `spec` RFCs allow deletion only for unreferenced Clauses whose `since` equals the current RFC version"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "AGENTS.md, `gov`, `spec`, and `rfc-writer` skills, CLI help, and `docs/guide/rfcs.md` describe the corrected lifecycle"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused lifecycle tests, `cargo test`, `govctl check`, and `just pre-commit` pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "[[ADR-0054]] is accepted and [[RFC-0000]], [[RFC-0001]], and [[RFC-0002]] complete their spec, impl, test, and stable gates"
+status = "done"
+category = "chore"

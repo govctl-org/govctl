@@ -461,7 +461,8 @@ fn test_rfc_changelog_edits_reject_legacy_signature_without_false_amendment() ->
         3,
         "output: {output}"
     );
-    assert!(output.contains("error[E0113]"), "output: {output}");
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(output.contains("phase=spec"), "output: {output}");
     assert!(
         output.contains("$ govctl rfc get RFC-0001 phase\nimpl"),
         "output: {output}"

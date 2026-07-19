@@ -194,15 +194,20 @@ fn hex_encode(bytes: &[u8]) -> String {
     hex
 }
 
-/// Check if an RFC has been amended since its last release.
+/// Check if a sealed RFC version has an unversioned content amendment.
 ///
 /// Returns `true` if the current content signature differs from the stored signature,
-/// indicating the RFC has been modified but not yet bumped to a new version.
+/// indicating an RFC in `impl`, `test`, or `stable` has been modified but not yet
+/// bumped to a new version. Content changes in `spec` belong to the open candidate.
 ///
 /// Returns `false` if signatures match (clean state) or if no signature is stored.
 /// Stored signatures created before content-only signatures are accepted as a
 /// legacy clean baseline when the full rendered-projection signature still matches.
 pub fn is_rfc_amended(rfc: &RfcIndex) -> bool {
+    if rfc.rfc.phase == crate::model::RfcPhase::Spec {
+        return false;
+    }
+
     let Some(stored_sig) = &rfc.rfc.signature else {
         return false;
     };

@@ -101,6 +101,17 @@ fn test_migrated_legacy_signature_ignores_later_phase_changes() -> Result<(), Di
     Ok(())
 }
 
+#[test]
+fn test_rfc_amended_ignores_open_spec_candidate_changes() -> Result<(), Diagnostic> {
+    let mut rfc = test_rfc_index();
+    rfc.rfc.signature = Some(compute_rfc_content_signature(&rfc)?);
+    rfc.rfc.phase = RfcPhase::Spec;
+    rfc.rfc.title = "Open candidate title".to_string();
+
+    assert!(!is_rfc_amended(&rfc));
+    Ok(())
+}
+
 fn test_rfc_index() -> RfcIndex {
     RfcIndex {
         rfc: RfcSpec {

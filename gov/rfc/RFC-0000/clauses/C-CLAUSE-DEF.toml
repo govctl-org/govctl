@@ -30,7 +30,7 @@ Clause kinds:
 
 Deprecation is a lifecycle state (in `status`), not a document kind.
 
-The `since` field identifies the first RFC version that contains the clause. A clause whose `since` field is absent is a pending clause.
+The `since` field identifies the first RFC version that contains the clause. A clause whose `since` field is absent is a pending clause. `since` is lifecycle-owned: generic editing MUST NOT set, change, or remove it. Finalization and version bumps MUST assign `since` only to pending clauses and MUST preserve every non-pending clause's existing `since` value.
 
 Clause creation and version assignment MUST follow these rules:
 - A new clause in a draft RFC MUST be pending.
@@ -40,7 +40,9 @@ Clause creation and version assignment MUST follow these rules:
 - A version bump of a normative RFC MUST assign the new RFC version to every pending clause.
 - Creating a clause in a deprecated RFC MUST be rejected.
 
+Permanent clause deletion MUST be allowed when the containing RFC is draft. Permanent clause deletion MUST also be allowed when the containing RFC is normative, its phase is `spec`, and the clause `since` equals the RFC current version. Permanent deletion MUST be rejected for every other RFC status, phase, or clause-version combination. Permanent deletion MUST reject a clause referenced by any other artifact and MUST report the referencing artifact IDs.
+
 Advancing a normative RFC from `spec` to `impl` MUST reject every pending clause. That transition MUST NOT assign clause version metadata. That transition MUST NOT rewrite existing clause version metadata.
 
 **Rationale:**
-A clause can record its version immediately only after that target version is known. Initial draft clauses receive a version only at finalization, amendments created outside `spec` receive a version at the next normative RFC bump, and clauses added to an already-open normative `spec` version can safely use the current version. This preserves version provenance without making phase advancement own clause metadata."""
+A clause can record its version immediately only after that target version is known. Initial draft clauses receive a version only at finalization, amendments created outside `spec` receive a version at the next normative RFC bump, and clauses added to an already-open normative `spec` version can safely use the current version. This preserves version provenance without making phase advancement own clause metadata. Lifecycle-only assignment and preservation make `since == current version` reliable evidence that a Clause belongs only to the open candidate, while the reference gate prevents dangling governance links."""

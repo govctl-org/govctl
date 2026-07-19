@@ -11,12 +11,20 @@ $ govctl rfc finalize RFC-0001 normative
 Finalized RFC-0001 to status: normative
 exit: 0
 
-$ govctl rfc bump RFC-0001 --patch --summary Establish baseline
-Bumped RFC-0001 to 0.1.1
+$ govctl rfc advance RFC-0001 impl
+Advanced RFC-0001 to phase: impl
+exit: 0
+
+$ govctl rfc advance RFC-0001 test
+Advanced RFC-0001 to phase: test
+exit: 0
+
+$ govctl rfc advance RFC-0001 stable
+Advanced RFC-0001 to phase: stable
 exit: 0
 
 $ govctl rfc bump RFC-0001 --change Added changelog note
-Added change to RFC-0001 v0.1.1: Added changelog note
+Added change to RFC-0001 v0.1.0: Added changelog note
 exit: 0
 
 $ govctl rfc bump RFC-0001 --patch --summary Changelog-only bump
@@ -24,9 +32,9 @@ error[E0113]: RFC version bump requires RFC or clause content changes since the 
 exit: 1
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬──────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title    │
-╞══════════╪═════════╪═══════════╪═══════╪══════════╡
-│ RFC-0001 ┆ 0.1.1   ┆ normative ┆ spec  ┆ Test RFC │
-└──────────┴─────────┴───────────┴───────┴──────────┘
+┌──────────┬─────────┬───────────┬────────┬──────────┐
+│ RFC      ┆ Version ┆ Status    ┆ Phase  ┆ Title    │
+╞══════════╪═════════╪═══════════╪════════╪══════════╡
+│ RFC-0001 ┆ 0.1.0   ┆ normative ┆ stable ┆ Test RFC │
+└──────────┴─────────┴───────────┴────────┴──────────┘
 exit: 0

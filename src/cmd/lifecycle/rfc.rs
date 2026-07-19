@@ -27,7 +27,7 @@ pub fn bump(
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let mut rfc = read_rfc(config, &rfc_path)?;
-    let refresh_signature_after_write = match (level, summary, changes.is_empty()) {
+    match (level, summary, changes.is_empty()) {
         (Some(lvl), Some(sum), _) => {
             // [[RFC-0002:C-LIFECYCLE-VERBS]] reserves version-changing bumps for
             // RFC lineages that have crossed the normative publication boundary.
@@ -42,13 +42,24 @@ pub fn bump(
                 ));
             }
 
-            let releases_content_amendment =
-                ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
+            // [[RFC-0000:C-PHASE-LIFECYCLE]] permits a version-changing bump only
+            // after the current version has been sealed with a stored signature.
+            if rfc.phase == RfcPhase::Spec {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0104RfcInvalidTransition,
+                    "Cannot bump RFC version while phase=spec. Continue authoring the current version candidate, then advance it to impl before opening another version.",
+                    rfc_id,
+                ));
+            }
+
+            if rfc.signature.is_none() {
+                return Err(missing_sealed_signature(rfc_id, "bump RFC version"));
+            }
+
+            ensure_rfc_has_content_amendment(config, &rfc_path, rfc_id)?;
 
             let new_version = bump_rfc_version(&mut rfc, lvl, sum)?;
-            if releases_content_amendment {
-                rfc.phase = RfcPhase::Spec;
-            }
+            rfc.phase = RfcPhase::Spec;
 
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
@@ -60,7 +71,6 @@ pub fn bump(
                 write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
                 let updated_clause_ids =
                     fill_pending_clause_versions(config, &rfc_path, &new_version, op)?;
-                refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
                 Ok(updated_clause_ids)
             })?;
 
@@ -95,7 +105,6 @@ pub fn bump(
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
             }
-            false
         }
         (None, None, true) => {
             return Err(Diagnostic::new(
@@ -104,14 +113,10 @@ pub fn bump(
                 rfc_id,
             ));
         }
-    };
+    }
 
     with_file_transaction(&[rfc_path.as_path()], op, || {
-        write_lifecycle_rfc(config, &rfc_path, &rfc, op)?;
-        if refresh_signature_after_write {
-            refresh_rfc_signature_best_effort(config, &rfc_path, &mut rfc, op)?;
-        }
-        Ok(())
+        write_lifecycle_rfc(config, &rfc_path, &rfc, op)
     })?;
     if !op.is_preview() {
         for change in changes {
@@ -255,17 +260,32 @@ pub fn advance(
         }
     }
 
+    // [[RFC-0000:C-PHASE-LIFECYCLE]] requires every post-spec phase to retain
+    // the sealed signature established by the spec -> impl transition.
+    if !seals_current_version && rfc.signature.is_none() {
+        return Err(missing_sealed_signature(rfc_id, "advance RFC phase"));
+    }
+
     let rfc_index = crate::load::load_rfc(config, &rfc_path)?;
     let current_signature = crate::signature::compute_rfc_content_signature(&rfc_index)?;
     let next_signature = if seals_current_version {
         Some(current_signature)
-    } else if let Some(stored_signature) = &rfc_index.rfc.signature {
+    } else {
+        let stored_signature = rfc_index
+            .rfc
+            .signature
+            .as_ref()
+            .ok_or_else(|| missing_sealed_signature(rfc_id, "advance RFC phase"))?;
         if stored_signature == &current_signature {
             None
         } else if crate::signature::compute_rfc_signature(&rfc_index)
             .is_ok_and(|legacy| stored_signature == &legacy)
         {
-            Some(current_signature)
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0505MigrationRequired,
+                "Cannot advance phase while the RFC has a legacy amendment signature. Run `govctl migrate` before advancing.",
+                rfc_id,
+            ));
         } else {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0114RfcPendingAmendment,
@@ -273,8 +293,6 @@ pub fn advance(
                 rfc_id,
             ));
         }
-    } else {
-        None
     };
 
     let mut updated_rfc = rfc;
@@ -333,36 +351,21 @@ fn write_lifecycle_rfc(
     crate::write::write_rfc(rfc_path, rfc, op, Some(&config.display_path(rfc_path)))
 }
 
-fn refresh_rfc_signature_best_effort(
-    config: &Config,
-    rfc_path: &Path,
-    rfc: &mut RfcSpec,
-    op: WriteOp,
-) -> DiagnosticResult<()> {
-    if let Ok(rfc_index) = crate::load::load_rfc(config, rfc_path)
-        && let Ok(sig) = crate::signature::compute_rfc_content_signature(&rfc_index)
-    {
-        rfc.signature = Some(sig);
-        write_lifecycle_rfc(config, rfc_path, rfc, op)?;
-    }
-    Ok(())
-}
-
 fn ensure_rfc_has_content_amendment(
     config: &Config,
     rfc_path: &Path,
     rfc_id: &str,
-) -> DiagnosticResult<bool> {
+) -> DiagnosticResult<()> {
     if !pending_clause_ids(config, rfc_path)?.is_empty() {
-        return Ok(true);
+        return Ok(());
     }
 
     let rfc_index = crate::load::load_rfc(config, rfc_path)?;
     if rfc_index.rfc.signature.is_none() {
-        return Ok(false);
+        return Err(missing_sealed_signature(rfc_id, "bump RFC version"));
     }
     if crate::signature::is_rfc_amended(&rfc_index) {
-        return Ok(true);
+        return Ok(());
     }
 
     Err(Diagnostic::new(
@@ -370,6 +373,16 @@ fn ensure_rfc_has_content_amendment(
         "RFC version bump requires RFC or clause content changes since the last bump",
         rfc_id,
     ))
+}
+
+fn missing_sealed_signature(rfc_id: &str, action: &str) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0505MigrationRequired,
+        format!(
+            "Cannot {action} without a sealed RFC content signature. Run `govctl migrate` or restore the sealed signature baseline from version-control history."
+        ),
+        rfc_id,
+    )
 }
 
 pub(crate) fn require_changelog_update_ready(

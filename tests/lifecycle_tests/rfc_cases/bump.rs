@@ -13,6 +13,17 @@ fn test_bump_patch_version() -> common::TestResult {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Test RFC patch amendment",
+            ],
             &[
                 "rfc",
                 "bump",
@@ -37,6 +48,17 @@ fn test_bump_minor_version() -> common::TestResult {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Test RFC minor amendment",
+            ],
             &[
                 "rfc",
                 "bump",
@@ -61,6 +83,17 @@ fn test_bump_major_version() -> common::TestResult {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Test RFC major amendment",
+            ],
             &[
                 "rfc",
                 "bump",
@@ -163,6 +196,66 @@ fn test_version_bump_rejects_deprecated_without_mutation() -> common::TestResult
 }
 
 #[test]
+fn test_version_bump_rejects_spec_without_mutation_but_allows_changelog_change()
+-> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Spec RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Amended spec candidate",
+            ],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let before = fs::read(&rfc_path)?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--minor",
+            "--summary",
+            "Must be rejected",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0104]"), "output: {output}");
+    assert!(output.contains("phase=spec"), "output: {output}");
+    assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, before);
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--change",
+                "fix: Correct candidate changelog",
+            ],
+            &["rfc", "get", "RFC-0001", "version"],
+        ],
+    )?;
+    assert!(!output.contains("error["), "output: {output}");
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 version\n0.1.0"),
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_changelog_only_bump_remains_available_for_non_normative_rfc() -> common::TestResult {
     let temp_dir = init_project()?;
     let output = run_commands(
@@ -227,14 +320,6 @@ fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "Establish baseline",
-            ],
             &["rfc", "advance", "RFC-0001", "impl"],
             &["rfc", "advance", "RFC-0001", "test"],
             &["rfc", "advance", "RFC-0001", "stable"],
@@ -265,7 +350,70 @@ fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
 }
 
 #[test]
-fn test_signature_baseline_and_changelog_only_update_preserve_stable_phase() -> common::TestResult {
+fn test_bump_preserves_signature_until_new_candidate_advances_to_impl() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
+        ],
+    )?;
+
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let sealed: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    let sealed_signature = sealed["govctl"]["signature"]
+        .as_str()
+        .ok_or("missing sealed signature")?
+        .to_string();
+
+    run_commands(
+        temp_dir.path(),
+        &[
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "title",
+                "--set",
+                "Amended Test RFC",
+            ],
+            &[
+                "rfc",
+                "bump",
+                "RFC-0001",
+                "--patch",
+                "--summary",
+                "Release amendment",
+            ],
+        ],
+    )?;
+
+    let candidate: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    assert_eq!(candidate["govctl"]["phase"].as_str(), Some("spec"));
+    assert_eq!(
+        candidate["govctl"]["signature"].as_str(),
+        Some(sealed_signature.as_str())
+    );
+
+    run_commands(
+        temp_dir.path(),
+        &[["rfc", "advance", "RFC-0001", "impl"].as_slice()],
+    )?;
+    let implemented: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    assert_eq!(implemented["govctl"]["phase"].as_str(), Some("impl"));
+    assert_ne!(
+        implemented["govctl"]["signature"].as_str(),
+        Some(sealed_signature.as_str())
+    );
+    Ok(())
+}
+
+#[test]
+fn test_changelog_only_update_preserves_stable_phase() -> common::TestResult {
     let temp_dir = init_project()?;
 
     let output = run_commands(
@@ -276,14 +424,6 @@ fn test_signature_baseline_and_changelog_only_update_preserve_stable_phase() -> 
             &["rfc", "advance", "RFC-0001", "impl"],
             &["rfc", "advance", "RFC-0001", "test"],
             &["rfc", "advance", "RFC-0001", "stable"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "Establish baseline",
-            ],
             &["rfc", "get", "RFC-0001", "phase"],
             &[
                 "rfc",
@@ -486,7 +626,8 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
 }
 
 #[test]
-fn test_baseline_bump_with_pending_clause_restarts_at_spec() -> common::TestResult {
+fn test_version_bump_rejects_missing_signature_and_preserves_pending_clause() -> common::TestResult
+{
     let temp_dir = init_project()?;
     run_commands(
         temp_dir.path(),
@@ -518,30 +659,36 @@ fn test_baseline_bump_with_pending_clause_restarts_at_spec() -> common::TestResu
         ]],
     )?;
 
+    let clause_path = temp_dir
+        .path()
+        .join("gov/rfc/RFC-0001/clauses/C-PENDING.toml");
+    let rfc_before = fs::read(&rfc_path)?;
+    let clause_before = fs::read(&clause_path)?;
+
     let output = run_commands(
         temp_dir.path(),
-        &[
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "Release pending clause",
-            ],
-            &["rfc", "get", "RFC-0001", "phase"],
-            &["clause", "get", "RFC-0001:C-PENDING", "since"],
-        ],
+        &[&[
+            "rfc",
+            "bump",
+            "RFC-0001",
+            "--patch",
+            "--summary",
+            "Release pending clause",
+        ]],
     )?;
 
+    assert!(output.contains("error[E0505]"), "output: {output}");
     assert!(
-        output.contains("$ govctl rfc get RFC-0001 phase\nspec"),
+        output.contains("sealed RFC content signature"),
         "output: {output}"
     );
-    assert!(
-        output.contains("$ govctl clause get RFC-0001:C-PENDING since\n0.1.1"),
-        "output: {output}"
-    );
+    assert!(output.contains("govctl migrate"), "output: {output}");
+    assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
+    assert!(!output.contains("Set C-PENDING.since"), "output: {output}");
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    assert_eq!(fs::read(&clause_path)?, clause_before);
+    let clause: toml::Value = toml::from_str(&fs::read_to_string(&clause_path)?)?;
+    assert!(clause["govctl"].get("since").is_none());
     Ok(())
 }
 
@@ -554,14 +701,9 @@ fn test_bump_rejects_empty_bump_after_signature_baseline() -> common::TestResult
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "Establish baseline",
-            ],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
             &[
                 "rfc",
                 "bump",
@@ -586,14 +728,9 @@ fn test_bump_rejects_changelog_only_after_signature_baseline() -> common::TestRe
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "Establish baseline",
-            ],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
             &[
                 "rfc",
                 "bump",
@@ -642,14 +779,9 @@ fn test_bump_change_does_not_clear_pending_amendment() -> common::TestResult {
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "Establish baseline",
-            ],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
             &[
                 "clause",
                 "edit",
@@ -694,6 +826,9 @@ fn test_bump_rejects_malformed_unlisted_clause_without_mutation() -> common::Tes
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "advance", "RFC-0001", "test"],
+            &["rfc", "advance", "RFC-0001", "stable"],
         ],
     )?;
 

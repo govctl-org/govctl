@@ -3,17 +3,17 @@
 [govctl]
 id = "RFC-0001"
 title = "Lifecycle State Machines"
-version = "0.6.0"
+version = "0.7.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-07-16"
+updated = "2026-07-20"
 tags = [
     "core",
     "lifecycle",
 ]
-signature = "bb15b23a30af637d2a939a84afba34636b7af115de50afcc658ff19f70c0e44a"
+signature = "e67a234786417d9c81abf240a46875efdc6e0852c4be3c4ef5e914223450646a"
 
 [[sections]]
 title = "Summary"
@@ -29,6 +29,12 @@ clauses = [
     "clauses/C-CLAUSE-STATUS.toml",
     "clauses/C-GATE-CONDITIONS.toml",
 ]
+
+[[changelog]]
+version = "0.7.0"
+date = "2026-07-20"
+notes = "Clarify RFC candidate phase transitions"
+changed = ["Bind version bumps and signature sealing to explicit phase boundaries"]
 
 [[changelog]]
 version = "0.6.0"

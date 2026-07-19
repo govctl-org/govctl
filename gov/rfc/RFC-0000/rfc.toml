@@ -3,19 +3,19 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.6.1"
+version = "1.7.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-07-16"
+updated = "2026-07-20"
 tags = [
     "core",
     "schema",
     "validation",
     "lifecycle",
 ]
-signature = "8225ff5173cd4af351f8ff01bff00baa3bda2a239b0c41f76799c68b1f210048"
+signature = "1bdf74804a9478ae32ca5df2367944699dae3aa11dc1e2ec7d8c8a6a9838ff63"
 
 [[sections]]
 title = "Summary"
@@ -52,6 +52,15 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.7.0"
+date = "2026-07-20"
+notes = "Define single-candidate RFC version boundaries"
+changed = [
+    "Restrict version-changing bumps to sealed RFC versions",
+    "Allow deletion of unreferenced Clauses introduced in the current spec candidate",
+]
 
 [[changelog]]
 version = "1.6.1"

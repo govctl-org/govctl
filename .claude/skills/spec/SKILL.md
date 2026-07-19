@@ -108,8 +108,10 @@ For RFC work:
 - If the RFC is draft, do not bump it; when ready, ask permission before `govctl rfc finalize <RFC-ID> normative`
 - If a normative RFC is in `spec`, edit the current version candidate directly; do not bump it again for those edits
 - If a normative RFC is in `impl`, `test`, or `stable`, an RFC or Clause edit creates an unversioned amendment; after review, ask permission before using `govctl rfc bump` to release it as the next version in `spec`
+- If a normative RFC in `impl`, `test`, or `stable` lacks a sealed signature, stop and run migration or restore the baseline; do not use a bump to infer it
 - If the RFC is deprecated, do not edit or version-bump it
 - Use `govctl rfc edit <RFC-ID> changelog.*` for current-version changelog corrections; these do not change version, phase, or the sealed content signature
+- Delete an unreferenced Clause only in a draft RFC or when it was introduced in the current normative `spec` candidate (`since` equals the RFC version); inherited Clauses require deprecation or supersession
 
 Semver guidance for RFC amendments:
 

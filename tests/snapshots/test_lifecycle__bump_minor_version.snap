@@ -1,6 +1,6 @@
 ---
-source: tests/test_lifecycle.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/rfc_cases/bump.rs
+expression: snapshot
 ---
 $ govctl rfc new Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -11,14 +11,30 @@ $ govctl rfc finalize RFC-0001 normative
 Finalized RFC-0001 to status: normative
 exit: 0
 
+$ govctl rfc advance RFC-0001 impl
+Advanced RFC-0001 to phase: impl
+exit: 0
+
+$ govctl rfc advance RFC-0001 test
+Advanced RFC-0001 to phase: test
+exit: 0
+
+$ govctl rfc advance RFC-0001 stable
+Advanced RFC-0001 to phase: stable
+exit: 0
+
+$ govctl rfc edit RFC-0001 title --set Test RFC minor amendment
+Set RFC-0001.title = Test RFC minor amendment
+exit: 0
+
 $ govctl rfc bump RFC-0001 --minor --summary New feature
 Bumped RFC-0001 to 0.2.0
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬──────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title    │
-╞══════════╪═════════╪═══════════╪═══════╪══════════╡
-│ RFC-0001 ┆ 0.2.0   ┆ normative ┆ spec  ┆ Test RFC │
-└──────────┴─────────┴───────────┴───────┴──────────┘
+┌──────────┬─────────┬───────────┬───────┬──────────────────────────┐
+│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title                    │
+╞══════════╪═════════╪═══════════╪═══════╪══════════════════════════╡
+│ RFC-0001 ┆ 0.2.0   ┆ normative ┆ spec  ┆ Test RFC minor amendment │
+└──────────┴─────────┴───────────┴───────┴──────────────────────────┘
 exit: 0
