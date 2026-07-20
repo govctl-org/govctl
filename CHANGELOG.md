@@ -10,6 +10,49 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-07-20
+
+0.13.0 makes each RFC version a single, explicit authoring candidate. It rejects
+attempts to bump away from an unsealed `spec` candidate, seals exactly the
+content that enters `impl`, and adds a safe way to remove mistaken Clauses before
+that boundary.
+
+### Added
+
+- `govctl clause delete` now permits deletion of an unreferenced Clause
+  introduced in the current normative `spec` candidate when its `since` version
+  matches the RFC version. Clauses inherited from earlier versions still require
+  deprecation or supersession.
+
+### Changed
+
+- Version-changing `govctl rfc bump` operations now open the next candidate only
+  from a normative RFC in `impl`, `test`, or `stable` with a sealed signature and
+  a content amendment. A second version-changing bump from `spec` is rejected.
+- Advancing from `spec` to `impl` establishes the current RFC and Clause content
+  as the sealed implementation baseline. Candidate edits made during `spec` are
+  no longer reported as unversioned amendments.
+
+### Fixed
+
+- Version bumps and later phase transitions now reject missing sealed signatures
+  without modifying RFC or pending-Clause state, with guidance to migrate or
+  restore the baseline.
+- Later phase transitions reject legacy projection signatures with migration
+  guidance instead of silently replacing the sealed baseline.
+- Clause deletion now detects structured references, inline governance links,
+  and supersession edges, reports every referencing artifact, and applies the
+  RFC index update and Clause removal transactionally.
+
+### Upgrade Notes
+
+- Workflows that previously issued another version-changing bump while an RFC
+  was already in `spec` must now continue editing that candidate and advance it
+  to `impl`. Open the following version only after a later content amendment.
+- Repositories with an RFC in `impl`, `test`, or `stable` but no trustworthy
+  sealed signature must run migration or restore a consistent RFC-and-Clause
+  baseline before further lifecycle progression.
+
 ## [0.12.0] - 2026-07-16
 
 0.12.0 completes the current-version RFC authoring model. Normative RFCs can be
