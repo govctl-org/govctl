@@ -1,0 +1,53 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-21-001"
+title = "Add current and archival show projections"
+status = "done"
+created = "2026-07-21"
+started = "2026-07-21"
+completed = "2026-07-21"
+refs = [
+    "RFC-0002:C-SHOW-PROJECTION",
+    "ADR-0055",
+    "ADR-0022",
+]
+tags = ["cli"]
+
+[content]
+description = "Implement [[RFC-0002:C-SHOW-PROJECTION]] and [[ADR-0055]] across shared renderers and resource `show` commands so default agent-facing views omit obsolete content while `--history`, structured output, and generated documentation remain complete. Add regression coverage and guidance for this projection boundary."
+
+[[content.acceptance_criteria]]
+text = "Human-readable `show` defaults to the current projection and `show --history` selects the archival projection for RFCs, ADRs, Clauses, Work Items, and Guards"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`show --output json|yaml|toml` returns the complete structured resource for every supported resource type"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Structured `show` output rejects combination with `--history`"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "`render` and generated documentation retain complete archival content"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "CLI help, user documentation, and agent skills explain the current default, archival access, and structured-output restriction"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Regression tests cover lifecycle suppression, archival restoration, structured completeness, and archival rendering"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "govctl check and just pre-commit pass"
+status = "done"
+category = "chore"

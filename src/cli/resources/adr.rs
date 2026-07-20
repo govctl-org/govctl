@@ -39,7 +39,12 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl adr show ADR-0001
+    govctl adr show ADR-0001 --history
     govctl adr show ADR-0001 -o plain
+
+NOTES:
+    - Human-readable `show` hides superseded ADR bodies by default.
+    - Use `--history` for complete archival content; structured output is always complete.
 ")]
     Show(CommonShowArgs),
     /// Create a new ADR

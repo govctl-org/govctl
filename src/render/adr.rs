@@ -1,7 +1,7 @@
-use super::{render_refs, write_expanded_rendered_md};
+use super::{RenderProjection, render_refs, write_expanded_rendered_md};
 use crate::config::Config;
 use crate::diagnostic::DiagnosticResult;
-use crate::model::{AdrEntry, AlternativeStatus};
+use crate::model::{AdrEntry, AdrStatus, AlternativeStatus};
 use crate::signature::{compute_adr_signature, format_signature_header};
 use std::fmt::Write as FmtWrite;
 
@@ -10,6 +10,17 @@ use std::fmt::Write as FmtWrite;
 /// # Errors
 /// Returns an error if signature computation fails.
 pub fn render_adr(adr: &AdrEntry) -> DiagnosticResult<String> {
+    render_adr_with_projection(adr, RenderProjection::Archive)
+}
+
+/// Render an ADR using the selected lifecycle projection.
+///
+/// # Errors
+/// Returns an error if signature computation fails.
+pub fn render_adr_with_projection(
+    adr: &AdrEntry,
+    projection: RenderProjection,
+) -> DiagnosticResult<String> {
     let meta = adr.meta();
     let content = &adr.spec.content;
     let mut out = String::new();
@@ -47,6 +58,12 @@ pub fn render_adr(adr: &AdrEntry) -> DiagnosticResult<String> {
     if !meta.refs.is_empty() {
         let _ = writeln!(out, "**References:** {}", render_refs(&meta.refs));
         let _ = writeln!(out);
+    }
+
+    // [[RFC-0002:C-SHOW-PROJECTION]] keeps superseded ADR metadata visible
+    // while omitting obsolete decision content from the current projection.
+    if projection == RenderProjection::Current && meta.status == AdrStatus::Superseded {
+        return Ok(out);
     }
 
     // Context

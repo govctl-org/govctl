@@ -1,7 +1,7 @@
-use super::{render_refs, write_expanded_rendered_md};
+use super::{RenderProjection, render_refs, write_expanded_rendered_md};
 use crate::config::Config;
 use crate::diagnostic::DiagnosticResult;
-use crate::model::{ClauseEntry, ClauseKind, ClauseStatus, RfcIndex};
+use crate::model::{ClauseEntry, ClauseKind, ClauseStatus, RfcIndex, RfcStatus};
 use crate::signature::{compute_rfc_signature, format_signature_header};
 use std::fmt::Write as FmtWrite;
 
@@ -10,6 +10,18 @@ use std::fmt::Write as FmtWrite;
 /// # Errors
 /// Returns an error if signature computation fails.
 pub fn render_rfc(rfc: &RfcIndex) -> DiagnosticResult<String> {
+    render_rfc_with_projection(rfc, RenderProjection::Archive, None)
+}
+
+/// Render an RFC using the selected lifecycle projection.
+///
+/// # Errors
+/// Returns an error if signature computation fails.
+pub fn render_rfc_with_projection(
+    rfc: &RfcIndex,
+    projection: RenderProjection,
+    superseded_by: Option<&str>,
+) -> DiagnosticResult<String> {
     let mut out = String::new();
 
     // Compute signature from source content (per ADR-0003)
@@ -31,12 +43,34 @@ pub fn render_rfc(rfc: &RfcIndex) -> DiagnosticResult<String> {
         rfc.rfc.status.as_ref(),
         rfc.rfc.phase.as_ref()
     );
+
+    let suppress_body =
+        projection == RenderProjection::Current && rfc.rfc.status == RfcStatus::Deprecated;
+
+    if !rfc.rfc.owners.is_empty() {
+        let _ = writeln!(out, "> **Owners:** {}", rfc.rfc.owners.join(", "));
+    }
+    if !rfc.rfc.tags.is_empty() {
+        let _ = writeln!(out, "> **Tags:** `{}`", rfc.rfc.tags.join("`, `"));
+    }
+    if let Some(ref supersedes) = rfc.rfc.supersedes {
+        let _ = writeln!(out, "> **Supersedes:** {supersedes}");
+    }
+    if suppress_body && let Some(superseded_by) = superseded_by {
+        let _ = writeln!(out, "> **Superseded by:** {superseded_by}");
+    }
     let _ = writeln!(out);
 
     // References (expanded to markdown links)
     if !rfc.rfc.refs.is_empty() {
         let _ = writeln!(out, "**References:** {}", render_refs(&rfc.rfc.refs));
         let _ = writeln!(out);
+    }
+
+    // [[RFC-0002:C-SHOW-PROJECTION]]: a deprecated RFC is a metadata-only
+    // tombstone in the current projection; archival rendering remains complete.
+    if suppress_body {
+        return Ok(out);
     }
 
     // Render sections with clauses
@@ -54,7 +88,7 @@ pub fn render_rfc(rfc: &RfcIndex) -> DiagnosticResult<String> {
                     .and_then(|n| n.to_str())
                     .is_some_and(|n| clause_path.ends_with(n))
             }) {
-                render_clause(&mut out, &rfc.rfc.rfc_id, clause);
+                render_clause_with_projection(&mut out, &rfc.rfc.rfc_id, clause, projection);
             }
         }
     }
@@ -109,6 +143,16 @@ fn clause_anchor(rfc_id: &str, clause_id: &str) -> String {
 
 /// Render a single clause
 pub fn render_clause(out: &mut String, rfc_id: &str, clause: &ClauseEntry) {
+    render_clause_with_projection(out, rfc_id, clause, RenderProjection::Archive);
+}
+
+/// Render a single Clause using the selected lifecycle projection.
+pub fn render_clause_with_projection(
+    out: &mut String,
+    rfc_id: &str,
+    clause: &ClauseEntry,
+    projection: RenderProjection,
+) {
     let spec = &clause.spec;
 
     // Clause header with ID anchor
@@ -135,13 +179,32 @@ pub fn render_clause(out: &mut String, rfc_id: &str, clause: &ClauseEntry) {
     );
     let _ = writeln!(out);
 
-    // Clause text
-    let _ = writeln!(out, "{}", spec.text);
-    let _ = writeln!(out);
+    // Keep lifecycle state visible before historical text per [[RFC-0001:C-CLAUSE-STATUS]].
+    match spec.status {
+        ClauseStatus::Active => {}
+        ClauseStatus::Deprecated => {
+            let _ = writeln!(out, "> **Status:** deprecated");
+        }
+        ClauseStatus::Superseded => {
+            let _ = writeln!(out, "> **Status:** superseded");
+        }
+    }
 
-    // Superseded by notice
     if let Some(ref by) = spec.superseded_by {
         let _ = writeln!(out, "> **Superseded by:** {by}");
+    }
+
+    if spec.status != ClauseStatus::Active || spec.superseded_by.is_some() {
+        let _ = writeln!(out);
+    }
+
+    let suppress_body = projection == RenderProjection::Current
+        && matches!(
+            spec.status,
+            ClauseStatus::Deprecated | ClauseStatus::Superseded
+        );
+    if !suppress_body {
+        let _ = writeln!(out, "{}", spec.text);
         let _ = writeln!(out);
     }
 

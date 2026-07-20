@@ -1,7 +1,6 @@
 ---
 source: tests/test_help.rs
-assertion_line: 40
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: normalized
 ---
 $ govctl adr --help
 ADR operations
@@ -33,7 +32,7 @@ Options:
 COMMON WORKFLOW:
     1. `govctl adr list` to discover ADRs
     2. `govctl adr get <ID> ...` for metadata/fields
-    3. `govctl adr show <ID>` for rendered prose
+    3. `govctl adr show <ID>` for current rendered prose (`--history` for the archive)
     4. `govctl adr edit/add/tick` to work through alternatives
     5. `govctl adr accept/reject/...` for lifecycle
 

@@ -52,3 +52,22 @@ fn print_toml_maps_serialization_error_to_diagnostic() -> Result<(), String> {
     assert!(err.message.contains("forced failure"));
     Ok(())
 }
+
+#[test]
+fn print_yaml_maps_serialization_error_to_diagnostic() -> Result<(), String> {
+    let result = print_yaml(
+        &FailingSerialize,
+        DiagnosticCode::E0903UnexpectedError,
+        "Failed to serialize YAML",
+        "show",
+    );
+    let Err(err) = result else {
+        return Err("expected serialization failure".to_string());
+    };
+
+    assert_eq!(err.code, DiagnosticCode::E0903UnexpectedError);
+    assert_eq!(err.file, "show");
+    assert!(err.message.starts_with("Failed to serialize YAML: "));
+    assert!(err.message.contains("forced failure"));
+    Ok(())
+}

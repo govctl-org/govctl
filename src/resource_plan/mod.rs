@@ -41,7 +41,7 @@ fn compile_common_get(args: &CommonGetArgs) -> DiagnosticResult<CommandPlan> {
 }
 
 fn compile_common_show(artifact: cmd::edit::ArtifactType, args: &CommonShowArgs) -> CommandPlan {
-    plan_show(artifact, &args.id, args.output)
+    plan_show(artifact, &args.id, args.output, args.history)
 }
 
 fn compile_common_edit(args: &CommonEditArgs, extras: EditExtras) -> DiagnosticResult<CommandPlan> {

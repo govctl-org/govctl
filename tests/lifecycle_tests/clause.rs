@@ -853,6 +853,118 @@ fn test_deprecate_clause_force() -> common::TestResult {
 }
 
 #[test]
+fn test_clause_show_suppresses_non_active_body_until_history() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Clause Status RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-DEPRECATED",
+                "Deprecated Clause",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-OLD",
+                "Old Clause",
+                "-k",
+                "normative",
+            ],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-NEW",
+                "New Clause",
+                "-k",
+                "normative",
+            ],
+            &["clause", "deprecate", "RFC-0001:C-DEPRECATED", "--force"],
+            &[
+                "clause",
+                "supersede",
+                "RFC-0001:C-OLD",
+                "--by",
+                "RFC-0001:C-NEW",
+                "--force",
+            ],
+        ],
+    )?;
+
+    let deprecated = run_commands(
+        temp_dir.path(),
+        &[&["clause", "show", "RFC-0001:C-DEPRECATED"]],
+    )?;
+    let deprecated_history = run_commands(
+        temp_dir.path(),
+        &[&["clause", "show", "RFC-0001:C-DEPRECATED", "--history"]],
+    )?;
+    let superseded = run_commands(temp_dir.path(), &[&["clause", "show", "RFC-0001:C-OLD"]])?;
+    let superseded_history = run_commands(
+        temp_dir.path(),
+        &[&["clause", "show", "RFC-0001:C-OLD", "--history"]],
+    )?;
+
+    assert!(deprecated.contains("(Normative)"), "output: {deprecated}");
+    assert!(
+        deprecated.contains("> **Status:** deprecated"),
+        "output: {deprecated}"
+    );
+    assert!(!deprecated.contains("TODO: Add clause text here."));
+    assert!(
+        deprecated_history.contains("> **Status:** deprecated"),
+        "output: {deprecated_history}"
+    );
+    assert!(
+        deprecated_history.contains("TODO: Add clause text here."),
+        "output: {deprecated_history}"
+    );
+    assert!(
+        deprecated_history.find("> **Status:** deprecated")
+            < deprecated_history.find("TODO: Add clause text here."),
+        "output: {deprecated_history}"
+    );
+
+    assert!(
+        superseded.contains("> **Status:** superseded"),
+        "output: {superseded}"
+    );
+    assert!(
+        superseded.contains("> **Superseded by:** RFC-0001:C-NEW"),
+        "output: {superseded}"
+    );
+    assert!(!superseded.contains("TODO: Add clause text here."));
+    assert!(
+        superseded_history.contains("> **Status:** superseded"),
+        "output: {superseded_history}"
+    );
+    assert!(
+        superseded_history.contains("> **Superseded by:** RFC-0001:C-NEW"),
+        "output: {superseded_history}"
+    );
+    assert!(
+        superseded_history.contains("TODO: Add clause text here."),
+        "output: {superseded_history}"
+    );
+    assert!(
+        superseded_history.find("> **Status:** superseded")
+            < superseded_history.find("TODO: Add clause text here."),
+        "output: {superseded_history}"
+    );
+    assert!(
+        superseded_history.find("> **Superseded by:** RFC-0001:C-NEW")
+            < superseded_history.find("TODO: Add clause text here."),
+        "output: {superseded_history}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_deprecate_clause_already_deprecated_fails() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 

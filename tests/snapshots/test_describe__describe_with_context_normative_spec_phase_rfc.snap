@@ -357,7 +357,7 @@ $ govctl describe --context
     {
       "name": "rfc show",
       "purpose": "Show RFC content to stdout (no file written)",
-      "when_to_use": "To read the full rendered RFC content. Use -o json for structured output.",
+      "when_to_use": "To read current rendered RFC content. Use --history for the archive or -o json for complete structured output.",
       "example": "govctl rfc show RFC-0001",
       "prerequisites": [
         "RFC must exist"
@@ -366,7 +366,7 @@ $ govctl describe --context
     {
       "name": "adr show",
       "purpose": "Show ADR content to stdout (no file written)",
-      "when_to_use": "To read the full rendered ADR content. Use -o json for structured output.",
+      "when_to_use": "To read current rendered ADR content. Use --history for the archive or -o json for complete structured output.",
       "example": "govctl adr show ADR-0001",
       "prerequisites": [
         "ADR must exist"
@@ -375,7 +375,7 @@ $ govctl describe --context
     {
       "name": "work show",
       "purpose": "Show work item content to stdout (no file written)",
-      "when_to_use": "To read the full rendered work item content. Use -o json for structured output.",
+      "when_to_use": "To read rendered work item content. Structured output remains complete.",
       "example": "govctl work show WI-<DATE>-001",
       "prerequisites": [
         "Work item must exist"
@@ -384,7 +384,7 @@ $ govctl describe --context
     {
       "name": "clause show",
       "purpose": "Show clause content to stdout (no file written)",
-      "when_to_use": "To read the clause text. Use -o json for structured output.",
+      "when_to_use": "To read current clause content. Use --history for obsolete text or -o json for complete structured output.",
       "example": "govctl clause show RFC-0001:C-SUMMARY",
       "prerequisites": [
         "Clause must exist"

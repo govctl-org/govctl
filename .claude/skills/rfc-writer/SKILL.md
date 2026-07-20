@@ -179,6 +179,13 @@ The renderer auto-generates structural elements. **Do NOT include these in claus
 
 Clause text should contain only the specification prose, rationale, and `[[...]]` references.
 
+### Inspection Projections
+
+`govctl rfc show <RFC-ID>` presents the current projection and omits obsolete
+body content. Use `govctl rfc show <RFC-ID> --history` when reviewing the full
+RFC and Clause history. Generated Markdown from `govctl render` remains a
+complete archival projection.
+
 ## Common Mistakes
 
 | Mistake                                        | Fix                                                                   |

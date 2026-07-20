@@ -1,7 +1,6 @@
 ---
 source: tests/test_help.rs
-assertion_line: 67
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: normalized
 ---
 $ govctl clause --help
 Clause operations
@@ -28,7 +27,7 @@ Options:
 COMMON WORKFLOW:
     1. `govctl clause list` to discover clauses
     2. `govctl clause get <ID> ...` for metadata/fields
-    3. `govctl clause show <ID>` for rendered clause text
+    3. `govctl clause show <ID>` for current clause text (`--history` for the archive)
     4. `govctl clause edit <ID> ...` to update content
     5. `govctl clause deprecate/supersede` for lifecycle
 

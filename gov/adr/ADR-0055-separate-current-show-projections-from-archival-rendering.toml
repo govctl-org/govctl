@@ -1,0 +1,37 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0055"
+title = "Separate current show projections from archival rendering"
+status = "accepted"
+date = "2026-07-21"
+refs = [
+    "ADR-0022",
+    "RFC-0002:C-SHOW-PROJECTION",
+]
+tags = ["cli"]
+
+[content]
+context = "[[ADR-0022]] established side-effect-free show commands by reusing Markdown renderers. [[RFC-0002:C-SHOW-PROJECTION]] now separates the agent-facing current view from the complete archival projection. The implementation must preserve one rendering pipeline, keep generated documentation lossless, and avoid schema changes in structured output."
+decision = "We will pass an explicit projection mode through the shared Markdown renderers. File-writing render paths select the archival mode, human-readable show paths select the current mode unless history is requested, and structured output bypasses Markdown projection. This keeps formatting ownership centralized, makes caller intent explicit, and avoids post-processing rendered text."
+consequences = "Positive: show and render can differ without duplicating formatting or lifecycle metadata. Negative: a caller selecting the wrong mode can expose obsolete bodies or produce an incomplete archive; focused mode-selection tests mitigate this risk. Neutral: structured serialization remains outside the Markdown projection path, and [[ADR-0022]] remains the authority for providing show commands."
+
+[[content.alternatives]]
+text = "Keep one archival renderer mode for both show and render"
+status = "rejected"
+pros = ["No renderer API change"]
+cons = ["Agent-facing show continues to include obsolete bodies"]
+rejection_reason = "It continues exposing obsolete normative text in the default agent-facing read path."
+
+[[content.alternatives]]
+text = "Build separate show renderers or remove bodies after rendering"
+status = "rejected"
+pros = ["Keeps archival renderer signatures unchanged"]
+cons = ["Duplicates formatting rules or relies on fragile post-processing"]
+rejection_reason = "It creates a second formatting authority or depends on post-processing rendered text, both of which can drift from archival output."
+
+[[content.alternatives]]
+text = "Pass an explicit projection mode through shared renderers"
+status = "accepted"
+pros = ["Keeps formatting and lifecycle metadata in one rendering pipeline"]
+cons = ["Requires every renderer caller to choose projection intent"]

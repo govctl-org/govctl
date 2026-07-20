@@ -1,12 +1,13 @@
 //! Guard resource commands per [[RFC-0002:C-RESOURCES]].
 
 use super::guard_refs::{guard_reference_blockers, load_guard_by_id};
-use crate::OutputFormat;
-use crate::cmd::output::{print_json, print_toml};
+use crate::ShowOutputFormat;
+use crate::cmd::output::{print_json, print_toml, print_yaml};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{GuardCheck, GuardMeta, GuardSpec};
 use crate::parse::{load_guards, write_guard};
+use crate::render::RenderProjection;
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all};
 use slug::slugify;
@@ -110,12 +111,21 @@ pub fn delete_guard(
 pub fn show_guard(
     config: &Config,
     id: &str,
-    output: OutputFormat,
+    output: ShowOutputFormat,
+    history: bool,
 ) -> DiagnosticResult<Diagnostics> {
     let guard = load_guard_by_id(config, id)?;
 
+    if history && output.is_structured() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0802ConflictingArgs,
+            "--history cannot be combined with structured --output; use table or plain",
+            id,
+        ));
+    }
+
     match output {
-        OutputFormat::Json => {
+        ShowOutputFormat::Json => {
             print_json(
                 &guard.spec,
                 DiagnosticCode::E1001GuardSchemaInvalid,
@@ -123,7 +133,20 @@ pub fn show_guard(
                 id,
             )?;
         }
-        OutputFormat::Table | OutputFormat::Plain => {
+        ShowOutputFormat::Yaml => {
+            print_yaml(
+                &guard.spec,
+                DiagnosticCode::E1001GuardSchemaInvalid,
+                "Failed to serialize guard YAML",
+                id,
+            )?;
+        }
+        ShowOutputFormat::Toml | ShowOutputFormat::Table | ShowOutputFormat::Plain => {
+            let _projection = if history {
+                RenderProjection::Archive
+            } else {
+                RenderProjection::Current
+            };
             print_toml(
                 &guard.spec,
                 DiagnosticCode::E1001GuardSchemaInvalid,

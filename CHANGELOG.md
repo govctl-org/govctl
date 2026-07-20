@@ -10,6 +10,12 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- Human-readable `show` defaults to the current projection and `show --history` selects the archival projection for RFCs, ADRs, Clauses, Work Items, and Guards (WI-2026-07-21-001)
+- `show --output json|yaml|toml` returns the complete structured resource for every supported resource type (WI-2026-07-21-001)
+- Structured `show` output rejects combination with `--history` (WI-2026-07-21-001)
+
 ## [0.13.0] - 2026-07-20
 
 0.13.0 makes each RFC version a single, explicit authoring candidate. It rejects
@@ -35,6 +41,9 @@ that boundary.
 
 ### Fixed
 
+- Deprecated and superseded Clause output now shows lifecycle status before
+  historical normative text, including the direct replacement for superseded
+  Clauses.
 - Version bumps and later phase transitions now reject missing sealed signatures
   without modifying RFC or pending-Clause state, with guidance to migrate or
   restore the baseline.

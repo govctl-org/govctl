@@ -43,7 +43,12 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl work show WI-2026-04-06-001
+    govctl work show WI-2026-04-06-001 --history
     govctl work show WI-2026-04-06-001 -o plain
+
+NOTES:
+    - Work Items have no obsolete-body state, so current and archival content are equivalent.
+    - JSON, YAML, and TOML output is complete and cannot be combined with `--history`.
 ")]
     Show(CommonShowArgs),
     /// Create a new work item
