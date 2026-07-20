@@ -32,7 +32,7 @@ Options:
 COMMON WORKFLOW:
     1. `govctl rfc list` to discover RFCs
     2. `govctl rfc get <ID> ...` for metadata/fields
-    3. `govctl rfc show <ID>` for rendered prose
+    3. `govctl rfc show <ID>` for current rendered prose (`--history` for the archive)
     4. `govctl rfc edit <ID> ...` to update content
     5. `govctl rfc finalize/advance/...` for lifecycle
 

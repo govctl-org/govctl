@@ -11,7 +11,7 @@ mod plan;
 
 use crate::cmd;
 use crate::diagnostic::DiagnosticResult;
-use crate::{ListTarget, OutputFormat};
+use crate::{ListTarget, OutputFormat, ShowOutputFormat};
 
 pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 pub(crate) type OwnedEditAction = cmd::edit::OwnedEditAction;
@@ -91,9 +91,10 @@ pub(crate) fn plan_get(id: &str, field: Option<&str>) -> DiagnosticResult<Comman
 pub(crate) fn plan_show(
     artifact_type: cmd::edit::ArtifactType,
     id: &str,
-    output: OutputFormat,
+    output: ShowOutputFormat,
+    history: bool,
 ) -> CommandPlan {
-    artifact(artifact_type, id, Op::Show { output })
+    artifact(artifact_type, id, Op::Show { output, history })
 }
 
 pub(crate) fn plan_edit(

@@ -16,4 +16,5 @@ fn wi_ref(id: &str) -> String {
 
 mod adr;
 mod links;
+mod rfc;
 mod work;

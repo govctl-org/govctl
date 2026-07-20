@@ -1,0 +1,40 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SHOW-PROJECTION"
+title = "Show Projection Modes"
+kind = "normative"
+status = "active"
+since = "0.15.0"
+
+[content]
+text = """
+For the purposes of this clause, `table` and `plain` are human-readable output formats, while `json`, `yaml`, and `toml` are structured output formats. `current` is the projection used to omit obsolete body content, and `archive` is the complete historical projection.
+
+RFC, ADR, Work Item, Clause, and Guard resource commands MUST expose `show <id>` as a side-effect-free projection operation distinct from `get`. This distinction is a scoped exception to [[RFC-0002:C-CRUD-VERBS]]: `get` retrieves a field or complete structured resource, while `show` presents either the current or archival projection defined here.
+
+The `show` output matrix MUST be:
+
+- `show <id>` with no `--output` uses the human-readable `table` format and the `current` projection, regardless of whether stdout is a TTY.
+- `show <id> --history` with no `--output` uses the human-readable `table` format and the `archive` projection, regardless of whether stdout is a TTY.
+- `show <id> --output table` and `show <id> --output plain` use the `current` projection unless `--history` selects `archive`.
+- `show <id> --output json`, `--output yaml`, or `--output toml` returns the complete structured resource with a schema equivalent to complete `get <id>` retrieval.
+- Combining `--history` with `--output json`, `--output yaml`, or `--output toml` MUST be rejected.
+
+This matrix is a scoped exception to [[RFC-0002:C-OUTPUT-FORMAT]] for the implicit non-TTY default and for the historical-body completeness of human-readable `show`. Choosing among structured formats MUST NOT change resource semantics or completeness.
+
+For an RFC whose status is `deprecated` under [[RFC-0001:C-RFC-STATUS]], the `current` projection MUST retain its heading, identity, title, version, status, phase, owners, tags, references, and direct replacement metadata when present. It MUST omit the RFC body sections, Clause list and bodies, and changelog. Parent suppression MUST take precedence over the status of nested Clauses.
+
+For an RFC not suppressed by the preceding rule, the `current` projection MUST fully render the RFC body and every active Clause. A nested Clause whose status is `deprecated` or `superseded` under [[RFC-0001:C-CLAUSE-STATUS]] MUST retain its heading, generated heading anchor, identity, title, kind, status, `since`, tags, and direct `superseded_by` metadata when present. Its Clause text MUST be omitted.
+
+For an ADR whose status is `superseded` under [[RFC-0001:C-ADR-STATUS]], the `current` projection MUST retain its heading, identity, title, status, date, tags, references, and direct `superseded_by` metadata. It MUST omit context, alternatives, decision, and consequences.
+
+For a directly shown Clause whose status is `deprecated` or `superseded`, the `current` projection MUST retain the same metadata required for a suppressed nested Clause. Its Clause text MUST be omitted.
+
+For resources without a `deprecated` or `superseded` lifecycle state, including Work Items and Guards, `current` and `archive` MUST be content-equivalent. Other lifecycle states MUST remain fully rendered.
+
+The `archive` projection MUST render all authoritative content supported by the resource's human-readable renderer without lifecycle-based omission. In particular, it MUST include every RFC section, Clause text, RFC changelog entry, ADR content section and alternative, Work Item content section, and Guard field present in the selected resource. Terminal styling and transport-only wrappers MAY differ. `render` MUST always use the `archive` projection and MUST NOT suppress deprecated or superseded content.
+
+`get`, validation, signatures, search, and the authoritative governance artifacts MUST remain unaffected by human-readable projection mode.
+
+**Rationale:** Agents need a concise default view that does not present obsolete requirements as current, while maintainers and generated documentation need an explicit, lossless path to the complete governance history. An explicit projection boundary preserves both uses without changing stored artifacts or structured automation interfaces."""

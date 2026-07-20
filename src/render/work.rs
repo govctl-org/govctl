@@ -1,4 +1,4 @@
-use super::{render_refs, write_expanded_rendered_md};
+use super::{RenderProjection, render_refs, write_expanded_rendered_md};
 use crate::config::Config;
 use crate::diagnostic::DiagnosticResult;
 use crate::model::{ChecklistStatus, WorkItemEntry};
@@ -26,6 +26,20 @@ fn indent_continuation(text: &str) -> String {
 /// # Errors
 /// Returns an error if signature computation fails.
 pub fn render_work_item(item: &WorkItemEntry) -> DiagnosticResult<String> {
+    render_work_item_with_projection(item, RenderProjection::Archive)
+}
+
+/// Render a Work Item using an explicit projection.
+///
+/// Work Item current and archival projections are content-equivalent per
+/// [[RFC-0002:C-SHOW-PROJECTION]].
+///
+/// # Errors
+/// Returns an error if signature computation fails.
+pub fn render_work_item_with_projection(
+    item: &WorkItemEntry,
+    _projection: RenderProjection,
+) -> DiagnosticResult<String> {
     let meta = item.meta();
     let content = &item.spec.content;
     let mut out = String::new();
@@ -143,6 +157,6 @@ pub fn write_work_item_md(
     let meta = item.meta();
     let output_path = config.work_output().join(format!("{}.md", meta.id));
 
-    let raw = render_work_item(item)?;
+    let raw = render_work_item_with_projection(item, RenderProjection::Archive)?;
     write_expanded_rendered_md(config, &output_path, &raw, dry_run, 15)
 }

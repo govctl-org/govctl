@@ -59,3 +59,41 @@ fn test_render_adr_alternatives_rejected_with_reason() -> Result<(), Box<dyn std
     assert!(result.contains("- **Rejected because:** Budget constraints"));
     Ok(())
 }
+
+#[test]
+fn test_superseded_adr_current_projection_is_metadata_only_but_archive_is_complete()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut meta = AdrMeta::new(
+        "ADR-9997",
+        "Historical decision",
+        AdrStatus::Superseded,
+        "2026-02-22",
+    );
+    meta.superseded_by = Some("ADR-9998".to_string());
+    meta.tags = vec!["cli".to_string()];
+    meta.refs = vec!["RFC-0002".to_string()];
+    let adr = AdrEntry {
+        spec: AdrSpec {
+            govctl: meta,
+            content: AdrContent {
+                context: "Historical context".to_string(),
+                decision: "Historical decision body".to_string(),
+                consequences: "Historical consequences".to_string(),
+                alternatives: vec![],
+            },
+        },
+        path: std::path::PathBuf::new(),
+    };
+
+    let current = render_adr_with_projection(&adr, RenderProjection::Current)?;
+    let archive = render_adr_with_projection(&adr, RenderProjection::Archive)?;
+
+    assert!(current.contains("# ADR-9997: Historical decision"));
+    assert!(current.contains("**Status:** superseded"));
+    assert!(current.contains("**Superseded by:** ADR-9998"));
+    assert!(!current.contains("Historical context"));
+    assert!(!current.contains("Historical decision body"));
+    assert!(archive.contains("Historical context"));
+    assert!(archive.contains("Historical decision body"));
+    Ok(())
+}

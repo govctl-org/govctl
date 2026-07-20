@@ -60,6 +60,28 @@ pub enum OutputFormat {
     Plain,
 }
 
+/// Output formats available to resource `show` commands.
+#[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum ShowOutputFormat {
+    /// Human-readable rendered content (default)
+    #[default]
+    Table,
+    /// JSON structured data
+    Json,
+    /// YAML structured data
+    Yaml,
+    /// TOML structured data
+    Toml,
+    /// Human-readable rendered content without changing projection semantics
+    Plain,
+}
+
+impl ShowOutputFormat {
+    pub(crate) fn is_structured(self) -> bool {
+        matches!(self, Self::Json | Self::Yaml | Self::Toml)
+    }
+}
+
 #[derive(ValueEnum, Clone, Copy, Debug)]
 pub(crate) enum RenderTarget {
     /// Render RFCs only (default, published to repo)

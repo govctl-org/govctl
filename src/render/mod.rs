@@ -15,12 +15,21 @@ mod rfc;
 mod tests;
 mod work;
 
-pub use adr::{render_adr, write_adr_md};
+pub use adr::{render_adr, render_adr_with_projection, write_adr_md};
 pub use links::expand_inline_refs;
 use links::render_refs;
 use output::write_expanded_rendered_md;
-pub use rfc::{render_clause, render_rfc, write_rfc};
-pub use work::{render_work_item, write_work_item_md};
+pub use rfc::{
+    render_clause, render_clause_with_projection, render_rfc_with_projection, write_rfc,
+};
+pub use work::{render_work_item, render_work_item_with_projection, write_work_item_md};
+
+/// Selects whether lifecycle-obsolete body content is included in human-readable output.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RenderProjection {
+    Current,
+    Archive,
+}
 
 pub fn ref_link_from_root(ref_id: &str, docs_output: &str) -> String {
     links::ref_link_from_root(ref_id, docs_output)

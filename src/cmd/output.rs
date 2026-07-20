@@ -58,6 +58,21 @@ pub(crate) fn print_toml<T: Serialize>(
     )
 }
 
+pub(crate) fn print_yaml<T: Serialize>(
+    value: &T,
+    error_code: DiagnosticCode,
+    error_message: &str,
+    scope: impl Into<String>,
+) -> DiagnosticResult<()> {
+    print_serialized(
+        value,
+        serde_yaml::to_string,
+        error_code,
+        error_message,
+        scope,
+    )
+}
+
 fn print_serialized<T, E>(
     value: &T,
     serialize: impl FnOnce(&T) -> Result<String, E>,

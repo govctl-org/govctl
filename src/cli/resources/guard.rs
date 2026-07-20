@@ -38,7 +38,12 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl guard show GUARD-CLIPPY
+    govctl guard show GUARD-CLIPPY --history
     govctl guard show GUARD-CLIPPY -o json
+
+NOTES:
+    - Guards have no obsolete-body state, so current and archival content are equivalent.
+    - JSON, YAML, and TOML output is complete and cannot be combined with `--history`.
 ")]
     Show(CommonShowArgs),
     /// Create a new verification guard

@@ -4,7 +4,7 @@ use crate::config::Config;
 use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
-use crate::{FinalizeStatus, ListTarget, OutputFormat, RenderTarget};
+use crate::{FinalizeStatus, ListTarget, OutputFormat, RenderTarget, ShowOutputFormat};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -231,7 +231,8 @@ pub enum Op {
     },
     Get,
     Show {
-        output: OutputFormat,
+        output: ShowOutputFormat,
+        history: bool,
     },
     Edit(EditOp),
     Lifecycle(LifecycleOp),

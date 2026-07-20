@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.14.0"
+version = "0.15.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-20"
+updated = "2026-07-21"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "d76a4b3a12eaa15379eba7ca63c3ccb532d15528ca6d3a39dbf06cc14700d02f"
+signature = "9fd6a2dcabbea00d22440172c64fc4e539ea826c1fdd2a033b3d461192e200cc"
 
 [[sections]]
 title = "Summary"
@@ -34,7 +34,14 @@ clauses = [
     "clauses/C-VERIFY-CONFIG.toml",
     "clauses/C-SELF-UPDATE.toml",
     "clauses/C-SEARCH-COMMAND.toml",
+    "clauses/C-SHOW-PROJECTION.toml",
 ]
+
+[[changelog]]
+version = "0.15.0"
+date = "2026-07-21"
+notes = "Define current and archival show projections"
+added = ["Define current-context show output, explicit history access, and complete structured serialization"]
 
 [[changelog]]
 version = "0.14.0"

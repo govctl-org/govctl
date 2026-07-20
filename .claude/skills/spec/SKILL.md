@@ -84,6 +84,11 @@ govctl rfc show <RFC-ID>
 govctl adr show <ADR-ID>
 ```
 
+Human-readable `show` defaults to the current projection and omits obsolete
+RFC, ADR, and Clause bodies. Use `--history` when auditing or amending a
+deprecated or superseded artifact. JSON, YAML, and TOML `show` output is always
+complete and cannot be combined with `--history`.
+
 Before editing a normative RFC, inspect its current phase. The phase determines
 whether the edit remains in the current version candidate or must be released as
 a new version.

@@ -2,7 +2,7 @@ use crate::model::ChangelogCategory;
 use clap::Args;
 
 use super::actions::{AdrTickStatus, EditActionArgs, WorkTickStatus};
-use super::targets::OutputFormat;
+use super::targets::{OutputFormat, ShowOutputFormat};
 
 #[derive(Args, Clone, Debug)]
 pub(crate) struct CommonListArgs {
@@ -33,7 +33,10 @@ pub(crate) struct CommonShowArgs {
     pub(crate) id: String,
     /// Output format
     #[arg(short = 'o', long, value_enum, default_value = "table")]
-    pub(crate) output: OutputFormat,
+    pub(crate) output: ShowOutputFormat,
+    /// Include complete historical body content in human-readable output
+    #[arg(long)]
+    pub(crate) history: bool,
 }
 
 #[derive(Args, Clone, Debug)]

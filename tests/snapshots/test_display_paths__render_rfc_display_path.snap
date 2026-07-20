@@ -11,6 +11,7 @@ Would write: docs/rfc/RFC-0001.md
 # RFC-0001: Test RFC
 
 > **Version:** 0.1.0 | **Status:** draft | **Phase:** spec
+> **Owners:** test@example.com
 
 ---
 
@@ -24,6 +25,5 @@ Test clause content.
 
 ## Changelog
 
-### v0.1.0 (2026-01-01)
 ...
 exit: 0

@@ -40,10 +40,14 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl rfc show RFC-0001
+    govctl rfc show RFC-0001 --history
     govctl rfc show RFC-0001 -o plain
+    govctl rfc show RFC-0001 -o yaml
 
 NOTES:
-    - `show` prints human-readable rendered content.
+    - Human-readable `show` hides deprecated RFC bodies and obsolete Clause bodies by default.
+    - Use `--history` for complete archival human-readable content.
+    - JSON, YAML, and TOML output stays complete and cannot be combined with `--history`.
     - Use `get` for field/path-level inspection.
 ")]
     Show(CommonShowArgs),

@@ -157,6 +157,32 @@ govctl render
 
 Generates human-readable markdown in `docs/`.
 
+## Current Views and History
+
+Human-readable `show` output is optimized for the current governance context.
+Deprecated RFC bodies, superseded ADR bodies, and deprecated or superseded
+Clause text are hidden by default while their identity, lifecycle state, and
+replacement metadata remain visible.
+
+```bash
+# Current context for humans and agents
+govctl rfc show RFC-0002
+
+# Complete historical body content
+govctl rfc show RFC-0002 --history
+
+# Complete structured resources for automation
+govctl rfc show RFC-0002 --output json
+govctl rfc show RFC-0002 --output yaml
+govctl rfc show RFC-0002 --output toml
+```
+
+`--history` applies only to human-readable `table` and `plain` output. Structured
+output is always complete. `render` also always preserves complete historical
+content in generated Markdown; it is not affected by the default `show`
+projection. Work Items and Guards have no obsolete-body lifecycle state, so
+their current and archival human-readable views are equivalent.
+
 ## Interactive TUI
 
 govctl includes an optional read-only terminal cockpit:

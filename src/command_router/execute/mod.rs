@@ -7,7 +7,7 @@ use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::write::WriteOp;
-use crate::{NewTarget, OutputFormat};
+use crate::{NewTarget, OutputFormat, ShowOutputFormat};
 use builtin::execute_builtin;
 use render::execute_artifact_render;
 use scope::{ShowKind, extract_artifact_scope, extract_collection_scope, extract_target_scope};
@@ -91,14 +91,19 @@ fn execute_get(plan: &CommandPlan, config: &Config) -> CommandResult {
     }
 }
 
-fn execute_show(plan: &CommandPlan, config: &Config, output: OutputFormat) -> CommandResult {
+fn execute_show(
+    plan: &CommandPlan,
+    config: &Config,
+    output: ShowOutputFormat,
+    history: bool,
+) -> CommandResult {
     let (artifact, id) = extract_artifact_scope(&plan.scope)?;
     match ShowKind::from_artifact(artifact) {
-        ShowKind::Rfc => cmd::render::show_rfc(config, id, output),
-        ShowKind::Clause => cmd::render::show_clause(config, id, output),
-        ShowKind::Adr => cmd::render::show_adr(config, id, output),
-        ShowKind::Work => cmd::render::show_work(config, id, output),
-        ShowKind::Guard => cmd::guard::show_guard(config, id, output),
+        ShowKind::Rfc => cmd::render::show_rfc(config, id, output, history),
+        ShowKind::Clause => cmd::render::show_clause(config, id, output, history),
+        ShowKind::Adr => cmd::render::show_adr(config, id, output, history),
+        ShowKind::Work => cmd::render::show_work(config, id, output, history),
+        ShowKind::Guard => cmd::guard::show_guard(config, id, output, history),
     }
 }
 
@@ -197,7 +202,7 @@ pub(super) fn execute_plan(plan: &CommandPlan, config: &Config, op: WriteOp) -> 
             tags,
         } => execute_list(plan, config, filter.as_deref(), *limit, *output, tags),
         Op::Get => execute_get(plan, config),
-        Op::Show { output } => execute_show(plan, config, *output),
+        Op::Show { output, history } => execute_show(plan, config, *output, *history),
         Op::Edit(edit) => execute_edit(plan, config, edit, op),
         Op::Lifecycle(lifecycle) => execute_lifecycle(plan, config, lifecycle, op),
         Op::Delete { force } => execute_delete(plan, config, *force, op),

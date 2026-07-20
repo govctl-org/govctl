@@ -41,7 +41,12 @@ EXAMPLES:
     #[command(after_help = "\
 EXAMPLES:
     govctl clause show RFC-0001:C-SCOPE
+    govctl clause show RFC-0001:C-SCOPE --history
     govctl clause show RFC-0001:C-SCOPE -o plain
+
+NOTES:
+    - Human-readable `show` hides deprecated or superseded Clause text by default.
+    - Use `--history` for complete archival content; structured output is always complete.
 ")]
     Show(CommonShowArgs),
     /// Create a new clause

@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-20-002"
+title = "Expose Clause lifecycle status in rendered output"
+status = "done"
+created = "2026-07-20"
+started = "2026-07-20"
+completed = "2026-07-20"
+refs = [
+    "RFC-0001:C-CLAUSE-STATUS",
+    "RFC-0000:C-CLAUSE-DEF",
+    "ADR-0022",
+]
+
+[content]
+description = "Update shared Clause rendering so human-readable RFC documents and clause show output expose lifecycle status separately from normative or informative kind, with focused regression coverage and release notes."
+
+[[content.acceptance_criteria]]
+text = "Deprecated and superseded Clause renderings display explicit lifecycle status before normative or informative text while retaining Clause kind"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Clause show terminal output preserves a visible non-active status signal after HTML cleanup and includes direct replacement metadata for superseded Clauses"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused renderer and lifecycle tests, govctl check, and just pre-commit pass, and the 0.13.0 changelog describes the fix"
+status = "done"
+category = "chore"

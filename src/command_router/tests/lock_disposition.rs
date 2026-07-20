@@ -112,7 +112,8 @@ fn test_lock_disposition_is_lock_free_for_inspect_commands()
         plan_show(
             cmd::edit::ArtifactType::Adr,
             "ADR-0038",
-            OutputFormat::Table
+            crate::ShowOutputFormat::Table,
+            false,
         )
         .lock_disposition(),
         LockDisposition::None

@@ -97,7 +97,7 @@ NOTES:
 pub(super) const RFC: &str = r#"COMMON WORKFLOW:
     1. `govctl rfc list` to discover RFCs
     2. `govctl rfc get <ID> ...` for metadata/fields
-    3. `govctl rfc show <ID>` for rendered prose
+    3. `govctl rfc show <ID>` for current rendered prose (`--history` for the archive)
     4. `govctl rfc edit <ID> ...` to update content
     5. `govctl rfc finalize/advance/...` for lifecycle
 
@@ -110,7 +110,7 @@ START HERE:
 pub(super) const CLAUSE: &str = r#"COMMON WORKFLOW:
     1. `govctl clause list` to discover clauses
     2. `govctl clause get <ID> ...` for metadata/fields
-    3. `govctl clause show <ID>` for rendered clause text
+    3. `govctl clause show <ID>` for current clause text (`--history` for the archive)
     4. `govctl clause edit <ID> ...` to update content
     5. `govctl clause deprecate/supersede` for lifecycle
 
@@ -122,7 +122,7 @@ START HERE:
 pub(super) const ADR: &str = r#"COMMON WORKFLOW:
     1. `govctl adr list` to discover ADRs
     2. `govctl adr get <ID> ...` for metadata/fields
-    3. `govctl adr show <ID>` for rendered prose
+    3. `govctl adr show <ID>` for current rendered prose (`--history` for the archive)
     4. `govctl adr edit/add/tick` to work through alternatives
     5. `govctl adr accept/reject/...` for lifecycle
 

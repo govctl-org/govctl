@@ -180,6 +180,12 @@ govctl adr add <ADR-ID> refs ADR-0005
 
 Link to artifacts that constrained or informed the decision. Use plain IDs (not `[[...]]` syntax) in the refs field.
 
+### Inspection Projections
+
+`govctl adr show <ADR-ID>` presents the current projection and omits the body of
+a superseded ADR. Use `govctl adr show <ADR-ID> --history` for a full historical
+review. Generated Markdown from `govctl render` remains complete.
+
 ## Validation and Handoff
 
 - Run `govctl check` after substantive ADR edits
