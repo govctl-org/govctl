@@ -19,7 +19,7 @@ Commit changes using the project's version control system, with govctl-aware che
 
 1. This is the only workflow that should issue raw `jj` or `git` commit commands.
 2. Do not perform RFC/ADR lifecycle verbs here, except work-item tick/move updates and rare durable notes that belong to commit bookkeeping.
-3. Implementation-bearing commits should belong to an active work item.
+3. Implementation-bearing commits should remain traceable to the matching work item, whether it is active or done. Never create or reactivate a work item solely to make a commit.
 4. Spec-only governance commits may proceed without a work item only when the diff is limited to governance artifacts, rendered governance docs, embedded skill/agent templates, or related metadata.
 
 ### Step 1: Detect VCS and Governance
@@ -47,12 +47,18 @@ govctl check
 
 If check fails, stop. Show the diagnostics, fix the issue, and rerun `govctl check` before committing.
 
-### Step 3: Work Item Status Check
+### Step 3: Work Item Traceability Check
 
-Check for queued and active work items:
+Check for queued and active work items, then inspect any changed or already-known completed work item that may match the diff:
 
 ```bash
 govctl work list pending
+```
+
+If no matching pending item is found and the completed item is not already known from the changed files or current task context, inspect completed items:
+
+```bash
+govctl work list done
 ```
 
 **If an active work item exists:**
@@ -69,7 +75,7 @@ govctl work list pending
      ```bash
      govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
      ```
-4. If the active work item does not apply and the diff is not spec-only, ask whether to switch to a different work item or create a new one before committing
+4. If the active work item does not apply and the diff is not spec-only, look for the active or done work item that governed the implementation
 
 **If no active work item exists:**
 
@@ -78,9 +84,9 @@ govctl work list pending
   - rendered governance docs under `docs/rfc/**` or `docs/adr/**`
   - embedded skill or agent templates under `.claude/**`
   - supporting metadata such as `CLAUDE.md`, `build.rs`, or `src/cmd/new.rs` that only wire governance assets
-- Otherwise, ask whether these changes should be attached to an existing work item or a new one
-- In the standard govctl workflow, create or activate a work item before committing
-- If the user explicitly says this commit is outside tracked work, record that exception in your summary
+- If a matching done work item governed the implementation, keep the commit traceable to it; the final implementation commit may include that work item's closure
+- Otherwise, report that the implementation was performed outside tracked work and ask how the user wants it recorded
+- Never create or reactivate a work item solely to make the commit. If substantive implementation remains, establish an active work item before continuing that implementation
 
 ### Step 4: Inspect Changes
 
@@ -119,7 +125,24 @@ Format (mandatory):
 
 If `$ARGUMENTS` provided, use as basis. Otherwise derive from diff.
 
-### Step 6: Execute Commit
+### Step 6: Finalize Work Item
+
+Before invoking the commit command, if a matching work item exists:
+
+1. **Add notes only when there is a closure-worthy durable constraint, retry rule, or learning to preserve after the work item is done**:
+
+   ```bash
+   govctl work add <WI-ID> notes "Do not retry parser path X; it cannot preserve normalized arrays"
+   ```
+
+   Do not add notes for commands run, tests passed, review findings addressed, current plans, next actions, or temporary blockers.
+
+2. **Tick acceptance criteria** when the completed work satisfies them.
+3. **Move the work item to done only when all criteria are satisfied**. Otherwise, keep it active.
+
+Include these finalization changes in the same commit as the implementation. Do not update the work item after committing solely to record closure.
+
+### Step 7: Execute Commit
 
 #### Jujutsu
 
@@ -148,24 +171,6 @@ git add -A
 git commit -m "<type>(<area>): <summary>"
 ```
 
-### Step 7: Post-Commit Work Item Update
-
-After successful commit, if work item exists:
-
-1. **Add notes only when there is a closure-worthy durable constraint, retry rule, or learning to preserve after the work item is done**:
-
-   ```bash
-   govctl work add <WI-ID> notes "Do not retry parser path X; it cannot preserve normalized arrays"
-   ```
-
-   Do not add notes for commands run, tests passed, review findings addressed, current plans, next actions, or temporary blockers.
-
-2. **Tick acceptance criteria** (if applicable)
-
-3. **Check if work item should be marked done**:
-   - All criteria ticked? Suggest: `govctl work move <WI-ID> done`
-   - Still in progress? Keep active
-
 ---
 
 ## QUICK REFERENCE
@@ -188,30 +193,28 @@ git diff --stat
 
 ## COMMON SCENARIOS
 
-### Scenario 1: Active Work Item with Progress
+### Scenario 1: Matching Work Item
 
-```
-1. Detect active WI-XXXX
+```text
+1. Detect the matching active or done WI-XXXX
 2. govctl check → passes
-3. Confirm the active WI actually matches this diff
+3. Confirm the WI actually matches this diff
 4. If yes: ask about closure-worthy durable notes and criterion ticks
 5. If no, but diff is spec-only: proceed without attaching the commit to that WI
-6. If no and diff is implementation-bearing: switch/create the correct WI first
-7. Commit changes
-8. Ask: "Mark work item as done?" (if all criteria ticked)
+6. If all criteria are satisfied, move the WI to done before the final implementation commit
+7. Commit the implementation and WI closure together
 ```
 
 ### Scenario 2: No Active Work Item
 
-```
+```text
 1. No pending work items
 2. govctl check → passes
-3. Check whether the diff is spec-only governance maintenance
+3. Check whether a matching done work item governed the implementation
+   - If yes: keep the commit traceable to it and include any closure changes in the same commit
+4. Otherwise, check whether the diff is spec-only governance maintenance
    - If yes: proceed with a spec-only commit and mention no WI was used
-   - Otherwise: ask "Which work item should this commit belong to?"
-4. If implementation work applies:
-   - If existing work applies: activate or use it
-   - Otherwise: create WI with `govctl work new --active`
+   - If no: report the untracked implementation; do not create or reactivate a WI solely for the commit
 5. Commit changes
 ```
 
