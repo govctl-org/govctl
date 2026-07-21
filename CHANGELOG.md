@@ -10,6 +10,21 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.14.1] - 2026-07-21
+
+0.14.1 removes unnecessary commit churn from the bundled agent workflows.
+
+### Fixed
+
+- Implementation commits may remain traceable to either active or completed
+  work items; agents no longer create or reactivate work items solely to make a
+  commit.
+- Work-item notes, acceptance criteria, and closure are finalized before the
+  final implementation commit so the implementation and its governance record
+  can be committed together.
+- Quick changes keep their work item active until every acceptance criterion is
+  satisfied.
+
 ## [0.14.0] - 2026-07-21
 
 0.14.0 separates concise current-state views from complete governance history.
