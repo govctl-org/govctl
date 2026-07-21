@@ -10,11 +10,35 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-07-21
+
+0.14.0 separates concise current-state views from complete governance history.
+Human-readable `show` output no longer presents deprecated or superseded bodies
+as current requirements, while explicit history and structured formats preserve
+the full record.
+
 ### Added
 
-- Human-readable `show` defaults to the current projection and `show --history` selects the archival projection for RFCs, ADRs, Clauses, Work Items, and Guards (WI-2026-07-21-001)
-- `show --output json|yaml|toml` returns the complete structured resource for every supported resource type (WI-2026-07-21-001)
-- Structured `show` output rejects combination with `--history` (WI-2026-07-21-001)
+- Added `show --history` for RFCs, ADRs, Clauses, Work Items, and Guards to
+  restore complete human-readable history on demand.
+- Added complete YAML and TOML structured output alongside JSON for every
+  supported `show` resource.
+
+### Changed
+
+- Human-readable `show` now defaults to a current-state projection. Deprecated
+  RFCs and superseded ADRs become metadata-only views, while deprecated or
+  superseded Clause text is omitted without hiding lifecycle and replacement
+  metadata.
+- RFC rendering now includes authoritative owners, tags, and supersession
+  metadata in one compact metadata block.
+
+### Compatibility
+
+- `render` remains a complete archival projection, and structured `show`
+  remains equivalent to complete `get` retrieval. Combining `--history` with a
+  structured output format is rejected because structured output is already
+  complete.
 
 ## [0.13.0] - 2026-07-20
 
