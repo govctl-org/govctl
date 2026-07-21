@@ -64,7 +64,7 @@ govctl render
 2. Respect phase discipline: `spec -> impl -> test -> stable`.
 3. Behavior changes must be grounded in a normative RFC. If behavior is unspecified or ambiguous, stop and escalate.
 4. Ask permission before `govctl rfc finalize ...` or `govctl rfc advance ...` unless `$ARGUMENTS` explicitly grant full authority.
-5. Keep an active work item before implementation. `govctl check --has-active` is the gate.
+5. Keep an active work item while performing substantive implementation. `govctl check --has-active` is the pre-implementation gate, not a commit prerequisite; a completed work item may move to `done` before the final implementation commit.
 6. In source comments, reference artifacts with `[[artifact-id]]`.
 7. Use work item fields correctly:
    - `description`: task scope and why; set once, rarely change

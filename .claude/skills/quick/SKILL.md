@@ -90,17 +90,13 @@ govctl work add <WI-ID> notes "Do not use the old command name in generated exam
 Do not write progress, command output, review status, current plans, next actions, temporary blockers, or TODOs to `notes`. Transient execution progress belongs in loop state and round artifacts, not in work item fields.
 When a tracked cleanup batch gains or loses durable roots, use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>`, `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>`, or `govctl loop replan <LOOP-ID>` rather than creating a new loop for each small item. `wi` is accepted as a short alias for the loop `work` field, but examples should prefer `work`.
 
-### 4. Record
+### 4. Complete
 
-Record the implementation change with `/commit`, typically using `docs(scope)`, `chore(scope)`, or `fix(scope)` as appropriate.
+If a work item was used, tick matching criteria and move it to `done` only when all acceptance criteria are satisfied; otherwise, keep it active. If no work item was used, skip this step.
 
-### 5. Complete
+### 5. Record
 
-If a work item was used, tick matching criteria and move it to `done`. If no work item was used, skip this step.
-
-### 6. Final record
-
-If work-item closure should be recorded separately, use `/commit` with `chore(work): complete <WI-ID>`.
+Record the implementation change with `/commit`, typically using `docs(scope)`, `chore(scope)`, or `fix(scope)` as appropriate. Include any work-item closure in this commit; do not create a separate closure commit by default.
 
 ## Switch to /gov when
 
