@@ -10,6 +10,25 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.14.2] - 2026-07-25
+
+0.14.2 tightens the bundled agent guidance around verification and RFC
+amendments.
+
+### Fixed
+
+- Bundled workflows now treat `govctl work move <WI-ID> done` as the final guard
+  gate, avoiding an immediate `govctl verify --work <WI-ID>` that would execute
+  the same effective guards twice.
+- User guides now reserve standalone work-item verification for early feedback,
+  diagnosis, or work that will remain active.
+
+### Changed
+
+- The `gov` skill now states the RFC amendment sequence directly: edit sealed
+  RFC or Clause content to form an amendment, then bump to release the next
+  version in `spec`.
+
 ## [0.14.1] - 2026-07-21
 
 0.14.1 removes unnecessary commit churn from the bundled agent workflows.
