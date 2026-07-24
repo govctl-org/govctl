@@ -201,7 +201,7 @@ For RFC-governed work, verify the RFC state:
 
 - `draft/spec`: do not bump; ask permission, then finalize and advance to `impl`
 - `normative/spec`: continue authoring the current version without another bump; ask permission before advancing to `impl`, which seals its RFC and Clause content
-- `normative/impl+`: proceed against the sealed current-version baseline
+- `normative/impl+`: proceed against the sealed current-version baseline; when RFC or Clause content needs to change, edit it to form an unversioned amendment, then release that amendment with `govctl rfc bump` as the next version in `spec`
 - `deprecated`: stop; do not edit or version-bump
 
 If implementation reveals a spec bug, do not silently deviate:
