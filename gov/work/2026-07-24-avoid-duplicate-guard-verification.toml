@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-24-001"
+title = "Avoid duplicate guard verification"
+status = "done"
+created = "2026-07-24"
+started = "2026-07-24"
+completed = "2026-07-25"
+refs = [
+    "RFC-0001:C-GATE-CONDITIONS",
+    "RFC-0002:C-GLOBAL-COMMANDS",
+]
+
+[content]
+description = "Align the bundled agent skills and guides with the existing work-item completion guard behavior to avoid duplicate guard execution."
+
+[[content.acceptance_criteria]]
+text = "Repository validation passes"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Bundled agent skills treat work-item completion as the final guard gate and avoid immediate verify-work repeats"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "User guides reserve standalone verify-work for early feedback, diagnosis, or leaving the work item active"
+status = "done"
+category = "fixed"

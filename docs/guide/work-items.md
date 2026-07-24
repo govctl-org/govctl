@@ -206,6 +206,10 @@ To run the effective guard set for a single work item:
 govctl verify --work WI-2026-01-17-001
 ```
 
+Use this command for early feedback or diagnosis while the Work Item remains
+active. Moving the Work Item to `done` runs the same effective guard set, so
+running both commands back to back repeats the guards.
+
 ### Waiving A Guard
 
 If a specific guard must be waived for this work item, record that in the artifact with a reason:

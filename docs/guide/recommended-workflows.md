@@ -202,16 +202,21 @@ record.
 
 ## Review And Verification
 
-Use both structural and semantic checks:
+Run structural checks directly:
 
 ```bash
 govctl check
-govctl verify
 ```
 
 `govctl check` validates schemas, references, lifecycle rules, tags, source
 annotations, and other deterministic constraints. It does not decide whether an
 RFC is too implementation-specific or whether an ADR is intellectually honest.
+
+When closing a Work Item, use `govctl work move <WI-ID> done` as the final
+verification gate. The move runs the Work Item's effective verification guards,
+so do not run `govctl verify --work <WI-ID>` immediately beforehand. Run
+`govctl verify` independently only to diagnose guards or when the Work Item will
+remain active.
 
 Use reviewer agents for semantic checks:
 

@@ -166,6 +166,11 @@ govctl verify GUARD-CARGO-TEST GUARD-GOVCTL-CHECK
 govctl verify --work WI-2026-01-17-001
 ```
 
+`govctl work move <WI-ID> done` runs the same effective required guards. Do not
+run `govctl verify --work <WI-ID>` immediately before that move; doing so
+executes the guards twice. Use independent verification for early feedback,
+diagnosis, or workflows that leave the Work Item active.
+
 ### Per-Work-Item Guards
 
 Project-level `default_guards` are only part of the picture. A work item can also require additional guards of its own:

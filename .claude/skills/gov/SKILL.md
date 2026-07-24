@@ -237,6 +237,12 @@ Run the relevant verification for the change:
 - Project tests
 - Render commands when governed output changed
 
+When the work item is ready to close, do not run `govctl verify --work <WI-ID>`
+or manually repeat commands already covered by its effective guards immediately
+before `govctl work move <WI-ID> done`. The move is the final verification gate
+and runs those guards itself. Use standalone verification earlier for diagnosis
+or when the work item will remain active.
+
 If a check fails:
 
 - Record the failed attempt in loop state or the final response
@@ -269,7 +275,7 @@ Before closing the work item:
 
 1. Review the work item with `wi-reviewer`
 2. Tick completed acceptance criteria
-3. Move the work item to `done`
+3. Move the work item to `done`; this runs its effective verification guards
 
 Example:
 

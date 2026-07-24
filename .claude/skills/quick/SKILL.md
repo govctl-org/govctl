@@ -81,6 +81,12 @@ Run the relevant validation:
 govctl check
 ```
 
+If the work item is ready to close, do not run `govctl verify --work <WI-ID>`
+or manually repeat commands covered by its effective guards immediately before
+the move. `govctl work move <WI-ID> done` runs those guards as the final gate.
+Use standalone verification only when diagnosing a guard or leaving the work
+item active.
+
 If using a work item, add a note only when there is a durable lesson that should remain useful after closure:
 
 ```bash
@@ -92,7 +98,9 @@ When a tracked cleanup batch gains or loses durable roots, use `govctl loop add 
 
 ### 4. Complete
 
-If a work item was used, tick matching criteria and move it to `done` only when all acceptance criteria are satisfied; otherwise, keep it active. If no work item was used, skip this step.
+If a work item was used, tick matching criteria and move it to `done` only when
+all acceptance criteria are satisfied; the move runs its effective verification
+guards. Otherwise, keep it active. If no work item was used, skip this step.
 
 ### 5. Record
 
