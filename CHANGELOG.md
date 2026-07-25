@@ -14,6 +14,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 - Unsupported legacy storage is diagnosed explicitly instead of being silently ignored (WI-2026-07-25-001)
 - CLI help, describe metadata, diagnostic hints, bundled skills, and hand-authored guides use only retained canonical interfaces (WI-2026-07-25-001)
+- Misrouted Clause references and Clause-content paths fail with a canonical govctl clause replacement command (WI-2026-07-25-002)
+- CLI metadata and bundled skills teach Clause as a first-class command resource (WI-2026-07-25-002)
 
 ### Removed
 

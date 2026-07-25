@@ -37,4 +37,7 @@ START HERE:
     - New RFC: `govctl rfc new "Title"`
     - Inspect one RFC: `govctl rfc get RFC-0001`
     - Render one RFC: `govctl rfc show RFC-0001`
+
+NOTES:
+    - Clause references such as `RFC-0001:C-SCOPE` are first-class `govctl clause` resources, not RFC subcommands or RFC edit paths.
 exit: 0

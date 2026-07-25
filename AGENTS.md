@@ -210,6 +210,10 @@ govctl adr edit ADR-0001 alternatives[0].pros --add "New advantage"
 govctl work edit WI-001 acceptance_criteria[0].category --set fixed
 ```
 
+Clauses are first-class CLI resources. Use the root `govctl clause` namespace
+for every Clause operation, even though Clause IDs and storage are scoped by an
+RFC.
+
 Before requesting review: `just pre-commit`
 
 ---

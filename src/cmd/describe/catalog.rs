@@ -221,15 +221,15 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
         command(
             "rfc get / adr get / work get / guard get / clause get",
             "Get a field value from an artifact",
-            "To read artifact data. Omit field name to show entire artifact.",
+            "To read artifact data. Omit field name to show the entire artifact. Clause references always use the first-class `clause` namespace.",
             "govctl rfc get RFC-0001 status",
             ARTIFACT_EXISTS,
         ),
         command(
             "rfc edit / adr edit / work edit / guard edit / clause edit",
             "Edit artifact fields via the canonical path-first surface",
-            "To update RFC, ADR, work item, guard, or clause content fields using `edit <ID> <path> --set/--add/--remove/--tick`.",
-            "govctl clause edit RFC-0001:C-SCOPE text --stdin",
+            "To update artifact fields using `edit <ID> <path> --set/--add/--remove/--tick`. Clause references always use the first-class `clause` namespace.",
+            "govctl clause edit RFC-0001:C-SCOPE text --set --stdin",
             &["Target artifact must exist"],
         ),
         command(
@@ -298,7 +298,7 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
         command(
             "clause show",
             "Show clause content to stdout (no file written)",
-            "To read current clause content. Use --history for obsolete text or -o json for complete structured output.",
+            "To read current clause content through the first-class Clause namespace. Use --history for obsolete text or -o json for complete structured output.",
             "govctl clause show RFC-0001:C-SUMMARY",
             &["Clause must exist"],
         ),

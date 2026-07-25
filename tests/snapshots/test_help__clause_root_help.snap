@@ -33,4 +33,7 @@ COMMON WORKFLOW:
 START HERE:
     - New clause: `govctl clause new RFC-0001:C-SCOPE "Scope"`
     - Inspect one clause: `govctl clause get RFC-0001:C-SCOPE`
+
+NOTES:
+    - Always use the root `govctl clause` namespace for Clause operations, even though Clause storage and IDs are scoped by an RFC.
 exit: 0

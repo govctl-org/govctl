@@ -93,6 +93,10 @@ through either `rfc edit ... changelog` or `rfc bump --change`.
 
 ## Working with Clauses
 
+Clauses are first-class CLI resources. Use the root `govctl clause` namespace
+for every Clause operation, even though Clause IDs and files are scoped by an
+RFC. `govctl rfc` operates on the RFC resource itself.
+
 ### Create a Clause
 
 ```bash

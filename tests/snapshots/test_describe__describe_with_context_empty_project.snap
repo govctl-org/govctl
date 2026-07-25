@@ -240,7 +240,7 @@ $ govctl describe --context
     {
       "name": "rfc get / adr get / work get / guard get / clause get",
       "purpose": "Get a field value from an artifact",
-      "when_to_use": "To read artifact data. Omit field name to show entire artifact.",
+      "when_to_use": "To read artifact data. Omit field name to show the entire artifact. Clause references always use the first-class `clause` namespace.",
       "example": "govctl rfc get RFC-0001 status",
       "prerequisites": [
         "Artifact must exist"
@@ -249,8 +249,8 @@ $ govctl describe --context
     {
       "name": "rfc edit / adr edit / work edit / guard edit / clause edit",
       "purpose": "Edit artifact fields via the canonical path-first surface",
-      "when_to_use": "To update RFC, ADR, work item, guard, or clause content fields using `edit <ID> <path> --set/--add/--remove/--tick`.",
-      "example": "govctl clause edit RFC-0001:C-SCOPE text --stdin",
+      "when_to_use": "To update artifact fields using `edit <ID> <path> --set/--add/--remove/--tick`. Clause references always use the first-class `clause` namespace.",
+      "example": "govctl clause edit RFC-0001:C-SCOPE text --set --stdin",
       "prerequisites": [
         "Target artifact must exist"
       ]
@@ -339,7 +339,7 @@ $ govctl describe --context
     {
       "name": "clause show",
       "purpose": "Show clause content to stdout (no file written)",
-      "when_to_use": "To read current clause content. Use --history for obsolete text or -o json for complete structured output.",
+      "when_to_use": "To read current clause content through the first-class Clause namespace. Use --history for obsolete text or -o json for complete structured output.",
       "example": "govctl clause show RFC-0001:C-SUMMARY",
       "prerequisites": [
         "Clause must exist"

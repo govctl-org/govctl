@@ -1,0 +1,22 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-NAMESPACE-RECOVERY"
+title = "Misrouted resource command recovery"
+kind = "normative"
+status = "active"
+since = "1.0.1"
+
+[content]
+text = """
+Governed artifact resources are first-class CLI namespaces even when their storage or identifiers express ownership by another resource.
+
+An invocation under the `rfc` namespace MUST fail with a non-zero exit when an argument in the command's canonical RFC-ID position is a Clause reference (`RFC-NNNN:C-NAME`). The rejected invocation MUST leave governed artifacts and local state unchanged. For the shared `get`, `show`, and `edit` verbs, the diagnostic MUST show the corresponding `govctl clause` command when replacing only the resource token `rfc` with `clause` produces a syntactically valid Clause invocation with every remaining argument and flag unchanged. For any other RFC verb, or when the token-preserving replacement is not a valid Clause invocation, the diagnostic MUST identify the reference as a Clause and the expected `govctl clause` namespace without synthesizing a complete command.
+
+The exact nested form `govctl rfc clause ...` MUST remain invalid and fail with a non-zero exit. It MUST leave governed artifacts and local state unchanged. Its diagnostic MUST direct the user to the command formed by removing the `rfc` token: `govctl clause ...`.
+
+When `govctl rfc edit <RFC-ID> <path> ...` rejects an unknown path whose first logical segment is `clause` or `clauses`, its diagnostic MUST identify Clause content as belonging to the `govctl clause edit <RFC-ID:C-NAME> ...` namespace. Because that form does not identify a Clause, the diagnostic MUST NOT invent a Clause ID or claim a complete replacement command.
+
+Recovery guidance MUST NOT make an invalid invocation an alias, rewrite it into an executable command, or otherwise cause the requested operation to succeed.
+
+**Rationale:** Deterministic guidance lets agents recover from the storage-derived assumption that Clauses are RFC subcommands while preserving one accepted resource-first grammar. Restricting exact replacements to token-preserving namespace changes avoids guessing user intent."""

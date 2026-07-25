@@ -278,6 +278,9 @@ govctl rfc new "<spec title>"
 
 ### 3.2 Create Clauses from Existing Requirements
 
+Clauses are first-class CLI resources. Use the root `govctl clause` namespace
+for every Clause operation even though their IDs and storage are RFC-scoped.
+
 For each requirement in the existing specification:
 
 ```bash

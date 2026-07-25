@@ -90,6 +90,9 @@ The CLI is the operating surface for agents:
 - path-first mutation through `edit`
 - explicit help text designed to act as a reliable command contract
 
+Clauses remain first-class `govctl clause` resources even though their IDs and
+storage are scoped by an RFC.
+
 This matters because agent workflows get better when the interface is stable, local, and inspectable.
 
 ### 4. Works in brownfield repositories

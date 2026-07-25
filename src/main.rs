@@ -39,7 +39,17 @@ use config::Config;
 use diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticResult, Diagnostics};
 
 fn main() -> ExitCode {
-    let cli = Cli::parse();
+    let args: Vec<std::ffi::OsString> = std::env::args_os().collect();
+    if let Some(diag) = cli::misrouted_nested_clause(&args) {
+        ui::diagnostic(&diag);
+        return ExitCode::FAILURE;
+    }
+
+    let cli = Cli::parse_from(&args);
+    if let Some(diag) = cli::misrouted_clause_after_parse(&cli, &args) {
+        ui::diagnostic(&diag);
+        return ExitCode::FAILURE;
+    }
     let result = run(&cli);
 
     match result {

@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "1.0.0"
+version = "1.0.1"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "d28cbe5baf419fe2a3c002f79dff9d51a9f8a5378ba2495f68dadeaf6186961c"
+signature = "af2686060488e2c10005fae157d6b3a8160b506372c8427e0ce9742b3351aa3e"
 
 [[sections]]
 title = "Summary"
@@ -37,7 +37,14 @@ clauses = [
     "clauses/C-SHOW-PROJECTION.toml",
     "clauses/C-COMPATIBILITY-BOUNDARY.toml",
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
+    "clauses/C-NAMESPACE-RECOVERY.toml",
 ]
+
+[[changelog]]
+version = "1.0.1"
+date = "2026-07-25"
+notes = "Guide misrouted Clause commands to the canonical namespace"
+changed = ["Define deterministic recovery diagnostics for Clause commands sent through the RFC namespace"]
 
 [[changelog]]
 version = "1.0.0"

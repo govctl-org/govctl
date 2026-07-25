@@ -110,6 +110,7 @@ For ADR work:
 
 For RFC work:
 
+- Treat Clauses as first-class CLI resources; use `govctl clause` for every Clause operation rather than routing through `govctl rfc`
 - Edit clauses with `govctl clause edit`
 - If the RFC is draft, do not bump it; when ready, ask permission before `govctl rfc finalize <RFC-ID> normative`
 - If a normative RFC is in `spec`, edit the current version candidate directly; do not bump it again for those edits

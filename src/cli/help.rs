@@ -103,6 +103,9 @@ START HERE:
     - New RFC: `govctl rfc new "Title"`
     - Inspect one RFC: `govctl rfc get RFC-0001`
     - Render one RFC: `govctl rfc show RFC-0001`
+
+NOTES:
+    - Clause references such as `RFC-0001:C-SCOPE` are first-class `govctl clause` resources, not RFC subcommands or RFC edit paths.
 "#;
 
 pub(super) const CLAUSE: &str = r#"COMMON WORKFLOW:
@@ -115,6 +118,9 @@ pub(super) const CLAUSE: &str = r#"COMMON WORKFLOW:
 START HERE:
     - New clause: `govctl clause new RFC-0001:C-SCOPE "Scope"`
     - Inspect one clause: `govctl clause get RFC-0001:C-SCOPE`
+
+NOTES:
+    - Always use the root `govctl clause` namespace for Clause operations, even though Clause storage and IDs are scoped by an RFC.
 "#;
 
 pub(super) const ADR: &str = r#"COMMON WORKFLOW:

@@ -125,6 +125,8 @@ Only include representation details when they are themselves the external contra
 
 ### Clause Naming
 
+- Treat Clauses as first-class CLI resources. Every Clause operation uses
+  `govctl clause`, not an RFC subcommand or RFC edit path.
 - Use `C-` prefix followed by a descriptive uppercase name with hyphens
 - Good: `C-VALIDATION`, `C-ERROR-FORMAT`, `C-WORK-DEF`
 - Bad: `C-1`, `C-Misc`, `C-stuff`

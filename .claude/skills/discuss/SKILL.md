@@ -151,6 +151,8 @@ Document this exploration — for ADRs, it should first become `alternatives` an
 ### 2.1 RFC Drafting (if needed)
 
 For structure, templates, and quality guidelines, follow the **rfc-writer** skill.
+Clauses are first-class CLI resources: always use the root `govctl clause`
+namespace even though their IDs and storage are scoped by an RFC.
 
 ```bash
 govctl rfc new "<title>"

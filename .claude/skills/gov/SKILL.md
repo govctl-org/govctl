@@ -74,6 +74,7 @@ govctl render
 10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description` or `notes`.
 11. Create work items for durable, reader-useful outcomes only. Do not create separate work items for mechanical helper extraction, fixture sharing, file moves, formatting, or cleanup substeps.
 12. Do not invent loop IDs. Omit `--id` when starting a loop; use the generated `LOOP-YYYY-MM-DD-NNN` ID printed by the command for later `run`, `show`, `replan`, `add`, or `remove`.
+13. Treat Clauses as first-class CLI resources. Every Clause operation uses the root `govctl clause` namespace, even though Clause IDs and storage are scoped by an RFC.
 
 ## Work Item Context
 
