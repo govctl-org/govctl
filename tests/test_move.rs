@@ -69,11 +69,10 @@ fn test_move_active_to_done_with_criteria() -> common::TestResult {
         &[
             &[
                 "work",
-                "tick",
+                "edit",
                 &work_id,
-                "acceptance_criteria",
-                "Task done",
-                "-s",
+                "acceptance_criteria[0]",
+                "--tick",
                 "done",
             ],
             &["work", "move", &work_id, "done"],
@@ -164,7 +163,6 @@ fn test_move_falls_back_to_partial_filename_starting_with_wi() -> common::TestRe
     fs::write(
         work_path,
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-777"
 title = "Partial Filename"
 status = "active"
@@ -244,11 +242,10 @@ fn test_move_sets_completed_date() -> common::TestResult {
         &[
             &[
                 "work",
-                "tick",
+                "edit",
                 &work_id,
-                "acceptance_criteria",
-                "Done",
-                "-s",
+                "acceptance_criteria[0]",
+                "--tick",
                 "done",
             ],
             &["work", "show", &work_id],
@@ -270,11 +267,10 @@ fn test_move_reopens_unreleased_done_item_and_updates_timestamps() -> common::Te
         &[
             &[
                 "work",
-                "tick",
+                "edit",
                 &work_id,
-                "acceptance_criteria",
-                "Done",
-                "-s",
+                "acceptance_criteria[0]",
+                "--tick",
                 "done",
             ],
             &["work", "move", &work_id, "done"],
@@ -313,11 +309,10 @@ fn test_move_rejects_reopening_released_done_item() -> common::TestResult {
         &[
             &[
                 "work",
-                "tick",
+                "edit",
                 &work_id,
-                "acceptance_criteria",
-                "Done",
-                "-s",
+                "acceptance_criteria[0]",
+                "--tick",
                 "done",
             ],
             &["work", "move", &work_id, "done"],
@@ -350,11 +345,10 @@ fn test_move_reopen_release_load_failure_preserves_work_item() -> common::TestRe
         &[
             &[
                 "work",
-                "tick",
+                "edit",
                 &work_id,
-                "acceptance_criteria",
-                "Done",
-                "-s",
+                "acceptance_criteria[0]",
+                "--tick",
                 "done",
             ],
             &["work", "move", &work_id, "done"],
@@ -389,11 +383,10 @@ fn test_move_reopen_does_not_mutate_existing_loop_files() -> common::TestResult 
         &[
             &[
                 "work",
-                "tick",
+                "edit",
                 &work_id,
-                "acceptance_criteria",
-                "Done",
-                "-s",
+                "acceptance_criteria[0]",
+                "--tick",
                 "done",
             ],
             &["work", "move", &work_id, "done"],

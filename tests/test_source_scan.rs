@@ -18,7 +18,6 @@ fn test_source_scan_detects_refs() -> common::TestResult {
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "Test RFC"
 version = "1.0.0"
@@ -43,7 +42,6 @@ notes = "Initial release"
         r#"#:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-VALID"
 title = "Valid Clause"
 kind = "normative"

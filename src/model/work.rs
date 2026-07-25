@@ -6,8 +6,6 @@ use strum::AsRefStr;
 /// Work Item metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct WorkItemMeta {
-    #[serde(default, rename = "schema", skip_serializing)]
-    _schema: u32,
     pub id: String,
     pub title: String,
     pub status: WorkItemStatus,
@@ -28,7 +26,6 @@ pub struct WorkItemMeta {
 impl WorkItemMeta {
     pub fn new(id: impl Into<String>, title: impl Into<String>, status: WorkItemStatus) -> Self {
         Self {
-            _schema: 1,
             id: id.into(),
             title: title.into(),
             status,
@@ -107,26 +104,11 @@ impl ChecklistItem {
     }
 }
 
-/// A legacy inline journal entry preserved for work item rendering per [[ADR-0047]].
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct JournalEntry {
-    /// ISO date string "YYYY-MM-DD"
-    pub date: String,
-    /// Optional topic/module identifier for this entry
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
-    /// Markdown text with progress details
-    pub content: String,
-}
-
 /// Work Item content section `[content]`
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct WorkItemContent {
     #[serde(default)]
     pub description: String,
-    /// Legacy inline journal entries are parsed for render/show only.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub journal: Vec<JournalEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub acceptance_criteria: Vec<ChecklistItem>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

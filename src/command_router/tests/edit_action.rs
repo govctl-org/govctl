@@ -8,8 +8,6 @@ fn test_owned_edit_action_requires_exactly_one_action() -> Result<(), Box<dyn st
         remove: None,
         tick: None,
         stdin: false,
-        at: None,
-        exact: false,
         regex: false,
         all: false,
     });
@@ -27,8 +25,6 @@ fn test_owned_edit_action_builds_tick_match_options() -> Result<(), Box<dyn std:
         remove: None,
         tick: Some(TickStatus::Done),
         stdin: false,
-        at: Some(2),
-        exact: true,
         regex: false,
         all: false,
     })?;
@@ -36,8 +32,8 @@ fn test_owned_edit_action_builds_tick_match_options() -> Result<(), Box<dyn std:
     match action {
         OwnedEditAction::Tick { match_opts, status } => {
             assert!(matches!(status, TickStatus::Done));
-            assert_eq!(match_opts.at, Some(2));
-            assert!(match_opts.exact);
+            assert_eq!(match_opts.at, None);
+            assert!(!match_opts.exact);
         }
         other => return Err(format!("expected tick action, got {other:?}").into()),
     }
@@ -52,8 +48,6 @@ fn test_owned_edit_action_rejects_tick_all_combination() -> Result<(), Box<dyn s
         remove: None,
         tick: Some(TickStatus::Done),
         stdin: false,
-        at: None,
-        exact: false,
         regex: false,
         all: true,
     });
@@ -71,8 +65,6 @@ fn test_owned_edit_action_rejects_multiple_actions() -> Result<(), Box<dyn std::
         remove: None,
         tick: None,
         stdin: false,
-        at: None,
-        exact: false,
         regex: false,
         all: false,
     });
@@ -91,8 +83,6 @@ fn test_owned_edit_action_preserves_explicit_empty_strings()
         remove: None,
         tick: None,
         stdin: false,
-        at: None,
-        exact: false,
         regex: false,
         all: false,
     })?;
@@ -110,8 +100,6 @@ fn test_owned_edit_action_preserves_explicit_empty_strings()
         remove: None,
         tick: None,
         stdin: false,
-        at: None,
-        exact: false,
         regex: false,
         all: false,
     })?;
@@ -129,8 +117,6 @@ fn test_owned_edit_action_preserves_explicit_empty_strings()
         remove: Some(Some(String::new())),
         tick: None,
         stdin: false,
-        at: None,
-        exact: false,
         regex: false,
         all: false,
     })?;
@@ -144,20 +130,17 @@ fn test_owned_edit_action_preserves_explicit_empty_strings()
 }
 
 #[test]
-fn test_owned_edit_action_rejects_selector_flags_for_set() -> Result<(), Box<dyn std::error::Error>>
-{
+fn test_owned_edit_action_rejects_regex_for_set() -> Result<(), Box<dyn std::error::Error>> {
     let result = owned_edit_action(&EditActionArgs {
         set: Some(Some("x".to_string())),
         add: None,
         remove: None,
         tick: None,
         stdin: false,
-        at: Some(0),
-        exact: false,
-        regex: false,
+        regex: true,
         all: false,
     });
-    assert!(result.is_err(), "set with --at should fail");
+    assert!(result.is_err(), "set with --regex should fail");
     let diag = result.err().ok_or("expected Err")?;
     assert_eq!(diag.code, DiagnosticCode::E0802ConflictingArgs);
     Ok(())
@@ -171,8 +154,6 @@ fn test_owned_edit_action_rejects_stdin_for_remove() -> Result<(), Box<dyn std::
         remove: Some(None),
         tick: None,
         stdin: true,
-        at: Some(0),
-        exact: false,
         regex: false,
         all: false,
     });

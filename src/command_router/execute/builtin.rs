@@ -11,8 +11,7 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::InitSkills { force, format, dir } => {
             cmd::new::sync_skills(config, *force, format, dir.as_deref(), op)
         }
-        BuiltinOp::Check { has_active: true } => cmd::check::check_has_active(config),
-        BuiltinOp::Check { has_active: false } => cmd::check::check_all(config),
+        BuiltinOp::Check => cmd::check::check_all(config),
         BuiltinOp::Status => cmd::status::show_status(config),
         BuiltinOp::RenderGlobal {
             target,

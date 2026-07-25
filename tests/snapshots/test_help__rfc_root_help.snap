@@ -8,14 +8,11 @@ RFC operations
 Usage: govctl rfc [OPTIONS] <COMMAND>
 
 Commands:
-  list       List RFCs [aliases: ls]
+  list       List RFCs
   get        Get RFC metadata or specific field
   show       Show rendered RFC content
   new        Create a new RFC
   edit       Canonical path-first edit entrypoint
-  set        Set RFC field value
-  add        Add value to RFC array field
-  remove     Remove value from RFC array field
   bump       Bump RFC version
   finalize   Finalize RFC status (draft → normative)
   advance    Advance RFC phase

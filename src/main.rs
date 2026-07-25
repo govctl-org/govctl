@@ -58,10 +58,6 @@ fn main() -> ExitCode {
                     cli.command,
                     Commands::Check {
                         deny_warnings: true,
-                        ..
-                    } | Commands::Check {
-                        has_active: true,
-                        ..
                     }
                 ) {
                     ExitCode::FAILURE

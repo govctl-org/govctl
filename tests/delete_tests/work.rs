@@ -29,7 +29,7 @@ fn test_delete_work_safeguard_done() -> TestResult {
     let commands: Vec<Vec<String>> = vec![
         work_new_active("Completed work item"),
         work_add_acceptance(&wi1, "chore: Test criterion"),
-        work_tick_acceptance_done(&wi1, "Test"),
+        work_tick_acceptance_done(&wi1, 0),
         work_move_done(&wi1),
         work_delete_force(&wi1),
     ];

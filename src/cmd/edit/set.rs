@@ -114,7 +114,7 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> Di
                 && fp.segments[1].name == "status"
             {
                 Some(
-                    "ADR alternative status is tick-owned. Use `govctl adr tick ... alternatives ...`.",
+                    "ADR alternative status is tick-owned. Use `govctl adr edit <ID> alternatives[N] --tick <status>`.",
                 )
             } else {
                 None
@@ -127,7 +127,9 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> Di
                 && fp.segments[0].name == "acceptance_criteria"
                 && fp.segments[1].name == "status"
             {
-                Some("Acceptance criteria status is tick-owned. Use `govctl work tick`.")
+                Some(
+                    "Acceptance criteria status is tick-owned. Use `govctl work edit <ID> acceptance_criteria[N] --tick <status>`.",
+                )
             } else {
                 None
             }

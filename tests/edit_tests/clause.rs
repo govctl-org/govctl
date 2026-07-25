@@ -35,7 +35,8 @@ fn test_clause_set_text() -> common::TestResult {
                 "clause",
                 "edit",
                 TEST_CLAUSE_ID,
-                "--text",
+                "text",
+                "--set",
                 "Updated clause text",
             ],
             SHOW_TEST_CLAUSE,
@@ -80,7 +81,14 @@ fn test_clause_set_title() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "title", "New Title"],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "title",
+                "--set",
+                "New Title",
+            ],
             SHOW_TEST_CLAUSE,
         ],
     )?;
@@ -187,7 +195,7 @@ fn test_clause_set_since_rejected() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "since", "0.1.0"],
+            &["clause", "edit", TEST_CLAUSE_ID, "since", "--set", "0.1.0"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -200,7 +208,7 @@ fn test_clause_set_since_rejected() -> common::TestResult {
 }
 
 #[test]
-fn test_clause_set_text_sugar() -> common::TestResult {
+fn test_clause_edit_text() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let clause = new_test_clause("Test Clause");
 
@@ -209,7 +217,14 @@ fn test_clause_set_text_sugar() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "text", "new text"],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "text",
+                "--set",
+                "new text",
+            ],
             SHOW_TEST_CLAUSE,
         ],
     )?;
@@ -227,7 +242,14 @@ fn test_clause_set_status_rejected() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "status", "deprecated"],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "status",
+                "--set",
+                "deprecated",
+            ],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -247,7 +269,14 @@ fn test_clause_edit_nonexistent() -> common::TestResult {
         temp_dir.path(),
         &[
             NEW_TEST_RFC,
-            &["clause", "edit", "RFC-0001:C-NONEXISTENT", "--text", "Text"],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-NONEXISTENT",
+                "text",
+                "--set",
+                "Text",
+            ],
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);

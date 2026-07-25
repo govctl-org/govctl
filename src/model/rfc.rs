@@ -51,9 +51,6 @@ pub struct RfcWire {
 /// RFC metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct RfcMeta {
-    /// Backward-compat: accepted on read, never written. See `config.toml [schema] version`.
-    #[serde(default, rename = "schema", skip_serializing)]
-    _schema: u32,
     pub id: String,
     pub title: String,
     pub version: String,
@@ -77,7 +74,6 @@ impl From<RfcSpec> for RfcWire {
     fn from(s: RfcSpec) -> Self {
         Self {
             govctl: RfcMeta {
-                _schema: 1,
                 id: s.rfc_id,
                 title: s.title,
                 version: s.version,

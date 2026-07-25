@@ -1,0 +1,59 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-EDIT-FIELD-CONTRACT"
+title = "Canonical Edit Field Contract"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = """
+This clause defines the complete canonical mutation-path contract for `govctl <resource> edit`. A path not listed here MUST be rejected. Lifecycle-owned fields remain mutable only through the lifecycle verbs in [[RFC-0002:C-LIFECYCLE-VERBS]].
+
+Each resource MUST support these paths and operations:
+
+| Resource | Canonical path | Permitted operation |
+| --- | --- | --- |
+| RFC | `title` | `--set` |
+| RFC | `owners`, `refs`, `tags` | `--add`, `--remove` |
+| RFC | `changelog.summary` | `--set` |
+| RFC | `changelog.added`, `changelog.changed`, `changelog.deprecated`, `changelog.removed`, `changelog.fixed`, `changelog.security` | `--add`, `--remove` |
+| ADR | `title`, `date`, `context`, `decision`, `consequences` | `--set` |
+| ADR | `refs`, `tags` | `--add`, `--remove` |
+| ADR | `alternatives` | `--add`, `--remove`, `--tick` |
+| ADR | `alternatives[i].text`, `alternatives[i].rejection_reason` | `--set` |
+| ADR | `alternatives[i].pros`, `alternatives[i].cons` | `--add`, `--remove` |
+| ADR | `alternatives[i].pros[j]`, `alternatives[i].cons[j]` | `--set`, `--remove` |
+| Work Item | `title`, `description` | `--set` |
+| Work Item | `refs`, `depends_on`, `tags`, `notes` | `--add`, `--remove` |
+| Work Item | `notes[i]` | `--set`, `--remove` |
+| Work Item | `acceptance_criteria` | `--add`, `--remove`, `--tick` |
+| Work Item | `acceptance_criteria[i].text`, `acceptance_criteria[i].category` | `--set` |
+| Work Item | `verification.required_guards` | `--add`, `--remove` |
+| Work Item | `verification.waivers` | `--remove` |
+| Work Item | `verification.waivers[i].guard`, `verification.waivers[i].reason` | `--set` |
+| Clause | `title`, `text`, `kind` | `--set` |
+| Clause | `anchors`, `tags` | `--add`, `--remove` |
+| Guard | `title`, `command`, `timeout_secs`, `pattern` | `--set` |
+| Guard | `refs`, `tags` | `--add`, `--remove` |
+
+List selection MUST use only these canonical forms:
+
+```
+govctl <resource> edit <id> <list-path>[<index>] --remove
+govctl <resource> edit <id> <list-path> --remove <exact-value>
+govctl <resource> edit <id> <list-path> --remove <pattern> --regex
+govctl <resource> edit <id> <list-path> --remove --all
+govctl <resource> edit <id> <checklist-path>[<index>] --tick <status>
+```
+
+Indices MUST be zero-based decimal integers. `--remove <value>` MUST use exact matching unless `--regex` is present. `--all` MUST NOT be combined with a value, indexed path, or `--regex`. `--tick` MUST require an indexed path and a lifecycle value permitted for that checklist type. Selector flags such as `--at` and `--exact` MUST be rejected because the canonical path and exact-value form already express those selections.
+
+RFC changelog paths address only the current version record. Released historical changelog records MUST NOT be editable through this surface.
+
+The logical Guard paths `command`, `timeout_secs`, and `pattern` map to persisted check configuration without exposing the wire-layout name. Work Item waiver creation remains owned by the verification waiver command; `edit` only corrects or removes an existing waiver.
+
+**Rationale:**
+
+A closed list gives scripts and agents one discoverable interface and makes removal of aliases testable. Logical paths keep the command contract independent of TOML table layout while lifecycle and verification commands retain ownership of constrained transitions."""

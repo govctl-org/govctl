@@ -10,7 +10,7 @@ fn test_list_filter_by_tag() -> TestResult {
             &["tag", "new", "caching"],
             &["adr", "new", "Tagged Decision"],
             &["adr", "new", "Untagged Decision"],
-            &["adr", "add", "ADR-0001", "tags", "caching"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "caching"],
         ],
     )?;
 
@@ -33,8 +33,8 @@ fn test_list_filter_multiple_tags() -> TestResult {
             &["tag", "new", "performance"],
             &["tag", "new", "security"],
             &["adr", "new", "Multi-Tagged Decision"],
-            &["adr", "add", "ADR-0001", "tags", "caching"],
-            &["adr", "add", "ADR-0001", "tags", "performance"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "caching"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "performance"],
         ],
     )?;
 

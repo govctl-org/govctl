@@ -35,11 +35,11 @@ govctl work list pending
 govctl work show <WI-ID>
 govctl work new --active "<title>"
 govctl work move <WI-ID> <status>
-govctl work set <WI-ID> description "Scope and why"
-govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
-govctl work add <WI-ID> refs RFC-0001
-govctl work add <WI-ID> tags <tag>
-govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
+govctl work edit <WI-ID> description --set "Scope and why"
+govctl work edit <WI-ID> acceptance_criteria --add "add: Implement feature X"
+govctl work edit <WI-ID> refs --add RFC-0001
+govctl work edit <WI-ID> tags --add <tag>
+govctl work edit <WI-ID> depends_on --add <BLOCKING-WI-ID>
 govctl tag new <tag>
 govctl tag list
 govctl loop list open
@@ -64,7 +64,7 @@ govctl render
 2. Respect phase discipline: `spec -> impl -> test -> stable`.
 3. Behavior changes must be grounded in a normative RFC. If behavior is unspecified or ambiguous, stop and escalate.
 4. Ask permission before `govctl rfc finalize ...` or `govctl rfc advance ...` unless `$ARGUMENTS` explicitly grant full authority.
-5. Keep an active work item while performing substantive implementation. `govctl check --has-active` is the pre-implementation gate, not a commit prerequisite; a completed work item may move to `done` before the final implementation commit.
+5. Keep an active work item while performing substantive implementation. Confirm it with `govctl work list active` before implementation; a completed work item may move to `done` before the final implementation commit.
 6. In source comments, reference artifacts with `[[artifact-id]]`.
 7. Use work item fields correctly:
    - `description`: task scope and why; set once, rarely change
@@ -115,7 +115,7 @@ If the scope changes during execution, keep the same loop identity:
 - Use `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>` when a root no longer belongs in the batch.
 - Use `govctl loop replan <LOOP-ID>` after dependency edits that should refresh the current closure.
 
-`work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
+`work` is the only editable loop work-item field.
 
 Do not create multiple scattered loops for work that belongs in one coherent execution session.
 
@@ -153,15 +153,15 @@ Then immediately:
 
 ```bash
 govctl work show <WI-ID>
-govctl work set <WI-ID> description "Brief scope: what and why"
-govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
+govctl work edit <WI-ID> description --set "Brief scope: what and why"
+govctl work edit <WI-ID> acceptance_criteria --add "chore: govctl check passes"
 ```
 
 Add task-specific acceptance criteria and refs as needed:
 
 ```bash
-govctl work add <WI-ID> acceptance_criteria "add: Implement feature X"
-govctl work add <WI-ID> refs RFC-0001
+govctl work edit <WI-ID> acceptance_criteria --add "add: Implement feature X"
+govctl work edit <WI-ID> refs --add RFC-0001
 ```
 
 Follow the **wi-writer** skill for acceptance criteria quality.
@@ -194,10 +194,11 @@ If you create artifacts:
 Before writing code:
 
 ```bash
-govctl check --has-active
+govctl work list active
 ```
 
-For RFC-governed work, verify the RFC state:
+Confirm the intended work item appears in the active list. For RFC-governed work,
+verify the RFC state:
 
 - `draft/spec`: do not bump; ask permission, then finalize and advance to `impl`
 - `normative/spec`: continue authoring the current version without another bump; ask permission before advancing to `impl`, which seals its RFC and Clause content
@@ -224,7 +225,7 @@ Implementation rules:
 4. Add durable work-item notes only when a closure-worthy fact exists:
 
 ```bash
-govctl work add <WI-ID> notes "Do not retry parser path X; it cannot preserve normalized arrays"
+govctl work edit <WI-ID> notes --add "Do not retry parser path X; it cannot preserve normalized arrays"
 ```
 
 ### 4. Test
@@ -281,7 +282,7 @@ Example:
 
 ```bash
 govctl work show <WI-ID>
-govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+govctl work edit <WI-ID> acceptance_criteria[0] --tick done
 govctl work move <WI-ID> done
 ```
 

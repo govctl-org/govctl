@@ -1,6 +1,6 @@
 ---
-source: tests/test_delete.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/delete_tests/work.rs
+expression: value
 ---
 $ govctl work new Keep this work item
 Created work item: gov/work/<DATE>-keep-this-work-item.toml
@@ -42,5 +42,5 @@ Checked:
   1 work items
   0 verification guards
 
-warning[W0108]: Work item has placeholder description (hint: `govctl work set WI-<DATE>-002 description "..."`) (gov/work/<DATE>-delete-this-work-item.toml)
+warning[W0108]: Work item has placeholder description (hint: `govctl work edit WI-<DATE>-002 description --set "..."`) (gov/work/<DATE>-delete-this-work-item.toml)
 exit: 0

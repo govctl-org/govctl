@@ -1,0 +1,10 @@
+---
+source: tests/error_tests/rfc_clause_cases/wire_format.rs
+expression: snapshot
+---
+$ govctl check
+error[E0201]: clause does not match schema 'clause.schema.json':
+  - "content" is a required property
+  - "govctl" is a required property
+  - Additional properties are not allowed ('clause_id', 'kind', 'status', 'text', 'title' were unexpected) (<TEMPDIR>/gov/rfc/RFC-0001/clauses/C-FLAT.toml)
+exit: 1

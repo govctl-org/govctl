@@ -427,11 +427,13 @@ Mismatches are reported as errors. Run `govctl render` to regenerate.
 
 ## Schema Version
 
-All TOML artifacts include a schema version for forward compatibility:
+The project schema version is declared once in `gov/config.toml`:
 
 ```toml
-[govctl]
-schema = 1  # Increment when breaking changes occur
+[schema]
+version = 3
 ```
 
-Current version: **1**
+Artifact TOML files do not contain their own schema-version field. Schema
+comments such as `#:schema ../schema/work.schema.json` provide editor tooling
+with a path to the applicable JSON Schema without changing artifact data.

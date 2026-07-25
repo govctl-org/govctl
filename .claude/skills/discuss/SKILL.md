@@ -28,20 +28,21 @@ govctl adr list                           # List all ADRs
 # RFC drafting
 govctl rfc new "<title>"                  # Create RFC (auto-assigns ID)
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF'
 clause text here
 EOF
 
 # ADR drafting
 govctl adr new "<title>"                  # Create ADR
-govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
-govctl adr add <ADR-ID> alternatives "Other option: Description" --reject-reason "Why it was not chosen"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> refs RFC-0001
+govctl adr edit <ADR-ID> context --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> alternatives --add "Option: Description"
+govctl adr edit <ADR-ID> alternatives --add "Other option: Description"
+govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "Why it was not chosen"
+govctl adr edit <ADR-ID> alternatives[1] --tick rejected
+govctl adr edit <ADR-ID> alternatives[0] --tick accepted
+govctl adr edit <ADR-ID> decision --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> refs --add RFC-0001
 
 # Validation
 govctl check                              # Validate all artifacts
@@ -154,7 +155,7 @@ For structure, templates, and quality guidelines, follow the **rfc-writer** skil
 ```bash
 govctl rfc new "<title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF'
 clause text
 EOF
 ```
@@ -165,13 +166,13 @@ For structure, templates, and quality guidelines, follow the **adr-writer** skil
 
 ```bash
 govctl adr new "<title>"
-govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> refs RFC-NNNN
+govctl adr edit <ADR-ID> context --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> alternatives --add "Option: Description"
+govctl adr edit <ADR-ID> alternatives[1] --tick rejected
+govctl adr edit <ADR-ID> alternatives[0] --tick accepted
+govctl adr edit <ADR-ID> decision --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> refs --add RFC-NNNN
 ```
 
 In this sequence, alternative `0` is the chosen option and alternative `1` is explicitly rejected.
@@ -192,7 +193,7 @@ Historical backfills are the exception: if alternatives cannot be reconstructed,
 
 ```bash
 # Edit the clause content
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF'
 Updated specification text.
 EOF
 

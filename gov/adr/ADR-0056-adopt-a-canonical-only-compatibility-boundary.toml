@@ -1,0 +1,75 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0056"
+title = "Adopt a canonical-only compatibility boundary"
+status = "accepted"
+date = "2026-07-25"
+refs = [
+    "ADR-0037",
+    "ADR-0030",
+    "ADR-0034",
+    "RFC-0002",
+    "RFC-0006",
+    "RFC-0002:C-COMPATIBILITY-BOUNDARY",
+    "RFC-0002:C-CRUD-VERBS",
+    "RFC-0006:C-LOOP-STATE-STORAGE",
+    "ADR-0047",
+]
+tags = [
+    "cli",
+    "editing",
+    "schema",
+    "migration",
+]
+
+[content]
+context = "[[ADR-0037]] established canonical path-oriented edit while retaining shorthand verbs during migration. [[ADR-0030]] selected strict full-input path parsing while retaining aliases and wire-layout prefixes. [[ADR-0034]] selected canonical TOML with a migration boundary, and [[ADR-0047]] removed journal from the editable Work Item surface while allowing historical rendering. These transitional policies now duplicate command documentation, expand agent choice, preserve silent input tolerance, and require broad compatibility tests. The governing constraints are the canonical resource contract in [[RFC-0002:C-CRUD-VERBS]], the explicit schema-3 boundary and safety diagnostics in [[RFC-0002:C-COMPATIBILITY-BOUNDARY]], the loop-state model in [[RFC-0006:C-LOOP-STATE-STORAGE]], and preservation of conforming governance history."
+decision = """
+We will **adopt one canonical-only compatibility boundary in the breaking release** because:
+
+1. One migration event lets automation move directly to the retained interface instead of crossing several temporary states.
+2. CLI help, describe metadata, skills, guides, and tests can describe one mutation grammar and one repository baseline.
+3. Compatibility code can be removed rather than carried through another deprecation cycle.
+
+This decision supplies the rationale for [[RFC-0002:C-COMPATIBILITY-BOUNDARY]]; that RFC clause owns the exact accepted syntax, schema baseline, migration eligibility, and diagnostics. We preserve the canonical edit direction from [[ADR-0037]], strict full-input parsing from [[ADR-0030]], canonical TOML from [[ADR-0034]], and the loop-centric Work Item boundary from [[ADR-0047]]. We end only their transitional compatibility policies: sibling mutation-verb sugar, path aliases and wire-layout prefixes, pre-baseline migration branches, and legacy inline-journal rendering."""
+consequences = """
+### Positive
+
+- CLI help, describe metadata, skills, guides, and tests converge on one mutation grammar.
+- Repository loading and migration have one documented support baseline.
+- Compatibility normalization and silent-tolerance branches leave the runtime instead of remaining permanent maintenance obligations.
+
+### Negative
+
+- Existing scripts using aliases, sibling mutation verbs, or resource-specific shortcuts require coordinated updates. The breaking-release notes provide command translations.
+- Repositories below the RFC-defined schema baseline require an earlier compatible govctl version before upgrading. The unsupported-schema diagnostic identifies that prerequisite.
+- Legacy inline Work Item journal data is not retained by the new binary. Users must export any history they need with a compatible earlier version before crossing the boundary.
+
+### Neutral
+
+- Canonical edit semantics, strict path parsing, TOML storage, loop-centric execution state, released changelog content, and conforming historical artifacts remain in force.
+- The RFC, rather than this ADR, defines the exact external contract and schema version."""
+
+[[content.alternatives]]
+text = "Keep all existing compatibility surfaces indefinitely"
+status = "rejected"
+pros = ["Avoids breaking existing scripts and old repositories"]
+cons = ["Preserves duplicated CLI and storage paths without an end state"]
+rejection_reason = "Indefinite compatibility conflicts with the goal of a small canonical interface and keeps migration complexity in every future release"
+
+[[content.alternatives]]
+text = "Remove compatibility surfaces gradually across several releases"
+status = "rejected"
+pros = ["Spreads user migration work over time"]
+cons = ["Extends the period where every authoring surface must explain two grammars and multiple storage generations"]
+rejection_reason = "A coordinated breaking release gives users one explicit migration event and lets implementation, documentation, and tests converge atomically"
+
+[[content.alternatives]]
+text = "Adopt one canonical-only boundary in the breaking release"
+status = "accepted"
+pros = [
+    "Leaves one mutation grammar and one supported repository baseline",
+    "Allows help, describe metadata, skills, docs, and tests to teach the same interface",
+]
+cons = ["Requires users to update scripts and migrate older repositories before upgrading"]

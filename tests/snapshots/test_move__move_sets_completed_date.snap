@@ -1,8 +1,8 @@
 ---
 source: tests/test_move.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)?"
+expression: value
 ---
-$ govctl work tick WI-<DATE>-001 acceptance_criteria Done -s done
+$ govctl work edit WI-<DATE>-001 acceptance_criteria[0] --tick done
 Marked 'Done' as done
 exit: 0
 

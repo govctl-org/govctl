@@ -58,7 +58,6 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         SourceWireSpec {
             read_action: "read RFC",
             schema: ArtifactSchema::Rfc,
-            normalize_toml: crate::write::normalize_rfc_value,
             schema_error: rfc_schema_error,
         },
     )?
@@ -107,7 +106,6 @@ pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEnt
         SourceWireSpec {
             read_action: "read clause",
             schema: ArtifactSchema::Clause,
-            normalize_toml: crate::write::normalize_clause_value,
             schema_error: clause_schema_error,
         },
     )?
@@ -136,18 +134,26 @@ pub fn reject_legacy_json_storage(config: &Config) -> DiagnosticResult<()> {
         return Ok(());
     }
 
-    let mut dirs: Vec<_> = std::fs::read_dir(&rfc_root)
-        .map_err(|err| {
+    let entries = std::fs::read_dir(&rfc_root).map_err(|err| {
+        Diagnostic::io_error(
+            "read RFC directory for legacy JSON scan",
+            err,
+            config.display_path(&rfc_root).display().to_string(),
+        )
+    })?;
+    let mut dirs = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|err| {
             Diagnostic::io_error(
-                "read RFC directory for legacy JSON scan",
+                "read RFC directory entry for legacy JSON scan",
                 err,
                 config.display_path(&rfc_root).display().to_string(),
             )
-        })?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| path.is_dir())
-        .collect();
+        })?;
+        if entry.path().is_dir() {
+            dirs.push(entry.path());
+        }
+    }
     dirs.sort();
 
     for dir in dirs {
@@ -167,18 +173,27 @@ fn reject_legacy_json_in_rfc_dir(config: &Config, rfc_dir: &Path) -> DiagnosticR
         return Ok(());
     }
 
-    let mut clauses: Vec<_> = std::fs::read_dir(&clauses_dir)
-        .map_err(|err| {
+    let entries = std::fs::read_dir(&clauses_dir).map_err(|err| {
+        Diagnostic::io_error(
+            "read clause directory for legacy JSON scan",
+            err,
+            config.display_path(&clauses_dir).display().to_string(),
+        )
+    })?;
+    let mut clauses = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|err| {
             Diagnostic::io_error(
-                "read clause directory for legacy JSON scan",
+                "read clause directory entry for legacy JSON scan",
                 err,
                 config.display_path(&clauses_dir).display().to_string(),
             )
-        })?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"))
-        .collect();
+        })?;
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+            clauses.push(path);
+        }
+    }
     clauses.sort();
 
     if let Some(path) = clauses.first() {
@@ -190,7 +205,7 @@ fn reject_legacy_json_in_rfc_dir(config: &Config, rfc_dir: &Path) -> DiagnosticR
 fn legacy_json_diagnostic(config: &Config, path: &Path) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0505MigrationRequired,
-        "Legacy RFC/clause JSON artifact storage is no longer supported. Use govctl <0.9 to run `govctl migrate` before upgrading.",
+        "Legacy RFC/clause JSON artifact storage is unsupported. Migrate this repository with a compatible earlier govctl version before upgrading.",
         config.display_path(path).display().to_string(),
     )
 }
@@ -206,7 +221,6 @@ fn read_source_file(path: &Path, action: &'static str) -> Result<String, LoadErr
 struct SourceWireSpec {
     read_action: &'static str,
     schema: ArtifactSchema,
-    normalize_toml: fn(&mut toml::Value),
     schema_error: fn(String, String) -> LoadError,
 }
 
@@ -238,11 +252,10 @@ fn load_toml_wire<Wire>(
 where
     Wire: DeserializeOwned,
 {
-    let mut raw: toml::Value = toml::from_str(content).map_err(|e| LoadError::Json {
+    let raw: toml::Value = toml::from_str(content).map_err(|e| LoadError::Json {
         file: path.display().to_string(),
         message: e.to_string(),
     })?;
-    (spec.normalize_toml)(&mut raw);
     validate_toml_value(spec.schema, config, path, &raw)
         .map_err(|e| (spec.schema_error)(path.display().to_string(), e.message))?;
     raw.try_into().map_err(|e| LoadError::Json {

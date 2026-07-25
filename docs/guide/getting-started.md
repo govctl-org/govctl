@@ -99,7 +99,7 @@ govctl clause new RFC-0000:C-SCOPE "Scope" -s "Specification" -k normative
 ## Edit Clause Content
 
 ```bash
-govctl clause edit RFC-0000:C-SCOPE text --stdin <<'EOF'
+govctl clause edit RFC-0000:C-SCOPE text --set --stdin <<'EOF'
 The feature MUST do X.
 The feature SHOULD do Y.
 EOF
@@ -251,33 +251,33 @@ For AI-assisted migration, use the `/migrate` skill to systematically discover u
 | **Effect** | Rewrites TOML files in `gov/` and syncs schemas     | Discovers decisions, backfills ADRs, annotates source |
 | **Risk**   | Low — transactional, reversible                     | Medium — requires human review of generated ADRs      |
 
-Run `govctl migrate` when govctl reports an outdated schema version. If a repository still contains legacy RFC or clause JSON storage, migrate it with govctl <0.9 before upgrading. Use the `/migrate` skill when bringing a legacy project under governance for the first time.
+Run `govctl migrate` for supported schema upgrades and bundled-file synchronization. Schema versions below 3 require migration with a compatible earlier govctl version before upgrading. Use the `/migrate` skill when bringing a project under governance for the first time.
 
 ## Canonical Edit Surface
 
-All artifact fields are accessible through a unified path-based edit interface:
+Editable artifact fields use a unified path-based edit interface:
 
 ```bash
 # Set a scalar value
-govctl rfc edit RFC-0010 version --set 1.2.0
+govctl rfc edit RFC-0010 title --set "Updated title"
 
 # Add to an array
 govctl adr edit ADR-0003 refs --add RFC-0010
 
 # Remove by index
-govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --remove
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --remove
 
 # Tick checklist items
-govctl adr edit ADR-0003 content.alternatives[0] --tick accepted
-govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
+govctl adr edit ADR-0003 alternatives[0] --tick accepted
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
 ```
 
 Nested object fields use dot-delimited paths:
 
 ```bash
-govctl adr edit ADR-0003 content.decision --set "We will use Redis"
-govctl adr edit ADR-0003 "content.alternatives[0].pros" --add "Low latency"
-govctl work edit WI-2026-01-17-001 "content.acceptance_criteria[0].category" --set fixed
+govctl adr edit ADR-0003 decision --set "We will use Redis"
+govctl adr edit ADR-0003 "alternatives[0].pros" --add "Low latency"
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].category" --set fixed
 ```
 
 ## CLI Self-Description

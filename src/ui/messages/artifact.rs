@@ -128,14 +128,6 @@ pub fn superseded(kind: &str, id: &str, by: &str) {
     }
 }
 
-pub fn updated(kind: &str, id: &str) {
-    if use_colors() {
-        eprintln!("Updated {}: {}", kind, id.cyan().bold());
-    } else {
-        eprintln!("Updated {}: {}", kind, id);
-    }
-}
-
 pub fn finalized(id: &str, status: &str) {
     if use_colors() {
         eprintln!(

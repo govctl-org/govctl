@@ -134,7 +134,6 @@ fn test_show_clause_rejects_path_with_mismatched_id() -> common::TestResult {
     fs::write(
         clauses_dir.join("C-TARGET.toml"),
         r#"[govctl]
-schema = 1
 id = "C-ACTUAL"
 title = "Wrong Clause"
 kind = "normative"

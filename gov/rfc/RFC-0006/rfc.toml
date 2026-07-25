@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0006"
 title = "Loop Execution Model"
-version = "0.5.0"
+version = "1.0.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-05-31"
-updated = "2026-06-15"
-signature = "7a83e5455d89c552aaf6dc6b955dd52d1a82126eb8fe49eee7f670c3749772a0"
+updated = "2026-07-25"
+signature = "d02adbb9e12eea12c7ab230165b2d269bc5e3baec462089f55224f24ab8acb52"
 
 [[sections]]
 title = "Summary"
@@ -37,6 +37,13 @@ clauses = [
     "clauses/C-EXECUTION-STATE-SEPARATION.toml",
     "clauses/C-DEPENDENCY-SEPARATION.toml",
 ]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-07-25"
+notes = "Use canonical loop command and round metadata surfaces"
+changed = ["Use canonical Work Item edit syntax in round evidence guidance"]
+removed = ["Remove the loop work-item field alias and legacy round metadata tolerance"]
 
 [[changelog]]
 version = "0.5.0"

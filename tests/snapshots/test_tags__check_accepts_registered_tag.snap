@@ -1,12 +1,12 @@
 ---
-source: tests/test_tags.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/tag_tests/mod.rs
+expression: value
 ---
 $ govctl adr new Test Decision
 Created ADR: gov/adr/ADR-XXXX-test-decision.toml
 exit: 0
 
-$ govctl adr add ADR-0001 tags caching
+$ govctl adr edit ADR-0001 tags --add caching
 Added 'caching' to ADR-0001.tags
 exit: 0
 
@@ -18,6 +18,6 @@ Checked:
   0 work items
   0 verification guards
 
-warning[W0103]: ADR has no artifact references (hint: `govctl adr add ADR-0001 refs RFC-XXXX`) (gov/adr/ADR-XXXX-test-decision.toml)
-warning[W0113]: ADR has placeholder context (hint: `govctl adr set ADR-0001 context "..."`) (gov/adr/ADR-XXXX-test-decision.toml)
+warning[W0103]: ADR has no artifact references (hint: `govctl adr edit ADR-0001 refs --add RFC-XXXX`) (gov/adr/ADR-XXXX-test-decision.toml)
+warning[W0113]: ADR has placeholder context (hint: `govctl adr edit ADR-0001 context --set "..."`) (gov/adr/ADR-XXXX-test-decision.toml)
 exit: 0

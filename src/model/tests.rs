@@ -1,6 +1,20 @@
 use super::*;
 
 #[test]
+fn bundled_artifact_templates_do_not_emit_legacy_schema_metadata() {
+    for template in [
+        include_str!("../../gov/templates/adr.toml"),
+        include_str!("../../gov/templates/work.toml"),
+    ] {
+        assert!(
+            !template
+                .lines()
+                .any(|line| line.trim_start().starts_with("schema ="))
+        );
+    }
+}
+
+#[test]
 fn test_checklist_item_new() {
     let item = ChecklistItem::new("Test criterion");
     assert_eq!(item.text, "Test criterion");
@@ -67,18 +81,10 @@ fn test_work_item_status_as_ref() {
 }
 
 #[test]
-fn test_changelog_category_rendered_prefix_helpers() {
+fn test_changelog_category_prefix_helpers() {
     assert_eq!(
-        ChangelogCategory::from_rendered_prefix("fixed"),
+        ChangelogCategory::from_prefix("fixed"),
         Some(ChangelogCategory::Fixed)
-    );
-    assert_eq!(
-        ChangelogCategory::strip_rendered_prefix("fixed: sample"),
-        Some("sample")
-    );
-    assert_eq!(
-        ChangelogCategory::strip_rendered_prefix("fix: sample"),
-        None
     );
     assert_eq!(
         ChangelogCategory::RELEASE_CHANGELOG_SECTIONS,

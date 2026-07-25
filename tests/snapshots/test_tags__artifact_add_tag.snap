@@ -1,6 +1,6 @@
 ---
-source: tests/test_tags.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/tag_tests/mod.rs
+expression: value
 ---
 $ govctl tag new caching
 Added tag: caching
@@ -10,7 +10,7 @@ $ govctl adr new Test Decision
 Created ADR: gov/adr/ADR-XXXX-test-decision.toml
 exit: 0
 
-$ govctl adr add ADR-0001 tags caching
+$ govctl adr edit ADR-0001 tags --add caching
 Added 'caching' to ADR-0001.tags
 exit: 0
 

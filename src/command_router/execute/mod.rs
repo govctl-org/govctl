@@ -109,37 +109,16 @@ fn execute_show(
 
 fn execute_edit(plan: &CommandPlan, config: &Config, edit: &EditOp, op: WriteOp) -> CommandResult {
     match edit {
-        EditOp::Field { action, extras } => {
+        EditOp::Field { action } => {
             let (_, id, target) = extract_target_scope(&plan.scope)?;
             let path = target.display_path();
-            let pros = (!extras.pros.is_empty()).then(|| extras.pros.clone());
-            let cons = (!extras.cons.is_empty()).then(|| extras.cons.clone());
             cmd::edit::edit_field(cmd::edit::EditFieldRequest {
                 config,
                 id,
                 path: &path,
                 action,
-                category_override: extras.category,
-                pros,
-                cons,
-                reject_reason: extras.reject_reason.clone(),
                 op,
             })
-        }
-        EditOp::ClauseLegacy {
-            text,
-            text_file,
-            stdin,
-        } => {
-            let (_, id) = extract_artifact_scope(&plan.scope)?;
-            cmd::edit::edit_clause(
-                config,
-                id,
-                text.as_deref(),
-                text_file.as_deref(),
-                *stdin,
-                op,
-            )
         }
     }
 }

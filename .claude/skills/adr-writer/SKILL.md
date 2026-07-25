@@ -23,21 +23,22 @@ They are justificatory artifacts, not normative mini-RFCs and not work-item exec
 
 ```bash
 govctl adr new "<title>"
-govctl adr set <ADR-ID> context --stdin <<'EOF'
+govctl adr edit <ADR-ID> context --set --stdin <<'EOF'
 context text
 EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
-govctl adr add <ADR-ID> alternatives "Other option: Description" --reject-reason "Why it was not chosen"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF'
+govctl adr edit <ADR-ID> alternatives --add "Option: Description"
+govctl adr edit <ADR-ID> alternatives --add "Other option: Description"
+govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "Why it was not chosen"
+govctl adr edit <ADR-ID> alternatives[1] --tick rejected
+govctl adr edit <ADR-ID> alternatives[0] --tick accepted
+govctl adr edit <ADR-ID> decision --set --stdin <<'EOF'
 decision text
 EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF'
+govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF'
 consequences text
 EOF
-govctl adr add <ADR-ID> refs RFC-NNNN
-govctl adr add <ADR-ID> tags <tag>
+govctl adr edit <ADR-ID> refs --add RFC-NNNN
+govctl adr edit <ADR-ID> tags --add <tag>
 ```
 
 ## ADR Writing Order
@@ -105,19 +106,20 @@ Document options considered before you write the final decision. Future readers 
 
 ```bash
 # Simple alternative
-govctl adr add <ADR-ID> alternatives "Option A: Use PostgreSQL"
+govctl adr edit <ADR-ID> alternatives --add "Option A: Use PostgreSQL"
 
 # With pros, cons, and rejection reason
-govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
-  --pro "Fast caching" --pro "Simple API" \
-  --con "Additional infrastructure" \
-  --reject-reason "Overkill for our scale"
+govctl adr edit <ADR-ID> alternatives --add "Option B: Use Redis"
+govctl adr edit <ADR-ID> alternatives[1].pros --add "Fast caching"
+govctl adr edit <ADR-ID> alternatives[1].pros --add "Simple API"
+govctl adr edit <ADR-ID> alternatives[1].cons --add "Additional infrastructure"
+govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "Overkill for our scale"
 
 # Update alternative state after discussion
-govctl adr tick <ADR-ID> alternatives --at 0 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 1 -s accepted
-govctl adr edit <ADR-ID> content.alternatives[0].pros --add "New advantage"
-govctl adr edit <ADR-ID> content.alternatives[0].cons --remove "Outdated disadvantage"
+govctl adr edit <ADR-ID> alternatives[0] --tick rejected
+govctl adr edit <ADR-ID> alternatives[1] --tick accepted
+govctl adr edit <ADR-ID> alternatives[0].pros --add "New advantage"
+govctl adr edit <ADR-ID> alternatives[0].cons --remove "Outdated disadvantage"
 ```
 
 **When to add pros/cons:**
@@ -174,8 +176,8 @@ Honest accounting of trade-offs. Structure:
 ### 5. References (recommended)
 
 ```bash
-govctl adr add <ADR-ID> refs RFC-0001
-govctl adr add <ADR-ID> refs ADR-0005
+govctl adr edit <ADR-ID> refs --add RFC-0001
+govctl adr edit <ADR-ID> refs --add ADR-0005
 ```
 
 Link to artifacts that constrained or informed the decision. Use plain IDs (not `[[...]]` syntax) in the refs field.

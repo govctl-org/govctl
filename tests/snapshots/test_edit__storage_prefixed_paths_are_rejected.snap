@@ -1,0 +1,39 @@
+---
+source: tests/edit_tests/path_cases/compatibility.rs
+expression: value
+---
+$ govctl adr new Compat Test
+Created ADR: gov/adr/ADR-XXXX-compat-test.toml
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives --add Option A
+Added 'Option A' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives --add Option B
+Added 'Option B' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives[0] --tick accepted
+Marked 'Option A' as accepted
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives[1] --tick rejected
+Marked 'Option B' as rejected
+exit: 0
+
+$ govctl adr edit ADR-0001 content.decision --set A dotted decision
+error[E0803]: Unknown ADR field: content.decision (ADR-0001)
+exit: 1
+
+$ govctl adr get ADR-0001 content.decision
+error[E0803]: Unknown ADR field: content.decision (ADR-0001)
+exit: 1
+
+$ govctl adr edit ADR-0001 govctl.title --set Compat Title
+error[E0803]: Unknown ADR field: govctl.title (ADR-0001)
+exit: 1
+
+$ govctl adr get ADR-0001 govctl.title
+error[E0803]: Unknown ADR field: govctl.title (ADR-0001)
+exit: 1

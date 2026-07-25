@@ -1,36 +1,36 @@
 ---
-source: tests/test_adr_gates.rs
-expression: normalized
+source: tests/adr_gate_tests/accept.rs
+expression: snapshot
 ---
 $ govctl adr new Test ADR
 Created ADR: gov/adr/ADR-XXXX-test-adr.toml
 exit: 0
 
-$ govctl adr set ADR-0001 context We need to pick a storage layer.
+$ govctl adr edit ADR-0001 context --set We need to pick a storage layer.
 Set ADR-0001.context = We need to pick a storage layer.
 exit: 0
 
-$ govctl adr add ADR-0001 alternatives Option A
+$ govctl adr edit ADR-0001 alternatives --add Option A
 Added 'Option A' to ADR-0001.alternatives
 exit: 0
 
-$ govctl adr add ADR-0001 alternatives Option B
+$ govctl adr edit ADR-0001 alternatives --add Option B
 Added 'Option B' to ADR-0001.alternatives
 exit: 0
 
-$ govctl adr tick ADR-0001 alternatives --at 0 -s accepted
+$ govctl adr edit ADR-0001 alternatives[0] --tick accepted
 Marked 'Option A' as accepted
 exit: 0
 
-$ govctl adr tick ADR-0001 alternatives --at 1 -s rejected
+$ govctl adr edit ADR-0001 alternatives[1] --tick rejected
 Marked 'Option B' as rejected
 exit: 0
 
-$ govctl adr set ADR-0001 decision We chose Option A.
+$ govctl adr edit ADR-0001 decision --set We chose Option A.
 Set ADR-0001.decision = We chose Option A.
 exit: 0
 
-$ govctl adr set ADR-0001 consequences Faster reads, more memory.
+$ govctl adr edit ADR-0001 consequences --set Faster reads, more memory.
 Set ADR-0001.consequences = Faster reads, more memory.
 exit: 0
 

@@ -94,7 +94,7 @@ pub fn write_guard_with_timeout(
         .map(|pattern| format!("pattern = \"{pattern}\"\n"))
         .unwrap_or_default();
     let content = format!(
-        "[govctl]\nschema = 1\nid = \"{guard_id}\"\ntitle = \"{guard_id}\"\n\n[check]\ncommand = \"{command}\"\ntimeout_secs = {timeout_secs}\n{pattern_line}"
+        "[govctl]\nid = \"{guard_id}\"\ntitle = \"{guard_id}\"\n\n[check]\ncommand = \"{command}\"\ntimeout_secs = {timeout_secs}\n{pattern_line}"
     );
     write_guard_content(dir, guard_id, &content)
 }
@@ -133,7 +133,6 @@ pub fn write_minimal_rfc(
     fs::create_dir_all(rfc_dir.join("clauses"))?;
     let content = format!(
         r#"[govctl]
-schema = 1
 id = "{rfc_id}"
 title = "{title}"
 version = "0.1.0"
@@ -163,7 +162,7 @@ pub fn write_canonical_guarded_work_item(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let waiver = guard_waiver(guard_id, waiver_reason);
     let content = format!(
-        "[govctl]\nschema = 1\nid = \"{work_id}\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done criteria\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]{waiver}"
+        "[govctl]\nid = \"{work_id}\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done criteria\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]{waiver}"
     );
     write_guarded_work_item_content(dir, &content)
 }

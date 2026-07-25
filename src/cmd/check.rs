@@ -5,8 +5,7 @@ use crate::diagnostic::{
     Diagnostic, DiagnosticCode, DiagnosticLevel, DiagnosticResult, Diagnostics,
 };
 use crate::load::load_project_with_warnings;
-use crate::model::WorkItemStatus;
-use crate::parse::{load_guards_with_warnings, load_releases, load_work_items};
+use crate::parse::{load_guards_with_warnings, load_releases};
 use crate::scan::scan_source_refs;
 use crate::schema::installed_schema_diagnostics;
 use crate::ui;
@@ -138,22 +137,4 @@ pub(crate) fn collect_diagnostics(
     all_diagnostics.extend(scan_result.diagnostics);
 
     Ok((all_diagnostics, summary))
-}
-
-/// Fast-path: assert that at least one active work item exists.
-pub fn check_has_active(config: &Config) -> DiagnosticResult<Diagnostics> {
-    let items = load_work_items(config)?;
-    let has_active = items
-        .iter()
-        .any(|w| w.meta().status == WorkItemStatus::Active);
-
-    if has_active {
-        Ok(vec![])
-    } else {
-        Ok(vec![Diagnostic::new(
-            DiagnosticCode::W0109WorkNoActive,
-            "No active work item (hint: `govctl work new --active \"<title>\"`)",
-            "",
-        )])
-    }
 }

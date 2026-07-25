@@ -1,5 +1,122 @@
 use super::*;
 
+#[test]
+fn test_legacy_artifact_schema_field_is_rejected_for_all_artifacts() -> common::TestResult {
+    let cases = [
+        (
+            "gov/rfc/RFC-0001/rfc.toml",
+            r#"[govctl]
+schema = 1
+id = "RFC-0001"
+title = "Legacy artifact schema field"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["@test-user"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+"#,
+            "E0101",
+        ),
+        (
+            "gov/rfc/RFC-0002/clauses/C-LEGACY.toml",
+            r#"[govctl]
+schema = 1
+id = "C-LEGACY"
+title = "Legacy clause schema field"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = "Legacy clause."
+"#,
+            "E0201",
+        ),
+        (
+            "gov/adr/ADR-0001-legacy.toml",
+            r#"[govctl]
+schema = 1
+id = "ADR-0001"
+title = "Legacy ADR schema field"
+status = "proposed"
+date = "2026-01-01"
+refs = []
+
+[content]
+context = "Context"
+decision = "Decision"
+consequences = "Consequences"
+"#,
+            "E0301",
+        ),
+        (
+            "gov/work/2026-01-01-legacy-schema-field.toml",
+            r#"[govctl]
+schema = 1
+id = "WI-2026-01-01-001"
+title = "Legacy Work Item schema field"
+status = "queue"
+created = "2026-01-01"
+
+[content]
+description = "Description"
+"#,
+            "E0401",
+        ),
+        (
+            "gov/guard/legacy-schema-field.toml",
+            r#"[govctl]
+schema = 1
+id = "GUARD-LEGACY"
+title = "Legacy Guard schema field"
+
+[check]
+command = "true"
+"#,
+            "E1001",
+        ),
+    ];
+
+    for (relative_path, content, code) in cases {
+        let temp_dir = init_project()?;
+        let path = temp_dir.path().join(relative_path);
+        fs::create_dir_all(path.parent().expect("artifact path has parent"))?;
+        if code == "E0201" {
+            fs::write(
+                temp_dir.path().join("gov/rfc/RFC-0002/rfc.toml"),
+                r#"[govctl]
+id = "RFC-0002"
+title = "Legacy clause schema field"
+version = "1.0.0"
+status = "normative"
+phase = "stable"
+owners = ["@test-user"]
+created = "2026-01-01"
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-LEGACY.toml"]
+"#,
+            )?;
+        }
+        fs::write(path, content)?;
+
+        let output = run_commands(temp_dir.path(), &[&["check"]])?;
+        assert!(
+            output.contains(&format!("error[{code}]")),
+            "output: {output}"
+        );
+        assert!(
+            output.contains("Additional properties are not allowed ('schema' was unexpected)"),
+            "output: {output}"
+        );
+    }
+    Ok(())
+}
+
 /// Test: RFC files fail check when they contain unknown fields rejected by schema
 #[test]
 fn test_invalid_rfc_schema_check() -> common::TestResult {
@@ -11,7 +128,6 @@ fn test_invalid_rfc_schema_check() -> common::TestResult {
     fs::write(
         rfc_dir.join("rfc.toml"),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Invalid RFC"
 version = "1.0.0"
@@ -43,7 +159,6 @@ fn test_invalid_clause_schema_check() -> common::TestResult {
     fs::write(
         rfc_dir.join("rfc.toml"),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Clause Schema Test"
 version = "1.0.0"
@@ -61,7 +176,6 @@ clauses = ["clauses/C-TEST.toml"]
     fs::write(
         rfc_dir.join("clauses/C-TEST.toml"),
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Invalid Clause"
 kind = "normative"
@@ -85,7 +199,6 @@ fn test_invalid_adr_schema_check() -> common::TestResult {
     fs::write(
         temp_dir.path().join("gov/adr/ADR-0001-invalid.toml"),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Invalid ADR"
 status = "accepted"
@@ -113,7 +226,6 @@ fn test_invalid_work_schema_check() -> common::TestResult {
     fs::write(
         temp_dir.path().join("gov/work/2026-01-01-invalid.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Invalid Work Item"
 status = "queue"
@@ -138,7 +250,6 @@ fn test_invalid_release_schema_check() -> common::TestResult {
     fs::write(
         temp_dir.path().join("gov/releases.toml"),
         r#"[govctl]
-schema = 1
 
 [[releases]]
 version = "1.0.0"
@@ -161,7 +272,6 @@ fn test_invalid_guard_schema_check() -> common::TestResult {
     fs::write(
         temp_dir.path().join("gov/guard/check.toml"),
         r#"[govctl]
-schema = 1
 id = "GUARD-CHECK"
 title = "Invalid Guard"
 
@@ -216,7 +326,6 @@ fn test_check_reports_stale_schema_file_even_when_schema_version_is_current() ->
     fs::write(
         temp_dir.path().join("gov/work/2026-01-01-dependency.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Dependency field"
 status = "queue"

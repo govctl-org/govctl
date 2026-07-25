@@ -23,13 +23,13 @@ They are operational memory, not normative authority and not decision records.
 
 ```bash
 govctl work new --active "<title>"
-govctl work set <WI-ID> description "Task scope description"
-govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
-govctl work add <WI-ID> notes "Durable constraint or retry rule"
-govctl work add <WI-ID> refs RFC-NNNN
-govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
-govctl work add <WI-ID> tags <tag>
-govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+govctl work edit <WI-ID> description --set "Task scope description"
+govctl work edit <WI-ID> acceptance_criteria --add "<category>: <description>"
+govctl work edit <WI-ID> notes --add "Durable constraint or retry rule"
+govctl work edit <WI-ID> refs --add RFC-NNNN
+govctl work edit <WI-ID> depends_on --add <BLOCKING-WI-ID>
+govctl work edit <WI-ID> tags --add <tag>
+govctl work edit <WI-ID> acceptance_criteria[0] --tick done
 govctl work move <WI-ID> done
 ```
 
@@ -77,8 +77,8 @@ These notes may explain local execution constraints, but they do not override RF
 Do not use notes for progress updates, commands run, validation output, current plans, next actions, temporary blockers, hypotheses, review status, or "remember to do X" TODOs.
 
 ```bash
-govctl work add <WI-ID> notes "Do not retry the legacy JSON migration path; v0.9 intentionally rejects it"
-govctl work add <WI-ID> notes "Legacy inline journal entries must remain render-only for older work items"
+govctl work edit <WI-ID> notes --add "Do not retry the legacy JSON migration path; v0.9 intentionally rejects it"
+govctl work edit <WI-ID> notes --add "Legacy inline journal entries must remain render-only for older work items"
 ```
 
 ### Acceptance Criteria
@@ -97,15 +97,15 @@ govctl work add <WI-ID> notes "Legacy inline journal entries must remain render-
 
 ```bash
 # Feature work
-govctl work add <WI-ID> acceptance_criteria "add: Implement clause validation"
-govctl work add <WI-ID> acceptance_criteria "add: Error messages include clause ID"
+govctl work edit <WI-ID> acceptance_criteria --add "add: Implement clause validation"
+govctl work edit <WI-ID> acceptance_criteria --add "add: Error messages include clause ID"
 
 # Bug fix
-govctl work add <WI-ID> acceptance_criteria "fix: Duplicate clause detection"
+govctl work edit <WI-ID> acceptance_criteria --add "fix: Duplicate clause detection"
 
 # Internal
-govctl work add <WI-ID> acceptance_criteria "chore: All tests pass"
-govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
+govctl work edit <WI-ID> acceptance_criteria --add "chore: All tests pass"
+govctl work edit <WI-ID> acceptance_criteria --add "chore: govctl check passes"
 ```
 
 ### References
@@ -113,8 +113,8 @@ govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
 Link to governing artifacts:
 
 ```bash
-govctl work add <WI-ID> refs RFC-0001
-govctl work add <WI-ID> refs ADR-0023
+govctl work edit <WI-ID> refs --add RFC-0001
+govctl work edit <WI-ID> refs --add ADR-0023
 ```
 
 ### Dependencies and Batches
@@ -139,7 +139,7 @@ govctl loop remove <LOOP-ID> work <ROOT-WI-ID>
 govctl loop replan <LOOP-ID>
 ```
 
-`work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
+`work` is the only editable loop work-item field.
 
 Do not hand-write descriptive loop IDs or encode time finer than the day in loop IDs.
 
@@ -190,7 +190,7 @@ Work items cannot be marked done without ticking all criteria:
 
 ```bash
 # Tick criteria as you complete them
-govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+govctl work edit <WI-ID> acceptance_criteria[0] --tick done
 
 # When all criteria are done, close the work item
 govctl work move <WI-ID> done
@@ -201,7 +201,7 @@ govctl work move <WI-ID> done
 Always add at least one `chore:` criterion for validation:
 
 ```bash
-govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
+govctl work edit <WI-ID> acceptance_criteria --add "chore: govctl check passes"
 ```
 
 This ensures validation is an explicit gate, not an afterthought.

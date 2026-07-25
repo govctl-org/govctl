@@ -127,8 +127,8 @@ govctl guard list
 govctl guard show GUARD-MY-LINT
 
 # Set guard fields
-govctl guard edit GUARD-MY-LINT check.command --set "npm run lint"
-govctl guard edit GUARD-MY-LINT check.timeout_secs --set 60
+govctl guard edit GUARD-MY-LINT command --set "npm run lint"
+govctl guard edit GUARD-MY-LINT timeout_secs --set 60
 
 # Delete a guard (blocked if still referenced by work items or project defaults)
 govctl guard delete GUARD-MY-LINT
@@ -331,7 +331,7 @@ These are related but serve different purposes:
 
 Run `govctl migrate` when govctl reports an outdated schema version, missing or
 stale bundled schema files, or missing govctl-managed local-state `.gitignore`
-entries such as `.govctl.lock` and `.govctl/`. If a repository still contains
-legacy RFC or clause JSON storage, migrate it with govctl <0.9 before
-upgrading. Use the `/migrate` skill when bringing a legacy project under
-governance for the first time.
+entries such as `.govctl.lock` and `.govctl/`. Schema versions below 3 require
+migration with a compatible earlier govctl version before upgrading. Legacy RFC
+or clause JSON storage is rejected explicitly. Use the `/migrate` skill when
+bringing an existing project under governance for the first time.

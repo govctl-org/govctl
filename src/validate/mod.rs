@@ -28,7 +28,7 @@ use bracket_refs::validate_bracket_reference_hierarchy;
 use rfc::{validate_clause_references, validate_rfc};
 use signatures::validate_rfc_signatures;
 use tags::validate_artifact_tags;
-use work_items::{validate_work_item_descriptions, validate_work_item_legacy_inline_history};
+use work_items::validate_work_item_descriptions;
 
 pub(crate) use adr_projection::validate_adr_projection_ownership as validate_adr_projection;
 pub use artifact_refs::validate_artifact_ref_edit;
@@ -79,7 +79,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
                 format!(
-                    "ADR has no artifact references (hint: `govctl adr add {} refs RFC-XXXX`)",
+                    "ADR has no artifact references (hint: `govctl adr edit {} refs --add RFC-XXXX`)",
                     adr.meta().id
                 ),
                 adr_path_display.clone(),
@@ -91,7 +91,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0113AdrPlaceholderContext,
                 format!(
-                    "ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)",
+                    "ADR has placeholder context (hint: `govctl adr edit {} context --set \"...\"`)",
                     adr.meta().id
                 ),
                 adr_path_display.clone(),
@@ -120,7 +120,6 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
     validate_work_item_descriptions(index, config, &mut result);
 
     // Surface legacy inline execution history without blocking validation.
-    validate_work_item_legacy_inline_history(index, config, &mut result);
 
     // Validate tags against allowed set — [[RFC-0002:C-RESOURCES]]
     validate_artifact_tags(index, config, &mut result);

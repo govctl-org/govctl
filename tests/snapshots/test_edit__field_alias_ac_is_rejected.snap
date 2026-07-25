@@ -1,0 +1,16 @@
+---
+source: tests/edit_tests/path_cases/aliases.rs
+expression: value
+---
+$ govctl work new Test Task
+Created work item: gov/work/<DATE>-test-task.toml
+  ID: WI-<DATE>-001
+exit: 0
+
+$ govctl work edit WI-<DATE>-001 ac --add add: Test criterion
+error[E0803]: Unknown work item field: ac (WI-<DATE>-001)
+exit: 1
+
+$ govctl work get WI-<DATE>-001 ac
+error[E0803]: Unknown work item field: ac (WI-<DATE>-001)
+exit: 1

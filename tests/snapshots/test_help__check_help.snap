@@ -1,0 +1,22 @@
+---
+source: tests/test_help.rs
+expression: normalized
+---
+$ govctl check --help
+Validate all governed documents
+
+Usage: govctl check [OPTIONS]
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+  -W, --deny-warnings    Treat warnings as errors
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+EXAMPLES:
+    govctl check
+    govctl check -W
+
+NOTES:
+    - `-W/--deny-warnings` treats warnings as errors.
+exit: 0

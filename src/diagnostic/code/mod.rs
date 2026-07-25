@@ -7,7 +7,6 @@ mod metadata;
 pub enum DiagnosticLevel {
     Error,
     Warning,
-    Info,
 }
 
 /// Diagnostic error codes
@@ -160,16 +159,13 @@ pub enum DiagnosticCode {
     W0106RenderedReadError,
     W0107SourceRefOutdated,
     W0108WorkPlaceholderDescription,
-    W0109WorkNoActive,
     W0110SchemaOutdated,
     W0111ProjectSupportOutdated,
     /// Known artifact ID appears in governed prose without [[...]] syntax.
     W0112BareArtifactReference,
     /// ADR context still contains the generated placeholder text.
     W0113AdrPlaceholderContext,
-
     // Informational diagnostics (I04xx)
-    I0401WorkLegacyInlineHistory,
 }
 
 impl DiagnosticCode {
@@ -204,7 +200,6 @@ mod tests {
         assert_eq!(DiagnosticCode::W0111ProjectSupportOutdated.code(), "W0111");
         assert_eq!(DiagnosticCode::W0112BareArtifactReference.code(), "W0112");
         assert_eq!(DiagnosticCode::W0113AdrPlaceholderContext.code(), "W0113");
-        assert_eq!(DiagnosticCode::I0401WorkLegacyInlineHistory.code(), "I0401");
     }
 
     #[test]
@@ -228,10 +223,6 @@ mod tests {
         assert_eq!(
             DiagnosticCode::W0112BareArtifactReference.level(),
             DiagnosticLevel::Warning
-        );
-        assert_eq!(
-            DiagnosticCode::I0401WorkLegacyInlineHistory.level(),
-            DiagnosticLevel::Info
         );
     }
 }

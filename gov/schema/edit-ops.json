@@ -1,46 +1,5 @@
 {
   "version": 3,
-  "aliases": [
-    { "alias": "ac", "canonical": "acceptance_criteria" },
-    { "alias": "alt", "canonical": "alternatives" },
-    { "alias": "desc", "canonical": "description" },
-    { "alias": "pro", "canonical": "pros" },
-    { "alias": "con", "canonical": "cons" },
-    { "alias": "reason", "canonical": "rejection_reason" }
-  ],
-  "legacy_prefixes": [
-    {
-      "prefix": "content",
-      "allowed_fields": [
-        "context",
-        "decision",
-        "consequences",
-        "description",
-        "alternatives",
-        "acceptance_criteria",
-        "notes"
-      ]
-    },
-    {
-      "prefix": "govctl",
-      "allowed_fields": [
-        "id",
-        "status",
-        "title",
-        "date",
-        "refs",
-        "depends_on",
-        "tags",
-        "superseded_by",
-        "started",
-        "completed",
-        "created",
-        "phase",
-        "version",
-        "owners"
-      ]
-    }
-  ],
   "simple_rules": [
     {
       "artifact": "clause",
@@ -58,7 +17,7 @@
       "artifact": "clause",
       "name": "status",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "clause",
@@ -70,7 +29,7 @@
       "artifact": "clause",
       "name": "superseded_by",
       "kind": "scalar",
-      "verbs": ["get", "set"]
+      "verbs": ["get"]
     },
     {
       "artifact": "clause",
@@ -771,7 +730,7 @@
               "name": "pros",
               "node": {
                 "kind": "list",
-                "verbs": ["get", "set", "add", "remove"],
+                "verbs": ["get", "add", "remove"],
                 "text_key": null,
                 "item": {
                   "kind": "scalar",
@@ -784,7 +743,7 @@
               "name": "cons",
               "node": {
                 "kind": "list",
-                "verbs": ["get", "set", "add", "remove"],
+                "verbs": ["get", "add", "remove"],
                 "text_key": null,
                 "item": {
                   "kind": "scalar",
@@ -864,12 +823,12 @@
             "name": "required_guards",
             "node": {
               "kind": "list",
-              "verbs": ["get", "set", "add", "remove"],
+              "verbs": ["get", "add", "remove"],
               "text_key": null,
               "item": {
                 "kind": "scalar",
-                "verbs": ["get", "set"],
-                "set_mode": { "type": "string" }
+                "verbs": ["get"],
+                "set_mode": null
               }
             }
           },
@@ -901,41 +860,6 @@
                   }
                 ]
               }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "artifact": "guard",
-      "root": "check",
-      "content_path": ["check"],
-      "node": {
-        "kind": "object",
-        "verbs": ["get"],
-        "fields": [
-          {
-            "name": "command",
-            "node": {
-              "kind": "scalar",
-              "verbs": ["get", "set"],
-              "set_mode": { "type": "string" }
-            }
-          },
-          {
-            "name": "timeout_secs",
-            "node": {
-              "kind": "scalar",
-              "verbs": ["get", "set"],
-              "set_mode": { "type": "integer" }
-            }
-          },
-          {
-            "name": "pattern",
-            "node": {
-              "kind": "scalar",
-              "verbs": ["get", "set"],
-              "set_mode": { "type": "string" }
             }
           }
         ]

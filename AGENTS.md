@@ -205,9 +205,9 @@ govctl rfc finalize RFC-0001 normative
 govctl rfc advance RFC-0001 impl
 
 # Nested field editing (path-based per ADR-0029)
-govctl adr edit ADR-0001 content.alternatives[0].text --set "Updated option"
-govctl adr edit ADR-0001 content.alternatives[0].pros --add "New advantage"
-govctl work edit WI-001 content.acceptance_criteria[0].category --set fixed
+govctl adr edit ADR-0001 alternatives[0].text --set "Updated option"
+govctl adr edit ADR-0001 alternatives[0].pros --add "New advantage"
+govctl work edit WI-001 acceptance_criteria[0].category --set fixed
 ```
 
 Before requesting review: `just pre-commit`

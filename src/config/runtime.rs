@@ -24,6 +24,17 @@ impl Config {
                     config_path.display().to_string(),
                 )
             })?;
+            if config.schema.version < crate::cmd::migrate::MIN_SUPPORTED_SCHEMA_VERSION {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0505MigrationRequired,
+                    format!(
+                        "Project schema version {} is unsupported (minimum: {}). Migrate this repository with a compatible earlier govctl version before upgrading.",
+                        config.schema.version,
+                        crate::cmd::migrate::MIN_SUPPORTED_SCHEMA_VERSION
+                    ),
+                    config_path.display().to_string(),
+                ));
+            }
 
             // Resolve paths to absolute. gov_root is always <project_root>/gov.
             if let Some(project_root) = config_path.parent().and_then(|p| p.parent()) {

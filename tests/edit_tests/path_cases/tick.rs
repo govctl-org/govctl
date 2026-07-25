@@ -10,18 +10,18 @@ fn test_tick_rejects_nested_path() -> common::TestResult {
             &["work", "new", "Nested Tick"],
             &[
                 "work",
-                "add",
+                "edit",
                 &format!("WI-{}-001", date),
                 "acceptance_criteria",
+                "--add",
                 "add: Criterion 1",
             ],
             &[
                 "work",
-                "tick",
+                "edit",
                 &format!("WI-{}-001", date),
-                "ac[0].text",
-                "Criterion 1",
-                "-s",
+                "acceptance_criteria[0].text",
+                "--tick",
                 "done",
             ],
         ],
@@ -31,23 +31,28 @@ fn test_tick_rejects_nested_path() -> common::TestResult {
 }
 
 #[test]
-fn test_adr_edit_tick_updates_alternative_root() -> common::TestResult {
+fn test_adr_edit_tick_updates_indexed_alternative() -> common::TestResult {
     let temp_dir = init_project()?;
 
     let output = run_commands(
         temp_dir.path(),
         &[
             &["adr", "new", "Tick Root Test"],
-            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
             &[
                 "adr",
                 "edit",
                 "ADR-0001",
                 "alternatives",
+                "--add",
+                "Option A",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives[0]",
                 "--tick",
                 "accepted",
-                "--at",
-                "0",
             ],
             &["adr", "get", "ADR-0001", "alternatives"],
         ],
@@ -69,8 +74,22 @@ fn test_adr_edit_tick_updates_indexed_alternative_item() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Indexed Tick Test"],
-            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
-            &["adr", "edit", "ADR-0001", "alt[0]", "--tick", "accepted"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives",
+                "--add",
+                "Option A",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives[0]",
+                "--tick",
+                "accepted",
+            ],
             &["adr", "get", "ADR-0001", "alternatives[0].status"],
         ],
     )?;
@@ -95,16 +114,21 @@ fn test_adr_edit_tick_rejects_work_item_status_names() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Invalid Tick Test"],
-            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
             &[
                 "adr",
                 "edit",
                 "ADR-0001",
                 "alternatives",
+                "--add",
+                "Option A",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives[0]",
                 "--tick",
                 "done",
-                "--at",
-                "0",
             ],
         ],
     )?;

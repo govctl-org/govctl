@@ -73,7 +73,7 @@ govctl work list done
      ```
      If criteria match the completed work, suggest ticking them:
      ```bash
-     govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+     govctl work edit <WI-ID> acceptance_criteria[0] --tick done
      ```
 4. If the active work item does not apply and the diff is not spec-only, look for the active or done work item that governed the implementation
 
@@ -132,7 +132,7 @@ Before invoking the commit command, if a matching work item exists:
 1. **Add notes only when there is a closure-worthy durable constraint, retry rule, or learning to preserve after the work item is done**:
 
    ```bash
-   govctl work add <WI-ID> notes "Do not retry parser path X; it cannot preserve normalized arrays"
+   govctl work edit <WI-ID> notes --add "Do not retry parser path X; it cannot preserve normalized arrays"
    ```
 
    Do not add notes for commands run, tests passed, review findings addressed, current plans, next actions, or temporary blockers.
@@ -180,7 +180,7 @@ git commit -m "<type>(<area>): <summary>"
 govctl check                    # Validate all artifacts
 govctl work list pending        # List queued and active work items
 govctl work show <WI-ID>        # Show work item details
-govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
+govctl work edit <WI-ID> acceptance_criteria[0] --tick done
 
 # VCS commands
 jj status                       # Jujutsu

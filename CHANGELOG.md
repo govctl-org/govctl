@@ -10,6 +10,17 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Changed
+
+- Unsupported legacy storage is diagnosed explicitly instead of being silently ignored (WI-2026-07-25-001)
+- CLI help, describe metadata, diagnostic hints, bundled skills, and hand-authored guides use only retained canonical interfaces (WI-2026-07-25-001)
+
+### Removed
+
+- CLI compatibility surfaces superseded by the governing amendment are removed while the canonical edit interface retains equivalent artifact mutation outcomes (WI-2026-07-25-001)
+- Obsolete artifact readers, ignored legacy fields, migration steps, and signature fallbacks are removed according to the amended schema support baseline (WI-2026-07-25-001)
+- Release documentation identifies removed compatibility surfaces and the required repository upgrade baseline (WI-2026-07-25-001)
+
 ## [0.14.2] - 2026-07-25
 
 0.14.2 tightens the bundled agent guidance around verification and RFC

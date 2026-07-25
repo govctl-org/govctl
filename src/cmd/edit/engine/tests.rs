@@ -31,7 +31,7 @@ fn test_plan_simple_path() -> Result<(), Box<dyn std::error::Error>> {
 
 #[test]
 fn test_plan_nested_path() -> Result<(), Box<dyn std::error::Error>> {
-    let plan = plan_request("ADR-0001", Some("alt[0].pro[1]"))?;
+    let plan = plan_request("ADR-0001", Some("alternatives[0].pros[1]"))?;
     let fp = plan
         .field_path
         .as_ref()
@@ -76,18 +76,18 @@ fn test_scope_aware_alias_only_applies_when_valid_for_artifact()
 }
 
 #[test]
-fn test_scope_aware_alias_keeps_work_short_name() -> Result<(), Box<dyn std::error::Error>> {
-    let plan = plan_request("WI-2026-01-01-001", Some("desc"))?;
-    let fp = plan.field_path.ok_or("field path should exist")?;
-    assert_eq!(fp.as_simple(), Some("description"));
+fn test_noncanonical_work_short_name_is_rejected() -> Result<(), Box<dyn std::error::Error>> {
+    let diag = plan_request("WI-2026-01-01-001", Some("desc"))
+        .expect_err("noncanonical field should fail");
+    assert_eq!(diag.code, DiagnosticCode::E0803UnknownField);
     Ok(())
 }
 
 #[test]
-fn test_scope_aware_alias_under_legacy_prefix() -> Result<(), Box<dyn std::error::Error>> {
-    let plan = plan_request("WI-2026-01-01-001", Some("content.desc"))?;
-    let fp = plan.field_path.ok_or("field path should exist")?;
-    assert_eq!(fp.as_simple(), Some("description"));
+fn test_legacy_storage_prefix_is_rejected() -> Result<(), Box<dyn std::error::Error>> {
+    let diag = plan_request("WI-2026-01-01-001", Some("content.description"))
+        .expect_err("storage-prefixed field should fail");
+    assert_eq!(diag.code, DiagnosticCode::E0803UnknownField);
     Ok(())
 }
 
@@ -106,7 +106,7 @@ fn test_unknown_alias_in_scope_is_not_rewritten() -> Result<(), Box<dyn std::err
 
 #[test]
 fn test_plan_mutation_request_records_verb() -> Result<(), Box<dyn std::error::Error>> {
-    let plan = plan_mutation_request("ADR-0001", "content.decision", Verb::Set)?;
+    let plan = plan_mutation_request("ADR-0001", "decision", Verb::Set)?;
     assert_eq!(plan.verb, Some(Verb::Set));
     assert_eq!(
         plan.field_path

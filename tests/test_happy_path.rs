@@ -22,7 +22,6 @@ fn setup_minimal_valid(dir: &Path, date: &str) -> common::TestResult {
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "Test RFC"
 version = "1.0.0"
@@ -47,7 +46,6 @@ added = ["Initial release"]
         r#"#:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-EXAMPLE"
 title = "Example Clause"
 kind = "normative"
@@ -63,7 +61,6 @@ text = "This is an example clause for testing."
     fs::write(
         dir.join("gov/adr/ADR-0001-test-decision.toml"),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Test Decision"
 status = "accepted"

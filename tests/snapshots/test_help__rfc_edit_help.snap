@@ -44,17 +44,11 @@ Options:
       --stdin
           Read set/add value from stdin
 
-      --at <AT>
-          Match by index for remove/tick
-
-      --exact
-          Exact match for remove/tick
-
       --regex
-          Regex match for remove/tick
+          Treat the remove value as a regular expression
 
       --all
-          Remove all matches
+          Remove every item from the addressed list
 
   -h, --help
           Print help (see a summary with '-h')

@@ -25,8 +25,6 @@ pub use guard::{GuardCheck, GuardMeta, GuardSpec};
 pub use index::{AdrEntry, ClauseEntry, GuardEntry, ProjectIndex, RfcIndex, WorkItemEntry};
 pub use release::{Release, ReleasesFile};
 pub use rfc::{RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec};
-#[cfg(test)]
-pub use work::JournalEntry;
 pub use work::{
     ChecklistItem, ChecklistStatus, WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus,
     WorkItemVerification,

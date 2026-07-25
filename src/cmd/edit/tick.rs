@@ -25,6 +25,13 @@ pub fn tick_item(
     let artifact = plan.artifact;
     let target = &plan.target;
     reject_match_flags_for_indexed_target(id, target, opts)?;
+    if !matches!(target, super::engine::ResolvedTarget::IndexedItem { .. }) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            "Tick requires an indexed checklist path such as acceptance_criteria[0]",
+            id,
+        ));
+    }
 
     let status_str = match (artifact, status) {
         (ArtifactType::Adr, crate::TickStatus::Accepted) => "accepted",

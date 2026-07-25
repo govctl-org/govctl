@@ -2,7 +2,7 @@ use super::{OwnedEditAction, execute};
 use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::{DiagnosticResult, Diagnostics};
-use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
+use crate::model::{ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
 use crate::{FinalizeStatus, ListTarget, OutputFormat, RenderTarget, ShowOutputFormat};
 use std::path::PathBuf;
@@ -24,15 +24,6 @@ pub enum Scope {
     },
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct EditExtras {
-    pub category: Option<ChangelogCategory>,
-    pub scope: Option<String>,
-    pub pros: Vec<String>,
-    pub cons: Vec<String>,
-    pub reject_reason: Option<String>,
-}
-
 #[derive(Debug, Clone)]
 pub enum BuiltinOp {
     Init {
@@ -43,9 +34,7 @@ pub enum BuiltinOp {
         format: crate::SkillFormat,
         dir: Option<std::path::PathBuf>,
     },
-    Check {
-        has_active: bool,
-    },
+    Check,
     Status,
     RenderGlobal {
         target: RenderTarget,
@@ -177,15 +166,7 @@ pub enum CreateOp {
 
 #[derive(Debug, Clone)]
 pub enum EditOp {
-    Field {
-        action: OwnedEditAction,
-        extras: EditExtras,
-    },
-    ClauseLegacy {
-        text: Option<String>,
-        text_file: Option<PathBuf>,
-        stdin: bool,
-    },
+    Field { action: OwnedEditAction },
 }
 
 #[derive(Debug, Clone)]

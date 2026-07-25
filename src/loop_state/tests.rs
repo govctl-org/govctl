@@ -121,7 +121,7 @@ round_count = 0
 }
 
 #[test]
-fn test_loop_round_load_tolerates_legacy_max_rounds() -> TestResult {
+fn test_loop_round_load_rejects_legacy_max_rounds() -> TestResult {
     let temp_dir = tempfile::TempDir::new()?;
     let config = test_config(temp_dir.path());
     let loop_id = "LOOP-2026-05-31-007";
@@ -150,14 +150,11 @@ note_candidates = []
         ),
     )?;
 
-    let record = load_loop_round_record(&config, loop_id, 1)?;
-    assert_eq!(record.round_meta.loop_id, loop_id);
-    assert_eq!(record.round_meta.round_number, 1);
-    assert_eq!(record.round_meta.work, vec![work_id.to_string()]);
-
-    write_loop_round_record(&config, &record, WriteOp::Execute)?;
-    let rewritten = std::fs::read_to_string(round_dir.join("round-001.toml"))?;
-    assert!(!rewritten.contains("max_rounds"), "{rewritten}");
+    assert_err_contains(
+        load_loop_round_record(&config, loop_id, 1),
+        "unknown field `max_rounds`",
+        "legacy round metadata must be rejected",
+    )?;
     Ok(())
 }
 

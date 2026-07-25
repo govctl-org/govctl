@@ -20,7 +20,7 @@ Loop command arguments MUST have stable roles:
 3. Positional `WI-ID...` arguments identify explicit loop `work` field values for loop creation or field mutation.
 4. Positional `WI-ID...` arguments MUST NOT mean an execution target subset.
 5. Execution target selection MUST use an explicit selector flag.
-6. Loop field mutation MUST use the same `add` and `remove` field-position shape used by governed artifact resources.
+6. Loop field mutation MUST use the explicit `add LOOP-ID work WI-ID` and `remove LOOP-ID work WI-ID` shapes defined below.
 
 **Canonical subcommands:**
 
@@ -37,7 +37,7 @@ The canonical loop subcommands are:
 
 `loop run` MUST NOT accept a maximum-rounds argument or any other caller retry-budget argument. Repeated execution limits belong to callers and MUST NOT be persisted in loop state or round artifacts.
 
-The `work` field is the only canonical user-facing field name for the loop's explicit work set. Implementations MUST accept `wi` as a shorthand alias for `work`. User-facing help SHOULD prefer `loop add LOOP-ID work WI-ID` and `loop remove LOOP-ID work WI-ID` while documenting the alias.
+The `work` field is the only accepted user-facing field name for the loop's explicit work set. Implementations MUST reject `wi` and every other field alias.
 
 **Discovery semantics:**
 

@@ -1,8 +1,8 @@
 use super::*;
 use crate::model::{
     AdrContent, AdrEntry, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus,
-    ChangelogCategory, ChecklistItem, ChecklistStatus, JournalEntry, WorkItemContent,
-    WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus,
+    ChangelogCategory, ChecklistItem, ChecklistStatus, WorkItemContent, WorkItemEntry,
+    WorkItemMeta, WorkItemSpec, WorkItemStatus,
 };
 
 const DEFAULT_PATTERN: &str = r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]";

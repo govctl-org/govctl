@@ -25,7 +25,6 @@ mod tick;
 mod toml_adapter;
 mod toml_target;
 
-use self::adapter::{ClauseTomlAdapter, DocAdapter};
 use self::add::{AddFieldRequest, add_to_field};
 pub use self::artifact::ArtifactType;
 pub use self::get::get_field;
@@ -35,15 +34,12 @@ use self::set::apply_set_field;
 pub(crate) use self::set::set_field_direct;
 pub use self::tick::tick_item;
 use self::{engine as edit_engine, path::FieldPath, rules as edit_rules};
-use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::ui;
-use crate::write::WriteOp;
 pub use delete::{delete_clause, delete_work_item};
 pub use matching::{MatchOptions, MatchOptionsOwned};
-use std::path::Path;
 
-use self::request::{read_stdin, resolve_owned_value};
+use self::request::resolve_owned_value;
 
 // Field normalization is centralized in edit_engine::plan_request.
 
@@ -106,51 +102,12 @@ pub(super) fn plan_mutation_target(
     })
 }
 
-pub fn edit_clause(
-    config: &Config,
-    clause_id: &str,
-    text: Option<&str>,
-    text_file: Option<&Path>,
-    stdin: bool,
-    op: WriteOp,
-) -> DiagnosticResult<Vec<Diagnostic>> {
-    let mut clause_doc = ClauseTomlAdapter::load(config, clause_id)?;
-
-    let new_text = match (text, text_file, stdin) {
-        (Some(t), None, false) => t.to_string(),
-        (None, Some(path), false) => std::fs::read_to_string(path).map_err(|err| {
-            Diagnostic::io_error("read text file", err, path.display().to_string())
-        })?,
-        (None, None, true) => read_stdin()?,
-        (None, None, false) => {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0801MissingRequiredArg,
-                "Provide --text, --text-file, or --stdin",
-                "input",
-            ));
-        }
-        _ => unreachable!("clap arg group ensures mutual exclusivity"),
-    };
-
-    clause_doc.data.text = new_text;
-    ClauseTomlAdapter::write(config, &clause_doc, op)?;
-
-    if !op.is_preview() {
-        ui::updated("clause", clause_id);
-    }
-    Ok(vec![])
-}
-
 pub fn edit_field(request: EditFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnostic>> {
     let EditFieldRequest {
         config,
         id,
         path,
         action,
-        category_override,
-        pros,
-        cons,
-        reject_reason,
         op,
     } = request;
 
@@ -179,10 +136,6 @@ pub fn edit_field(request: EditFieldRequest<'_>) -> DiagnosticResult<Vec<Diagnos
                 id,
                 field: path,
                 value: value.as_str(),
-                category_override,
-                pros,
-                cons,
-                reject_reason,
                 op,
             })
         }
@@ -206,22 +159,13 @@ fn reject_match_flags_for_indexed_target(
     opts: &MatchOptions,
 ) -> DiagnosticResult<()> {
     let pattern_provided = opts.pattern.is_some_and(|pattern| !pattern.is_empty());
-    let edit_engine::ResolvedTarget::IndexedItem { index, .. } = target else {
+    let edit_engine::ResolvedTarget::IndexedItem { .. } = target else {
         return Ok(());
     };
-    if pattern_provided || opts.exact || opts.regex || opts.all {
+    if pattern_provided || opts.regex || opts.all {
         return Err(Diagnostic::new(
             DiagnosticCode::E0818PathIndexConflict,
-            "Cannot combine indexed path (e.g., alt[0].cons[1]) with match flags (--at, --exact, --regex, --all, or pattern)",
-            id,
-        ));
-    }
-    if let Some(existing_at) = opts.at
-        && existing_at != *index
-    {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0818PathIndexConflict,
-            "Cannot combine indexed path with a different --at value",
+            "Cannot combine an indexed path with a value, --regex, or --all",
             id,
         ));
     }

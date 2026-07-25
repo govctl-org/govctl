@@ -11,8 +11,6 @@ fn test_edit_plans_are_mutating() -> Result<(), Box<dyn std::error::Error>> {
             remove: None,
             tick: None,
             stdin: false,
-            at: None,
-            exact: false,
             regex: false,
             all: false,
         },
@@ -22,23 +20,21 @@ fn test_edit_plans_are_mutating() -> Result<(), Box<dyn std::error::Error>> {
     assert!(matches!(plan.op, Op::Edit(EditOp::Field { .. })));
     assert_eq!(plan.lock_disposition(), LockDisposition::GovRootExclusive);
 
-    let plan = ClauseCommand::Edit {
+    let plan = ClauseCommand::Edit(CommonEditArgs {
         id: "RFC-0001:C-TEST".to_string(),
-        path: None,
-        set: None,
-        add: None,
-        remove: None,
-        tick: None,
-        stdin: true,
-        at: None,
-        exact: false,
-        regex: false,
-        all: false,
-        text: None,
-        text_file: None,
-    }
+        path: "text".to_string(),
+        action: EditActionArgs {
+            set: Some(None),
+            add: None,
+            remove: None,
+            tick: None,
+            stdin: true,
+            regex: false,
+            all: false,
+        },
+    })
     .to_plan()?;
-    assert!(matches!(plan.op, Op::Edit(EditOp::ClauseLegacy { .. })));
+    assert!(matches!(plan.op, Op::Edit(EditOp::Field { .. })));
     assert_eq!(plan.lock_disposition(), LockDisposition::GovRootExclusive);
     Ok(())
 }
@@ -154,8 +150,10 @@ fn test_lock_disposition_requires_lock_for_mutating_commands()
         plan_edit(
             "WI-2026-04-07-004",
             "acceptance_criteria[0]",
-            tick_action(OwnedMatchOptions::default(), TickStatus::Done),
-            EditExtras::default(),
+            OwnedEditAction::Tick {
+                match_opts: OwnedMatchOptions::default(),
+                status: TickStatus::Done,
+            },
         )?
         .lock_disposition(),
         LockDisposition::GovRootExclusive

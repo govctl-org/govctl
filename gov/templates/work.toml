@@ -2,7 +2,6 @@
 # See gov/schema/SCHEMA.md for full specification
 
 [govctl]
-schema = 1
 id = "WI-YYYY-MM-DD-NNN"
 title = "Work Item Title"
 status = "queue"
@@ -25,5 +24,5 @@ notes = []
 # category = "added"  # added | changed | deprecated | removed | fixed | security | chore (chore items excluded from changelog)
 #
 # CLI supports prefix parsing per ADR-0012/ADR-0013:
-#   govctl work add WI-xxx acceptance_criteria "fix: memory leak"
+#   govctl work edit WI-xxx acceptance_criteria --add "fix: memory leak"
 #   → creates criterion with text="memory leak", category="fixed"

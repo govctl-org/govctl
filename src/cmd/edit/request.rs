@@ -1,7 +1,6 @@
 use super::matching::MatchOptionsOwned;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::model::ChangelogCategory;
 use crate::write::WriteOp;
 use std::io::Read;
 
@@ -29,10 +28,6 @@ pub struct EditFieldRequest<'a> {
     pub id: &'a str,
     pub path: &'a str,
     pub action: &'a OwnedEditAction,
-    pub category_override: Option<ChangelogCategory>,
-    pub pros: Option<Vec<String>>,
-    pub cons: Option<Vec<String>>,
-    pub reject_reason: Option<String>,
     pub op: WriteOp,
 }
 

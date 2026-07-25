@@ -75,11 +75,28 @@ fn test_guard_root_help() -> common::TestResult {
 }
 
 #[test]
-fn test_adr_tick_help() -> common::TestResult {
-    assert_help_snapshot!(&["adr", "tick", "--help"])
+fn test_adr_edit_help() -> common::TestResult {
+    assert_help_snapshot!(&["adr", "edit", "--help"])
 }
 
 #[test]
-fn test_work_tick_help() -> common::TestResult {
-    assert_help_snapshot!(&["work", "tick", "--help"])
+fn test_work_edit_help() -> common::TestResult {
+    assert_help_snapshot!(&["work", "edit", "--help"])
+}
+
+#[test]
+fn test_check_help() -> common::TestResult {
+    assert_help_snapshot!(&["check", "--help"])
+}
+
+#[test]
+fn test_check_rejects_removed_has_active_flag() -> common::TestResult {
+    let (temp_dir, _) = common::temp_dir_with_date()?;
+    let output = run_commands(temp_dir.path(), &[&["check", "--has-active"]])?;
+    assert!(
+        output.contains("unexpected argument '--has-active'"),
+        "{output}"
+    );
+    assert!(output.contains("exit: 2"), "{output}");
+    Ok(())
 }

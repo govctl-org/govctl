@@ -1,15 +1,19 @@
 ---
-source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/edit_tests/path_cases/nested_adr.rs
+expression: value
 ---
 $ govctl adr new Conflict Test
 Created ADR: gov/adr/ADR-XXXX-conflict-test.toml
 exit: 0
 
-$ govctl adr add ADR-0001 alternatives Opt1 --con Bad
+$ govctl adr edit ADR-0001 alternatives --add Opt1
 Added 'Opt1' to ADR-0001.alternatives
 exit: 0
 
-$ govctl adr remove ADR-0001 alt[0].cons[0] --exact Bad
-error[E0818]: Cannot combine indexed path (e.g., alt[0].cons[1]) with match flags (--at, --exact, --regex, --all, or pattern) (ADR-0001)
+$ govctl adr edit ADR-0001 alternatives[0].cons --add Bad
+Added 'Bad' to ADR-0001.alternatives[0].cons
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives[0].cons[0] --remove Bad
+error[E0818]: Cannot combine an indexed path with a value, --regex, or --all (ADR-0001)
 exit: 1

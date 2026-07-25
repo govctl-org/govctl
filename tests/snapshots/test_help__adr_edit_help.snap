@@ -1,0 +1,62 @@
+---
+source: tests/test_help.rs
+expression: normalized
+---
+$ govctl adr edit --help
+Canonical path-first edit entrypoint
+
+Usage: govctl adr edit [OPTIONS] <ID> <PATH>
+
+Arguments:
+  <ID>
+          Artifact ID
+
+  <PATH>
+          Canonical field path
+
+Options:
+  -C, --config <CONFIG>
+          Path to govctl config (TOML)
+
+      --set [<SET>]
+          Set a scalar value (omit VALUE only when using --stdin)
+
+      --add [<ADD>]
+          Append a value to a list (omit VALUE only when using --stdin)
+
+      --dry-run
+          Dry run: preview changes without writing files
+
+      --remove [<REMOVE>]
+          Remove a matching value, or omit PATTERN when removing an indexed path
+
+      --tick <TICK>
+          Update checklist-style item status
+
+          Possible values:
+          - done:       Mark work items as done
+          - pending:    Mark work items as pending
+          - cancelled:  Mark work items as cancelled
+          - accepted:   Mark ADR alternatives as accepted
+          - considered: Mark ADR alternatives as considered
+          - rejected:   Mark ADR alternatives as rejected
+
+      --stdin
+          Read set/add value from stdin
+
+      --regex
+          Treat the remove value as a regular expression
+
+      --all
+          Remove every item from the addressed list
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+EXAMPLES:
+    govctl adr edit ADR-0001 decision --set "We will ..."
+    govctl adr edit ADR-0001 consequences --set "Trade-off summary"
+    govctl adr edit ADR-0001 alternatives --add "Option A"
+    govctl adr edit ADR-0001 alternatives[0].pros --add "Readable"
+    govctl adr edit ADR-0001 alternatives[0] --tick accepted
+exit: 0

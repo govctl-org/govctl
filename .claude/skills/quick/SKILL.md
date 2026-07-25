@@ -54,9 +54,9 @@ If using a work item:
 
 ```bash
 govctl work show <WI-ID>
-govctl work set <WI-ID> description "Brief scope: what and why"
-govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
-govctl work add <WI-ID> acceptance_criteria "<category>: <specific observable outcome for this trivial change>"
+govctl work edit <WI-ID> description --set "Brief scope: what and why"
+govctl work edit <WI-ID> acceptance_criteria --add "chore: govctl check passes"
+govctl work edit <WI-ID> acceptance_criteria --add "<category>: <specific observable outcome for this trivial change>"
 ```
 
 The second criterion must be concrete and diff-specific. Examples:
@@ -70,10 +70,12 @@ The second criterion must be concrete and diff-specific. Examples:
 If using a work item, verify the active gate before editing:
 
 ```bash
-govctl check --has-active
+govctl work list active
 ```
 
-Otherwise, make the change without creating a work item. If code comments reference governance artifacts, use `[[artifact-id]]`.
+Confirm the intended work item appears in the active list. Otherwise, make the
+change without creating a work item. If code comments reference governance
+artifacts, use `[[artifact-id]]`.
 
 Run the relevant validation:
 
@@ -90,11 +92,11 @@ item active.
 If using a work item, add a note only when there is a durable lesson that should remain useful after closure:
 
 ```bash
-govctl work add <WI-ID> notes "Do not use the old command name in generated examples; it was removed in v0.9"
+govctl work edit <WI-ID> notes --add "Do not use the old command name in generated examples; it was removed in v0.9"
 ```
 
 Do not write progress, command output, review status, current plans, next actions, temporary blockers, or TODOs to `notes`. Transient execution progress belongs in loop state and round artifacts, not in work item fields.
-When a tracked cleanup batch gains or loses durable roots, use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>`, `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>`, or `govctl loop replan <LOOP-ID>` rather than creating a new loop for each small item. `wi` is accepted as a short alias for the loop `work` field, but examples should prefer `work`.
+When a tracked cleanup batch gains or loses durable roots, use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>`, `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>`, or `govctl loop replan <LOOP-ID>` rather than creating a new loop for each small item.
 
 ### 4. Complete
 

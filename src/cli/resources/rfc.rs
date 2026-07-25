@@ -2,18 +2,15 @@ use clap::Subcommand;
 
 use crate::model::RfcPhase;
 use crate::{
-    CommonAddArgs, CommonDeprecateArgs, CommonEditArgs, CommonGetArgs, CommonListArgs,
-    CommonRemoveArgs, CommonRenderArgs, CommonSetArgs, CommonShowArgs, CommonSupersedeArgs,
-    FinalizeStatus,
+    CommonDeprecateArgs, CommonEditArgs, CommonGetArgs, CommonListArgs, CommonRenderArgs,
+    CommonShowArgs, CommonSupersedeArgs, FinalizeStatus,
 };
 
 /// RFC commands (resource-first structure)
 #[derive(Subcommand, Clone, Debug)]
 pub(crate) enum RfcCommand {
     /// List RFCs
-    #[command(
-        visible_alias = "ls",
-        after_help = "\
+    #[command(after_help = "\
 FILTERS:
     Filter may be an RFC status, phase, or ID/title substring.
 
@@ -22,8 +19,7 @@ EXAMPLES:
     govctl rfc list draft
     govctl rfc list impl -n 5
     govctl rfc list RFC-0002 -o json
-"
-    )]
+")]
     List(CommonListArgs),
     /// Get RFC metadata or specific field
     #[command(after_help = "\
@@ -81,52 +77,6 @@ NOTES:
     - RFC and changelog version/date fields are lifecycle-owned.
 ")]
     Edit(CommonEditArgs),
-    /// Set RFC field value
-    #[command(after_help = "\
-VALID FIELDS:
-  String fields (use 'set'):
-    - title: RFC title
-
-  Array fields (use 'add' / 'remove'):
-    - owners, refs, sections
-
-EXAMPLES:
-    govctl rfc set RFC-0001 title \"New Title\"
-
-Use dedicated lifecycle verbs instead of `set` for:
-    - version → `govctl rfc bump`
-    - status → `govctl rfc finalize` / `govctl rfc deprecate` / `govctl rfc supersede`
-    - phase → `govctl rfc advance`
-")]
-    Set(CommonSetArgs),
-    /// Add value to RFC array field
-    #[command(after_help = "\
-VALID ARRAY FIELDS:
-    - refs: Cross-references to other RFCs (e.g., \"RFC-0002\")
-    - owners: RFC owners (e.g., \"@alice\")
-
-EXAMPLES:
-    govctl rfc add RFC-0001 refs RFC-0002
-    govctl rfc add RFC-0001 owners @alice
-")]
-    Add(CommonAddArgs),
-    /// Remove value from RFC array field
-    #[command(after_help = "\
-VALID ARRAY FIELDS:
-    - refs, owners
-
-MATCHING OPTIONS:
-    - pattern: Substring match (default)
-    - --at N: Remove by index (0-based, negative = from end)
-    - --exact: Exact string match
-    - --regex: Regex pattern match
-    - --all: Remove all matches
-
-EXAMPLES:
-    govctl rfc remove RFC-0001 refs RFC-0002     # Remove first match
-    govctl rfc remove RFC-0001 refs --at 1       # Remove by index
-")]
-    Remove(CommonRemoveArgs),
     /// Bump RFC version
     #[command(after_help = "\
 EXAMPLES:

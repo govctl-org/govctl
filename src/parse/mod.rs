@@ -41,7 +41,6 @@ pub fn load_adr(config: &Config, path: &Path) -> Result<AdrEntry, Diagnostic> {
         DiagnosticCode::E0301AdrSchemaInvalid,
         "Invalid TOML",
         "Invalid ADR structure",
-        |_| {},
     )?;
 
     Ok(AdrEntry {
@@ -108,7 +107,6 @@ pub fn load_guard(config: &Config, path: &Path) -> Result<GuardEntry, Diagnostic
         DiagnosticCode::E1001GuardSchemaInvalid,
         "Invalid TOML",
         "Invalid verification guard structure",
-        |_| {},
     )?;
 
     Ok(GuardEntry {
@@ -126,24 +124,12 @@ pub fn load_work_item(config: &Config, path: &Path) -> Result<WorkItemEntry, Dia
         DiagnosticCode::E0401WorkSchemaInvalid,
         "Invalid TOML",
         "Invalid work item structure",
-        strip_legacy_inline_history_for_schema,
     )?;
 
     Ok(WorkItemEntry {
         spec,
         path: path.to_path_buf(),
     })
-}
-
-fn strip_legacy_inline_history_for_schema(raw: &mut toml::Value) {
-    let Some(content) = raw
-        .as_table_mut()
-        .and_then(|root| root.get_mut("content"))
-        .and_then(toml::Value::as_table_mut)
-    else {
-        return;
-    };
-    content.remove("journal");
 }
 
 /// Write a work item to TOML file
@@ -196,7 +182,6 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
         DiagnosticCode::E0704ReleaseSchemaInvalid,
         "Invalid releases.toml",
         "Invalid release structure",
-        |_| {},
     )?;
 
     // Validate all versions are valid semver

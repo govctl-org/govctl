@@ -21,23 +21,22 @@ fn resolves_case_insensitive_substring_match() -> Result<(), Box<dyn std::error:
 }
 
 #[test]
-fn strips_known_category_prefixes_before_matching() -> Result<(), Box<dyn std::error::Error>> {
+fn exact_matching_does_not_strip_category_prefixes() {
     let items = ["some text", "other text"];
     let opts = MatchOptions {
         pattern: Some("fixed: some text"),
+        exact: true,
         ..Default::default()
     };
 
-    let indices = resolve_match_indices(
+    let result = resolve_match_indices(
         "WI-1",
         "acceptance_criteria",
         &items,
         &opts,
-        MatchUse::TickSingle,
-    )?;
-
-    assert_eq!(indices, vec![0]);
-    Ok(())
+        MatchUse::Remove,
+    );
+    assert!(result.is_err());
 }
 
 #[test]
@@ -79,27 +78,26 @@ fn allows_remove_all_for_multiple_matches() -> Result<(), Box<dyn std::error::Er
         MatchUse::Remove,
     )?;
 
-    assert_eq!(indices, vec![0, 1]);
+    assert_eq!(indices, vec![0, 1, 2]);
     Ok(())
 }
 
 #[test]
-fn resolves_negative_indices_from_end() -> Result<(), Box<dyn std::error::Error>> {
+fn rejects_negative_indices() -> Result<(), Box<dyn std::error::Error>> {
     let items = ["first", "second", "third"];
     let opts = MatchOptions {
         at: Some(-1),
         ..Default::default()
     };
 
-    let indices = resolve_match_indices(
+    let result = resolve_match_indices(
         "WI-1",
         "acceptance_criteria",
         &items,
         &opts,
         MatchUse::TickSingle,
-    )?;
-
-    assert_eq!(indices, vec![2]);
+    );
+    assert!(result.is_err());
     Ok(())
 }
 

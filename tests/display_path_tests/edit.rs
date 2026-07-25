@@ -8,7 +8,6 @@ fn write_draft_rfc_fixture(project_dir: &std::path::Path) -> common::TestResult 
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "Draft RFC"
 version = "0.1.0"
@@ -40,9 +39,10 @@ fn test_rfc_set_dry_run_display_path() -> common::TestResult {
         temp_dir.path(),
         &[&[
             "rfc",
-            "set",
+            "edit",
             "RFC-0001",
             "title",
+            "--set",
             "Updated Title",
             "--dry-run",
         ]],

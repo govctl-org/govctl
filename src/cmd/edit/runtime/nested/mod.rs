@@ -96,16 +96,6 @@ fn apply_nested_scalar_set(
 ) -> DiagnosticResult<()> {
     match mode.unwrap_or(NestedScalarMode::String) {
         NestedScalarMode::String => *slot = Value::String(value.to_string()),
-        NestedScalarMode::Integer => {
-            let n: i64 = value.parse().map_err(|_| {
-                Diagnostic::new(
-                    DiagnosticCode::E0820InvalidFieldValue,
-                    format!("Invalid integer value for {}: {value}", id),
-                    id,
-                )
-            })?;
-            *slot = Value::Number(serde_json::Number::from(n));
-        }
         NestedScalarMode::Enum {
             allowed,
             invalid_msg,

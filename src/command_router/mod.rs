@@ -16,12 +16,8 @@ use crate::{ListTarget, OutputFormat, ShowOutputFormat};
 pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 pub(crate) type OwnedEditAction = cmd::edit::OwnedEditAction;
 
-pub(crate) use edit_action::{
-    add_action, owned_edit_action, remove_action, set_action, tick_action,
-};
-pub use plan::{
-    BuiltinOp, CommandPlan, CreateOp, EditExtras, EditOp, LifecycleOp, LockDisposition, Op, Scope,
-};
+pub(crate) use edit_action::owned_edit_action;
+pub use plan::{BuiltinOp, CommandPlan, CreateOp, EditOp, LifecycleOp, LockDisposition, Op, Scope};
 
 fn artifact_scope(artifact: cmd::edit::ArtifactType, id: &str) -> Scope {
     Scope::Artifact {
@@ -56,10 +52,6 @@ pub(crate) fn artifact(artifact: cmd::edit::ArtifactType, id: &str, op: Op) -> C
 
 fn target(id: &str, field: Option<&str>, op: Op) -> DiagnosticResult<CommandPlan> {
     Ok(CommandPlan::new(resolve_scope(id, field)?, op))
-}
-
-fn edit_op_with_extras(action: OwnedEditAction, extras: EditExtras) -> Op {
-    Op::Edit(EditOp::Field { action, extras })
 }
 
 pub(crate) fn plan_create(collection_target: ListTarget, create: CreateOp) -> CommandPlan {
@@ -101,9 +93,8 @@ pub(crate) fn plan_edit(
     id: &str,
     field: &str,
     action: OwnedEditAction,
-    extras: EditExtras,
 ) -> DiagnosticResult<CommandPlan> {
-    target(id, Some(field), edit_op_with_extras(action, extras))
+    target(id, Some(field), Op::Edit(EditOp::Field { action }))
 }
 
 pub(crate) fn plan_lifecycle(

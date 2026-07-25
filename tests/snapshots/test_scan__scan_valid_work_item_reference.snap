@@ -1,6 +1,6 @@
 ---
 source: tests/test_scan.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl check
 Checked:
@@ -12,5 +12,5 @@ Checked:
   1 source files scanned
   1 references found
 
-warning[W0108]: Work item has placeholder description (hint: `govctl work set WI-<DATE>-001 description "..."`) (gov/work/<DATE>-test-task.toml)
+warning[W0108]: Work item has placeholder description (hint: `govctl work edit WI-<DATE>-001 description --set "..."`) (gov/work/<DATE>-test-task.toml)
 exit: 0

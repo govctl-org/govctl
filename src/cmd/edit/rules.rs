@@ -18,7 +18,6 @@ pub enum NestedNodeKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NestedScalarMode {
     String,
-    Integer,
     Enum {
         allowed: &'static [&'static str],
         invalid_msg: &'static str,
@@ -100,28 +99,6 @@ impl Verb {
     }
 }
 
-macro_rules! define_alias_resolver {
-    ($(($alias:literal, $canonical:literal)),* $(,)?) => {
-        pub fn normalize_alias(name: &str) -> &str {
-            match name {
-                $($alias => $canonical,)*
-                _ => name,
-            }
-        }
-    };
-}
-
-macro_rules! define_legacy_prefix_resolver {
-    ($(($prefix:literal, [$($field:literal),* $(,)?])),* $(,)?) => {
-        pub fn can_collapse_legacy_prefix(prefix: &str, field: &str) -> bool {
-            match prefix {
-                $($prefix => matches!(field, $($field)|*),)*
-                _ => false,
-            }
-        }
-    };
-}
-
 include!(concat!(env!("OUT_DIR"), "/edit_rules_generated.rs"));
 
 pub fn nested_root_rule(artifact: &str, root: &str) -> Option<&'static NestedRootRule> {
@@ -140,6 +117,7 @@ pub fn simple_field_supports_verb(artifact: &str, field: &str, verb: Verb) -> bo
     simple_field_rule(artifact, field).is_some_and(|rule| rule.verbs.contains(&verb.as_str()))
 }
 
+#[cfg(test)]
 pub fn nested_field_rule(
     artifact: &str,
     root: &str,
@@ -200,20 +178,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_aliases_generated() {
-        assert_eq!(normalize_alias("alt"), "alternatives");
-        assert_eq!(normalize_alias("reason"), "rejection_reason");
-        assert_eq!(normalize_alias("unknown"), "unknown");
-    }
-
-    #[test]
-    fn test_legacy_prefix_generation() {
-        assert!(can_collapse_legacy_prefix("content", "decision"));
-        assert!(!can_collapse_legacy_prefix("content", "nonexistent"));
-        assert!(!can_collapse_legacy_prefix("nope", "decision"));
-    }
-
-    #[test]
     fn test_nested_rule_lookup() -> Result<(), Box<dyn std::error::Error>> {
         let rule = nested_root_rule("adr", "alternatives").ok_or("rule should exist")?;
         assert_eq!(rule.node.kind, NestedNodeKind::List);
@@ -235,15 +199,6 @@ mod tests {
             "status",
             Verb::Add
         ));
-    }
-
-    #[test]
-    fn test_nested_object_root_lookup() -> Result<(), Box<dyn std::error::Error>> {
-        let rule = nested_root_rule("guard", "check").ok_or("rule should exist")?;
-        assert_eq!(rule.node.kind, NestedNodeKind::Object);
-        let child = nested_field_rule("guard", "check", "timeout_secs").ok_or("child exists")?;
-        assert_eq!(child.node.kind, NestedNodeKind::Scalar);
-        Ok(())
     }
 
     #[test]

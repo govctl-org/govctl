@@ -94,29 +94,6 @@ pub fn render_work_item_with_projection(
     let _ = writeln!(out, "{}", content.description);
     let _ = writeln!(out);
 
-    // Legacy inline history remains renderable for existing work items per [[ADR-0047]].
-    if !content.journal.is_empty() {
-        let _ = writeln!(out, "## Journal");
-        let _ = writeln!(out);
-        let _ = writeln!(
-            out,
-            "> Legacy execution history preserved from older work items. Move durable takeaways to `notes` and keep new execution trace in loop state."
-        );
-        let _ = writeln!(out);
-        for entry in &content.journal {
-            // Render heading with date and optional scope
-            if let Some(ref scope) = entry.scope {
-                let _ = writeln!(out, "### {} · {}", entry.date, scope);
-            } else {
-                let _ = writeln!(out, "### {}", entry.date);
-            }
-            let _ = writeln!(out);
-            // Render content (multi-line markdown)
-            let _ = writeln!(out, "{}", entry.content);
-            let _ = writeln!(out);
-        }
-    }
-
     // Acceptance Criteria
     if !content.acceptance_criteria.is_empty() {
         let _ = writeln!(out, "## Acceptance Criteria");

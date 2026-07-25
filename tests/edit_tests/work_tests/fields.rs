@@ -44,7 +44,6 @@ fn test_work_get_falls_back_to_partial_filename_starting_with_wi() -> common::Te
     std::fs::write(
         temp_dir.path().join("gov/work/WI-partial-edit.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-778"
 title = "Partial Edit Lookup"
 status = "queue"
@@ -104,7 +103,11 @@ fn test_work_set_acceptance_criteria_status_rejected() -> common::TestResult {
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
-    assert!(output.contains("govctl work tick"), "output: {}", output);
+    assert!(
+        output.contains("govctl work edit <ID> acceptance_criteria[N] --tick <status>"),
+        "output: {}",
+        output
+    );
     Ok(())
 }
 

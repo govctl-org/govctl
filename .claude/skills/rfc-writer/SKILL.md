@@ -24,10 +24,10 @@ They are normative artifacts, not design diaries, code sketches, or task plans.
 ```bash
 govctl rfc new "<title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF'
 clause text
 EOF
-govctl rfc add <RFC-ID> tags <tag>
+govctl rfc edit <RFC-ID> tags --add <tag>
 ```
 
 ## RFC Structure
@@ -42,7 +42,7 @@ Every RFC should have:
 
 ```bash
 govctl clause new <RFC-ID>:C-SUMMARY "Summary" -s "Summary" -k informative
-govctl clause edit <RFC-ID>:C-SUMMARY text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-SUMMARY text --set --stdin <<'EOF'
 Brief overview of what this RFC specifies and why.
 
 **Scope:** What is covered and what is not.
@@ -55,7 +55,7 @@ EOF
 
 ```bash
 govctl clause new <RFC-ID>:C-<NAME> "<Title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF'
 The system MUST ...
 The system SHOULD ...
 The system MAY ...

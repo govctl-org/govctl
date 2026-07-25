@@ -103,8 +103,7 @@ fn inline_clause_referrers(
         let content = &work.spec.content;
         let mut direct_content = std::iter::once(&content.description)
             .chain(content.acceptance_criteria.iter().map(|item| &item.text))
-            .chain(content.notes.iter())
-            .chain(content.journal.iter().map(|entry| &entry.content));
+            .chain(content.notes.iter());
         if direct_content.any(|text| text_references(inline_re, text, target_id)) {
             referrers.push(work.spec.govctl.id.clone());
         }

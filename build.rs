@@ -129,28 +129,6 @@ fn render_edit_rules(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
         spec.version
     ));
 
-    out.push_str("define_alias_resolver! {\n");
-    for alias in &spec.aliases {
-        out.push_str(&format!(
-            "    ({:?}, {:?}),\n",
-            alias.alias, alias.canonical
-        ));
-    }
-    out.push_str("}\n\n");
-
-    out.push_str("define_legacy_prefix_resolver! {\n");
-    for rule in &spec.legacy_prefixes {
-        out.push_str(&format!("    ({:?}, [", rule.prefix));
-        for (idx, field) in rule.allowed_fields.iter().enumerate() {
-            if idx > 0 {
-                out.push_str(", ");
-            }
-            out.push_str(&format!("{field:?}"));
-        }
-        out.push_str("]),\n");
-    }
-    out.push_str("}\n\n");
-
     out.push_str("pub const SIMPLE_RULES: &[SimpleFieldRule] = &[\n");
     for field in &spec.simple_rules {
         let kind = match field.kind.as_str() {
@@ -320,7 +298,9 @@ fn render_nested_scalar_mode_expr(mode: Option<&RuntimeSetMode>) -> Result<Strin
     match mode {
         None => Ok("None".to_string()),
         Some(RuntimeSetMode::String) => Ok("Some(NestedScalarMode::String)".to_string()),
-        Some(RuntimeSetMode::Integer) => Ok("Some(NestedScalarMode::Integer)".to_string()),
+        Some(RuntimeSetMode::Integer) => {
+            Err("integer set mode is not supported for nested edit paths".into())
+        }
         Some(RuntimeSetMode::Enum {
             allowed,
             invalid_msg,

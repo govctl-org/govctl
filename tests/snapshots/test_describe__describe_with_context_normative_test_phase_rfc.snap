@@ -255,48 +255,12 @@ $ govctl describe --context
       ]
     },
     {
-      "name": "rfc set / adr set / work set / guard set / clause set",
-      "purpose": "Set a field value on an artifact",
-      "when_to_use": "To update artifact fields. Use --stdin for multi-line content.",
-      "example": "govctl rfc set RFC-0001 title \"New Title\"",
-      "prerequisites": [
-        "Artifact must exist"
-      ]
-    },
-    {
       "name": "rfc get / adr get / work get / guard get / clause get",
       "purpose": "Get a field value from an artifact",
       "when_to_use": "To read artifact data. Omit field name to show entire artifact.",
       "example": "govctl rfc get RFC-0001 status",
       "prerequisites": [
         "Artifact must exist"
-      ]
-    },
-    {
-      "name": "rfc add / adr add / work add / guard add",
-      "purpose": "Add a value to an array field",
-      "when_to_use": "To add items to refs, owners, acceptance_criteria, etc.",
-      "example": "govctl work add WI-<DATE>-001 acceptance_criteria \"Tests pass\"",
-      "prerequisites": [
-        "Artifact must exist"
-      ]
-    },
-    {
-      "name": "rfc remove / adr remove / work remove / guard remove",
-      "purpose": "Remove a value from an array field",
-      "when_to_use": "To remove items from array fields. Use --at for index, or pattern matching.",
-      "example": "govctl rfc remove RFC-0001 owners \"@oldowner\"",
-      "prerequisites": [
-        "Artifact must exist"
-      ]
-    },
-    {
-      "name": "work tick / adr tick",
-      "purpose": "Mark a checklist item as done/pending/cancelled",
-      "when_to_use": "To update acceptance criteria status on work items.",
-      "example": "govctl work tick WI-<DATE>-001 acceptance_criteria \"Tests\" -s done",
-      "prerequisites": [
-        "Work item or ADR must exist"
       ]
     },
     {
@@ -416,7 +380,7 @@ $ govctl describe --context
       "govctl rfc advance RFC-NNNN test",
       "# Write tests",
       "govctl rfc advance RFC-NNNN stable",
-      "govctl work tick WI-xxx acceptance_criteria \"criterion\" -s done",
+      "govctl work edit WI-xxx acceptance_criteria[0] --tick done",
       "govctl work move WI-xxx done"
     ]
   },

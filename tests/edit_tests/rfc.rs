@@ -12,7 +12,7 @@ fn test_rfc_set_title() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Original Title"],
-            &["rfc", "set", "RFC-0001", "title", "New Title"],
+            &["rfc", "edit", "RFC-0001", "title", "--set", "New Title"],
             &["rfc", "list"],
         ],
     )?;
@@ -45,7 +45,7 @@ fn test_rfc_add_owner() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@newowner"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@newowner"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
     )?;
@@ -61,9 +61,9 @@ fn test_rfc_remove_owner() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
-            &["rfc", "remove", "RFC-0001", "owners", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners", "--remove", "@owner1"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
     )?;
@@ -79,8 +79,8 @@ fn test_rfc_remove_owner_by_index_canonical() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner2"],
             &["rfc", "edit", "RFC-0001", "owners[1]", "--remove"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
@@ -108,7 +108,7 @@ fn test_rfc_add_ref() -> common::TestResult {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "new", "Referenced RFC"],
-            &["rfc", "add", "RFC-0001", "refs", "RFC-0002"],
+            &["rfc", "edit", "RFC-0001", "refs", "--add", "RFC-0002"],
             &["rfc", "get", "RFC-0001", "refs"],
         ],
     )?;
@@ -135,8 +135,8 @@ fn test_rfc_refs_reject_invalid_hierarchy_and_preserve_existing_value() -> commo
             &["rfc", "new", "Test RFC"],
             &["rfc", "new", "Referenced RFC"],
             &["adr", "new", "Lower Authority Decision"],
-            &["rfc", "add", "RFC-0001", "refs", "ADR-0001"],
-            &["rfc", "add", "RFC-0001", "refs", "RFC-0002"],
+            &["rfc", "edit", "RFC-0001", "refs", "--add", "ADR-0001"],
+            &["rfc", "edit", "RFC-0001", "refs", "--add", "RFC-0002"],
             &["rfc", "edit", "RFC-0001", "refs[0]", "--set", "ADR-0001"],
             &["rfc", "get", "RFC-0001", "refs"],
         ],
@@ -204,8 +204,8 @@ fn test_rfc_edit_set_owner_by_index_canonical() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner2"],
             &[
                 "rfc",
                 "edit",
@@ -239,7 +239,7 @@ fn test_rfc_set_nonexistent_field() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "set", "RFC-0001", "nonexistent", "value"],
+            &["rfc", "edit", "RFC-0001", "nonexistent", "--set", "value"],
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -254,7 +254,7 @@ fn test_rfc_set_version_rejected() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "set", "RFC-0001", "version", "0.2.0"],
+            &["rfc", "edit", "RFC-0001", "version", "--set", "0.2.0"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -274,7 +274,7 @@ fn test_rfc_set_status_rejected() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "set", "RFC-0001", "status", "normative"],
+            &["rfc", "edit", "RFC-0001", "status", "--set", "normative"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);

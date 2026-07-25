@@ -1,21 +1,21 @@
 ---
-source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)?"
+source: tests/edit_tests/work_tests/acceptance.rs
+expression: value
 ---
 $ govctl work new Test Task
 Created work item: gov/work/<DATE>-test-task.toml
   ID: WI-<DATE>-001
 exit: 0
 
-$ govctl work add WI-<DATE>-001 acceptance_criteria add: To remove
+$ govctl work edit WI-<DATE>-001 acceptance_criteria --add add: To remove
 Added 'add: To remove' to WI-<DATE>-001.acceptance_criteria
 exit: 0
 
-$ govctl work add WI-<DATE>-001 acceptance_criteria add: To keep
+$ govctl work edit WI-<DATE>-001 acceptance_criteria --add add: To keep
 Added 'add: To keep' to WI-<DATE>-001.acceptance_criteria
 exit: 0
 
-$ govctl work remove WI-<DATE>-001 acceptance_criteria To remove
+$ govctl work edit WI-<DATE>-001 acceptance_criteria --remove To remove
 Removed 'To remove' from WI-<DATE>-001.acceptance_criteria
 exit: 0
 

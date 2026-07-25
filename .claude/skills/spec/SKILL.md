@@ -37,16 +37,17 @@ govctl rfc show <RFC-ID>
 govctl adr list
 govctl adr show <ADR-ID>
 
-govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: ..."
-govctl adr add <ADR-ID> alternatives "Other option: ..." --reject-reason "Why it was not chosen"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> context --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> alternatives --add "Option: ..."
+govctl adr edit <ADR-ID> alternatives --add "Other option: ..."
+govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "Why it was not chosen"
+govctl adr edit <ADR-ID> alternatives[1] --tick rejected
+govctl adr edit <ADR-ID> alternatives[0] --tick accepted
+govctl adr edit <ADR-ID> decision --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF' ... EOF
 govctl adr accept <ADR-ID>
 
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF' ... EOF
 govctl rfc bump <RFC-ID> --patch -m "Clarify clause wording"
 govctl rfc get <RFC-ID> changelog
 govctl rfc edit <RFC-ID> changelog.summary --set "Clarify current version"

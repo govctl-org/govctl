@@ -179,9 +179,9 @@ govctl rfc get RFC-0001 status
 For precise artifact mutation, `govctl` provides a canonical path-first interface:
 
 ```bash
-govctl adr edit ADR-0038 content.decision --stdin
-govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
-govctl clause edit RFC-0002:C-CRUD-VERBS text --stdin
+govctl adr edit ADR-0038 decision --set --stdin
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
+govctl clause edit RFC-0002:C-CRUD-VERBS text --set --stdin
 ```
 
 This is not the product's identity. It is the low-level tool agents use to update governed artifacts precisely and consistently.
@@ -250,7 +250,7 @@ govctl migrate
 govctl check
 ```
 
-In govctl `0.9` and later, RFC and clause artifacts are TOML-only. `govctl migrate` no longer converts legacy RFC/clause JSON storage; migrate those repositories with govctl `<0.9` before upgrading.
+Schema version 3 is the minimum supported repository format. Use a compatible earlier govctl version to migrate older repositories before upgrading. Legacy RFC and clause JSON storage is rejected explicitly.
 
 ### Interactive TUI
 

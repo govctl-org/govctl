@@ -11,7 +11,7 @@ fn test_loop_run_opens_round_without_mutating_work_item() -> common::TestResult 
         &[
             work_new("Root"),
             work_add_acceptance(&root_id, "add: ready"),
-            work_tick_acceptance_done(&root_id, "ready"),
+            work_tick_acceptance_done(&root_id, 0),
             loop_start_with_id(&loop_id, &[&root_id]),
             loop_run(&loop_id),
         ],
@@ -121,7 +121,7 @@ fn test_loop_run_closes_submitted_round_and_reflects_done_work() -> common::Test
         &[
             work_new_active("Root"),
             work_add_acceptance(&root_id, "add: ready"),
-            work_tick_acceptance_done(&root_id, "ready"),
+            work_tick_acceptance_done(&root_id, 0),
             loop_start_with_id(&loop_id, &[&root_id]),
             loop_run(&loop_id),
             work_move_done(&root_id),

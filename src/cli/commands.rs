@@ -60,30 +60,21 @@ pub(crate) enum Commands {
     },
 
     /// Validate all governed documents
-    #[command(visible_alias = "lint")]
     #[command(after_help = help::CHECK)]
     Check {
         /// Treat warnings as errors
         #[arg(short = 'W', long)]
         deny_warnings: bool,
-
-        /// Assert that an active work item exists (exits non-zero if none)
-        #[arg(long)]
-        has_active: bool,
     },
 
     /// Show summary counts
-    #[command(visible_alias = "stat")]
     #[command(after_help = help::STATUS)]
     Status,
 
     /// Render artifacts to markdown from SSOT (bulk operation)
     ///
     /// For single-item render, use: govctl rfc render <ID>, govctl adr render <ID>, etc.
-    #[command(
-        visible_alias = "gen",
-        after_help = help::RENDER
-    )]
+    #[command(after_help = help::RENDER)]
     Render {
         /// What to render: rfc (default), adr, work, changelog, or all
         #[arg(value_enum, default_value = "rfc")]
@@ -185,7 +176,6 @@ pub(crate) enum Commands {
     },
 
     /// Work item operations
-    #[command(visible_alias = "wi")]
     #[command(after_help = help::WORK)]
     Work {
         #[command(subcommand)]

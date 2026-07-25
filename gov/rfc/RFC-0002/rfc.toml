@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.15.0"
+version = "1.0.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-21"
+updated = "2026-07-25"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "9fd6a2dcabbea00d22440172c64fc4e539ea826c1fdd2a033b3d461192e200cc"
+signature = "d28cbe5baf419fe2a3c002f79dff9d51a9f8a5378ba2495f68dadeaf6186961c"
 
 [[sections]]
 title = "Summary"
@@ -35,6 +35,21 @@ clauses = [
     "clauses/C-SELF-UPDATE.toml",
     "clauses/C-SEARCH-COMMAND.toml",
     "clauses/C-SHOW-PROJECTION.toml",
+    "clauses/C-COMPATIBILITY-BOUNDARY.toml",
+    "clauses/C-EDIT-FIELD-CONTRACT.toml",
+]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-07-25"
+notes = "Adopt the canonical-only compatibility boundary"
+changed = [
+    "Define the complete canonical edit path and selector contract",
+    "Diagnose recognized unsupported legacy storage before project operations succeed",
+]
+removed = [
+    "Remove sibling mutation verbs, command aliases, field aliases, wire-layout paths, and resource-specific edit flags",
+    "End migration support for project schemas below version 3 and remove legacy storage readers",
 ]
 
 [[changelog]]

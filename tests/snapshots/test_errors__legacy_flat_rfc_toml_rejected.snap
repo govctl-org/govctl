@@ -1,0 +1,9 @@
+---
+source: tests/error_tests/rfc_clause_cases/wire_format.rs
+expression: snapshot
+---
+$ govctl check
+error[E0101]: RFC does not match schema 'rfc.schema.json':
+  - "govctl" is a required property
+  - Additional properties are not allowed ('created', 'owners', 'phase', 'rfc_id', 'status', 'title', 'version' were unexpected) (<TEMPDIR>/gov/rfc/RFC-0001/rfc.toml)
+exit: 1

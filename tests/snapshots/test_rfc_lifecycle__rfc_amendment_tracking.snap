@@ -12,8 +12,8 @@ Created clause: gov/rfc/RFC-0001/clauses/C-AMEND-TEST.toml
   Added to section 'Specification', path: clauses/C-AMEND-TEST.toml
 exit: 0
 
-$ govctl clause edit RFC-0001:C-AMEND-TEST --text Original text for amendment test.
-Updated clause: RFC-0001:C-AMEND-TEST
+$ govctl clause edit RFC-0001:C-AMEND-TEST text --set Original text for amendment test.
+Set RFC-0001:C-AMEND-TEST.text = Original text for amendment test.
 exit: 0
 
 $ govctl rfc finalize RFC-0001 normative
@@ -41,8 +41,8 @@ $ govctl rfc list
 └──────────┴─────────┴───────────┴────────┴────────────────────┘
 exit: 0
 
-$ govctl clause edit RFC-0001:C-AMEND-TEST --text AMENDED text - content changed.
-Updated clause: RFC-0001:C-AMEND-TEST
+$ govctl clause edit RFC-0001:C-AMEND-TEST text --set AMENDED text - content changed.
+Set RFC-0001:C-AMEND-TEST.text = AMENDED text - content changed.
 exit: 0
 
 $ govctl rfc list

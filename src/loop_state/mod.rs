@@ -92,8 +92,6 @@ pub struct LoopState {
 pub struct LoopRoundMeta {
     pub loop_id: String,
     pub round_number: u32,
-    #[serde(default, rename = "max_rounds", skip_serializing)]
-    legacy_max_rounds: Option<u32>,
     pub status: LoopRoundStatus,
     pub work: Vec<String>,
 }
@@ -232,7 +230,6 @@ impl LoopRoundRecord {
             round_meta: LoopRoundMeta {
                 loop_id: loop_id.into(),
                 round_number,
-                legacy_max_rounds: None,
                 status: LoopRoundStatus::Open,
                 work,
             },

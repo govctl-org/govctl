@@ -117,20 +117,6 @@ pub(in crate::cmd::edit) fn remove(
     opts: &MatchOptions,
     op: WriteOp,
 ) -> DiagnosticResult<()> {
-    if !matches!(
-        target,
-        edit_engine::ResolvedTarget::IndexedItem {
-            origin: edit_engine::TargetOrigin::Nested,
-            ..
-        }
-    ) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            "RFC changelog removal requires an indexed current-category path",
-            id,
-        ));
-    }
-
     let mut loaded = RfcTomlAdapter::load(config, id)?;
     crate::cmd::lifecycle::require_changelog_update_ready(config, &loaded.path, id)?;
     let mut doc = current_changelog_doc(&loaded.data, id)?;

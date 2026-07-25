@@ -1,0 +1,71 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-25-001"
+title = "Remove legacy compatibility surfaces for breaking release"
+status = "done"
+created = "2026-07-25"
+started = "2026-07-25"
+completed = "2026-07-25"
+refs = [
+    "RFC-0002",
+    "RFC-0006",
+    "ADR-0029",
+    "ADR-0030",
+    "ADR-0031",
+    "ADR-0034",
+    "ADR-0037",
+    "ADR-0047",
+]
+tags = [
+    "cli",
+    "editing",
+    "schema",
+    "migration",
+    "skills-agents",
+    "documentation",
+    "testing",
+]
+
+[content]
+description = "Coordinate the breaking-release cleanup of compatibility-only CLI, storage, migration, and historical-read paths. The work includes the governing RFC and ADR amendments, implementation cleanup, migration of agent-facing and human-facing authoring surfaces, and regression coverage for the retained canonical behavior."
+
+[[content.acceptance_criteria]]
+text = "Governing RFC and ADR amendments for the breaking compatibility boundary are accepted before implementation begins"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "CLI compatibility surfaces superseded by the governing amendment are removed while the canonical edit interface retains equivalent artifact mutation outcomes"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Obsolete artifact readers, ignored legacy fields, migration steps, and signature fallbacks are removed according to the amended schema support baseline"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Unsupported legacy storage is diagnosed explicitly instead of being silently ignored"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "CLI help, describe metadata, diagnostic hints, bundled skills, and hand-authored guides use only retained canonical interfaces"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Regression tests cover canonical edit equivalence, rejection of removed syntax and storage, and unchanged artifact validation outcomes from govctl check"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Release documentation identifies removed compatibility surfaces and the required repository upgrade baseline"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "The project default verification guards pass"
+status = "done"
+category = "chore"

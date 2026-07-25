@@ -139,7 +139,8 @@ fn test_advance_seals_content_edits_made_during_spec() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
@@ -161,7 +162,8 @@ fn test_advance_seals_content_edits_made_during_spec() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Amended normative behavior.",
             ],
             &[
@@ -237,7 +239,10 @@ fn test_advance_after_spec_rejects_missing_signature_without_mutation() -> commo
         output.contains("sealed RFC content signature"),
         "output: {output}"
     );
-    assert!(output.contains("govctl migrate"), "output: {output}");
+    assert!(
+        output.contains("Restore the sealed baseline from version-control history"),
+        "output: {output}"
+    );
     assert_eq!(fs::read(&rfc_path)?, rfc_before);
     assert_eq!(fs::read(&clause_path)?, clause_before);
     let clause: toml::Value = toml::from_str(&fs::read_to_string(&clause_path)?)?;
@@ -266,7 +271,8 @@ fn test_advance_after_impl_rejects_unversioned_content_amendment() -> common::Te
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
@@ -275,7 +281,8 @@ fn test_advance_after_impl_rejects_unversioned_content_amendment() -> common::Te
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Unversioned implementation-phase amendment.",
             ],
             &["rfc", "advance", "RFC-0001", "test"],
@@ -412,10 +419,13 @@ fn test_later_phase_advance_rejects_legacy_signature_without_mutation() -> commo
 
     assert!(output.contains("error[E0505]"), "output: {output}");
     assert!(
-        output.contains("legacy amendment signature"),
+        output.contains("legacy rendered-projection RFC signature"),
         "output: {output}"
     );
-    assert!(output.contains("govctl migrate"), "output: {output}");
+    assert!(
+        output.contains("Restore a schema-3 content-signature baseline"),
+        "output: {output}"
+    );
     assert_eq!(fs::read(&rfc_path)?, before);
     Ok(())
 }

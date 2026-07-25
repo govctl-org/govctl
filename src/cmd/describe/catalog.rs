@@ -219,39 +219,11 @@ pub(super) fn command_catalog() -> Vec<CommandInfo> {
             &["ADR must be in proposed status"],
         ),
         command(
-            "rfc set / adr set / work set / guard set / clause set",
-            "Set a field value on an artifact",
-            "To update artifact fields. Use --stdin for multi-line content.",
-            "govctl rfc set RFC-0001 title \"New Title\"",
-            ARTIFACT_EXISTS,
-        ),
-        command(
             "rfc get / adr get / work get / guard get / clause get",
             "Get a field value from an artifact",
             "To read artifact data. Omit field name to show entire artifact.",
             "govctl rfc get RFC-0001 status",
             ARTIFACT_EXISTS,
-        ),
-        command(
-            "rfc add / adr add / work add / guard add",
-            "Add a value to an array field",
-            "To add items to refs, owners, acceptance_criteria, etc.",
-            "govctl work add WI-2026-01-18-001 acceptance_criteria \"Tests pass\"",
-            ARTIFACT_EXISTS,
-        ),
-        command(
-            "rfc remove / adr remove / work remove / guard remove",
-            "Remove a value from an array field",
-            "To remove items from array fields. Use --at for index, or pattern matching.",
-            "govctl rfc remove RFC-0001 owners \"@oldowner\"",
-            ARTIFACT_EXISTS,
-        ),
-        command(
-            "work tick / adr tick",
-            "Mark a checklist item as done/pending/cancelled",
-            "To update acceptance criteria status on work items.",
-            "govctl work tick WI-2026-01-18-001 acceptance_criteria \"Tests\" -s done",
-            &["Work item or ADR must exist"],
         ),
         command(
             "rfc edit / adr edit / work edit / guard edit / clause edit",
@@ -352,7 +324,7 @@ pub(super) fn workflow_info() -> WorkflowInfo {
             "govctl rfc advance RFC-NNNN test".to_string(),
             "# Write tests".to_string(),
             "govctl rfc advance RFC-NNNN stable".to_string(),
-            "govctl work tick WI-xxx acceptance_criteria \"criterion\" -s done".to_string(),
+            "govctl work edit WI-xxx acceptance_criteria[0] --tick done".to_string(),
             "govctl work move WI-xxx done".to_string(),
         ],
     }

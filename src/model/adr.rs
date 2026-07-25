@@ -5,8 +5,6 @@ use strum::AsRefStr;
 /// ADR metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AdrMeta {
-    #[serde(default, rename = "schema", skip_serializing)]
-    _schema: u32,
     pub id: String,
     pub title: String,
     pub status: AdrStatus,
@@ -27,7 +25,6 @@ impl AdrMeta {
         date: impl Into<String>,
     ) -> Self {
         Self {
-            _schema: 1,
             id: id.into(),
             title: title.into(),
             status,

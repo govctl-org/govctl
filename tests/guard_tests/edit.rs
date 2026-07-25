@@ -8,7 +8,14 @@ fn test_guard_set_command() -> common::TestResult {
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["guard", "set", "GUARD-ECHO", "command", "echo new"],
+            &[
+                "guard",
+                "edit",
+                "GUARD-ECHO",
+                "command",
+                "--set",
+                "echo new",
+            ],
             &["guard", "get", "GUARD-ECHO", "command"],
         ],
     )?;
@@ -24,9 +31,16 @@ fn test_guard_add_remove_refs() -> common::TestResult {
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["guard", "add", "GUARD-ECHO", "refs", "RFC-0001"],
+            &["guard", "edit", "GUARD-ECHO", "refs", "--add", "RFC-0001"],
             &["guard", "get", "GUARD-ECHO", "refs"],
-            &["guard", "remove", "GUARD-ECHO", "refs", "RFC-0001"],
+            &[
+                "guard",
+                "edit",
+                "GUARD-ECHO",
+                "refs",
+                "--remove",
+                "RFC-0001",
+            ],
         ],
     )?;
     assert!(
@@ -63,7 +77,7 @@ fn test_guard_set_timeout_secs() -> common::TestResult {
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["guard", "set", "GUARD-ECHO", "timeout_secs", "30"],
+            &["guard", "edit", "GUARD-ECHO", "timeout_secs", "--set", "30"],
             &["guard", "get", "GUARD-ECHO", "timeout_secs"],
         ],
     )?;
@@ -72,7 +86,7 @@ fn test_guard_set_timeout_secs() -> common::TestResult {
 }
 
 #[test]
-fn test_guard_nested_object_root_edit_paths() -> common::TestResult {
+fn test_guard_logical_edit_paths() -> common::TestResult {
     let temp_dir = init_project()?;
     write_guard(temp_dir.path(), "GUARD-ECHO", "echo old")?;
 
@@ -81,36 +95,30 @@ fn test_guard_nested_object_root_edit_paths() -> common::TestResult {
         &[
             &[
                 "guard",
-                "set",
-                "GUARD-ECHO",
-                "check.command",
-                "echo nested legacy",
-            ],
-            &[
-                "guard",
                 "edit",
                 "GUARD-ECHO",
-                "check.timeout_secs",
+                "command",
                 "--set",
-                "45",
+                "echo canonical",
             ],
+            &["guard", "edit", "GUARD-ECHO", "timeout_secs", "--set", "45"],
             &["guard", "get", "GUARD-ECHO", "command"],
             &["guard", "get", "GUARD-ECHO", "timeout_secs"],
         ],
     )?;
 
     assert!(
-        output.contains("Set GUARD-ECHO.check.command = echo nested legacy"),
+        output.contains("Set GUARD-ECHO.command = echo canonical"),
         "output: {}",
         output
     );
     assert!(
-        output.contains("Set GUARD-ECHO.check.timeout_secs = 45"),
+        output.contains("Set GUARD-ECHO.timeout_secs = 45"),
         "output: {}",
         output
     );
     assert!(
-        output.contains("$ govctl guard get GUARD-ECHO command\necho nested legacy"),
+        output.contains("$ govctl guard get GUARD-ECHO command\necho canonical"),
         "output: {}",
         output
     );

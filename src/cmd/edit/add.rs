@@ -11,37 +11,19 @@ use super::toml_target::{is_work_dependency_target, validate_work_dependency_edi
 use super::{ArtifactType, deserialize_edit_doc, plan_mutation_target, serialize_edit_doc};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::model::{AdrEntry, ChangelogCategory, WorkItemEntry};
+use crate::model::{AdrEntry, WorkItemEntry};
 use crate::ui;
 use crate::write::WriteOp;
-
-struct AdrAddContext {
-    pros: Option<Vec<String>>,
-    cons: Option<Vec<String>>,
-    reject_reason: Option<String>,
-}
-
-struct WorkAddContext {
-    category_override: Option<ChangelogCategory>,
-}
 
 pub(super) struct AddFieldRequest<'a> {
     pub(super) config: &'a Config,
     pub(super) id: &'a str,
     pub(super) field: &'a str,
     pub(super) value: &'a str,
-    pub(super) category_override: Option<ChangelogCategory>,
-    pub(super) pros: Option<Vec<String>>,
-    pub(super) cons: Option<Vec<String>>,
-    pub(super) reject_reason: Option<String>,
     pub(super) op: WriteOp,
 }
 
-fn adr_add_alternatives(
-    entry: &mut AdrEntry,
-    value: &str,
-    ctx: &AdrAddContext,
-) -> DiagnosticResult<()> {
+fn adr_add_alternatives(entry: &mut AdrEntry, value: &str) {
     use crate::model::{Alternative, AlternativeStatus};
     if entry
         .spec
@@ -50,43 +32,30 @@ fn adr_add_alternatives(
         .iter()
         .any(|a| a.text == value)
     {
-        return Ok(());
+        return;
     }
-
-    let status = if ctx.reject_reason.is_some() {
-        AlternativeStatus::Rejected
-    } else {
-        AlternativeStatus::Considered
-    };
 
     entry.spec.content.alternatives.push(Alternative {
         text: value.to_string(),
-        status,
-        pros: ctx.pros.clone().unwrap_or_default(),
-        cons: ctx.cons.clone().unwrap_or_default(),
-        rejection_reason: ctx.reject_reason.clone(),
+        status: AlternativeStatus::Considered,
+        pros: vec![],
+        cons: vec![],
+        rejection_reason: None,
     });
-    Ok(())
 }
 
-fn work_add_acceptance_criteria(
-    entry: &mut WorkItemEntry,
-    value: &str,
-    ctx: &WorkAddContext,
-) -> DiagnosticResult<()> {
+fn work_add_acceptance_criteria(entry: &mut WorkItemEntry, value: &str) -> DiagnosticResult<()> {
     use crate::model::ChecklistItem;
     use crate::write::parse_changelog_change;
     let parsed = parse_changelog_change(value)?;
 
-    let final_category = if let Some(cat) = ctx.category_override {
-        cat
-    } else if parsed.explicit {
+    let final_category = if parsed.explicit {
         parsed.category
     } else {
         return Err(Diagnostic::new(
             DiagnosticCode::E0408WorkCriteriaMissingCategory,
             format!(
-                "Acceptance criteria requires category. Use prefix (e.g., 'fix: {}') or --category",
+                "Acceptance criteria requires a category prefix (e.g., 'fix: {}')",
                 parsed.message
             ),
             &entry.spec.govctl.id,
@@ -134,10 +103,6 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
         id,
         field,
         value,
-        category_override,
-        pros,
-        cons,
-        reject_reason,
         op,
     } = request;
 
@@ -158,12 +123,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
         ArtifactType::Adr => {
             let mut entry = AdrTomlAdapter::load(config, id)?;
             if fp.as_simple() == Some("alternatives") {
-                let ctx = AdrAddContext {
-                    pros,
-                    cons,
-                    reject_reason,
-                };
-                adr_add_alternatives(&mut entry, value, &ctx)?;
+                adr_add_alternatives(&mut entry, value);
             } else {
                 add_to_serialized_doc(&mut entry.spec, ArtifactType::Adr, target, value, id)?;
             }
@@ -172,8 +132,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
         ArtifactType::WorkItem => {
             let mut entry = WorkTomlAdapter::load(config, id)?;
             if fp.as_simple() == Some("acceptance_criteria") {
-                let ctx = WorkAddContext { category_override };
-                work_add_acceptance_criteria(&mut entry, value, &ctx)?;
+                work_add_acceptance_criteria(&mut entry, value)?;
             } else {
                 add_to_serialized_doc(&mut entry.spec, ArtifactType::WorkItem, target, value, id)?;
             }

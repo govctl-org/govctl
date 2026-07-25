@@ -1,5 +1,4 @@
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::model::ChangelogCategory;
 use regex::Regex;
 
 #[derive(Debug, Clone, Default)]
@@ -50,10 +49,6 @@ pub(super) enum MatchUse {
     TickSingle,
 }
 
-fn strip_category_prefix(pattern: &str) -> &str {
-    ChangelogCategory::strip_rendered_prefix(pattern).unwrap_or(pattern)
-}
-
 pub(super) fn resolve_match_indices(
     id: &str,
     field: &str,
@@ -69,11 +64,15 @@ pub(super) fn resolve_match_indices(
         ));
     }
 
+    if opts.all {
+        return Ok((0..items.len()).collect());
+    }
+
     if opts.pattern.is_none() && opts.at.is_none() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0801MissingRequiredArg,
             format!(
-                "Remove from {}.{} requires a pattern or --at <index>",
+                "Remove from {}.{} requires an indexed path, exact value, regex, or --all",
                 id, field
             ),
             id,
@@ -82,8 +81,7 @@ pub(super) fn resolve_match_indices(
 
     let indices: Vec<usize> = if let Some(idx) = opts.at {
         let len = items.len() as i32;
-        let actual_idx = if idx < 0 { len + idx } else { idx };
-        if actual_idx < 0 || actual_idx >= len {
+        if idx < 0 || idx >= len {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0806InvalidPattern,
                 format!(
@@ -94,14 +92,10 @@ pub(super) fn resolve_match_indices(
                 "array",
             ));
         }
-        vec![actual_idx as usize]
+        vec![idx as usize]
     } else {
         let raw_pattern = opts.pattern.unwrap_or("<index>");
-        let pattern = if opts.regex {
-            raw_pattern
-        } else {
-            strip_category_prefix(raw_pattern)
-        };
+        let pattern = raw_pattern;
         let matches = if opts.regex {
             let re = Regex::new(pattern).map_err(|e| {
                 Diagnostic::new(
@@ -149,9 +143,9 @@ pub(super) fn resolve_match_indices(
 
     let pattern = opts.pattern.unwrap_or("");
     let hint = if use_case == MatchUse::Remove {
-        "Options:\n  • Use more specific pattern\n  • Use --at <index> to select one\n  • Use --all to remove all matches"
+        "Use an indexed path to select one item, or --all to remove every item"
     } else {
-        "Use more specific pattern or --at <index> to select one"
+        "Use an indexed path to select one item"
     };
     let mut msg = format!(
         "{} items match '{}' in {}.{}:\n",

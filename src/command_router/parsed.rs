@@ -15,9 +15,7 @@ impl CommandPlan {
                     dir: dir.clone(),
                 })))
             }
-            Commands::Check { has_active, .. } => Ok(global(Op::Builtin(BuiltinOp::Check {
-                has_active: *has_active,
-            }))),
+            Commands::Check { .. } => Ok(global(Op::Builtin(BuiltinOp::Check))),
             Commands::Status => Ok(global(Op::Builtin(BuiltinOp::Status))),
             Commands::Render {
                 target,

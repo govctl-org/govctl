@@ -17,16 +17,10 @@ pub(crate) struct EditActionArgs {
     /// Read set/add value from stdin
     #[arg(long)]
     pub(crate) stdin: bool,
-    /// Match by index for remove/tick
-    #[arg(long, allow_hyphen_values = true)]
-    pub(crate) at: Option<i32>,
-    /// Exact match for remove/tick
-    #[arg(long)]
-    pub(crate) exact: bool,
-    /// Regex match for remove/tick
+    /// Treat the remove value as a regular expression
     #[arg(long)]
     pub(crate) regex: bool,
-    /// Remove all matches
+    /// Remove every item from the addressed list
     #[arg(long)]
     pub(crate) all: bool,
 }

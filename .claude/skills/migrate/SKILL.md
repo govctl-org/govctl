@@ -39,19 +39,24 @@ govctl status                             # Verify setup
 
 # Backfill ADRs
 govctl adr new "<decision title>"
-govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Chosen option: ..." --pro "..." --con "..."
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr add <ADR-ID> alternatives "Rejected option: ..." --pro "..." --con "..." --reject-reason "Why this was not chosen"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> context --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> alternatives --add "Chosen option: ..."
+govctl adr edit <ADR-ID> alternatives[0].pros --add "..."
+govctl adr edit <ADR-ID> alternatives[0].cons --add "..."
+govctl adr edit <ADR-ID> alternatives[0] --tick accepted
+govctl adr edit <ADR-ID> alternatives --add "Rejected option: ..."
+govctl adr edit <ADR-ID> alternatives[1].pros --add "..."
+govctl adr edit <ADR-ID> alternatives[1].cons --add "..."
+govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "Why this was not chosen"
+govctl adr edit <ADR-ID> alternatives[1] --tick rejected
+govctl adr edit <ADR-ID> decision --set --stdin <<'EOF' ... EOF
+govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF' ... EOF
 govctl adr accept <ADR-ID>
 
 # Backfill RFCs (optional)
 govctl rfc new "<spec title>"
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF' ... EOF
 govctl rfc finalize <RFC-ID> normative
 govctl rfc advance <RFC-ID> impl
 govctl rfc advance <RFC-ID> test
@@ -187,11 +192,11 @@ govctl adr new "<decision title>"
 ### 2.2 Populate Context and Consequences
 
 ```bash
-govctl adr set <ADR-ID> context --stdin <<'EOF'
+govctl adr edit <ADR-ID> context --set --stdin <<'EOF'
 [Problem statement and what prompted the decision]
 EOF
 
-govctl adr set <ADR-ID> consequences --stdin <<'EOF'
+govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF'
 ### Positive
 - [Observed benefits]
 
@@ -206,12 +211,15 @@ EOF
 ### 2.3 Add Alternatives (if known)
 
 ```bash
-govctl adr add <ADR-ID> alternatives "Chosen: <what was adopted>" \
-  --pro "..." --con "..."
-govctl adr add <ADR-ID> alternatives "Rejected: <what was not chosen>" \
-  --pro "..." --con "..." --reject-reason "..."
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
+govctl adr edit <ADR-ID> alternatives --add "Chosen: <what was adopted>"
+govctl adr edit <ADR-ID> alternatives[0].pros --add "..."
+govctl adr edit <ADR-ID> alternatives[0].cons --add "..."
+govctl adr edit <ADR-ID> alternatives --add "Rejected: <what was not chosen>"
+govctl adr edit <ADR-ID> alternatives[1].pros --add "..."
+govctl adr edit <ADR-ID> alternatives[1].cons --add "..."
+govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "..."
+govctl adr edit <ADR-ID> alternatives[0] --tick accepted
+govctl adr edit <ADR-ID> alternatives[1] --tick rejected
 ```
 
 Preserve the normal ADR discussion order during backfill when possible:
@@ -226,7 +234,7 @@ If non-selected alternatives are not recoverable, it is acceptable to omit `alte
 ### 2.4 Write the Decision Last
 
 ```bash
-govctl adr set <ADR-ID> decision --stdin <<'EOF'
+govctl adr edit <ADR-ID> decision --set --stdin <<'EOF'
 We will [what was decided].
 
 [Rationale — why this was chosen]
@@ -247,7 +255,7 @@ Since these are historical decisions already in effect:
 
 ```bash
 govctl adr accept <ADR-ID>
-govctl adr add <ADR-ID> refs <related-ADR-or-RFC>
+govctl adr edit <ADR-ID> refs --add <related-ADR-or-RFC>
 ```
 
 ### 2.7 Commit Batch
@@ -274,7 +282,7 @@ For each requirement in the existing specification:
 
 ```bash
 govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
+govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF'
 [Clause text extracted from existing spec, rewritten with RFC 2119 keywords]
 EOF
 ```
@@ -353,9 +361,9 @@ For each active task:
 
 ```bash
 govctl work new --active "<task title>"
-govctl work set <WI-ID> description "<what is being done>"
-govctl work add <WI-ID> acceptance_criteria "add: <expected outcome>"
-govctl work add <WI-ID> refs <related-ADR-or-RFC>
+govctl work edit <WI-ID> description --set "<what is being done>"
+govctl work edit <WI-ID> acceptance_criteria --add "add: <expected outcome>"
+govctl work edit <WI-ID> refs --add <related-ADR-or-RFC>
 ```
 
 ### 5.2 Establish Tag Vocabulary (Optional)
@@ -366,8 +374,8 @@ If the project benefits from cross-cutting categorization, set up a tag vocabula
 govctl tag new "architecture"
 govctl tag new "security"
 govctl tag new "performance"
-govctl adr add <ADR-ID> tags "architecture"
-govctl rfc add <RFC-ID> tags "security"
+govctl adr edit <ADR-ID> tags --add "architecture"
+govctl rfc edit <RFC-ID> tags --add "security"
 ```
 
 Skip this step if tagging is not needed yet — it can be adopted incrementally later.

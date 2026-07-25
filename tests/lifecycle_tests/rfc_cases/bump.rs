@@ -316,7 +316,8 @@ fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
@@ -327,7 +328,8 @@ fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Updated normative behavior.",
             ],
             &[
@@ -618,7 +620,7 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
 
     assert!(output.contains("error[E0505]"), "output: {output}");
     assert!(
-        output.contains("legacy amendment signature"),
+        output.contains("legacy rendered-projection RFC signature"),
         "output: {output}"
     );
     assert_eq!(fs::read(&rfc_path)?, before);
@@ -682,7 +684,10 @@ fn test_version_bump_rejects_missing_signature_and_preserves_pending_clause() ->
         output.contains("sealed RFC content signature"),
         "output: {output}"
     );
-    assert!(output.contains("govctl migrate"), "output: {output}");
+    assert!(
+        output.contains("Restore the sealed baseline from version-control history"),
+        "output: {output}"
+    );
     assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
     assert!(!output.contains("Set C-PENDING.since"), "output: {output}");
     assert_eq!(fs::read(&rfc_path)?, rfc_before);
@@ -775,7 +780,8 @@ fn test_bump_change_does_not_clear_pending_amendment() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
@@ -786,7 +792,8 @@ fn test_bump_change_does_not_clear_pending_amendment() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Updated normative behavior.",
             ],
             &["rfc", "bump", "RFC-0001", "--change", "Added release note"],

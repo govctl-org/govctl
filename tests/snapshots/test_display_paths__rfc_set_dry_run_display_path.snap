@@ -1,8 +1,8 @@
 ---
-source: tests/test_display_paths.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/display_path_tests/edit.rs
+expression: value
 ---
-$ govctl rfc set RFC-0001 title Updated Title --dry-run
+$ govctl rfc edit RFC-0001 title --set Updated Title --dry-run
 Would write: gov/rfc/RFC-0001/rfc.toml
   #:schema ../../schema/rfc.schema.json
   

@@ -8,7 +8,7 @@ fn test_artifact_add_tag() -> TestResult {
         &[
             &["tag", "new", "caching"],
             &["adr", "new", "Test Decision"],
-            &["adr", "add", "ADR-0001", "tags", "caching"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "caching"],
             &["adr", "get", "ADR-0001", "tags"],
         ],
     )?;
@@ -29,7 +29,7 @@ fn test_artifact_add_unregistered_tag() -> TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &["adr", "add", "ADR-0001", "tags", "nonexistent"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "nonexistent"],
         ],
     )?;
     assert_tag_snapshot(
@@ -89,7 +89,7 @@ fn test_check_accepts_registered_tag() -> TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            &["adr", "add", "ADR-0001", "tags", "caching"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "caching"],
             &["check"],
         ],
     )?;

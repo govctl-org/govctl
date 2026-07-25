@@ -1,33 +1,44 @@
 ---
-source: tests/test_edit.rs
-assertion_line: 1409
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/edit_tests/path_cases/nested_adr.rs
+expression: value
 ---
 $ govctl adr new Remove Test
 Created ADR: gov/adr/ADR-XXXX-remove-test.toml
 exit: 0
 
-$ govctl adr add ADR-0001 alternatives Opt1 --pro Good --pro Great --con Bad
+$ govctl adr edit ADR-0001 alternatives --add Opt1
 Added 'Opt1' to ADR-0001.alternatives
 exit: 0
 
-$ govctl adr remove ADR-0001 alt[0].pros[0]
+$ govctl adr edit ADR-0001 alternatives[0].pros --add Good
+Added 'Good' to ADR-0001.alternatives[0].pros
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives[0].pros --add Great
+Added 'Great' to ADR-0001.alternatives[0].pros
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives[0].cons --add Bad
+Added 'Bad' to ADR-0001.alternatives[0].cons
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives[0].pros[0] --remove
 Removed 'Good' from ADR-0001.alternatives[0].pros
 exit: 0
 
-$ govctl adr get ADR-0001 alt[0].pros
+$ govctl adr get ADR-0001 alternatives[0].pros
 Great
 exit: 0
 
-$ govctl adr remove ADR-0001 alt[0].cons Bad
+$ govctl adr edit ADR-0001 alternatives[0].cons --remove Bad
 Removed 'Bad' from ADR-0001.alternatives[0].cons
 exit: 0
 
-$ govctl adr get ADR-0001 alt[0].cons
+$ govctl adr get ADR-0001 alternatives[0].cons
 
 exit: 0
 
-$ govctl adr remove ADR-0001 alt[0]
+$ govctl adr edit ADR-0001 alternatives[0] --remove
 Removed 'Opt1' from ADR-0001.alternatives
 exit: 0
 

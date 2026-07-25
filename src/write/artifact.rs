@@ -2,7 +2,6 @@
 
 use super::WriteOp;
 use super::artifact_io::{ArtifactIo, read_artifact, write_toml_artifact};
-use super::artifact_normalize::{normalize_clause_value, normalize_rfc_value};
 use crate::config::Config;
 use crate::diagnostic::{DiagnosticCode, DiagnosticResult};
 use crate::model::{ClauseSpec, ClauseWire, RfcSpec, RfcWire};
@@ -14,7 +13,6 @@ const RFC_IO: ArtifactIo = ArtifactIo {
     message_label: "RFC",
     schema: ArtifactSchema::Rfc,
     schema_error: DiagnosticCode::E0101RfcSchemaInvalid,
-    normalize_toml: normalize_rfc_value,
 };
 
 const CLAUSE_IO: ArtifactIo = ArtifactIo {
@@ -22,11 +20,9 @@ const CLAUSE_IO: ArtifactIo = ArtifactIo {
     message_label: "clause",
     schema: ArtifactSchema::Clause,
     schema_error: DiagnosticCode::E0201ClauseSchemaInvalid,
-    normalize_toml: normalize_clause_value,
 };
 
-/// Read RFC from file and validate its normalized structure.
-/// Handles both legacy flat format and new `[govctl]` wire format (TOML and JSON).
+/// Read an RFC from canonical structured TOML.
 pub fn read_rfc(config: &Config, path: &Path) -> DiagnosticResult<RfcSpec> {
     read_artifact::<RfcWire, RfcSpec>(config, path, &RFC_IO)
 }
@@ -51,8 +47,7 @@ pub fn write_rfc(
     )
 }
 
-/// Read clause from file and validate its normalized structure.
-/// Handles both legacy flat format and new `[govctl]` + `[content]` wire format.
+/// Read a clause from canonical structured TOML.
 pub fn read_clause(config: &Config, path: &Path) -> DiagnosticResult<ClauseSpec> {
     read_artifact::<ClauseWire, ClauseSpec>(config, path, &CLAUSE_IO)
 }

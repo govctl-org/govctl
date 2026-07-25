@@ -1,12 +1,12 @@
 ---
-source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/edit_tests/rfc.rs
+expression: value
 ---
 $ govctl rfc new Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
   Clauses dir: gov/rfc/RFC-0001/clauses
 exit: 0
 
-$ govctl rfc set RFC-0001 nonexistent value
+$ govctl rfc edit RFC-0001 nonexistent --set value
 error[E0101]: Unknown field: nonexistent ()
 exit: 1
