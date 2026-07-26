@@ -1,5 +1,41 @@
 use super::*;
 
+fn create_rfc_with_clause(project: &std::path::Path, clause_id: &str) -> common::TestResult {
+    run_commands(
+        project,
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                clause_id,
+                "Test Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+    Ok(())
+}
+
+fn set_only_clause_reference(rfc_path: &std::path::Path, reference: &str) -> common::TestResult {
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(rfc_path)?)?;
+    let clause = rfc["sections"]
+        .as_array_mut()
+        .ok_or("missing RFC sections")?
+        .iter_mut()
+        .filter_map(|section| section.get_mut("clauses"))
+        .filter_map(toml::Value::as_array_mut)
+        .flatten()
+        .next()
+        .ok_or("missing Clause reference")?;
+    *clause = toml::Value::String(reference.to_string());
+    fs::write(rfc_path, toml::to_string_pretty(&rfc)?)?;
+    Ok(())
+}
+
 // ============================================================================
 // RFC Advance Tests
 // ============================================================================
@@ -348,44 +384,14 @@ fn test_advance_rejects_unversioned_unlisted_clause() -> common::TestResult {
 #[test]
 fn test_referenced_clause_outside_canonical_directory_affects_signature() -> common::TestResult {
     let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-ALT",
-                "Alternate Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-        ],
-    )?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-ALT")?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     let canonical_path = rfc_dir.join("clauses/C-ALT.toml");
     let alternate_path = rfc_dir.join("C-ALT.toml");
     fs::rename(&canonical_path, &alternate_path)?;
     let rfc_path = rfc_dir.join("rfc.toml");
-    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
-    let clause_ref = rfc["sections"]
-        .as_array_mut()
-        .ok_or("missing RFC sections")?
-        .iter_mut()
-        .filter_map(|section| section.get_mut("clauses"))
-        .filter_map(toml::Value::as_array_mut)
-        .flatten()
-        .find(|clause| {
-            clause
-                .as_str()
-                .is_some_and(|path| path.ends_with("C-ALT.toml"))
-        })
-        .ok_or("missing Clause reference")?;
-    *clause_ref = toml::Value::String("C-ALT.toml".to_string());
-    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+    set_only_clause_reference(&rfc_path, "C-ALT.toml")?;
 
     let finalize_output = run_commands(
         temp_dir.path(),
@@ -422,22 +428,7 @@ fn test_referenced_clause_outside_canonical_directory_affects_signature() -> com
 #[test]
 fn test_finalize_accepts_relative_clause_path_with_colon() -> common::TestResult {
     let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-ALT",
-                "Alternate Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-        ],
-    )?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-ALT")?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     let alternate_dir = rfc_dir.join("clauses:v1");
@@ -445,22 +436,7 @@ fn test_finalize_accepts_relative_clause_path_with_colon() -> common::TestResult
     let alternate_path = alternate_dir.join("C-ALT.toml");
     fs::rename(rfc_dir.join("clauses/C-ALT.toml"), &alternate_path)?;
     let rfc_path = rfc_dir.join("rfc.toml");
-    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
-    let clause_ref = rfc["sections"]
-        .as_array_mut()
-        .ok_or("missing RFC sections")?
-        .iter_mut()
-        .filter_map(|section| section.get_mut("clauses"))
-        .filter_map(toml::Value::as_array_mut)
-        .flatten()
-        .find(|clause| {
-            clause
-                .as_str()
-                .is_some_and(|path| path.ends_with("C-ALT.toml"))
-        })
-        .ok_or("missing Clause reference")?;
-    *clause_ref = toml::Value::String("clauses:v1/C-ALT.toml".to_string());
-    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+    set_only_clause_reference(&rfc_path, "clauses:v1/C-ALT.toml")?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -476,22 +452,7 @@ fn test_finalize_accepts_relative_clause_path_with_colon() -> common::TestResult
 #[test]
 fn test_finalize_rejects_dangling_clause_reference_without_mutation() -> common::TestResult {
     let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-MISSING",
-                "Missing Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-        ],
-    )?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-MISSING")?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     let rfc_path = rfc_dir.join("rfc.toml");
@@ -513,44 +474,14 @@ fn test_finalize_rejects_dangling_clause_reference_without_mutation() -> common:
 #[test]
 fn test_finalize_rejects_absolute_clause_path_without_external_write() -> common::TestResult {
     let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-EXT",
-                "External Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-        ],
-    )?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-EXT")?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     let canonical_path = rfc_dir.join("clauses/C-EXT.toml");
     let external_path = temp_dir.path().join("external-clause.toml");
     fs::rename(&canonical_path, &external_path)?;
     let rfc_path = rfc_dir.join("rfc.toml");
-    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
-    let clause_ref = rfc["sections"]
-        .as_array_mut()
-        .ok_or("missing RFC sections")?
-        .iter_mut()
-        .filter_map(|section| section.get_mut("clauses"))
-        .filter_map(toml::Value::as_array_mut)
-        .flatten()
-        .find(|clause| {
-            clause
-                .as_str()
-                .is_some_and(|path| path.ends_with("C-EXT.toml"))
-        })
-        .ok_or("missing Clause reference")?;
-    *clause_ref = toml::Value::String(external_path.display().to_string());
-    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+    set_only_clause_reference(&rfc_path, &external_path.display().to_string())?;
     let rfc_before = fs::read(&rfc_path)?;
     let external_before = fs::read(&external_path)?;
 
@@ -573,22 +504,7 @@ fn test_finalize_rejects_clause_symlink_outside_rfc() -> common::TestResult {
     use std::os::unix::fs::symlink;
 
     let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-LINK",
-                "Linked Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-        ],
-    )?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-LINK")?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     let clause_path = rfc_dir.join("clauses/C-LINK.toml");
@@ -617,22 +533,7 @@ fn test_finalize_rejects_clause_directory_symlink_outside_rfc() -> common::TestR
     use std::os::unix::fs::symlink;
 
     let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-LINK",
-                "Linked Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-        ],
-    )?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-LINK")?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     let clauses_dir = rfc_dir.join("clauses");
@@ -662,22 +563,7 @@ fn test_finalize_rejects_rfc_directory_symlink_outside_storage() -> common::Test
     use std::os::unix::fs::symlink;
 
     let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Test RFC"],
-            &[
-                "clause",
-                "new",
-                "RFC-0001:C-LINK",
-                "Linked Clause",
-                "-s",
-                "Specification",
-                "-k",
-                "normative",
-            ],
-        ],
-    )?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-LINK")?;
 
     let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
     let external_dir = temp_dir.path().join("external-rfc");

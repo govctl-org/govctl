@@ -55,5 +55,15 @@ text = "Release notes describe the complete loader and compatibility impact"
 status = "done"
 category = "chore"
 
+[[content.acceptance_criteria]]
+text = "Path safety code expresses each trust boundary once without changing observable path behavior"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Existing path safety regressions and full guards remain green"
+status = "done"
+category = "chore"
+
 [verification]
 required_guards = ["GUARD-CARGO-TEST"]

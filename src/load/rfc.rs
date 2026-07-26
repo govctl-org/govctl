@@ -58,19 +58,19 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         message: "RFC path has no parent directory".to_string(),
     })?;
     let resolved_rfc_root = canonicalize_path(&config.rfc_dir(), "resolve RFC storage root")?;
-    let resolved_rfc_dir = canonicalize_path(rfc_dir, "resolve RFC directory")?;
-    ensure_path_contained(
+    let resolved_rfc_dir = canonicalize_contained(
+        rfc_dir,
         &resolved_rfc_root,
-        &resolved_rfc_dir,
         rfc_path,
         &rfc_dir.display().to_string(),
+        "resolve RFC directory",
     )?;
-    let resolved_rfc_path = canonicalize_path(rfc_path, "resolve RFC path")?;
-    ensure_path_contained(
+    canonicalize_contained(
+        rfc_path,
         &resolved_rfc_dir,
-        &resolved_rfc_path,
         rfc_path,
         &rfc_path.display().to_string(),
+        "resolve RFC path",
     )?;
 
     let rfc: RfcSpec = load_source_wire::<RfcWire>(
@@ -89,34 +89,13 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
 
     let mut clause_paths = BTreeSet::new();
     for section in &rfc.sections {
-        for clause_path in &section.clauses {
-            if !is_safe_relative_clause_path(clause_path) {
-                return Err(LoadError::ClausePathInvalid {
-                    file: rfc_path.display().to_string(),
-                    clause: clause_path.clone(),
-                });
-            }
-            let full_path = rfc_dir.join(clause_path);
-            let exists = full_path.try_exists().map_err(|err| LoadError::Io {
-                file: full_path.display().to_string(),
-                action: "inspect clause path",
-                message: err.to_string(),
-            })?;
-            if !exists || full_path.extension().and_then(|ext| ext.to_str()) != Some("toml") {
-                return Err(LoadError::ClausePathInvalid {
-                    file: rfc_path.display().to_string(),
-                    clause: clause_path.clone(),
-                });
-            }
-            let resolved_clause = canonicalize_path(&full_path, "resolve clause path")?;
-            if !resolved_clause.is_file() {
-                return Err(LoadError::ClausePathInvalid {
-                    file: rfc_path.display().to_string(),
-                    clause: clause_path.clone(),
-                });
-            }
-            ensure_path_contained(&resolved_rfc_dir, &resolved_clause, rfc_path, clause_path)?;
-            clause_paths.insert(full_path);
+        for clause_reference in &section.clauses {
+            clause_paths.insert(resolve_clause_reference(
+                rfc_dir,
+                &resolved_rfc_dir,
+                rfc_path,
+                clause_reference,
+            )?);
         }
     }
     clause_paths.extend(clause_directory_paths(
@@ -136,9 +115,43 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
     })
 }
 
-fn is_safe_relative_clause_path(clause_path: &str) -> bool {
-    let path = Path::new(clause_path);
-    !path.as_os_str().is_empty() && !path.is_absolute()
+fn resolve_clause_reference(
+    rfc_dir: &Path,
+    resolved_rfc_dir: &Path,
+    rfc_path: &Path,
+    reference: &str,
+) -> Result<PathBuf, LoadError> {
+    let path = Path::new(reference);
+    if path.as_os_str().is_empty()
+        || path.is_absolute()
+        || path.extension().and_then(|extension| extension.to_str()) != Some("toml")
+    {
+        return Err(invalid_clause_path(rfc_path, reference));
+    }
+
+    let path = rfc_dir.join(path);
+    let resolved = std::fs::canonicalize(&path).map_err(|err| {
+        if err.kind() == std::io::ErrorKind::NotFound {
+            invalid_clause_path(rfc_path, reference)
+        } else {
+            LoadError::Io {
+                file: path.display().to_string(),
+                action: "resolve clause path",
+                message: err.to_string(),
+            }
+        }
+    })?;
+    if !resolved.is_file() || !resolved.starts_with(resolved_rfc_dir) {
+        return Err(invalid_clause_path(rfc_path, reference));
+    }
+    Ok(path)
+}
+
+fn invalid_clause_path(rfc_path: &Path, reference: &str) -> LoadError {
+    LoadError::ClausePathInvalid {
+        file: rfc_path.display().to_string(),
+        clause: reference.to_string(),
+    }
 }
 
 fn canonicalize_path(path: &Path, action: &'static str) -> Result<PathBuf, LoadError> {
@@ -149,19 +162,18 @@ fn canonicalize_path(path: &Path, action: &'static str) -> Result<PathBuf, LoadE
     })
 }
 
-fn ensure_path_contained(
-    resolved_root: &Path,
-    resolved_path: &Path,
+fn canonicalize_contained(
+    path: &Path,
+    root: &Path,
     rfc_path: &Path,
-    clause_reference: &str,
-) -> Result<(), LoadError> {
-    if !resolved_path.starts_with(resolved_root) {
-        return Err(LoadError::ClausePathInvalid {
-            file: rfc_path.display().to_string(),
-            clause: clause_reference.to_string(),
-        });
+    reference: &str,
+    action: &'static str,
+) -> Result<PathBuf, LoadError> {
+    let resolved = canonicalize_path(path, action)?;
+    if !resolved.starts_with(root) {
+        return Err(invalid_clause_path(rfc_path, reference));
     }
-    Ok(())
+    Ok(resolved)
 }
 
 fn clause_directory_paths(
@@ -173,12 +185,12 @@ fn clause_directory_paths(
     if !clauses_dir.exists() {
         return Ok(vec![]);
     }
-    let resolved_clauses_dir = canonicalize_path(&clauses_dir, "resolve clause directory")?;
-    ensure_path_contained(
+    canonicalize_contained(
+        &clauses_dir,
         resolved_rfc_dir,
-        &resolved_clauses_dir,
         rfc_path,
         &clauses_dir.display().to_string(),
+        "resolve clause directory",
     )?;
 
     let entries = std::fs::read_dir(&clauses_dir).map_err(|err| LoadError::Io {
@@ -195,18 +207,16 @@ fn clause_directory_paths(
         })?;
         let path = entry.path();
         if path.extension().and_then(|ext| ext.to_str()) == Some("toml") {
-            let resolved_clause = canonicalize_path(&path, "resolve clause path")?;
-            ensure_path_contained(
+            canonicalize_contained(
+                &path,
                 resolved_rfc_dir,
-                &resolved_clause,
                 rfc_path,
                 &path.display().to_string(),
+                "resolve clause path",
             )?;
             paths.push(path);
         }
     }
-    paths.sort();
-
     Ok(paths)
 }
 
@@ -419,30 +429,4 @@ fn valid_clause_name(id: &str) -> bool {
 fn find_rfc_in_dir(dir: &Path) -> Option<PathBuf> {
     let toml = dir.join("rfc.toml");
     toml.exists().then_some(toml)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::is_safe_relative_clause_path;
-
-    #[test]
-    fn clause_paths_require_relative_syntax() {
-        for path in [
-            "clauses/C-ONE.toml",
-            "C-ALT.toml",
-            "./clauses/C-ONE.toml",
-            "../C-ONE.toml",
-            "clauses//C-ONE.toml",
-        ] {
-            assert!(is_safe_relative_clause_path(path), "{path}");
-        }
-        assert!(!is_safe_relative_clause_path(""));
-
-        let absolute = std::env::temp_dir().join("C-ONE.toml");
-        assert!(
-            !is_safe_relative_clause_path(&absolute.display().to_string()),
-            "{}",
-            absolute.display()
-        );
-    }
 }
