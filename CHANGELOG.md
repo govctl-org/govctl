@@ -31,6 +31,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Brownfield migration uses a compact policy and discovery baseline instead of a fixed command recipe (WI-2026-07-26-005)
 - Historical evidence, uncertainty, user scope selection, and duplicate avoidance remain explicit (WI-2026-07-26-005)
 - Lifecycle authorization, optional source annotation, incremental completion, and failure recovery remain explicit (WI-2026-07-26-005)
+- Init guidance preserves installation, overwrite authorization, discovery, and verification boundaries (WI-2026-07-26-006)
+- Detach guidance uses ownership-aware inventory, collision-safe archival, explicit confirmation, and recoverable mutations (WI-2026-07-26-006)
+- Decision analysis scales with risk and maps obligations, rationale, and execution evidence to their authoritative artifacts (WI-2026-07-26-006)
 
 ### Removed
 

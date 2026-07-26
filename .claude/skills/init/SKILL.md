@@ -1,79 +1,68 @@
 ---
 name: init
-description: "Set up govctl in the current project. Installs the binary if missing, initializes governance structure."
+description: "Set up govctl in the current project with explicit installation and overwrite authorization"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: "[optional setup scope]"
 ---
 
-# /init - Set Up Govctl
+# Initialize Govctl
 
-Set up govctl in the current project.
+Establish a valid local governance scaffold and report the workflow that should
+own the user's next task. Setup does not create product behavior or governance
+history.
 
-**Outputs:** Initialized governance structure, verified local setup, and a recommended next workflow.
+## Discovery
 
-## Critical Rules
+Check for `gov/config.toml`, a usable local `govctl`, and any existing
+project-local agent assets. In the govctl source repository, prefer
+`cargo run --quiet --` as the development invocation. Elsewhere, use the
+available project-local or installed binary.
 
-1. This is a setup workflow, not an implementation workflow. Do not create work items or change product code here.
-2. Ask permission before installing `govctl` with `cargo install govctl`.
-3. Prefer local `govctl` if it is already available. When working in the `govctl` repo itself, prefer `cargo run --quiet --` before installing a global binary.
-4. Never edit governed files directly. Use `govctl init`.
-5. If setup succeeds and the user wants it recorded, hand off to `/commit` rather than embedding raw VCS commands here.
+Use `govctl init --help` and `govctl init-skills --help` for current options,
+destination resolution, and overwrite behavior.
+Before `init-skills`, map the logical destination to its resolved target,
+inspect existing path ancestors for symlinks, and determine whether the target
+is contained by the project root.
 
-## Steps
+## Hard Stops
 
-### 1. Check for govctl binary
+- Do not create Work Items, product code, RFCs, or ADRs during setup.
+- Obtain explicit user authorization before installing a binary or using any
+  `--force` option.
+- Do not run `init --force` as a generic repair for an existing project.
+- Do not overwrite project-local skills or agents without inspecting their
+  destination and confirming that replacement is intended.
+- Obtain separate explicit authorization before `init-skills` creates or
+  replaces files when the resolved destination is outside the project root or
+  any existing ancestor is a symlink. Show the exact resolved target first.
+- Do not edit governed files directly; let `govctl init` own the scaffold.
+- Hand raw VCS work to `commit`.
 
-```bash
-govctl --version
-```
+## Setup Policy
 
-If you are working in the `govctl` repository itself, prefer:
+If no usable invocation exists, report the missing prerequisite. Ask before
+installing `govctl`; if Rust tooling is also absent, stop with the required
+installation dependency rather than modifying the project.
 
-```bash
-cargo run --quiet -- --version
-```
+When `gov/config.toml` is absent, initialize through `govctl init`. When it is
+present, treat the project as initialized and inspect `govctl status` rather
+than running initialization again. Follow diagnostics: outdated schemas or
+project-support files belong to deterministic `govctl migrate`, while invalid
+artifacts require correction through their owning workflows.
 
-If that works, use `cargo run --quiet -- <subcommand>` for the rest of this workflow instead of installing a global binary.
+Project-local skills and reviewer agents are optional. Install them only when
+the user wants local copies, using `init-skills` destination and format
+discovery. Default to a non-symlinked destination within the project. Preserve
+existing assets unless their replacement was explicitly authorized.
 
-If no usable local invocation exists, ask permission, then install it:
+## Completion Evidence
 
-```bash
-cargo install govctl
-```
+Setup is complete when:
 
-If `cargo` is also missing, tell the user to install Rust first: https://rustup.rs
-
-### 2. Initialize the project
-
-If `gov/config.toml` does not exist:
-
-```bash
-govctl init
-```
-
-If it already exists, skip — the project is already initialized.
-
-### 3. Optional: Install project-local agent assets
-
-If the user wants the bundled skills and reviewer agents copied into the project or agent config directory, run:
-
-```bash
-govctl init-skills
-```
-
-Use `govctl init-skills --format codex` for Codex agent role output, and `--dir <path>` when the assets should be written outside the project directory.
-
-### 4. Verify
-
-```bash
-govctl status
-```
-
-Show the user what was created and confirm everything is working.
-
-## Next Steps
-
-- Use `/discuss` for design work
-- Use `/spec` for governance-only artifact maintenance
-- Use `/gov` for implementation-bearing work
-- Use `/quick` for trivial non-behavioral cleanup
+- `gov/config.toml` and the expected scaffold exist;
+- `govctl status` can read the project;
+- initialization or asset-install diagnostics have no unresolved failure;
+- the report distinguishes files created, skipped, and intentionally replaced;
+  and
+- the user is directed to `discuss`, `spec`, `gov`, `quick`, or `migrate`
+  according to the next task.

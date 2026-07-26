@@ -1,0 +1,48 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-006"
+title = "Finish policy-oriented guidance for helper skills"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "ADR-0057",
+    "ADR-0024",
+]
+tags = [
+    "skills-agents",
+    "documentation",
+]
+
+[content]
+description = "Complete the staged [[ADR-0057]] guidance migration for project setup, governance detachment, and decision-analysis helpers while preserving authorization, ownership, recovery, and artifact-authority boundaries."
+
+[[content.acceptance_criteria]]
+text = "Init guidance preserves installation, overwrite authorization, discovery, and verification boundaries"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Detach guidance uses ownership-aware inventory, collision-safe archival, explicit confirmation, and recoverable mutations"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Decision analysis scales with risk and maps obligations, rationale, and execution evidence to their authoritative artifacts"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Capability-tiered and destructive-operation reviews report no safety-boundary blockers"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Project verification and pre-commit checks pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-GOVCTL-CHECK"]
