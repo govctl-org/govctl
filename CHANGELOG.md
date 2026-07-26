@@ -19,6 +19,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Guard and Work Item skills define the universal-default intersection rule and select narrow risk-domain guards (WI-2026-07-26-001)
 - User documentation, generated configuration guidance, and Guard creation recovery text prioritize per-Work-Item binding for non-universal checks (WI-2026-07-26-001)
 - The repository default guard set excludes GUARD-CARGO-TEST and this Work Item explicitly requires it (WI-2026-07-26-001)
+- gov, commit, and discuss use a compact operational baseline and contextual decision policy (WI-2026-07-26-002)
+- Lifecycle authority, authorization stops, discovery routes, and completion evidence remain explicit (WI-2026-07-26-002)
+- Agent guidance documentation explains information ownership and staged progressive disclosure (WI-2026-07-26-002)
 
 ### Removed
 

@@ -1,344 +1,114 @@
 ---
 name: gov
-description: "Execute governed implementation workflow with work items, RFC/ADR checks, phase gates, testing, and closure. Use when: (1) User invokes /gov, (2) A non-trivial change needs work item tracking, (3) Implementation may require RFC/ADR handling"
+description: "Execute governed implementation with work-item traceability, RFC/ADR authority, risk-scoped verification, and closure"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <what-to-do>
 ---
 
-# /gov - Governed Workflow
+# Governed Implementation
 
-Execute a complete, auditable workflow for: `$ARGUMENTS`
+Deliver `$ARGUMENTS` under the repository's governance model. Use this skill for
+substantive implementation; use `quick` for trivial non-behavioral changes and
+`spec` when no implementation is required.
 
-**Outputs:** Implemented change, updated governance artifacts where needed, validated tests/checks, and a completed work item.
+## Operational Baseline
 
-## Agent Patterns
+### Discovery
 
-### CLI choice
-
-Use `govctl` for governance operations.
-
-When working on the `govctl` repo itself, use `cargo run --quiet --` instead. Commands below use `govctl` for brevity.
-
-### Non-interactive commands
-
-Use non-interactive CLI commands only. Prefer `--stdin` for multi-line content.
-
-### Verification
-
-After each governance write or substantive code change, run the relevant validation (`govctl check`, tests, render when needed).
-
-## Quick Reference
+Establish current state before choosing a workflow:
 
 ```bash
 govctl status
-govctl work list pending
-govctl work show <WI-ID>
-govctl work new --active "<title>"
-govctl work move <WI-ID> <status>
-govctl work edit <WI-ID> description --set "Scope and why"
-govctl work edit <WI-ID> acceptance_criteria --add "add: Implement feature X"
-govctl work edit <WI-ID> refs --add RFC-0001
-govctl work edit <WI-ID> tags --add <tag>
-govctl work edit <WI-ID> depends_on --add <BLOCKING-WI-ID>
-govctl tag new <tag>
-govctl tag list
-govctl loop list open
-govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]
-govctl loop run <LOOP-ID>
-govctl loop replan <LOOP-ID>
-govctl loop add <LOOP-ID> work <ROOT-WI-ID>
-govctl loop remove <LOOP-ID> work <ROOT-WI-ID>
-govctl rfc list
-govctl adr list
-govctl rfc new "<title>"
-govctl adr new "<title>"
-govctl rfc finalize <RFC-ID> normative
-govctl rfc advance <RFC-ID> <impl|test|stable>
-govctl check
-govctl render
-```
-
-## Critical Rules
-
-1. Use `govctl` for governance operations. Never edit governed files directly.
-2. Respect phase discipline: `spec -> impl -> test -> stable`.
-3. Behavior changes must be grounded in a normative RFC. If behavior is unspecified or ambiguous, stop and escalate.
-4. Ask permission before `govctl rfc finalize ...` or `govctl rfc advance ...` unless `$ARGUMENTS` explicitly grant full authority.
-5. Keep an active work item while performing substantive implementation. Confirm it with `govctl work list active` before implementation; a completed work item may move to `done` before the final implementation commit.
-6. In source comments, reference artifacts with `[[artifact-id]]`.
-7. Use work item fields correctly:
-   - `description`: task scope and why; set once, rarely change
-   - `notes`: closure-worthy durable facts only; record stable constraints, decisions, and retry rules that should still matter after the work item is done
-8. Avoid retry cycles. If the same approach already failed, do not repeat it unchanged.
-9. Spec-only governance maintenance does not belong here. Use `/spec` when no implementation work is required.
-10. Work items are operational memory, not normative authority. If implementation needs a new requirement or design decision, amend the RFC or ADR instead of stuffing it into `description` or `notes`.
-11. Create work items for durable, reader-useful outcomes only. Do not create separate work items for mechanical helper extraction, fixture sharing, file moves, formatting, or cleanup substeps.
-12. Do not invent loop IDs. Omit `--id` when starting a loop; use the generated `LOOP-YYYY-MM-DD-NNN` ID printed by the command for later `run`, `show`, `replan`, `add`, or `remove`.
-13. Treat Clauses as first-class CLI resources. Every Clause operation uses the root `govctl clause` namespace, even though Clause IDs and storage are scoped by an RFC.
-
-## Work Item Context
-
-The active work item is durable outcome context. Read it with `govctl work show <WI-ID>`; do not rely on raw TOML.
-
-### Read order
-
-1. `description` tells you the scope.
-2. `notes` tells you closure-worthy constraints or lessons that should survive future sessions.
-3. `acceptance_criteria` tells you what must be true before closure.
-
-### Write rules
-
-- Do not add `notes` by default. Add one only when the fact should remain useful after the work item is closed.
-- Never put progress, command output, review status, current plan, next action, temporary blocker, hypothesis, or "remember to do X" TODOs in `notes`.
-- Record execution trace, failed attempts, blockers, and next actions in loop state and round artifacts. If no loop exists, report them in the final response instead of writing them to the work item.
-- On failure, add a note only when you discovered a stable retry rule such as "Do not retry parser path X; it cannot preserve normalized arrays."
-
-### Loop usage
-
-Use a loop for non-trivial governed execution that needs local execution memory. This includes single-Work-Item work now that transient journal-style execution trace belongs in loop state and round artifacts. Multi-Work-Item loops add dependency and batch coordination; they are not permission to split one cleanup/refactor into mechanical work-item fragments.
-
-1. Create or activate only the work items that represent durable outcomes a future reader should see.
-2. Add `depends_on` edges for hard execution ordering.
-3. Run `govctl check` so dependency cycles or missing work item IDs are caught before the loop starts.
-4. Start one loop for the root set with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; let govctl generate the `LOOP-YYYY-MM-DD-NNN` ID.
-5. Run `govctl loop run <LOOP-ID>` to open a local round for ready work.
-6. Perform implementation, verification, and any explicit `govctl work move` commands yourself.
-7. Fill the opened `.govctl/loops/<LOOP-ID>/rounds/round-NNN.toml` summary evidence.
-8. Run `govctl loop run <LOOP-ID>` again to validate and close the round.
-
-When resuming after an interruption or inspecting current local execution state, run `govctl loop list open` first. Use the listed generated loop ID for `run`, `show`, `resume`, `add`, `remove`, or `replan`; do not guess a loop ID from memory.
-
-`govctl loop run` advances local round state only. It does not implement code, tick acceptance criteria, add notes, or move Work Items to `done`.
-
-If the scope changes during execution, keep the same loop identity:
-
-- Use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>` when newly discovered work belongs in the current batch.
-- Use `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>` when a root no longer belongs in the batch.
-- Use `govctl loop replan <LOOP-ID>` after dependency edits that should refresh the current closure.
-
-`work` is the only editable loop work-item field.
-
-Do not create multiple scattered loops for work that belongs in one coherent execution session.
-
-Do not create separate work items for low-level implementation slices such as helper moves, test fixture sharing, module normalization, comment cleanup, snapshot reshaping, or other changes whose only durable record should be the commit diff or one higher-level work item.
-
-## Workflow
-
-### 0. Initialize
-
-```bash
-govctl status
-```
-
-- Read `gov/config.toml`.
-- Classify the task:
-  - Doc-only: use `/quick` or `/spec` unless the user explicitly wants `/gov`
-  - Bug fix: usually no new RFC if behavior is already specified
-  - Feature: likely requires an RFC or ADR
-  - Deprecation or removal: amend the governing RFC before implementation
-  - Refactor: ADR may be needed if it changes architecture
-
-### 1. Resolve the work item
-
-```bash
-govctl work list pending
-```
-
-- Matching active item: use it
-- Matching queued item: `govctl work move <WI-ID> active`
-- No match and the task has one durable outcome: `govctl work new --active "<concise-title>"`, then start a loop if the work is non-trivial
-- No match and the task has multiple independently reviewable durable outcomes: create that small batch first, wire only hard `depends_on` edges, then start one generated-ID loop for the batch.
-- No match and the apparent split is only mechanical implementation steps: create at most one coarse work item, or route trivial cleanup to `/quick`.
-
-Then immediately:
-
-```bash
-govctl work show <WI-ID>
-govctl work edit <WI-ID> description --set "Brief scope: what and why"
-govctl work edit <WI-ID> acceptance_criteria --add "chore: govctl check passes"
-```
-
-Add task-specific acceptance criteria and refs as needed:
-
-```bash
-govctl work edit <WI-ID> acceptance_criteria --add "add: Implement feature X"
-govctl work edit <WI-ID> refs --add RFC-0001
-```
-
-Follow the **wi-writer** skill for acceptance criteria quality.
-
-Inspect available verification guards and add the narrowest reusable checks
-that cover the Work Item's changed surface, governing refs, and acceptance
-criteria:
-
-```bash
-govctl guard list
-govctl work edit <WI-ID> verification.required_guards --add GUARD-DOMAIN-TESTS
-```
-
-Project defaults are reserved for checks needed by every Work Item. Require
-heavy aggregate guards, such as a full test suite, only when this Work Item
-crosses shared boundaries or narrower guards cannot cover its blast radius.
-
-### 2. Analyze governance
-
-Skip this step for doc-only changes.
-
-```bash
-govctl rfc list
-govctl adr list
-```
-
-Choose the smallest thing that matches reality:
-
-- New behavior not covered by an RFC: draft an RFC
-- Ambiguous interpretation or architectural choice: draft an ADR
-- Deprecation or removal of specified behavior: amend the governing RFC first
-- Existing normative RFC already specifies the change: proceed
-- Spec-only artifact maintenance with no implementation: stop and use `/spec`
-
-If you create artifacts:
-
-- Follow `rfc-writer` or `adr-writer`
-- Review drafts with the appropriate reviewer agent
-- Fix critical findings before implementation
-
-### 3. Enter implementation
-
-Before writing code:
-
-```bash
 govctl work list active
+govctl work list queue
+govctl loop list open
+govctl search <topic>
 ```
 
-Confirm the intended work item appears in the active list. For RFC-governed work,
-verify the RFC state:
+Read a matching Work Item with `govctl work show <WI-ID>` and inspect relevant
+RFCs or ADRs through their `show` commands. Use `govctl <resource> --help` for
+current syntax and diagnostics for recovery. In the govctl repository itself,
+invoke the development binary as `cargo run --quiet --`.
 
-- `draft/spec`: do not bump; ask permission, then finalize and advance to `impl`
-- `normative/spec`: continue authoring the current version without another bump; ask permission before advancing to `impl`, which seals its RFC and Clause content
-- `normative/impl+`: proceed against the sealed current-version baseline; when RFC or Clause content needs to change, edit it to form an unversioned amendment, then release that amendment with `govctl rfc bump` as the next version in `spec`
-- `deprecated`: stop; do not edit or version-bump
+### Hard Stops
 
-If implementation reveals a spec bug, do not silently deviate:
+- RFCs are authoritative. Stop when the requested behavior conflicts with a
+  normative RFC or is materially unspecified.
+- Do not implement behavior that depends on a draft RFC.
+- Obtain user authorization before lifecycle-owned or destructive artifact
+  operations, including acceptance/rejection, phase or version changes,
+  deprecation, supersession, and deletion, unless the request already grants it.
+- Do not edit files under `gov/` directly; use canonical govctl resource
+  commands. Clause operations use the root `govctl clause` namespace.
+- Substantive implementation needs a matching active Work Item. Do not create
+  separate Work Items for mechanical substeps.
+- Stop before mutation when authoritative lifecycle state or the required
+  recovery path cannot be established.
 
-- A code-only implementation defect does not require an RFC edit or bump.
-- Editing RFC or Clause content after entry to `impl` creates an unversioned amendment. Do not advance to `test` while it exists.
-- Release that amendment on the normative RFC with an appropriate patch, minor, or major `govctl rfc bump`; the new version starts in `spec`.
-- Continue authoring that new version in `spec` without another bump, then advance to `impl` to seal the corrected baseline.
-- A current-version changelog correction uses `govctl rfc edit <RFC-ID> changelog.*` and does not affect the sealed content baseline.
-- If an RFC in `impl`, `test`, or `stable` has no sealed signature, stop lifecycle mutation. Run migration, or restore a consistent known-good baseline comprising the RFC TOML and its complete Clause TOML set from version-control history; do not reconstruct it from possibly amended content. See [[RFC-0000:C-PHASE-LIFECYCLE]].
-- For a Clause introduced in the current normative `spec` candidate whose `since` equals the RFC version, use `govctl clause delete`; it scans all governed artifacts and reports every referrer before allowing deletion. Inherited Clauses use deprecate or supersede. See [[RFC-0000:C-CLAUSE-DEF]].
+## Decision Policy
 
-Ask before the lifecycle-owned bump unless the user already granted full authority.
+### Choose The Smallest Governance Path
 
-Implementation rules:
+| Situation                                               | Action                                                                              |
+| ------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Existing normative RFC fully specifies the change       | Implement against it                                                                |
+| Behavior is new, ambiguous, deprecated, or incompatible | Establish the obligation in an RFC; use an ADR only for supporting design rationale |
+| Change is trivial and non-behavioral                    | Hand off to `quick`                                                                 |
+| Work is governance-only                                 | Hand off to `spec`                                                                  |
 
-1. Keep changes focused.
-2. Follow RFC clauses and cite them in source comments when useful.
-3. After each substantive change, run the relevant validation.
-4. Add durable work-item notes only when a closure-worthy fact exists:
+Use one Work Item for one durable outcome. Reuse a matching active item, activate
+a queued item, or create one only when the result deserves durable tracking.
+Use `wi-writer` for field quality and choose the narrowest guards that cover the
+changed risk. Project defaults are for checks required by every Work Item.
 
-```bash
-govctl work edit <WI-ID> notes --add "Do not retry parser path X; it cannot preserve normalized arrays"
-```
+Use a loop when non-trivial execution needs local round evidence. Let govctl
+generate the loop ID, reuse an open matching loop, and keep transient progress in
+loop state rather than Work Item notes.
 
-### 4. Test
+### Preserve Artifact Authority
 
-If an RFC exists, ask permission before `govctl rfc advance <RFC-ID> test` unless full authority was granted.
+- RFC: obligations and externally relevant invariants.
+- ADR: design choice, rationale, and consequences.
+- Work Item: task scope, acceptance criteria, dependencies, and durable
+  execution facts.
 
-Run the relevant verification for the change:
+Work Item `description` states scope and reason. `notes` hold only facts or retry
+constraints that remain useful after closure. Progress, validation output,
+plans, and temporary blockers belong in loop evidence or the final response.
 
-- `govctl check`
-- Project tests
-- Render commands when governed output changed
+### Respect RFC Lifecycle Boundaries
 
-When the work item is ready to close, do not run `govctl verify --work <WI-ID>`
-or manually repeat commands already covered by its effective guards immediately
-before `govctl work move <WI-ID> done`. The move is the final verification gate
-and runs those guards itself. Use standalone verification earlier for diagnosis
-or when the work item will remain active.
+Inspect the current RFC with `show` and read its governing lifecycle clauses
+before mutation. Do not implement against draft or deprecated content, progress
+an amended sealed version without its authorized bump, or mutate a post-`spec`
+RFC whose sealed baseline cannot be established. Clause `since` is
+lifecycle-owned; use canonical Clause lifecycle commands rather than editing
+history.
 
-If a check fails:
+### Implement And Verify
 
-- Record the failed attempt in loop state or the final response
-- Add a work-item note only for a stable retry rule that should survive closure
-- Change approach before retrying
+Keep implementation scoped to the Work Item and governing artifacts. When work
+reveals a specification defect, repair the specification through the authorized
+lifecycle rather than silently deviating.
 
-Do not continue until green.
+Run the narrowest useful checks while developing. Before closing the Work Item,
+do not manually repeat guards that `govctl work move <WI-ID> done` is about to
+run. Standalone verification is for diagnosis or evidence while the item remains
+active. Use `compliance-checker` when RFC-governed behavior changes materially.
 
-If the change implements, removes, or materially alters RFC-governed behavior, invoke the **compliance-checker** agent before moving to `stable`.
-Treat Critical compliance findings as a release gate; fix them before continuing.
+Recover from diagnostics by changing the failing assumption or approach. Do not
+repeat the same failed command without new evidence.
 
-### 5. Complete
+## Completion Evidence
 
-Run final validation:
+The task is complete when:
 
-```bash
-govctl check
-govctl render
-```
+- implementation matches the governing RFCs and accepted ADRs;
+- `govctl check` passes for the governed repository;
+- relevant focused tests and generated projections are current;
+- semantic review has no unresolved critical finding;
+- Work Item acceptance criteria reflect the delivered outcome;
+- moving the Work Item to `done` passes its effective guards; and
+- the final response reports the result, validation, and any residual risk.
 
-If an RFC exists and all required testing is done, ask permission before `govctl rfc advance <RFC-ID> stable` unless full authority was granted.
-
-Before advancing to `stable` for RFC-governed behavior:
-
-1. Run **compliance-checker**
-2. Fix any Critical findings
-3. Re-run the relevant checks if code changed
-
-Before closing the work item:
-
-1. Review the work item with `wi-reviewer`
-2. Tick completed acceptance criteria
-3. Move the work item to `done`; this runs its effective verification guards
-
-Example:
-
-```bash
-govctl work show <WI-ID>
-govctl work edit <WI-ID> acceptance_criteria[0] --tick done
-govctl work move <WI-ID> done
-```
-
-## Error Handling
-
-### Stop and ask when
-
-1. Requirements are ambiguous.
-2. A normative RFC conflicts with the requested change.
-3. The change would break existing behavior.
-4. Security or secret-handling issues appear.
-5. The task grows beyond the original scope.
-6. The same failure recurs and you do not have a materially different next step.
-
-### Otherwise recover and continue
-
-| Problem                       | Recovery                                                                                   |
-| ----------------------------- | ------------------------------------------------------------------------------------------ |
-| `govctl check` fails          | Read diagnostics, fix, rerun                                                               |
-| Tests fail                    | Debug, fix, rerun                                                                          |
-| `work move ... done` rejected | Add or tick acceptance criteria first                                                      |
-| Same failure repeats          | Read durable `notes`; record the new plan in loop state or final response, or stop and ask |
-
-## Commit Conventions
-
-- `chore(work)`: activate or complete a work item
-- `docs(rfc)` / `docs(adr)`: draft governance artifacts
-- `feat(scope)` / `fix(scope)` / `refactor(scope)` / `docs(scope)` / `test(scope)`: implementation commits
-
-Use the `commit` skill for all raw VCS operations.
-
-## Execution Checklist
-
-- [ ] Environment validated; config read
-- [ ] Active work item exists
-- [ ] Work items represent durable outcomes, not mechanical substeps
-- [ ] Related durable work was batched into one loop where applicable
-- [ ] `govctl work show <WI-ID>` read before implementation
-- [ ] `description` and `notes` used correctly
-- [ ] Governance analysis completed or explicitly skipped
-- [ ] Validation and tests passed
-- [ ] Acceptance criteria ticked
-- [ ] Work item closed
-
-**BEGIN EXECUTION NOW.**
+Use the `commit` skill for raw VCS operations.

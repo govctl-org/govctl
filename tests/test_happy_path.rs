@@ -155,6 +155,31 @@ fn test_minimal_valid_list_work() -> common::TestResult {
 }
 
 #[test]
+fn test_work_list_status_filters() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    setup_minimal_valid(temp_dir.path(), &date)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "list", "active", "-o", "plain"],
+            &["work", "list", "queue", "-o", "plain"],
+        ],
+    )?;
+
+    assert!(
+        output.contains(&format!("WI-{date}-001\tactive\tTest work item")),
+        "active filter should include the active Work Item: {output}"
+    );
+    assert_eq!(
+        output.matches("WI-").count(),
+        1,
+        "queue filter should not repeat the active Work Item: {output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;

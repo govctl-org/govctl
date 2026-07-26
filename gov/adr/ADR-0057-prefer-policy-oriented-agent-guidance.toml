@@ -1,0 +1,133 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0057"
+title = "Prefer policy-oriented agent guidance"
+status = "accepted"
+date = "2026-07-26"
+refs = [
+    "ADR-0024",
+    "ADR-0042",
+    "ADR-0056",
+    "RFC-0000",
+    "ADR-0015",
+]
+tags = ["skills-agents"]
+
+[content]
+context = """
+govctl's bundled agent layer has grown through repeated corrections to workflow skills, writer guidance, project instructions, CLI help, and user guides. The current `.claude/skills/*/SKILL.md` corpus contains 2,976 lines and more than 350 `govctl` command references. Several workflow skills exceed the progressive-disclosure limit recorded in [[ADR-0024]], while recent fixes show that detailed instructions can preserve removed commands, trigger duplicate verification, and steer agents into unnecessary lifecycle churn.
+
+### Problem Statement
+
+The guidance was optimized for agents that needed explicit procedural sequencing. Newer agents can often infer local steps from repository state, code, and tool feedback, but the repository has not yet demonstrated that less procedural guidance preserves governance compliance across supported capability levels. The design problem is therefore how to reduce duplicated procedure without weakening authority boundaries, hard stops, recovery for weaker agents, or completion evidence.
+
+### Constraints
+
+- RFCs remain the source of normative obligations; ADRs explain design choices and consequences.
+- [[ADR-0024]] keeps writing guidance in skills and independent review in agents.
+- [[ADR-0042]] demonstrates that important structural invariants belong in executable gates rather than prose alone.
+- [[ADR-0056]] establishes one canonical CLI and storage surface.
+- [[ADR-0015]] establishes self-describing CLI metadata while acknowledging that semantic usage guidance remains manually maintained.
+- Skills must remain useful across agent implementations with different capabilities.
+- Human guides still need explanatory depth and complete historical context.
+- Reducing guidance must not weaken lifecycle authority, approval boundaries, artifact roles, discovery of uncommon safety conditions, or final verification expectations."""
+decision = """
+We will make the bundled agent guidance policy-oriented while retaining a compact operational baseline. Every workflow skill will identify its purpose, required preflight or discovery entrypoint, hard stops that require escalation or authorization, policy for choosing the next action, and evidence that defines completion. This baseline keeps weaker agents recoverable without prescribing every intermediate command to stronger agents.
+
+We choose this approach because it gives changing information one owner, adapts to different agent capabilities through explicit discovery rather than duplicated prose, and retains safety-critical guidance according to risk rather than frequency or an arbitrary line count.
+
+The agent layer will use the following information ownership model:
+
+| Content | Owner | Skill treatment |
+| --- | --- | --- |
+| Normative obligations and lifecycle invariants | RFCs | Reference the governing artifact; keep the hard stop or decision trigger needed for the workflow |
+| Design rationale | ADRs | Reference when it constrains a choice; do not reproduce the decision history |
+| Repository-specific authority and safety boundaries | Project instructions | Keep concise and always available |
+| Task strategy, escalation triggers, discovery route, and completion evidence | Relevant skill | Keep inline as the operational baseline |
+| Current syntax, state, validation, and actionable recovery | Canonical CLI help, status/describe output, schemas, diagnostics, and guards | Query only where the surface has been verified to expose the needed information; otherwise retain concise guidance or a stable reference route |
+| Explanation, worked examples, and uncommon recovery detail | Human guides or indexed on-demand references | Keep out of the core skill, but name the trigger and stable discovery route when omission would make the material hard to find |
+
+RFCs remain authoritative when these surfaces disagree; executable surfaces enforce or expose obligations but do not replace them. Project authorization boundaries still apply before a lifecycle mutation. Canonical CLI output owns current syntax and repository state, but this decision does not assume that every recovery path is already complete. Missing discovery or recovery capability remains inline or in a stable referenced fallback until separately implemented under any required RFC amendment.
+
+Progressive disclosure will be driven by risk, discoverability, and relevance rather than a fixed line limit. A fact stays inline when omitting it could cause an unsafe or invalid common-path action, when it gates an irreversible or high-cost operation, or when the agent would not reliably discover the owning surface before acting. Other changing syntax, detailed examples, rare branches, and background explanation move to their owning surface only after a stable discovery route exists. If an agent cannot establish authoritative state or reach the named fallback, it stops before mutation rather than inferring permission.
+
+The migration will be staged. Before prior guidance is retired, representative common-path, recovery, and lifecycle-sensitive tasks will be compared across stronger and weaker agent profiles. Completion rate, lifecycle or authorization errors, recovery success, duplicate verification, and tool-call overhead form the evaluation evidence. A new safety-boundary regression blocks that removal and retains or restores the prior guidance while the ownership or discovery gap is corrected.
+
+Remaining executable examples should receive automated drift coverage where practical. Generated command reference remains useful as an on-demand CLI or documentation surface, but not as content injected into every skill invocation.
+
+This decision replaces the fixed 250-line skill constraint in [[ADR-0024]] with the risk, ownership, and discovery test above. The writer-skill and reviewer-agent split from that ADR remains in force."""
+consequences = """
+### Positive
+
+- Hard governance boundaries receive more attention because they compete with less procedural text.
+- Capable agents can choose shorter paths from actual repository state instead of following generic recipes.
+- Weaker agents retain a common preflight, explicit escalation triggers, and a stable route to deeper guidance.
+- CLI syntax and state recovery have fewer duplicated documentation surfaces.
+- Skill maintenance focuses on durable policy and quality judgment rather than command churn.
+- Staged comparison makes the premise testable instead of assuming that shorter guidance is safer.
+- Independent review remains available for decisions where cognitive isolation adds value.
+
+### Negative
+
+- Less capable or poorly tooled agents could miss guidance and cross a lifecycle or authorization boundary (mitigation: keep safety triggers inline, require a stable fallback, compare capability profiles, and block removal on any new safety regression).
+- Less capable agents may make more exploratory tool calls (mitigation: every workflow skill retains a discovery entrypoint and verified canonical surfaces provide actionable recovery where available).
+- The initial rewrite requires judgment about information ownership (mitigation: classify each retained item with the shared ownership model and review representative workflows before deletion).
+- Some uncommon workflows become less immediately visible (mitigation: retain an inline trigger and stable indexed route whenever the material is otherwise hard to discover).
+- Drift checks for remaining executable examples add test maintenance (mitigation: retain examples only when they communicate semantics that canonical help does not already expose).
+- Future model regressions could change the appropriate balance (mitigation: keep the operational baseline capability-neutral and preserve staged evaluation evidence so guidance can be restored or expanded).
+
+### Neutral
+
+- This decision does not change RFC, ADR, Work Item, or lifecycle semantics.
+- It does not establish a blanket requirement that current CLI recovery surfaces are complete; missing product behavior requires its own specification and implementation path.
+- Human documentation may remain detailed when that depth serves learning or reference use rather than agent control.
+- Skill size remains a review signal, but no line-count target substitutes for information ownership, risk, and discoverability."""
+
+[[content.alternatives]]
+text = "Procedural guidance: Keep comprehensive step-by-step skills, command references, recovery recipes, and checklists as the primary control mechanism."
+status = "rejected"
+pros = [
+    "Works predictably with less capable agents",
+    "Keeps uncommon recovery procedures immediately visible",
+]
+cons = [
+    "Duplicates commands and rules across several maintained surfaces",
+    "Encourages mechanical execution and repeated validation",
+]
+rejection_reason = "The accumulated drift and execution churn show that exhaustive prose is no longer a reliable control surface."
+
+[[content.alternatives]]
+text = "Policy plus discovery: Keep purpose, a compact safety and discovery baseline, decision policy, and completion conditions in skills; obtain changing syntax and current state from canonical CLI surfaces; retain detailed explanation in human guides or indexed on-demand references."
+status = "accepted"
+pros = [
+    "Keeps high-value boundaries salient while allowing contextual planning",
+    "Moves changing syntax and state-dependent advice to executable sources",
+]
+cons = [
+    "Requires better CLI diagnostics and discovery surfaces",
+    "Very weak agents may need to query more context",
+]
+
+[[content.alternatives]]
+text = "Tool-only guidance: Remove most workflow and writer skills, relying almost entirely on model judgment and CLI validation."
+status = "rejected"
+pros = ["Minimizes prompt size and maintenance cost"]
+cons = [
+    "Leaves authority and approval boundaries too implicit",
+    "Makes safe behavior depend heavily on model quality",
+]
+rejection_reason = "Tool validation cannot express every governance judgment, escalation boundary, or artifact-authority distinction."
+
+[[content.alternatives]]
+text = "Always-loaded generated fallback: Keep concise policies plus a comprehensive procedural appendix generated from command metadata in the content loaded for every skill invocation."
+status = "rejected"
+pros = [
+    "Reduces syntax drift in procedural references",
+    "Provides a capability-neutral fallback for weaker agents",
+]
+cons = [
+    "Command metadata cannot generate governance judgment or cross-command workflow policy",
+    "Bundling the generated fallback still consumes attention on every invocation",
+]
+rejection_reason = "Generated command reference is useful as an on-demand discovery surface and is incorporated into the chosen approach in that role. Loading the full generated appendix on every invocation would recreate the prompt competition this decision addresses."

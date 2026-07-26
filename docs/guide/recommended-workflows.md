@@ -31,6 +31,37 @@ When in doubt, ask what the text is trying to do:
 - "What are we doing in this task?" belongs in a Work Item.
 - "What happened in this round?" belongs in loop state or the final response.
 
+## Agent Guidance Model
+
+Bundled skills provide policy and discovery, not a second copy of the CLI
+manual. Each workflow skill keeps a compact operational baseline:
+
+- where to inspect current state and find deeper guidance;
+- hard stops for authority, authorization, and unsafe mutation;
+- policy for choosing the next action from repository context; and
+- evidence that defines completion.
+
+Information stays with its authoritative owner:
+
+| Information                                               | Primary owner                 |
+| --------------------------------------------------------- | ----------------------------- |
+| Normative behavior and lifecycle invariants               | RFCs                          |
+| Design rationale                                          | ADRs                          |
+| Repository-specific authority boundaries                  | Project instructions          |
+| Task strategy and escalation triggers                     | Workflow skills               |
+| Current syntax, state, validation, and available recovery | Canonical CLI surfaces        |
+| Explanation, examples, and uncommon recovery detail       | Guides and indexed references |
+
+Skills retain safety-critical triggers even when the full explanation lives
+elsewhere. Detailed material moves out of a skill only after it has a stable
+discovery route. If authoritative state or the named fallback is unavailable,
+the safe response is to stop before mutation rather than infer permission.
+
+This structure lets capable agents plan from live context while keeping weaker
+agents recoverable. Guidance changes should be staged and checked across both
+common paths and lifecycle-sensitive recovery paths before older instructions
+are removed.
+
 ## Small Changes
 
 Not every change needs every artifact.
