@@ -10,7 +10,8 @@ fn wide_dashboard_draws_control_plane_sections_and_state() -> Result<(), Box<dyn
     let (_, rendered) = render_app(120, 24, app, |frame, app| draw(frame, app, frame.area()))?;
     for marker in [
         "LIFECYCLE MATRIX",
-        "OPERATIONS",
+        "EXECUTION",
+        "HEALTH",
         "GOVERNANCE INDEX",
         "draft",
         "normative",
@@ -31,6 +32,46 @@ fn wide_dashboard_draws_control_plane_sections_and_state() -> Result<(), Box<dyn
             "missing {marker}: {rendered:?}"
         );
     }
+
+    let Some(rfc) = rendered
+        .iter()
+        .find(|line| line.contains("RFC") && line.contains("draft"))
+    else {
+        return Err("missing RFC lifecycle row".into());
+    };
+    let Some(adr) = rendered
+        .iter()
+        .find(|line| line.contains("ADR") && line.contains("proposed"))
+    else {
+        return Err("missing ADR lifecycle row".into());
+    };
+    let Some(work) = rendered
+        .iter()
+        .find(|line| line.contains("WORK") && line.contains("queue"))
+    else {
+        return Err("missing Work lifecycle row".into());
+    };
+    assert_eq!(rfc.find("draft"), adr.find("proposed"));
+    assert_eq!(rfc.find("draft"), work.find("queue"));
+    assert_eq!(rfc.find("normative"), adr.find("accepted"));
+    assert_eq!(rfc.find("normative"), work.find("active"));
+    assert_eq!(rfc.find("deprecated"), adr.find("superseded"));
+    assert_eq!(rfc.find("deprecated"), work.find("cancelled"));
+
+    let Some(first_index_row) = rendered.iter().find(|line| line.contains("RFC INDEX")) else {
+        return Err("missing first governance index row".into());
+    };
+    let Some(second_index_row) = rendered.iter().find(|line| line.contains("ADR INDEX")) else {
+        return Err("missing second governance index row".into());
+    };
+    assert_eq!(
+        first_index_row.find("RFC INDEX"),
+        second_index_row.find("ADR INDEX")
+    );
+    assert_eq!(
+        first_index_row.find("CLAUSE INDEX"),
+        second_index_row.find("WORK QUEUE")
+    );
     Ok(())
 }
 
@@ -41,6 +82,8 @@ fn narrow_dashboard_uses_compact_readable_layout() -> Result<(), Box<dyn std::er
     let (_, rendered) = render_app(72, 18, app, |frame, app| draw(frame, app, frame.area()))?;
     for marker in [
         "LIFECYCLE MATRIX",
+        "EXECUTION",
+        "HEALTH",
         "GOVERNANCE INDEX",
         "deprecated",
         "rejected",

@@ -1,0 +1,37 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-004"
+title = "Structure TUI dashboard information hierarchy"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0007:C-HUMAN-UX",
+    "RFC-0007:C-COCKPIT-VIEWS",
+]
+tags = ["tui"]
+
+[content]
+description = "Clarify dashboard relationships through aligned lifecycle, navigation, execution, and health regions."
+
+[[content.acceptance_criteria]]
+text = "Lifecycle states occupy stable semantic columns across RFC, ADR, and Work rows"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Governance navigation entries use an aligned tabular grid on wide and narrow terminals"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Execution activity and diagnostic health are presented as separate dashboard regions"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Wide and narrow dashboard tests, all-target clippy, and governance checks pass"
+status = "done"
+category = "chore"
