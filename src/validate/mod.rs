@@ -119,8 +119,6 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
     // Validate work item descriptions
     validate_work_item_descriptions(index, config, &mut result);
 
-    // Surface legacy inline execution history without blocking validation.
-
     // Validate tags against allowed set — [[RFC-0002:C-RESOURCES]]
     validate_artifact_tags(index, config, &mut result);
 

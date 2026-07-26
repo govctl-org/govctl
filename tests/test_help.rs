@@ -45,6 +45,11 @@ fn test_adr_root_help() -> common::TestResult {
 }
 
 #[test]
+fn test_adr_reject_help() -> common::TestResult {
+    assert_help_snapshot!(&["adr", "reject", "--help"])
+}
+
+#[test]
 fn test_work_get_help() -> common::TestResult {
     assert_help_snapshot!(&["work", "get", "--help"])
 }

@@ -92,7 +92,7 @@ EXAMPLES:
 
 NOTES:
     - Reject the ADR itself when the proposal should not proceed.
-    - Use `adr tick ... -s rejected` to reject a specific alternative instead.
+    - Use `govctl adr edit ADR-0001 alternatives[N] --tick rejected` to reject a specific alternative instead.
 ")]
     Reject(CommonIdArgs),
     /// Explain that ADRs must be superseded, not deprecated

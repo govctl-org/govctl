@@ -78,7 +78,7 @@ Do not use notes for progress updates, commands run, validation output, current 
 
 ```bash
 govctl work edit <WI-ID> notes --add "Do not retry the legacy JSON migration path; v0.9 intentionally rejects it"
-govctl work edit <WI-ID> notes --add "Legacy inline journal entries must remain render-only for older work items"
+govctl work edit <WI-ID> notes --add "The fixture uses a fixed clock because generated IDs are date-scoped"
 ```
 
 ### Acceptance Criteria
@@ -249,7 +249,7 @@ Keep `chore:` criteria for validation summaries, especially when the validation 
 | Placeholder description left in      | Replace immediately with real description                                                                |
 | Vague criteria: "Feature works"      | Specific: "add: CLI returns exit code 0 on success"                                                      |
 | No `chore:` criterion                | Add "chore: govctl check passes" or "chore: all tests pass"                                              |
-| No refs to governing artifacts       | Link RFCs/ADRs with `work add <WI-ID> refs`                                                              |
+| No refs to governing artifacts       | Link RFCs/ADRs with `govctl work edit <WI-ID> refs --add <REF>`                                          |
 | Description used for tracking        | Use loop state and round artifacts for execution trace                                                   |
 | Progress details stored as notes     | Keep `notes` durable; put transient round logs in loop state and round artifacts                         |
 | TODOs or next actions stored notes   | Put next actions in loop state or the final response; use acceptance criteria for completion obligations |

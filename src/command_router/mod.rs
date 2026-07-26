@@ -1,8 +1,8 @@
 //! Command planning for unified routing semantics.
 //!
 //! This module compiles parsed CLI syntax into semantic execution plans built
-//! from `Scope + Op`. The planner is the single normalization point for both
-//! canonical and compatibility command forms.
+//! from `Scope + Op`. The planner is the single normalization point for
+//! canonical command forms.
 
 mod edit_action;
 mod execute;

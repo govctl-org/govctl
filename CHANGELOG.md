@@ -26,6 +26,10 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Obsolete artifact readers, ignored legacy fields, migration steps, and signature fallbacks are removed according to the amended schema support baseline (WI-2026-07-25-001)
 - Release documentation identifies removed compatibility surfaces and the required repository upgrade baseline (WI-2026-07-25-001)
 
+### Fixed
+
+- User and agent guidance uses only canonical edit commands (WI-2026-07-25-001)
+
 ## [0.14.2] - 2026-07-25
 
 0.14.2 tightens the bundled agent guidance around verification and RFC

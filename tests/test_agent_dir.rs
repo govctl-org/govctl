@@ -72,6 +72,18 @@ fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
         content.contains("Select the narrowest guards"),
         "wi-writer should explain per-work-item guard selection"
     );
+    assert!(
+        content.contains("govctl work edit <WI-ID> refs --add <REF>"),
+        "wi-writer should use the canonical edit path for references"
+    );
+    assert!(
+        !content.contains("work add <WI-ID> refs"),
+        "wi-writer should not recommend the removed work add command"
+    );
+    assert!(
+        !content.contains("Legacy inline journal entries must remain render-only"),
+        "wi-writer should not preserve the rejected inline journal contract"
+    );
     Ok(())
 }
 

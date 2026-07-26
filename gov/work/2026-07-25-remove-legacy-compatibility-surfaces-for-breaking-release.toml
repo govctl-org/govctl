@@ -6,7 +6,7 @@ title = "Remove legacy compatibility surfaces for breaking release"
 status = "done"
 created = "2026-07-25"
 started = "2026-07-25"
-completed = "2026-07-25"
+completed = "2026-07-26"
 refs = [
     "RFC-0002",
     "RFC-0006",
@@ -67,5 +67,15 @@ category = "removed"
 
 [[content.acceptance_criteria]]
 text = "The project default verification guards pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "User and agent guidance uses only canonical edit commands"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Removed compatibility snapshots and comments leave no stale contracts"
 status = "done"
 category = "chore"
