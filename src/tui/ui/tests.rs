@@ -30,11 +30,11 @@ fn draw_renders_chrome_and_help_overlay() -> Result<(), Box<dyn std::error::Erro
     app.show_help = true;
 
     let (_, rendered) = render_app(100, 18, app, draw)?;
-    assert!(rendered.iter().any(|line| line.contains("govctl")));
+    assert!(rendered.iter().any(|line| line.contains("GOVCTL")));
     assert!(
         rendered
             .iter()
-            .any(|line| line.contains("Dashboard > RFCs"))
+            .any(|line| line.contains("DASHBOARD > RFCS"))
     );
     assert!(rendered.iter().any(|line| line.contains("Shown 1/1")));
     assert!(rendered.iter().any(|line| line.contains("Global")));

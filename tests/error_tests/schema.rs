@@ -417,7 +417,10 @@ command = "true"
     for (relative_path, content, code) in cases {
         let temp_dir = init_project()?;
         let path = temp_dir.path().join(relative_path);
-        fs::create_dir_all(path.parent().expect("artifact path has parent"))?;
+        let parent = path
+            .parent()
+            .ok_or_else(|| std::io::Error::other("artifact path has no parent"))?;
+        fs::create_dir_all(parent)?;
         if code == "E0201" {
             fs::write(
                 temp_dir.path().join("gov/rfc/RFC-0002/rfc.toml"),

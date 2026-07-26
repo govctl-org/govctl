@@ -1,5 +1,5 @@
 use super::super::app::{App, View};
-use super::rounded_block;
+use super::panel_block;
 use ratatui::{
     prelude::*,
     widgets::{Clear, Paragraph, Wrap},
@@ -10,8 +10,8 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
     let popup = centered_rect(70, 70, area);
     frame.render_widget(Clear, popup);
 
-    let title = "Help";
-    let block = rounded_block(title).border_style(Style::default().fg(Color::Cyan));
+    let title = "COMMAND MATRIX";
+    let block = panel_block(title).border_style(Style::default().fg(Color::Cyan));
 
     let mut lines = vec![
         Line::from("Global"),
@@ -39,13 +39,19 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
         | View::AdrList
         | View::WorkList
         | View::GuardList
-        | View::ReleaseList
-        | View::TagList
         | View::LoopList
         | View::DiagnosticList => {
             lines.push(Line::from("List"));
             lines.push(Line::from("  j/k    Move selection"));
             lines.push(Line::from("  Enter  View detail"));
+            lines.push(Line::from("  g/G    Top/Bottom"));
+            lines.push(Line::from("  /      Filter"));
+            lines.push(Line::from("  n/p    Next/Prev match (when filtered)"));
+            lines.push(Line::from("  Esc    Back (or clear filter in filter mode)"));
+        }
+        View::ReleaseList | View::TagList => {
+            lines.push(Line::from("List"));
+            lines.push(Line::from("  j/k    Move selection"));
             lines.push(Line::from("  g/G    Top/Bottom"));
             lines.push(Line::from("  /      Filter"));
             lines.push(Line::from("  n/p    Next/Prev match (when filtered)"));

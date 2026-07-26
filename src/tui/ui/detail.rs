@@ -1,8 +1,10 @@
 use super::super::app::App;
 use super::{
     components::{ClauseListRow, SelectableList, StatusText},
-    phase_style, rounded_block, wrapped_line_count,
+    panel_block, phase_style, wrapped_line_count,
 };
+use crate::model::RfcStatus;
+use crate::render::RenderProjection;
 use crate::tui::dag::dag_lines;
 use ratatui::{
     prelude::*,
@@ -30,7 +32,7 @@ impl<'a> MetadataPanel<'a> {
     }
 
     fn render(self, frame: &mut Frame, area: Rect) {
-        let block = rounded_block(&self.title).border_style(Style::default().fg(self.border_color));
+        let block = panel_block(&self.title).border_style(Style::default().fg(self.border_color));
         let panel = Paragraph::new(self.lines).block(block);
         frame.render_widget(panel, area);
     }
@@ -54,7 +56,7 @@ impl<'a> MarkdownPanel<'a> {
     }
 
     fn render(self, frame: &mut Frame, area: Rect) -> DetailViewport {
-        let block = rounded_block(self.title).border_style(Style::default().fg(self.border_color));
+        let block = panel_block(self.title).border_style(Style::default().fg(self.border_color));
         let inner_width = block.inner(area).width;
         let total_lines = wrapped_line_count(&self.text.lines, inner_width);
         let content = Paragraph::new(self.text)
@@ -197,13 +199,37 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
         header_lines.push(MetadataLine::joined("Refs:    ", &rfc.rfc.refs, ", ").render());
     }
 
+    if let Some(supersedes) = &rfc.rfc.supersedes {
+        header_lines.push(MetadataLine::plain("Supersedes: ", supersedes.as_str()).render());
+    }
+
     if !rfc.rfc.tags.is_empty() {
         header_lines.push(MetadataLine::tags("Tags:    ", &rfc.rfc.tags).render());
     }
 
-    let header_panel =
-        MetadataPanel::new(format!("📋 {}", rfc.rfc.rfc_id), Color::Blue, header_lines);
+    let suppress_clauses = rfc.rfc.status == RfcStatus::Deprecated;
+    if suppress_clauses
+        && let Some(replacement) = app
+            .index
+            .rfcs
+            .iter()
+            .find(|candidate| candidate.rfc.supersedes.as_deref() == Some(&rfc.rfc.rfc_id))
+    {
+        header_lines
+            .push(MetadataLine::plain("Superseded by: ", replacement.rfc.rfc_id.as_str()).render());
+    }
+
+    let header_panel = MetadataPanel::new(
+        format!("RFC // {}", rfc.rfc.rfc_id),
+        Color::Blue,
+        header_lines,
+    );
     let header_height = header_panel.outer_height();
+
+    if suppress_clauses {
+        header_panel.render(frame, area);
+        return;
+    }
 
     let chunks = Layout::default()
         .direction(Direction::Vertical)
@@ -226,7 +252,7 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
         })
         .collect();
 
-    SelectableList::new("Clauses", Color::Cyan, clause_items).render(
+    SelectableList::new("CLAUSE INDEX", Color::Cyan, clause_items).render(
         frame,
         chunks[1],
         &mut app.clause_list_state,
@@ -238,8 +264,9 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect, idx: usize)
         return DetailViewport::new(0);
     };
 
-    let markdown = crate::render::render_adr(adr).unwrap_or_default();
-    let title = format!("📝 {}", adr.meta().id);
+    let markdown = crate::render::render_adr_with_projection(adr, RenderProjection::Current)
+        .unwrap_or_default();
+    let title = format!("ADR // {}", adr.meta().id);
     MarkdownDetailPanel::new(&title, Color::Green, app.scroll, &markdown).render(frame, area)
 }
 
@@ -254,7 +281,7 @@ pub(super) fn draw_work(
     };
 
     let markdown = crate::render::render_work_item(item).unwrap_or_default();
-    let title = format!("📌 {}", item.meta().id);
+    let title = format!("WI // {}", item.meta().id);
     MarkdownDetailPanel::new(&title, Color::Yellow, app.scroll, &markdown).render(frame, area)
 }
 
@@ -282,7 +309,7 @@ pub(super) fn draw_guard(
     if !meta.tags.is_empty() {
         markdown.push_str(&format!("\n**Tags:** `{}`\n", meta.tags.join("`, `")));
     }
-    let title = format!("Guard {}", meta.id);
+    let title = format!("GUARD // {}", meta.id);
     MarkdownDetailPanel::new(&title, Color::LightBlue, app.scroll, &markdown).render(frame, area)
 }
 
@@ -300,7 +327,7 @@ pub(super) fn draw_loop(frame: &mut Frame, app: &mut App, area: Rect, idx: usize
         frame.render_widget(
             Paragraph::new(message)
                 .wrap(Wrap { trim: false })
-                .block(rounded_block("Loop").border_style(Style::default().fg(Color::Red))),
+                .block(panel_block("LOOP CONTROL").border_style(Style::default().fg(Color::Red))),
             area,
         );
         return;
@@ -346,14 +373,14 @@ pub(super) fn draw_loop(frame: &mut Frame, app: &mut App, area: Rect, idx: usize
         )))],
     };
     let dag = List::new(dag_items)
-        .block(rounded_block("Dependency DAG").border_style(Style::default().fg(Color::Yellow)));
+        .block(panel_block("DEPENDENCY DAG").border_style(Style::default().fg(Color::Yellow)));
     frame.render_widget(dag, chunks[0]);
 
     let inspector = loop_inspector_lines(state, selected.as_deref());
     frame.render_widget(
         Paragraph::new(inspector)
             .wrap(Wrap { trim: false })
-            .block(rounded_block("Selected Work").border_style(Style::default().fg(Color::Cyan))),
+            .block(panel_block("SELECTED WORK").border_style(Style::default().fg(Color::Cyan))),
         chunks[1],
     );
 }
@@ -447,9 +474,14 @@ pub(super) fn draw_clause(
     };
 
     let mut raw = String::new();
-    crate::render::render_clause(&mut raw, &rfc.rfc.rfc_id, clause);
+    crate::render::render_clause_with_projection(
+        &mut raw,
+        &rfc.rfc.rfc_id,
+        clause,
+        RenderProjection::Current,
+    );
 
-    let title = format!("📜 {}", clause.spec.clause_id);
+    let title = format!("CLAUSE // {}", clause.spec.clause_id);
     MarkdownDetailPanel::new(&title, Color::Magenta, app.scroll, &raw).render(frame, area)
 }
 

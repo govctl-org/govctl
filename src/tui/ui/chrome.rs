@@ -1,5 +1,6 @@
 use super::super::app::{App, View};
 use super::components::ChromeBar;
+use crate::diagnostic::DiagnosticLevel;
 use ratatui::prelude::*;
 
 fn breadcrumb(app: &App) -> String {
@@ -62,15 +63,34 @@ fn breadcrumb(app: &App) -> String {
 
 fn header_status(app: &mut App) -> String {
     match app.view {
-        View::Dashboard => format!(
-            "RFC {} | ADR {} | Work {} | Guard {} | Loop {} | Diag {}",
-            app.index.rfcs.len(),
-            app.index.adrs.len(),
-            app.index.work_items.len(),
-            app.supplement.guards.len(),
-            app.supplement.loops.len(),
-            app.supplement.diagnostics.len()
-        ),
+        View::Dashboard => {
+            let errors = app
+                .supplement
+                .diagnostics
+                .iter()
+                .filter(|diag| diag.level == DiagnosticLevel::Error)
+                .count();
+            let warnings = app
+                .supplement
+                .diagnostics
+                .iter()
+                .filter(|diag| diag.level == DiagnosticLevel::Warning)
+                .count();
+            let state = if errors > 0 {
+                "ERROR"
+            } else if warnings > 0 {
+                "WARN"
+            } else {
+                "NOMINAL"
+            };
+            format!(
+                "v{} | {} | E {} | W {}",
+                env!("CARGO_PKG_VERSION"),
+                state,
+                errors,
+                warnings
+            )
+        }
         View::RfcList
         | View::ClauseList
         | View::AdrList
@@ -128,10 +148,15 @@ impl<'a> Header<'a> {
     // Implements [[RFC-0003:C-NAV]]
     pub(super) fn render(self, frame: &mut Frame, area: Rect) {
         let app = self.app;
+        let control_plane = (area.width >= 90).then_some(Span::styled(
+            " // CONTROL PLANE",
+            Style::default().fg(Color::DarkGray),
+        ));
         let left = Line::from(vec![
-            Span::styled("govctl", Style::default().fg(Color::Cyan).bold()),
-            Span::raw(" "),
-            Span::raw(breadcrumb(app)),
+            Span::styled("GOVCTL", Style::default().fg(Color::Cyan).bold()),
+            control_plane.unwrap_or_else(|| Span::raw("")),
+            Span::styled(" // ", Style::default().fg(Color::DarkGray)),
+            Span::raw(breadcrumb(app).to_uppercase()),
         ]);
 
         ChromeBar::new(Color::Cyan, left, header_status(app)).render(frame, area);
@@ -165,12 +190,14 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
         | View::AdrList
         | View::WorkList
         | View::GuardList
-        | View::ReleaseList
-        | View::TagList
         | View::LoopList
         | View::DiagnosticList => &[
             "j/k", "Navigate", "Enter", "View", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?",
             "Help", "q", "Quit",
+        ],
+        View::ReleaseList | View::TagList => &[
+            "j/k", "Navigate", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?", "Help", "q",
+            "Quit",
         ],
         View::Search => &[
             "e//",
@@ -297,7 +324,7 @@ mod tests {
     -> Result<(), Box<dyn std::error::Error>> {
         let mut app = chrome_app()?;
 
-        assert!(header_status(&mut app).contains("RFC 1"));
+        assert!(header_status(&mut app).contains("NOMINAL"));
 
         app.go_to(View::RfcList);
         assert!(header_status(&mut app).contains("Shown 1/1"));
@@ -346,13 +373,31 @@ mod tests {
             Footer::new(app.view, Some("status")).render(frame, chunks[1]);
         })?;
 
-        assert!(rendered.iter().any(|line| line.contains("govctl")));
+        assert!(rendered.iter().any(|line| line.contains("GOVCTL")));
         assert!(
             rendered
                 .iter()
-                .any(|line| line.contains("Dashboard > RFCs"))
+                .any(|line| line.contains("DASHBOARD > RFCS"))
         );
         assert!(rendered.iter().any(|line| line.contains("status")));
+        Ok(())
+    }
+
+    #[test]
+    fn narrow_header_preserves_brand_and_breadcrumb() -> Result<(), Box<dyn std::error::Error>> {
+        let mut app = chrome_app()?;
+        app.view = View::RfcList;
+
+        let (_, rendered) = render_app(72, 3, app, |frame, app| {
+            Header::new(app).render(frame, frame.area());
+        })?;
+
+        assert!(rendered.iter().any(|line| line.contains("GOVCTL")));
+        assert!(
+            rendered
+                .iter()
+                .any(|line| line.contains("DASHBOARD > RFCS"))
+        );
         Ok(())
     }
 

@@ -77,16 +77,20 @@ fn test_scope_aware_alias_only_applies_when_valid_for_artifact()
 
 #[test]
 fn test_noncanonical_work_short_name_is_rejected() -> Result<(), Box<dyn std::error::Error>> {
-    let diag = plan_request("WI-2026-01-01-001", Some("desc"))
-        .expect_err("noncanonical field should fail");
+    let diag = match plan_request("WI-2026-01-01-001", Some("desc")) {
+        Ok(plan) => return Err(format!("noncanonical field should fail, got {plan:?}").into()),
+        Err(diag) => diag,
+    };
     assert_eq!(diag.code, DiagnosticCode::E0803UnknownField);
     Ok(())
 }
 
 #[test]
 fn test_legacy_storage_prefix_is_rejected() -> Result<(), Box<dyn std::error::Error>> {
-    let diag = plan_request("WI-2026-01-01-001", Some("content.description"))
-        .expect_err("storage-prefixed field should fail");
+    let diag = match plan_request("WI-2026-01-01-001", Some("content.description")) {
+        Ok(plan) => return Err(format!("storage-prefixed field should fail, got {plan:?}").into()),
+        Err(diag) => diag,
+    };
     assert_eq!(diag.code, DiagnosticCode::E0803UnknownField);
     Ok(())
 }

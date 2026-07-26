@@ -178,7 +178,7 @@ mod tests {
     }
 
     #[test]
-    fn nested_recovery_removes_only_rfc_resource_token() {
+    fn nested_recovery_removes_only_rfc_resource_token() -> Result<(), Box<dyn std::error::Error>> {
         let args = [
             "govctl",
             "--config",
@@ -189,11 +189,13 @@ mod tests {
             "RFC-0001:C-ONE",
         ]
         .map(OsString::from);
-        let diagnostic = misrouted_nested_clause(&args).expect("misroute");
+        let diagnostic = misrouted_nested_clause(&args)
+            .ok_or_else(|| std::io::Error::other("expected nested clause recovery"))?;
         assert!(
             diagnostic
                 .message
                 .contains("govctl --config gov/config.toml clause show RFC-0001:C-ONE")
         );
+        Ok(())
     }
 }

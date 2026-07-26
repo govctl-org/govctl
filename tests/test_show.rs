@@ -8,21 +8,25 @@ fn assert_success_with(output: &str, marker: &str) {
     assert!(output.contains("exit: 0"), "output: {output}");
 }
 
-fn successful_payload(output: &str) -> &str {
-    output
+fn successful_payload(output: &str) -> Result<&str, Box<dyn std::error::Error>> {
+    let payload = output
         .split_once('\n')
         .and_then(|(_, body)| body.strip_suffix("exit: 0\n\n"))
-        .expect("single successful command output")
-        .trim_end()
+        .ok_or_else(|| std::io::Error::other("missing successful command payload"))?;
+    Ok(payload.trim_end())
 }
 
-fn get_value(resource: &str, output: &str) -> serde_json::Value {
-    let payload = successful_payload(output);
+fn get_value(
+    resource: &str,
+    output: &str,
+) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    let payload = successful_payload(output)?;
     if matches!(resource, "rfc" | "clause") {
-        serde_json::from_str(payload).expect("complete get JSON")
+        Ok(serde_json::from_str(payload)?)
     } else {
-        serde_json::to_value(toml::from_str::<toml::Value>(payload).expect("complete get TOML"))
-            .expect("TOML converts to JSON value")
+        Ok(serde_json::to_value(toml::from_str::<toml::Value>(
+            payload,
+        )?)?)
     }
 }
 
@@ -50,7 +54,7 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
 
     for (resource, id, identity_key, content_key, toml_content_marker) in resources {
         let get = run_commands(temp_dir.path(), &[&[resource, "get", id]])?;
-        let expected = get_value(resource, &get);
+        let expected = get_value(resource, &get)?;
 
         let json = run_commands(
             temp_dir.path(),
@@ -58,8 +62,7 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
         )?;
         assert_success_with(&json, &format!("\"{identity_key}\""));
         assert!(json.contains(&format!("\"{content_key}\"")), "{json}");
-        let json_value: serde_json::Value =
-            serde_json::from_str(successful_payload(&json)).expect("show JSON");
+        let json_value: serde_json::Value = serde_json::from_str(successful_payload(&json)?)?;
         assert_eq!(json_value, expected, "resource: {resource}");
 
         let yaml = run_commands(
@@ -68,8 +71,7 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
         )?;
         assert_success_with(&yaml, &format!("{identity_key}:"));
         assert!(yaml.contains(&format!("{content_key}:")), "{yaml}");
-        let yaml_value: serde_json::Value =
-            serde_yaml::from_str(successful_payload(&yaml)).expect("show YAML");
+        let yaml_value: serde_json::Value = serde_yaml::from_str(successful_payload(&yaml)?)?;
         assert_eq!(yaml_value, expected, "resource: {resource}");
 
         let toml = run_commands(
@@ -83,10 +85,8 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
         };
         assert_success_with(&toml, &toml_identity_marker);
         assert!(toml.contains(toml_content_marker), "{toml}");
-        let toml_value = serde_json::to_value(
-            toml::from_str::<toml::Value>(successful_payload(&toml)).expect("show TOML"),
-        )
-        .expect("TOML converts to JSON value");
+        let toml_value =
+            serde_json::to_value(toml::from_str::<toml::Value>(successful_payload(&toml)?)?)?;
         assert_eq!(toml_value, expected, "resource: {resource}");
 
         for format in ["json", "yaml", "toml"] {
@@ -227,8 +227,8 @@ fn test_content_equivalent_resources_accept_explicit_human_projection_matrix() -
         )?;
         assert_success_with(&work_current, "Projection Work");
         assert_eq!(
-            successful_payload(&work_current),
-            successful_payload(&work_history),
+            successful_payload(&work_current)?,
+            successful_payload(&work_history)?,
             "work format: {format}"
         );
 
@@ -255,8 +255,8 @@ fn test_content_equivalent_resources_accept_explicit_human_projection_matrix() -
         )?;
         assert_success_with(&guard_current, "Projection Guard");
         assert_eq!(
-            successful_payload(&guard_current),
-            successful_payload(&guard_history),
+            successful_payload(&guard_current)?,
+            successful_payload(&guard_history)?,
             "guard format: {format}"
         );
     }

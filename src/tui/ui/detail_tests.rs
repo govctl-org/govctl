@@ -23,6 +23,7 @@ fn detail_renderers_draw_expected_content() -> Result<(), Box<dyn std::error::Er
     assert!(rendered.iter().any(|line| line.contains("RFC-0001")));
     assert!(rendered.iter().any(|line| line.contains("RFC title")));
     assert!(rendered.iter().any(|line| line.contains("C-TEST")));
+    assert!(rendered.iter().any(|line| line.contains("▌ ")));
 
     let rendered = render_detail(View::AdrDetail(0), |frame, app, area| {
         draw_adr(frame, app, area, 0);
@@ -48,6 +49,74 @@ fn detail_renderers_draw_expected_content() -> Result<(), Box<dyn std::error::Er
 }
 
 #[test]
+fn obsolete_artifact_details_use_current_projection() -> Result<(), Box<dyn std::error::Error>> {
+    let mut index = detail_project_index();
+    index.adrs[0].spec.govctl.status = AdrStatus::Superseded;
+    index.adrs[0].spec.govctl.superseded_by = Some("ADR-0002".to_string());
+    index.adrs[0].spec.content.decision = "OBSOLETE ADR BODY".to_string();
+    index.rfcs[0].clauses[0].spec.status = crate::model::ClauseStatus::Superseded;
+    index.rfcs[0].clauses[0].spec.superseded_by = Some("C-NEXT".to_string());
+    index.rfcs[0].clauses[0].spec.text = "OBSOLETE CLAUSE BODY".to_string();
+
+    let mut app = App::new(index);
+    app.view = View::AdrDetail(0);
+    let (_, rendered) = render_app(110, 14, app, |frame, app| {
+        draw_adr(frame, app, frame.area(), 0);
+    })?;
+    assert!(rendered.iter().any(|line| line.contains("superseded")));
+    assert!(rendered.iter().any(|line| line.contains("ADR-0002")));
+    assert!(
+        !rendered
+            .iter()
+            .any(|line| line.contains("OBSOLETE ADR BODY"))
+    );
+
+    let mut app = App::new(detail_project_index());
+    app.index.rfcs[0].clauses[0].spec.status = crate::model::ClauseStatus::Deprecated;
+    app.index.rfcs[0].clauses[0].spec.text = "OBSOLETE CLAUSE BODY".to_string();
+    app.view = View::ClauseDetail(0, 0);
+    let (_, rendered) = render_app(110, 14, app, |frame, app| {
+        draw_clause(frame, app, frame.area(), 0, 0);
+    })?;
+    assert!(rendered.iter().any(|line| line.contains("deprecated")));
+    assert!(
+        !rendered
+            .iter()
+            .any(|line| line.contains("OBSOLETE CLAUSE BODY"))
+    );
+    Ok(())
+}
+
+#[test]
+fn deprecated_rfc_detail_omits_clause_navigation() -> Result<(), Box<dyn std::error::Error>> {
+    let mut index = detail_project_index();
+    index.rfcs[0].rfc.status = RfcStatus::Deprecated;
+    index.rfcs[0].rfc.supersedes = Some("RFC-0000".to_string());
+    let mut replacement = rfc(
+        "RFC-0002",
+        "Replacement",
+        RfcStatus::Normative,
+        RfcPhase::Stable,
+        &[],
+    );
+    replacement.rfc.supersedes = Some("RFC-0001".to_string());
+    index.rfcs.push(replacement);
+
+    let mut app = App::new(index);
+    app.view = View::RfcDetail(0);
+    let (app, rendered) = render_app(110, 14, app, |frame, app| {
+        draw_rfc(frame, app, frame.area(), 0);
+    })?;
+
+    assert!(rendered.iter().any(|line| line.contains("deprecated")));
+    assert!(rendered.iter().any(|line| line.contains("RFC-0000")));
+    assert!(rendered.iter().any(|line| line.contains("RFC-0002")));
+    assert!(!rendered.iter().any(|line| line.contains("C-TEST")));
+    assert_eq!(app.clause_count(), 0);
+    Ok(())
+}
+
+#[test]
 fn loop_detail_renders_dag_and_inspector_on_narrow_viewport()
 -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::new(detail_project_index());
@@ -63,8 +132,8 @@ fn loop_detail_renders_dag_and_inspector_on_narrow_viewport()
         draw_loop(frame, app, frame.area(), 0);
     })?;
 
-    assert!(rendered.iter().any(|line| line.contains("Dependency DAG")));
-    assert!(rendered.iter().any(|line| line.contains("Selected Work")));
+    assert!(rendered.iter().any(|line| line.contains("DEPENDENCY DAG")));
+    assert!(rendered.iter().any(|line| line.contains("SELECTED WORK")));
     assert!(
         rendered
             .iter()

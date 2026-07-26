@@ -1,0 +1,41 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-001"
+title = "Align TUI with current governance state"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0007",
+    "RFC-0002:C-SHOW-PROJECTION",
+]
+
+[content]
+description = "Align TUI lifecycle summaries, artifact detail projections, and advertised navigation with the current governed CLI behavior."
+
+[[content.acceptance_criteria]]
+text = "TUI summaries and semantic styling cover every ADR and Work Item lifecycle status"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "TUI artifact details use the current projection for obsolete RFC, ADR, and Clause content"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI key hints advertise detail navigation only for lists that support it"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused TUI tests and governance checks pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "All-target clippy validation passes without test-code lint exceptions"
+status = "done"
+category = "fixed"

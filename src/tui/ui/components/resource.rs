@@ -1,8 +1,8 @@
-use super::super::{phase_style, rounded_block, status_style};
+use super::super::{panel_block, phase_style, status_style};
 use crate::theme::status_icon;
 use ratatui::{
     prelude::*,
-    widgets::{List, ListItem, ListState, Row, Table, TableState},
+    widgets::{HighlightSpacing, List, ListItem, ListState, Row, Table, TableState},
 };
 
 pub(in crate::tui::ui) struct ResourceTable {
@@ -45,9 +45,11 @@ impl ResourceTable {
                     .style(Style::default().bold().fg(self.spec.header_color))
                     .bottom_margin(1),
             )
-            .row_highlight_style(Style::default().bg(Color::DarkGray))
+            .row_highlight_style(Style::default().fg(Color::Cyan).bold())
+            .highlight_symbol("▌ ")
+            .highlight_spacing(HighlightSpacing::Always)
             .block(
-                rounded_block(self.spec.title)
+                panel_block(self.spec.title)
                     .border_style(Style::default().fg(self.spec.border_color)),
             );
         frame.render_stateful_widget(table, area, state);
@@ -172,9 +174,10 @@ impl SelectableList {
 
     pub(in crate::tui::ui) fn render(self, frame: &mut Frame, area: Rect, state: &mut ListState) {
         let list = List::new(self.items)
-            .block(rounded_block(&self.title).border_style(Style::default().fg(self.border_color)))
-            .highlight_style(Style::default().bg(Color::DarkGray))
-            .highlight_symbol("▶ ");
+            .block(panel_block(&self.title).border_style(Style::default().fg(self.border_color)))
+            .highlight_style(Style::default().fg(Color::Cyan).bold())
+            .highlight_symbol("▌ ")
+            .highlight_spacing(HighlightSpacing::Always);
 
         frame.render_stateful_widget(list, area, state);
     }

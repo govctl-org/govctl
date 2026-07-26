@@ -33,7 +33,7 @@ impl ChromeBar {
     pub(in crate::tui::ui) fn render(self, frame: &mut Frame, area: Rect) {
         let block = Block::default()
             .borders(Borders::ALL)
-            .border_set(border::ROUNDED)
+            .border_set(border::PLAIN)
             .border_style(Style::default().fg(self.border_color));
         let inner = block.inner(area);
         frame.render_widget(block, area);

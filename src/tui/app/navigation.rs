@@ -212,7 +212,8 @@ impl App {
                 .index
                 .rfcs
                 .get(idx)
-                .map(|r| r.clauses.len())
+                .filter(|rfc| rfc.rfc.status != crate::model::RfcStatus::Deprecated)
+                .map(|rfc| rfc.clauses.len())
                 .unwrap_or(0),
             _ => 0,
         }

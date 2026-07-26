@@ -42,6 +42,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 - [ADR-0057](docs/adr/ADR-0057.md) supersedes the conflicting [ADR-0024](docs/adr/ADR-0024.md) guidance (WI-2026-07-26-009)
 - Describe schema v1 reports tool version, parser-derived canonical command metadata, and phase order without a prescribed task sequence. (WI-2026-07-26-014)
 - Context enumerates only actionable RFCs, ADRs, Work Items, and non-terminal loops while reporting complete state counts. (WI-2026-07-26-014)
+- TUI artifact details use the current projection for obsolete RFC, ADR, and Clause content (WI-2026-07-27-001)
 
 ### Removed
 
@@ -74,6 +75,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Guard deletion requires confirmation unless force is explicit. (WI-2026-07-26-013)
 - Clause edit help documents an executable stdin form. (WI-2026-07-26-013)
 - Context loading failures are reported instead of silently omitting requested state. (WI-2026-07-26-014)
+- TUI summaries and semantic styling cover every ADR and Work Item lifecycle status (WI-2026-07-27-001)
+- TUI key hints advertise detail navigation only for lists that support it (WI-2026-07-27-001)
+- All-target clippy validation passes without test-code lint exceptions (WI-2026-07-27-001)
 
 ### Security
 

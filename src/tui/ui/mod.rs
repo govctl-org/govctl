@@ -145,11 +145,11 @@ fn wrapped_line_count(lines: &[Line], render_width: u16) -> usize {
         .sum()
 }
 
-fn rounded_block(title: &str) -> Block<'_> {
+fn panel_block(title: &str) -> Block<'_> {
     Block::default()
         .title(format!(" {} ", title))
         .borders(Borders::ALL)
-        .border_set(border::ROUNDED)
+        .border_set(border::PLAIN)
 }
 
 #[cfg(test)]

@@ -17,6 +17,7 @@ fn list_renderers_draw_table_rows() -> Result<(), Box<dyn std::error::Error>> {
     assert!(rendered.iter().any(|line| line.contains("RFC-0001")));
     assert!(rendered.iter().any(|line| line.contains("RFC title")));
     assert!(rendered.iter().any(|line| line.contains("normative")));
+    assert!(rendered.iter().any(|line| line.contains("▌ ")));
 
     let rendered = render_list(View::AdrList, draw_adr)?;
     assert!(rendered.iter().any(|line| line.contains("ADR-0001")));

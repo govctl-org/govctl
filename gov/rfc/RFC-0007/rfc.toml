@@ -3,19 +3,19 @@
 [govctl]
 id = "RFC-0007"
 title = "TUI v2 read-only cockpit"
-version = "0.2.0"
+version = "0.3.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-06-06"
-updated = "2026-06-07"
+updated = "2026-07-27"
 refs = [
     "RFC-0003",
     "RFC-0006",
     "RFC-0002",
 ]
 tags = ["tui"]
-signature = "12693d8406d5289c411931c5e8737de238e9d727b6f313fc1ba94f72e45d97c0"
+signature = "0b4392d0ab8768b9dbbce63473397c59d56d11c3f8c56f6a1a0b8ca2e439bf2d"
 
 [[sections]]
 title = "Summary"
@@ -33,6 +33,12 @@ clauses = [
     "clauses/C-DIAGNOSTICS.toml",
     "clauses/C-HUMAN-UX.toml",
 ]
+
+[[changelog]]
+version = "0.3.0"
+date = "2026-07-27"
+notes = "Align TUI detail views with current governance state"
+changed = ["Use current projections for artifact detail views"]
 
 [[changelog]]
 version = "0.2.0"

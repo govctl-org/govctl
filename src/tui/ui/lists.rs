@@ -2,7 +2,7 @@ use super::super::app::App;
 use super::components::{
     PhaseCell, ResourceListRow, ResourceTable, ResourceTableSpec, StatusText, TagsCell,
 };
-use super::rounded_block;
+use super::panel_block;
 use crate::diagnostic::DiagnosticLevel;
 use ratatui::{
     prelude::*,
@@ -24,7 +24,7 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["ID", "Title", "Status", "Phase", "Tags"],
             header_color: Color::Cyan,
-            title: "📋 RFCs",
+            title: "RFC INDEX",
             border_color: Color::Blue,
         },
         |rfc| {
@@ -57,7 +57,7 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["ID", "Title", "Status", "Tags"],
             header_color: Color::Green,
-            title: "📝 ADRs",
+            title: "ADR INDEX",
             border_color: Color::Green,
         },
         |adr| {
@@ -88,7 +88,7 @@ pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["ID", "Title", "Status", "Tags"],
             header_color: Color::Yellow,
-            title: "📌 Work Items",
+            title: "WORK QUEUE",
             border_color: Color::Yellow,
         },
         |item| {
@@ -121,7 +121,7 @@ pub(super) fn draw_clause(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["RFC", "Clause", "Title", "Status", "Tags"],
             header_color: Color::Magenta,
-            title: "Clauses",
+            title: "CLAUSE INDEX",
             border_color: Color::Magenta,
         },
         |entry| {
@@ -153,7 +153,7 @@ pub(super) fn draw_guard(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["ID", "Title", "Timeout", "Command"],
             header_color: Color::LightBlue,
-            title: "Guards",
+            title: "GUARD MATRIX",
             border_color: Color::LightBlue,
         },
         |guard| {
@@ -183,7 +183,7 @@ pub(super) fn draw_release(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["Version", "Date", "Refs", "Work Items"],
             header_color: Color::Cyan,
-            title: "Releases",
+            title: "RELEASE LOG",
             border_color: Color::Cyan,
         },
         |release| {
@@ -208,7 +208,7 @@ pub(super) fn draw_tag(frame: &mut Frame, app: &mut App, area: Rect) {
             widths: vec![Constraint::Min(20), Constraint::Length(8)],
             headers: &["Tag", "Count"],
             header_color: Color::Magenta,
-            title: "Tags",
+            title: "TAG INDEX",
             border_color: Color::Magenta,
         },
         |tag| {
@@ -238,7 +238,7 @@ pub(super) fn draw_loop(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["ID", "State", "Items", "Rounds", "Action", "Work"],
             header_color: Color::Yellow,
-            title: "Loops",
+            title: "LOOP CONTROL",
             border_color: Color::Yellow,
         },
         |entry| {
@@ -300,7 +300,7 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
         frame.render_widget(
             Paragraph::new(message)
                 .wrap(Wrap { trim: false })
-                .block(rounded_block("Search").border_style(Style::default().fg(Color::Red))),
+                .block(panel_block("SEARCH").border_style(Style::default().fg(Color::Red))),
             area,
         );
         return;
@@ -319,7 +319,7 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["Kind", "ID", "Title", "Snippet"],
             header_color: Color::Green,
-            title: "Search",
+            title: "SEARCH",
             border_color: Color::Green,
         },
         |result| {
@@ -349,7 +349,7 @@ pub(super) fn draw_diagnostics(frame: &mut Frame, app: &mut App, area: Rect) {
             ],
             headers: &["Level", "Code", "Message", "Target"],
             header_color: Color::Red,
-            title: "Diagnostics",
+            title: "DIAGNOSTICS",
             border_color: Color::Red,
         },
         |diagnostic| {
