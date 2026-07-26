@@ -19,6 +19,31 @@ pub const CURRENT_SCHEMA_VERSION: u32 = 3;
 /// Oldest project schema accepted by this binary.
 pub const MIN_SUPPORTED_SCHEMA_VERSION: u32 = 3;
 
+pub(crate) fn validate_supported_schema_version(
+    version: u32,
+    location: impl Into<String>,
+) -> DiagnosticResult<()> {
+    if version < MIN_SUPPORTED_SCHEMA_VERSION {
+        return Err(Diagnostic::new(
+            crate::diagnostic::DiagnosticCode::E0505MigrationRequired,
+            format!(
+                "Project schema version {version} is unsupported (minimum: {MIN_SUPPORTED_SCHEMA_VERSION}). Migrate this repository with a compatible earlier govctl version before upgrading."
+            ),
+            location,
+        ));
+    }
+    if version > CURRENT_SCHEMA_VERSION {
+        return Err(Diagnostic::new(
+            crate::diagnostic::DiagnosticCode::E0505MigrationRequired,
+            format!(
+                "Project schema version {version} is newer than this govctl supports (latest: {CURRENT_SCHEMA_VERSION}). Upgrade govctl before using this repository."
+            ),
+            location,
+        ));
+    }
+    Ok(())
+}
+
 /// A versioned migration step.
 struct MigrationStep {
     from: u32,
@@ -35,19 +60,13 @@ const MIGRATIONS: &[MigrationStep] = &[];
 // =============================================================================
 
 pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
-    if config.schema.version < MIN_SUPPORTED_SCHEMA_VERSION {
-        return Err(Diagnostic::new(
-            crate::diagnostic::DiagnosticCode::E0505MigrationRequired,
-            format!(
-                "Project schema version {} is unsupported (minimum: {}). Migrate this repository with a compatible earlier govctl version before upgrading.",
-                config.schema.version, MIN_SUPPORTED_SCHEMA_VERSION
-            ),
-            config
-                .display_path(&config.gov_root.join("config.toml"))
-                .display()
-                .to_string(),
-        ));
-    }
+    validate_supported_schema_version(
+        config.schema.version,
+        config
+            .display_path(&config.gov_root.join("config.toml"))
+            .display()
+            .to_string(),
+    )?;
     crate::load::reject_legacy_json_storage(config)?;
 
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]

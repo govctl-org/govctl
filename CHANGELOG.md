@@ -38,16 +38,23 @@ Release entries are curated summaries for readers. Work item traceability remain
 - ADR review evaluates decision evidence and projection ownership without requiring optional prose templates (WI-2026-07-26-007)
 - Work Item review evaluates durable scope, categorized outcomes, and effective guards without mandatory chore criteria or session-size rules (WI-2026-07-26-007)
 - Compliance review treats RFCs as conformance authority and ADRs as design-alignment evidence (WI-2026-07-26-007)
+- Replaced compatibility ADRs are marked superseded by the decisions that replaced them (WI-2026-07-26-008)
+- [ADR-0057](docs/adr/ADR-0057.md) supersedes the conflicting [ADR-0024](docs/adr/ADR-0024.md) guidance (WI-2026-07-26-009)
 
 ### Removed
 
 - CLI compatibility surfaces superseded by the governing amendment are removed while the canonical edit interface retains equivalent artifact mutation outcomes (WI-2026-07-25-001)
 - Obsolete artifact readers, ignored legacy fields, migration steps, and signature fallbacks are removed according to the amended schema support baseline (WI-2026-07-25-001)
 - Release documentation identifies removed compatibility surfaces and the required repository upgrade baseline (WI-2026-07-25-001)
+- The unsupported ADR deprecate command is absent from parsing, help, and routing (WI-2026-07-26-008)
 
 ### Fixed
 
 - User and agent guidance uses only canonical edit commands (WI-2026-07-25-001)
+- Schema version 3 is the explicit RFC content-signature interpretation boundary and lifecycle checks do not infer hash origin from an untagged value (WI-2026-07-26-008)
+- Unsupported future schema versions and missing project configuration block repository mutation (WI-2026-07-26-009)
+- Every stored Clause participates in validation and RFC amendment signatures (WI-2026-07-26-009)
+- Namespace recovery recognizes only structurally valid Clause references (WI-2026-07-26-009)
 
 ## [0.14.2] - 2026-07-25
 

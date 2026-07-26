@@ -300,6 +300,125 @@ fn test_advance_after_impl_rejects_unversioned_content_amendment() -> common::Te
 }
 
 #[test]
+fn test_advance_rejects_unversioned_unlisted_clause() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-LISTED",
+                "Listed Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+            &["rfc", "finalize", "RFC-0001", "normative"],
+            &["rfc", "advance", "RFC-0001", "impl"],
+            &["rfc", "render", "RFC-0001"],
+        ],
+    )?;
+
+    let clauses_dir = temp_dir.path().join("gov/rfc/RFC-0001/clauses");
+    let listed_path = clauses_dir.join("C-LISTED.toml");
+    let orphan_path = clauses_dir.join("C-ORPHAN.toml");
+    let mut orphan: toml::Value = toml::from_str(&fs::read_to_string(listed_path)?)?;
+    orphan["govctl"]["id"] = toml::Value::String("C-ORPHAN".to_string());
+    orphan["govctl"]["title"] = toml::Value::String("Unlisted Clause".to_string());
+    fs::write(&orphan_path, toml::to_string_pretty(&orphan)?)?;
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    let before = fs::read(&rfc_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["check"], &["rfc", "advance", "RFC-0001", "test"]],
+    )?;
+
+    assert!(output.contains("2 clauses"), "{output}");
+    assert!(output.contains("error[E0601]"), "{output}");
+    assert!(output.contains("error[E0114]"), "{output}");
+    assert!(output.contains("unversioned amendment"), "{output}");
+    assert_eq!(fs::read(&rfc_path)?, before);
+    Ok(())
+}
+
+#[test]
+fn test_referenced_clause_outside_canonical_directory_affects_signature() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-ALT",
+                "Alternate Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let canonical_path = rfc_dir.join("clauses/C-ALT.toml");
+    let alternate_path = rfc_dir.join("C-ALT.toml");
+    fs::rename(&canonical_path, &alternate_path)?;
+    let rfc_path = rfc_dir.join("rfc.toml");
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    let clause_ref = rfc["sections"]
+        .as_array_mut()
+        .ok_or("missing RFC sections")?
+        .iter_mut()
+        .filter_map(|section| section.get_mut("clauses"))
+        .filter_map(toml::Value::as_array_mut)
+        .flatten()
+        .find(|clause| {
+            clause
+                .as_str()
+                .is_some_and(|path| path.ends_with("C-ALT.toml"))
+        })
+        .ok_or("missing Clause reference")?;
+    *clause_ref = toml::Value::String("C-ALT.toml".to_string());
+    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+
+    let finalize_output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "finalize", "RFC-0001", "normative"]],
+    )?;
+    assert!(
+        finalize_output.contains("Finalized RFC-0001"),
+        "{finalize_output}"
+    );
+    let clause: toml::Value = toml::from_str(&fs::read_to_string(&alternate_path)?)?;
+    assert_eq!(clause["govctl"]["since"].as_str(), Some("0.1.0"));
+
+    let impl_output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-0001", "impl"]])?;
+    assert!(
+        impl_output.contains("Advanced RFC-0001 to phase: impl"),
+        "{impl_output}"
+    );
+    let check_output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(check_output.contains("1 clauses"), "{check_output}");
+
+    let mut clause: toml::Value = toml::from_str(&fs::read_to_string(&alternate_path)?)?;
+    clause["content"]["text"] = toml::Value::String("Changed after sealing".to_string());
+    fs::write(&alternate_path, toml::to_string_pretty(&clause)?)?;
+    let before = fs::read(&rfc_path)?;
+    let output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-0001", "test"]])?;
+
+    assert!(output.contains("error[E0114]"), "{output}");
+    assert!(output.contains("unversioned amendment"), "{output}");
+    assert_eq!(fs::read(&rfc_path)?, before);
+    Ok(())
+}
+
+#[test]
 fn test_advance_to_impl_rejects_pending_clause_versions_without_mutation() -> common::TestResult {
     let temp_dir = init_project()?;
     run_commands(

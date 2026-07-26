@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "1.0.2"
+version = "1.0.4"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "23044a878ac6c2b99a190a48aad6d465036ffc783e08f5bda9c157f9c2350f94"
+signature = "eb06adb9b6c40cd9d381c9f9d40a6f3b60041394514cdbaab35a6e985ed497db"
 
 [[sections]]
 title = "Summary"
@@ -39,6 +39,18 @@ clauses = [
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
     "clauses/C-NAMESPACE-RECOVERY.toml",
 ]
+
+[[changelog]]
+version = "1.0.4"
+date = "2026-07-26"
+notes = "Restore schema boundary formatting"
+fixed = ["Render repository schema rules as separate requirements"]
+
+[[changelog]]
+version = "1.0.3"
+date = "2026-07-26"
+notes = "Close repository schema validation gaps"
+fixed = ["Reject future schemas and existing projects with missing configuration"]
 
 [[changelog]]
 version = "1.0.2"

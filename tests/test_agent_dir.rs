@@ -49,14 +49,15 @@ fn test_custom_agent_dir() -> common::TestResult {
     let temp_dir = init_project()?;
 
     let config_path = temp_dir.path().join("gov/config.toml");
-    let config_content = r#"[project]
-name = "test-project"
-
-[paths]
-docs_output = "docs"
-agent_dir = ".custom-agent"
-"#;
-    fs::write(&config_path, config_content)?;
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config["paths"]
+        .as_table_mut()
+        .ok_or("missing paths table")?
+        .insert(
+            "agent_dir".to_string(),
+            toml::Value::String(".custom-agent".to_string()),
+        );
+    fs::write(&config_path, toml::to_string_pretty(&config)?)?;
 
     run_commands(temp_dir.path(), &[&["init-skills", "-f"]])?;
 

@@ -177,13 +177,9 @@ fn test_init_custom_docs_output() -> common::TestResult {
     run_commands(temp_dir.path(), &[&["init"]])?;
 
     let config_path = temp_dir.path().join("gov/config.toml");
-    let config_content = r#"[project]
-name = "test-project"
-
-[paths]
-docs_output = "documentation"
-"#;
-    fs::write(&config_path, config_content)?;
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config["paths"]["docs_output"] = toml::Value::String("documentation".to_string());
+    fs::write(&config_path, toml::to_string_pretty(&config)?)?;
 
     let output = run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
     assert!(output.contains("Created RFC"));
@@ -202,13 +198,9 @@ fn test_init_custom_paths_combined() -> common::TestResult {
     run_commands(temp_dir.path(), &[&["init"]])?;
 
     let config_path = temp_dir.path().join("gov/config.toml");
-    let config_content = r#"[project]
-name = "test-project"
-
-[paths]
-docs_output = "output/docs"
-"#;
-    fs::write(&config_path, config_content)?;
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config["paths"]["docs_output"] = toml::Value::String("output/docs".to_string());
+    fs::write(&config_path, toml::to_string_pretty(&config)?)?;
 
     let output = run_commands(temp_dir.path(), &[&["adr", "new", "Test ADR"]])?;
     assert!(output.contains("Created ADR"), "output: {}", output);

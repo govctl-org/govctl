@@ -1,11 +1,11 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::{Diagnostic, DiagnosticResult};
 use crate::write::{WriteOp, read_clause, write_clause};
 use std::path::{Path, PathBuf};
 
 pub(super) fn rfc_update_paths(config: &Config, rfc_path: &Path) -> DiagnosticResult<Vec<PathBuf>> {
     let mut paths = vec![rfc_path.to_path_buf()];
-    for path in clause_toml_paths(rfc_path)? {
+    for path in clause_toml_paths(config, rfc_path)? {
         if read_clause(config, &path)?.since.is_none() {
             paths.push(path);
         }
@@ -19,7 +19,7 @@ pub(super) fn pending_clause_ids(
     rfc_path: &Path,
 ) -> DiagnosticResult<Vec<String>> {
     let mut clause_ids = Vec::new();
-    for path in clause_toml_paths(rfc_path)? {
+    for path in clause_toml_paths(config, rfc_path)? {
         let clause = read_clause(config, &path)?;
         if clause.since.is_none() {
             clause_ids.push(clause.clause_id);
@@ -29,45 +29,13 @@ pub(super) fn pending_clause_ids(
     Ok(clause_ids)
 }
 
-fn clause_toml_paths(rfc_path: &Path) -> DiagnosticResult<Vec<PathBuf>> {
-    let clauses_dir = rfc_path
-        .parent()
-        .ok_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0901IoError,
-                "RFC path has no parent directory",
-                rfc_path.display().to_string(),
-            )
-        })?
-        .join("clauses");
-    if !clauses_dir.exists() {
-        return Ok(Vec::new());
-    }
-
-    let entries = std::fs::read_dir(&clauses_dir).map_err(|err| {
-        Diagnostic::io_error(
-            "read clauses directory",
-            err,
-            clauses_dir.display().to_string(),
-        )
-    })?;
-    let mut paths = Vec::new();
-    for entry in entries {
-        let entry = entry.map_err(|err| {
-            Diagnostic::io_error(
-                "read clauses directory entry",
-                err,
-                clauses_dir.display().to_string(),
-            )
-        })?;
-        let path = entry.path();
-        if path
-            .extension()
-            .is_some_and(|extension| extension == "toml")
-        {
-            paths.push(path);
-        }
-    }
+fn clause_toml_paths(config: &Config, rfc_path: &Path) -> DiagnosticResult<Vec<PathBuf>> {
+    let mut paths = crate::load::load_rfc(config, rfc_path)
+        .map_err(Diagnostic::from)?
+        .clauses
+        .into_iter()
+        .map(|clause| clause.path)
+        .collect::<Vec<_>>();
     paths.sort();
     Ok(paths)
 }
@@ -82,7 +50,7 @@ pub(super) fn fill_pending_clause_versions(
     op: WriteOp,
 ) -> DiagnosticResult<Vec<String>> {
     let mut pending_clauses = Vec::new();
-    for path in clause_toml_paths(rfc_path)? {
+    for path in clause_toml_paths(config, rfc_path)? {
         let clause = read_clause(config, &path)?;
         if clause.since.is_none() {
             pending_clauses.push((path, clause));

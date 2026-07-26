@@ -21,9 +21,11 @@ This clause defines the compatibility boundary for the canonical-only breaking r
 
 **Repository boundary:**
 
-- Project schema version 3 MUST be the minimum supported project schema version.
-- Any command that loads an existing governance project MUST validate the project schema version before reading or writing governed artifacts, generated documentation, or `.govctl` local state.
+- Project schema version 3 MUST be the minimum supported project schema version, and the running binary’s current schema version MUST be the maximum supported project schema version.
+- Any command that loads an existing governance project MUST validate that the declared project schema version is within the supported inclusive range before reading or writing governed artifacts, generated documentation, or `.govctl` local state.
 - A repository whose `gov/config.toml` declares a schema version below 3 MUST be rejected. The rejection MUST leave `gov/`, generated documentation, and `.govctl` unchanged. The diagnostic MUST instruct the user to migrate the repository with a compatible earlier govctl version before upgrading.
+- A repository whose `gov/config.toml` declares a schema version newer than the running binary’s current schema version MUST be rejected without mutation. The diagnostic MUST instruct the user to upgrade govctl to a version that supports the repository schema.
+- If `gov/config.toml` is absent while `gov/` contains governance project state, the project schema cannot be established and normal project commands MUST reject the repository without mutation. The diagnostic MUST identify the missing configuration. A new project with no existing governance state MAY still be initialized.
 - RFC and Clause artifacts MUST use the structured TOML wire layout defined by their current schemas. The former flat RFC and Clause TOML layouts MUST be rejected.
 - RFC, Clause, ADR, Work Item, and Guard TOML files MUST NOT contain the legacy `[govctl].schema` field.
 - Work Item TOML containing `content.journal` MUST be rejected.

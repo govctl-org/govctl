@@ -111,6 +111,17 @@ fn test_nonshared_rfc_verb_does_not_invent_clause_command() -> common::TestResul
 }
 
 #[test]
+fn test_malformed_clause_like_id_does_not_trigger_namespace_recovery() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let output = run_commands(temp_dir.path(), &[&["rfc", "get", "RFC-X:C-", "title"]])?;
+
+    assert!(!output.contains("error[E0821]"), "{output}");
+    assert!(!output.contains("identifies a Clause"), "{output}");
+    assert!(output.contains("error[E0202]"), "{output}");
+    Ok(())
+}
+
+#[test]
 fn test_rfc_new_rejects_clause_reference_in_explicit_id_position() -> common::TestResult {
     let temp_dir = init_project()?;
     let output = run_commands(

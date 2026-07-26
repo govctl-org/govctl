@@ -17,39 +17,73 @@ impl Config {
             let content = std::fs::read_to_string(&config_path).map_err(|err| {
                 Diagnostic::io_error("read config", err, config_path.display().to_string())
             })?;
-            let mut config: Config = toml::from_str(&content).map_err(|err| {
+            let raw: toml::Value = toml::from_str(&content).map_err(|err| {
                 Diagnostic::new(
                     DiagnosticCode::E0501ConfigInvalid,
                     format!("Failed to parse config: {err}"),
                     config_path.display().to_string(),
                 )
             })?;
-            if config.schema.version < crate::cmd::migrate::MIN_SUPPORTED_SCHEMA_VERSION {
-                return Err(Diagnostic::new(
-                    DiagnosticCode::E0505MigrationRequired,
-                    format!(
-                        "Project schema version {} is unsupported (minimum: {}). Migrate this repository with a compatible earlier govctl version before upgrading.",
-                        config.schema.version,
-                        crate::cmd::migrate::MIN_SUPPORTED_SCHEMA_VERSION
-                    ),
+            let schema_version = raw
+                .get("schema")
+                .and_then(toml::Value::as_table)
+                .and_then(|schema| schema.get("version"))
+                .and_then(toml::Value::as_integer)
+                .and_then(|version| u32::try_from(version).ok())
+                .ok_or_else(|| {
+                    Diagnostic::new(
+                        DiagnosticCode::E0501ConfigInvalid,
+                        "Missing or invalid required config field: schema.version",
+                        config_path.display().to_string(),
+                    )
+                })?;
+            crate::cmd::migrate::validate_supported_schema_version(
+                schema_version,
+                config_path.display().to_string(),
+            )?;
+            let mut config: Config = raw.try_into().map_err(|err| {
+                Diagnostic::new(
+                    DiagnosticCode::E0501ConfigInvalid,
+                    format!("Failed to parse config: {err}"),
                     config_path.display().to_string(),
-                ));
-            }
+                )
+            })?;
 
-            // Resolve paths to absolute. gov_root is always <project_root>/gov.
-            if let Some(project_root) = config_path.parent().and_then(|p| p.parent()) {
-                config.gov_root = project_root.join("gov");
-                if config.paths.docs_output.is_relative() {
-                    config.paths.docs_output = project_root.join(&config.paths.docs_output);
-                }
-                if config.paths.agent_dir.is_relative() {
-                    config.paths.agent_dir = project_root.join(&config.paths.agent_dir);
-                }
-            }
+            resolve_project_paths(&mut config, &config_path);
 
             Ok(config)
         } else {
-            Ok(Config::default())
+            let gov_root = config_path.parent().unwrap_or_else(|| Path::new("gov"));
+            if gov_root.exists() {
+                let mut entries = std::fs::read_dir(gov_root).map_err(|err| {
+                    Diagnostic::io_error(
+                        "inspect governance directory",
+                        err,
+                        gov_root.display().to_string(),
+                    )
+                })?;
+                if entries
+                    .next()
+                    .transpose()
+                    .map_err(|err| {
+                        Diagnostic::io_error(
+                            "inspect governance directory entry",
+                            err,
+                            gov_root.display().to_string(),
+                        )
+                    })?
+                    .is_some()
+                {
+                    return Err(Diagnostic::new(
+                        DiagnosticCode::E0505MigrationRequired,
+                        "gov/config.toml is missing for an existing governance project. Restore the project configuration before using govctl.",
+                        config_path.display().to_string(),
+                    ));
+                }
+            }
+            let mut config = Config::default();
+            resolve_project_paths(&mut config, &config_path);
+            Ok(config)
         }
     }
 
@@ -138,5 +172,18 @@ impl Config {
         path.strip_prefix(self.project_root())
             .map(PathBuf::from)
             .unwrap_or_else(|_| path.to_path_buf())
+    }
+}
+
+fn resolve_project_paths(config: &mut Config, config_path: &Path) {
+    let Some(project_root) = config_path.parent().and_then(|path| path.parent()) else {
+        return;
+    };
+    config.gov_root = project_root.join("gov");
+    if config.paths.docs_output.is_relative() {
+        config.paths.docs_output = project_root.join(&config.paths.docs_output);
+    }
+    if config.paths.agent_dir.is_relative() {
+        config.paths.agent_dir = project_root.join(&config.paths.agent_dir);
     }
 }

@@ -96,8 +96,7 @@ fn namespace_diagnostic(prefix: &str, suggestion: &str) -> Diagnostic {
 }
 
 fn is_clause_reference(id: &str) -> bool {
-    id.split_once(':')
-        .is_some_and(|(rfc, clause)| rfc.starts_with("RFC-") && clause.starts_with("C-"))
+    crate::load::split_clause_id(id).is_some()
 }
 
 fn is_clause_owned_path(path: &str) -> bool {
@@ -166,6 +165,8 @@ mod tests {
         assert!(is_clause_reference("RFC-0001:C-ONE"));
         assert!(!is_clause_reference("RFC-0001"));
         assert!(!is_clause_reference("ADR-0001:C-ONE"));
+        assert!(!is_clause_reference("RFC-X:C-ONE"));
+        assert!(!is_clause_reference("RFC-0001:C-"));
     }
 
     #[test]

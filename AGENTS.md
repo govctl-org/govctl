@@ -18,7 +18,7 @@ Do not invent behavior, skip governance gates, or deviate silently from specific
 
 ```
 .claude/                ← Agent configuration (SSOT for skills and agents)
-├── skills/                Workflow skills (gov, quick, discuss, commit, migrate) + writer skills (rfc-writer, adr-writer, wi-writer)
+├── skills/                Workflow skills (gov, quick, discuss, commit, migrate, detach) + writer skills (rfc-writer, adr-writer, wi-writer)
 └── agents/                Reviewer agents (rfc-reviewer, adr-reviewer, wi-reviewer, compliance-checker)
 
 gov/                    ← Source of truth (governance artifacts)
@@ -233,6 +233,7 @@ Workflow skills:
 | Quick   | `.claude/skills/quick/SKILL.md`   | Fast path for trivial changes      |
 | Commit  | `.claude/skills/commit/SKILL.md`  | VCS commit with govctl integration |
 | Migrate | `.claude/skills/migrate/SKILL.md` | Adopt govctl in existing projects  |
+| Detach  | `.claude/skills/detach/SKILL.md`  | Remove govctl from a project       |
 
 Writer/helper skills:
 
