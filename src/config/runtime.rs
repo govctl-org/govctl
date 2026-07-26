@@ -8,10 +8,15 @@ impl Config {
     /// All relative paths in the config are resolved relative to the project root
     /// (the parent of gov/config.toml), not the current working directory.
     pub fn load(path: Option<&Path>) -> DiagnosticResult<Self> {
-        let config_path = path
-            .map(PathBuf::from)
-            .or_else(Self::find_config)
-            .unwrap_or_else(|| PathBuf::from("gov/config.toml"));
+        let config_path = if let Some(path) = path {
+            let path = PathBuf::from(path);
+            if !path.exists() {
+                return Err(missing_config_diagnostic(&path));
+            }
+            path
+        } else {
+            Self::find_config()?.unwrap_or_else(|| PathBuf::from("gov/config.toml"))
+        };
 
         if config_path.exists() {
             let content = std::fs::read_to_string(&config_path).map_err(|err| {
@@ -53,50 +58,26 @@ impl Config {
 
             Ok(config)
         } else {
-            let gov_root = config_path.parent().unwrap_or_else(|| Path::new("gov"));
-            if gov_root.exists() {
-                let mut entries = std::fs::read_dir(gov_root).map_err(|err| {
-                    Diagnostic::io_error(
-                        "inspect governance directory",
-                        err,
-                        gov_root.display().to_string(),
-                    )
-                })?;
-                if entries
-                    .next()
-                    .transpose()
-                    .map_err(|err| {
-                        Diagnostic::io_error(
-                            "inspect governance directory entry",
-                            err,
-                            gov_root.display().to_string(),
-                        )
-                    })?
-                    .is_some()
-                {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0505MigrationRequired,
-                        "gov/config.toml is missing for an existing governance project. Restore the project configuration before using govctl.",
-                        config_path.display().to_string(),
-                    ));
-                }
-            }
             let mut config = Config::default();
             resolve_project_paths(&mut config, &config_path);
             Ok(config)
         }
     }
 
-    /// Find config file by walking up directory tree.
-    fn find_config() -> Option<PathBuf> {
-        let mut current = std::env::current_dir().ok()?;
+    /// Find a config file by walking up the directory tree.
+    fn find_config() -> DiagnosticResult<Option<PathBuf>> {
+        let mut current = std::env::current_dir()
+            .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?;
         loop {
             let config_path = current.join("gov/config.toml");
             if config_path.exists() {
-                return Some(config_path);
+                return Ok(Some(config_path));
+            }
+            if contains_governance_state(&current.join("gov"))? {
+                return Err(missing_config_diagnostic(&config_path));
             }
             if !current.pop() {
-                return None;
+                return Ok(None);
             }
         }
     }
@@ -173,6 +154,61 @@ impl Config {
             .map(PathBuf::from)
             .unwrap_or_else(|_| path.to_path_buf())
     }
+}
+
+fn missing_config_diagnostic(config_path: &Path) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0505MigrationRequired,
+        "gov/config.toml is missing for an existing governance project. Restore the project configuration before using govctl.",
+        config_path.display().to_string(),
+    )
+}
+
+fn contains_governance_state(gov_root: &Path) -> DiagnosticResult<bool> {
+    if gov_root.join("releases.toml").exists() {
+        return Ok(true);
+    }
+
+    let mut pending = ["rfc", "adr", "work", "guard"]
+        .into_iter()
+        .map(|name| gov_root.join(name))
+        .filter(|path| path.exists())
+        .collect::<Vec<_>>();
+    while let Some(dir) = pending.pop() {
+        let entries = std::fs::read_dir(&dir).map_err(|err| {
+            Diagnostic::io_error(
+                "inspect governance artifact directory",
+                err,
+                dir.display().to_string(),
+            )
+        })?;
+        for entry in entries {
+            let entry = entry.map_err(|err| {
+                Diagnostic::io_error(
+                    "inspect governance artifact directory entry",
+                    err,
+                    dir.display().to_string(),
+                )
+            })?;
+            let file_type = entry.file_type().map_err(|err| {
+                Diagnostic::io_error(
+                    "inspect governance artifact type",
+                    err,
+                    entry.path().display().to_string(),
+                )
+            })?;
+            if file_type.is_dir() {
+                pending.push(entry.path());
+            } else if entry
+                .path()
+                .extension()
+                .is_some_and(|extension| extension == "toml" || extension == "json")
+            {
+                return Ok(true);
+            }
+        }
+    }
+    Ok(false)
 }
 
 fn resolve_project_paths(config: &mut Config, config_path: &Path) {

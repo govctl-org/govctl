@@ -55,6 +55,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Unsupported future schema versions and missing project configuration block repository mutation (WI-2026-07-26-009)
 - Every stored Clause participates in validation and RFC amendment signatures (WI-2026-07-26-009)
 - Namespace recovery recognizes only structurally valid Clause references (WI-2026-07-26-009)
+- Explicit and ancestor missing-config paths cannot select or mutate the wrong project (WI-2026-07-26-010)
+- RFC Clause references reject absolute and parent-traversal paths before lifecycle writes (WI-2026-07-26-010)
+- Fresh and partial initialization layouts without governance artifacts remain recoverable (WI-2026-07-26-010)
 
 ## [0.14.2] - 2026-07-25
 

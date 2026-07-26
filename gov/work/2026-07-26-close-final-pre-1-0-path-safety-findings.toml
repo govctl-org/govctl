@@ -1,0 +1,49 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-010"
+title = "Close final pre-1.0 path safety findings"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "RFC-0000:C-RFC-DEF",
+    "RFC-0002:C-COMPATIBILITY-BOUNDARY",
+    "RFC-0002:C-GLOBAL-COMMANDS",
+]
+tags = [
+    "safety",
+    "validation",
+]
+
+[content]
+description = "Resolve verified repository-selection, Clause-path containment, partial-initialization recovery, and agent inventory gaps."
+
+[[content.acceptance_criteria]]
+text = "Explicit and ancestor missing-config paths cannot select or mutate the wrong project"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "RFC Clause references reject absolute and parent-traversal paths before lifecycle writes"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Fresh and partial initialization layouts without governance artifacts remain recoverable"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "The AGENTS skill inventory is internally complete"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused regression tests and pre-commit checks pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

@@ -29,6 +29,25 @@ fn test_init_creates_gitignore() -> common::TestResult {
 }
 
 #[test]
+fn test_init_recovers_partial_directories_without_governance_artifacts() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
+    fs::create_dir_all(temp_dir.path().join("gov/rfc"))?;
+    fs::create_dir_all(temp_dir.path().join("gov/adr"))?;
+    fs::create_dir_all(temp_dir.path().join("gov/schema"))?;
+    fs::write(temp_dir.path().join("gov/.DS_Store"), "metadata")?;
+    fs::write(
+        temp_dir.path().join("gov/schema/rfc.schema.json"),
+        "partial generated state",
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["init", "--force"]])?;
+
+    assert!(output.contains("Project initialized"), "{output}");
+    assert!(temp_dir.path().join("gov/config.toml").exists());
+    Ok(())
+}
+
+#[test]
 fn test_init_config_reserves_default_guards_for_universal_checks() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 

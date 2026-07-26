@@ -18,7 +18,7 @@ Do not invent behavior, skip governance gates, or deviate silently from specific
 
 ```
 .claude/                ← Agent configuration (SSOT for skills and agents)
-├── skills/                Workflow skills (gov, quick, discuss, commit, migrate, detach) + writer skills (rfc-writer, adr-writer, wi-writer)
+├── skills/                Workflow skills (init, discuss, spec, gov, quick, commit, migrate, detach) + writer skills (rfc-writer, adr-writer, wi-writer, guard-writer)
 └── agents/                Reviewer agents (rfc-reviewer, adr-reviewer, wi-reviewer, compliance-checker)
 
 gov/                    ← Source of truth (governance artifacts)

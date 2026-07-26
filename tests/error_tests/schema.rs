@@ -145,7 +145,7 @@ fn test_explicit_missing_config_does_not_fall_back_to_current_project() -> commo
     )?;
     let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
     let original_rfc = fs::read(&rfc_path)?;
-    let explicit_config = "missing/gov/config.toml";
+    let explicit_config = "missing.toml";
 
     let output = run_commands(
         temp_dir.path(),
@@ -161,9 +161,43 @@ fn test_explicit_missing_config_does_not_fall_back_to_current_project() -> commo
         ]],
     )?;
 
-    assert!(output.contains("error[E0502]"), "{output}");
+    assert!(output.contains("error[E0505]"), "{output}");
+    assert!(output.contains("gov/config.toml is missing"), "{output}");
     assert_eq!(fs::read(&rfc_path)?, original_rfc);
     assert!(!temp_dir.path().join(explicit_config).exists());
+    Ok(())
+}
+
+#[test]
+fn test_missing_project_config_is_found_from_subdirectory() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[&["rfc", "new", "Existing project", "--id", "RFC-0001"]],
+    )?;
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
+    fs::remove_file(&config_path)?;
+    let rfc_before = fs::read(&rfc_path)?;
+    let nested_dir = temp_dir.path().join("docs/sub");
+    fs::create_dir_all(&nested_dir)?;
+
+    let output = run_commands(
+        &nested_dir,
+        &[&[
+            "rfc",
+            "edit",
+            "RFC-0001",
+            "title",
+            "--set",
+            "Must not be written",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0505]"), "{output}");
+    assert!(output.contains("gov/config.toml is missing"), "{output}");
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    assert!(!config_path.exists());
     Ok(())
 }
 
