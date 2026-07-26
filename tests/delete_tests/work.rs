@@ -113,3 +113,23 @@ fn test_delete_work_safeguard_depended_on() -> TestResult {
     assert!(output.contains(&wi2), "output: {}", output);
     Ok(())
 }
+
+#[test]
+fn test_delete_work_aborts_when_governed_referrers_fail_to_load() -> TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let work_id = first_work_id(&date);
+    run_dynamic_commands(temp_dir.path(), &[work_new("Keep on load failure")])?;
+    let work_path = fs::read_dir(temp_dir.path().join("gov/work"))?
+        .next()
+        .ok_or("missing work item")??
+        .path();
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
+    fs::write(rfc_dir.join("rfc.toml"), "not valid TOML")?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[work_delete_force(&work_id)])?;
+
+    assert!(output.contains("exit: 1"), "{output}");
+    assert!(work_path.exists(), "load failure must abort deletion");
+    Ok(())
+}

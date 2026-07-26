@@ -7,7 +7,7 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticResult, Diagnostics};
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
-use crate::write::{WriteOp, write_file};
+use crate::write::{WriteOp, with_file_transaction, write_file};
 use std::fs;
 
 mod ops;
@@ -69,6 +69,38 @@ pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     )?;
     crate::load::reject_legacy_json_storage(config)?;
 
+    let mut support_paths = support_paths_to_sync(config)?;
+    if crate::cmd::project_support::local_state_gitignore_needs_sync(config)? {
+        support_paths.push(config.project_root().join(".gitignore"));
+    }
+    let support_path_refs = support_paths
+        .iter()
+        .map(std::path::PathBuf::as_path)
+        .collect::<Vec<_>>();
+    with_file_transaction(&support_path_refs, op, || migrate_inner(config, op))
+}
+
+fn support_paths_to_sync(config: &Config) -> DiagnosticResult<Vec<std::path::PathBuf>> {
+    let mut paths = Vec::new();
+    for template in ARTIFACT_SCHEMA_TEMPLATES {
+        let path = config.schema_dir().join(template.filename);
+        match fs::read_to_string(&path) {
+            Ok(existing) if existing == template.content => {}
+            Ok(_) => paths.push(path),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => paths.push(path),
+            Err(err) => {
+                return Err(Diagnostic::io_error(
+                    "read schema file",
+                    err,
+                    config.display_path(&path).display().to_string(),
+                ));
+            }
+        }
+    }
+    Ok(paths)
+}
+
+fn migrate_inner(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
     let schemas_synced = sync_schemas(config, op)?;
     let gitignore_entries_synced =

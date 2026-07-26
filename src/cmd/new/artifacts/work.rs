@@ -1,6 +1,6 @@
 use super::write_new_artifact_toml;
 use crate::config::{Config, IdStrategy};
-use crate::diagnostic::{DiagnosticCode, DiagnosticResult, Diagnostics};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{
     WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
@@ -26,14 +26,16 @@ pub(super) fn create(
     let work_id = match config.work_item.id_strategy {
         IdStrategy::Sequential => {
             let id_prefix = format!("WI-{date}-");
-            let max_seq = find_max_sequence(&work_dir, &id_prefix);
+            let max_seq = find_max_sequence(config, &id_prefix)?;
+            reject_exhausted_sequence(max_seq, &id_prefix, &work_dir)?;
             format!("WI-{date}-{:03}", max_seq + 1)
         }
         IdStrategy::AuthorHash => {
             let author_hash =
                 IdStrategy::get_author_hash().unwrap_or_else(IdStrategy::generate_random_suffix);
             let id_prefix = format!("WI-{date}-{author_hash}-");
-            let max_seq = find_max_sequence(&work_dir, &id_prefix);
+            let max_seq = find_max_sequence(config, &id_prefix)?;
+            reject_exhausted_sequence(max_seq, &id_prefix, &work_dir)?;
             format!("WI-{date}-{author_hash}-{:03}", max_seq + 1)
         }
         IdStrategy::Random => {
@@ -46,7 +48,7 @@ pub(super) fn create(
     let mut work_path = work_dir.join(&filename);
     let mut suffix = 1u32;
 
-    while !op.is_preview() && work_path.exists() {
+    while work_path.exists() {
         filename = format!("{date}-{slug}-{suffix:03}.toml");
         work_path = work_dir.join(&filename);
         suffix += 1;
@@ -92,25 +94,32 @@ pub(super) fn create(
     Ok(vec![])
 }
 
-fn find_max_sequence(work_dir: &Path, id_prefix: &str) -> u32 {
-    std::fs::read_dir(work_dir)
+fn reject_exhausted_sequence(
+    max_seq: u32,
+    id_prefix: &str,
+    work_dir: &Path,
+) -> DiagnosticResult<()> {
+    if max_seq >= 999 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0401WorkSchemaInvalid,
+            format!("Work Item ID namespace exhausted at {id_prefix}999"),
+            work_dir.display().to_string(),
+        ));
+    }
+    Ok(())
+}
+
+fn find_max_sequence(config: &Config, id_prefix: &str) -> DiagnosticResult<u32> {
+    Ok(crate::parse::load_work_items(config)?
         .into_iter()
-        .flatten()
-        .flatten()
         .filter_map(|entry| {
-            let path = entry.path();
-            (path.extension()? == "toml").then_some(path)
-        })
-        .filter_map(|path| std::fs::read_to_string(&path).ok())
-        .filter_map(|content| {
-            content
-                .lines()
-                .find(|line| line.starts_with("id = \""))
-                .and_then(|line| line.strip_prefix("id = \""))
-                .and_then(|s| s.strip_suffix('"'))
-                .and_then(|id| id.strip_prefix(id_prefix))
-                .and_then(|seq_str| seq_str.parse::<u32>().ok())
+            entry
+                .spec
+                .govctl
+                .id
+                .strip_prefix(id_prefix)
+                .and_then(|seq| seq.parse::<u32>().ok())
         })
         .max()
-        .unwrap_or(0)
+        .unwrap_or(0))
 }

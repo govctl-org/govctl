@@ -64,6 +64,13 @@ Release entries are curated summaries for readers. Work item traceability remain
 - RFC and Clause loading enforce per-RFC Clause containment for configured storage roots (WI-2026-07-26-012)
 - Creation dry-runs apply the same non-mutating preflight validation as execution (WI-2026-07-26-012)
 - Clause creation rejects occupied logical targets without overwriting existing artifacts (WI-2026-07-26-012)
+- Project discovery and forced initialization reject incompatible or incomplete local governance state without falling through to an ancestor project. (WI-2026-07-26-013)
+- Work Item deletion aborts when governed referrers cannot be loaded. (WI-2026-07-26-013)
+- Migration support-file updates and schema migration operations roll back together on failure. (WI-2026-07-26-013)
+- Resource creation rejects schema-invalid constructed artifacts before writing an authoritative artifact. (WI-2026-07-26-013)
+- Creation dry-runs perform the same validation and target selection as execution without persistent mutation. (WI-2026-07-26-013)
+- Guard deletion requires confirmation unless force is explicit. (WI-2026-07-26-013)
+- Clause edit help documents an executable stdin form. (WI-2026-07-26-013)
 
 ### Security
 

@@ -69,7 +69,7 @@ NOTES:
     #[command(after_help = "\
 EXAMPLES:
     govctl clause edit RFC-0001:C-SUMMARY text --set \"Updated clause text\"
-    govctl clause edit RFC-0001:C-SUMMARY text --stdin
+    govctl clause edit RFC-0001:C-SUMMARY text --set --stdin
     govctl clause edit RFC-0001:C-SUMMARY title --set \"New Title\"
     govctl clause edit RFC-0001:C-SUMMARY kind --set informative
 

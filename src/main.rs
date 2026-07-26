@@ -88,12 +88,13 @@ fn main() -> ExitCode {
 fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
     // Convert parsed CLI command to canonical form
     let plan = command_router::CommandPlan::from_parsed(&cli.command, cli.dry_run)?;
-    let config = if cli.config.is_none()
-        && matches!(
-            plan.op,
-            command_router::Op::Builtin(command_router::BuiltinOp::Init { .. })
-        ) {
-        Config::for_init()?
+    let config = if cli.config.is_none() {
+        match &plan.op {
+            command_router::Op::Builtin(command_router::BuiltinOp::Init { force }) => {
+                Config::for_init(*force)?
+            }
+            _ => Config::load(None)?,
+        }
     } else {
         Config::load(cli.config.as_deref())?
     };

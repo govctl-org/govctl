@@ -8,9 +8,25 @@ fn test_guard_delete_unreferenced() -> common::TestResult {
     let guard_path = temp_dir.path().join("gov/guard/guard-temp.toml");
     assert!(guard_path.exists());
 
-    let output = run_commands(temp_dir.path(), &[&["guard", "delete", "GUARD-TEMP"]])?;
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["guard", "delete", "GUARD-TEMP", "--force"]],
+    )?;
     assert!(output.contains("exit: 0"), "output: {}", output);
     assert!(!guard_path.exists(), "guard file should be deleted");
+    Ok(())
+}
+
+#[test]
+fn test_guard_delete_without_force_requires_confirmation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_guard(temp_dir.path(), "GUARD-TEMP", "true")?;
+
+    let guard_path = temp_dir.path().join("gov/guard/guard-temp.toml");
+    let output = run_commands(temp_dir.path(), &[&["guard", "delete", "GUARD-TEMP"]])?;
+
+    assert!(output.contains("Deletion cancelled"), "output: {output}");
+    assert!(guard_path.exists(), "unconfirmed deletion must not write");
     Ok(())
 }
 

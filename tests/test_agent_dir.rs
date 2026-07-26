@@ -45,6 +45,21 @@ fn test_init_skills_excludes_plugin_only_init_skill() -> common::TestResult {
 }
 
 #[test]
+fn test_init_skills_dry_run_skips_existing_assets_without_force() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["init-skills"]])?;
+    let skill_path = temp_dir.path().join(".claude/skills/gov/SKILL.md");
+    let before = fs::read(&skill_path)?;
+
+    let output = run_commands(temp_dir.path(), &[&["init-skills", "--dry-run"]])?;
+
+    assert!(output.contains("exit: 0"), "{output}");
+    assert!(!output.contains("Would write"), "{output}");
+    assert_eq!(fs::read(&skill_path)?, before);
+    Ok(())
+}
+
+#[test]
 fn test_custom_agent_dir() -> common::TestResult {
     let temp_dir = init_project()?;
 

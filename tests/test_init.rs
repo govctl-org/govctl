@@ -100,6 +100,43 @@ fn test_init_force_dry_run_in_nested_directory_does_not_mutate_either_project() 
     Ok(())
 }
 
+#[test]
+fn test_init_force_rejects_unsupported_existing_schema_without_mutation() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
+    run_commands(temp_dir.path(), &[&["init"]])?;
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config["schema"]["version"] = toml::Value::Integer(2);
+    fs::write(&config_path, toml::to_string_pretty(&config)?)?;
+    let before = fs::read(&config_path)?;
+
+    let output = run_commands(temp_dir.path(), &[&["init", "--force"]])?;
+
+    assert!(output.contains("error[E0505]"), "{output}");
+    assert!(
+        output.contains("schema version 2 is unsupported"),
+        "{output}"
+    );
+    assert_eq!(fs::read(&config_path)?, before);
+    Ok(())
+}
+
+#[test]
+fn test_init_dry_run_rejects_existing_project_without_force() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
+    run_commands(temp_dir.path(), &[&["init"]])?;
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let before = fs::read(&config_path)?;
+
+    let output = run_commands(temp_dir.path(), &[&["init", "--dry-run"]])?;
+
+    assert!(output.contains("exit: 1"), "{output}");
+    assert!(output.contains("already exists"), "{output}");
+    assert!(!output.contains("Would write"), "{output}");
+    assert_eq!(fs::read(&config_path)?, before);
+    Ok(())
+}
+
 #[cfg(unix)]
 #[test]
 fn test_init_allows_symlinked_default_governance_root() -> common::TestResult {

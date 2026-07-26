@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "1.0.4"
+version = "1.1.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "eb06adb9b6c40cd9d381c9f9d40a6f3b60041394514cdbaab35a6e985ed497db"
+signature = "d125173838bde45f89151943e7648b9bdf3f6603e95f75fbad7a753052ec927f"
 
 [[sections]]
 title = "Summary"
@@ -39,6 +39,12 @@ clauses = [
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
     "clauses/C-NAMESPACE-RECOVERY.toml",
 ]
+
+[[changelog]]
+version = "1.1.0"
+date = "2026-07-26"
+notes = "Define universal dry-run preflight semantics"
+changed = ["Require dry-runs to preserve execution validation and target selection"]
 
 [[changelog]]
 version = "1.0.4"

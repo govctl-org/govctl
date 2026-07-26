@@ -170,12 +170,15 @@ pub fn delete_work_item(
         ));
     }
 
-    let load_result = match load_project_with_warnings(config) {
-        Ok(result) => result,
-        Err(_) => {
-            return proceed_with_deletion(config, &entry.path, &wi.govctl.id, force, op);
-        }
-    };
+    let load_result = load_project_with_warnings(config).map_err(|diagnostics| {
+        diagnostics.into_iter().next().unwrap_or_else(|| {
+            Diagnostic::new(
+                DiagnosticCode::E0903UnexpectedError,
+                "Failed to load governed referrers before deleting work item",
+                id,
+            )
+        })
+    })?;
 
     let index = &load_result.index;
     let referenced_by = work_item_deletion_referrers(index, &wi.govctl.id);

@@ -225,6 +225,115 @@ fn test_symlinked_artifact_state_blocks_ancestor_project_selection() -> common::
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn test_dangling_config_blocks_ancestor_project_selection() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    let inner = temp_dir.path().join("inner");
+    fs::create_dir_all(inner.join("gov"))?;
+    symlink("missing-config.toml", inner.join("gov/config.toml"))?;
+    let outer_work_dir = temp_dir.path().join("gov/work");
+    let outer_work_count = fs::read_dir(&outer_work_dir)?.count();
+
+    let output = run_commands(&inner, &[&["work", "new", "Must not use outer project"]])?;
+
+    assert!(output.contains("exit: 1"), "{output}");
+    assert_eq!(fs::read_dir(&outer_work_dir)?.count(), outer_work_count);
+    assert!(!inner.join("gov/work").exists());
+    Ok(())
+}
+
+#[test]
+fn test_schema_state_without_config_blocks_ancestor_project_selection() -> common::TestResult {
+    let outer = init_project()?;
+    let inner = outer.path().join("inner");
+    fs::create_dir(&inner)?;
+    run_commands(&inner, &[&["init"]])?;
+    fs::remove_file(inner.join("gov/config.toml"))?;
+    let outer_work_dir = outer.path().join("gov/work");
+    let outer_work_count = fs::read_dir(&outer_work_dir)?.count();
+
+    let output = run_commands(&inner, &[&["work", "new", "Must not use outer project"]])?;
+
+    assert!(output.contains("error[E0505]"), "{output}");
+    assert!(output.contains("gov/config.toml is missing"), "{output}");
+    assert_eq!(fs::read_dir(&outer_work_dir)?.count(), outer_work_count);
+    assert_eq!(fs::read_dir(inner.join("gov/work"))?.count(), 0);
+    Ok(())
+}
+
+#[test]
+fn test_new_resources_reject_empty_titles_before_artifact_write() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Container RFC"]])?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", ""],
+            &["adr", "new", ""],
+            &["work", "new", ""],
+            &["clause", "new", "RFC-0001:C-EMPTY", ""],
+        ],
+    )?;
+
+    assert_eq!(output.matches("exit: 1").count(), 4, "{output}");
+    assert_eq!(
+        output.matches("is shorter than 1 character").count(),
+        4,
+        "{output}"
+    );
+    assert!(!temp_dir.path().join("gov/rfc/RFC-0002/rfc.toml").exists());
+    assert_eq!(fs::read_dir(temp_dir.path().join("gov/adr"))?.count(), 0);
+    assert_eq!(fs::read_dir(temp_dir.path().join("gov/work"))?.count(), 0);
+    assert!(
+        !temp_dir
+            .path()
+            .join("gov/rfc/RFC-0001/clauses/C-EMPTY.toml")
+            .exists()
+    );
+    Ok(())
+}
+
+#[test]
+fn test_generated_resource_ids_reject_exhausted_namespaces() -> common::TestResult {
+    let temp_dir = init_project()?;
+    fs::write(temp_dir.path().join("gov/adr/ADR-9999-existing.toml"), "")?;
+    let date = common::today();
+    fs::write(
+        temp_dir
+            .path()
+            .join(format!("gov/work/{date}-existing.toml")),
+        format!(
+            "#:schema ../schema/work.schema.json\n\n[govctl]\nid    = \"WI-{date}-999\"\ntitle = \"Existing\"\nstatus = \"queue\"\ncreated = \"{date}\"\n\n[content]\ndescription = \"Existing work item\"\n"
+        ),
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["adr", "new", "Overflow"], &["work", "new", "Overflow"]],
+    )?;
+
+    assert_eq!(output.matches("exit: 1").count(), 2, "{output}");
+    assert!(output.contains("ADR-9999"), "{output}");
+    assert!(output.contains(&format!("WI-{date}-999")), "{output}");
+    assert!(
+        !temp_dir
+            .path()
+            .join("gov/adr/ADR-10000-overflow.toml")
+            .exists()
+    );
+    assert!(
+        !temp_dir
+            .path()
+            .join(format!("gov/work/{date}-overflow.toml"))
+            .exists()
+    );
+    Ok(())
+}
+
 #[test]
 fn test_legacy_artifact_schema_field_is_rejected_for_all_artifacts() -> common::TestResult {
     let cases = [

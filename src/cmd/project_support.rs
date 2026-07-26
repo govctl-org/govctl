@@ -60,6 +60,19 @@ pub(crate) fn ensure_local_state_gitignore_entries(
     }
 }
 
+pub(crate) fn local_state_gitignore_needs_sync(config: &Config) -> DiagnosticResult<bool> {
+    let gitignore_path = gitignore_path(config);
+    match std::fs::read_to_string(&gitignore_path) {
+        Ok(content) => Ok(!missing_local_state_gitignore_entries(&content).is_empty()),
+        Err(err) if err.kind() == ErrorKind::NotFound => Ok(true),
+        Err(err) => Err(Diagnostic::io_error(
+            "read .gitignore",
+            err,
+            config.display_path(&gitignore_path).display().to_string(),
+        )),
+    }
+}
+
 // Implements [[RFC-0002:C-GLOBAL-COMMANDS]]: check warns when govctl-managed
 // local-state .gitignore entries are missing or outdated.
 pub(crate) fn local_state_gitignore_diagnostics(config: &Config) -> Diagnostics {

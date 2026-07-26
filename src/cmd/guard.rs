@@ -2,6 +2,7 @@
 
 use super::guard_refs::{guard_reference_blockers, load_guard_by_id};
 use crate::ShowOutputFormat;
+use crate::cmd::confirmation::confirm_destructive_action;
 use crate::cmd::output::{print_json, print_toml, print_yaml};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
@@ -32,15 +33,13 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<
     }
     let id = format!("GUARD-{slug}");
 
-    if !op.is_preview() {
-        let existing = load_guards(config)?;
-        if existing.iter().any(|g| g.spec.govctl.id == id) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E1003GuardDuplicate,
-                format!("Guard already exists: {id}"),
-                &id,
-            ));
-        }
+    let existing = load_guards(config)?;
+    if existing.iter().any(|g| g.spec.govctl.id == id) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1003GuardDuplicate,
+            format!("Guard already exists: {id}"),
+            &id,
+        ));
     }
 
     let filename = slug.to_lowercase().replace('_', "-");
@@ -77,7 +76,7 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<
 pub fn delete_guard(
     config: &Config,
     id: &str,
-    _force: bool,
+    force: bool,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     let guard = load_guard_by_id(config, id)?;
@@ -101,6 +100,14 @@ pub fn delete_guard(
     }
 
     let path = guard.path.clone();
+    if !confirm_destructive_action(
+        force,
+        op,
+        &format!("Delete guard {id}?"),
+        "Deletion cancelled",
+    )? {
+        return Ok(vec![]);
+    }
     crate::write::delete_file(&path, op, Some(&config.display_path(&path)))?;
 
     if !op.is_preview() {

@@ -213,6 +213,41 @@ fn test_migrate_syncs_stale_schema_file_at_current_version() -> TestResult {
 }
 
 #[test]
+fn test_migrate_schema_sync_failure_leaves_earlier_schema_unchanged() -> TestResult {
+    let temp_dir = init_project()?;
+    let rfc_schema = temp_dir.path().join("gov/schema/rfc.schema.json");
+    let clause_schema = temp_dir.path().join("gov/schema/clause.schema.json");
+    fs::write(&rfc_schema, "stale schema\n")?;
+    fs::remove_file(&clause_schema)?;
+    fs::create_dir(&clause_schema)?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+
+    assert!(output.contains("exit: 1"), "{output}");
+    assert_eq!(fs::read_to_string(&rfc_schema)?, "stale schema\n");
+    assert!(clause_schema.is_dir());
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_migrate_noop_does_not_require_schema_write_access() -> TestResult {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp_dir = init_project()?;
+    let schema_path = temp_dir.path().join("gov/schema/rfc.schema.json");
+    let original_permissions = fs::metadata(&schema_path)?.permissions();
+    fs::set_permissions(&schema_path, fs::Permissions::from_mode(0o444))?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+
+    fs::set_permissions(&schema_path, original_permissions)?;
+    assert!(output.contains("exit: 0"), "{output}");
+    assert!(output.contains("already at schema version"), "{output}");
+    Ok(())
+}
+
+#[test]
 fn test_migrate_dry_run_reports_would_sync_at_current_version() -> TestResult {
     let temp_dir = init_project()?;
     let expected_version = current_schema_version(temp_dir.path())?;

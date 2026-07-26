@@ -82,6 +82,7 @@ Deletion SHOULD require confirmation unless an explicit force option is provided
 - Equivalent universal operations MUST use the same flag names and exit-code conventions.
 - Error messages MUST identify the rejected resource, field path, or value.
 - Input transport such as stdin MUST NOT change mutation semantics.
+- A mutating universal operation invoked with `--dry-run` MUST perform the same validation and target selection as execution, MUST report the planned mutation, and MUST leave persistent state unchanged.
 
 **Rationale:**
 

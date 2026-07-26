@@ -10,7 +10,7 @@ impl Config {
     pub fn load(path: Option<&Path>) -> DiagnosticResult<Self> {
         let config_path = if let Some(path) = path {
             let path = PathBuf::from(path);
-            if !path.exists() {
+            if !path_entry_exists(&path)? {
                 return Err(explicit_config_not_found_diagnostic(&path));
             }
             path
@@ -18,7 +18,7 @@ impl Config {
             Self::find_config()?.unwrap_or_else(|| PathBuf::from("gov/config.toml"))
         };
 
-        if config_path.exists() {
+        if path_entry_exists(&config_path)? {
             let content = std::fs::read_to_string(&config_path).map_err(|err| {
                 Diagnostic::io_error("read config", err, config_path.display().to_string())
             })?;
@@ -64,10 +64,16 @@ impl Config {
         }
     }
 
-    pub fn for_init() -> DiagnosticResult<Self> {
+    pub fn for_init(force: bool) -> DiagnosticResult<Self> {
         let project_root = std::env::current_dir()
             .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?;
         let config_path = project_root.join("gov/config.toml");
+        if path_entry_exists(&config_path)? {
+            return Self::load(Some(&config_path));
+        }
+        if !force && contains_governance_state(&project_root.join("gov"))? {
+            return Err(missing_config_diagnostic(&config_path));
+        }
         let mut config = Self::default();
         resolve_project_paths(&mut config, &config_path);
         Ok(config)
@@ -79,7 +85,7 @@ impl Config {
             .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?;
         loop {
             let config_path = current.join("gov/config.toml");
-            if config_path.exists() {
+            if path_entry_exists(&config_path)? {
                 return Ok(Some(config_path));
             }
             if contains_governance_state(&current.join("gov"))? {
@@ -182,15 +188,27 @@ fn explicit_config_not_found_diagnostic(config_path: &Path) -> Diagnostic {
 }
 
 fn contains_governance_state(gov_root: &Path) -> DiagnosticResult<bool> {
-    if gov_root.join("releases.toml").exists() {
+    if path_entry_exists(&gov_root.join("releases.toml"))? {
         return Ok(true);
     }
 
-    let mut pending = ["rfc", "adr", "work", "guard"]
-        .into_iter()
-        .map(|name| gov_root.join(name))
-        .filter(|path| path.exists())
-        .collect::<Vec<_>>();
+    let mut pending = Vec::new();
+    for name in ["rfc", "adr", "work", "guard", "schema", "templates"] {
+        let path = gov_root.join(name);
+        match std::fs::symlink_metadata(&path) {
+            Ok(metadata) if metadata.file_type().is_symlink() => return Ok(true),
+            Ok(metadata) if metadata.is_dir() => pending.push(path),
+            Ok(_) => return Ok(true),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+            Err(err) => {
+                return Err(Diagnostic::io_error(
+                    "inspect governance path",
+                    err,
+                    path.display().to_string(),
+                ));
+            }
+        }
+    }
     while let Some(dir) = pending.pop() {
         let entries = std::fs::read_dir(&dir).map_err(|err| {
             Diagnostic::io_error(
@@ -228,6 +246,18 @@ fn contains_governance_state(gov_root: &Path) -> DiagnosticResult<bool> {
         }
     }
     Ok(false)
+}
+
+fn path_entry_exists(path: &Path) -> DiagnosticResult<bool> {
+    match std::fs::symlink_metadata(path) {
+        Ok(_) => Ok(true),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(false),
+        Err(err) => Err(Diagnostic::io_error(
+            "inspect path",
+            err,
+            path.display().to_string(),
+        )),
+    }
 }
 
 fn resolve_project_paths(config: &mut Config, config_path: &Path) {

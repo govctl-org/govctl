@@ -21,7 +21,7 @@ fn schema_version_for_init() -> u32 {
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     let config_path = config.gov_root.join("config.toml");
 
-    if config_path.exists() && !force && !op.is_preview() {
+    if config_path.exists() && !force {
         return Err(Diagnostic::new(
             DiagnosticCode::E0501ConfigInvalid,
             format!(

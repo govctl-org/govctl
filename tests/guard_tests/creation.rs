@@ -44,6 +44,18 @@ fn test_guard_new_duplicate_rejected() -> common::TestResult {
 }
 
 #[test]
+fn test_guard_new_duplicate_dry_run_is_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_guard(temp_dir.path(), "GUARD-ECHO", "true")?;
+
+    let output = run_commands(temp_dir.path(), &[&["guard", "new", "echo", "--dry-run"]])?;
+    assert!(output.contains("exit: 1"), "output: {output}");
+    assert!(output.contains("error[E1003]"), "output: {output}");
+    assert!(!output.contains("Would write"), "output: {output}");
+    Ok(())
+}
+
+#[test]
 fn test_guard_new_invalid_title_rejected_with_code() -> common::TestResult {
     let temp_dir = init_project()?;
 
