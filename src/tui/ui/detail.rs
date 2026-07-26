@@ -8,7 +8,7 @@ use crate::render::RenderProjection;
 use crate::tui::dag::dag_lines;
 use ratatui::{
     prelude::*,
-    widgets::{List, ListItem, Paragraph, Wrap},
+    widgets::{List, ListItem, Paragraph, Scrollbar, ScrollbarOrientation, ScrollbarState, Wrap},
 };
 use std::borrow::Cow;
 
@@ -65,6 +65,25 @@ impl<'a> MarkdownPanel<'a> {
             .block(block);
 
         frame.render_widget(content, area);
+        let viewport_length = area.height.saturating_sub(2) as usize;
+        if total_lines > viewport_length && area.height >= 3 {
+            let scrollbar = Scrollbar::new(ScrollbarOrientation::VerticalRight)
+                .begin_symbol(None)
+                .end_symbol(None)
+                .thumb_style(Style::default().fg(Color::Cyan))
+                .track_style(Style::default().fg(Color::DarkGray));
+            let mut scrollbar_state = ScrollbarState::new(total_lines)
+                .position(self.scroll as usize)
+                .viewport_content_length(viewport_length);
+            frame.render_stateful_widget(
+                scrollbar,
+                area.inner(Margin {
+                    vertical: 1,
+                    horizontal: 0,
+                }),
+                &mut scrollbar_state,
+            );
+        }
         DetailViewport::new(total_lines)
     }
 }

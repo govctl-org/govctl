@@ -38,9 +38,15 @@ impl ChromeBar {
         let inner = block.inner(area);
         frame.render_widget(block, area);
 
+        let right_width = if self.right.is_empty() {
+            0
+        } else {
+            let desired = Line::from(self.right.as_str()).width().saturating_add(1) as u16;
+            desired.min(inner.width.saturating_sub(16))
+        };
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Min(10), Constraint::Length(30)])
+            .constraints([Constraint::Min(10), Constraint::Length(right_width)])
             .split(inner);
 
         let left = Paragraph::new(self.left).alignment(self.left_alignment);

@@ -1,7 +1,24 @@
 use super::super::app::{App, View};
 use super::components::ChromeBar;
+use super::panel_block;
 use crate::diagnostic::DiagnosticLevel;
-use ratatui::prelude::*;
+use ratatui::{prelude::*, widgets::LineGauge};
+
+pub(super) fn shows_command_strip(view: View) -> bool {
+    matches!(
+        view,
+        View::RfcList
+            | View::ClauseList
+            | View::AdrList
+            | View::WorkList
+            | View::GuardList
+            | View::ReleaseList
+            | View::TagList
+            | View::Search
+            | View::LoopList
+            | View::DiagnosticList
+    )
+}
 
 fn breadcrumb(app: &App) -> String {
     match app.view {
@@ -101,25 +118,12 @@ fn header_status(app: &mut App) -> String {
         | View::Search
         | View::LoopList
         | View::DiagnosticList => {
-            let total = app.list_total_len();
             let shown = app.list_len();
-            let mut parts = vec![format!("Shown {}/{}", shown, total)];
             if shown > 0 {
-                parts.push(format!("Sel {}/{}", app.selected + 1, shown));
+                format!("SEL {} / {}", app.selected + 1, shown)
+            } else {
+                "SEL 0 / 0".to_string()
             }
-            if app.filter_mode {
-                parts.push(format!("Filter: /{}_", app.filter_query));
-            } else if app.filter_active() {
-                parts.push(format!("Filter: {}", app.filter_query));
-            }
-            if app.view == View::Search {
-                if app.search_mode {
-                    parts.push(format!("Query: {}_", app.search_query));
-                } else if !app.search_query.is_empty() {
-                    parts.push(format!("Query: {}", app.search_query));
-                }
-            }
-            parts.join(" | ")
         }
         View::LoopDetail(idx) => app
             .current_loop_state(idx)
@@ -134,6 +138,115 @@ fn header_status(app: &mut App) -> String {
             .unwrap_or_else(|| "invalid loop state".to_string()),
         _ => String::new(),
     }
+}
+
+pub(super) struct CommandStrip<'a> {
+    app: &'a mut App,
+}
+
+impl<'a> CommandStrip<'a> {
+    pub(super) fn new(app: &'a mut App) -> Self {
+        Self { app }
+    }
+
+    pub(super) fn render(self, frame: &mut Frame, area: Rect) {
+        let app = self.app;
+        let shown = app.list_len();
+        let total = app.list_total_len();
+        let (label, value, focused) = if app.view == View::Search {
+            ("QUERY", app.search_query.as_str(), app.search_mode)
+        } else {
+            ("FILTER", app.filter_query.as_str(), app.filter_mode)
+        };
+        let focus_label = if focused { "EDITING" } else { "READY" };
+        let border_color = if focused {
+            Color::Cyan
+        } else {
+            Color::DarkGray
+        };
+
+        if area.width < 60 {
+            let title = format!("{label} // {focus_label}");
+            let block = panel_block(&title)
+                .title_bottom(
+                    Line::from(format!(" {shown} / {total} "))
+                        .right_aligned()
+                        .style(Style::default().fg(Color::DarkGray)),
+                )
+                .border_style(Style::default().fg(border_color));
+            let inner_width = block.inner(area).width as usize;
+            frame.render_widget(
+                ratatui::widgets::Paragraph::new(input_line(value, focused, inner_width))
+                    .block(block),
+                area,
+            );
+            return;
+        }
+
+        let match_width = (area.width / 4).clamp(20, 28);
+        let chunks = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Min(24), Constraint::Length(match_width)])
+            .split(area);
+        let title = format!("{label} // {focus_label}");
+        let input_block = panel_block(&title).border_style(Style::default().fg(border_color));
+        let input_width = input_block.inner(chunks[0]).width as usize;
+        frame.render_widget(
+            ratatui::widgets::Paragraph::new(input_line(value, focused, input_width))
+                .block(input_block),
+            chunks[0],
+        );
+
+        let ratio = if total == 0 {
+            0.0
+        } else {
+            shown as f64 / total as f64
+        };
+        let gauge = LineGauge::default()
+            .block(panel_block("MATCH SET").border_style(Style::default().fg(Color::DarkGray)))
+            .label(format!("{shown} / {total}"))
+            .ratio(ratio)
+            .filled_symbol("━")
+            .unfilled_symbol("─")
+            .filled_style(Style::default().fg(Color::Cyan))
+            .unfilled_style(Style::default().fg(Color::DarkGray));
+        frame.render_widget(gauge, chunks[1]);
+    }
+}
+
+fn input_line(value: &str, focused: bool, max_width: usize) -> Line<'static> {
+    let cursor_width = usize::from(focused);
+    let value_width = max_width.saturating_sub(2 + cursor_width);
+    let visible = tail_with_ellipsis(value, value_width);
+    let mut spans = vec![
+        Span::styled("/", Style::default().fg(Color::Cyan).bold()),
+        Span::raw(visible),
+    ];
+    if focused {
+        spans.push(Span::styled("▏", Style::default().fg(Color::Cyan).bold()));
+    }
+    Line::from(spans)
+}
+
+fn tail_with_ellipsis(value: &str, max_width: usize) -> String {
+    if max_width == 0 {
+        return String::new();
+    }
+    if Line::from(value).width() <= max_width {
+        return value.to_string();
+    }
+
+    let mut start = value.len();
+    let mut used = 1;
+    for (idx, ch) in value.char_indices().rev() {
+        let char_width = Span::raw(ch.to_string()).width();
+        if used + char_width > max_width {
+            break;
+        }
+        start = idx;
+        used += char_width;
+    }
+    format!("…{}", &value[start..])
 }
 
 pub(super) struct Header<'a> {
@@ -235,6 +348,39 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
     }
 }
 
+fn compact_bindings_for_view(view: View) -> &'static [&'static str] {
+    match view {
+        View::Dashboard => &[
+            "r", "RFC", "c", "Clause", "w", "Work", "s", "Search", "?", "Help", "q", "Quit",
+        ],
+        View::RfcList
+        | View::ClauseList
+        | View::AdrList
+        | View::WorkList
+        | View::GuardList
+        | View::LoopList
+        | View::DiagnosticList => &[
+            "j/k", "Move", "Enter", "Open", "Esc", "Back", "/", "Filter", "?", "Help", "q", "Quit",
+        ],
+        View::ReleaseList | View::TagList => &[
+            "j/k", "Move", "Esc", "Back", "/", "Filter", "?", "Help", "q", "Quit",
+        ],
+        View::Search => &[
+            "e//", "Query", "Enter", "Open", "j/k", "Move", "Esc", "Back", "?", "Help", "q", "Quit",
+        ],
+        View::LoopDetail(_) => &["j/k", "Select", "Esc", "Back", "?", "Help", "q", "Quit"],
+        View::RfcDetail(_) => &[
+            "j/k", "Clause", "Enter", "Open", "Esc", "Back", "?", "Help", "q", "Quit",
+        ],
+        View::AdrDetail(_)
+        | View::WorkDetail(_)
+        | View::GuardDetail(_)
+        | View::ClauseDetail(_, _) => &[
+            "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
+        ],
+    }
+}
+
 fn keybind_line(bindings: &[&str]) -> Line<'static> {
     let mut spans: Vec<Span<'static>> = vec![Span::raw(" ")];
     for chunk in bindings.chunks(2) {
@@ -266,9 +412,14 @@ impl<'a> Footer<'a> {
 
     // Implements [[RFC-0003:C-NAV]]
     pub(super) fn render(self, frame: &mut Frame, area: Rect) {
+        let bindings = if area.width < 90 {
+            compact_bindings_for_view(self.view)
+        } else {
+            bindings_for_view(self.view)
+        };
         ChromeBar::new(
             Color::DarkGray,
-            keybind_line(bindings_for_view(self.view)),
+            keybind_line(bindings),
             self.status.unwrap_or(""),
         )
         .left_alignment(Alignment::Center)
@@ -327,21 +478,80 @@ mod tests {
         assert!(header_status(&mut app).contains("NOMINAL"));
 
         app.go_to(View::RfcList);
-        assert!(header_status(&mut app).contains("Shown 1/1"));
+        assert!(header_status(&mut app).contains("SEL 1 / 1"));
         app.enter_filter_mode();
         app.filter_query = "rfc".to_string();
-        assert!(header_status(&mut app).contains("Filter: /rfc_"));
+        assert!(header_status(&mut app).contains("SEL 1 / 1"));
 
         app.go_to(View::Search);
         app.search_query = "work".to_string();
         app.enter_search_mode();
-        assert!(header_status(&mut app).contains("Query: work_"));
+        assert!(header_status(&mut app).contains("SEL 0 / 0"));
 
         app.view = View::LoopDetail(0);
         assert!(header_status(&mut app).contains("start"));
         app.view = View::LoopDetail(99);
         assert_eq!(header_status(&mut app), "invalid loop state");
         Ok(())
+    }
+
+    #[test]
+    fn command_strip_preserves_filter_focus_and_long_input_tail()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut app = chrome_app()?;
+        app.go_to(View::RfcList);
+        app.enter_filter_mode();
+        app.filter_query =
+            "a-very-long-filter-value-that-must-keep-its-visible-tail-value".to_string();
+
+        let (_, rendered) = render_app(72, 3, app, |frame, app| {
+            CommandStrip::new(app).render(frame, frame.area());
+        })?;
+
+        assert!(
+            rendered
+                .iter()
+                .any(|line| line.contains("FILTER // EDITING"))
+        );
+        assert!(rendered.iter().any(|line| line.contains("…")));
+        assert!(
+            rendered
+                .iter()
+                .any(|line| line.contains("visible-tail-value▏"))
+        );
+        assert!(rendered.iter().any(|line| line.contains("MATCH SET")));
+        Ok(())
+    }
+
+    #[test]
+    fn narrow_empty_filter_keeps_complete_label_and_cursor()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut app = chrome_app()?;
+        app.go_to(View::RfcList);
+        app.enter_filter_mode();
+
+        let (_, rendered) = render_app(50, 3, app, |frame, app| {
+            CommandStrip::new(app).render(frame, frame.area());
+        })?;
+
+        assert!(
+            rendered
+                .iter()
+                .any(|line| line.contains("FILTER // EDITING"))
+        );
+        assert!(rendered.iter().any(|line| line.contains("/▏")));
+        assert!(rendered.iter().any(|line| line.contains("1 / 1")));
+        Ok(())
+    }
+
+    #[test]
+    fn input_tail_uses_available_display_width() {
+        assert_eq!(
+            tail_with_ellipsis("abcdefghijklmnopqrstuvwxyz", 8),
+            "…tuvwxyz"
+        );
+        assert_eq!(tail_with_ellipsis("short", 8), "short");
+        assert_eq!(tail_with_ellipsis("anything", 0), "");
     }
 
     #[test]
@@ -356,6 +566,8 @@ mod tests {
         ] {
             let line = keybind_line(bindings_for_view(view));
             assert!(line.width() > 0);
+            let compact = keybind_line(compact_bindings_for_view(view));
+            assert!(compact.width() > 0);
         }
     }
 

@@ -1,0 +1,37 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-003"
+title = "Improve TUI filter and visual hierarchy"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0003:C-FILTER",
+    "RFC-0007:C-HUMAN-UX",
+]
+tags = ["tui"]
+
+[content]
+description = "Improve TUI filtering ergonomics and strengthen visual hierarchy with data-backed terminal widgets."
+
+[[content.acceptance_criteria]]
+text = "Filter and search input remain legible for long values on common narrow terminals"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "List views present filtering and result counts in a dedicated command strip"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Scroll position and record counts use consistent data-backed visual indicators"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused TUI tests, all-target clippy, and governance checks pass"
+status = "done"
+category = "chore"

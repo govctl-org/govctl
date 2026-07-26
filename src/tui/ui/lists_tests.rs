@@ -18,6 +18,7 @@ fn list_renderers_draw_table_rows() -> Result<(), Box<dyn std::error::Error>> {
     assert!(rendered.iter().any(|line| line.contains("RFC title")));
     assert!(rendered.iter().any(|line| line.contains("normative")));
     assert!(rendered.iter().any(|line| line.contains("▌ ")));
+    assert!(rendered.iter().any(|line| line.contains("1 RECORD")));
 
     let rendered = render_list(View::AdrList, draw_adr)?;
     assert!(rendered.iter().any(|line| line.contains("ADR-0001")));
@@ -163,6 +164,33 @@ fn loop_list_renderer_draws_invalid_loop_diagnostic() -> Result<(), Box<dyn std:
     Ok(())
 }
 
+#[test]
+fn narrow_table_preserves_priority_columns_and_scroll_context()
+-> Result<(), Box<dyn std::error::Error>> {
+    let rfcs = (1..=8)
+        .map(|idx| {
+            rfc(
+                &format!("RFC-{idx:04}"),
+                &format!("RFC title {idx}"),
+                RfcStatus::Normative,
+                RfcPhase::Impl,
+                &["core"],
+            )
+        })
+        .collect();
+    let mut app = App::new(project_index(rfcs, vec![], vec![]));
+    app.view = View::RfcList;
+    app.selected = 7;
+    app.table_state.select(Some(7));
+
+    let rendered = render_list_app_at(72, 7, app, draw_rfc)?;
+
+    assert!(rendered.iter().any(|line| line.contains("normative")));
+    assert!(rendered.iter().any(|line| line.contains("8 RECORDS")));
+    assert!(rendered.iter().any(|line| line.contains("█")));
+    Ok(())
+}
+
 fn render_list(
     view: View,
     draw: fn(&mut Frame, &mut App, Rect),
@@ -178,7 +206,18 @@ fn render_list_app(
     app: App,
     draw: fn(&mut Frame, &mut App, Rect),
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let (_, rendered) = render_app(120, 10, app, |frame, app| draw(frame, app, frame.area()))?;
+    render_list_app_at(120, 10, app, draw)
+}
+
+fn render_list_app_at(
+    width: u16,
+    height: u16,
+    app: App,
+    draw: fn(&mut Frame, &mut App, Rect),
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let (_, rendered) = render_app(width, height, app, |frame, app| {
+        draw(frame, app, frame.area());
+    })?;
     Ok(rendered)
 }
 
