@@ -418,6 +418,98 @@ fn test_referenced_clause_outside_canonical_directory_affects_signature() -> com
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn test_finalize_accepts_relative_clause_path_with_colon() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-ALT",
+                "Alternate Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let alternate_dir = rfc_dir.join("clauses:v1");
+    fs::create_dir(&alternate_dir)?;
+    let alternate_path = alternate_dir.join("C-ALT.toml");
+    fs::rename(rfc_dir.join("clauses/C-ALT.toml"), &alternate_path)?;
+    let rfc_path = rfc_dir.join("rfc.toml");
+    let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    let clause_ref = rfc["sections"]
+        .as_array_mut()
+        .ok_or("missing RFC sections")?
+        .iter_mut()
+        .filter_map(|section| section.get_mut("clauses"))
+        .filter_map(toml::Value::as_array_mut)
+        .flatten()
+        .find(|clause| {
+            clause
+                .as_str()
+                .is_some_and(|path| path.ends_with("C-ALT.toml"))
+        })
+        .ok_or("missing Clause reference")?;
+    *clause_ref = toml::Value::String("clauses:v1/C-ALT.toml".to_string());
+    fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "finalize", "RFC-0001", "normative"]],
+    )?;
+
+    assert!(output.contains("Finalized RFC-0001"), "{output}");
+    let clause: toml::Value = toml::from_str(&fs::read_to_string(&alternate_path)?)?;
+    assert_eq!(clause["govctl"]["since"].as_str(), Some("0.1.0"));
+    Ok(())
+}
+
+#[test]
+fn test_finalize_rejects_dangling_clause_reference_without_mutation() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-MISSING",
+                "Missing Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let rfc_path = rfc_dir.join("rfc.toml");
+    fs::remove_file(rfc_dir.join("clauses/C-MISSING.toml"))?;
+    let rfc_before = fs::read(&rfc_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["check"], &["rfc", "finalize", "RFC-0001", "normative"]],
+    )?;
+
+    assert_eq!(output.matches("error[E0204]").count(), 2, "{output}");
+    assert!(!output.contains("All checks passed"), "{output}");
+    assert!(!output.contains("Finalized RFC-0001"), "{output}");
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    Ok(())
+}
+
 #[test]
 fn test_finalize_rejects_absolute_clause_path_without_external_write() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -561,6 +653,50 @@ fn test_finalize_rejects_clause_directory_symlink_outside_rfc() -> common::TestR
     assert!(!output.contains("Finalized RFC-0001"), "{output}");
     assert_eq!(fs::read(&rfc_path)?, rfc_before);
     assert_eq!(fs::read(&external_path)?, external_before);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_finalize_rejects_rfc_directory_symlink_outside_storage() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &[
+                "clause",
+                "new",
+                "RFC-0001:C-LINK",
+                "Linked Clause",
+                "-s",
+                "Specification",
+                "-k",
+                "normative",
+            ],
+        ],
+    )?;
+
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let external_dir = temp_dir.path().join("external-rfc");
+    fs::rename(&rfc_dir, &external_dir)?;
+    symlink(&external_dir, &rfc_dir)?;
+    let external_rfc = external_dir.join("rfc.toml");
+    let external_clause = external_dir.join("clauses/C-LINK.toml");
+    let rfc_before = fs::read(&external_rfc)?;
+    let clause_before = fs::read(&external_clause)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "finalize", "RFC-0001", "normative"]],
+    )?;
+
+    assert!(output.contains("error[E0204]"), "{output}");
+    assert!(!output.contains("Finalized RFC-0001"), "{output}");
+    assert_eq!(fs::read(&external_rfc)?, rfc_before);
+    assert_eq!(fs::read(&external_clause)?, clause_before);
     Ok(())
 }
 

@@ -201,6 +201,30 @@ fn test_missing_project_config_is_found_from_subdirectory() -> common::TestResul
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn test_symlinked_artifact_state_blocks_ancestor_project_selection() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    let inner = temp_dir.path().join("inner");
+    let inner_rfc_root = inner.join("gov/rfc");
+    let external_rfc = temp_dir.path().join("external-rfc");
+    fs::create_dir_all(&inner_rfc_root)?;
+    fs::create_dir(&external_rfc)?;
+    symlink(&external_rfc, inner_rfc_root.join("RFC-0009"))?;
+    let outer_work_dir = temp_dir.path().join("gov/work");
+    let outer_work_count = fs::read_dir(&outer_work_dir)?.count();
+
+    let output = run_commands(&inner, &[&["work", "new", "Must not use outer project"]])?;
+
+    assert!(output.contains("error[E0505]"), "{output}");
+    assert!(output.contains("gov/config.toml is missing"), "{output}");
+    assert_eq!(fs::read_dir(&outer_work_dir)?.count(), outer_work_count);
+    assert!(!inner.join("gov/config.toml").exists());
+    Ok(())
+}
+
 #[test]
 fn test_legacy_artifact_schema_field_is_rejected_for_all_artifacts() -> common::TestResult {
     let cases = [

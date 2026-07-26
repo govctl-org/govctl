@@ -56,8 +56,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Every stored Clause participates in validation and RFC amendment signatures (WI-2026-07-26-009)
 - Namespace recovery recognizes only structurally valid Clause references (WI-2026-07-26-009)
 - Explicit and ancestor missing-config paths cannot select or mutate the wrong project (WI-2026-07-26-010)
-- RFC Clause references reject absolute and parent-traversal paths before lifecycle writes (WI-2026-07-26-010)
-- Fresh and partial initialization layouts without governance artifacts remain recoverable (WI-2026-07-26-010)
+- RFC loading rejects dangling or storage-escaping Clause references before any mutation (WI-2026-07-26-010)
+- Partial initialization detection recognizes artifact symlinks without selecting an ancestor project (WI-2026-07-26-010)
+- RFC-conforming relative Clause filenames remain loadable (WI-2026-07-26-010)
 
 ## [0.14.2] - 2026-07-25
 

@@ -197,7 +197,9 @@ fn contains_governance_state(gov_root: &Path) -> DiagnosticResult<bool> {
                     entry.path().display().to_string(),
                 )
             })?;
-            if file_type.is_dir() {
+            if file_type.is_symlink() {
+                return Ok(true);
+            } else if file_type.is_dir() {
                 pending.push(entry.path());
             } else if entry
                 .path()

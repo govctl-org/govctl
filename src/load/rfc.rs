@@ -5,7 +5,7 @@ use crate::model::{ClauseEntry, ClauseWire, RfcIndex, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_toml_value};
 use serde::de::DeserializeOwned;
 use std::collections::BTreeSet;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 
 /// Load all RFCs from the gov/rfc directory
 pub fn load_rfcs(config: &Config) -> Result<Vec<RfcIndex>, LoadError> {
@@ -53,6 +53,26 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         )));
     }
 
+    let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::InternalIo {
+        file: rfc_path.display().to_string(),
+        message: "RFC path has no parent directory".to_string(),
+    })?;
+    let resolved_rfc_root = canonicalize_path(&config.rfc_dir(), "resolve RFC storage root")?;
+    let resolved_rfc_dir = canonicalize_path(rfc_dir, "resolve RFC directory")?;
+    ensure_path_contained(
+        &resolved_rfc_root,
+        &resolved_rfc_dir,
+        rfc_path,
+        &rfc_dir.display().to_string(),
+    )?;
+    let resolved_rfc_path = canonicalize_path(rfc_path, "resolve RFC path")?;
+    ensure_path_contained(
+        &resolved_rfc_dir,
+        &resolved_rfc_path,
+        rfc_path,
+        &rfc_path.display().to_string(),
+    )?;
+
     let rfc: RfcSpec = load_source_wire::<RfcWire>(
         config,
         rfc_path,
@@ -65,12 +85,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
     )?
     .into();
 
-    let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::InternalIo {
-        file: rfc_path.display().to_string(),
-        message: "RFC path has no parent directory".to_string(),
-    })?;
     reject_legacy_json_in_rfc_dir(config, rfc_dir).map_err(LoadError::Diagnostic)?;
-    let resolved_rfc_dir = canonicalize_path(rfc_dir, "resolve RFC directory")?;
 
     let mut clause_paths = BTreeSet::new();
     for section in &rfc.sections {
@@ -82,10 +97,26 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
                 });
             }
             let full_path = rfc_dir.join(clause_path);
-            if full_path.exists() {
-                ensure_clause_path_contained(&resolved_rfc_dir, &full_path, rfc_path, clause_path)?;
-                clause_paths.insert(full_path);
+            let exists = full_path.try_exists().map_err(|err| LoadError::Io {
+                file: full_path.display().to_string(),
+                action: "inspect clause path",
+                message: err.to_string(),
+            })?;
+            if !exists || full_path.extension().and_then(|ext| ext.to_str()) != Some("toml") {
+                return Err(LoadError::ClausePathInvalid {
+                    file: rfc_path.display().to_string(),
+                    clause: clause_path.clone(),
+                });
             }
+            let resolved_clause = canonicalize_path(&full_path, "resolve clause path")?;
+            if !resolved_clause.is_file() {
+                return Err(LoadError::ClausePathInvalid {
+                    file: rfc_path.display().to_string(),
+                    clause: clause_path.clone(),
+                });
+            }
+            ensure_path_contained(&resolved_rfc_dir, &resolved_clause, rfc_path, clause_path)?;
+            clause_paths.insert(full_path);
         }
     }
     clause_paths.extend(clause_directory_paths(
@@ -107,15 +138,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
 
 fn is_safe_relative_clause_path(clause_path: &str) -> bool {
     let path = Path::new(clause_path);
-    !path.as_os_str().is_empty()
-        && !clause_path.contains('\\')
-        && clause_path
-            .split('/')
-            .all(|component| !component.is_empty() && component != ".." && !component.contains(':'))
-        && !path.is_absolute()
-        && path
-            .components()
-            .all(|component| matches!(component, Component::CurDir | Component::Normal(_)))
+    !path.as_os_str().is_empty() && !path.is_absolute()
 }
 
 fn canonicalize_path(path: &Path, action: &'static str) -> Result<PathBuf, LoadError> {
@@ -126,14 +149,13 @@ fn canonicalize_path(path: &Path, action: &'static str) -> Result<PathBuf, LoadE
     })
 }
 
-fn ensure_clause_path_contained(
-    resolved_rfc_dir: &Path,
-    clause_path: &Path,
+fn ensure_path_contained(
+    resolved_root: &Path,
+    resolved_path: &Path,
     rfc_path: &Path,
     clause_reference: &str,
 ) -> Result<(), LoadError> {
-    let resolved_clause = canonicalize_path(clause_path, "resolve clause path")?;
-    if !resolved_clause.starts_with(resolved_rfc_dir) {
+    if !resolved_path.starts_with(resolved_root) {
         return Err(LoadError::ClausePathInvalid {
             file: rfc_path.display().to_string(),
             clause: clause_reference.to_string(),
@@ -151,6 +173,13 @@ fn clause_directory_paths(
     if !clauses_dir.exists() {
         return Ok(vec![]);
     }
+    let resolved_clauses_dir = canonicalize_path(&clauses_dir, "resolve clause directory")?;
+    ensure_path_contained(
+        resolved_rfc_dir,
+        &resolved_clauses_dir,
+        rfc_path,
+        &clauses_dir.display().to_string(),
+    )?;
 
     let entries = std::fs::read_dir(&clauses_dir).map_err(|err| LoadError::Io {
         file: clauses_dir.display().to_string(),
@@ -166,9 +195,10 @@ fn clause_directory_paths(
         })?;
         let path = entry.path();
         if path.extension().and_then(|ext| ext.to_str()) == Some("toml") {
-            ensure_clause_path_contained(
+            let resolved_clause = canonicalize_path(&path, "resolve clause path")?;
+            ensure_path_contained(
                 resolved_rfc_dir,
-                &path,
+                &resolved_clause,
                 rfc_path,
                 &path.display().to_string(),
             )?;
@@ -396,21 +426,23 @@ mod tests {
     use super::is_safe_relative_clause_path;
 
     #[test]
-    fn clause_paths_use_portable_relative_syntax() {
-        for path in ["clauses/C-ONE.toml", "C-ALT.toml", "./clauses/C-ONE.toml"] {
-            assert!(is_safe_relative_clause_path(path), "{path}");
-        }
+    fn clause_paths_require_relative_syntax() {
         for path in [
-            "",
+            "clauses/C-ONE.toml",
+            "C-ALT.toml",
+            "./clauses/C-ONE.toml",
             "../C-ONE.toml",
-            r"..\C-ONE.toml",
-            "/tmp/C-ONE.toml",
-            "C:/tmp/C-ONE.toml",
-            r"C:\tmp\C-ONE.toml",
-            r"\\server\share\C-ONE.toml",
             "clauses//C-ONE.toml",
         ] {
-            assert!(!is_safe_relative_clause_path(path), "{path}");
+            assert!(is_safe_relative_clause_path(path), "{path}");
         }
+        assert!(!is_safe_relative_clause_path(""));
+
+        let absolute = std::env::temp_dir().join("C-ONE.toml");
+        assert!(
+            !is_safe_relative_clause_path(&absolute.display().to_string()),
+            "{}",
+            absolute.display()
+        );
     }
 }
