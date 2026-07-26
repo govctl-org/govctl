@@ -52,7 +52,6 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0302AdrNotFound => "E0302",
         DiagnosticCode::E0303AdrInvalidTransition => "E0303",
         DiagnosticCode::E0304AdrRefNotFound => "E0304",
-        DiagnosticCode::E0305AdrCannotDeprecate => "E0305",
         DiagnosticCode::E0306AdrReferenceHierarchy => "E0306",
         DiagnosticCode::E0307AdrProjectionConflict => "E0307",
         // E04xx - Work Item

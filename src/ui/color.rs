@@ -3,7 +3,7 @@ use std::path::Path;
 
 /// Check if stderr supports colors (TTY detection + NO_COLOR)
 ///
-/// Implements [[ADR-0017]] terminal capability detection:
+/// Implements [[RFC-0002:C-OUTPUT-FORMAT]] terminal capability detection:
 /// - Auto-detect TTY
 /// - Respect `NO_COLOR` environment variable
 pub(super) fn use_colors() -> bool {

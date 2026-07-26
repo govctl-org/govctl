@@ -1,4 +1,4 @@
-//! Path-based nested field addressing per [[ADR-0029]].
+//! Path-based nested field addressing per [[RFC-0002:C-EDIT-FIELD-CONTRACT]].
 //!
 //! Parses field paths like `alternatives[0].pros[1]` into structured segments
 //! for nested access into ADR alternatives, work item acceptance criteria, etc.

@@ -100,7 +100,6 @@ pub fn bump(
             ));
         }
         (None, None, false) => {
-            require_changelog_update_ready(config, &rfc_path, rfc_id)?;
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
             }
@@ -269,7 +268,6 @@ pub fn advance(
     let next_signature = if seals_current_version {
         Some(current_signature)
     } else {
-        reject_legacy_signature(&rfc_index, rfc_id, "advance RFC phase")?;
         let stored_signature = rfc_index
             .rfc
             .signature
@@ -334,7 +332,6 @@ fn ensure_rfc_has_content_amendment(
     if rfc_index.rfc.signature.is_none() {
         return Err(missing_sealed_signature(rfc_id, "bump RFC version"));
     }
-    reject_legacy_signature(&rfc_index, rfc_id, "bump RFC version")?;
     if !pending_clause_ids(config, rfc_path)?.is_empty() {
         return Ok(());
     }
@@ -357,45 +354,4 @@ fn missing_sealed_signature(rfc_id: &str, action: &str) -> Diagnostic {
         ),
         rfc_id,
     )
-}
-
-pub(crate) fn require_changelog_update_ready(
-    config: &Config,
-    rfc_path: &Path,
-    rfc_id: &str,
-) -> DiagnosticResult<()> {
-    let rfc_index = crate::load::load_rfc(config, rfc_path)?;
-    let Some(stored_signature) = &rfc_index.rfc.signature else {
-        return Ok(());
-    };
-    reject_legacy_signature(&rfc_index, rfc_id, "update the RFC changelog")?;
-    let content_signature = crate::signature::compute_rfc_content_signature(&rfc_index)?;
-    if stored_signature == &content_signature {
-        return Ok(());
-    }
-    Ok(())
-}
-
-fn reject_legacy_signature(
-    rfc: &crate::model::RfcIndex,
-    rfc_id: &str,
-    action: &str,
-) -> DiagnosticResult<()> {
-    let Some(stored_signature) = &rfc.rfc.signature else {
-        return Ok(());
-    };
-    let content_signature = crate::signature::compute_rfc_content_signature(rfc)?;
-    if stored_signature != &content_signature
-        && crate::signature::compute_rfc_signature(rfc)
-            .is_ok_and(|legacy| stored_signature == &legacy)
-    {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0505MigrationRequired,
-            format!(
-                "Cannot {action} with a legacy rendered-projection RFC signature. Restore a schema-3 content-signature baseline from version-control history."
-            ),
-            rfc_id,
-        ));
-    }
-    Ok(())
 }

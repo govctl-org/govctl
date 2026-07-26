@@ -339,7 +339,7 @@ fn test_advance_to_impl_rejects_pending_clause_versions_without_mutation() -> co
 }
 
 #[test]
-fn test_advance_to_impl_replaces_legacy_signature() -> common::TestResult {
+fn test_advance_to_impl_replaces_existing_signature() -> common::TestResult {
     let temp_dir = init_project()?;
     run_commands(
         temp_dir.path(),
@@ -388,7 +388,7 @@ fn test_advance_to_impl_replaces_legacy_signature() -> common::TestResult {
 }
 
 #[test]
-fn test_later_phase_advance_rejects_legacy_signature_without_mutation() -> common::TestResult {
+fn test_later_phase_advance_treats_mismatched_signature_as_amendment() -> common::TestResult {
     let temp_dir = init_project()?;
     run_commands(
         temp_dir.path(),
@@ -401,7 +401,7 @@ fn test_later_phase_advance_rejects_legacy_signature_without_mutation() -> commo
     )?;
 
     let rendered = fs::read_to_string(temp_dir.path().join("docs/rfc/RFC-0001.md"))?;
-    let legacy_signature = rendered
+    let mismatched_signature = rendered
         .lines()
         .find_map(|line| {
             line.trim()
@@ -411,21 +411,14 @@ fn test_later_phase_advance_rejects_legacy_signature_without_mutation() -> commo
         .ok_or("missing rendered RFC signature")?;
     let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
     let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
-    rfc["govctl"]["signature"] = toml::Value::String(legacy_signature.to_string());
+    rfc["govctl"]["signature"] = toml::Value::String(mismatched_signature.to_string());
     fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
     let before = fs::read(&rfc_path)?;
 
     let output = run_commands(temp_dir.path(), &[&["rfc", "advance", "RFC-0001", "test"]])?;
 
-    assert!(output.contains("error[E0505]"), "output: {output}");
-    assert!(
-        output.contains("legacy rendered-projection RFC signature"),
-        "output: {output}"
-    );
-    assert!(
-        output.contains("Restore a schema-3 content-signature baseline"),
-        "output: {output}"
-    );
+    assert!(output.contains("error[E0114]"), "output: {output}");
+    assert!(output.contains("unversioned amendment"), "output: {output}");
     assert_eq!(fs::read(&rfc_path)?, before);
     Ok(())
 }

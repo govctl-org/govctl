@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0017"
 title = "CLI Command Implementation Details"
-status = "accepted"
+status = "superseded"
 date = "2026-01-19"
+superseded_by = "ADR-0037"
 refs = [
     "RFC-0002",
     "ADR-0037",

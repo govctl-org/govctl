@@ -1,6 +1,6 @@
 //! Edit command implementation - modify artifacts.
 //!
-//! Implements [[ADR-0007]] ergonomic array field matching for remove and tick commands.
+//! Implements canonical mutation semantics from [[RFC-0002:C-EDIT-FIELD-CONTRACT]].
 
 pub mod adapter;
 mod add;

@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0047"
 title = "Remove journal from work item field surface for loop-centric execution state"
-status = "accepted"
+status = "superseded"
 date = "2026-05-31"
+superseded_by = "ADR-0056"
 refs = [
     "ADR-0043",
     "ADR-0026",

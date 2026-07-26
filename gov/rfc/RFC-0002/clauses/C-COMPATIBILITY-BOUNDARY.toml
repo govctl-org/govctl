@@ -28,7 +28,7 @@ This clause defines the compatibility boundary for the canonical-only breaking r
 - RFC, Clause, ADR, Work Item, and Guard TOML files MUST NOT contain the legacy `[govctl].schema` field.
 - Work Item TOML containing `content.journal` MUST be rejected.
 - Loading or rewriting a loop round TOML file containing `max_rounds` MUST be rejected.
-- RFC signatures stored for project schema version 3 or later MUST use the content-signature contract in [[RFC-0000:C-PHASE-LIFECYCLE]]. A rendered-projection signature MUST be rejected as an invalid baseline.
+- Project schema version 3 establishes the content-signature interpretation for stored RFC signatures. RFC signatures stored for project schema version 3 or later MUST use the content-signature contract in [[RFC-0000:C-PHASE-LIFECYCLE]]. Repositories below version 3 MUST be migrated with a compatible earlier govctl version before the current binary loads their RFC baselines. The current binary MUST NOT infer a pre-version-3 signature algorithm from an untagged hash value.
 
 **Migration and safety:**
 

@@ -49,7 +49,6 @@ pub enum DiagnosticCode {
     E0302AdrNotFound,
     E0303AdrInvalidTransition,
     E0304AdrRefNotFound,
-    E0305AdrCannotDeprecate,
     /// ADR refs or [[...]] targets WI-* — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
     E0306AdrReferenceHierarchy,
     E0307AdrProjectionConflict,

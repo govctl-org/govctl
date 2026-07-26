@@ -48,7 +48,7 @@ pub(crate) enum ListTarget {
     Guard,
 }
 
-/// Output format for CLI command output per [[ADR-0017]]
+/// Output format for CLI command output per [[RFC-0002:C-OUTPUT-FORMAT]].
 #[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum OutputFormat {
     /// Table format (default)

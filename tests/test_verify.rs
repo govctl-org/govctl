@@ -3,7 +3,7 @@
 mod common;
 
 use common::{
-    TestResult, append_verification_config, init_project, run_commands,
+    TestResult, append_verification_config, init_project, run_commands, today, work_id,
     write_canonical_guarded_work_item, write_guard_with_timeout,
 };
 use std::fs;
@@ -145,6 +145,83 @@ fn test_work_move_done_allows_waived_guard() -> TestResult {
         content
     );
 
+    Ok(())
+}
+
+#[test]
+fn test_work_specific_guard_does_not_leak_to_unrelated_work_item() -> TestResult {
+    let temp_dir = init_project()?;
+    let date = today();
+    let scoped_work = work_id(&date, 1);
+    let unrelated_work = work_id(&date, 2);
+
+    append_verification_config(temp_dir.path(), true, &["GUARD-DEFAULT"])?;
+    write_guard_with_timeout(temp_dir.path(), "GUARD-DEFAULT", "true", None, 300)?;
+    write_guard_with_timeout(temp_dir.path(), "GUARD-SCOPED", "exit 1", None, 300)?;
+    let setup = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "Scoped work", "--active"],
+            &[
+                "work",
+                "edit",
+                &scoped_work,
+                "acceptance_criteria",
+                "--add",
+                "chore: Scoped behavior is complete",
+            ],
+            &[
+                "work",
+                "edit",
+                &scoped_work,
+                "acceptance_criteria[0]",
+                "--tick",
+                "done",
+            ],
+            &[
+                "work",
+                "edit",
+                &scoped_work,
+                "verification.required_guards",
+                "--add",
+                "GUARD-SCOPED",
+            ],
+            &["work", "new", "Unrelated work", "--active"],
+            &[
+                "work",
+                "edit",
+                &unrelated_work,
+                "acceptance_criteria",
+                "--add",
+                "chore: Unrelated behavior is complete",
+            ],
+            &[
+                "work",
+                "edit",
+                &unrelated_work,
+                "acceptance_criteria[0]",
+                "--tick",
+                "done",
+            ],
+        ],
+    )?;
+    assert!(!setup.contains("exit: 1"), "{setup}");
+
+    let scoped = run_commands(temp_dir.path(), &[&["verify", "--work", &scoped_work]])?;
+    assert!(scoped.contains("PASS GUARD-DEFAULT"), "{scoped}");
+    assert!(scoped.contains("FAIL GUARD-SCOPED"), "{scoped}");
+    assert!(scoped.contains("exit: 1"), "{scoped}");
+
+    let unrelated = run_commands(
+        temp_dir.path(),
+        &[
+            &["verify", "--work", &unrelated_work],
+            &["work", "move", &unrelated_work, "done"],
+        ],
+    )?;
+    assert!(unrelated.contains("PASS GUARD-DEFAULT"), "{unrelated}");
+    assert!(!unrelated.contains("GUARD-SCOPED"), "{unrelated}");
+    assert_eq!(unrelated.matches("exit: 0").count(), 2, "{unrelated}");
     Ok(())
 }
 

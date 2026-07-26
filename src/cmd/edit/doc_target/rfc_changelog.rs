@@ -88,7 +88,6 @@ pub(in crate::cmd::edit) fn set(
     op: WriteOp,
 ) -> DiagnosticResult<()> {
     let mut loaded = RfcTomlAdapter::load(config, id)?;
-    crate::cmd::lifecycle::require_changelog_update_ready(config, &loaded.path, id)?;
     let mut doc = current_changelog_doc(&loaded.data, id)?;
     edit_runtime::set_nested_field(ArtifactType::Rfc, &mut doc, target.path(), value, id)?;
     apply_current_changelog_doc(&mut loaded.data, doc, id)?;
@@ -103,7 +102,6 @@ pub(in crate::cmd::edit) fn add(
     op: WriteOp,
 ) -> DiagnosticResult<()> {
     let mut loaded = RfcTomlAdapter::load(config, id)?;
-    crate::cmd::lifecycle::require_changelog_update_ready(config, &loaded.path, id)?;
     let mut doc = current_changelog_doc(&loaded.data, id)?;
     add_to_target_doc(ArtifactType::Rfc, &mut doc, target, value, id)?;
     apply_current_changelog_doc(&mut loaded.data, doc, id)?;
@@ -118,7 +116,6 @@ pub(in crate::cmd::edit) fn remove(
     op: WriteOp,
 ) -> DiagnosticResult<()> {
     let mut loaded = RfcTomlAdapter::load(config, id)?;
-    crate::cmd::lifecycle::require_changelog_update_ready(config, &loaded.path, id)?;
     let mut doc = current_changelog_doc(&loaded.data, id)?;
     let (display_field, removed) =
         remove_target_from_doc(ArtifactType::Rfc, &mut doc, id, target, opts)?;

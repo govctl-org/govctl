@@ -1,8 +1,8 @@
 use clap::Subcommand;
 
 use crate::{
-    CommonDeprecateArgs, CommonEditArgs, CommonGetArgs, CommonIdArgs, CommonListArgs,
-    CommonRenderArgs, CommonShowArgs, CommonSupersedeArgs,
+    CommonEditArgs, CommonGetArgs, CommonIdArgs, CommonListArgs, CommonRenderArgs, CommonShowArgs,
+    CommonSupersedeArgs,
 };
 
 /// ADR commands (resource-first structure)
@@ -95,13 +95,6 @@ NOTES:
     - Use `govctl adr edit ADR-0001 alternatives[N] --tick rejected` to reject a specific alternative instead.
 ")]
     Reject(CommonIdArgs),
-    /// Explain that ADRs must be superseded, not deprecated
-    #[command(after_help = "\
-NOTES:
-    - ADRs cannot be deprecated; use `govctl adr supersede ADR-0001 --by ADR-0002` when a newer ADR replaces it.
-    - Use `govctl adr reject ADR-0001` for a proposal that should not proceed.
-")]
-    Deprecate(CommonDeprecateArgs),
     /// Supersede ADR
     #[command(after_help = "\
 EXAMPLES:

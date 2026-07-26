@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "1.0.1"
+version = "1.0.2"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-25"
+updated = "2026-07-26"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "af2686060488e2c10005fae157d6b3a8160b506372c8427e0ce9742b3351aa3e"
+signature = "23044a878ac6c2b99a190a48aad6d465036ffc783e08f5bda9c157f9c2350f94"
 
 [[sections]]
 title = "Summary"
@@ -39,6 +39,12 @@ clauses = [
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
     "clauses/C-NAMESPACE-RECOVERY.toml",
 ]
+
+[[changelog]]
+version = "1.0.2"
+date = "2026-07-26"
+notes = "Clarify schema-3 RFC signature semantics"
+changed = ["Define schema version 3 as the content-signature interpretation boundary"]
 
 [[changelog]]
 version = "1.0.1"

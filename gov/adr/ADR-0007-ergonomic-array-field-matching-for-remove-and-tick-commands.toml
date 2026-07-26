@@ -3,9 +3,13 @@
 [govctl]
 id = "ADR-0007"
 title = "Ergonomic array field matching for remove and tick commands"
-status = "accepted"
+status = "superseded"
 date = "2026-01-17"
-refs = ["RFC-0000:C-WORK-DEF", "RFC-0000:C-ADR-DEF"]
+superseded_by = "ADR-0037"
+refs = [
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0000:C-ADR-DEF",
+]
 tags = ["editing"]
 
 [content]

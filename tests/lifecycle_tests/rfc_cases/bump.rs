@@ -575,7 +575,7 @@ fn test_bump_change_resolves_reordered_current_entry_without_version_change() ->
 }
 
 #[test]
-fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestResult {
+fn test_bump_change_preserves_schema_three_signature_baseline() -> common::TestResult {
     let temp_dir = init_project()?;
     run_commands(
         temp_dir.path(),
@@ -587,7 +587,7 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
     )?;
 
     let rendered = fs::read_to_string(temp_dir.path().join("docs/rfc/RFC-0001.md"))?;
-    let legacy_signature = rendered
+    let schema_three_signature = rendered
         .lines()
         .find_map(|line| {
             line.trim()
@@ -602,10 +602,10 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
         .ok_or("RFC metadata is not a table")?
         .insert(
             "signature".to_string(),
-            toml::Value::String(legacy_signature.to_string()),
+            toml::Value::String(schema_three_signature.to_string()),
         );
     fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
-    let before = fs::read(&rfc_path)?;
+    let before: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -614,16 +614,23 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
             "bump",
             "RFC-0001",
             "--change",
-            "fix: Must not rewrite signature",
+            "fix: Correct current changelog",
         ]],
     )?;
 
-    assert!(output.contains("error[E0505]"), "output: {output}");
     assert!(
-        output.contains("legacy rendered-projection RFC signature"),
+        output.contains("Added change to RFC-0001 v0.1.0"),
         "output: {output}"
     );
-    assert_eq!(fs::read(&rfc_path)?, before);
+    let after: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    assert_eq!(after["govctl"]["signature"], before["govctl"]["signature"]);
+    assert_eq!(
+        after["changelog"][0]["fixed"]
+            .as_array()
+            .and_then(|items| items.first())
+            .and_then(toml::Value::as_str),
+        Some("Correct current changelog")
+    );
     Ok(())
 }
 

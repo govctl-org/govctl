@@ -1,0 +1,49 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-008"
+title = "Close pre-1.0 local review findings"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "RFC-0002:C-COMPATIBILITY-BOUNDARY",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+]
+
+[content]
+description = "Resolve verified pre-1.0 review findings in signature validation, canonical CLI exposure, ADR lifecycle state, and scoped guard coverage."
+
+[[content.acceptance_criteria]]
+text = "Schema version 3 is the explicit RFC content-signature interpretation boundary and lifecycle checks do not infer hash origin from an untagged value"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "The unsupported ADR deprecate command is absent from parsing, help, and routing"
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Replaced compatibility ADRs are marked superseded by the decisions that replaced them"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Guard selection has cross-work-item behavioral coverage"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused tests, governance validation, and pre-commit checks pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Pre-commit renders generated governance projections before validating them"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]
