@@ -22,6 +22,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - gov, commit, and discuss use a compact operational baseline and contextual decision policy (WI-2026-07-26-002)
 - Lifecycle authority, authorization stops, discovery routes, and completion evidence remain explicit (WI-2026-07-26-002)
 - Agent guidance documentation explains information ownership and staged progressive disclosure (WI-2026-07-26-002)
+- spec and quick use compact operational baselines and contextual decision policies (WI-2026-07-26-003)
+- Spec lifecycle authorization and artifact-authority boundaries remain explicit (WI-2026-07-26-003)
+- Quick escalates behavior, ambiguity, and durable work to the owning workflow (WI-2026-07-26-003)
 
 ### Removed
 
