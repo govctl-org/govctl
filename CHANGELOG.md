@@ -25,6 +25,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - spec and quick use compact operational baselines and contextual decision policies (WI-2026-07-26-003)
 - Spec lifecycle authorization and artifact-authority boundaries remain explicit (WI-2026-07-26-003)
 - Quick escalates behavior, ambiguity, and durable work to the owning workflow (WI-2026-07-26-003)
+- RFC, ADR, Work Item, and Guard writer skills use compact policy and discovery baselines (WI-2026-07-26-004)
+- Artifact authority, field semantics, lifecycle handoff, and content-quality boundaries remain explicit (WI-2026-07-26-004)
+- Duplicated command recipes, templates, and examples defer to canonical discovery surfaces (WI-2026-07-26-004)
 
 ### Removed
 
