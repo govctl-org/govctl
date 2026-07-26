@@ -174,10 +174,9 @@ NOTES:
 pub(super) const DESCRIBE: &str = r#"EXAMPLES:
     govctl describe
     govctl describe --context
-    govctl describe -o json
 
 NOTES:
-    - `--context` includes current project state and suggested next actions.
+    - `--context` includes lifecycle counts, actionable records, and read-only discovery commands.
     - Output is intended for agents and tooling.
 "#;
 

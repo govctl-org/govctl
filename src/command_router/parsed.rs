@@ -46,7 +46,7 @@ impl CommandPlan {
                 output: *output,
                 reindex: *reindex,
             }))),
-            Commands::Describe { context, .. } => Ok(global(Op::Builtin(BuiltinOp::Describe {
+            Commands::Describe { context } => Ok(global(Op::Builtin(BuiltinOp::Describe {
                 context: *context,
             }))),
             Commands::Completions { shell } => Ok(global(Op::Builtin(BuiltinOp::Completions {

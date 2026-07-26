@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "1.1.0"
+version = "2.0.0"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "d125173838bde45f89151943e7648b9bdf3f6603e95f75fbad7a753052ec927f"
+signature = "8a9087dcb292d245022a9e098de157a73a4a3b92fa87108a8ce01f5a12c4c9dc"
 
 [[sections]]
 title = "Summary"
@@ -39,6 +39,16 @@ clauses = [
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
     "clauses/C-NAMESPACE-RECOVERY.toml",
 ]
+
+[[sections]]
+title = "Global Commands"
+clauses = ["clauses/C-DESCRIBE-COMMAND.toml"]
+
+[[changelog]]
+version = "2.0.0"
+date = "2026-07-26"
+notes = "Define reliable agent introspection"
+changed = ["Derive describe command metadata from the compiled CLI and limit context to actionable state"]
 
 [[changelog]]
 version = "1.1.0"

@@ -199,9 +199,6 @@ pub(crate) enum Commands {
         /// Include project state and suggested actions
         #[arg(long)]
         context: bool,
-        /// Output format (currently only json is supported)
-        #[arg(short = 'o', long, default_value = "json")]
-        output: String,
     },
 
     /// Generate shell completion scripts

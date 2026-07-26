@@ -1,0 +1,40 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-014"
+title = "Make describe a reliable agent entry point"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-27"
+refs = [
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "ADR-0058",
+    "RFC-0002:C-DESCRIBE-COMMAND",
+]
+
+[content]
+description = "Replace the drifting describe metadata with parser-owned command discovery and concise actionable project context, implementing [[RFC-0002:C-DESCRIBE-COMMAND]]."
+
+[[content.acceptance_criteria]]
+text = "Describe schema v1 reports tool version, parser-derived canonical command metadata, and phase order without a prescribed task sequence."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Context enumerates only actionable RFCs, ADRs, Work Items, and non-terminal loops while reporting complete state counts."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Context loading failures are reported instead of silently omitting requested state."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Describe tests and user documentation cover the versioned low-noise contract."
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

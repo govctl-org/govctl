@@ -286,11 +286,14 @@ govctl provides a machine-readable command catalog:
 
 ```bash
 govctl describe
-govctl describe --context   # Includes project context
-govctl describe --output json
+govctl describe --context   # Adds actionable project state and read-only next commands
 ```
 
-This is designed for agent discoverability — agents can inspect available commands and their semantics without hardcoded knowledge.
+The versioned JSON describes the command grammar compiled into the running
+binary. Context mode reports complete lifecycle counts but enumerates only
+non-terminal RFCs, ADRs, work items, and loops, so historical records do not
+inflate an agent's working context. Workflow policy remains in the RFCs and
+installed skills.
 
 ## Next Steps
 

@@ -1,0 +1,33 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0058"
+title = "Use parser-owned CLI introspection"
+status = "accepted"
+date = "2026-07-26"
+refs = [
+    "RFC-0002:C-DESCRIBE-COMMAND",
+    "ADR-0015",
+]
+tags = ["cli"]
+
+[content]
+context = "[[ADR-0015]] coupled CLI discovery to a separately maintained catalogue of workflow advice, examples, and prerequisites. As the command surface and agent skills evolved, its work-first typical sequence contradicted the guide's RFC-first workflow, while context mode enumerated terminal history that was not actionable. [[RFC-0002:C-DESCRIBE-COMMAND]] now defines a versioned low-noise introspection contract."
+decision = "Replace [[ADR-0015]] with CLI-parser-owned command discovery and limit context mode to lifecycle counts, non-terminal records, and read-only discovery commands. This retires the separate semantic catalogue, terminal-record enumeration, and state-based transition recommendations. RFCs and installed skills remain the authority for workflow policy."
+consequences = "Positive: command changes appear in introspection without catalogue edits, and terminal history no longer scales agent context. Negative: schema v1 consumers must migrate with the coordinated major govctl release, and describe no longer provides task-specific coaching. The schema version makes compatibility explicit, while resource help, RFCs, and installed skills retain syntax and procedural guidance. Neutral: describe remains a CLI-only integration surface."
+
+[[content.alternatives]]
+text = "Derive command discovery from the CLI parser and keep workflow policy in RFCs and skills."
+status = "accepted"
+pros = [
+    "Eliminates a second command catalogue and its drift.",
+    "Keeps agent context bounded to current actionable state.",
+]
+cons = ["Describe no longer provides task-specific coaching."]
+
+[[content.alternatives]]
+text = "Continue maintaining semantic command guidance inside describe."
+status = "rejected"
+pros = ["Provides richer guidance in one response."]
+cons = ["Duplicates parser metadata and workflow policy that already have authoritative owners."]
+rejection_reason = "The recurring synchronization cost and stale instructions outweigh the extra coaching."

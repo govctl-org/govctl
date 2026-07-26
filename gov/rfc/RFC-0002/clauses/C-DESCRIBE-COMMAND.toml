@@ -1,0 +1,76 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-DESCRIBE-COMMAND"
+title = "Agent Introspection Contract"
+kind = "normative"
+status = "active"
+since = "2.0.0"
+
+[content]
+text = """
+`govctl describe` provides read-only, machine-readable discovery for the running CLI.
+
+**Syntax**
+
+```
+govctl describe [--context]
+```
+
+The command MUST emit JSON and MUST NOT mutate project or local execution state. Without `--context`, it MUST succeed without an initialized governance project.
+
+**Schema v1**
+
+The top-level object MUST contain:
+
+- `schema_version`: the integer `1`
+- `tool_version`: the running binary semantic version as a string
+- `purpose`: a string
+- `commands`: an array of command nodes
+- `workflow`: an object containing only `phase_order`
+
+Without `--context`, `project_state` and `suggested_actions` MUST be absent. With `--context`, both fields MUST be present.
+
+A command node MUST contain `name`, `summary`, and `usage` strings plus a `subcommands` array of command nodes. The command catalog MUST represent every top-level command and nested command defined by the accepted CLI grammar. Generic `help` dispatch MUST be omitted. `commands` and every `subcommands` array MUST be sorted lexicographically by `name`. `usage` MUST contain the canonical invocation without a leading `Usage:` label. Command nodes MUST NOT contain examples, prerequisites, workflow policy, or `when_to_use` guidance.
+
+`workflow.phase_order` MUST equal `["spec", "impl", "test", "stable"]` and MUST NOT prescribe a task sequence.
+
+With `--context`, `project_state` MUST contain `counts`, `rfcs`, `adrs`, `work_items`, and `loops`.
+
+`counts` MUST contain these objects and integer fields, including zero-valued fields:
+
+- `rfcs`: `total`, `draft`, `normative`, `deprecated`, `spec`, `impl`, `test`, and `stable`
+- `adrs`: `total`, `proposed`, `accepted`, `rejected`, and `superseded`
+- `work_items`: `total`, `queue`, `active`, `done`, and `cancelled`
+- `loops`: `total`, `pending`, `active`, `paused`, `completed`, and `failed`
+
+RFC status and phase counts MUST cover every RFC according to [[RFC-0001:C-RFC-STATUS]] and [[RFC-0001:C-RFC-PHASE]]. ADR, Work Item, and loop counts MUST cover every corresponding record according to [[RFC-0001:C-ADR-STATUS]], [[RFC-0001:C-WORK-STATUS]], and [[RFC-0006:C-LOOP-LIFECYCLE]].
+
+`rfcs` MUST enumerate only draft RFCs and normative RFCs whose phase is not `stable`. Each RFC record MUST contain `id`, `title`, `status`, and `phase` strings.
+
+`adrs` MUST enumerate only proposed ADRs. Each ADR record MUST contain `id`, `title`, and `status` strings.
+
+`work_items` MUST enumerate only Work Items in `queue` or `active`. Each Work Item record MUST contain `id`, `title`, and `status` strings.
+
+`loops` MUST enumerate only loops in `pending`, `active`, or `paused`. Each loop record MUST contain `id`, `state`, and `next_action` strings plus a `work` array of Work Item ID strings. If valid loop state omits `next_action` as permitted by [[RFC-0006:C-LOOP-STATE-STORAGE]], the record MUST report `"start"`. The `work` array MUST preserve the stored `loop.work` order.
+
+Each context record array MUST be sorted lexicographically by `id`. Terminal records MUST affect counts but MUST NOT be enumerated. Context output MUST NOT contain artifact body text, changelogs, acceptance criteria, notes, loop round records, or other historical content.
+
+`suggested_actions` MUST be an array of canonical read-only command strings. It MUST contain one discovery command for each enumerated record, ordered by RFCs, ADRs, Work Items, then loops, preserving each record array's order:
+
+- RFC: `govctl rfc show <id>`
+- ADR: `govctl adr show <id>`
+- Work Item: `govctl work show <id>`
+- loop: `govctl loop resume <id>`
+
+A suggested action indicates only how to inspect current state. It MUST NOT assert that a lifecycle gate passes or recommend a mutating transition.
+
+If requested context cannot be loaded completely, `describe --context` MUST exit non-zero, MUST emit no JSON or partial context to stdout, and MUST report diagnostics to stderr.
+
+**Compatibility**
+
+`schema_version` MUST increase for a backward-incompatible output change. Removing or renaming a field, changing a field's type or meaning, making an optional field required, or changing required ordering is backward-incompatible. A backward-incompatible schema change also requires a major govctl version bump. Additive optional fields MAY retain the current schema version. Consumers SHOULD ignore unknown fields.
+
+**Rationale**
+
+A small versioned command map lets agents discover the running binary without loading a duplicate workflow manual. Counts retain project-scale awareness, while non-terminal records and read-only inspection commands keep context proportional to current work rather than repository history."""

@@ -300,9 +300,13 @@ govctl provides a machine-readable command catalog for agent discoverability:
 
 ```bash
 govctl describe
-govctl describe --context   # Includes project context (RFCs, ADRs, active work items)
-govctl describe --output json
+govctl describe --context   # Adds counts and non-terminal project state
 ```
+
+The output includes a schema version and derives its command tree from the
+running CLI. Context mode omits terminal artifact details and offers only
+read-only discovery commands; use resource `show` commands or installed skills
+for deeper guidance.
 
 ## Self-Update
 

@@ -80,21 +80,9 @@ Behavior:
 
 **5. `govctl describe`**
 
-Outputs machine-readable CLI metadata for agent/tool integration.
+Provides machine-readable discovery for agent and tool integration as defined by [[RFC-0002:C-DESCRIBE-COMMAND]].
 
 Syntax: `govctl describe [--context]`
-
-Behavior:
-- Outputs JSON with command catalog
-- Includes workflow information
-- With `--context`: adds current project state and suggested actions
-- Enables machine agents and automation to discover capabilities safely
-
-**Stability Contract:**
-
-The JSON schema of `govctl describe` output MUST be versioned. The schema version MUST be included in the output. Backward-incompatible changes to the schema require a major version bump of govctl.
-
-This ensures agents and automation tools can rely on stable introspection.
 
 **6. `govctl completions`**
 
