@@ -200,6 +200,12 @@ This means:
 - project defaults from `gov/config.toml` still apply when verification is enabled
 - the work item cannot move to `done` until the effective required guards pass or are explicitly waived
 
+Project defaults should contain only the checks required by every Work Item.
+Choose additional guards from the Work Item's changed surface, governing
+references, and acceptance criteria. Prefer a narrow domain guard over a full
+test suite; require the full suite when the change crosses shared boundaries or
+cannot be covered reliably by narrower checks.
+
 To run the effective guard set for a single work item:
 
 ```bash

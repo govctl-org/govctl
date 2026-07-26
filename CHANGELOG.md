@@ -16,6 +16,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - CLI help, describe metadata, diagnostic hints, bundled skills, and hand-authored guides use only retained canonical interfaces (WI-2026-07-25-001)
 - Misrouted Clause references and Clause-content paths fail with a canonical govctl clause replacement command (WI-2026-07-25-002)
 - CLI metadata and bundled skills teach Clause as a first-class command resource (WI-2026-07-25-002)
+- Guard and Work Item skills define the universal-default intersection rule and select narrow risk-domain guards (WI-2026-07-26-001)
+- User documentation, generated configuration guidance, and Guard creation recovery text prioritize per-Work-Item binding for non-universal checks (WI-2026-07-26-001)
+- The repository default guard set excludes GUARD-CARGO-TEST and this Work Item explicitly requires it (WI-2026-07-26-001)
 
 ### Removed
 

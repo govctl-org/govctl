@@ -167,6 +167,19 @@ govctl work edit <WI-ID> refs --add RFC-0001
 
 Follow the **wi-writer** skill for acceptance criteria quality.
 
+Inspect available verification guards and add the narrowest reusable checks
+that cover the Work Item's changed surface, governing refs, and acceptance
+criteria:
+
+```bash
+govctl guard list
+govctl work edit <WI-ID> verification.required_guards --add GUARD-DOMAIN-TESTS
+```
+
+Project defaults are reserved for checks needed by every Work Item. Require
+heavy aggregate guards, such as a full test suite, only when this Work Item
+crosses shared boundaries or narrower guards cannot cover its blast radius.
+
 ### 2. Analyze governance
 
 Skip this step for doc-only changes.

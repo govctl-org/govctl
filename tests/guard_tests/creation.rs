@@ -8,8 +8,13 @@ fn test_guard_new_scaffolds_file() -> common::TestResult {
     assert!(output.contains("exit: 0"), "output: {}", output);
     assert!(output.contains("GUARD-CLIPPY-LINT"), "output: {}", output);
     assert!(
-        output.contains("verification.default_guards"),
-        "should hint about default_guards: {}",
+        output.contains("verification.required_guards --add GUARD-CLIPPY-LINT"),
+        "should prioritize per-work-item selection: {}",
+        output
+    );
+    assert!(
+        output.contains("Only if every work item needs this check"),
+        "should qualify project-default selection: {}",
         output
     );
 

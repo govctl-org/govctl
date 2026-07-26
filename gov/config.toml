@@ -34,8 +34,5 @@ allowed = [
 ]
 
 [verification]
-default_guards = [
-    "GUARD-GOVCTL-CHECK",
-    "GUARD-CARGO-TEST",
-]
+default_guards = ["GUARD-GOVCTL-CHECK"]
 enabled = true

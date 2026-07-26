@@ -250,6 +250,9 @@ govctl work edit WI-YYYY-MM-DD-NNN verification.required_guards --add GUARD-REQU
 
 Keep the guard domain-specific. govctl provides the governance structure; your
 project owns the language, framework, and protocol-specific checks.
+Project defaults are the checks every Work Item needs. Select heavier or
+domain-specific guards per Work Item, and reserve full suites for changes whose
+blast radius crosses the narrower domains.
 
 ## Common Pitfalls
 

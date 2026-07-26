@@ -222,20 +222,37 @@ Waivers apply to the effective guard set: project defaults plus work-item-specif
 required_guards = ["GUARD-CARGO-TEST"]
 ```
 
+Treat the project default set as the intersection of checks needed by every Work
+Item. Full test suites, full lint suites, integration tests, and
+domain-specific checks normally belong in `required_guards`, even when they are
+reusable.
+
+When defining a Work Item:
+
+1. Inspect the available guards.
+2. Identify risk domains from the changed surface, governing refs, and
+   acceptance criteria.
+3. Select the narrowest guards that cover those domains.
+4. Add a full-suite guard only when the change crosses shared boundaries or
+   narrower guards cannot cover its blast radius.
+5. Run one-off diagnostic commands directly instead of turning them into
+   completion guards.
+
 Use acceptance criteria for observable task outcomes.
 Keep `chore:` criteria for validation summaries, especially when the validation is not fully enforced by a guard or the work item needs an explicit closure checklist item.
 
 ## Common Mistakes
 
-| Mistake                            | Fix                                                                                                      |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                                                                |
-| Placeholder description left in    | Replace immediately with real description                                                                |
-| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"                                                      |
-| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass"                                              |
-| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                                                              |
-| Description used for tracking      | Use loop state and round artifacts for execution trace                                                   |
-| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts                         |
-| TODOs or next actions stored notes | Put next actions in loop state or the final response; use acceptance criteria for completion obligations |
-| Mechanical substeps become WIs     | Use no WI or one coarse WI; leave helper/test/file-move details to the commit diff                       |
-| Work item invents new requirements | Move those requirements into an RFC or ADR first                                                         |
+| Mistake                              | Fix                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Missing category prefix              | Always use `add:`, `fix:`, `chore:`, etc.                                                                |
+| Placeholder description left in      | Replace immediately with real description                                                                |
+| Vague criteria: "Feature works"      | Specific: "add: CLI returns exit code 0 on success"                                                      |
+| No `chore:` criterion                | Add "chore: govctl check passes" or "chore: all tests pass"                                              |
+| No refs to governing artifacts       | Link RFCs/ADRs with `work add <WI-ID> refs`                                                              |
+| Description used for tracking        | Use loop state and round artifacts for execution trace                                                   |
+| Progress details stored as notes     | Keep `notes` durable; put transient round logs in loop state and round artifacts                         |
+| TODOs or next actions stored notes   | Put next actions in loop state or the final response; use acceptance criteria for completion obligations |
+| Mechanical substeps become WIs       | Use no WI or one coarse WI; leave helper/test/file-move details to the commit diff                       |
+| Work item invents new requirements   | Move those requirements into an RFC or ADR first                                                         |
+| Full suite added to project defaults | Keep it available and require it only on Work Items with matching risk                                   |

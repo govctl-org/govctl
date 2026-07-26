@@ -63,7 +63,10 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<
             config.display_path(&path).display()
         ));
         ui::hint(format!(
-            "To add to project defaults: edit gov/config.toml and add \"{id}\" to verification.default_guards"
+            "To require for an affected work item: govctl work edit <WI-ID> verification.required_guards --add {id}"
+        ));
+        ui::hint(format!(
+            "Only if every work item needs this check, add \"{id}\" to verification.default_guards in gov/config.toml"
         ));
     }
 

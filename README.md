@@ -231,10 +231,12 @@ Define reusable project defaults in `gov/config.toml`:
 ```toml
 [verification]
 enabled = true
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
+default_guards = ["GUARD-GOVCTL-CHECK"]
 ```
 
-You can also require extra guards on a specific work item or waive a guard with an explicit reason. See:
+Keep expensive or domain-specific checks out of the universal default set and
+require them on affected work items. You can also waive a guard with an explicit
+reason. See:
 
 - [Validation & Rendering](https://github.com/govctl-org/govctl/blob/main/docs/guide/validation.md#per-work-item-guards)
 - [Working with Work Items](https://github.com/govctl-org/govctl/blob/main/docs/guide/work-items.md#per-work-item-guards)

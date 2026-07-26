@@ -94,7 +94,7 @@ When you run `govctl work move <WI-ID> done`, govctl executes each guard defined
 ```toml
 [verification]
 enabled = true
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
+default_guards = ["GUARD-GOVCTL-CHECK"]
 ```
 
 Each guard is a TOML file in `gov/guard/`:
@@ -103,12 +103,12 @@ Each guard is a TOML file in `gov/guard/`:
 #:schema ../schema/guard.schema.json
 
 [govctl]
-id = "GUARD-CARGO-TEST"
-title = "cargo test passes"
+id = "GUARD-LIFECYCLE-TESTS"
+title = "lifecycle tests pass"
 refs = ["RFC-0000"]
 
 [check]
-command = "cargo test"
+command = "cargo test --test lifecycle_tests"
 timeout_secs = 300
 ```
 
@@ -187,6 +187,30 @@ The effective required guard set for a work item is:
 - the project-level `default_guards` when verification is enabled
 - plus the work item's `verification.required_guards`
 - minus any explicitly waived guards
+
+### Choosing Guard Granularity
+
+Treat `default_guards` as the intersection of checks required by every Work
+Item, not as a catalog of everything the project can verify. A default guard
+should be necessary even for documentation-only work, fast enough for every
+completion gate, stable, and independent of optional services.
+
+Keep reusable checks narrow and name them for the risk domain they cover, such
+as lifecycle tests, schema tests, or CLI parsing tests. Add those guards to
+affected Work Items:
+
+```bash
+govctl work edit WI-2026-01-17-001 verification.required_guards --add GUARD-LIFECYCLE-TESTS
+```
+
+Full test suites, full lint suites, integration tests, and other expensive
+aggregate checks should remain available as guards, but normally be required
+only by Work Items that change shared infrastructure or cross multiple risk
+domains. One-off diagnostic commands do not need Guard artifacts.
+
+Repeated waivers are not a substitute for correct scope. If many unrelated Work
+Items waive the same default guard, remove it from `default_guards` and require
+it only where its risk applies.
 
 ### Guard Waivers
 

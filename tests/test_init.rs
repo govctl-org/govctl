@@ -29,6 +29,28 @@ fn test_init_creates_gitignore() -> common::TestResult {
 }
 
 #[test]
+fn test_init_config_reserves_default_guards_for_universal_checks() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
+
+    run_commands(temp_dir.path(), &[&["init"]])?;
+
+    let content = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
+    assert!(
+        content.contains("# default_guards = [\"GUARD-GOVCTL-CHECK\"]"),
+        "config should show a narrow universal default: {content}"
+    );
+    assert!(
+        !content.contains("# default_guards = [\"GUARD-GOVCTL-CHECK\", \"GUARD-CARGO-TEST\"]"),
+        "config should not present the full test suite as a project default: {content}"
+    );
+    assert!(
+        content.contains("verification.required_guards"),
+        "config should direct scoped checks to work items: {content}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_init_creates_artifact_schema_files() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 

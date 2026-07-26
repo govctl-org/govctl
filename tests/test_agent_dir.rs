@@ -65,8 +65,35 @@ fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
         "wi-writer should mention project-level default guards"
     );
     assert!(
-        content.contains("Project-level `verification.default_guards` apply broadly"),
-        "wi-writer should explain how default guards relate to per-work-item guards"
+        content.contains("intersection of checks needed by every Work"),
+        "wi-writer should reserve defaults for universal checks"
+    );
+    assert!(
+        content.contains("Select the narrowest guards"),
+        "wi-writer should explain per-work-item guard selection"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_guard_writer_recommends_scoped_work_item_guards() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    run_commands(temp_dir.path(), &[&["init-skills"]])?;
+
+    let guard_writer = temp_dir.path().join(".claude/skills/guard-writer/SKILL.md");
+    let content = fs::read_to_string(&guard_writer)?;
+    assert!(
+        content.contains("intersection of checks required by every Work"),
+        "guard-writer should reserve defaults for universal checks"
+    );
+    assert!(
+        content.contains("Verify one risk domain"),
+        "guard-writer should recommend narrow guard scope"
+    );
+    assert!(
+        content.contains("required_guards = [\"GUARD-CARGO-TEST\"]"),
+        "guard-writer should show heavyweight guards selected per work item"
     );
     Ok(())
 }

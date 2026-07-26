@@ -49,18 +49,18 @@ Every guard is a TOML file under `gov/guard/` with two sections:
 
 ## Examples
 
-### Basic test guard
+### Scoped test guard
 
 ```toml
 #:schema ../schema/guard.schema.json
 
 [govctl]
-id = "GUARD-CARGO-TEST"
-title = "cargo test passes"
+id = "GUARD-LIFECYCLE-TESTS"
+title = "lifecycle tests pass"
 refs = ["RFC-0000", "RFC-0001"]
 
 [check]
-command = "cargo test"
+command = "cargo test --test lifecycle_tests"
 timeout_secs = 300
 ```
 
@@ -102,20 +102,48 @@ timeout_secs = 300
 5. **Set timeouts intentionally**: Long builds may need more than the 300s default
 6. **Use `pattern` sparingly**: Only when exit code alone is insufficient
 7. **Add `refs`**: Link guards to the RFCs/ADRs they verify
+8. **Verify one risk domain**: Prefer the narrowest stable command that proves a
+   named concern, such as lifecycle tests, schema tests, or CLI parsing tests
+9. **Keep aggregate suites available but opt-in**: A full test or lint suite is
+   appropriate for cross-cutting Work Items, release checks, and CI; its
+   reusability alone does not make it a project default
+
+## Choosing Scope
+
+Treat project defaults as the intersection of checks required by every Work
+Item, not the union of every check the project can run.
+
+A guard belongs in `verification.default_guards` only when all of these are
+true:
+
+- Every Work Item, including documentation-only work, needs the check.
+- The command is fast enough to run at every completion gate.
+- The result is stable and independent of optional services or environments.
+- A narrower Work Item selection would not preserve useful time.
+
+Put other reusable checks on affected Work Items through
+`verification.required_guards`. Select guards from the Work Item's changed
+surface, governing references, and acceptance criteria. Use a full-suite guard
+only for shared infrastructure, cross-domain behavior, or another change whose
+blast radius cannot be covered by narrower guards.
+
+Do not create a guard for a one-off diagnostic command. Run that command during
+implementation instead. Create a guard when the check is stable and likely to
+be reused as a completion requirement.
 
 ## Integration with Work Items
 
 Guards can be required by work items and by project-level config:
 
 ```toml
-# In gov/config.toml — applies to all work items
+# In gov/config.toml — only checks required by every work item
 [verification]
 enabled = true
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
+default_guards = ["GUARD-GOVCTL-CHECK"]
 
-# In a work item — additional guards for that item
+# In a cross-cutting work item — additional checks selected for its risk
 [verification]
-required_guards = ["GUARD-CLIPPY"]
+required_guards = ["GUARD-CARGO-TEST"]
 ```
 
 Work items can waive guards with a reason:
@@ -123,8 +151,12 @@ Work items can waive guards with a reason:
 ```toml
 [[verification.waivers]]
 guard = "GUARD-CARGO-TEST"
-reason = "Documentation-only change, no code modified"
+reason = "Temporarily unavailable runner dependency; tracked in issue #123"
 ```
+
+Do not use repeated waivers to compensate for an over-broad project default.
+Remove that guard from `default_guards` and require it only on affected Work
+Items.
 
 ## Validation
 
