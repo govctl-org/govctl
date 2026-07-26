@@ -28,6 +28,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - RFC, ADR, Work Item, and Guard writer skills use compact policy and discovery baselines (WI-2026-07-26-004)
 - Artifact authority, field semantics, lifecycle handoff, and content-quality boundaries remain explicit (WI-2026-07-26-004)
 - Duplicated command recipes, templates, and examples defer to canonical discovery surfaces (WI-2026-07-26-004)
+- Brownfield migration uses a compact policy and discovery baseline instead of a fixed command recipe (WI-2026-07-26-005)
+- Historical evidence, uncertainty, user scope selection, and duplicate avoidance remain explicit (WI-2026-07-26-005)
+- Lifecycle authorization, optional source annotation, incremental completion, and failure recovery remain explicit (WI-2026-07-26-005)
 
 ### Removed
 

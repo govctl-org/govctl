@@ -1,455 +1,203 @@
 ---
 name: migrate
-description: "Adopt govctl in an existing project. Discovers undocumented decisions, backfills ADRs/RFCs, annotates source code. Use when: (1) Project has no governance yet, (2) User mentions migrate, adopt, onboard, or brownfield"
+description: "Adopt govctl in an existing project by discovering and confirming historical decisions, specifications, and active work before backfilling a governed baseline"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: '[optional scope hint, e.g. "focus on database decisions"]'
 ---
 
-# /migrate — Adopt govctl in an Existing Project
+# Brownfield Migration
 
-Migrate an existing codebase to govctl governance per [[ADR-0032]].
+Adopt govctl incrementally in an existing codebase according to [[ADR-0032]].
+Recover durable governance from available evidence without rewriting history,
+inventing rationale, or changing product behavior.
 
-**Purpose:** Systematically discover undocumented decisions and specifications in an existing project, codify them as govctl artifacts, and annotate source code with cross-references.
+This is a historical backfill workflow. Use `gov` for implementation,
+`discuss` for unresolved design, `init` for installation and scaffolding policy,
+and `commit` for VCS operations.
 
-**Outputs:** Discovery report, backfilled governance artifacts, annotated source references, and an initial governed baseline.
+## Operational Baseline
 
-**Properties:**
+### Discovery
 
-- **Interactive** — Confirms discoveries with the user before creating artifacts
-- **Incremental** — Each phase can be run independently; partial migration is valid
-- **Non-destructive** — Never overwrites existing files; only adds governance artifacts
+Check for `gov/config.toml` before running resource discovery. Its absence means
+the repository is not initialized; use the `init` skill when the adoption
+request authorizes scaffolding, or confirm that step with the user first.
 
-## Critical Rules
-
-1. This is a historical backfill workflow, not an implementation workflow.
-2. Do not create work items during discovery or backfill phases unless you are establishing baseline tracking for already in-progress work.
-3. Ask permission before lifecycle-owned verbs used in migration: `govctl adr accept`, `govctl rfc finalize`, and `govctl rfc advance`.
-4. Never edit governed files directly. Use `govctl` verbs only.
-5. Use `/commit` to record migration milestones. Do not embed raw VCS procedures in this workflow.
-6. If migration uncovers unresolved design questions for future work, hand them off to `/discuss` rather than inventing rationale.
-
----
-
-## QUICK REFERENCE
-
-```bash
-# Scaffold
-govctl init                               # Initialize governance structure
-govctl status                             # Verify setup
-
-# Backfill ADRs
-govctl adr new "<decision title>"
-govctl adr edit <ADR-ID> context --set --stdin <<'EOF' ... EOF
-govctl adr edit <ADR-ID> alternatives --add "Chosen option: ..."
-govctl adr edit <ADR-ID> alternatives[0].pros --add "..."
-govctl adr edit <ADR-ID> alternatives[0].cons --add "..."
-govctl adr edit <ADR-ID> alternatives[0] --tick accepted
-govctl adr edit <ADR-ID> alternatives --add "Rejected option: ..."
-govctl adr edit <ADR-ID> alternatives[1].pros --add "..."
-govctl adr edit <ADR-ID> alternatives[1].cons --add "..."
-govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "Why this was not chosen"
-govctl adr edit <ADR-ID> alternatives[1] --tick rejected
-govctl adr edit <ADR-ID> decision --set --stdin <<'EOF' ... EOF
-govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF' ... EOF
-govctl adr accept <ADR-ID>
-
-# Backfill RFCs (optional)
-govctl rfc new "<spec title>"
-govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF' ... EOF
-govctl rfc finalize <RFC-ID> normative
-govctl rfc advance <RFC-ID> impl
-govctl rfc advance <RFC-ID> test
-govctl rfc advance <RFC-ID> stable
-
-# Validate
-govctl check
-```
-
----
-
-## PHASE 0: SCAFFOLD
-
-### 0.1 Initialize govctl
-
-```bash
-govctl init
-```
-
-This creates the `gov/` directory structure alongside existing project files. It is safe to run in an existing repo — it does not overwrite existing files.
-
-### 0.2 Verify Setup
+When the config exists, establish what was previously migrated:
 
 ```bash
 govctl status
+govctl search <topic>
+govctl adr list
+govctl rfc list
+govctl work list active
+govctl work list queue
 ```
 
-Confirm the governance structure was created. Read `gov/config.toml` and adjust if needed (e.g., `source_scan.include` patterns for the project's language).
-
-### 0.3 Detect VCS
-
-If migration milestones should be recorded, `/commit` will choose the raw VCS workflow.
-
-### 0.4 Initial Commit
-
-If the user wants to record scaffold creation, use `/commit` with `chore(gov): initialize govctl governance structure`.
-
----
-
-## PHASE 1: DISCOVER
-
-Systematically scan the project to find implicit governance artifacts. **Do not create any govctl artifacts yet** — this phase is purely discovery.
-
-### 1.1 Read Project Overview
-
-Read these files (if they exist) to understand the project:
-
-- `README.md` — Project purpose, tech stack, architecture overview
-- `CONTRIBUTING.md` — Development conventions and processes
-- `ARCHITECTURE.md` or `docs/architecture.md` — System design
-- `CHANGELOG.md` — History of changes and decisions
-- `Makefile`, `Justfile`, `package.json`, `Cargo.toml` — Build system and dependencies
-
-### 1.2 Discover Architectural Decisions
-
-Scan for implicit decisions in:
-
-| Source              | What to look for                                                                     |
-| ------------------- | ------------------------------------------------------------------------------------ |
-| README/docs         | "We chose X because...", "This project uses..."                                      |
-| Config files        | Framework choices, database configs, deployment targets                              |
-| Dependencies        | Major library choices (ORM, web framework, test framework)                           |
-| Directory structure | Architectural patterns (monorepo, microservices, MVC, hexagonal)                     |
-| Code comments       | "TODO: migrate to...", "HACK: because X doesn't support...", "We use X instead of Y" |
-| Git/jj history      | Large refactors, technology migrations, design pivots                                |
-
-For each discovered decision, note:
-
-- **What** was decided
-- **Why** (if discernible from context)
-- **What alternatives** existed (if known)
-- **Where** in the code this decision is implemented
-
-### 1.3 Discover Existing Specifications
-
-Look for documents that function as specifications:
-
-- API contracts (OpenAPI specs, GraphQL schemas, protobuf definitions)
-- Design docs or RFCs in markdown
-- Interface definitions or type contracts
-- Formal requirements documents
-
-### 1.4 Discover In-Progress Work
-
-Check for:
-
-- Open issues in the repo (if accessible)
-- TODO/FIXME/HACK comments in code
-- Feature branches
-- Draft PRs
-
-### 1.5 Present Discovery Report
-
-**Present findings to the user before proceeding.** Format:
-
-```
-=== MIGRATION DISCOVERY REPORT ===
-
-Architectural Decisions Found: N
-  1. [Brief description] — source: [where found]
-  2. ...
-
-Existing Specifications Found: N
-  1. [Brief description] — source: [file path]
-  2. ...
-
-In-Progress Work Found: N
-  1. [Brief description] — source: [where found]
-  2. ...
-
-Recommended migration scope:
-  - ADRs to create: [list]
-  - RFCs to create: [list or "none"]
-  - Work items to create: [list or "none"]
-```
-
-**Ask the user:** Which items should be backfilled? The user may choose to skip some or prioritize others. Respect their choices.
-
----
-
-## PHASE 2: BACKFILL ADRs
-
-For each decision the user confirmed, create an ADR.
-
-### 2.1 Create ADR
-
-Follow the **adr-writer** skill for quality guidelines.
-
-```bash
-govctl adr new "<decision title>"
-```
-
-### 2.2 Populate Context and Consequences
-
-```bash
-govctl adr edit <ADR-ID> context --set --stdin <<'EOF'
-[Problem statement and what prompted the decision]
-EOF
-
-govctl adr edit <ADR-ID> consequences --set --stdin <<'EOF'
-### Positive
-- [Observed benefits]
-
-### Negative
-- [Observed downsides or trade-offs]
-
-### Neutral
-- [Side effects]
-EOF
-```
-
-### 2.3 Add Alternatives (if known)
-
-```bash
-govctl adr edit <ADR-ID> alternatives --add "Chosen: <what was adopted>"
-govctl adr edit <ADR-ID> alternatives[0].pros --add "..."
-govctl adr edit <ADR-ID> alternatives[0].cons --add "..."
-govctl adr edit <ADR-ID> alternatives --add "Rejected: <what was not chosen>"
-govctl adr edit <ADR-ID> alternatives[1].pros --add "..."
-govctl adr edit <ADR-ID> alternatives[1].cons --add "..."
-govctl adr edit <ADR-ID> alternatives[1].rejection_reason --set "..."
-govctl adr edit <ADR-ID> alternatives[0] --tick accepted
-govctl adr edit <ADR-ID> alternatives[1] --tick rejected
-```
-
-Preserve the normal ADR discussion order during backfill when possible:
-
-1. Record the alternatives that are still recoverable
-2. Mark the chosen option `accepted`
-3. Mark non-chosen options `rejected` with reasons when known
-4. Only then write or finalize the `decision` prose
-
-If non-selected alternatives are not recoverable, it is acceptable to omit `alternatives` entirely and say so explicitly in the ADR context. Historical backfills may not be able to reconstruct rejected options, and reviewers should evaluate them with that limitation in mind.
-
-### 2.4 Write the Decision Last
-
-```bash
-govctl adr edit <ADR-ID> decision --set --stdin <<'EOF'
-We will [what was decided].
-
-[Rationale — why this was chosen]
-EOF
-```
-
-Treat `decision` as the conclusion of the reconstructed alternatives discussion, not as the starting point.
-
-### 2.5 Review Backfilled ADRs
-
-Invoke the **adr-reviewer** agent on each newly created ADR. For large batches, review the most important 3-5 ADRs and spot-check the rest.
-
-Fix Critical findings before accepting the ADRs.
-
-### 2.6 Accept and Cross-Reference
-
-Since these are historical decisions already in effect:
-
-```bash
-govctl adr accept <ADR-ID>
-govctl adr edit <ADR-ID> refs --add <related-ADR-or-RFC>
-```
-
-### 2.7 Commit Batch
-
-Group related ADRs into logical commits:
-
-Use `/commit` with `docs(adr): backfill ADRs for existing architectural decisions`.
-
----
-
-## PHASE 3: BACKFILL RFCs (Optional)
-
-**Only if the user confirmed existing specifications in Phase 1.** Most migrations skip this phase.
-
-### 3.1 Create RFC from Existing Spec
-
-```bash
-govctl rfc new "<spec title>"
-```
-
-### 3.2 Create Clauses from Existing Requirements
-
-Clauses are first-class CLI resources. Use the root `govctl clause` namespace
-for every Clause operation even though their IDs and storage are RFC-scoped.
-
-For each requirement in the existing specification:
-
-```bash
-govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "Specification" -k normative
-govctl clause edit <RFC-ID>:C-<NAME> text --set --stdin <<'EOF'
-[Clause text extracted from existing spec, rewritten with RFC 2119 keywords]
-EOF
-```
-
-### 3.3 Review Backfilled RFCs
-
-Invoke the **rfc-reviewer** agent on each newly created RFC. For large batches, review the most important RFCs first and spot-check the rest.
-
-Fix Critical findings before making the RFC authoritative.
-
-### 3.4 Finalize and Advance
-
-Migration is a historical backfill workflow. Only finalize and advance the RFC after the user confirms the spec is already implemented and tested:
-
-```bash
-govctl rfc finalize <RFC-ID> normative
-govctl rfc advance <RFC-ID> impl
-govctl rfc advance <RFC-ID> test
-govctl rfc advance <RFC-ID> stable
-```
-
-### 3.5 Commit
-
-Use `/commit` with `docs(rfc): backfill RFCs for existing specifications`.
-
----
-
-## PHASE 4: ANNOTATE SOURCE
-
-Add `[[...]]` references to existing source code so `govctl check` can trace implementations to their governing artifacts.
-
-### 4.1 Scan and Annotate
-
-For each newly created ADR/RFC, find the source files that implement the decision or specification:
-
-```bash
-# Example: if ADR-0001 decided to use PostgreSQL
-# Find database-related files and add reference comments:
-```
-
-Add comments in the project's comment style:
-
-```python
-# Per [[ADR-0001]], we use PostgreSQL for persistence
-```
-
-```rust
-// Implements [[RFC-0001:C-VALIDATION]]
-```
-
-```typescript
-// Per [[ADR-0003]], API responses use camelCase
-```
-
-### 4.2 Validate References
-
-```bash
-govctl check
-```
-
-Fix any broken references. All `[[...]]` references must resolve to existing artifacts.
-
-### 4.3 Commit
-
-Use `/commit` with `chore(gov): annotate source with governance artifact references`.
-
----
-
-## PHASE 5: ESTABLISH BASELINE
-
-Create work items for any in-progress work discovered in Phase 1.
-
-### 5.1 Create Work Items
-
-For each active task:
-
-```bash
-govctl work new --active "<task title>"
-govctl work edit <WI-ID> description --set "<what is being done>"
-govctl work edit <WI-ID> acceptance_criteria --add "add: <expected outcome>"
-govctl work edit <WI-ID> refs --add <related-ADR-or-RFC>
-```
-
-### 5.2 Establish Tag Vocabulary (Optional)
-
-If the project benefits from cross-cutting categorization, set up a tag vocabulary and tag the backfilled artifacts:
-
-```bash
-govctl tag new "architecture"
-govctl tag new "security"
-govctl tag new "performance"
-govctl adr edit <ADR-ID> tags --add "architecture"
-govctl rfc edit <RFC-ID> tags --add "security"
-```
-
-Skip this step if tagging is not needed yet — it can be adopted incrementally later.
-
-### 5.3 Final Validation
-
-```bash
-govctl check
-govctl render
-```
-
-### 5.4 Final Commit
-
-Use `/commit` with `chore(gov): establish govctl governance baseline`.
-
----
-
-## PHASE 6: SUMMARY
-
-Present the migration results:
-
-```
-=== MIGRATION COMPLETE ===
-
-Project: <project name>
-
-Artifacts created:
-  ADRs: N (documenting existing architectural decisions)
-  RFCs: N (codifying existing specifications)
-  Work Items: N (tracking in-progress tasks)
-
-Source annotations: N files annotated with [[...]] references
-
-Validation: govctl check passes
-
-Next steps:
-  - Use /gov for all new work going forward
-  - Use /discuss for new design decisions
-  - Incrementally annotate more source files as you touch them
-  - Run govctl check in CI to enforce governance going forward
-```
-
----
-
-## TIPS
-
-### Prioritization
-
-Not everything needs an ADR. Focus on decisions that:
-
-- **Affect multiple developers** (framework choice, API conventions)
-- **Are hard to reverse** (database choice, authentication strategy)
-- **Generate recurring questions** ("Why do we use X instead of Y?")
-
-Skip trivial decisions (indentation style, variable naming) — those belong in a linter config, not an ADR.
-
-### Handling Uncertainty
-
-When discovering decisions:
-
-- If you can identify the decision but not the rationale → say so in the context. "The rationale is not documented; this ADR records the current state."
-- If alternatives are unknown → omit `alternatives` and say in the ADR context that non-selected options were not recoverable.
-- If alternatives are known → capture them first and let the decision prose summarize the conclusion, rather than skipping straight to the final answer.
-- If consequences are unclear → document what you can observe. "The negative consequences of this decision have not been formally evaluated."
-
-### Incremental Migration
-
-It's fine to migrate in stages:
-
-- **Week 1:** Scaffold + top 5 most important ADRs
-- **Week 2:** Annotate the most-touched modules
-- **Later:** Backfill as you encounter undocumented decisions during regular work
-
-The `/gov` workflow naturally extends migration — every new decision gets an ADR, every new feature gets a work item.
+If existing governance instead reports an outdated artifact or schema format,
+use the deterministic `govctl migrate` command and its diagnostics. That format
+upgrade is distinct from this brownfield adoption skill.
+
+Use resource and subcommand `--help` for current creation, editing, lifecycle,
+and rendering syntax. Never assume a rerun starts from an empty governance
+directory.
+
+Read the smallest useful set of repository evidence:
+
+- project, architecture, contribution, and changelog documentation;
+- manifests, dependency declarations, schemas, API contracts, and deployment
+  configuration;
+- code structure and comments that expose durable constraints;
+- VCS history when it can recover why or when a choice was made; and
+- issue or planning systems only when accessible and relevant to active work.
+
+Search existing governed artifacts before proposing a candidate. Reuse,
+cross-reference, or extend an existing artifact when it already owns the
+subject.
+
+### Hard Stops
+
+- Discovery is read-only. Present candidates and obtain user-selected scope
+  before creating artifacts or annotating source.
+- Obtain explicit authorization before any lifecycle mutation, artifact
+  deletion, or source annotation. This includes acceptance or rejection,
+  finalization, phase or version changes, deprecation, and supersession. A clear
+  approval may cover a stated batch.
+- Use canonical govctl resource commands for governed files. Clause operations
+  use the root `govctl clause` namespace.
+- Do not infer undocumented rationale, rejected alternatives, requirements,
+  implementation status, test status, or active work as fact.
+- Do not make a reconstructed RFC normative or advance it merely because
+  related code exists.
+- Do not create migration-tracking Work Items in the target project. Backfill
+  Work Items only for confirmed work already in progress.
+- Do not change product code except for explicitly authorized reference
+  annotations, and keep those annotations behavior-neutral.
+- Stop when evidence conflicts, the requested backfill would misrepresent
+  history, or a lifecycle transition lacks authorization or supporting evidence.
+
+## Decision Policy
+
+### Select Durable Candidates
+
+Backfill only information whose future value justifies governance:
+
+| Candidate        | Use when                                                                                     |
+| ---------------- | -------------------------------------------------------------------------------------------- |
+| ADR              | Evidence shows a consequential choice, its constraints, and why the chosen direction matters |
+| RFC              | An existing specification or stable contract can be recovered without inventing obligations  |
+| Work Item        | Evidence and user confirmation identify unfinished work that is currently active or queued   |
+| Source reference | A high-signal implementation site clearly relates to a recovered artifact                    |
+
+Prefer decisions that are hard to reverse, cross-cutting, or repeatedly
+questioned. Tool-enforced style choices, incidental dependencies, TODOs without
+ownership, and behavior inferred only from implementation usually do not
+deserve backfill.
+
+An ADR explains a historical choice; it does not retroactively create product
+requirements. An RFC records an existing contract; it is not a dump of current
+implementation behavior. A Work Item records unfinished execution; it is not a
+list of every discovered cleanup opportunity.
+
+### Preserve Evidence Quality
+
+For every candidate, retain:
+
+- the evidence location;
+- what is directly supported;
+- what remains uncertain or inferred;
+- whether alternatives and rationale are recoverable; and
+- the proposed artifact type and migration priority.
+
+State missing evidence plainly. Historical ADRs may omit unrecoverable
+alternatives when their context says so. Do not manufacture a rejected option
+to satisfy a template. RFC clauses must still be observable,
+implementation-independent, and testable; use `rfc-writer` for that quality
+test.
+
+Present a compact discovery report before mutation. Include the candidate,
+artifact type, evidence, confidence or uncertainty, likely duplicates, and a
+recommended scope. Let the user select, defer, or reject each group.
+
+## Backfill Loop
+
+Work in small coherent batches so partial migration remains useful:
+
+1. Reinspect current governed state and selected evidence.
+2. Draft the selected artifacts with `adr-writer`, `rfc-writer`, or `wi-writer`.
+3. Review drafts independently before lifecycle publication.
+4. Show uncertainties and proposed lifecycle outcomes to the user.
+5. Perform only the authorized transitions.
+6. Run `govctl check` and render the affected projections.
+7. Optionally record the coherent milestone through `commit`.
+
+### Historical ADRs
+
+Reconstruct context and alternatives before the decision where evidence allows.
+Distinguish observed consequences from predictions. Use `adr-reviewer` before
+acceptance.
+
+An already-adopted choice may be accepted as historical only after user
+confirmation. If the choice is unresolved or being reconsidered, leave it
+proposed and route the discussion through `discuss`.
+
+### Existing Specifications
+
+Backfill RFCs only from identifiable specifications or confirmed contracts.
+Preserve traceability to the source material and use first-class Clause
+resources. Use `rfc-reviewer` before finalization.
+
+Finalization and each phase progression require user authorization and evidence
+appropriate to the target state. Confirmed existing implementation can support
+entry to `impl`; evidence that implementation is complete can support `test`;
+`stable` requires evidence that both implementation and relevant tests are
+complete. Missing evidence leaves the RFC at the last defensible phase rather
+than filling the lifecycle optimistically.
+
+### Active Work
+
+Create Work Items only for user-confirmed unfinished work. Record task scope,
+governing references, testable categorized acceptance criteria, and
+risk-matched guards. Do not convert every issue, TODO, or branch into a Work
+Item automatically.
+
+### Source References
+
+Source annotation is optional and modifies existing files. Obtain authorization,
+respect the repository's comment conventions, and annotate only stable,
+high-signal implementation points with resolvable `[[...]]` references. Avoid
+blanket annotations, generated files, and comments that claim stronger
+conformance than the evidence supports.
+
+## Recovery And Incremental Use
+
+Migration may stop after any validated batch. On resume:
+
+- rediscover existing artifacts and source references;
+- compare candidates by subject and evidence, not only by title;
+- skip completed backfill and continue unresolved scope;
+- preserve user changes and do not overwrite artifacts to force idempotence; and
+- report prior partial state instead of silently starting over.
+
+When `govctl check`, rendering, or review fails, keep the batch unpublished,
+correct the evidence or artifact content, and rerun the narrow failing check.
+Do not advance lifecycle state to make validation appear complete. Use
+diagnostics and command help for recovery; escalate when no authoritative path
+is available.
+
+## Completion Evidence
+
+A migration scope is complete when:
+
+- the user-selected candidates are created, deferred, or rejected explicitly;
+- each artifact distinguishes recovered fact from uncertainty;
+- accepted ADRs and normative RFC phases have supporting evidence and
+  authorization;
+- optional source annotations are behavior-neutral and resolve;
+- no duplicate artifacts or untracked product changes were introduced;
+- `govctl check` passes and affected projections are current; and
+- the final report lists created artifacts, lifecycle states, annotated paths,
+  omitted or uncertain history, remaining scope, and validation results.
+
+The project can begin using `discuss`, `spec`, `gov`, and `quick` after the first
+coherent baseline; exhaustive historical backfill is not a prerequisite.

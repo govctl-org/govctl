@@ -1,0 +1,49 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-005"
+title = "Apply policy-oriented guidance to brownfield migration"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "ADR-0057",
+    "ADR-0032",
+    "ADR-0024",
+]
+tags = [
+    "skills-agents",
+    "migration",
+]
+
+[content]
+description = "Apply [[ADR-0057]]'s policy-plus-discovery model to the brownfield adoption workflow defined by [[ADR-0032]], preserving evidence quality, user-selected scope, lifecycle authorization, incremental execution, and recovery."
+
+[[content.acceptance_criteria]]
+text = "Brownfield migration uses a compact policy and discovery baseline instead of a fixed command recipe"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Historical evidence, uncertainty, user scope selection, and duplicate avoidance remain explicit"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Lifecycle authorization, optional source annotation, incremental completion, and failure recovery remain explicit"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Capability-tiered and governance reviews report no safety-boundary blockers"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Project verification and pre-commit checks pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-GOVCTL-CHECK"]
