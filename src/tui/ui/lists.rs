@@ -368,6 +368,7 @@ fn level_label(level: DiagnosticLevel) -> &'static str {
     match level {
         DiagnosticLevel::Error => "error",
         DiagnosticLevel::Warning => "warning",
+        DiagnosticLevel::Info => "info",
     }
 }
 

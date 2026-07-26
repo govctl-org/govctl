@@ -63,7 +63,13 @@ pub(super) fn fill_pending_clause_versions(
     let mut updated_clause_ids = Vec::with_capacity(pending_clauses.len());
     for (path, mut clause) in pending_clauses {
         clause.since = Some(version.to_string());
-        write_clause(&path, &clause, op, Some(&config.display_path(&path)))?;
+        write_clause(
+            config,
+            &path,
+            &clause,
+            op,
+            Some(&config.display_path(&path)),
+        )?;
         updated_clause_ids.push(clause.clause_id);
     }
 

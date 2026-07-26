@@ -86,11 +86,18 @@ fn main() -> ExitCode {
 }
 
 fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
-    let config = Config::load(cli.config.as_deref())?;
-    let op = write::WriteOp::from_dry_run(cli.dry_run);
-
     // Convert parsed CLI command to canonical form
     let plan = command_router::CommandPlan::from_parsed(&cli.command, cli.dry_run)?;
+    let config = if cli.config.is_none()
+        && matches!(
+            plan.op,
+            command_router::Op::Builtin(command_router::BuiltinOp::Init { .. })
+        ) {
+        Config::for_init()?
+    } else {
+        Config::load(cli.config.as_deref())?
+    };
+    let op = write::WriteOp::from_dry_run(cli.dry_run);
 
     let lock_disposition = plan.lock_disposition();
 

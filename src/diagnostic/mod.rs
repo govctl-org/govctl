@@ -46,6 +46,7 @@ impl fmt::Display for Diagnostic {
         let level_str = match self.level {
             DiagnosticLevel::Error => "error",
             DiagnosticLevel::Warning => "warning",
+            DiagnosticLevel::Info => "info",
         };
         write!(
             f,

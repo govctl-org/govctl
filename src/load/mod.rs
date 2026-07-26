@@ -7,6 +7,7 @@ mod rfc;
 
 pub use project::{load_project, load_project_with_warnings};
 pub(crate) use rfc::split_clause_id;
+pub(crate) use rfc::validate_rfc_storage_path;
 pub use rfc::{find_clause_toml, find_rfc_toml, load_rfc, load_rfcs, reject_legacy_json_storage};
 
 /// Result of loading a project: index plus any warnings encountered
@@ -24,10 +25,6 @@ pub enum LoadError {
         message: String,
     },
     InternalIo {
-        file: String,
-        message: String,
-    },
-    Json {
         file: String,
         message: String,
     },
@@ -56,9 +53,6 @@ impl From<LoadError> for Diagnostic {
             } => Diagnostic::io_error(action, message, file),
             LoadError::InternalIo { file, message } => {
                 Diagnostic::new(DiagnosticCode::E0901IoError, message, file)
-            }
-            LoadError::Json { file, message } => {
-                Diagnostic::new(DiagnosticCode::E0902JsonParseError, message, file)
             }
             LoadError::RfcSchema { file, message } => {
                 Diagnostic::new(DiagnosticCode::E0101RfcSchemaInvalid, message, file)

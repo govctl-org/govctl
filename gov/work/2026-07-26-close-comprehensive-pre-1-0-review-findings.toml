@@ -1,0 +1,46 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-011"
+title = "Close comprehensive pre-1.0 review findings"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "RFC-0002",
+    "RFC-0004",
+]
+
+[content]
+description = "Resolve verified pre-1.0 review findings in governed path containment, initialization targeting, diagnostics, and canonical command documentation."
+
+[[content.acceptance_criteria]]
+text = "RFC and Clause reads and writes reject paths whose resolved storage escapes the governed project root"
+status = "done"
+category = "security"
+
+[[content.acceptance_criteria]]
+text = "Init without an explicit config targets the current directory without selecting an ancestor project"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Missing explicit configuration and malformed RFC TOML emit accurate diagnostics"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Canonical-only documentation contains no removed mutation command examples"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused regression tests and the repository pre-commit checks pass"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Retired diagnostic codes retain their assigned identifiers and severity levels"
+status = "done"
+category = "chore"

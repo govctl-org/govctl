@@ -48,6 +48,7 @@ where
 
 fn write_rfc_doc(config: &Config, doc: &LoadedDoc<RfcSpec>, op: WriteOp) -> DiagnosticResult<()> {
     write_rfc(
+        config,
         &doc.path,
         &doc.data,
         op,
@@ -87,6 +88,7 @@ fn write_clause_doc(
     op: WriteOp,
 ) -> DiagnosticResult<()> {
     write_clause(
+        config,
         &doc.path,
         &doc.data,
         op,

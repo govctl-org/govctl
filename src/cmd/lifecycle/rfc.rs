@@ -320,7 +320,13 @@ fn write_lifecycle_rfc(
     rfc: &RfcSpec,
     op: WriteOp,
 ) -> DiagnosticResult<()> {
-    crate::write::write_rfc(rfc_path, rfc, op, Some(&config.display_path(rfc_path)))
+    crate::write::write_rfc(
+        config,
+        rfc_path,
+        rfc,
+        op,
+        Some(&config.display_path(rfc_path)),
+    )
 }
 
 fn ensure_rfc_has_content_amendment(

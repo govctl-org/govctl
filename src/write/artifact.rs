@@ -3,7 +3,7 @@
 use super::WriteOp;
 use super::artifact_io::{ArtifactIo, read_artifact, write_toml_artifact};
 use crate::config::Config;
-use crate::diagnostic::{DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{ClauseSpec, ClauseWire, RfcSpec, RfcWire};
 use crate::schema::ArtifactSchema;
 use std::path::Path;
@@ -24,17 +24,20 @@ const CLAUSE_IO: ArtifactIo = ArtifactIo {
 
 /// Read an RFC from canonical structured TOML.
 pub fn read_rfc(config: &Config, path: &Path) -> DiagnosticResult<RfcSpec> {
+    crate::load::validate_rfc_storage_path(config, path).map_err(Diagnostic::from)?;
     read_artifact::<RfcWire, RfcSpec>(config, path, &RFC_IO)
 }
 
 /// Write RFC to file in TOML only.
 /// TOML output uses the `[govctl]` wire format plus schema header.
 pub fn write_rfc(
+    config: &Config,
     path: &Path,
     rfc: &RfcSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> DiagnosticResult<()> {
+    crate::load::validate_rfc_storage_path(config, path).map_err(Diagnostic::from)?;
     let wire: RfcWire = rfc.clone().into();
     write_toml_artifact(
         path,
@@ -49,17 +52,20 @@ pub fn write_rfc(
 
 /// Read a clause from canonical structured TOML.
 pub fn read_clause(config: &Config, path: &Path) -> DiagnosticResult<ClauseSpec> {
+    crate::load::validate_rfc_storage_path(config, path).map_err(Diagnostic::from)?;
     read_artifact::<ClauseWire, ClauseSpec>(config, path, &CLAUSE_IO)
 }
 
 /// Write clause to file in TOML only.
 /// TOML output uses the `[govctl]` + `[content]` wire format plus schema header.
 pub fn write_clause(
+    config: &Config,
     path: &Path,
     clause: &ClauseSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> DiagnosticResult<()> {
+    crate::load::validate_rfc_storage_path(config, path).map_err(Diagnostic::from)?;
     let wire: ClauseWire = clause.clone().into();
     write_toml_artifact(
         path,

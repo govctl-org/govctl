@@ -87,6 +87,7 @@ pub fn delete_clause(
         op,
         || {
             crate::write::write_rfc(
+                config,
                 &rfc_loaded.path,
                 &rfc_loaded.data,
                 op,

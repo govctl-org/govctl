@@ -3,14 +3,14 @@
 [govctl]
 id = "RFC-0004"
 title = "Concurrent write safety for governance artifacts"
-version = "0.1.0"
+version = "0.1.1"
 status = "normative"
 phase = "stable"
 owners = ["@govctl-org"]
 created = "2026-02-15"
-updated = "2026-03-17"
+updated = "2026-07-26"
 tags = ["safety"]
-signature = "1ca183a0fdad049793ebc144d7ef397a8a5cc5aa98819416cb2f43bd47ad8762"
+signature = "3300513028d7c937535460919f675a13ce99c210e760aa8d90d2d80cb68df2f4"
 
 [[sections]]
 title = "Summary"
@@ -24,6 +24,12 @@ clauses = [
     "clauses/C-FAILURE-BEHAVIOUR.toml",
     "clauses/C-SCOPE.toml",
 ]
+
+[[changelog]]
+version = "0.1.1"
+date = "2026-07-26"
+notes = "Refresh command examples for the canonical edit surface"
+fixed = ["Replace removed mutation command examples with canonical commands"]
 
 [[changelog]]
 version = "0.1.0"

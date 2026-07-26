@@ -63,6 +63,7 @@ pub(super) fn supersede_clause(
     clause.status = ClauseStatus::Superseded;
     clause.superseded_by = Some(by.to_string());
     write_clause(
+        config,
         &clause_path,
         &clause,
         op,

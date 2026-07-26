@@ -161,8 +161,8 @@ fn test_explicit_missing_config_does_not_fall_back_to_current_project() -> commo
         ]],
     )?;
 
-    assert!(output.contains("error[E0505]"), "{output}");
-    assert!(output.contains("gov/config.toml is missing"), "{output}");
+    assert!(output.contains("error[E0502]"), "{output}");
+    assert!(output.contains("Configuration file not found"), "{output}");
     assert_eq!(fs::read(&rfc_path)?, original_rfc);
     assert!(!temp_dir.path().join(explicit_config).exists());
     Ok(())

@@ -282,3 +282,37 @@ fn test_clause_edit_nonexistent() -> common::TestResult {
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
     Ok(())
 }
+
+#[cfg(unix)]
+#[test]
+fn test_clause_edit_rejects_clause_symlink_outside_rfc() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    let clause = new_test_clause("Test Clause");
+    run_commands(temp_dir.path(), &[NEW_TEST_RFC, &clause])?;
+    let clause_path = temp_dir.path().join("gov/rfc/RFC-0001/clauses/C-TEST.toml");
+    let external_path = temp_dir.path().join("external-clause.toml");
+    std::fs::rename(&clause_path, &external_path)?;
+    symlink(&external_path, &clause_path)?;
+    let before = std::fs::read(&external_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["clause", "show", TEST_CLAUSE_ID],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "text",
+                "--set",
+                "Redirected",
+            ],
+        ],
+    )?;
+
+    assert_eq!(output.matches("error[E0204]").count(), 2, "{output}");
+    assert_eq!(std::fs::read(&external_path)?, before);
+    Ok(())
+}

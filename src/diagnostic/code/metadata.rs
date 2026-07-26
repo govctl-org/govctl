@@ -8,10 +8,12 @@ pub(super) fn level(code: &DiagnosticCode) -> DiagnosticLevel {
         | DiagnosticCode::W0106RenderedReadError
         | DiagnosticCode::W0107SourceRefOutdated
         | DiagnosticCode::W0108WorkPlaceholderDescription
+        | DiagnosticCode::W0109WorkNoActive
         | DiagnosticCode::W0110SchemaOutdated
         | DiagnosticCode::W0111ProjectSupportOutdated
         | DiagnosticCode::W0112BareArtifactReference
         | DiagnosticCode::W0113AdrPlaceholderContext => DiagnosticLevel::Warning,
+        DiagnosticCode::I0401WorkLegacyInlineHistory => DiagnosticLevel::Info,
         _ => DiagnosticLevel::Error,
     }
 }
@@ -52,6 +54,7 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0302AdrNotFound => "E0302",
         DiagnosticCode::E0303AdrInvalidTransition => "E0303",
         DiagnosticCode::E0304AdrRefNotFound => "E0304",
+        DiagnosticCode::E0305AdrCannotDeprecate => "E0305",
         DiagnosticCode::E0306AdrReferenceHierarchy => "E0306",
         DiagnosticCode::E0307AdrProjectionConflict => "E0307",
         // E04xx - Work Item
@@ -143,10 +146,12 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::W0106RenderedReadError => "W0106",
         DiagnosticCode::W0107SourceRefOutdated => "W0107",
         DiagnosticCode::W0108WorkPlaceholderDescription => "W0108",
+        DiagnosticCode::W0109WorkNoActive => "W0109",
         DiagnosticCode::W0110SchemaOutdated => "W0110",
         DiagnosticCode::W0111ProjectSupportOutdated => "W0111",
         DiagnosticCode::W0112BareArtifactReference => "W0112",
         DiagnosticCode::W0113AdrPlaceholderContext => "W0113",
         // I04xx - Work Item info
+        DiagnosticCode::I0401WorkLegacyInlineHistory => "I0401",
     }
 }

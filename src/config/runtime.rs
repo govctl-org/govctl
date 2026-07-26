@@ -11,7 +11,7 @@ impl Config {
         let config_path = if let Some(path) = path {
             let path = PathBuf::from(path);
             if !path.exists() {
-                return Err(missing_config_diagnostic(&path));
+                return Err(explicit_config_not_found_diagnostic(&path));
             }
             path
         } else {
@@ -62,6 +62,15 @@ impl Config {
             resolve_project_paths(&mut config, &config_path);
             Ok(config)
         }
+    }
+
+    pub fn for_init() -> DiagnosticResult<Self> {
+        let project_root = std::env::current_dir()
+            .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?;
+        let config_path = project_root.join("gov/config.toml");
+        let mut config = Self::default();
+        resolve_project_paths(&mut config, &config_path);
+        Ok(config)
     }
 
     /// Find a config file by walking up the directory tree.
@@ -160,6 +169,14 @@ fn missing_config_diagnostic(config_path: &Path) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0505MigrationRequired,
         "gov/config.toml is missing for an existing governance project. Restore the project configuration before using govctl.",
+        config_path.display().to_string(),
+    )
+}
+
+fn explicit_config_not_found_diagnostic(config_path: &Path) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E0502PathNotFound,
+        format!("Configuration file not found: {}", config_path.display()),
         config_path.display().to_string(),
     )
 }

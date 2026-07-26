@@ -48,6 +48,59 @@ fn test_init_recovers_partial_directories_without_governance_artifacts() -> comm
 }
 
 #[test]
+fn test_init_in_nested_directory_does_not_select_ancestor_project() -> common::TestResult {
+    let temp_dir = TempDir::new()?;
+    run_commands(temp_dir.path(), &[&["init"]])?;
+    let outer_config = temp_dir.path().join("gov/config.toml");
+    let outer_before = fs::read(&outer_config)?;
+    let inner = temp_dir.path().join("inner");
+    fs::create_dir(&inner)?;
+
+    let output = run_commands(&inner, &[&["init"]])?;
+
+    assert!(output.contains("Project initialized"), "{output}");
+    assert!(inner.join("gov/config.toml").exists());
+    assert_eq!(fs::read(&outer_config)?, outer_before);
+    Ok(())
+}
+
+#[test]
+fn test_init_force_recovers_nested_partial_project_without_rewriting_ancestor() -> common::TestResult
+{
+    let temp_dir = TempDir::new()?;
+    run_commands(temp_dir.path(), &[&["init"]])?;
+    let outer_config = temp_dir.path().join("gov/config.toml");
+    let outer_before = fs::read(&outer_config)?;
+    let inner = temp_dir.path().join("inner");
+    fs::create_dir_all(inner.join("gov/rfc"))?;
+    fs::create_dir_all(inner.join("gov/schema"))?;
+
+    let output = run_commands(&inner, &[&["init", "--force"]])?;
+
+    assert!(output.contains("Project initialized"), "{output}");
+    assert!(inner.join("gov/config.toml").exists());
+    assert_eq!(fs::read(&outer_config)?, outer_before);
+    Ok(())
+}
+
+#[test]
+fn test_init_force_dry_run_in_nested_directory_does_not_mutate_either_project() -> common::TestResult
+{
+    let temp_dir = TempDir::new()?;
+    run_commands(temp_dir.path(), &[&["init"]])?;
+    let outer_config = temp_dir.path().join("gov/config.toml");
+    let outer_before = fs::read(&outer_config)?;
+    let inner = temp_dir.path().join("inner");
+    fs::create_dir(&inner)?;
+
+    run_commands(&inner, &[&["--dry-run", "init", "--force"]])?;
+
+    assert!(!inner.join("gov").exists());
+    assert_eq!(fs::read(&outer_config)?, outer_before);
+    Ok(())
+}
+
+#[test]
 fn test_init_config_reserves_default_guards_for_universal_checks() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 

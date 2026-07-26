@@ -586,6 +586,35 @@ fn test_finalize_rejects_rfc_directory_symlink_outside_storage() -> common::Test
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn test_finalize_rejects_rfc_storage_root_symlink_outside_gov() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    create_rfc_with_clause(temp_dir.path(), "RFC-0001:C-LINK")?;
+
+    let rfc_root = temp_dir.path().join("gov/rfc");
+    let external_root = temp_dir.path().join("external-rfc-root");
+    fs::rename(&rfc_root, &external_root)?;
+    symlink(&external_root, &rfc_root)?;
+    let external_rfc = external_root.join("RFC-0001/rfc.toml");
+    let external_clause = external_root.join("RFC-0001/clauses/C-LINK.toml");
+    let rfc_before = fs::read(&external_rfc)?;
+    let clause_before = fs::read(&external_clause)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "finalize", "RFC-0001", "normative"]],
+    )?;
+
+    assert!(output.contains("error[E0204]"), "{output}");
+    assert!(!output.contains("Finalized RFC-0001"), "{output}");
+    assert_eq!(fs::read(&external_rfc)?, rfc_before);
+    assert_eq!(fs::read(&external_clause)?, clause_before);
+    Ok(())
+}
+
 #[test]
 fn test_advance_to_impl_rejects_pending_clause_versions_without_mutation() -> common::TestResult {
     let temp_dir = init_project()?;

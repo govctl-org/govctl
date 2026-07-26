@@ -57,7 +57,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         file: rfc_path.display().to_string(),
         message: "RFC path has no parent directory".to_string(),
     })?;
-    let resolved_rfc_root = canonicalize_path(&config.rfc_dir(), "resolve RFC storage root")?;
+    let resolved_rfc_root = resolved_rfc_storage_root(config, rfc_path)?;
     let resolved_rfc_dir = canonicalize_contained(
         rfc_dir,
         &resolved_rfc_root,
@@ -80,7 +80,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
             read_action: "read RFC",
             schema: ArtifactSchema::Rfc,
             schema_error: rfc_schema_error,
-            decode_error: json_error,
+            decode_error: rfc_schema_error,
         },
     )?
     .into();
@@ -176,6 +176,36 @@ fn canonicalize_contained(
     Ok(resolved)
 }
 
+fn resolved_rfc_storage_root(config: &Config, context: &Path) -> Result<PathBuf, LoadError> {
+    let project_root = canonicalize_path(config.project_root(), "resolve project root")?;
+    let gov_root = canonicalize_contained(
+        &config.gov_root,
+        &project_root,
+        context,
+        &config.gov_root.display().to_string(),
+        "resolve governance root",
+    )?;
+    canonicalize_contained(
+        &config.rfc_dir(),
+        &gov_root,
+        context,
+        &config.rfc_dir().display().to_string(),
+        "resolve RFC storage root",
+    )
+}
+
+pub(crate) fn validate_rfc_storage_path(config: &Config, path: &Path) -> Result<(), LoadError> {
+    let resolved_rfc_root = resolved_rfc_storage_root(config, path)?;
+    canonicalize_contained(
+        path,
+        &resolved_rfc_root,
+        path,
+        &path.display().to_string(),
+        "resolve RFC or Clause path",
+    )?;
+    Ok(())
+}
+
 fn clause_directory_paths(
     rfc_dir: &Path,
     resolved_rfc_dir: &Path,
@@ -222,6 +252,7 @@ fn clause_directory_paths(
 
 /// Load a single clause
 pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
+    validate_rfc_storage_path(config, path)?;
     if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
         return Err(LoadError::Diagnostic(legacy_json_diagnostic(config, path)));
     }
@@ -390,10 +421,6 @@ where
 
 fn rfc_schema_error(file: String, message: String) -> LoadError {
     LoadError::RfcSchema { file, message }
-}
-
-fn json_error(file: String, message: String) -> LoadError {
-    LoadError::Json { file, message }
 }
 
 fn clause_schema_error(file: String, message: String) -> LoadError {

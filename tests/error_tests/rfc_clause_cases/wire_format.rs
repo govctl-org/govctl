@@ -33,6 +33,18 @@ fn normalized_check_output(
     Ok(normalize_output(&output, root, date)?)
 }
 
+#[test]
+fn test_malformed_rfc_toml_reports_rfc_schema_error() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_rfc_toml(temp_dir.path(), "[govctl\nid = \"RFC-0001\"\n")?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+
+    assert!(output.contains("error[E0101]"), "{output}");
+    assert!(!output.contains("error[E0902]"), "{output}");
+    Ok(())
+}
+
 /// Test: Valid RFC TOML in [govctl] wire format passes check
 #[test]
 fn test_valid_rfc_toml_wire_format() -> common::TestResult {
