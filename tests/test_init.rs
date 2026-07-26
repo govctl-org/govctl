@@ -100,6 +100,31 @@ fn test_init_force_dry_run_in_nested_directory_does_not_mutate_either_project() 
     Ok(())
 }
 
+#[cfg(unix)]
+#[test]
+fn test_init_allows_symlinked_default_governance_root() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = TempDir::new()?;
+    let project_dir = temp_dir.path().join("project");
+    let external_gov = temp_dir.path().join("external-gov");
+    fs::create_dir(&project_dir)?;
+    fs::create_dir(&external_gov)?;
+    symlink(&external_gov, project_dir.join("gov"))?;
+
+    let output = run_commands(
+        &project_dir,
+        &[&["init"], &["rfc", "new", "Symlinked storage"], &["check"]],
+    )?;
+
+    assert!(output.contains("Project initialized"), "{output}");
+    assert!(output.contains("Created RFC"), "{output}");
+    assert!(output.contains("All checks passed"), "{output}");
+    assert!(external_gov.join("config.toml").exists());
+    assert!(external_gov.join("rfc/RFC-0001/rfc.toml").exists());
+    Ok(())
+}
+
 #[test]
 fn test_init_config_reserves_default_guards_for_universal_checks() -> common::TestResult {
     let temp_dir = TempDir::new()?;

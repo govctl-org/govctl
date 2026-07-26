@@ -146,6 +146,76 @@ fn test_rfc_new_rejects_clause_reference_in_explicit_id_position() -> common::Te
 }
 
 #[test]
+fn test_rfc_new_rejects_path_traversing_explicit_id_without_mutation() -> common::TestResult {
+    let temp_dir = tempfile::TempDir::new()?;
+    let project_dir = temp_dir.path().join("project");
+    fs::create_dir(&project_dir)?;
+    run_commands(&project_dir, &[&["init"]])?;
+    let escaped_dir = temp_dir.path().join("escaped-rfc");
+
+    let output = run_commands(
+        &project_dir,
+        &[&[
+            "rfc",
+            "new",
+            "Escaped RFC",
+            "--id",
+            "RFC-X/../../../../escaped-rfc",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0110]"), "{output}");
+    assert!(output.contains("expected RFC-NNNN"), "{output}");
+    assert!(!escaped_dir.exists(), "rejected RFC ID escaped storage");
+    assert!(
+        fs::read_dir(project_dir.join("gov/rfc"))?.next().is_none(),
+        "rejected RFC creation must not create storage"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_rfc_new_rejects_exhausted_automatic_id_namespace() -> common::TestResult {
+    let temp_dir = init_project()?;
+    fs::create_dir(temp_dir.path().join("gov/rfc/RFC-9999"))?;
+
+    let output = run_commands(temp_dir.path(), &[&["rfc", "new", "Overflow RFC"]])?;
+
+    assert!(output.contains("error[E0110]"), "{output}");
+    assert!(output.contains("namespace exhausted"), "{output}");
+    assert!(
+        !temp_dir.path().join("gov/rfc/RFC-10000").exists(),
+        "exhausted RFC namespace must not create invalid storage"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_rfc_new_dry_run_rejects_existing_explicit_id() -> common::TestResult {
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[&["rfc", "new", "Existing RFC", "--id", "RFC-0001"]],
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "rfc",
+            "new",
+            "Replacement RFC",
+            "--id",
+            "RFC-0001",
+            "--dry-run",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0109]"), "{output}");
+    assert!(!output.contains("Would write"), "{output}");
+    Ok(())
+}
+
+#[test]
 fn test_rfc_supersede_rejects_clause_reference_as_replacement() -> common::TestResult {
     let temp_dir = init_project()?;
     run_commands(

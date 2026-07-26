@@ -49,6 +49,7 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0211ClauseStillReferenced => "E0211",
         DiagnosticCode::E0212ClauseSupersessionCycle => "E0212",
         DiagnosticCode::E0213ClauseSupersededByMissing => "E0213",
+        DiagnosticCode::E0214ClauseAlreadyExists => "E0214",
         // E03xx - ADR
         DiagnosticCode::E0301AdrSchemaInvalid => "E0301",
         DiagnosticCode::E0302AdrNotFound => "E0302",

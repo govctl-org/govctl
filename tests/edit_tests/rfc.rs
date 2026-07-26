@@ -504,7 +504,7 @@ fn test_rfc_changelog_operations_reject_missing_current_entry_without_mutation()
 
 #[cfg(unix)]
 #[test]
-fn test_rfc_edit_rejects_rfc_directory_symlink_outside_storage() -> common::TestResult {
+fn test_rfc_edit_allows_symlinked_rfc_directory() -> common::TestResult {
     use std::os::unix::fs::symlink;
 
     let temp_dir = init_project()?;
@@ -514,14 +514,16 @@ fn test_rfc_edit_rejects_rfc_directory_symlink_outside_storage() -> common::Test
     std::fs::rename(&rfc_dir, &external_dir)?;
     symlink(&external_dir, &rfc_dir)?;
     let external_rfc = external_dir.join("rfc.toml");
-    let before = std::fs::read(&external_rfc)?;
-
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "edit", "RFC-0001", "title", "--set", "Redirected"]],
     )?;
 
-    assert!(output.contains("error[E0204]"), "{output}");
-    assert_eq!(std::fs::read(&external_rfc)?, before);
+    assert!(
+        output.contains("Set RFC-0001.title = Redirected"),
+        "{output}"
+    );
+    let rfc: toml::Value = toml::from_str(&std::fs::read_to_string(external_rfc)?)?;
+    assert_eq!(rfc["govctl"]["title"].as_str(), Some("Redirected"));
     Ok(())
 }

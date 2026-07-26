@@ -57,21 +57,7 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         file: rfc_path.display().to_string(),
         message: "RFC path has no parent directory".to_string(),
     })?;
-    let resolved_rfc_root = resolved_rfc_storage_root(config, rfc_path)?;
-    let resolved_rfc_dir = canonicalize_contained(
-        rfc_dir,
-        &resolved_rfc_root,
-        rfc_path,
-        &rfc_dir.display().to_string(),
-        "resolve RFC directory",
-    )?;
-    canonicalize_contained(
-        rfc_path,
-        &resolved_rfc_dir,
-        rfc_path,
-        &rfc_path.display().to_string(),
-        "resolve RFC path",
-    )?;
+    let resolved_rfc_dir = canonicalize_path(rfc_dir, "resolve RFC directory")?;
 
     let rfc: RfcSpec = load_source_wire::<RfcWire>(
         config,
@@ -176,33 +162,49 @@ fn canonicalize_contained(
     Ok(resolved)
 }
 
-fn resolved_rfc_storage_root(config: &Config, context: &Path) -> Result<PathBuf, LoadError> {
-    let project_root = canonicalize_path(config.project_root(), "resolve project root")?;
-    let gov_root = canonicalize_contained(
-        &config.gov_root,
-        &project_root,
-        context,
-        &config.gov_root.display().to_string(),
-        "resolve governance root",
-    )?;
-    canonicalize_contained(
-        &config.rfc_dir(),
-        &gov_root,
-        context,
-        &config.rfc_dir().display().to_string(),
-        "resolve RFC storage root",
-    )
-}
-
-pub(crate) fn validate_rfc_storage_path(config: &Config, path: &Path) -> Result<(), LoadError> {
-    let resolved_rfc_root = resolved_rfc_storage_root(config, path)?;
-    canonicalize_contained(
-        path,
-        &resolved_rfc_root,
-        path,
-        &path.display().to_string(),
-        "resolve RFC or Clause path",
-    )?;
+/// Enforce the per-RFC Clause boundary from RFC-0000:C-RFC-DEF.
+pub(crate) fn validate_clause_storage_path(config: &Config, path: &Path) -> Result<(), LoadError> {
+    let relative = path
+        .strip_prefix(config.rfc_dir())
+        .map_err(|_| invalid_clause_path(path, &path.display().to_string()))?;
+    let rfc_component = relative
+        .components()
+        .next()
+        .filter(|component| matches!(component, std::path::Component::Normal(_)))
+        .ok_or_else(|| invalid_clause_path(path, &path.display().to_string()))?;
+    let rfc_dir = config.rfc_dir().join(rfc_component.as_os_str());
+    let resolved_rfc_dir = canonicalize_path(&rfc_dir, "resolve RFC directory")?;
+    let resolved_target = match std::fs::canonicalize(path) {
+        Ok(resolved) => resolved,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            match std::fs::symlink_metadata(path) {
+                Ok(_) => return Err(invalid_clause_path(path, &path.display().to_string())),
+                Err(metadata_err) if metadata_err.kind() == std::io::ErrorKind::NotFound => {
+                    let parent = path
+                        .parent()
+                        .ok_or_else(|| invalid_clause_path(path, &path.display().to_string()))?;
+                    canonicalize_path(parent, "resolve Clause storage path")?
+                }
+                Err(metadata_err) => {
+                    return Err(LoadError::Io {
+                        file: path.display().to_string(),
+                        action: "read Clause storage metadata",
+                        message: metadata_err.to_string(),
+                    });
+                }
+            }
+        }
+        Err(err) => {
+            return Err(LoadError::Io {
+                file: path.display().to_string(),
+                action: "resolve Clause storage path",
+                message: err.to_string(),
+            });
+        }
+    };
+    if !resolved_target.starts_with(&resolved_rfc_dir) {
+        return Err(invalid_clause_path(path, &path.display().to_string()));
+    }
     Ok(())
 }
 
@@ -252,7 +254,7 @@ fn clause_directory_paths(
 
 /// Load a single clause
 pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
-    validate_rfc_storage_path(config, path)?;
+    validate_clause_storage_path(config, path)?;
     if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
         return Err(LoadError::Diagnostic(legacy_json_diagnostic(config, path)));
     }
@@ -439,7 +441,7 @@ pub(crate) fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {
     }
 }
 
-fn valid_rfc_id(id: &str) -> bool {
+pub(crate) fn valid_rfc_id(id: &str) -> bool {
     id.strip_prefix("RFC-")
         .is_some_and(|suffix| suffix.len() == 4 && suffix.bytes().all(|byte| byte.is_ascii_digit()))
 }

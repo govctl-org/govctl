@@ -44,6 +44,7 @@ pub enum DiagnosticCode {
     E0211ClauseStillReferenced,
     E0212ClauseSupersessionCycle,
     E0213ClauseSupersededByMissing,
+    E0214ClauseAlreadyExists,
 
     // ADR errors (E03xx)
     E0301AdrSchemaInvalid,
@@ -198,6 +199,7 @@ mod tests {
     fn code_strings_match_representative_catalog_ids() {
         assert_eq!(DiagnosticCode::E0101RfcSchemaInvalid.code(), "E0101");
         assert_eq!(DiagnosticCode::E0201ClauseSchemaInvalid.code(), "E0201");
+        assert_eq!(DiagnosticCode::E0214ClauseAlreadyExists.code(), "E0214");
         assert_eq!(DiagnosticCode::E0301AdrSchemaInvalid.code(), "E0301");
         assert_eq!(DiagnosticCode::E0401WorkSchemaInvalid.code(), "E0401");
         assert_eq!(DiagnosticCode::E0501ConfigInvalid.code(), "E0501");

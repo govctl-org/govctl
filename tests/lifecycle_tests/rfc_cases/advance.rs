@@ -559,7 +559,7 @@ fn test_finalize_rejects_clause_directory_symlink_outside_rfc() -> common::TestR
 
 #[cfg(unix)]
 #[test]
-fn test_finalize_rejects_rfc_directory_symlink_outside_storage() -> common::TestResult {
+fn test_finalize_allows_symlinked_rfc_directory_with_contained_clauses() -> common::TestResult {
     use std::os::unix::fs::symlink;
 
     let temp_dir = init_project()?;
@@ -571,24 +571,22 @@ fn test_finalize_rejects_rfc_directory_symlink_outside_storage() -> common::Test
     symlink(&external_dir, &rfc_dir)?;
     let external_rfc = external_dir.join("rfc.toml");
     let external_clause = external_dir.join("clauses/C-LINK.toml");
-    let rfc_before = fs::read(&external_rfc)?;
-    let clause_before = fs::read(&external_clause)?;
-
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "finalize", "RFC-0001", "normative"]],
     )?;
 
-    assert!(output.contains("error[E0204]"), "{output}");
-    assert!(!output.contains("Finalized RFC-0001"), "{output}");
-    assert_eq!(fs::read(&external_rfc)?, rfc_before);
-    assert_eq!(fs::read(&external_clause)?, clause_before);
+    assert!(output.contains("Finalized RFC-0001"), "{output}");
+    let rfc: toml::Value = toml::from_str(&fs::read_to_string(external_rfc)?)?;
+    let clause: toml::Value = toml::from_str(&fs::read_to_string(external_clause)?)?;
+    assert_eq!(rfc["govctl"]["status"].as_str(), Some("normative"));
+    assert_eq!(clause["govctl"]["since"].as_str(), Some("0.1.0"));
     Ok(())
 }
 
 #[cfg(unix)]
 #[test]
-fn test_finalize_rejects_rfc_storage_root_symlink_outside_gov() -> common::TestResult {
+fn test_finalize_allows_symlinked_rfc_storage_root_with_contained_clauses() -> common::TestResult {
     use std::os::unix::fs::symlink;
 
     let temp_dir = init_project()?;
@@ -600,18 +598,16 @@ fn test_finalize_rejects_rfc_storage_root_symlink_outside_gov() -> common::TestR
     symlink(&external_root, &rfc_root)?;
     let external_rfc = external_root.join("RFC-0001/rfc.toml");
     let external_clause = external_root.join("RFC-0001/clauses/C-LINK.toml");
-    let rfc_before = fs::read(&external_rfc)?;
-    let clause_before = fs::read(&external_clause)?;
-
     let output = run_commands(
         temp_dir.path(),
         &[&["rfc", "finalize", "RFC-0001", "normative"]],
     )?;
 
-    assert!(output.contains("error[E0204]"), "{output}");
-    assert!(!output.contains("Finalized RFC-0001"), "{output}");
-    assert_eq!(fs::read(&external_rfc)?, rfc_before);
-    assert_eq!(fs::read(&external_clause)?, clause_before);
+    assert!(output.contains("Finalized RFC-0001"), "{output}");
+    let rfc: toml::Value = toml::from_str(&fs::read_to_string(external_rfc)?)?;
+    let clause: toml::Value = toml::from_str(&fs::read_to_string(external_clause)?)?;
+    assert_eq!(rfc["govctl"]["status"].as_str(), Some("normative"));
+    assert_eq!(clause["govctl"]["since"].as_str(), Some("0.1.0"));
     Ok(())
 }
 

@@ -59,6 +59,17 @@ Release entries are curated summaries for readers. Work item traceability remain
 - RFC loading rejects dangling or storage-escaping Clause references before any mutation (WI-2026-07-26-010)
 - Partial initialization detection recognizes artifact symlinks without selecting an ancestor project (WI-2026-07-26-010)
 - RFC-conforming relative Clause filenames remain loadable (WI-2026-07-26-010)
+- Init without an explicit config targets the current directory without selecting an ancestor project (WI-2026-07-26-011)
+- Missing explicit configuration and malformed RFC TOML emit accurate diagnostics (WI-2026-07-26-011)
+- RFC and Clause loading enforce per-RFC Clause containment for configured storage roots (WI-2026-07-26-012)
+- Creation dry-runs apply the same non-mutating preflight validation as execution (WI-2026-07-26-012)
+- Clause creation rejects occupied logical targets without overwriting existing artifacts (WI-2026-07-26-012)
+
+### Security
+
+- Loading an RFC or Clause rejects Clause storage that resolves outside its containing RFC directory (WI-2026-07-26-011)
+- RFC creation rejects invalid or path-traversing explicit IDs and exhausted automatic numbering before filesystem mutation (WI-2026-07-26-012)
+- Clause creation rejects storage paths that resolve outside the containing RFC directory (WI-2026-07-26-012)
 
 ## [0.14.2] - 2026-07-25
 

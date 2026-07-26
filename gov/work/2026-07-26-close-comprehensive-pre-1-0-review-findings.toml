@@ -10,13 +10,14 @@ completed = "2026-07-26"
 refs = [
     "RFC-0002",
     "RFC-0004",
+    "RFC-0000:C-RFC-DEF",
 ]
 
 [content]
 description = "Resolve verified pre-1.0 review findings in governed path containment, initialization targeting, diagnostics, and canonical command documentation."
 
 [[content.acceptance_criteria]]
-text = "RFC and Clause reads and writes reject paths whose resolved storage escapes the governed project root"
+text = "Loading an RFC or Clause rejects Clause storage that resolves outside its containing RFC directory"
 status = "done"
 category = "security"
 

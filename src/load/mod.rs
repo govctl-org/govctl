@@ -6,9 +6,8 @@ mod project;
 mod rfc;
 
 pub use project::{load_project, load_project_with_warnings};
-pub(crate) use rfc::split_clause_id;
-pub(crate) use rfc::validate_rfc_storage_path;
 pub use rfc::{find_clause_toml, find_rfc_toml, load_rfc, load_rfcs, reject_legacy_json_storage};
+pub(crate) use rfc::{split_clause_id, valid_rfc_id, validate_clause_storage_path};
 
 /// Result of loading a project: index plus any warnings encountered
 pub struct ProjectLoadResult {
