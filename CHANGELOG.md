@@ -34,6 +34,10 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Init guidance preserves installation, overwrite authorization, discovery, and verification boundaries (WI-2026-07-26-006)
 - Detach guidance uses ownership-aware inventory, collision-safe archival, explicit confirmation, and recoverable mutations (WI-2026-07-26-006)
 - Decision analysis scales with risk and maps obligations, rationale, and execution evidence to their authoritative artifacts (WI-2026-07-26-006)
+- RFC review distinguishes external contracts from private implementation detail without concrete-syntax false positives (WI-2026-07-26-007)
+- ADR review evaluates decision evidence and projection ownership without requiring optional prose templates (WI-2026-07-26-007)
+- Work Item review evaluates durable scope, categorized outcomes, and effective guards without mandatory chore criteria or session-size rules (WI-2026-07-26-007)
+- Compliance review treats RFCs as conformance authority and ADRs as design-alignment evidence (WI-2026-07-26-007)
 
 ### Removed
 
