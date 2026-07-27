@@ -192,6 +192,11 @@ fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str) -> Diagnos
             format!("Unknown guard field: {field}"),
             id,
         ),
+        ArtifactType::Conformance => (
+            DiagnosticCode::E0803UnknownField,
+            format!("Unknown Conformance Case field: {field}"),
+            id,
+        ),
     };
     Diagnostic::new(code, msg, source)
 }

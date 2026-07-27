@@ -42,6 +42,7 @@ pub(super) enum NestedNodeRule {
     List {
         verbs: Vec<String>,
         text_key: Option<String>,
+        value_codec: Option<String>,
         item: Box<NestedNodeRule>,
     },
 }
@@ -82,6 +83,7 @@ pub(super) struct RuntimeSetRule {
 pub(super) enum RuntimeSetMode {
     String,
     Integer,
+    Semver,
     Enum {
         allowed: Vec<String>,
         invalid_msg: String,

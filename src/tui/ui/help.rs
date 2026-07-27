@@ -35,14 +35,7 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
             lines.push(Line::from("  9      Releases"));
             lines.push(Line::from("  t      Tags"));
         }
-        View::RfcList
-        | View::ClauseList
-        | View::AdrList
-        | View::WorkList
-        | View::GuardList
-        | View::ConformanceList
-        | View::LoopList
-        | View::DiagnosticList => {
+        view if view.is_standard_list() && view.selection_opens_detail() => {
             lines.push(Line::from("List"));
             lines.push(Line::from("  j/k    Move selection"));
             lines.push(Line::from("  Enter  View detail"));
@@ -51,7 +44,7 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
             lines.push(Line::from("  n/p    Next/Prev match (when filtered)"));
             lines.push(Line::from("  Esc    Back (or clear filter in filter mode)"));
         }
-        View::ReleaseList | View::TagList => {
+        view if view.is_standard_list() => {
             lines.push(Line::from("List"));
             lines.push(Line::from("  j/k    Move selection"));
             lines.push(Line::from("  g/G    Top/Bottom"));
@@ -88,6 +81,7 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
             lines.push(Line::from("  PgDn/Up  Full page"));
             lines.push(Line::from("  Esc      Back"));
         }
+        _ => unreachable!("every view has a declared help group"),
     }
 
     let content = Paragraph::new(lines).block(block).wrap(Wrap { trim: true });

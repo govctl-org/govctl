@@ -10,6 +10,7 @@ pub(super) enum ShowKind {
     Adr,
     Work,
     Guard,
+    Conformance,
 }
 
 impl ShowKind {
@@ -20,6 +21,7 @@ impl ShowKind {
             cmd::edit::ArtifactType::Adr => Self::Adr,
             cmd::edit::ArtifactType::WorkItem => Self::Work,
             cmd::edit::ArtifactType::Guard => Self::Guard,
+            cmd::edit::ArtifactType::Conformance => Self::Conformance,
         }
     }
 }

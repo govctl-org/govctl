@@ -5,35 +5,15 @@ use crate::diagnostic::DiagnosticLevel;
 use ratatui::{prelude::*, widgets::LineGauge};
 
 pub(super) fn shows_command_strip(view: View) -> bool {
-    matches!(
-        view,
-        View::RfcList
-            | View::ClauseList
-            | View::AdrList
-            | View::WorkList
-            | View::GuardList
-            | View::ConformanceList
-            | View::ReleaseList
-            | View::TagList
-            | View::Search
-            | View::LoopList
-            | View::DiagnosticList
-    )
+    view.is_list()
 }
 
 fn breadcrumb(app: &App) -> String {
+    if let Some(label) = app.view.list_label() {
+        return format!("Dashboard > {label}");
+    }
     match app.view {
         View::Dashboard => "Dashboard".to_string(),
-        View::RfcList => "Dashboard > RFCs".to_string(),
-        View::ClauseList => "Dashboard > Clauses".to_string(),
-        View::AdrList => "Dashboard > ADRs".to_string(),
-        View::WorkList => "Dashboard > Work".to_string(),
-        View::GuardList => "Dashboard > Guards".to_string(),
-        View::ConformanceList => "Dashboard > Cases".to_string(),
-        View::ReleaseList => "Dashboard > Releases".to_string(),
-        View::TagList => "Dashboard > Tags".to_string(),
-        View::Search => "Dashboard > Search".to_string(),
-        View::LoopList => "Dashboard > Loops".to_string(),
         View::LoopDetail(idx) => app
             .supplement
             .loops
@@ -83,6 +63,7 @@ fn breadcrumb(app: &App) -> String {
                 )
             })
             .unwrap_or_else(|| "Dashboard > RFCs".to_string()),
+        _ => unreachable!("list views return before breadcrumb detail dispatch"),
     }
 }
 
@@ -116,17 +97,7 @@ fn header_status(app: &mut App) -> String {
                 warnings
             )
         }
-        View::RfcList
-        | View::ClauseList
-        | View::AdrList
-        | View::WorkList
-        | View::GuardList
-        | View::ConformanceList
-        | View::ReleaseList
-        | View::TagList
-        | View::Search
-        | View::LoopList
-        | View::DiagnosticList => {
+        view if view.is_list() => {
             let shown = app.list_len();
             if shown > 0 {
                 format!("SEL {} / {}", app.selected + 1, shown)
@@ -309,18 +280,11 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
             "q",
             "Quit",
         ],
-        View::RfcList
-        | View::ClauseList
-        | View::AdrList
-        | View::WorkList
-        | View::GuardList
-        | View::ConformanceList
-        | View::LoopList
-        | View::DiagnosticList => &[
+        view if view.is_standard_list() && view.selection_opens_detail() => &[
             "j/k", "Navigate", "Enter", "View", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?",
             "Help", "q", "Quit",
         ],
-        View::ReleaseList | View::TagList => &[
+        view if view.is_standard_list() => &[
             "j/k", "Navigate", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?", "Help", "q",
             "Quit",
         ],
@@ -358,6 +322,7 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
         | View::ClauseDetail(_, _) => &[
             "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
         ],
+        _ => unreachable!("every view has a declared footer binding group"),
     }
 }
 
@@ -366,17 +331,10 @@ fn compact_bindings_for_view(view: View) -> &'static [&'static str] {
         View::Dashboard => &[
             "r", "RFC", "c", "Clause", "x", "Case", "s", "Search", "?", "Help", "q", "Quit",
         ],
-        View::RfcList
-        | View::ClauseList
-        | View::AdrList
-        | View::WorkList
-        | View::GuardList
-        | View::ConformanceList
-        | View::LoopList
-        | View::DiagnosticList => &[
+        view if view.is_standard_list() && view.selection_opens_detail() => &[
             "j/k", "Move", "Enter", "Open", "Esc", "Back", "/", "Filter", "?", "Help", "q", "Quit",
         ],
-        View::ReleaseList | View::TagList => &[
+        view if view.is_standard_list() => &[
             "j/k", "Move", "Esc", "Back", "/", "Filter", "?", "Help", "q", "Quit",
         ],
         View::Search => &[
@@ -393,6 +351,7 @@ fn compact_bindings_for_view(view: View) -> &'static [&'static str] {
         | View::ClauseDetail(_, _) => &[
             "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
         ],
+        _ => unreachable!("every view has a declared compact footer binding group"),
     }
 }
 

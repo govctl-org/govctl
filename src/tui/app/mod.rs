@@ -36,6 +36,99 @@ pub enum View {
     ClauseDetail(usize, usize),
 }
 
+#[derive(Clone, Copy)]
+struct ListCapabilities {
+    label: &'static str,
+    opens_detail: bool,
+    search_input: bool,
+}
+
+#[derive(Clone, Copy)]
+enum ViewCapabilities {
+    Dashboard,
+    List(ListCapabilities),
+    Detail,
+}
+
+impl View {
+    fn capabilities(self) -> ViewCapabilities {
+        let list = |label, opens_detail, search_input| {
+            ViewCapabilities::List(ListCapabilities {
+                label,
+                opens_detail,
+                search_input,
+            })
+        };
+        match self {
+            Self::Dashboard => ViewCapabilities::Dashboard,
+            Self::RfcList => list("RFCs", true, false),
+            Self::ClauseList => list("Clauses", true, false),
+            Self::AdrList => list("ADRs", true, false),
+            Self::WorkList => list("Work", true, false),
+            Self::GuardList => list("Guards", true, false),
+            Self::ConformanceList => list("Cases", true, false),
+            Self::ReleaseList => list("Releases", false, false),
+            Self::TagList => list("Tags", false, false),
+            Self::Search => list("Search", true, true),
+            Self::LoopList => list("Loops", true, false),
+            Self::DiagnosticList => list("Diagnostics", true, false),
+            Self::LoopDetail(_)
+            | Self::RfcDetail(_)
+            | Self::AdrDetail(_)
+            | Self::WorkDetail(_)
+            | Self::GuardDetail(_)
+            | Self::ConformanceDetail(_)
+            | Self::ClauseDetail(_, _) => ViewCapabilities::Detail,
+        }
+    }
+
+    pub fn is_list(self) -> bool {
+        matches!(self.capabilities(), ViewCapabilities::List(_))
+    }
+
+    pub fn is_standard_list(self) -> bool {
+        matches!(
+            self.capabilities(),
+            ViewCapabilities::List(ListCapabilities {
+                search_input: false,
+                ..
+            })
+        )
+    }
+
+    pub fn selection_opens_detail(self) -> bool {
+        matches!(
+            self.capabilities(),
+            ViewCapabilities::List(ListCapabilities {
+                opens_detail: true,
+                ..
+            })
+        )
+    }
+
+    pub fn list_label(self) -> Option<&'static str> {
+        match self.capabilities() {
+            ViewCapabilities::List(capabilities) => Some(capabilities.label),
+            ViewCapabilities::Dashboard | ViewCapabilities::Detail => None,
+        }
+    }
+
+    pub fn parent(self) -> Option<Self> {
+        match self {
+            Self::ClauseDetail(rfc_idx, _) => Some(Self::RfcDetail(rfc_idx)),
+            Self::RfcDetail(_) => Some(Self::RfcList),
+            Self::AdrDetail(_) => Some(Self::AdrList),
+            Self::WorkDetail(_) => Some(Self::WorkList),
+            Self::GuardDetail(_) => Some(Self::GuardList),
+            Self::ConformanceDetail(_) => Some(Self::ConformanceList),
+            Self::LoopDetail(_) => Some(Self::LoopList),
+            view if view.is_list() => Some(Self::Dashboard),
+            Self::Dashboard => None,
+            _ => unreachable!("every non-dashboard view has a declared parent"),
+        }
+    }
+}
+
 /// Application state
 pub struct App {
     /// Project configuration

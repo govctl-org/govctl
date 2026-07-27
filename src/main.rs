@@ -11,6 +11,7 @@ mod command_router;
 mod config;
 mod diagnostic;
 mod load;
+mod local_index;
 mod lock;
 mod loop_planner;
 mod loop_state;

@@ -108,6 +108,7 @@ fn execute_show(
         ShowKind::Adr => cmd::render::show_adr(config, id, output, history),
         ShowKind::Work => cmd::render::show_work(config, id, output, history),
         ShowKind::Guard => cmd::guard::show_guard(config, id, output, history),
+        ShowKind::Conformance => cmd::conformance::show(config, id, output, history),
     }
 }
 
@@ -166,6 +167,7 @@ fn execute_delete(plan: &CommandPlan, config: &Config, force: bool, op: WriteOp)
         cmd::edit::ArtifactType::Clause => cmd::edit::delete_clause(config, id, force, op),
         cmd::edit::ArtifactType::WorkItem => cmd::edit::delete_work_item(config, id, force, op),
         cmd::edit::ArtifactType::Guard => cmd::guard::delete_guard(config, id, force, op),
+        cmd::edit::ArtifactType::Conformance => cmd::conformance::delete(config, id, force, op),
         cmd::edit::ArtifactType::Rfc | cmd::edit::ArtifactType::Adr => Err(Diagnostic::new(
             DiagnosticCode::E0822UnsupportedOperation,
             "delete is not supported for this artifact",

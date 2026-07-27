@@ -33,6 +33,13 @@ fn render_nested_list(
     if let Some(spec) = nested_status_list_spec(node) {
         return render_status_lines(Some(value), spec.status_key, spec.text_key, id);
     }
+    if let Some(codec) = node.value_codec {
+        return arr
+            .iter()
+            .map(|item| crate::cmd::edit::value_codec::encode(codec, item, id))
+            .collect::<DiagnosticResult<Vec<_>>>()
+            .map(|items| items.join("\n"));
+    }
     if item.kind == NestedNodeKind::Scalar {
         return Ok(joined_scalar_list_text(arr, "\n"));
     }

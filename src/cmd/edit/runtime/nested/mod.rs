@@ -116,6 +116,16 @@ fn apply_nested_scalar_set(
 ) -> DiagnosticResult<()> {
     match mode.unwrap_or(NestedScalarMode::String) {
         NestedScalarMode::String => *slot = Value::String(value.to_string()),
+        NestedScalarMode::Semver => {
+            semver::Version::parse(value).map_err(|_| {
+                Diagnostic::new(
+                    DiagnosticCode::E0820InvalidFieldValue,
+                    format!("Invalid semantic version: {value}"),
+                    id,
+                )
+            })?;
+            *slot = Value::String(value.to_string());
+        }
         NestedScalarMode::Enum {
             allowed,
             invalid_msg,

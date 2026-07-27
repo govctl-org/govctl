@@ -43,7 +43,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "adr", "work", "guard"]
+          "enum": ["rfc", "adr", "work", "guard", "conformance"]
         },
         "root": {
           "type": "string",
@@ -136,6 +136,12 @@
                 { "type": "null" }
               ]
             },
+            "value_codec": {
+              "oneOf": [
+                { "type": "string", "enum": ["requirement_binding"] },
+                { "type": "null" }
+              ]
+            },
             "item": { "$ref": "#/definitions/nestedNodeRule" }
           },
           "additionalProperties": false
@@ -148,7 +154,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work", "guard"]
+          "enum": ["rfc", "clause", "adr", "work", "guard", "conformance"]
         },
         "name": {
           "type": "string",
@@ -175,7 +181,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work", "guard"]
+          "enum": ["rfc", "clause", "adr", "work", "guard", "conformance"]
         },
         "name": {
           "type": "string",
@@ -280,6 +286,14 @@
         },
         {
           "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string", "enum": ["semver"] }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
           "required": ["type", "allowed", "invalid_msg", "code"],
           "properties": {
             "type": { "type": "string", "enum": ["enum"] },
@@ -306,7 +320,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work", "guard"]
+          "enum": ["rfc", "clause", "adr", "work", "guard", "conformance"]
         },
         "field": {
           "type": "string",

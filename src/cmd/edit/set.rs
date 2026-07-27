@@ -1,4 +1,6 @@
-use super::adapter::{AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter};
+use super::adapter::{
+    AdrTomlAdapter, ClauseTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, RfcTomlAdapter,
+};
 use super::doc_target::{set_clause_field, set_rfc_field};
 use super::engine as edit_engine;
 use super::path::FieldPath;
@@ -77,6 +79,15 @@ pub(super) fn apply_set_field(
             ArtifactType::Guard,
             !enforce_verb_ownership,
         )?,
+        ArtifactType::Conformance => set_toml_field::<ConformanceTomlAdapter>(
+            config,
+            id,
+            target,
+            value,
+            op,
+            ArtifactType::Conformance,
+            !enforce_verb_ownership,
+        )?,
     }
     Ok(())
 }
@@ -135,6 +146,7 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> Di
             }
         }
         ArtifactType::Guard => None,
+        ArtifactType::Conformance => None,
     };
 
     if let Some(message) = msg {

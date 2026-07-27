@@ -10,6 +10,17 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- Schema version 4 initialization and migration preserve valid Conformance Case files and reject invalid prospective graphs atomically (WI-2026-07-27-005)
+- Conformance Case list, get, show, new, edit, and delete commands enforce the canonical resource and mutation contracts (WI-2026-07-27-005)
+- Project validation covers Case identity, locators, requirement versions, authority restrictions, Guard bindings, deletion referrers, and applicability prerequisites (WI-2026-07-27-005)
+- Conformance trace returns deterministic filtered table and JSON records with provisional, candidate, current, and stale applicability (WI-2026-07-27-005)
+- Search, tags, status, command discovery, and shell completion surfaces include Conformance Cases with unambiguous source and scenario paths (WI-2026-07-27-005)
+- Repository Conformance Cases bind representative integration scenarios to their governing RFC versions and the suite-scoped GUARD-CONFORMANCE-TESTS (WI-2026-07-27-006)
+- Conformance trace queries expose deterministic current Case, requirement, and Guard relationships for the dogfood set (WI-2026-07-27-006)
+- TUI overview and artifact browsing expose Conformance Case counts, list rows, and complete read-only detail data (WI-2026-07-27-007)
+
 ### Changed
 
 - Unsupported legacy storage is diagnosed explicitly instead of being silently ignored (WI-2026-07-25-001)
@@ -87,6 +98,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 - All-target clippy validation passes without test-code lint exceptions (WI-2026-07-27-001)
 - Wide and narrow TestBackend renders preserve readable state, selection, and navigation (WI-2026-07-27-002)
 - Filter and search input remain legible for long values on common narrow terminals (WI-2026-07-27-003)
+- Conformance search results and diagnostics navigate to the corresponding Case detail (WI-2026-07-27-007)
+- TUI tag usage counts include Conformance Case tags (WI-2026-07-27-007)
 
 ### Security
 

@@ -1,6 +1,6 @@
 use super::adapter::{
-    AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, TomlAdapter,
-    WorkTomlAdapter,
+    AdrTomlAdapter, ClauseTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, RfcTomlAdapter,
+    TomlAdapter, WorkTomlAdapter,
 };
 use super::doc_target::{add_doc_simple_list_field, rfc_changelog};
 use super::engine as edit_engine;
@@ -169,6 +169,17 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
             let mut entry = GuardTomlAdapter::load(config, id)?;
             add_to_serialized_doc(&mut entry.spec, ArtifactType::Guard, target, value, id)?;
             GuardTomlAdapter::write(config, &entry, op)?;
+        }
+        ArtifactType::Conformance => {
+            let mut entry = ConformanceTomlAdapter::load(config, id)?;
+            add_to_serialized_doc(
+                &mut entry.spec,
+                ArtifactType::Conformance,
+                target,
+                value,
+                id,
+            )?;
+            ConformanceTomlAdapter::write(config, &entry, op)?;
         }
     }
 

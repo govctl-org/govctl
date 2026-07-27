@@ -4,7 +4,9 @@ use crate::write::WriteOp;
 use std::path::PathBuf;
 
 pub use super::doc_adapter::{ClauseTomlAdapter, RfcTomlAdapter};
-pub use super::toml_adapter::{AdrTomlAdapter, GuardTomlAdapter, WorkTomlAdapter};
+pub use super::toml_adapter::{
+    AdrTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, WorkTomlAdapter,
+};
 
 /// Generic document container (path + parsed payload).
 #[derive(Debug, Clone, PartialEq, Eq)]

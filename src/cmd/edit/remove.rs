@@ -1,5 +1,6 @@
 use super::adapter::{
-    AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, WorkTomlAdapter,
+    AdrTomlAdapter, ClauseTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, RfcTomlAdapter,
+    WorkTomlAdapter,
 };
 use super::doc_target::{remove_doc_simple_list_field, rfc_changelog};
 use super::matching::MatchOptions;
@@ -65,6 +66,14 @@ pub fn remove_from_field(
             opts,
             op,
             ArtifactType::Guard,
+        )?,
+        ArtifactType::Conformance => remove_toml_field::<ConformanceTomlAdapter>(
+            config,
+            id,
+            target,
+            opts,
+            op,
+            ArtifactType::Conformance,
         )?,
     }
 

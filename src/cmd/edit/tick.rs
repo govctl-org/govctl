@@ -54,7 +54,13 @@ pub fn tick_item(
                 id,
             ));
         }
-        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard, _) => {
+        (
+            ArtifactType::Rfc
+            | ArtifactType::Clause
+            | ArtifactType::Guard
+            | ArtifactType::Conformance,
+            _,
+        ) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0813SupersedeNotSupported,
                 TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
@@ -81,7 +87,10 @@ pub fn tick_item(
             ArtifactType::WorkItem,
             status_str,
         )?,
-        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard => {
+        ArtifactType::Rfc
+        | ArtifactType::Clause
+        | ArtifactType::Guard
+        | ArtifactType::Conformance => {
             unreachable!("handled above")
         }
     };

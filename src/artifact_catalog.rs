@@ -1,5 +1,7 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+pub(crate) use crate::local_index::database_path as index_db_path;
+use crate::local_index::{project_root, sqlite_diagnostic};
 use crate::model::{AdrEntry, ConformanceEntry, GuardEntry, WorkItemEntry};
 use crate::parse::{
     load_adr, load_adrs, load_conformance_case, load_conformance_cases, load_guard, load_guards,
@@ -24,6 +26,15 @@ pub(crate) enum CatalogKind {
 }
 
 impl CatalogKind {
+    pub(crate) const ALL: [Self; 6] = [
+        Self::Rfc,
+        Self::Clause,
+        Self::Adr,
+        Self::Work,
+        Self::Guard,
+        Self::Conformance,
+    ];
+
     pub(crate) fn as_str(self) -> &'static str {
         match self {
             Self::Rfc => "rfc",
@@ -287,23 +298,8 @@ pub(crate) fn list_records(
 }
 
 fn open_catalog(config: &Config) -> DiagnosticResult<Connection> {
-    let path = index_db_path(config);
-    let parent = path.parent().ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0901IoError,
-            "Local index database path has no parent directory",
-            path.display().to_string(),
-        )
-    })?;
-    fs::create_dir_all(parent).map_err(|err| {
-        Diagnostic::io_error(
-            "create local index directory",
-            err,
-            parent.display().to_string(),
-        )
-    })?;
-    let connection = Connection::open(&path)
-        .map_err(|err| sqlite_diagnostic("open local artifact catalog", err, &path))?;
+    let (connection, path) =
+        crate::local_index::open_database(config, "open local artifact catalog")?;
     initialize_schema(&connection, &path)?;
     Ok(connection)
 }
@@ -312,7 +308,6 @@ fn initialize_schema(connection: &Connection, path: &Path) -> DiagnosticResult<(
     connection
         .execute_batch(
             "
-            PRAGMA journal_mode = WAL;
             CREATE TABLE IF NOT EXISTS catalog_meta (
                 key TEXT PRIMARY KEY,
                 value TEXT NOT NULL
@@ -617,26 +612,6 @@ fn sha256_hex(content: &str) -> String {
     let mut hasher = Sha256::new();
     hasher.update(content.as_bytes());
     format!("{:x}", hasher.finalize())
-}
-
-pub(crate) fn index_db_path(config: &Config) -> PathBuf {
-    project_root(config).join(".govctl").join("index.db")
-}
-
-pub(crate) fn project_root(config: &Config) -> &Path {
-    config
-        .gov_root
-        .parent()
-        .filter(|path| !path.as_os_str().is_empty())
-        .unwrap_or_else(|| Path::new("."))
-}
-
-fn sqlite_diagnostic(action: &'static str, err: rusqlite::Error, path: &Path) -> Diagnostic {
-    Diagnostic::new(
-        DiagnosticCode::E0903UnexpectedError,
-        format!("{action}: {err}"),
-        path.display().to_string(),
-    )
 }
 
 #[cfg(test)]

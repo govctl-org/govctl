@@ -24,6 +24,7 @@ mod target_doc_remove;
 mod tick;
 mod toml_adapter;
 mod toml_target;
+mod value_codec;
 
 use self::add::{AddFieldRequest, add_to_field};
 pub use self::artifact::ArtifactType;
@@ -40,6 +41,7 @@ pub use delete::{delete_clause, delete_work_item};
 pub use matching::{MatchOptions, MatchOptionsOwned};
 
 use self::request::resolve_owned_value;
+pub(crate) use value_codec::parse_requirement_binding as parse_conformance_requirement;
 
 // Field normalization is centralized in edit_engine::plan_request.
 

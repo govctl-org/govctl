@@ -7,16 +7,14 @@ use crate::cmd::output::{
 };
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::model::{
-    ConformanceContent, ConformanceEntry, ConformanceMeta, ConformanceSpec, RequirementBinding,
-};
+use crate::model::{ConformanceContent, ConformanceEntry, ConformanceMeta, ConformanceSpec};
 use crate::parse::{load_conformance_cases, write_conformance_case};
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all};
 use crate::{GetOutputFormat, ListOutputFormat, ShowOutputFormat, TraceOutputFormat};
 use serde::Serialize;
 use slug::slugify;
-use std::io::{IsTerminal, Read};
+use std::io::IsTerminal;
 
 pub struct NewCaseRequest<'a> {
     pub title: &'a str,
@@ -51,7 +49,7 @@ pub fn new_case(
     let requirements = request
         .requirements
         .iter()
-        .map(|value| parse_requirement(value))
+        .map(|value| crate::cmd::edit::parse_conformance_requirement(value))
         .collect::<DiagnosticResult<Vec<_>>>()?;
     let path = config.conformance_dir().join(format!("{id}.toml"));
     let entry = ConformanceEntry {
@@ -249,27 +247,13 @@ pub fn edit(
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     require_schema_v4(config)?;
-    if path.starts_with("govctl.") || path.starts_with("case.") {
-        return Err(unsupported_path(id, path));
-    }
-    let mut cases = load_conformance_cases(config)?;
-    let index = cases
-        .iter()
-        .position(|entry| entry.meta().id == id)
-        .ok_or_else(|| not_found(id))?;
-    apply_edit(id, &mut cases[index].spec, path, action)?;
-    let changed = cases[index].clone();
-    validate_prospective(config, &cases)?;
-    write_conformance_case(
-        &changed.path,
-        &changed.spec,
+    crate::cmd::edit::edit_field(crate::cmd::edit::EditFieldRequest {
+        config,
+        id,
+        path,
+        action,
         op,
-        Some(&config.display_path(&changed.path)),
-    )?;
-    if !op.is_preview() {
-        ui::field_set(id, path, "updated");
-    }
-    Ok(vec![])
+    })
 }
 
 pub fn delete(
@@ -432,128 +416,6 @@ pub fn trace(
     Ok(vec![])
 }
 
-fn apply_edit(
-    id: &str,
-    spec: &mut ConformanceSpec,
-    path: &str,
-    action: &OwnedEditAction,
-) -> DiagnosticResult<()> {
-    match action {
-        OwnedEditAction::Set { value, stdin } => {
-            let value = resolve_value(value.as_ref(), *stdin)?;
-            match path {
-                "title" => spec.govctl.title = value,
-                "path" => spec.case.path = value,
-                "selector" => spec.case.selector = value,
-                _ => {
-                    let Some(index) = requirement_version_index(path) else {
-                        return Err(unsupported_path(id, path));
-                    };
-                    let requirement = spec.case.requirements.get_mut(index).ok_or_else(|| {
-                        Diagnostic::new(
-                            DiagnosticCode::E0816PathIndexOutOfBounds,
-                            format!("Requirement index {index} is out of bounds"),
-                            id,
-                        )
-                    })?;
-                    semver::Version::parse(&value).map_err(|_| {
-                        Diagnostic::new(
-                            DiagnosticCode::E0820InvalidFieldValue,
-                            format!("Invalid semantic version: {value}"),
-                            id,
-                        )
-                    })?;
-                    requirement.version = value;
-                }
-            }
-        }
-        OwnedEditAction::Add { value, stdin } => {
-            let value = resolve_value(value.as_ref(), *stdin)?;
-            match path {
-                "requirements" => spec.case.requirements.push(parse_requirement(&value)?),
-                "guards" => spec.case.guards.push(value),
-                "tags" => spec.govctl.tags.push(value),
-                _ => return Err(unsupported_path(id, path)),
-            }
-        }
-        OwnedEditAction::Remove { match_opts } => {
-            if let Some(index) = requirement_index(path) {
-                if match_opts.pattern.is_some() {
-                    return Err(Diagnostic::new(
-                        DiagnosticCode::E0818PathIndexConflict,
-                        "Indexed requirement removal does not accept a value",
-                        id,
-                    ));
-                }
-                remove_index(&mut spec.case.requirements, index, id, "requirement")?;
-            } else {
-                match path {
-                    "requirements" => {
-                        if match_opts.regex || match_opts.all {
-                            return Err(Diagnostic::new(
-                                DiagnosticCode::E0802ConflictingArgs,
-                                "Requirement removal supports only an exact value or indexed path",
-                                id,
-                            ));
-                        }
-                        let value = match_opts.pattern.as_deref().ok_or_else(|| {
-                            Diagnostic::new(
-                                DiagnosticCode::E0801MissingRequiredArg,
-                                "Exact requirement removal requires a value",
-                                id,
-                            )
-                        })?;
-                        let parsed = parse_requirement(value)?;
-                        remove_exact(
-                            &mut spec.case.requirements,
-                            |item| {
-                                item.clause_ref == parsed.clause_ref
-                                    && item.version == parsed.version
-                            },
-                            id,
-                            value,
-                        )?;
-                    }
-                    "guards" => {
-                        remove_string_matches(&mut spec.case.guards, id, "guards", match_opts)?
-                    }
-                    "tags" => remove_string_matches(&mut spec.govctl.tags, id, "tags", match_opts)?,
-                    _ => return Err(unsupported_path(id, path)),
-                }
-            }
-        }
-        OwnedEditAction::Tick { .. } => return Err(unsupported_path(id, path)),
-    }
-    if spec.case.requirements.is_empty() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E1305ConformanceGraphInvalid,
-            "A Conformance Case must retain at least one requirement",
-            id,
-        ));
-    }
-    Ok(())
-}
-
-fn remove_string_matches(
-    values: &mut Vec<String>,
-    id: &str,
-    field: &str,
-    options: &crate::cmd::edit::MatchOptionsOwned,
-) -> DiagnosticResult<()> {
-    let items = values.iter().map(String::as_str).collect::<Vec<_>>();
-    let indices = crate::cmd::edit::matching::resolve_match_indices(
-        id,
-        field,
-        &items,
-        &options.as_match_options(),
-        crate::cmd::edit::matching::MatchUse::Remove,
-    )?;
-    for index in indices.into_iter().rev() {
-        values.remove(index);
-    }
-    Ok(())
-}
-
 fn validate_prospective(config: &Config, cases: &[ConformanceEntry]) -> DiagnosticResult<()> {
     let mut index = crate::load::load_project(config).map_err(|errors| {
         errors.into_iter().next().unwrap_or_else(|| {
@@ -685,105 +547,6 @@ fn validate_id(id: &str) -> DiagnosticResult<()> {
     }
 }
 
-fn parse_requirement(value: &str) -> DiagnosticResult<RequirementBinding> {
-    let (clause_ref, version) = value.rsplit_once('@').ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0820InvalidFieldValue,
-            "Requirement must use CLAUSE-ID@VERSION",
-            value,
-        )
-    })?;
-    if !clause_ref.starts_with("RFC-") || !clause_ref.contains(":C-") {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0820InvalidFieldValue,
-            "Requirement must use a fully qualified RFC Clause ID",
-            value,
-        ));
-    }
-    semver::Version::parse(version).map_err(|_| {
-        Diagnostic::new(
-            DiagnosticCode::E0820InvalidFieldValue,
-            format!("Invalid requirement version: {version}"),
-            value,
-        )
-    })?;
-    Ok(RequirementBinding {
-        clause_ref: clause_ref.to_string(),
-        version: version.to_string(),
-    })
-}
-
-fn resolve_value(value: Option<&Option<String>>, stdin: bool) -> DiagnosticResult<String> {
-    match (value, stdin) {
-        (Some(Some(value)), false) => Ok(value.clone()),
-        (Some(None), true) => {
-            let mut buffer = String::new();
-            std::io::stdin()
-                .read_to_string(&mut buffer)
-                .map_err(|error| Diagnostic::io_error("read stdin", error, "stdin"))?;
-            Ok(buffer.trim_end_matches('\n').to_string())
-        }
-        (Some(None), false) | (None, _) => Err(Diagnostic::new(
-            DiagnosticCode::E0801MissingRequiredArg,
-            "Provide a value or use --stdin",
-            "conformance edit",
-        )),
-        (Some(Some(_)), true) => Err(Diagnostic::new(
-            DiagnosticCode::E0802ConflictingArgs,
-            "Cannot combine a value with --stdin",
-            "conformance edit",
-        )),
-    }
-}
-
-fn requirement_index(path: &str) -> Option<usize> {
-    path.strip_prefix("requirements[")?
-        .strip_suffix(']')?
-        .parse()
-        .ok()
-}
-
-fn requirement_version_index(path: &str) -> Option<usize> {
-    path.strip_prefix("requirements[")?
-        .strip_suffix("].version")?
-        .parse()
-        .ok()
-}
-
-fn remove_index<T>(
-    values: &mut Vec<T>,
-    index: usize,
-    id: &str,
-    label: &str,
-) -> DiagnosticResult<()> {
-    if index >= values.len() {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0816PathIndexOutOfBounds,
-            format!("{label} index {index} is out of bounds"),
-            id,
-        ));
-    }
-    values.remove(index);
-    Ok(())
-}
-
-fn remove_exact<T>(
-    values: &mut Vec<T>,
-    predicate: impl Fn(&T) -> bool,
-    id: &str,
-    value: &str,
-) -> DiagnosticResult<()> {
-    let index = values.iter().position(predicate).ok_or_else(|| {
-        Diagnostic::new(
-            DiagnosticCode::E0806InvalidPattern,
-            format!("No exact value '{value}' exists"),
-            id,
-        )
-    })?;
-    values.remove(index);
-    Ok(())
-}
-
 fn print_case_table(entry: &ConformanceEntry) {
     let mut table = table_with_bold_headers(&["Field", "Value"]);
     table.add_row(["ID", entry.meta().id.as_str()]);
@@ -830,14 +593,6 @@ fn not_found(id: &str) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E1302ConformanceNotFound,
         format!("Conformance Case not found: {id}"),
-        id,
-    )
-}
-
-fn unsupported_path(id: &str, path: &str) -> Diagnostic {
-    Diagnostic::new(
-        DiagnosticCode::E0803UnknownField,
-        format!("Unsupported Conformance Case edit path: {path}"),
         id,
     )
 }

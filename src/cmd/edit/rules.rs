@@ -18,11 +18,17 @@ pub enum NestedNodeKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NestedScalarMode {
     String,
+    Semver,
     Enum {
         allowed: &'static [&'static str],
         invalid_msg: &'static str,
         code: Option<DiagnosticCode>,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NestedListValueCodec {
+    RequirementBinding,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,6 +42,7 @@ pub struct NestedNodeRule {
     pub kind: NestedNodeKind,
     pub verbs: &'static [&'static str],
     pub text_key: Option<&'static str>,
+    pub value_codec: Option<NestedListValueCodec>,
     pub set_mode: Option<NestedScalarMode>,
     pub item: Option<&'static NestedNodeRule>,
     pub fields: &'static [NestedChildRule],
@@ -241,6 +248,19 @@ mod tests {
             "superseded_by",
             Verb::Set
         ));
+    }
+
+    #[test]
+    fn test_conformance_requirement_rule_uses_structured_value_codec()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let rule = nested_root_rule("conformance", "requirements").ok_or("rule should exist")?;
+        assert_eq!(
+            rule.node.value_codec,
+            Some(NestedListValueCodec::RequirementBinding)
+        );
+        assert!(rule.node.verbs.contains(&"add"));
+        assert!(rule.node.verbs.contains(&"remove"));
+        Ok(())
     }
 
     #[test]

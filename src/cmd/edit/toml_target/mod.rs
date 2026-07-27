@@ -10,7 +10,10 @@ use super::target_doc_remove::{notify_removed, remove_target_from_doc};
 use super::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
 use crate::config::Config;
 use crate::diagnostic::DiagnosticResult;
-use crate::model::{AdrEntry, AdrSpec, GuardEntry, GuardSpec, WorkItemEntry, WorkItemSpec};
+use crate::model::{
+    AdrEntry, AdrSpec, ConformanceEntry, ConformanceSpec, GuardEntry, GuardSpec, WorkItemEntry,
+    WorkItemSpec,
+};
 use crate::write::WriteOp;
 pub(super) use set::{set_toml_field, set_work_toml_field};
 use tick::tick_target_in_doc;
@@ -44,6 +47,16 @@ impl TomlEditableEntry for WorkItemEntry {
 
 impl TomlEditableEntry for GuardEntry {
     type Spec = GuardSpec;
+    fn spec(&self) -> &Self::Spec {
+        &self.spec
+    }
+    fn spec_mut(&mut self) -> &mut Self::Spec {
+        &mut self.spec
+    }
+}
+
+impl TomlEditableEntry for ConformanceEntry {
+    type Spec = ConformanceSpec;
     fn spec(&self) -> &Self::Spec {
         &self.spec
     }

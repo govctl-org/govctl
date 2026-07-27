@@ -52,7 +52,9 @@ pub(super) fn execute_artifact_render(
         cmd::edit::ArtifactType::Rfc => render_rfc(config, Some(id), dry_run),
         cmd::edit::ArtifactType::Adr => render_adr(config, Some(id), dry_run),
         cmd::edit::ArtifactType::WorkItem => render_work(config, Some(id), dry_run),
-        cmd::edit::ArtifactType::Clause | cmd::edit::ArtifactType::Guard => Err(Diagnostic::new(
+        cmd::edit::ArtifactType::Clause
+        | cmd::edit::ArtifactType::Guard
+        | cmd::edit::ArtifactType::Conformance => Err(Diagnostic::new(
             DiagnosticCode::E0822UnsupportedOperation,
             "render is not supported for this artifact",
             id,

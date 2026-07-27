@@ -237,6 +237,19 @@ fn conformance_read_outputs_and_string_list_removal_follow_shared_contracts() ->
 {
     let temp_dir = init_project()?;
     establish_requirement(temp_dir.path())?;
+    let added_requirement = run_commands(
+        temp_dir.path(),
+        &[&[
+            "clause",
+            "new",
+            "RFC-0001:C-SECOND",
+            "Second trace requirement",
+        ]],
+    )?;
+    assert!(
+        !added_requirement.contains("exit: 1"),
+        "{added_requirement}"
+    );
     let created = run_commands(
         temp_dir.path(),
         &[&[
@@ -320,6 +333,31 @@ fn conformance_read_outputs_and_string_list_removal_follow_shared_contracts() ->
                 "conformance",
                 "edit",
                 "CONF-OUTPUT-CASE",
+                "requirements",
+                "--add",
+                "RFC-0001:C-SECOND@0.1.0",
+            ],
+            &["conformance", "get", "CONF-OUTPUT-CASE", "requirements"],
+            &[
+                "conformance",
+                "edit",
+                "CONF-OUTPUT-CASE",
+                "requirements",
+                "--remove",
+                "RFC-0001:C-SECOND@0.1.0",
+            ],
+            &[
+                "conformance",
+                "edit",
+                "CONF-OUTPUT-CASE",
+                "requirements[0].version",
+                "--set",
+                "0.1.0",
+            ],
+            &[
+                "conformance",
+                "edit",
+                "CONF-OUTPUT-CASE",
                 "tags",
                 "--add",
                 "case-tag",
@@ -346,6 +384,7 @@ fn conformance_read_outputs_and_string_list_removal_follow_shared_contracts() ->
         ],
     )?;
     assert!(!edits.contains("exit: 1"), "{edits}");
+    assert!(edits.contains("RFC-0001:C-SECOND@0.1.0"), "{edits}");
     assert!(
         !fs::read_to_string(
             temp_dir
@@ -353,6 +392,14 @@ fn conformance_read_outputs_and_string_list_removal_follow_shared_contracts() ->
                 .join("gov/conformance/CONF-OUTPUT-CASE.toml")
         )?
         .contains("GUARD-TRACE-GUARD")
+    );
+    assert!(
+        !fs::read_to_string(
+            temp_dir
+                .path()
+                .join("gov/conformance/CONF-OUTPUT-CASE.toml")
+        )?
+        .contains("C-SECOND")
     );
     Ok(())
 }

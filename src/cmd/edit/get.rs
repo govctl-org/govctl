@@ -1,6 +1,7 @@
 use super::ArtifactType;
 use super::adapter::{
-    AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, WorkTomlAdapter,
+    AdrTomlAdapter, ClauseTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, RfcTomlAdapter,
+    WorkTomlAdapter,
 };
 use super::doc_target::{get_doc_field, rfc_changelog};
 use super::engine as edit_engine;
@@ -56,6 +57,12 @@ pub fn get_field(
             id,
             plan.target.as_ref(),
             ArtifactType::Guard,
+        )?,
+        ArtifactType::Conformance => get_toml_field::<ConformanceTomlAdapter>(
+            config,
+            id,
+            plan.target.as_ref(),
+            ArtifactType::Conformance,
         )?,
     };
     print_get_output(

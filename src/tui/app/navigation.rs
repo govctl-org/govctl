@@ -99,30 +99,10 @@ impl App {
 
     /// Go back to previous view
     pub fn go_back(&mut self) {
-        self.view = match self.view {
-            View::ClauseDetail(rfc_idx, _) => View::RfcDetail(rfc_idx),
-            View::RfcDetail(_) => View::RfcList,
-            View::AdrDetail(_) => View::AdrList,
-            View::WorkDetail(_) => View::WorkList,
-            View::GuardDetail(_) => View::GuardList,
-            View::ConformanceDetail(_) => View::ConformanceList,
-            View::LoopDetail(_) => View::LoopList,
-            View::RfcList
-            | View::ClauseList
-            | View::AdrList
-            | View::WorkList
-            | View::GuardList
-            | View::ConformanceList
-            | View::ReleaseList
-            | View::TagList
-            | View::Search
-            | View::LoopList
-            | View::DiagnosticList => View::Dashboard,
-            View::Dashboard => {
-                self.should_quit = true;
-                View::Dashboard
-            }
-        };
+        self.view = self.view.parent().unwrap_or_else(|| {
+            self.should_quit = true;
+            View::Dashboard
+        });
         self.scroll = 0;
         if self.view == View::Dashboard {
             self.filter_mode = false;
@@ -137,20 +117,7 @@ impl App {
         self.table_state = TableState::default().with_selected(Some(0));
         self.scroll = 0;
         self.invalidate_indices();
-        if matches!(
-            self.view,
-            View::RfcList
-                | View::ClauseList
-                | View::AdrList
-                | View::WorkList
-                | View::GuardList
-                | View::ConformanceList
-                | View::ReleaseList
-                | View::TagList
-                | View::Search
-                | View::LoopList
-                | View::DiagnosticList
-        ) {
+        if self.view.is_list() {
             self.filter_mode = false;
             self.clear_filter();
         } else {

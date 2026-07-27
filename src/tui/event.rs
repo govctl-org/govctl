@@ -53,16 +53,7 @@ pub(super) fn handle_key(app: &mut App, key: KeyEvent) {
 
     match app.view {
         View::Dashboard => handle_dashboard_keys(app, key),
-        View::RfcList
-        | View::ClauseList
-        | View::AdrList
-        | View::WorkList
-        | View::GuardList
-        | View::ConformanceList
-        | View::ReleaseList
-        | View::TagList
-        | View::LoopList
-        | View::DiagnosticList => {
+        view if view.is_standard_list() => {
             if app.filter_mode {
                 handle_filter_input(app, key);
             } else {
@@ -87,6 +78,7 @@ pub(super) fn handle_key(app: &mut App, key: KeyEvent) {
         | View::ClauseDetail(_, _) => {
             handle_detail_keys(app, key);
         }
+        _ => unreachable!("every view has a declared input mode"),
     }
 }
 
