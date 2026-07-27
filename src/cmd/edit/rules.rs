@@ -120,6 +120,33 @@ pub fn simple_field_rule(artifact: &str, field: &str) -> Option<&'static SimpleF
         .find(|rule| rule.artifact == artifact && rule.name == field)
 }
 
+pub fn root_field_names(artifact: &str) -> Vec<&'static str> {
+    let mut names = SIMPLE_RULES
+        .iter()
+        .filter(|rule| rule.artifact == artifact)
+        .map(|rule| rule.name)
+        .chain(
+            NESTED_RULES
+                .iter()
+                .filter(|rule| rule.artifact == artifact)
+                .map(|rule| rule.root),
+        )
+        .collect::<Vec<_>>();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
+pub fn nested_child_names(node: &NestedNodeRule) -> Vec<&'static str> {
+    let mut names = node
+        .fields
+        .iter()
+        .map(|field| field.name)
+        .collect::<Vec<_>>();
+    names.sort_unstable();
+    names
+}
+
 pub fn simple_field_supports_verb(artifact: &str, field: &str, verb: Verb) -> bool {
     simple_field_rule(artifact, field).is_some_and(|rule| rule.verbs.contains(&verb.as_str()))
 }

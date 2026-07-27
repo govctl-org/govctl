@@ -21,6 +21,7 @@ pub(super) fn tick_target_in_doc(
             kind: edit_engine::TargetKind::List,
             origin,
             status_list,
+            ..
         } => {
             if !status_list {
                 return Err(Diagnostic::new(

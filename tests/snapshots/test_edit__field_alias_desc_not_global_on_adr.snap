@@ -7,5 +7,5 @@ Created ADR: gov/adr/ADR-XXXX-alias-scope.toml
 exit: 0
 
 $ govctl adr edit ADR-0001 desc --set nope
-error[E0803]: Unknown ADR field: desc (ADR-0001)
+error[E0803]: Unknown ADR field: desc. Known fields: alternatives, consequences, context, date, decision, refs, status, superseded_by, tags, title (ADR-0001)
 exit: 1

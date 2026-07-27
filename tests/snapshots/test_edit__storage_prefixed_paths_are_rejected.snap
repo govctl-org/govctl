@@ -23,17 +23,17 @@ Marked 'Option B' as rejected
 exit: 0
 
 $ govctl adr edit ADR-0001 content.decision --set A dotted decision
-error[E0803]: Unknown ADR field: content.decision (ADR-0001)
+error[E0803]: Unknown ADR field: content.decision. Known fields: alternatives, consequences, context, date, decision, refs, status, superseded_by, tags, title (ADR-0001)
 exit: 1
 
 $ govctl adr get ADR-0001 content.decision
-error[E0803]: Unknown ADR field: content.decision (ADR-0001)
+error[E0803]: Unknown ADR field: content.decision. Known fields: alternatives, consequences, context, date, decision, refs, status, superseded_by, tags, title (ADR-0001)
 exit: 1
 
 $ govctl adr edit ADR-0001 govctl.title --set Compat Title
-error[E0803]: Unknown ADR field: govctl.title (ADR-0001)
+error[E0803]: Unknown ADR field: govctl.title. Known fields: alternatives, consequences, context, date, decision, refs, status, superseded_by, tags, title (ADR-0001)
 exit: 1
 
 $ govctl adr get ADR-0001 govctl.title
-error[E0803]: Unknown ADR field: govctl.title (ADR-0001)
+error[E0803]: Unknown ADR field: govctl.title. Known fields: alternatives, consequences, context, date, decision, refs, status, superseded_by, tags, title (ADR-0001)
 exit: 1

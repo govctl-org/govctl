@@ -107,6 +107,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Status reports rejected ADRs and totals for verification guards and releases (WI-2026-07-27-009)
 - Conformance Case creation and editing validate the target, locator uniqueness, and direct dependencies without being blocked by unrelated project diagnostics (WI-2026-07-27-010)
 - Conformance Case deletion checks governed referrers without being blocked by unrelated project diagnostics (WI-2026-07-27-010)
+- Unknown root and nested edit fields report valid fields for the applicable resource or path level (WI-2026-07-27-011)
+- Unsupported edit operations report the addressed path and its permitted operations (WI-2026-07-27-011)
 
 ### Security
 

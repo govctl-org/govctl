@@ -110,6 +110,7 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
     let artifact = plan.artifact;
     let fp = &plan.field_path;
     let target = &plan.target;
+    target.ensure_supports(edit_rules::Verb::Add, id)?;
 
     // Validate tags against controlled vocabulary at add time — [[RFC-0002:C-RESOURCES]]
     if fp.as_simple() == Some("tags") {

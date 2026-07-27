@@ -8,5 +8,5 @@ Created RFC: gov/rfc/RFC-0001/rfc.toml
 exit: 0
 
 $ govctl rfc edit RFC-0001 nonexistent --set value
-error[E0101]: Unknown field: nonexistent ()
+error[E0101]: Unknown field: nonexistent. Known fields: changelog, created, owners, phase, refs, status, supersedes, tags, title, updated, version ()
 exit: 1

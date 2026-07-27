@@ -21,6 +21,7 @@ pub fn remove_from_field(
     let plan = plan_mutation_target(id, field, edit_rules::Verb::Remove)?;
     let artifact = plan.artifact;
     let target = &plan.target;
+    target.ensure_supports(edit_rules::Verb::Remove, id)?;
     reject_match_flags_for_indexed_target(id, target, opts)?;
 
     match artifact {

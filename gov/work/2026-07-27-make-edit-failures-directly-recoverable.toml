@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-011"
+title = "Make edit failures directly recoverable"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = ["RFC-0002:C-EDIT-FIELD-CONTRACT"]
+
+[content]
+description = "Improve shared edit diagnostics so invalid paths and operations identify the applicable canonical alternatives from the existing edit-rule registry."
+
+[[content.acceptance_criteria]]
+text = "Unknown root and nested edit fields report valid fields for the applicable resource or path level"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Unsupported edit operations report the addressed path and its permitted operations"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Recovery metadata is derived from the edit-rule registry and covered across simple and nested paths"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

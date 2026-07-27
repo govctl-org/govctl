@@ -8,9 +8,9 @@ Created work item: gov/work/<DATE>-test-task.toml
 exit: 0
 
 $ govctl work edit WI-<DATE>-001 desc --set A description
-error[E0803]: Unknown work item field: desc (WI-<DATE>-001)
+error[E0803]: Unknown work item field: desc. Known fields: acceptance_criteria, completed, depends_on, description, notes, refs, started, status, tags, title, verification (WI-<DATE>-001)
 exit: 1
 
 $ govctl work get WI-<DATE>-001 desc
-error[E0803]: Unknown work item field: desc (WI-<DATE>-001)
+error[E0803]: Unknown work item field: desc. Known fields: acceptance_criteria, completed, depends_on, description, notes, refs, started, status, tags, title, verification (WI-<DATE>-001)
 exit: 1

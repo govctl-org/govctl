@@ -24,6 +24,7 @@ pub fn tick_item(
     let plan = plan_mutation_target(id, field, edit_rules::Verb::Tick)?;
     let artifact = plan.artifact;
     let target = &plan.target;
+    target.ensure_supports(edit_rules::Verb::Tick, id)?;
     reject_match_flags_for_indexed_target(id, target, opts)?;
     if !matches!(target, super::engine::ResolvedTarget::IndexedItem { .. }) {
         return Err(Diagnostic::new(
