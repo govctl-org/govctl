@@ -32,6 +32,7 @@ It gives AI-assisted development a control plane that lives in your repo:
 - **ADRs** record why a design was chosen
 - **Work items** track execution and acceptance criteria
 - **Verification guards** enforce executable completion gates
+- **Conformance cases** map reusable acceptance scenarios to versioned RFC requirements and guards
 
 The point is not bureaucracy. The point is that AI-generated changes become **reviewable, traceable, and phase-gated**.
 
@@ -192,12 +193,13 @@ This is not the product's identity. It is the low-level tool agents use to updat
 ### Project-wide search
 
 Use `govctl search` to find governed artifacts across RFCs, clauses, ADRs,
-work items, and guards:
+work items, guards, and Conformance Cases:
 
 ```bash
 govctl search cache
 govctl search RFC-0002 --output json
 govctl search migration --type rfc --type adr --tag cli -n 5
+govctl search cache --type conformance
 ```
 
 Search uses a disposable local index under `.govctl/`. The TOML artifacts remain
@@ -241,6 +243,23 @@ reason. See:
 - [Validation & Rendering](https://github.com/govctl-org/govctl/blob/main/docs/guide/validation.md#per-work-item-guards)
 - [Working with Work Items](https://github.com/govctl-org/govctl/blob/main/docs/guide/work-items.md#per-work-item-guards)
 
+### Requirement traceability
+
+Conformance Cases provide a stable, non-normative link from a versioned RFC
+Clause to a project-owned scenario and reusable Guards:
+
+```bash
+govctl conformance new "Cache expiry" \
+  --path tests/conformance/cache.toml \
+  --selector cache-expiry \
+  --requirement RFC-0012:C-CACHE-EXPIRY@1.2.0 \
+  --guard GUARD-CACHE-CONFORMANCE
+govctl conformance trace RFC-0012
+```
+
+They declare traceability; they do not execute tests or override RFC authority.
+See [Conformance Cases](docs/guide/conformance-cases.md).
+
 ### Brownfield adoption vs format migration
 
 These are related, but different:
@@ -255,7 +274,10 @@ govctl migrate
 govctl check
 ```
 
-Schema version 3 is the minimum supported repository format. Use a compatible earlier govctl version to migrate older repositories before upgrading. Legacy RFC and clause JSON storage is rejected explicitly.
+Schema version 3 is the minimum supported repository format; schema version 4
+enables Conformance Cases. Use a compatible earlier govctl version to migrate
+older repositories before upgrading. Legacy RFC and clause JSON storage is
+rejected explicitly.
 
 ### Interactive TUI
 

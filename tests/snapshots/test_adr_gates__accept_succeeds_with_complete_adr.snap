@@ -39,9 +39,12 @@ Accepted ADR: ADR-0001
 exit: 0
 
 $ govctl adr list
-┌──────────┬──────────┬────────────┬──────────┐
-│ ADR      ┆ Status   ┆ Date       ┆ Title    │
-╞══════════╪══════════╪════════════╪══════════╡
-│ ADR-0001 ┆ accepted ┆ <DATE> ┆ Test ADR │
-└──────────┴──────────┴────────────┴──────────┘
+[
+  {
+    "id": "ADR-0001",
+    "status": "accepted",
+    "date": "<DATE>",
+    "title": "Test ADR"
+  }
+]
 exit: 0

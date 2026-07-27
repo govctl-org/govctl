@@ -5,12 +5,11 @@ mod work_dependencies;
 use super::adapter::TomlAdapter;
 use super::engine as edit_engine;
 use super::matching::MatchOptions;
-use super::target_doc::{NestedGetMode, render_target_from_doc};
+use super::target_doc::{NestedGetMode, value_target_from_doc};
 use super::target_doc_remove::{notify_removed, remove_target_from_doc};
 use super::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
-use crate::cmd::output::print_toml;
 use crate::config::Config;
-use crate::diagnostic::{DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::DiagnosticResult;
 use crate::model::{AdrEntry, AdrSpec, GuardEntry, GuardSpec, WorkItemEntry, WorkItemSpec};
 use crate::write::WriteOp;
 pub(super) use set::{set_toml_field, set_work_toml_field};
@@ -58,7 +57,7 @@ pub(super) fn get_toml_field<A>(
     id: &str,
     target: Option<&edit_engine::ResolvedTarget>,
     artifact: ArtifactType,
-) -> DiagnosticResult<()>
+) -> DiagnosticResult<serde_json::Value>
 where
     A: TomlAdapter,
     A::Entry: TomlEditableEntry,
@@ -66,19 +65,10 @@ where
     let entry = A::load(config, id)?;
     if let Some(target) = target {
         let doc = serialize_edit_doc(entry.spec(), id)?;
-        println!(
-            "{}",
-            render_target_from_doc(artifact, &doc, target, id, NestedGetMode::Allow)?
-        );
+        value_target_from_doc(artifact, &doc, target, id, NestedGetMode::Allow)
     } else {
-        print_toml(
-            entry.spec(),
-            DiagnosticCode::E0903UnexpectedError,
-            "Failed to serialize editable document TOML",
-            id,
-        )?;
+        serialize_edit_doc(entry.spec(), id)
     }
-    Ok(())
 }
 
 pub(super) fn remove_toml_field<A>(

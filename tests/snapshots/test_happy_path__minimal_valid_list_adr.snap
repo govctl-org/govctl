@@ -1,11 +1,14 @@
 ---
 source: tests/test_happy_path.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl adr list
-┌──────────┬──────────┬────────────┬───────────────┐
-│ ADR      ┆ Status   ┆ Date       ┆ Title         │
-╞══════════╪══════════╪════════════╪═══════════════╡
-│ ADR-0001 ┆ accepted ┆ 2026-01-01 ┆ Test Decision │
-└──────────┴──────────┴────────────┴───────────────┘
+[
+  {
+    "id": "ADR-0001",
+    "status": "accepted",
+    "date": "2026-01-01",
+    "title": "Test Decision"
+  }
+]
 exit: 0

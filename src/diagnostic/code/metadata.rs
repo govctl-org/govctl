@@ -113,6 +113,13 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E1208LoopResumeAmbiguous => "E1208",
         DiagnosticCode::E1209LoopWorkMismatch => "E1209",
         DiagnosticCode::E1210LoopExecutionFailed => "E1210",
+        // E13xx - Conformance Case
+        DiagnosticCode::E1301ConformanceSchemaInvalid => "E1301",
+        DiagnosticCode::E1302ConformanceNotFound => "E1302",
+        DiagnosticCode::E1303ConformanceDuplicate => "E1303",
+        DiagnosticCode::E1304ConformanceInvalidId => "E1304",
+        DiagnosticCode::E1305ConformanceGraphInvalid => "E1305",
+        DiagnosticCode::E1306ConformanceStillReferenced => "E1306",
         // E08xx - CLI/Command
         DiagnosticCode::E0801MissingRequiredArg => "E0801",
         DiagnosticCode::E0802ConflictingArgs => "E0802",

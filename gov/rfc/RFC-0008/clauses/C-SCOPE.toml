@@ -5,6 +5,7 @@ id = "C-SCOPE"
 title = "Scope and Authority"
 kind = "informative"
 status = "active"
+since = "0.1.0"
 tags = ["core"]
 
 [content]
@@ -15,4 +16,4 @@ This RFC defines a first-class Conformance Case as a version-aware, non-normativ
 
 This RFC covers current Case identity and storage, stable scenario locators, version-bound requirement relationships, derived applicability state, structural validation, and trace queries. It does not define sub-Clause requirement anchors, a test runner, domain-specific fixture or oracle formats, Work Item completion requirements, persistent run results, Case revisions or lifecycle states, Suite resources, or a general custom-artifact framework.
 
-Lifecycle readiness depends on companion amendments integrating the new resource into the closed contracts owned by [[RFC-0000:C-REFERENCE-HIERARCHY]], [[RFC-0002:C-RESOURCES]], [[RFC-0002:C-CRUD-VERBS]], [[RFC-0002:C-EDIT-FIELD-CONTRACT]], [[RFC-0002:C-SHOW-PROJECTION]], [[RFC-0002:C-GLOBAL-COMMANDS]], [[RFC-0002:C-SEARCH-COMMAND]], [[RFC-0002:C-COMPATIBILITY-BOUNDARY]], and [[RFC-0002:C-OUTPUT-FORMAT]]. Until those amendments remove conflicts with existing exhaustive lists, this draft remains a proposal rather than a finalizable contract."""
+The Conformance Case resource integrates with the authority, resource, CRUD, edit, show, global-command, search, compatibility, and output contracts defined by [[RFC-0000:C-REFERENCE-HIERARCHY]], [[RFC-0002:C-RESOURCES]], [[RFC-0002:C-CRUD-VERBS]], [[RFC-0002:C-EDIT-FIELD-CONTRACT]], [[RFC-0002:C-SHOW-PROJECTION]], [[RFC-0002:C-GLOBAL-COMMANDS]], [[RFC-0002:C-SEARCH-COMMAND]], [[RFC-0002:C-COMPATIBILITY-BOUNDARY]], and [[RFC-0002:C-OUTPUT-FORMAT]]."""

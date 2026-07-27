@@ -32,9 +32,13 @@ Bumped RFC-0001 to 1.0.0
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬──────────────────────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title                    │
-╞══════════╪═════════╪═══════════╪═══════╪══════════════════════════╡
-│ RFC-0001 ┆ 1.0.0   ┆ normative ┆ spec  ┆ Test RFC major amendment │
-└──────────┴─────────┴───────────┴───────┴──────────────────────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "1.0.0",
+    "status": "normative",
+    "phase": "spec",
+    "title": "Test RFC major amendment"
+  }
+]
 exit: 0

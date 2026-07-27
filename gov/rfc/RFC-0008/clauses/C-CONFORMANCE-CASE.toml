@@ -5,6 +5,7 @@ id = "C-CONFORMANCE-CASE"
 title = "Conformance Case Definition"
 kind = "normative"
 status = "active"
+since = "0.1.0"
 tags = ["schema"]
 
 [content]
@@ -24,10 +25,10 @@ A Conformance Case ID MUST match `CONF-[A-Z][A-Z0-9-]*`. The ID MUST be unique w
 
 A Case MAY bind one scenario to multiple requirement Clauses and multiple Guards. These bindings are declarations only. A Case MUST NOT establish, alter, or broaden an RFC obligation, and humans and agents MUST resolve every semantic disagreement in favor of the RFC.
 
-A Conformance Case has no persisted lifecycle status. Its requirement bindings derive `current`, `provisional`, or `stale` applicability under [[RFC-0008:C-TRACE-QUERY]]. Editing or deleting a Case changes only the current declaration; repository version control remains the history mechanism. Case mutation MUST NOT modify RFC versions, changelogs, Clause metadata, or sealed content signatures.
+A Conformance Case has no persisted lifecycle status. Its requirement bindings derive `current`, `candidate`, `provisional`, or `stale` applicability under [[RFC-0008:C-TRACE-QUERY]]. Editing or deleting a Case changes only the current declaration; repository version control remains the history mechanism. Case mutation MUST NOT modify RFC versions, changelogs, Clause metadata, or sealed content signatures.
 
 Conformance Case storage MUST use project schema version 4. Conformance commands on a version 3 project MUST fail without mutation and instruct the user to run `govctl migrate`. Normal project loading of version 3 data that contains `gov/conformance/*.toml` MUST fail with the same instruction rather than ignore those files.
 
-Migration from version 3 to version 4 MUST install all current bundled schemas and MUST NOT create Cases or requirement bindings. A successfully migrated project MUST load and validate Conformance Case files, enforce prohibited Conformance Case references, expose the `conformance` resource commands, and include Cases in `search --type conformance`. As a recovery exception to normal version 3 loading, `govctl migrate` MUST inspect prospective Case files with the version 4 schema before mutation. Valid files MUST be preserved by the atomic migration; invalid files MUST produce diagnostics and leave the project unchanged.
+Migration from version 3 to version 4 MUST install all current bundled schemas and MUST NOT create Cases or requirement bindings. A successfully migrated project MUST load and validate Conformance Case files, enforce prohibited Conformance Case references, expose the `conformance` resource commands, and include Cases in `search --type conformance`. As a recovery exception to normal version 3 loading, `govctl migrate` MUST validate prospective Case files with the version 4 schema and MUST validate the complete prospective Case graph under [[RFC-0008:C-VALIDATION]] before mutation. Valid files MUST be preserved by the atomic migration; any schema or graph error MUST produce diagnostics and leave the project unchanged.
 
 **Rationale:** Stable locator tokens and RFC version markers make declared relationships addressable without importing project test semantics into govctl. Current-only mutation keeps the resource small, while derived stale applicability exposes RFC evolution without creating another artifact lifecycle."""

@@ -68,6 +68,7 @@ fn test_target_resolves_get_and_edit_to_same_field_target() -> Result<(), Box<dy
     let get = crate::AdrCommand::Get(crate::CommonGetArgs {
         id: "ADR-0038".to_string(),
         field: Some("alternatives[1].status".to_string()),
+        output: None,
     })
     .to_plan()?;
     let edit = crate::AdrCommand::Edit(crate::CommonEditArgs {
@@ -88,7 +89,7 @@ fn test_target_resolves_get_and_edit_to_same_field_target() -> Result<(), Box<dy
     match ((&get.op, &get.scope), (&edit.op, &edit.scope)) {
         (
             (
-                Op::Get,
+                Op::Get { .. },
                 Scope::Target {
                     artifact: get_artifact,
                     id: get_id,

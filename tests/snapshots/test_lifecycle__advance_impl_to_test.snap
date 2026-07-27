@@ -1,6 +1,6 @@
 ---
-source: tests/test_lifecycle.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/rfc_cases/advance.rs
+expression: snapshot
 ---
 $ govctl rfc new Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -20,9 +20,13 @@ Advanced RFC-0001 to phase: test
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬──────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title    │
-╞══════════╪═════════╪═══════════╪═══════╪══════════╡
-│ RFC-0001 ┆ 0.1.0   ┆ normative ┆ test  ┆ Test RFC │
-└──────────┴─────────┴───────────┴───────┴──────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.0",
+    "status": "normative",
+    "phase": "test",
+    "title": "Test RFC"
+  }
+]
 exit: 0

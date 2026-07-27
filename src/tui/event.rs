@@ -367,6 +367,7 @@ mod tests {
                 work_item("WI-2026-06-07-001", "Alpha"),
                 work_item("WI-2026-06-07-002", "Beta"),
             ],
+            conformance_cases: vec![],
         }
     }
 

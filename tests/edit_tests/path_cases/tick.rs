@@ -62,7 +62,11 @@ fn test_adr_edit_tick_updates_indexed_alternative() -> common::TestResult {
         "output: {}",
         output
     );
-    assert!(output.contains("[accepted] Option A"), "output: {}", output);
+    assert!(
+        output.contains(r#"{"status":"accepted","text":"Option A"}"#),
+        "output: {}",
+        output
+    );
     Ok(())
 }
 

@@ -143,6 +143,10 @@ impl Config {
         self.gov_root.join("guard")
     }
 
+    pub fn conformance_dir(&self) -> PathBuf {
+        self.gov_root.join("conformance")
+    }
+
     pub fn templates_dir(&self) -> PathBuf {
         self.gov_root.join("templates")
     }
@@ -193,7 +197,15 @@ fn contains_governance_state(gov_root: &Path) -> DiagnosticResult<bool> {
     }
 
     let mut pending = Vec::new();
-    for name in ["rfc", "adr", "work", "guard", "schema", "templates"] {
+    for name in [
+        "rfc",
+        "adr",
+        "work",
+        "guard",
+        "conformance",
+        "schema",
+        "templates",
+    ] {
         let path = gov_root.join(name);
         match std::fs::symlink_metadata(&path) {
             Ok(metadata) if metadata.file_type().is_symlink() => return Ok(true),

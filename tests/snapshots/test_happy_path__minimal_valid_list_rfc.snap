@@ -1,11 +1,15 @@
 ---
 source: tests/test_happy_path.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬────────┬──────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase  ┆ Title    │
-╞══════════╪═════════╪═══════════╪════════╪══════════╡
-│ RFC-0001 ┆ 1.0.0   ┆ normative ┆ stable ┆ Test RFC │
-└──────────┴─────────┴───────────┴────────┴──────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "1.0.0",
+    "status": "normative",
+    "phase": "stable",
+    "title": "Test RFC"
+  }
+]
 exit: 0

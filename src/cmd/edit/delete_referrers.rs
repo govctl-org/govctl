@@ -22,6 +22,18 @@ pub(super) fn clause_deletion_referrers(
     })?;
     referrers.extend(inline_clause_referrers(index, &inline_re, clause_id));
     referrers.extend(guard_referrers(config, clause_id)?);
+    referrers.extend(
+        crate::parse::load_conformance_cases(config)?
+            .into_iter()
+            .filter(|case| {
+                case.spec
+                    .case
+                    .requirements
+                    .iter()
+                    .any(|requirement| requirement.clause_ref == clause_id)
+            })
+            .map(|case| case.meta().id.clone()),
+    );
     referrers.sort();
     referrers.dedup();
     Ok(referrers)

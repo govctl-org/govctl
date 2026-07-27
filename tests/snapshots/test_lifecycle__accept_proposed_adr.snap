@@ -23,11 +23,14 @@ Marked 'Option B' as rejected
 exit: 0
 
 $ govctl adr list
-┌──────────┬──────────┬────────────┬───────────────┐
-│ ADR      ┆ Status   ┆ Date       ┆ Title         │
-╞══════════╪══════════╪════════════╪═══════════════╡
-│ ADR-0001 ┆ proposed ┆ <DATE> ┆ Test Decision │
-└──────────┴──────────┴────────────┴───────────────┘
+[
+  {
+    "id": "ADR-0001",
+    "status": "proposed",
+    "date": "<DATE>",
+    "title": "Test Decision"
+  }
+]
 exit: 0
 
 $ govctl adr accept ADR-0001
@@ -35,9 +38,12 @@ Accepted ADR: ADR-0001
 exit: 0
 
 $ govctl adr list
-┌──────────┬──────────┬────────────┬───────────────┐
-│ ADR      ┆ Status   ┆ Date       ┆ Title         │
-╞══════════╪══════════╪════════════╪═══════════════╡
-│ ADR-0001 ┆ accepted ┆ <DATE> ┆ Test Decision │
-└──────────┴──────────┴────────────┴───────────────┘
+[
+  {
+    "id": "ADR-0001",
+    "status": "accepted",
+    "date": "<DATE>",
+    "title": "Test Decision"
+  }
+]
 exit: 0

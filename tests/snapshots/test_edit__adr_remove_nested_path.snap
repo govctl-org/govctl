@@ -35,7 +35,6 @@ Removed 'Bad' from ADR-0001.alternatives[0].cons
 exit: 0
 
 $ govctl adr get ADR-0001 alternatives[0].cons
-
 exit: 0
 
 $ govctl adr edit ADR-0001 alternatives[0] --remove
@@ -43,5 +42,4 @@ Removed 'Opt1' from ADR-0001.alternatives
 exit: 0
 
 $ govctl adr get ADR-0001 alternatives
-
 exit: 0

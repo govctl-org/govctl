@@ -1,11 +1,13 @@
 ---
 source: tests/test_happy_path.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl work list
-┌───────────────────┬────────┬────────────────┐
-│ ID                ┆ Status ┆ Title          │
-╞═══════════════════╪════════╪════════════════╡
-│ WI-<DATE>-001 ┆ active ┆ Test work item │
-└───────────────────┴────────┴────────────────┘
+[
+  {
+    "id": "WI-<DATE>-001",
+    "status": "active",
+    "title": "Test work item"
+  }
+]
 exit: 0

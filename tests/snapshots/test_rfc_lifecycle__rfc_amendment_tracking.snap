@@ -34,11 +34,15 @@ Advanced RFC-0001 to phase: stable
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬────────┬────────────────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase  ┆ Title              │
-╞══════════╪═════════╪═══════════╪════════╪════════════════════╡
-│ RFC-0001 ┆ 0.1.0   ┆ normative ┆ stable ┆ Amendment Test RFC │
-└──────────┴─────────┴───────────┴────────┴────────────────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.0",
+    "status": "normative",
+    "phase": "stable",
+    "title": "Amendment Test RFC"
+  }
+]
 exit: 0
 
 $ govctl clause edit RFC-0001:C-AMEND-TEST text --set AMENDED text - content changed.
@@ -46,11 +50,16 @@ Set RFC-0001:C-AMEND-TEST.text = AMENDED text - content changed.
 exit: 0
 
 $ govctl rfc list
-┌───────────┬─────────┬───────────┬────────┬────────────────────┐
-│ RFC       ┆ Version ┆ Status    ┆ Phase  ┆ Title              │
-╞═══════════╪═════════╪═══════════╪════════╪════════════════════╡
-│ RFC-0001* ┆ 0.1.0   ┆ normative ┆ stable ┆ Amendment Test RFC │
-└───────────┴─────────┴───────────┴────────┴────────────────────┘
+[
+  {
+    "id": "RFC-0001*",
+    "version": "0.1.0",
+    "status": "normative",
+    "phase": "stable",
+    "title": "Amendment Test RFC",
+    "amended": true
+  }
+]
 exit: 0
 
 $ govctl rfc bump RFC-0001 --patch --summary Release amendment
@@ -58,9 +67,13 @@ Bumped RFC-0001 to 0.1.1
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬────────────────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title              │
-╞══════════╪═════════╪═══════════╪═══════╪════════════════════╡
-│ RFC-0001 ┆ 0.1.1   ┆ normative ┆ spec  ┆ Amendment Test RFC │
-└──────────┴─────────┴───────────┴───────┴────────────────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.1",
+    "status": "normative",
+    "phase": "spec",
+    "title": "Amendment Test RFC"
+  }
+]
 exit: 0

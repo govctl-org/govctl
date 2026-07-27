@@ -1,6 +1,6 @@
 ---
-source: tests/test_lifecycle.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/clause.rs
+expression: snapshot
 ---
 $ govctl rfc new Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -29,11 +29,20 @@ Supersede cancelled
 exit: 0
 
 $ govctl clause list
-┌────────┬──────────┬───────────┬────────┬────────────┐
-│ Clause ┆ RFC      ┆ Kind      ┆ Status ┆ Title      │
-╞════════╪══════════╪═══════════╪════════╪════════════╡
-│ C-NEW  ┆ RFC-0001 ┆ normative ┆ active ┆ New Clause │
-├╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ C-OLD  ┆ RFC-0001 ┆ normative ┆ active ┆ Old Clause │
-└────────┴──────────┴───────────┴────────┴────────────┘
+[
+  {
+    "id": "C-NEW",
+    "rfc_id": "RFC-0001",
+    "kind": "normative",
+    "status": "active",
+    "title": "New Clause"
+  },
+  {
+    "id": "C-OLD",
+    "rfc_id": "RFC-0001",
+    "kind": "normative",
+    "status": "active",
+    "title": "Old Clause"
+  }
+]
 exit: 0

@@ -13,13 +13,18 @@ Created work item: gov/work/<DATE>-delete-this-work-item.toml
 exit: 0
 
 $ govctl work list
-┌───────────────────┬────────┬───────────────────────┐
-│ ID                ┆ Status ┆ Title                 │
-╞═══════════════════╪════════╪═══════════════════════╡
-│ WI-<DATE>-001 ┆ queue  ┆ Keep this work item   │
-├╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌┼╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┤
-│ WI-<DATE>-002 ┆ queue  ┆ Delete this work item │
-└───────────────────┴────────┴───────────────────────┘
+[
+  {
+    "id": "WI-<DATE>-001",
+    "status": "queue",
+    "title": "Keep this work item"
+  },
+  {
+    "id": "WI-<DATE>-002",
+    "status": "queue",
+    "title": "Delete this work item"
+  }
+]
 exit: 0
 
 $ govctl work delete WI-<DATE>-001 -f
@@ -27,11 +32,13 @@ $ govctl work delete WI-<DATE>-001 -f
 exit: 0
 
 $ govctl work list
-┌───────────────────┬────────┬───────────────────────┐
-│ ID                ┆ Status ┆ Title                 │
-╞═══════════════════╪════════╪═══════════════════════╡
-│ WI-<DATE>-002 ┆ queue  ┆ Delete this work item │
-└───────────────────┴────────┴───────────────────────┘
+[
+  {
+    "id": "WI-<DATE>-002",
+    "status": "queue",
+    "title": "Delete this work item"
+  }
+]
 exit: 0
 
 $ govctl check
@@ -41,6 +48,7 @@ Checked:
   0 ADRs
   1 work items
   0 verification guards
+  0 conformance cases
 
 warning[W0108]: Work item has placeholder description (hint: `govctl work edit WI-<DATE>-002 description --set "..."`) (gov/work/<DATE>-delete-this-work-item.toml)
 exit: 0

@@ -11,12 +11,6 @@ mod skills;
 pub use artifacts::create;
 pub use skills::sync_skills;
 
-fn schema_version_for_init() -> u32 {
-    std::env::var("GOVCTL_SCHEMA_VERSION")
-        .ok()
-        .and_then(|v| v.parse().ok())
-        .unwrap_or(crate::cmd::migrate::CURRENT_SCHEMA_VERSION)
-}
 /// Initialize govctl project
 pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     let config_path = config.gov_root.join("config.toml");
@@ -40,6 +34,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResu
         config.adr_dir(),
         config.work_dir(),
         config.guard_dir(),
+        config.conformance_dir(),
         config.templates_dir(),
     ];
 
@@ -53,7 +48,7 @@ pub fn init_project(config: &Config, force: bool, op: WriteOp) -> DiagnosticResu
     // Write config after gov_root exists
     write_file(
         &config_path,
-        &Config::default_toml(schema_version_for_init()),
+        &Config::default_toml(crate::cmd::migrate::CURRENT_SCHEMA_VERSION),
         op,
         Some(&config.display_path(&config_path)),
     )?;

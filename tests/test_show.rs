@@ -16,18 +16,9 @@ fn successful_payload(output: &str) -> Result<&str, Box<dyn std::error::Error>> 
     Ok(payload.trim_end())
 }
 
-fn get_value(
-    resource: &str,
-    output: &str,
-) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+fn get_value(output: &str) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     let payload = successful_payload(output)?;
-    if matches!(resource, "rfc" | "clause") {
-        Ok(serde_json::from_str(payload)?)
-    } else {
-        Ok(serde_json::to_value(toml::from_str::<toml::Value>(
-            payload,
-        )?)?)
-    }
+    Ok(serde_json::from_str(payload)?)
 }
 
 #[test]
@@ -53,8 +44,33 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
     ];
 
     for (resource, id, identity_key, content_key, toml_content_marker) in resources {
-        let get = run_commands(temp_dir.path(), &[&[resource, "get", id]])?;
-        let expected = get_value(resource, &get)?;
+        let get = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "json"]],
+        )?;
+        let expected = get_value(&get)?;
+        let get_yaml = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "yaml"]],
+        )?;
+        let get_yaml_value: serde_json::Value =
+            serde_yaml::from_str(successful_payload(&get_yaml)?)?;
+        assert_eq!(get_yaml_value, expected, "resource: {resource}");
+
+        let get_toml = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "toml"]],
+        )?;
+        let get_toml_value = serde_json::to_value(toml::from_str::<toml::Value>(
+            successful_payload(&get_toml)?,
+        )?)?;
+        assert_eq!(get_toml_value, expected, "resource: {resource}");
+
+        let get_table = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "table"]],
+        )?;
+        assert_success_with(&get_table, identity_key);
 
         let json = run_commands(
             temp_dir.path(),

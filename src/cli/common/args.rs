@@ -1,7 +1,7 @@
 use clap::Args;
 
 use super::actions::EditActionArgs;
-use super::targets::{OutputFormat, ShowOutputFormat};
+use super::targets::{GetOutputFormat, ListOutputFormat, ShowOutputFormat};
 
 #[derive(Args, Clone, Debug)]
 pub(crate) struct CommonListArgs {
@@ -10,9 +10,9 @@ pub(crate) struct CommonListArgs {
     /// Limit number of results
     #[arg(short = 'n', long)]
     pub(crate) limit: Option<usize>,
-    /// Output format
-    #[arg(short = 'o', long, value_enum, default_value = "table")]
-    pub(crate) output: OutputFormat,
+    /// Output format; defaults to table in a TTY and JSON otherwise
+    #[arg(short = 'o', long, value_enum)]
+    pub(crate) output: Option<ListOutputFormat>,
     /// Filter by tag (comma-separated, artifact must have ALL specified tags)
     #[arg(long)]
     pub(crate) tag: Option<String>,
@@ -24,6 +24,9 @@ pub(crate) struct CommonGetArgs {
     pub(crate) id: String,
     /// Field name or path (omit to show all)
     pub(crate) field: Option<String>,
+    /// Output format; valid formats depend on whether FIELD is present
+    #[arg(short = 'o', long, value_enum)]
+    pub(crate) output: Option<GetOutputFormat>,
 }
 
 #[derive(Args, Clone, Debug)]

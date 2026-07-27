@@ -169,6 +169,9 @@ fn build_tag_usage_map(config: &Config) -> DiagnosticResult<HashMap<String, usiz
     for guard in &guard_result.items {
         increment_tag_usage(&mut usage, &guard.spec.govctl.tags);
     }
+    for case in crate::parse::load_conformance_cases(config)? {
+        increment_tag_usage(&mut usage, &case.meta().tags);
+    }
 
     Ok(usage)
 }

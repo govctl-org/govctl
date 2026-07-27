@@ -162,13 +162,15 @@ fn test_work_list_status_filters() -> common::TestResult {
     let output = run_commands(
         temp_dir.path(),
         &[
-            &["work", "list", "active", "-o", "plain"],
-            &["work", "list", "queue", "-o", "plain"],
+            &["work", "list", "active", "-o", "json"],
+            &["work", "list", "queue", "-o", "json"],
         ],
     )?;
 
     assert!(
-        output.contains(&format!("WI-{date}-001\tactive\tTest work item")),
+        output.contains(&format!("\"id\": \"WI-{date}-001\""))
+            && output.contains("\"status\": \"active\"")
+            && output.contains("\"title\": \"Test work item\""),
         "active filter should include the active Work Item: {output}"
     );
     assert_eq!(
@@ -180,7 +182,7 @@ fn test_work_list_status_filters() -> common::TestResult {
 }
 
 #[test]
-fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
+fn test_minimal_valid_list_json_and_yaml_output() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
@@ -188,14 +190,16 @@ fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "list", "-o", "json"],
-            &["work", "list", "-o", "plain"],
+            &["work", "list", "-o", "yaml"],
         ],
     )?;
 
     assert!(output.contains("\"id\": \"RFC-0001\""), "output: {output}");
     assert!(output.contains("\"phase\": \"stable\""), "output: {output}");
     assert!(
-        output.contains(&format!("WI-{date}-001\tactive\tTest work item")),
+        output.contains(&format!("id: WI-{date}-001"))
+            && output.contains("status: active")
+            && output.contains("title: Test work item"),
         "output: {output}"
     );
     Ok(())

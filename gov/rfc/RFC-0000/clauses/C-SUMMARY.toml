@@ -10,7 +10,7 @@ tags = ["core"]
 
 [content]
 text = """
-govctl is a governance CLI that manages six artifact types:
+govctl is a governance CLI that manages seven artifact types:
 
 - **RFCs**: Normative specifications that define intent and constraints
 - **Clauses**: Individual requirements within RFCs
@@ -18,5 +18,6 @@ govctl is a governance CLI that manages six artifact types:
 - **Work Items**: Units of work tracking implementation progress
 - **Releases**: Local version-cut records and the Work Items included in each version
 - **Verification Guards**: Reusable executable checks that turn completion requirements into auditable pass/fail gates
+- **Conformance Cases**: Current non-normative declarations relating acceptance scenarios to RFC versions and Guards
 
 All artifacts follow explicit lifecycle states, phase gates, or constrained mutation rules to ensure disciplined development."""

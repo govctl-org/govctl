@@ -31,6 +31,25 @@ pub fn get_simple_list_item(
     Err(unknown_field_error(artifact, field, id))
 }
 
+pub fn get_simple_list_value(
+    artifact: ArtifactType,
+    doc: &Value,
+    field: &str,
+    index: i32,
+    id: &str,
+) -> DiagnosticResult<Value> {
+    let path = if let Some(path) = simple_runtime_list_path(artifact, field) {
+        path
+    } else if let Some(spec) = simple_status_list_spec(artifact, field) {
+        spec.path
+    } else {
+        return Err(unknown_field_error(artifact, field, id));
+    };
+    let items = array_items(doc, path, id)?;
+    let resolved = path::resolve_index(index, items.len())?;
+    Ok(items[resolved].clone())
+}
+
 pub fn add_simple_list_value(
     artifact: ArtifactType,
     doc: &mut Value,

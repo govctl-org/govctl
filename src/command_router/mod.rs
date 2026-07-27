@@ -11,7 +11,7 @@ mod plan;
 
 use crate::cmd;
 use crate::diagnostic::DiagnosticResult;
-use crate::{ListTarget, OutputFormat, ShowOutputFormat};
+use crate::{GetOutputFormat, ListOutputFormat, ListTarget, ShowOutputFormat};
 
 pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 pub(crate) type OwnedEditAction = cmd::edit::OwnedEditAction;
@@ -62,7 +62,7 @@ pub(crate) fn plan_list(
     target_kind: ListTarget,
     filter: Option<String>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: Option<ListOutputFormat>,
     tags: Vec<String>,
 ) -> CommandPlan {
     collection(
@@ -76,8 +76,12 @@ pub(crate) fn plan_list(
     )
 }
 
-pub(crate) fn plan_get(id: &str, field: Option<&str>) -> DiagnosticResult<CommandPlan> {
-    target(id, field, Op::Get)
+pub(crate) fn plan_get(
+    id: &str,
+    field: Option<&str>,
+    output: Option<GetOutputFormat>,
+) -> DiagnosticResult<CommandPlan> {
+    target(id, field, Op::Get { output })
 }
 
 pub(crate) fn plan_show(

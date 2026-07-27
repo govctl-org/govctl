@@ -1,7 +1,10 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::model::{AdrEntry, GuardEntry, WorkItemEntry};
-use crate::parse::{load_adr, load_adrs, load_guard, load_guards, load_work_item, load_work_items};
+use crate::model::{AdrEntry, ConformanceEntry, GuardEntry, WorkItemEntry};
+use crate::parse::{
+    load_adr, load_adrs, load_conformance_case, load_conformance_cases, load_guard, load_guards,
+    load_work_item, load_work_items,
+};
 use rusqlite::{Connection, OptionalExtension, params};
 use sha2::{Digest, Sha256};
 use std::fs;
@@ -17,6 +20,7 @@ pub(crate) enum CatalogKind {
     Adr,
     Work,
     Guard,
+    Conformance,
 }
 
 impl CatalogKind {
@@ -27,6 +31,7 @@ impl CatalogKind {
             Self::Adr => "adr",
             Self::Work => "work",
             Self::Guard => "guard",
+            Self::Conformance => "conformance",
         }
     }
 
@@ -37,6 +42,7 @@ impl CatalogKind {
             "adr" => Some(Self::Adr),
             "work" => Some(Self::Work),
             "guard" => Some(Self::Guard),
+            "conformance" => Some(Self::Conformance),
             _ => None,
         }
     }
@@ -47,6 +53,7 @@ impl CatalogKind {
             Self::Adr => config.adr_dir(),
             Self::Work => config.work_dir(),
             Self::Guard => config.guard_dir(),
+            Self::Conformance => config.conformance_dir(),
         }
     }
 }
@@ -114,6 +121,24 @@ pub(crate) fn load_guard_by_id(config: &Config, id: &str) -> DiagnosticResult<Gu
         MissingArtifact {
             code: DiagnosticCode::E1002GuardNotFound,
             label: "Guard",
+        },
+    )
+}
+
+pub(crate) fn load_conformance_by_id(
+    config: &Config,
+    id: &str,
+) -> DiagnosticResult<ConformanceEntry> {
+    load_cataloged_entry(
+        config,
+        CatalogKind::Conformance,
+        id,
+        load_conformance_case,
+        load_conformance_cases,
+        |entry| &entry.spec.govctl.id,
+        MissingArtifact {
+            code: DiagnosticCode::E1302ConformanceNotFound,
+            label: "Conformance Case",
         },
     )
 }
@@ -435,7 +460,7 @@ fn scan_kind(config: &Config, kind: CatalogKind) -> DiagnosticResult<Vec<Catalog
     match kind {
         CatalogKind::Rfc => return scan_rfc_kind(config),
         CatalogKind::Clause => return scan_clause_kind(config),
-        CatalogKind::Adr | CatalogKind::Work | CatalogKind::Guard => {}
+        CatalogKind::Adr | CatalogKind::Work | CatalogKind::Guard | CatalogKind::Conformance => {}
     }
 
     let dir = kind.dir(config);

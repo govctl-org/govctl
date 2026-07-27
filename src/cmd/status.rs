@@ -230,6 +230,9 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
 
     printer.active_work(&active_items);
 
+    printer.section_header("Conformance Cases");
+    printer.total_line(index.conformance_cases.len());
+
     println!();
     Ok(vec![])
 }

@@ -125,6 +125,14 @@ pub enum DiagnosticCode {
     E1209LoopWorkMismatch,
     E1210LoopExecutionFailed,
 
+    // Conformance Case errors (E13xx)
+    E1301ConformanceSchemaInvalid,
+    E1302ConformanceNotFound,
+    E1303ConformanceDuplicate,
+    E1304ConformanceInvalidId,
+    E1305ConformanceGraphInvalid,
+    E1306ConformanceStillReferenced,
+
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
     E0802ConflictingArgs,

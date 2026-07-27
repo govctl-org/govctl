@@ -15,7 +15,7 @@ mod ops;
 use ops::{FileOp, execute_ops, preview_ops};
 
 /// Latest schema version. Bump when adding a new migration step.
-pub const CURRENT_SCHEMA_VERSION: u32 = 3;
+pub const CURRENT_SCHEMA_VERSION: u32 = 4;
 /// Oldest project schema accepted by this binary.
 pub const MIN_SUPPORTED_SCHEMA_VERSION: u32 = 3;
 
@@ -53,7 +53,28 @@ struct MigrationStep {
 }
 
 /// All registered migrations, ordered by version.
-const MIGRATIONS: &[MigrationStep] = &[];
+const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
+    from: 3,
+    to: 4,
+    name: "enable Conformance Case resources",
+    plan_fn: plan_v3_to_v4,
+}];
+
+fn plan_v3_to_v4(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
+    validate_prospective_conformance_cases(config)?;
+    Ok(vec![])
+}
+
+fn validate_prospective_conformance_cases(config: &Config) -> DiagnosticResult<()> {
+    let cases = crate::parse::load_conformance_cases(config)?;
+    if cases.is_empty() {
+        return Ok(());
+    }
+    crate::validate::conformance::validate_cases(config, &cases)
+        .into_iter()
+        .next()
+        .map_or(Ok(()), Err)
+}
 
 // =============================================================================
 // Public API
@@ -77,7 +98,13 @@ pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
         .iter()
         .map(std::path::PathBuf::as_path)
         .collect::<Vec<_>>();
-    with_file_transaction(&support_path_refs, op, || migrate_inner(config, op))
+    let schema_dir = config.schema_dir();
+    let schema_dir_existed = schema_dir.exists();
+    let result = with_file_transaction(&support_path_refs, op, || migrate_inner(config, op));
+    if result.is_err() && !schema_dir_existed && schema_dir.is_dir() {
+        let _ = std::fs::remove_dir(&schema_dir);
+    }
+    result
 }
 
 fn support_paths_to_sync(config: &Config) -> DiagnosticResult<Vec<std::path::PathBuf>> {
@@ -101,12 +128,27 @@ fn support_paths_to_sync(config: &Config) -> DiagnosticResult<Vec<std::path::Pat
 }
 
 fn migrate_inner(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
+    let current = config.schema.version;
+    let pending: Vec<&MigrationStep> = MIGRATIONS
+        .iter()
+        .filter(|s| s.from >= current && s.to <= CURRENT_SCHEMA_VERSION)
+        .collect();
+
+    // Migration planning is the graph/schema preflight and must complete before
+    // support-file synchronization creates or changes anything.
+    let mut all_ops = Vec::new();
+    let mut step_names = Vec::new();
+    for step in &pending {
+        let ops = (step.plan_fn)(config)?;
+        step_names.push(format!("v{} -> v{}: {}", step.from, step.to, step.name));
+        all_ops.extend(ops);
+    }
+
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
     let schemas_synced = sync_schemas(config, op)?;
     let gitignore_entries_synced =
         crate::cmd::project_support::ensure_local_state_gitignore_entries(config, op)?;
 
-    let current = config.schema.version;
     if current >= CURRENT_SCHEMA_VERSION {
         if schemas_synced > 0 || gitignore_entries_synced > 0 {
             let mut parts = Vec::new();
@@ -145,18 +187,6 @@ fn migrate_inner(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> 
         return Ok(vec![]);
     }
 
-    let pending: Vec<&MigrationStep> = MIGRATIONS
-        .iter()
-        .filter(|s| s.from >= current && s.to <= CURRENT_SCHEMA_VERSION)
-        .collect();
-
-    let mut all_ops = Vec::new();
-    let mut step_names = Vec::new();
-    for step in &pending {
-        let ops = (step.plan_fn)(config)?;
-        step_names.push(format!("v{} -> v{}: {}", step.from, step.to, step.name));
-        all_ops.extend(ops);
-    }
     let config_path = config.gov_root.join("config.toml");
     all_ops.push(plan_config_version_bump(config, CURRENT_SCHEMA_VERSION)?);
 

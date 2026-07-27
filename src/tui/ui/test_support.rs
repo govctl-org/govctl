@@ -47,6 +47,7 @@ pub(super) fn project_index(
         rfcs,
         adrs,
         work_items,
+        conformance_cases: vec![],
     }
 }
 

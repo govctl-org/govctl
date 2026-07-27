@@ -42,11 +42,16 @@ Added change to RFC-0001 v0.1.0: Added release note
 exit: 0
 
 $ govctl rfc list
-┌───────────┬─────────┬───────────┬────────┬──────────┐
-│ RFC       ┆ Version ┆ Status    ┆ Phase  ┆ Title    │
-╞═══════════╪═════════╪═══════════╪════════╪══════════╡
-│ RFC-0001* ┆ 0.1.0   ┆ normative ┆ stable ┆ Test RFC │
-└───────────┴─────────┴───────────┴────────┴──────────┘
+[
+  {
+    "id": "RFC-0001*",
+    "version": "0.1.0",
+    "status": "normative",
+    "phase": "stable",
+    "title": "Test RFC",
+    "amended": true
+  }
+]
 exit: 0
 
 $ govctl rfc bump RFC-0001 --patch --summary Release amendment
@@ -54,9 +59,13 @@ Bumped RFC-0001 to 0.1.1
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬──────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title    │
-╞══════════╪═════════╪═══════════╪═══════╪══════════╡
-│ RFC-0001 ┆ 0.1.1   ┆ normative ┆ spec  ┆ Test RFC │
-└──────────┴─────────┴───────────┴───────┴──────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.1",
+    "status": "normative",
+    "phase": "spec",
+    "title": "Test RFC"
+  }
+]
 exit: 0

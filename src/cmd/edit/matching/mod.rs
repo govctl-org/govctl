@@ -44,12 +44,12 @@ impl<'a> MatchOptions<'a> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum MatchUse {
+pub(crate) enum MatchUse {
     Remove,
     TickSingle,
 }
 
-pub(super) fn resolve_match_indices(
+pub(crate) fn resolve_match_indices(
     id: &str,
     field: &str,
     items: &[&str],

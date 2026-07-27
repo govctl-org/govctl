@@ -15,9 +15,13 @@ For more information, try '--help'.
 exit: 2
 
 $ govctl rfc list
-┌──────────┬─────────┬────────┬───────┬──────────────┐
-│ RFC      ┆ Version ┆ Status ┆ Phase ┆ Title        │
-╞══════════╪═════════╪════════╪═══════╪══════════════╡
-│ RFC-0001 ┆ 0.1.0   ┆ draft  ┆ spec  ┆ Obsolete RFC │
-└──────────┴─────────┴────────┴───────┴──────────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.0",
+    "status": "draft",
+    "phase": "spec",
+    "title": "Obsolete RFC"
+  }
+]
 exit: 0

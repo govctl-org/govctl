@@ -10,6 +10,7 @@
 mod adr;
 mod changelog;
 mod clause;
+mod conformance;
 mod guard;
 mod index;
 mod release;
@@ -21,8 +22,11 @@ mod work;
 pub use adr::{AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus};
 pub use changelog::{ChangelogCategory, ChangelogEntry};
 pub use clause::{ClauseKind, ClauseSpec, ClauseStatus, ClauseWire};
+pub use conformance::{ConformanceContent, ConformanceMeta, ConformanceSpec, RequirementBinding};
 pub use guard::{GuardCheck, GuardMeta, GuardSpec};
-pub use index::{AdrEntry, ClauseEntry, GuardEntry, ProjectIndex, RfcIndex, WorkItemEntry};
+pub use index::{
+    AdrEntry, ClauseEntry, ConformanceEntry, GuardEntry, ProjectIndex, RfcIndex, WorkItemEntry,
+};
 pub use release::{Release, ReleasesFile};
 pub use rfc::{RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec};
 pub use work::{

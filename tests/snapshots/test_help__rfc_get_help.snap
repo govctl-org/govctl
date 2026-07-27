@@ -8,13 +8,31 @@ Get RFC metadata or specific field
 Usage: govctl rfc get [OPTIONS] <ID> [FIELD]
 
 Arguments:
-  <ID>     Artifact ID
-  [FIELD]  Field name or path (omit to show all)
+  <ID>
+          Artifact ID
+
+  [FIELD]
+          Field name or path (omit to show all)
 
 Options:
-  -C, --config <CONFIG>  Path to govctl config (TOML)
-      --dry-run          Dry run: preview changes without writing files
-  -h, --help             Print help
+  -C, --config <CONFIG>
+          Path to govctl config (TOML)
+
+  -o, --output <OUTPUT>
+          Output format; valid formats depend on whether FIELD is present
+
+          Possible values:
+          - table: Human-readable table for complete resources
+          - json:  JSON structured data
+          - yaml:  YAML structured data
+          - toml:  TOML structured data for complete resources
+          - plain: Plain text for logical field values
+
+      --dry-run
+          Dry run: preview changes without writing files
+
+  -h, --help
+          Print help (see a summary with '-h')
 
 VALID FIELDS:
     - title, version, status, phase, owners, refs, changelog

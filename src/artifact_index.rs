@@ -49,6 +49,9 @@ pub(crate) fn artifact_ref_states(index: &ProjectIndex) -> HashMap<String, Artif
     for work in &index.work_items {
         known.insert(work.meta().id.clone(), ArtifactRefState::Active);
     }
+    for case in &index.conformance_cases {
+        known.insert(case.meta().id.clone(), ArtifactRefState::Active);
+    }
 
     known
 }

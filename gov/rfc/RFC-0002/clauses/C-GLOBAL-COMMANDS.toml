@@ -20,8 +20,8 @@ Syntax: `govctl init [--force]`
 
 Behavior:
 - Creates `gov/` directory structure
-- Generates `gov/config.toml`
-- Creates subdirectories for rfcs, adrs, work items, and verification guards
+- Generates `gov/config.toml` declaring project schema version 4
+- Creates subdirectories for RFCs, ADRs, Work Items, verification guards, and Conformance Cases
 - Installs bundled JSON Schema files under `gov/schema/`
 - MUST error if already initialized (unless `--force`)
 - MUST NOT install agent skills or agents (see `init-skills`)
@@ -34,8 +34,8 @@ Validates all governance artifacts across the project.
 Syntax: `govctl check [--deny-warnings]`
 
 Behavior:
-- Validates RFCs, ADRs, clauses, work items, releases, and verification guards
-- Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, release, and verification guard
+- Validates RFCs, ADRs, clauses, work items, releases, verification guards, and Conformance Cases
+- Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, release, verification guard, and Conformance Case
 - These schemas MUST be JSON files stored under `gov/schema/`
 - For TOML artifacts, MUST validate the canonical structured layout against the corresponding JSON Schema after parsing
 - Checks state machine invariants
@@ -162,9 +162,9 @@ Behavior:
 - `delete`: removes a tag from the allowed list. MUST error if any artifact still references the tag.
 - `list`: displays all registered tags with usage counts (how many artifacts reference each tag).
 
-Artifact-level tagging uses existing resource verbs on taggable types (rfc, clause, adr, work, guard):
-- `govctl {rfc|clause|adr|work|guard} edit <ID> tags --add <tag>` - assign a tag to an artifact
-- `govctl {rfc|clause|adr|work|guard} edit <ID> tags --remove <tag>` - remove a tag from an artifact
+Artifact-level tagging uses existing resource verbs on taggable types (rfc, clause, adr, work, guard, conformance):
+- `govctl {rfc|clause|adr|work|guard|conformance} edit <ID> tags --add <tag>` - assign a tag to an artifact
+- `govctl {rfc|clause|adr|work|guard|conformance} edit <ID> tags --remove <tag>` - remove a tag from an artifact
 
 **11. `govctl self-update`**
 
@@ -194,10 +194,10 @@ Behavior:
 
 Searches governed artifacts across the project by user-provided query text.
 
-Syntax: `govctl search <query>... [--type <rfc|clause|adr|work|guard>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
+Syntax: `govctl search <query>... [--type <rfc|clause|adr|work|guard|conformance>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
 
 Behavior:
-- Operates across RFCs, clauses, ADRs, work items, and verification guards according to [[RFC-0002:C-SEARCH-COMMAND]]
+- Operates across RFCs, clauses, ADRs, work items, verification guards, and Conformance Cases according to [[RFC-0002:C-SEARCH-COMMAND]]
 - MUST remain at the global namespace because it is project-level discovery across multiple governed resource types, not a resource-specific CRUD operation
 - MUST NOT be required as a universal resource verb under each artifact namespace unless a future RFC amendment explicitly adds scoped search aliases
 

@@ -337,6 +337,7 @@ mod tests {
             ],
             adrs: vec![],
             work_items: vec![],
+            conformance_cases: vec![],
         };
 
         let app = App::with_project(config, index);
@@ -365,6 +366,7 @@ mod tests {
             snippet: "TUI cockpit".to_string(),
             score: None,
             status: Some("normative".to_string()),
+            scenario_path: None,
         });
         app.search_results.push(SearchResult {
             kind: "work".to_string(),
@@ -374,6 +376,7 @@ mod tests {
             snippet: "work item".to_string(),
             score: None,
             status: Some("active".to_string()),
+            scenario_path: None,
         });
         assert_eq!(app.list_indices(), vec![0, 1]);
 
@@ -396,6 +399,7 @@ mod tests {
             snippet: "TUI cockpit".to_string(),
             score: None,
             status: Some("normative".to_string()),
+            scenario_path: None,
         });
 
         app.enter_search_result_at(0);
@@ -502,6 +506,7 @@ mod tests {
             snippet: "not the match".to_string(),
             score: None,
             status: Some("active".to_string()),
+            scenario_path: None,
         });
         app.search_results.push(SearchResult {
             kind: "rfc".to_string(),
@@ -511,6 +516,7 @@ mod tests {
             snippet: "target".to_string(),
             score: None,
             status: Some("normative".to_string()),
+            scenario_path: None,
         });
 
         app.enter_detail();
@@ -595,6 +601,7 @@ mod tests {
                 },
                 path: PathBuf::from("gov/work/WI-2026-06-06-001.toml"),
             }],
+            conformance_cases: vec![],
         }
     }
 

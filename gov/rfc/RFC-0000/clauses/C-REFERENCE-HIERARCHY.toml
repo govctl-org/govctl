@@ -28,7 +28,9 @@ Implementations MUST validate these rules during project validation (for example
 
 - ADR `refs` entries, `[[...]]` link targets, and known artifact-ID mentions in governed ADR content fields MUST NOT identify a Work Item.
 
-- Work Item `refs` entries and `[[...]]` link targets MAY identify any artifact type.
+- Work Item `refs` entries and `[[...]]` link targets MAY identify any artifact type except a Conformance Case.
+
+- RFC and ADR `refs` entries, `[[...]]` link targets, and known Conformance Case ID mentions in governed content fields MUST NOT identify a Conformance Case. Known Conformance Case ID mentions in governed Work Item prose MUST NOT identify a Conformance Case.
 
 Known artifact-ID mentions in reviewable governed RFC clause text, governed ADR content fields, and governed Work Item prose SHOULD use `[[artifact-id]]` inline reference syntax. This inline syntax expectation does not apply to structured `refs` field entries.
 
@@ -40,11 +42,13 @@ Project validation MAY omit this inline syntax warning for accepted, stable, dep
 
 Unknown artifact-ID-shaped text MAY appear as an example without being treated as an artifact reference.
 
-This clause only defines the RFC/ADR/Work Item authority hierarchy and inline reference syntax expectations. It does not impose additional target-kind restrictions for artifact types outside that hierarchy.
+This clause defines the RFC/ADR/Work Item authority hierarchy, inline reference syntax expectations, and the Conformance Case target restriction. It does not impose other target-kind restrictions for artifact types outside that hierarchy.
 
 **Rationale:**
 
 This hierarchy prevents circular dependencies and maintains clear authority chains. An RFC that links to or names an ADR or Work Item as a governed reference inverts the dependency direction — lower layers become authorities over the specification.
+
+Conformance Cases are mutable current declarations rather than durable authorities. Prohibiting RFC, ADR, and Work Item references to them prevents later Case edits or deletion from rewriting the meaning of authoritative specifications, decisions, or historical execution records.
 
 Inline reference syntax makes artifact links explicit in source while allowing rendered projections to remain human-readable. A validation warning gives reviewers source-level evidence for raw reference syntax without requiring them to infer it from rendered output. Limiting this warning to reviewable artifacts avoids forcing historical backfill before existing accepted or completed artifacts can pass normal project validation.
 

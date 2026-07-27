@@ -20,5 +20,6 @@ Removed '@owner1' from RFC-0001.owners
 exit: 0
 
 $ govctl rfc get RFC-0001 owners
-@test-user, @owner2
+@test-user
+@owner2
 exit: 0

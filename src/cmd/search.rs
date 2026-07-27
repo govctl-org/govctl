@@ -3,8 +3,8 @@ use crate::cmd::output::{command_table, print_json_array};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::load::{load_clause, load_rfc};
-use crate::model::{AdrEntry, ClauseEntry, GuardEntry, RfcIndex, WorkItemEntry};
-use crate::parse::{load_adr, load_guard, load_work_item};
+use crate::model::{AdrEntry, ClauseEntry, ConformanceEntry, GuardEntry, RfcIndex, WorkItemEntry};
+use crate::parse::{load_adr, load_conformance_case, load_guard, load_work_item};
 use crate::{ListTarget, OutputFormat};
 use comfy_table::{Attribute, Cell};
 use rusqlite::{Connection, OptionalExtension, params};
@@ -28,6 +28,8 @@ pub(crate) struct SearchResult {
     pub score: Option<f64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub scenario_path: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -116,6 +118,7 @@ fn kinds_for_filters(type_filters: &[ListTarget]) -> Vec<CatalogKind> {
             CatalogKind::Adr,
             CatalogKind::Work,
             CatalogKind::Guard,
+            CatalogKind::Conformance,
         ];
     }
 
@@ -127,6 +130,7 @@ fn kinds_for_filters(type_filters: &[ListTarget]) -> Vec<CatalogKind> {
             ListTarget::Adr => CatalogKind::Adr,
             ListTarget::Work => CatalogKind::Work,
             ListTarget::Guard => CatalogKind::Guard,
+            ListTarget::Conformance => CatalogKind::Conformance,
         };
         if !kinds.contains(&kind) {
             kinds.push(kind);
@@ -240,6 +244,7 @@ fn sync_search_index(
             CatalogKind::Adr,
             CatalogKind::Work,
             CatalogKind::Guard,
+            CatalogKind::Conformance,
         ]
     } else {
         requested_kinds.to_vec()
@@ -575,6 +580,10 @@ fn build_search_document(
             let entry = load_guard(config, &path)?;
             Ok(guard_document(config, &entry))
         }
+        CatalogKind::Conformance => {
+            let entry = load_conformance_case(config, &path)?;
+            Ok(conformance_document(config, &entry))
+        }
     }
 }
 
@@ -736,6 +745,31 @@ fn guard_document(config: &Config, entry: &GuardEntry) -> SearchDocument {
     }
 }
 
+fn conformance_document(config: &Config, entry: &ConformanceEntry) -> SearchDocument {
+    let meta = entry.meta();
+    let mut parts = vec![
+        meta.id.clone(),
+        meta.title.clone(),
+        entry.spec.case.path.clone(),
+        entry.spec.case.selector.clone(),
+    ];
+    parts.extend(meta.tags.iter().cloned());
+    parts.extend(entry.spec.case.guards.iter().cloned());
+    for requirement in &entry.spec.case.requirements {
+        parts.push(requirement.clause_ref.clone());
+        parts.push(requirement.version.clone());
+    }
+    SearchDocument {
+        kind: CatalogKind::Conformance,
+        id: meta.id.clone(),
+        title: meta.title.clone(),
+        path: config.display_path(&entry.path).display().to_string(),
+        tags: meta.tags.clone(),
+        status: None,
+        body: join_parts(parts),
+    }
+}
+
 fn join_parts(parts: Vec<String>) -> String {
     parts
         .into_iter()
@@ -795,6 +829,7 @@ fn query_index(
                     snippet: clean_snippet(&snippet),
                     score: Some(row.get(7)?),
                     status: (!status.is_empty()).then_some(status),
+                    scenario_path: None,
                 },
                 tags: decode_tags(&tags_blob),
                 score: row.get(7)?,
@@ -826,25 +861,44 @@ fn query_index(
         matches.push(row);
     }
 
-    matches.sort_by(|a, b| {
-        let a_exact = exact_terms.contains(&a.result.id.to_lowercase());
-        let b_exact = exact_terms.contains(&b.result.id.to_lowercase());
-        match (a_exact, b_exact) {
-            (true, false) => Ordering::Less,
-            (false, true) => Ordering::Greater,
-            _ => a
-                .score
-                .partial_cmp(&b.score)
-                .unwrap_or(Ordering::Equal)
-                .then_with(|| a.result.id.cmp(&b.result.id)),
-        }
-    });
+    matches.sort_by(|a, b| compare_search_rows(a, b, &exact_terms));
 
-    Ok(matches
+    let mut results = matches
         .into_iter()
         .take(limit)
         .map(|row| row.result)
-        .collect())
+        .collect::<Vec<_>>();
+    if results.iter().any(|result| result.kind == "conformance") {
+        let scenario_paths = crate::parse::load_conformance_cases(config)?
+            .into_iter()
+            .map(|entry| (entry.meta().id.clone(), entry.spec.case.path))
+            .collect::<HashMap<_, _>>();
+        for result in &mut results {
+            if result.kind == "conformance" {
+                result.scenario_path = scenario_paths.get(&result.id).cloned();
+            }
+        }
+    }
+    Ok(results)
+}
+
+fn compare_search_rows(
+    left: &SearchRow,
+    right: &SearchRow,
+    exact_terms: &HashSet<String>,
+) -> Ordering {
+    let left_exact = exact_terms.contains(&left.result.id.to_lowercase());
+    let right_exact = exact_terms.contains(&right.result.id.to_lowercase());
+    match (left_exact, right_exact) {
+        (true, false) => Ordering::Less,
+        (false, true) => Ordering::Greater,
+        _ => left
+            .score
+            .partial_cmp(&right.score)
+            .unwrap_or(Ordering::Equal)
+            .then_with(|| left.result.kind.cmp(&right.result.kind))
+            .then_with(|| left.result.id.cmp(&right.result.id)),
+    }
 }
 
 fn fts_query(terms: &[String]) -> String {
@@ -993,6 +1047,40 @@ mod tests {
         assert_eq!(
             clean_snippet(" cache\n\nresult\tbody "),
             "cache result body"
+        );
+    }
+
+    #[test]
+    fn equal_relevance_orders_by_kind_then_id() {
+        let row = |kind: &str, id: &str| SearchRow {
+            result: SearchResult {
+                kind: kind.to_string(),
+                id: id.to_string(),
+                title: String::new(),
+                path: String::new(),
+                snippet: String::new(),
+                score: Some(1.0),
+                status: None,
+                scenario_path: None,
+            },
+            tags: vec![],
+            score: 1.0,
+        };
+        let mut rows = [
+            row("work", "WI-2026-01-01-001"),
+            row("adr", "ADR-0002"),
+            row("adr", "ADR-0001"),
+        ];
+        rows.sort_by(|left, right| compare_search_rows(left, right, &HashSet::new()));
+        assert_eq!(
+            rows.iter()
+                .map(|entry| (entry.result.kind.as_str(), entry.result.id.as_str()))
+                .collect::<Vec<_>>(),
+            vec![
+                ("adr", "ADR-0001"),
+                ("adr", "ADR-0002"),
+                ("work", "WI-2026-01-01-001")
+            ]
         );
     }
 }

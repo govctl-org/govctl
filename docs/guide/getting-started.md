@@ -183,6 +183,20 @@ content in generated Markdown; it is not affected by the default `show`
 projection. Work Items and Guards have no obsolete-body lifecycle state, so
 their current and archival human-readable views are equivalent.
 
+## Read Output Formats
+
+Resource `list` commands support `table`, `json`, and `yaml`. They default to a
+table in a terminal and JSON when piped. Complete `get` supports `table`, `json`,
+`yaml`, and `toml`; field retrieval supports `plain`, `json`, and `yaml`, with
+plain text as the field default.
+
+```bash
+govctl rfc list --output yaml
+govctl rfc get RFC-0002 --output toml
+govctl rfc get RFC-0002 phase
+govctl rfc get RFC-0002 owners --output json
+```
+
 ## Interactive TUI
 
 govctl includes an optional read-only terminal cockpit:

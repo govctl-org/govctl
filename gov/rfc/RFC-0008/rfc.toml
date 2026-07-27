@@ -4,8 +4,8 @@
 id = "RFC-0008"
 title = "Conformance Case and Declared Traceability Model"
 version = "0.1.0"
-status = "draft"
-phase = "spec"
+status = "normative"
+phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-07-27"
 updated = "2026-07-27"
@@ -25,6 +25,7 @@ refs = [
     "RFC-0002:C-OUTPUT-FORMAT",
     "RFC-0002:C-SEARCH-COMMAND",
 ]
+signature = "903eb80a4f6b56b67a3efd4de184d6b16fdd3597a7dc6b57173649839c6ef22f"
 
 [[sections]]
 title = "Summary"

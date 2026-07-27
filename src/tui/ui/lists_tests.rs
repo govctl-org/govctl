@@ -49,6 +49,7 @@ fn cockpit_list_renderers_draw_search_loop_and_diagnostic_rows()
         snippet: "human cockpit".to_string(),
         score: None,
         status: Some("normative".to_string()),
+        scenario_path: None,
     });
     let rendered = render_list_app(app, draw_search)?;
     assert!(rendered.iter().any(|line| line.contains("human cockpit")));

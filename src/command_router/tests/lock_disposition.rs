@@ -44,9 +44,9 @@ fn test_read_plans_are_lock_free() -> Result<(), Box<dyn std::error::Error>> {
     let status = global(Op::Builtin(BuiltinOp::Status));
     assert_eq!(status.lock_disposition(), LockDisposition::None);
 
-    let plan = plan_get("RFC-0001", Some("title"))?;
+    let plan = plan_get("RFC-0001", Some("title"), None)?;
     assert!(matches!(plan.scope, Scope::Target { .. }));
-    assert!(matches!(plan.op, Op::Get));
+    assert!(matches!(plan.op, Op::Get { .. }));
     assert_eq!(plan.lock_disposition(), LockDisposition::None);
     Ok(())
 }
@@ -62,7 +62,7 @@ fn test_lock_disposition_is_lock_free_for_inspect_commands()
         global(Op::Builtin(BuiltinOp::LoopList {
             filter: None,
             limit: None,
-            output: OutputFormat::Table,
+            output: crate::OutputFormat::Table,
         }))
         .lock_disposition(),
         LockDisposition::None
@@ -83,7 +83,7 @@ fn test_lock_disposition_is_lock_free_for_inspect_commands()
     );
     assert_eq!(
         global(Op::Builtin(BuiltinOp::TagList {
-            output: OutputFormat::Table,
+            output: crate::OutputFormat::Table,
         }))
         .lock_disposition(),
         LockDisposition::None
@@ -94,14 +94,14 @@ fn test_lock_disposition_is_lock_free_for_inspect_commands()
             types: vec![],
             tags: vec![],
             limit: None,
-            output: OutputFormat::Table,
+            output: crate::OutputFormat::Table,
             reindex: false,
         }))
         .lock_disposition(),
         LockDisposition::None
     );
     assert_eq!(
-        plan_get("RFC-0001", Some("title"))?.lock_disposition(),
+        plan_get("RFC-0001", Some("title"), None)?.lock_disposition(),
         LockDisposition::None
     );
     assert_eq!(

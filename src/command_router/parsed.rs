@@ -62,6 +62,7 @@ impl CommandPlan {
             Commands::Adr { command } => command.to_plan(),
             Commands::Work { command } => command.to_plan(),
             Commands::Guard { command } => command.to_plan(),
+            Commands::Conformance { command } => command.to_plan(),
             Commands::Loop { command } => Ok(plan_loop_command(command)),
             Commands::Release(args) => plan_release_command(args),
             Commands::Tag { command } => Ok(plan_tag_command(command)),

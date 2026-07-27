@@ -1,11 +1,11 @@
 //! List command implementation.
 
-mod output;
+pub(crate) mod output;
 mod resources;
 mod summaries;
 
+use crate::ListOutputFormat;
 use crate::ListTarget;
-use crate::OutputFormat;
 use crate::config::Config;
 use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::load::load_project;
@@ -18,12 +18,13 @@ pub fn list(
     target: ListTarget,
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: Option<ListOutputFormat>,
     tags: &[String],
 ) -> DiagnosticResult<Diagnostics> {
+    let output = output::resolve_list_output(output);
     if target == ListTarget::Guard {
         let result = load_guards_with_warnings(config)?;
-        list_guards(&result.items, filter, limit, output, tags);
+        list_guards(&result.items, filter, limit, output, tags)?;
         return Ok(result.warnings);
     }
 
@@ -33,11 +34,14 @@ pub fn list(
     };
 
     match target {
-        ListTarget::Rfc => list_rfcs(&index, filter, limit, output, tags),
-        ListTarget::Clause => list_clauses(&index, filter, limit, output, tags),
-        ListTarget::Adr => list_adrs(&index, filter, limit, output, tags),
-        ListTarget::Work => list_work_items(&index, filter, limit, output, tags),
+        ListTarget::Rfc => list_rfcs(&index, filter, limit, output, tags)?,
+        ListTarget::Clause => list_clauses(&index, filter, limit, output, tags)?,
+        ListTarget::Adr => list_adrs(&index, filter, limit, output, tags)?,
+        ListTarget::Work => list_work_items(&index, filter, limit, output, tags)?,
         ListTarget::Guard => unreachable!("handled above"),
+        ListTarget::Conformance => {
+            return crate::cmd::conformance::list(config, filter, limit, Some(output), tags);
+        }
     }
 
     Ok(vec![])

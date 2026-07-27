@@ -10,6 +10,7 @@ Created: docs/rfc
 Created: gov/adr
 Created: gov/work
 Created: gov/guard
+Created: gov/conformance
 Created: gov/templates
 Created: gov/config.toml
 Created: gov/schema/rfc.schema.json
@@ -18,6 +19,7 @@ Created: gov/schema/adr.schema.json
 Created: gov/schema/work.schema.json
 Created: gov/schema/release.schema.json
 Created: gov/schema/guard.schema.json
+Created: gov/schema/conformance.schema.json
 Created: gov/schema/loop-state.schema.json
 Created: gov/schema/loop-round.schema.json
 Created: .gitignore

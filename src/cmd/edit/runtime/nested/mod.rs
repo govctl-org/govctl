@@ -51,6 +51,26 @@ pub fn get_nested_field(
     render_nested_node(node, value, id)
 }
 
+pub fn get_nested_value(
+    artifact: ArtifactType,
+    doc: &Value,
+    fp: &FieldPath,
+    id: &str,
+) -> DiagnosticResult<Value> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let root_value = value_at_path(doc, rule.content_path);
+    let (_, value) = descend_get(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Get,
+        id,
+    )?;
+    Ok(value.cloned().unwrap_or(Value::Null))
+}
+
 pub fn set_nested_field(
     artifact: ArtifactType,
     doc: &mut Value,

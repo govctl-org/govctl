@@ -18,6 +18,23 @@ pub(super) fn check_ref_hierarchy(
     let owner_is_adr = owner_id.starts_with("ADR-");
     let owner_is_wi = owner_id.starts_with("WI-");
 
+    if target_id.starts_with("CONF-") && (owner_is_rfc || owner_is_adr || owner_is_wi) {
+        let (kind, code) = if owner_is_rfc {
+            ("RFC", DiagnosticCode::E0112RfcReferenceHierarchy)
+        } else if owner_is_adr {
+            ("ADR", DiagnosticCode::E0306AdrReferenceHierarchy)
+        } else {
+            ("Work Item", DiagnosticCode::E0404WorkRefNotFound)
+        };
+        return Err(Diagnostic::new(
+            code,
+            format!(
+                "{kind} '{owner_id}' cannot reference current-only Conformance Case '{target_id}'"
+            ),
+            diagnostic_path,
+        ));
+    }
+
     if owner_is_wi {
         return Ok(());
     }

@@ -24,6 +24,7 @@ pub fn check_all(config: &Config) -> DiagnosticResult<Diagnostics> {
         ui::check_count(summary.adr_count, "ADRs");
         ui::check_count(summary.work_count, "work items");
         ui::check_count(summary.guard_count, "verification guards");
+        ui::check_count(summary.conformance_count, "conformance cases");
 
         // Show source scan summary if enabled
         if config.source_scan.enabled {
@@ -55,6 +56,7 @@ pub(crate) struct CheckSummary {
     pub adr_count: usize,
     pub work_count: usize,
     pub guard_count: usize,
+    pub conformance_count: usize,
     pub files_scanned: usize,
     pub refs_found: usize,
 }
@@ -105,6 +107,7 @@ pub(crate) fn collect_diagnostics(
     summary.clause_count = result.clause_count;
     summary.adr_count = result.adr_count;
     summary.work_count = result.work_count;
+    summary.conformance_count = result.conformance_count;
     all_diagnostics.extend(result.diagnostics);
 
     match load_guards_with_warnings(config) {

@@ -53,6 +53,10 @@ Keep commands simple and portable within the repository's supported
 environment. Reference the RFC or ADR whose requirement or decision the guard
 helps verify.
 
+When a reusable scenario has a Conformance Case, add the Guard to that Case's
+`guards` field. Do not add `CONF-*` IDs to Guard `refs`; Cases own the derived
+Case-to-Guard edge.
+
 ## Scope Policy
 
 Project `verification.default_guards` are the intersection of checks required

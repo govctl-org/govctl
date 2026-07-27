@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use super::{
-    AdrMeta, AdrSpec, ClauseSpec, GuardMeta, GuardSpec, RfcSpec, WorkItemMeta, WorkItemSpec,
+    AdrMeta, AdrSpec, ClauseSpec, ConformanceMeta, ConformanceSpec, GuardMeta, GuardSpec, RfcSpec,
+    WorkItemMeta, WorkItemSpec,
 };
 
 /// Loaded RFC with all its clauses
@@ -60,12 +61,26 @@ impl GuardEntry {
     }
 }
 
+/// Loaded Conformance Case with full spec.
+#[derive(Debug, Clone)]
+pub struct ConformanceEntry {
+    pub spec: ConformanceSpec,
+    pub path: PathBuf,
+}
+
+impl ConformanceEntry {
+    pub fn meta(&self) -> &ConformanceMeta {
+        &self.spec.govctl
+    }
+}
+
 /// Full project index
 #[derive(Debug, Clone, Default)]
 pub struct ProjectIndex {
     pub rfcs: Vec<RfcIndex>,
     pub adrs: Vec<AdrEntry>,
     pub work_items: Vec<WorkItemEntry>,
+    pub conformance_cases: Vec<ConformanceEntry>,
 }
 
 impl ProjectIndex {

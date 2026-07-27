@@ -11,9 +11,12 @@ Set ADR-0001.title = New Title
 exit: 0
 
 $ govctl adr list
-┌──────────┬──────────┬────────────┬───────────┐
-│ ADR      ┆ Status   ┆ Date       ┆ Title     │
-╞══════════╪══════════╪════════════╪═══════════╡
-│ ADR-0001 ┆ proposed ┆ <DATE> ┆ New Title │
-└──────────┴──────────┴────────────┴───────────┘
+[
+  {
+    "id": "ADR-0001",
+    "status": "proposed",
+    "date": "<DATE>",
+    "title": "New Title"
+  }
+]
 exit: 0

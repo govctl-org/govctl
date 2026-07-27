@@ -12,5 +12,6 @@ Added '@newowner' to RFC-0001.owners
 exit: 0
 
 $ govctl rfc get RFC-0001 owners
-@test-user, @newowner
+@test-user
+@newowner
 exit: 0

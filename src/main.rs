@@ -98,6 +98,12 @@ fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
     } else {
         Config::load(cli.config.as_deref())?
     };
+    if !matches!(
+        plan.op,
+        command_router::Op::Builtin(command_router::BuiltinOp::Migrate)
+    ) {
+        load::reject_unmigrated_conformance(&config)?;
+    }
     let op = write::WriteOp::from_dry_run(cli.dry_run);
 
     let lock_disposition = plan.lock_disposition();

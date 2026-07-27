@@ -5,6 +5,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode};
 mod project;
 mod rfc;
 
+pub(crate) use project::reject_unmigrated_conformance;
 pub use project::{load_project, load_project_with_warnings};
 pub use rfc::{find_clause_toml, find_rfc_toml, load_rfc, load_rfcs, reject_legacy_json_storage};
 pub(crate) use rfc::{split_clause_id, valid_rfc_id, validate_clause_storage_path};

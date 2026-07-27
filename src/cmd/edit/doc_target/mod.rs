@@ -5,9 +5,8 @@ use super::engine as edit_engine;
 use super::matching::MatchOptions;
 use super::runtime as edit_runtime;
 use super::serialize_edit_doc;
-use super::target_doc::{NestedGetMode, cannot_add_to_field_error, render_target_from_doc};
+use super::target_doc::{NestedGetMode, cannot_add_to_field_error, value_target_from_doc};
 use super::target_doc_remove::{notify_removed, remove_target_from_doc};
-use crate::cmd::output::print_json;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::write::WriteOp;
@@ -93,7 +92,7 @@ pub(super) fn get_doc_field<A>(
     target: Option<&edit_engine::ResolvedTarget>,
     artifact: ArtifactType,
     nested_error: &str,
-) -> DiagnosticResult<()>
+) -> DiagnosticResult<serde_json::Value>
 where
     A: DocAdapter,
     A::Data: serde::Serialize + serde::de::DeserializeOwned,
@@ -101,25 +100,16 @@ where
     let loaded = A::load(config, id)?;
     if let Some(target) = target {
         let doc = serialize_edit_doc(&loaded.data, id)?;
-        println!(
-            "{}",
-            render_target_from_doc(
-                artifact,
-                &doc,
-                target,
-                id,
-                NestedGetMode::Reject(nested_error),
-            )?
-        );
-    } else {
-        print_json(
-            &loaded.data,
-            DiagnosticCode::E0903UnexpectedError,
-            "Failed to serialize editable document",
+        value_target_from_doc(
+            artifact,
+            &doc,
+            target,
             id,
-        )?;
+            NestedGetMode::Reject(nested_error),
+        )
+    } else {
+        serialize_edit_doc(&loaded.data, id)
     }
-    Ok(())
 }
 
 pub(super) fn add_doc_simple_list_field<A>(

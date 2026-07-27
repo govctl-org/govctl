@@ -2,6 +2,7 @@
 
 pub mod check;
 pub(crate) mod confirmation;
+pub mod conformance;
 pub mod describe;
 pub mod edit;
 pub mod guard;

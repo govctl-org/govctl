@@ -1,7 +1,7 @@
 use super::help;
 use super::{
-    AdrCommand, ClauseCommand, GuardCommand, ListTarget, LoopCommand, OutputFormat, RenderTarget,
-    RfcCommand, SkillFormat, TagCommand, WorkCommand,
+    AdrCommand, ClauseCommand, ConformanceCommand, GuardCommand, ListTarget, LoopCommand,
+    OutputFormat, RenderTarget, RfcCommand, SkillFormat, TagCommand, WorkCommand,
 };
 use clap::{Args, Subcommand};
 use std::path::PathBuf;
@@ -187,6 +187,12 @@ pub(crate) enum Commands {
     Guard {
         #[command(subcommand)]
         command: GuardCommand,
+    },
+
+    /// Conformance Case operations
+    Conformance {
+        #[command(subcommand)]
+        command: ConformanceCommand,
     },
 
     /// Manage local release cuts

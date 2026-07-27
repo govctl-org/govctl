@@ -40,8 +40,5 @@ Complex
 exit: 0
 
 $ govctl adr get ADR-0001 alternatives[0]
-text: Use traits
-status: considered
-pros: Flexible, Reusable
-cons: Complex
+{"cons":["Complex"],"pros":["Flexible","Reusable"],"status":"considered","text":"Use traits"}
 exit: 0

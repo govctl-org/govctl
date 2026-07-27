@@ -133,7 +133,7 @@ fn test_supersede_rejects_impl_phase_without_mutation() -> common::TestResult {
         "output: {output}"
     );
     assert!(
-        output.contains("$ govctl rfc get RFC-0002 supersedes\n\nexit: 0"),
+        output.contains("$ govctl rfc get RFC-0002 supersedes\nexit: 0"),
         "output: {output}"
     );
     Ok(())

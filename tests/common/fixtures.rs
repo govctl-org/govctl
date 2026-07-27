@@ -20,12 +20,26 @@ pub fn init_project_at(schema_version: Option<u32>) -> Result<TempDir, Box<dyn s
         .env("NO_COLOR", "1")
         .env("GOVCTL_DEFAULT_OWNER", "@test-user");
 
-    if let Some(v) = schema_version {
-        cmd.env("GOVCTL_SCHEMA_VERSION", v.to_string());
-    }
-
     let result = cmd.output()?;
     assert!(result.status.success(), "govctl init failed");
+    if let Some(version) = schema_version {
+        let config_path = temp_dir.path().join("gov/config.toml");
+        let config = fs::read_to_string(&config_path)?;
+        let mut in_schema = false;
+        let mut lines = Vec::new();
+        for line in config.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with('[') {
+                in_schema = trimmed == "[schema]";
+            }
+            if in_schema && trimmed.starts_with("version") {
+                lines.push(format!("version = {version}"));
+            } else {
+                lines.push(line.to_string());
+            }
+        }
+        fs::write(config_path, format!("{}\n", lines.join("\n")))?;
+    }
     Ok(temp_dir)
 }
 

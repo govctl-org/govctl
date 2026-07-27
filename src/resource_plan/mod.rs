@@ -11,6 +11,7 @@ use crate::{
 
 mod adr;
 mod clause;
+mod conformance;
 mod guard;
 mod rfc;
 mod work;
@@ -35,7 +36,7 @@ fn compile_common_list(target: ListTarget, args: &CommonListArgs) -> CommandPlan
 }
 
 fn compile_common_get(args: &CommonGetArgs) -> DiagnosticResult<CommandPlan> {
-    plan_get(&args.id, args.field.as_deref())
+    plan_get(&args.id, args.field.as_deref(), args.output)
 }
 
 fn compile_common_show(artifact: cmd::edit::ArtifactType, args: &CommonShowArgs) -> CommandPlan {

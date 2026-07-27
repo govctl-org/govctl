@@ -18,6 +18,9 @@ Work Items
   done         4
   Total        4
 
+Conformance Cases
+  Total        0
+
 exit: 0
 
 $ govctl render changelog --dry-run

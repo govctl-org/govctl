@@ -6,7 +6,7 @@ default_owner = "@govctl-org"
 name = "govctl"
 
 [schema]
-version = 3
+version = 4
 
 [source_scan]
 enabled = true

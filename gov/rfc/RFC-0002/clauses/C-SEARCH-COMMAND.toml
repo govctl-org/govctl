@@ -13,14 +13,14 @@ text = """
 
 Syntax:
 
-- `govctl search <query>... [--type <rfc|clause|adr|work|guard>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
+- `govctl search <query>... [--type <rfc|clause|adr|work|guard|conformance>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
 
 Behavior:
 
 - The command MUST operate at the global command namespace as an explicit [[RFC-0002:C-RESOURCE-MODEL]] exception listed in [[RFC-0002:C-GLOBAL-COMMANDS]], because it searches across multiple governed resource types and is project-level discovery rather than a resource-specific CRUD operation.
-- The command MUST search RFCs, clauses, ADRs, work items, and verification guards unless one or more `--type` filters are provided.
+- The command MUST search RFCs, clauses, ADRs, work items, verification guards, and Conformance Cases unless one or more `--type` filters are provided.
 - Positional `<query>...` values MUST be interpreted as user search terms by default, not as backend-specific raw query syntax.
-- The command MUST support artifact ID lookup as a search use case. A query containing an existing artifact ID SHOULD rank that artifact ahead of lower-confidence full-text matches.
+- The command MUST support artifact ID lookup as a search use case. A query containing an existing artifact ID SHOULD rank that artifact ahead of lower-confidence full-text matches. Results with equal relevance MUST be ordered lexicographically by artifact kind and then artifact ID.
 - The command MUST support `--tag <tag>` filters. When multiple tags are provided, returned artifacts MUST contain all requested tags.
 - The command MUST support `-n, --limit <limit>` and MUST apply a finite default limit when the flag is omitted.
 - The command MUST support `--reindex`, which forces a rebuild of any local derived search index before returning results.

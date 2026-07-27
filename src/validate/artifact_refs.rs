@@ -81,7 +81,7 @@ pub(super) fn validate_artifact_refs(
             owner_id: &work.meta().id,
             path_display: &work_path_display,
             unknown_code: DiagnosticCode::E0404WorkRefNotFound,
-            check_hierarchy: false,
+            check_hierarchy: true,
         };
         validate_refs(result, work_ref_check, &work.meta().refs, |ref_id| {
             format!(

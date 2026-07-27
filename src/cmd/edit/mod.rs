@@ -11,7 +11,7 @@ mod doc_adapter;
 mod doc_target;
 pub mod engine;
 mod get;
-mod matching;
+pub(crate) mod matching;
 pub mod path;
 mod refs;
 mod remove;

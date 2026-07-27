@@ -37,6 +37,12 @@ Each resource MUST support these paths and operations:
 | Clause | `anchors`, `tags` | `--add`, `--remove` |
 | Guard | `title`, `command`, `timeout_secs`, `pattern` | `--set` |
 | Guard | `refs`, `tags` | `--add`, `--remove` |
+| Conformance Case | `title`, `path`, `selector` | `--set` |
+| Conformance Case | `requirements`, `guards`, `tags` | `--add`, `--remove` |
+| Conformance Case | `requirements[i]` | `--remove` |
+| Conformance Case | `requirements[i].version` | `--set` |
+
+For Conformance Case `requirements`, `--remove` MUST select either one exact `<CLAUSE-ID>@<VERSION>` value or one indexed path. `--regex` and `--all` MUST be rejected for this object-valued, non-empty list.
 
 List selection MUST use only these canonical forms:
 

@@ -1,9 +1,11 @@
-use crate::OutputFormat;
-use crate::cmd::output::{command_table, print_json_array};
+use crate::ListOutputFormat;
+use crate::cmd::output::{command_table, print_json, print_yaml};
+use crate::diagnostic::{DiagnosticCode, DiagnosticResult};
 use crate::theme::{SemanticColor, status_semantic};
 use crate::ui::stdout_supports_color;
 use comfy_table::{Attribute, Cell};
 use serde::Serialize;
+use std::io::IsTerminal;
 
 fn cell(text: &str) -> Cell {
     Cell::new(text)
@@ -44,23 +46,40 @@ pub(super) fn truncate_chars(s: &str, max: usize) -> String {
     }
 }
 
+pub(crate) fn resolve_list_output(output: Option<ListOutputFormat>) -> ListOutputFormat {
+    output.unwrap_or_else(|| {
+        if std::io::stdout().is_terminal() {
+            ListOutputFormat::Table
+        } else {
+            ListOutputFormat::Json
+        }
+    })
+}
+
 pub(super) fn output_list<T: Serialize>(
     items: &[T],
     headers: &[&str],
-    format: OutputFormat,
+    format: ListOutputFormat,
     to_row: impl Fn(&T) -> Vec<String>,
-) {
+) -> DiagnosticResult<()> {
     match format {
-        OutputFormat::Json => {
-            print_json_array(items);
+        ListOutputFormat::Json => {
+            print_json(
+                &items,
+                DiagnosticCode::E0903UnexpectedError,
+                "Failed to serialize resource list as JSON",
+                "list",
+            )?;
         }
-        OutputFormat::Plain => {
-            for item in items {
-                let row = to_row(item);
-                println!("{}", row.join("\t"));
-            }
+        ListOutputFormat::Yaml => {
+            print_yaml(
+                &items,
+                DiagnosticCode::E0903UnexpectedError,
+                "Failed to serialize resource list as YAML",
+                "list",
+            )?;
         }
-        OutputFormat::Table => {
+        ListOutputFormat::Table => {
             let use_colors = stdout_supports_color();
             let mut table = command_table();
             table.set_header(
@@ -94,4 +113,5 @@ pub(super) fn output_list<T: Serialize>(
             println!("{table}");
         }
     }
+    Ok(())
 }

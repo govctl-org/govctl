@@ -51,6 +51,7 @@ cat > "$SUMMARY" << 'EOF'
 - [Working with RFCs](./guide/rfcs.md)
 - [Working with ADRs](./guide/adrs.md)
 - [Working with Work Items](./guide/work-items.md)
+- [Conformance Cases](./guide/conformance-cases.md)
 - [Validation & Rendering](./guide/validation.md)
 
 # Specifications

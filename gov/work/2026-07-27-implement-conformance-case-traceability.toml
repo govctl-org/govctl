@@ -1,0 +1,72 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-005"
+title = "Implement Conformance Case traceability"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0000:C-REFERENCE-HIERARCHY",
+    "RFC-0002:C-RESOURCES",
+    "RFC-0002:C-CRUD-VERBS",
+    "RFC-0002:C-EDIT-FIELD-CONTRACT",
+    "RFC-0002:C-SHOW-PROJECTION",
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "RFC-0002:C-COMPATIBILITY-BOUNDARY",
+    "RFC-0002:C-OUTPUT-FORMAT",
+    "RFC-0002:C-SEARCH-COMMAND",
+    "RFC-0008:C-CONFORMANCE-CASE",
+    "RFC-0008:C-TRACEABILITY",
+    "RFC-0008:C-VALIDATION",
+    "RFC-0008:C-TRACE-QUERY",
+    "RFC-0008:C-COMMAND-SURFACE",
+]
+tags = [
+    "cli",
+    "schema",
+    "validation",
+    "migration",
+]
+
+[content]
+description = "Implement the Conformance Case resource and declared traceability across storage, commands, validation, migration, discovery, and agent-facing documentation authorized by the governing RFCs."
+
+[[content.acceptance_criteria]]
+text = "Schema version 4 initialization and migration preserve valid Conformance Case files and reject invalid prospective graphs atomically"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Conformance Case list, get, show, new, edit, and delete commands enforce the canonical resource and mutation contracts"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Project validation covers Case identity, locators, requirement versions, authority restrictions, Guard bindings, deletion referrers, and applicability prerequisites"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Conformance trace returns deterministic filtered table and JSON records with provisional, candidate, current, and stale applicability"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Search, tags, status, command discovery, and shell completion surfaces include Conformance Cases with unambiguous source and scenario paths"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Focused schema, command, validation, migration, search, and trace tests cover success, rejection, and atomic rollback paths"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Agent skills and user documentation describe the canonical Conformance Case workflow and declared-not-evidenced semantics"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

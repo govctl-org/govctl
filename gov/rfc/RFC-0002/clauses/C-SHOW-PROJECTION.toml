@@ -11,7 +11,7 @@ since = "0.15.0"
 text = """
 For the purposes of this clause, `table` and `plain` are human-readable output formats, while `json`, `yaml`, and `toml` are structured output formats. `current` is the projection used to omit obsolete body content, and `archive` is the complete historical projection.
 
-RFC, ADR, Work Item, Clause, and Guard resource commands MUST expose `show <id>` as a side-effect-free projection operation distinct from `get`. This distinction is a scoped exception to [[RFC-0002:C-CRUD-VERBS]]: `get` retrieves a field or complete structured resource, while `show` presents either the current or archival projection defined here.
+RFC, ADR, Work Item, Clause, Guard, and Conformance Case resource commands MUST expose `show <id>` as a side-effect-free projection operation distinct from `get`. This distinction is a scoped exception to [[RFC-0002:C-CRUD-VERBS]]: `get` retrieves a field or complete structured resource, while `show` presents either the current or archival projection defined here.
 
 The `show` output matrix MUST be:
 
@@ -31,9 +31,9 @@ For an ADR whose status is `superseded` under [[RFC-0001:C-ADR-STATUS]], the `cu
 
 For a directly shown Clause whose status is `deprecated` or `superseded`, the `current` projection MUST retain the same metadata required for a suppressed nested Clause. Its Clause text MUST be omitted.
 
-For resources without a `deprecated` or `superseded` lifecycle state, including Work Items and Guards, `current` and `archive` MUST be content-equivalent. Other lifecycle states MUST remain fully rendered.
+For resources without a `deprecated` or `superseded` lifecycle state, including Work Items, Guards, and Conformance Cases, `current` and `archive` MUST be content-equivalent. Other lifecycle states MUST remain fully rendered.
 
-The `archive` projection MUST render all authoritative content supported by the resource's human-readable renderer without lifecycle-based omission. In particular, it MUST include every RFC section, Clause text, RFC changelog entry, ADR content section and alternative, Work Item content section, and Guard field present in the selected resource. Terminal styling and transport-only wrappers MAY differ. `render` MUST always use the `archive` projection and MUST NOT suppress deprecated or superseded content.
+The `archive` projection MUST render all governed resource content supported by the resource's human-readable renderer without lifecycle-based omission. In particular, it MUST include every RFC section, Clause text, RFC changelog entry, ADR content section and alternative, Work Item content section, Guard field, and Conformance Case field present in the selected resource. Terminal styling and transport-only wrappers MAY differ. `render` MUST always use the `archive` projection and MUST NOT suppress deprecated or superseded content.
 
 `get`, validation, signatures, search, and the authoritative governance artifacts MUST remain unaffected by human-readable projection mode.
 

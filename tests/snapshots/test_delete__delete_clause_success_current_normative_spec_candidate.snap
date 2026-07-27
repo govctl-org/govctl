@@ -7,11 +7,15 @@ $ govctl clause delete RFC-0001:C-DELETE -f
 exit: 0
 
 $ govctl clause list RFC-0001
-┌────────┬──────────┬───────────┬────────┬──────────────────┐
-│ Clause ┆ RFC      ┆ Kind      ┆ Status ┆ Title            │
-╞════════╪══════════╪═══════════╪════════╪══════════════════╡
-│ C-KEEP ┆ RFC-0001 ┆ normative ┆ active ┆ Keep This Clause │
-└────────┴──────────┴───────────┴────────┴──────────────────┘
+[
+  {
+    "id": "C-KEEP",
+    "rfc_id": "RFC-0001",
+    "kind": "normative",
+    "status": "active",
+    "title": "Keep This Clause"
+  }
+]
 exit: 0
 
 $ govctl check
@@ -21,6 +25,7 @@ Checked:
   0 ADRs
   0 work items
   0 verification guards
+  0 conformance cases
 
 ✓ All checks passed
 exit: 0

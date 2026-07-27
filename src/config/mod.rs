@@ -219,7 +219,7 @@ fn default_scan_pattern() -> String {
     // - [[WI-YYYY-MM-DD-NNN]] (sequential)
     // - [[WI-YYYY-MM-DD-HHHH-NNN]] (author-hash)
     // - [[WI-YYYY-MM-DD-HHHH]] (random)
-    r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\]\]".to_string()
+    r"\[\[(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3})|CONF-[A-Z][A-Z0-9-]*)\]\]".to_string()
 }
 
 impl Default for SourceScanConfig {

@@ -92,7 +92,7 @@ fn test_rfc_remove_owner_by_index_canonical() -> common::TestResult {
         output
     );
     assert!(
-        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @owner2"),
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user\n@owner2"),
         "output: {}",
         output
     );
@@ -224,7 +224,7 @@ fn test_rfc_edit_set_owner_by_index_canonical() -> common::TestResult {
         output
     );
     assert!(
-        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @replacement"),
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user\n@replacement"),
         "output: {}",
         output
     );
@@ -350,7 +350,7 @@ fn test_rfc_current_changelog_edit_resolves_by_version_and_preserves_lifecycle_f
                 "Second fix",
             ],
             &["rfc", "edit", "RFC-0001", "changelog.fixed[0]", "--remove"],
-            &["rfc", "get", "RFC-0001", "changelog"],
+            &["rfc", "get", "RFC-0001", "changelog", "--output", "json"],
         ],
     )?;
 

@@ -7,7 +7,7 @@ use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::write::WriteOp;
-use crate::{NewTarget, OutputFormat, ShowOutputFormat};
+use crate::{GetOutputFormat, ListOutputFormat, NewTarget, ShowOutputFormat};
 use builtin::execute_builtin;
 use render::execute_artifact_render;
 use scope::{ShowKind, extract_artifact_scope, extract_collection_scope, extract_target_scope};
@@ -63,7 +63,7 @@ fn execute_list(
     config: &Config,
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: Option<ListOutputFormat>,
     tags: &[String],
 ) -> CommandResult {
     cmd::list::list(
@@ -76,12 +76,16 @@ fn execute_list(
     )
 }
 
-fn execute_get(plan: &CommandPlan, config: &Config) -> CommandResult {
+fn execute_get(
+    plan: &CommandPlan,
+    config: &Config,
+    output: Option<GetOutputFormat>,
+) -> CommandResult {
     match &plan.scope {
-        Scope::Artifact { id, .. } => cmd::edit::get_field(config, id, None),
+        Scope::Artifact { id, .. } => cmd::edit::get_field(config, id, None, output),
         Scope::Target { id, target, .. } => {
             let path = target.display_path();
-            cmd::edit::get_field(config, id, Some(path.as_str()))
+            cmd::edit::get_field(config, id, Some(path.as_str()), output)
         }
         Scope::Global | Scope::Collection { .. } => Err(Diagnostic::new(
             DiagnosticCode::E0821InvalidCommandScope,
@@ -180,7 +184,7 @@ pub(super) fn execute_plan(plan: &CommandPlan, config: &Config, op: WriteOp) -> 
             output,
             tags,
         } => execute_list(plan, config, filter.as_deref(), *limit, *output, tags),
-        Op::Get => execute_get(plan, config),
+        Op::Get { output } => execute_get(plan, config, *output),
         Op::Show { output, history } => execute_show(plan, config, *output, *history),
         Op::Edit(edit) => execute_edit(plan, config, edit, op),
         Op::Lifecycle(lifecycle) => execute_lifecycle(plan, config, lifecycle, op),

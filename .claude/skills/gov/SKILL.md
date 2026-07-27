@@ -71,10 +71,14 @@ loop state rather than Work Item notes.
 - ADR: design choice, rationale, and consequences.
 - Work Item: task scope, acceptance criteria, dependencies, and durable
   execution facts.
+- Conformance Case: a derived, non-normative mapping from a project scenario to
+  versioned RFC Clauses and reusable Guards.
 
 Work Item `description` states scope and reason. `notes` hold only facts or retry
 constraints that remain useful after closure. Progress, validation output,
 plans, and temporary blockers belong in loop evidence or the final response.
+Use `govctl conformance trace` for requirement-to-scenario navigation. Never
+treat a Case as authority for behavior that is absent from its RFC requirements.
 
 ### Respect RFC Lifecycle Boundaries
 

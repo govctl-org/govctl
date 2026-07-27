@@ -7,7 +7,7 @@ use crate::model::{AdrStatus, ProjectIndex, RfcStatus, WorkItemStatus};
 use regex::Regex;
 use std::collections::HashSet;
 
-const BARE_ARTIFACT_ID_PATTERN: &str = r"\b(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\b";
+const BARE_ARTIFACT_ID_PATTERN: &str = r"\b(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3})|CONF-[A-Z][A-Z0-9-]*)\b";
 
 struct ReferenceScanner {
     bracket_re: Regex,

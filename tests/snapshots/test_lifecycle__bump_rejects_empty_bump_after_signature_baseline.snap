@@ -28,9 +28,13 @@ error[E0113]: RFC version bump requires RFC or clause content changes since the 
 exit: 1
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬────────┬──────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase  ┆ Title    │
-╞══════════╪═════════╪═══════════╪════════╪══════════╡
-│ RFC-0001 ┆ 0.1.0   ┆ normative ┆ stable ┆ Test RFC │
-└──────────┴─────────┴───────────┴────────┴──────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.0",
+    "status": "normative",
+    "phase": "stable",
+    "title": "Test RFC"
+  }
+]
 exit: 0

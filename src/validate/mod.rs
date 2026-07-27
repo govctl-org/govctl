@@ -12,6 +12,7 @@ use crate::model::{AdrStatus, ProjectIndex};
 mod adr_projection;
 mod artifact_refs;
 mod bracket_refs;
+pub(crate) mod conformance;
 mod fields;
 mod lifecycle;
 mod reference_hierarchy;
@@ -49,6 +50,7 @@ pub struct ValidationResult {
     pub clause_count: usize,
     pub adr_count: usize,
     pub work_count: usize,
+    pub conformance_count: usize,
 }
 
 /// Validate the entire project
@@ -58,6 +60,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         clause_count: index.iter_clauses().count(),
         adr_count: index.adrs.len(),
         work_count: index.work_items.len(),
+        conformance_count: index.conformance_cases.len(),
         ..Default::default()
     };
 
@@ -121,6 +124,13 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
 
     // Validate tags against allowed set — [[RFC-0002:C-RESOURCES]]
     validate_artifact_tags(index, config, &mut result);
+    result
+        .diagnostics
+        .extend(conformance::validate_cases_with_index(
+            config,
+            &index.conformance_cases,
+            index,
+        ));
 
     result
 }

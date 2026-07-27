@@ -19,7 +19,7 @@ Governed artifact resources MUST expose the following universal operations where
 
 Syntax: `govctl <resource> new <arguments>`
 
-`new` MUST be supported for RFCs, ADRs, Work Items, Clauses, and Guards. It MUST validate inputs. It MUST generate or validate the resource ID. It MUST initialize schema-defined defaults and create the canonical storage structure.
+`new` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. It MUST validate inputs. It MUST generate or validate the resource ID. It MUST initialize schema-defined defaults and create the canonical storage structure.
 
 Guard creation through `govctl guard new "<title>"` MUST scaffold a Guard TOML file under `gov/guard/`. The generated ID MUST use the `GUARD-` prefix. The command SHOULD print guidance for adding the Guard to project verification policy.
 
@@ -27,13 +27,13 @@ Guard creation through `govctl guard new "<title>"` MUST scaffold a Guard TOML f
 
 Syntax: `govctl <resource> list [status] [--tag <tag>[,<tag>...]]`
 
-`list` MUST be supported for RFCs, ADRs, Work Items, Clauses, and Guards. Results MUST be sorted lexicographically by ID. A positional status filter, where supported by the resource lifecycle, MUST accept only that resource's defined status values. Tag filtering MUST require every requested tag. Tag filtering MUST accept comma-separated tag values for taggable resource types. Output MUST follow [[RFC-0002:C-OUTPUT-FORMAT]].
+`list` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. Results MUST be sorted lexicographically by ID. A positional status filter, where supported by the resource lifecycle, MUST accept only that resource's defined status values. Tag filtering MUST require every requested tag. Tag filtering MUST accept comma-separated tag values for taggable resource types. Output MUST follow [[RFC-0002:C-OUTPUT-FORMAT]].
 
 **3. `get` - Read Resource**
 
 Syntax: `govctl <resource> get <id> [field]`
 
-`get` MUST be supported for RFCs, ADRs, Work Items, Clauses, and Guards. With no field, it returns the complete structured resource. With a field, it returns that logical field value. Unknown resources and fields MUST be rejected. Output MUST follow [[RFC-0002:C-OUTPUT-FORMAT]].
+`get` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. With no field, it returns the complete structured resource. With a field, it returns that logical field value. Unknown resources and fields MUST be rejected. Output MUST follow [[RFC-0002:C-OUTPUT-FORMAT]].
 
 Field identifiers exposed by `get` MUST be logical artifact field names rather than persisted table-layout paths. Renaming a logical field identifier requires a breaking govctl release.
 
@@ -54,7 +54,7 @@ govctl <resource> edit <id> <path> --remove [<pattern>]
 govctl <resource> edit <id> <path> --tick <status>
 ```
 
-`edit` MUST be supported for RFCs, ADRs, Work Items, Clauses, and Guards. It MUST be the only universal field-mutation subcommand for those resources. These resources MUST NOT expose `set`, `add`, `remove`, or `tick` as sibling mutation subcommands.
+`edit` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. It MUST be the only universal field-mutation subcommand for those resources. These resources MUST NOT expose `set`, `add`, `remove`, or `tick` as sibling mutation subcommands.
 
 An edit invocation MUST select exactly one mutation operation. `--stdin` MAY supply the value for `--set` or `--add`. Selectors and their exclusivity rules are defined by [[RFC-0002:C-EDIT-FIELD-CONTRACT]].
 
@@ -66,9 +66,9 @@ The same edit grammar and flag roles MUST apply across supported resource types.
 
 Syntax: `govctl <resource> delete <id>`
 
-`delete` MUST be supported for Work Items, Clauses, and Guards. RFCs and ADRs MUST use their lifecycle operations instead.
+`delete` MUST be supported for Work Items, Clauses, Guards, and Conformance Cases. RFCs and ADRs MUST use their lifecycle operations instead.
 
-For Guards, deletion MUST reject references from Work Item verification requirements, Work Item waivers, and project default Guards.
+For Guards, deletion MUST reject references from Work Item verification requirements, Work Item waivers, project default Guards, and Conformance Case guard bindings.
 
 For Clauses, deletion MUST enforce [[RFC-0000:C-CLAUSE-DEF]] and report every governed referrer that prevents deletion.
 

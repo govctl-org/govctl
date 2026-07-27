@@ -12,9 +12,11 @@ Set WI-<DATE>-001.title = New Title
 exit: 0
 
 $ govctl work list all
-┌───────────────────┬────────┬───────────┐
-│ ID                ┆ Status ┆ Title     │
-╞═══════════════════╪════════╪═══════════╡
-│ WI-<DATE>-001 ┆ queue  ┆ New Title │
-└───────────────────┴────────┴───────────┘
+[
+  {
+    "id": "WI-<DATE>-001",
+    "status": "queue",
+    "title": "New Title"
+  }
+]
 exit: 0
