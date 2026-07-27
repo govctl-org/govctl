@@ -4,6 +4,7 @@ use crate::config::Config;
 use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::load::load_project;
 use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus, WorkItemEntry, WorkItemStatus};
+use crate::parse::{load_guards, load_releases};
 use crate::status_counts::{StatusCounts, count_by, count_for, total_count};
 use crate::theme::status_semantic;
 use crate::ui::stdout_supports_color;
@@ -160,6 +161,8 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
         Ok(idx) => idx,
         Err(diags) => return Ok(diags),
     };
+    let guards = load_guards(config)?;
+    let releases = load_releases(config)?;
     let printer = StatusPrinter::new();
 
     printer.title();
@@ -204,6 +207,7 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
         rows: &[
             StatusRow::new("proposed", AdrStatus::Proposed),
             StatusRow::new("accepted", AdrStatus::Accepted),
+            StatusRow::new("rejected", AdrStatus::Rejected),
             StatusRow::new("superseded", AdrStatus::Superseded),
         ],
         total: index.adrs.len(),
@@ -230,8 +234,14 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
 
     printer.active_work(&active_items);
 
+    printer.section_header("Verification Guards");
+    printer.total_line(guards.len());
+
     printer.section_header("Conformance Cases");
     printer.total_line(index.conformance_cases.len());
+
+    printer.section_header("Releases");
+    printer.total_line(releases.releases.len());
 
     println!();
     Ok(vec![])

@@ -61,6 +61,10 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Lifecycle states occupy stable semantic columns across RFC, ADR, and Work rows (WI-2026-07-27-004)
 - Governance navigation entries use an aligned tabular grid on wide and narrow terminals (WI-2026-07-27-004)
 - Execution activity and diagnostic health are presented as separate dashboard regions (WI-2026-07-27-004)
+- Conformance Case edits use the shared edit contract and preserve the RFC-defined paths, validation, and diagnostics. (WI-2026-07-27-008)
+- TUI list-view capabilities and filtering avoid repeated view classification while preserving navigation, rendering, and search behavior. (WI-2026-07-27-008)
+- Search and artifact catalog code share local-index infrastructure and keep all supported artifact kinds searchable. (WI-2026-07-27-008)
+- Governed prose reference scanning separates source enumeration from policy-driven scanning without changing diagnostics. (WI-2026-07-27-008)
 
 ### Removed
 
@@ -100,6 +104,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Filter and search input remain legible for long values on common narrow terminals (WI-2026-07-27-003)
 - Conformance search results and diagnostics navigate to the corresponding Case detail (WI-2026-07-27-007)
 - TUI tag usage counts include Conformance Case tags (WI-2026-07-27-007)
+- Status reports rejected ADRs and totals for verification guards and releases (WI-2026-07-27-009)
 
 ### Security
 
