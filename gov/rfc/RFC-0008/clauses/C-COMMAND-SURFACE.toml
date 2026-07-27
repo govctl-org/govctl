@@ -1,0 +1,41 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-COMMAND-SURFACE"
+title = "Conformance Resource Commands"
+kind = "normative"
+status = "active"
+tags = ["cli"]
+
+[content]
+text = """
+Implementations MUST expose Conformance Cases through the top-level `conformance` resource namespace and the resource-first structure defined by [[RFC-0002:C-RESOURCE-MODEL]].
+
+Creation MUST use:
+
+```
+govctl conformance new "<title>" --path <path> --selector <selector> --requirement <CLAUSE-ID>@<VERSION> [--requirement <CLAUSE-ID>@<VERSION> ...] [--guard <GUARD-ID> ...] [--id <CONF-ID>]
+```
+
+`--path` and `--selector` MUST each occur exactly once. `--requirement` MUST be repeatable and occur at least once. `--guard` MAY be repeated. When `--id` is absent, govctl MUST generate a valid unused ID from the title. When `--id` is present, govctl MUST validate and use that ID.
+
+The resource MUST support `list`, `get`, `show`, `edit`, and `delete` with the applicable shared behavior defined by [[RFC-0002:C-CRUD-VERBS]] and [[RFC-0002:C-SHOW-PROJECTION]]. `get <id> [field]` MUST expose `id`, `title`, `tags`, `path`, `selector`, `requirements`, and `guards`. Because Cases have no lifecycle state, current and archive `show` projections MUST be content-equivalent.
+
+`conformance edit` MUST accept only these logical paths and operations:
+
+| Path | Permitted operation |
+| --- | --- |
+| `title`, `path`, `selector` | `--set` |
+| `requirements`, `guards`, `tags` | `--add`, `--remove` |
+| `requirements[i]` | `--remove` |
+| `requirements[i].version` | `--set` |
+
+Adding or exact-value removing a requirement MUST accept the same `<CLAUSE-ID>@<VERSION>` value used by `new`. Changing a requirement `ref` MUST use an add followed by removal of the old binding; it MUST NOT expose a scalar `requirements[i].ref` mutation that can create an invalid intermediate ref-version pair. Indexed removal MUST use `requirements[i] --remove`.
+
+Wire-layout prefixes such as `govctl.` and `case.` MUST be rejected. Every failed creation, edit, or deletion MUST leave governed files unchanged.
+
+Conformance Case tags MUST use the controlled vocabulary and syntax defined by [[RFC-0002:C-RESOURCES]]. `conformance list` MUST support the shared `--tag` filter. Cases MUST be included in `govctl tag list` usage counts, and `govctl tag delete` MUST reject a tag still used by a Case.
+
+Global search MUST index Conformance Case IDs, titles, tags, paths, selectors, requirement refs and versions, and Guard IDs. `govctl search --type conformance` MUST select this resource type.
+
+**Rationale:** Canonical CRUD keeps authoring consistent with existing resources, while a dedicated trace query supplies reverse navigation without creating a general graph language or a second execution policy."""

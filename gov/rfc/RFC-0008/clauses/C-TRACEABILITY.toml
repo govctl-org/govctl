@@ -1,0 +1,26 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-TRACEABILITY"
+title = "Case-Owned Declared Traceability"
+kind = "normative"
+status = "active"
+tags = ["validation"]
+
+[content]
+text = """
+Conformance traceability MUST use Case-owned edges:
+
+1. A Conformance Case owns its versioned `requirements` edges to RFC Clauses.
+2. A Conformance Case MAY own `guards` edges to Verification Guards.
+3. Verification Guards and Work Items MUST NOT persist reverse Conformance Case lists.
+
+Each Guard ID in a Case MUST identify an existing Verification Guard. A Case-to-Guard edge declares that the project associates that Guard with execution of the Case locator. It MUST NOT be treated as evidence that the Guard selects the locator, has run, has passed, or establishes conformance.
+
+Implementations MUST derive Clause-to-Case, Guard-to-Case, and Clause-to-Guard views from Case-owned edges. A Guard associated with a multi-requirement Case is related to that Case and its listed requirement bindings; this relationship MUST NOT be summarized as proof that every obligation in a Clause is covered.
+
+Deleting a Verification Guard MUST be rejected while any Conformance Case identifies that Guard. The diagnostic MUST identify every Case referrer.
+
+RFC `refs`, ADR `refs`, and Work Item `refs` MUST NOT identify a Conformance Case. `[[...]]` link targets and known Conformance Case ID mentions in governed RFC, ADR, or Work Item prose MUST NOT identify a Conformance Case. Work Item completion policy MUST continue to select Verification Guards through the existing required-Guard surface rather than through Cases.
+
+**Rationale:** Keeping both edge types in the Case makes one scenario locally understandable and avoids Guard files containing hundreds of reverse IDs. Prohibiting durable Work Item references preserves current-only Case mutation without rewriting historical task meaning."""

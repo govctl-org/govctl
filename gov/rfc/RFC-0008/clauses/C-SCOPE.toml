@@ -1,0 +1,18 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SCOPE"
+title = "Scope and Authority"
+kind = "informative"
+status = "active"
+tags = ["core"]
+
+[content]
+text = """
+Projects can identify RFC Clauses and execute reusable Verification Guards, but they cannot give individual acceptance scenarios stable governance identities or query the declared relationships between scenarios, requirements, and Guards. At scale, scenario prose is copied into RFCs or Work Items, positional test references become unstable, and agents must search opaque project files to reconstruct context.
+
+This RFC defines a first-class Conformance Case as a version-aware, non-normative declaration between RFC Clauses and Verification Guards. An RFC Clause remains the sole semantic authority. A Case identifies project-owned scenario content and declared Guard associations; it does not prove execution, passage, coverage, or conformance.
+
+This RFC covers current Case identity and storage, stable scenario locators, version-bound requirement relationships, derived applicability state, structural validation, and trace queries. It does not define sub-Clause requirement anchors, a test runner, domain-specific fixture or oracle formats, Work Item completion requirements, persistent run results, Case revisions or lifecycle states, Suite resources, or a general custom-artifact framework.
+
+Lifecycle readiness depends on companion amendments integrating the new resource into the closed contracts owned by [[RFC-0000:C-REFERENCE-HIERARCHY]], [[RFC-0002:C-RESOURCES]], [[RFC-0002:C-CRUD-VERBS]], [[RFC-0002:C-EDIT-FIELD-CONTRACT]], [[RFC-0002:C-SHOW-PROJECTION]], [[RFC-0002:C-GLOBAL-COMMANDS]], [[RFC-0002:C-SEARCH-COMMAND]], [[RFC-0002:C-COMPATIBILITY-BOUNDARY]], and [[RFC-0002:C-OUTPUT-FORMAT]]. Until those amendments remove conflicts with existing exhaustive lists, this draft remains a proposal rather than a finalizable contract."""
