@@ -1,0 +1,36 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-002"
+title = "Refine TUI control-plane visual identity"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0007:C-HUMAN-UX",
+    "RFC-0007:C-COCKPIT-VIEWS",
+]
+
+[content]
+description = "Create a distinctive terminal-native control-plane presentation across the TUI while preserving its read-only behavior and existing navigation."
+
+[[content.acceptance_criteria]]
+text = "Dashboard presents governance lifecycle and operations as a responsive control-plane matrix"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI chrome, lists, and details use a consistent terminal-native visual vocabulary"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Wide and narrow TestBackend renders preserve readable state, selection, and navigation"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused TUI tests, all-target clippy, and governance checks pass"
+status = "done"
+category = "chore"

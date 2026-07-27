@@ -38,8 +38,8 @@ pub(super) fn remove_target_from_doc(
                 "simple list target expected",
             ),
             edit_engine::TargetOrigin::Nested => {
-                remove_nested_target_values(artifact, doc, id, path, |display, items| {
-                    resolve_match_indices(id, display, items, opts, MatchUse::Remove)
+                remove_nested_target_values(artifact, doc, id, path, |display, items, codec| {
+                    super::value_codec::resolve_remove_indices(codec, id, display, items, opts)
                 })
             }
         },
@@ -60,12 +60,16 @@ pub(super) fn remove_target_from_doc(
                     "simple indexed container expected",
                 )
             }
-            edit_engine::TargetOrigin::Nested => {
-                remove_nested_target_values(artifact, doc, id, container_path, |_display, items| {
+            edit_engine::TargetOrigin::Nested => remove_nested_target_values(
+                artifact,
+                doc,
+                id,
+                container_path,
+                |_display, items, _codec| {
                     let resolved = super::path::resolve_index(*index, items.len())?;
                     Ok(vec![resolved])
-                })
-            }
+                },
+            ),
         },
         _ => Err(cannot_remove_from_field_error(id, &target.display_path())),
     }
@@ -103,12 +107,17 @@ fn remove_nested_target_values<F>(
     resolve: F,
 ) -> DiagnosticResult<(String, Vec<String>)>
 where
-    F: FnOnce(&str, &[&str]) -> DiagnosticResult<Vec<usize>>,
+    F: FnOnce(
+        &str,
+        &[&str],
+        Option<super::rules::NestedListValueCodec>,
+    ) -> DiagnosticResult<Vec<usize>>,
 {
     let display = path.to_string();
-    let removed = edit_runtime::remove_nested_list_values(artifact, doc, path, id, |items| {
-        resolve(&display, items)
-    })?;
+    let removed =
+        edit_runtime::remove_nested_list_values(artifact, doc, path, id, |items, codec| {
+            resolve(&display, items, codec)
+        })?;
     Ok((display, removed))
 }
 

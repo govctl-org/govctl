@@ -1,8 +1,8 @@
 //! Command planning for unified routing semantics.
 //!
 //! This module compiles parsed CLI syntax into semantic execution plans built
-//! from `Scope + Op`. The planner is the single normalization point for both
-//! canonical and compatibility command forms.
+//! from `Scope + Op`. The planner is the single normalization point for
+//! canonical command forms.
 
 mod edit_action;
 mod execute;
@@ -11,17 +11,13 @@ mod plan;
 
 use crate::cmd;
 use crate::diagnostic::DiagnosticResult;
-use crate::{ListTarget, OutputFormat, ShowOutputFormat};
+use crate::{GetOutputFormat, ListOutputFormat, ListTarget, ShowOutputFormat};
 
 pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 pub(crate) type OwnedEditAction = cmd::edit::OwnedEditAction;
 
-pub(crate) use edit_action::{
-    add_action, owned_edit_action, remove_action, set_action, tick_action,
-};
-pub use plan::{
-    BuiltinOp, CommandPlan, CreateOp, EditExtras, EditOp, LifecycleOp, LockDisposition, Op, Scope,
-};
+pub(crate) use edit_action::owned_edit_action;
+pub use plan::{BuiltinOp, CommandPlan, CreateOp, EditOp, LifecycleOp, LockDisposition, Op, Scope};
 
 fn artifact_scope(artifact: cmd::edit::ArtifactType, id: &str) -> Scope {
     Scope::Artifact {
@@ -58,10 +54,6 @@ fn target(id: &str, field: Option<&str>, op: Op) -> DiagnosticResult<CommandPlan
     Ok(CommandPlan::new(resolve_scope(id, field)?, op))
 }
 
-fn edit_op_with_extras(action: OwnedEditAction, extras: EditExtras) -> Op {
-    Op::Edit(EditOp::Field { action, extras })
-}
-
 pub(crate) fn plan_create(collection_target: ListTarget, create: CreateOp) -> CommandPlan {
     collection(collection_target, Op::Create(create))
 }
@@ -70,7 +62,7 @@ pub(crate) fn plan_list(
     target_kind: ListTarget,
     filter: Option<String>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: Option<ListOutputFormat>,
     tags: Vec<String>,
 ) -> CommandPlan {
     collection(
@@ -84,8 +76,12 @@ pub(crate) fn plan_list(
     )
 }
 
-pub(crate) fn plan_get(id: &str, field: Option<&str>) -> DiagnosticResult<CommandPlan> {
-    target(id, field, Op::Get)
+pub(crate) fn plan_get(
+    id: &str,
+    field: Option<&str>,
+    output: Option<GetOutputFormat>,
+) -> DiagnosticResult<CommandPlan> {
+    target(id, field, Op::Get { output })
 }
 
 pub(crate) fn plan_show(
@@ -101,9 +97,8 @@ pub(crate) fn plan_edit(
     id: &str,
     field: &str,
     action: OwnedEditAction,
-    extras: EditExtras,
 ) -> DiagnosticResult<CommandPlan> {
-    target(id, Some(field), edit_op_with_extras(action, extras))
+    target(id, Some(field), Op::Edit(EditOp::Field { action }))
 }
 
 pub(crate) fn plan_lifecycle(

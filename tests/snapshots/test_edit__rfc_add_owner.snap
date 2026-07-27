@@ -1,16 +1,17 @@
 ---
-source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/edit_tests/rfc.rs
+expression: value
 ---
 $ govctl rfc new Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
   Clauses dir: gov/rfc/RFC-0001/clauses
 exit: 0
 
-$ govctl rfc add RFC-0001 owners @newowner
+$ govctl rfc edit RFC-0001 owners --add @newowner
 Added '@newowner' to RFC-0001.owners
 exit: 0
 
 $ govctl rfc get RFC-0001 owners
-@test-user, @newowner
+@test-user
+@newowner
 exit: 0

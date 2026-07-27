@@ -1,0 +1,59 @@
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0008"
+title = "Conformance Case and Declared Traceability Model"
+version = "0.1.1"
+status = "normative"
+phase = "impl"
+owners = ["@govctl-org"]
+created = "2026-07-27"
+updated = "2026-07-27"
+refs = [
+    "RFC-0000:C-CLAUSE-DEF",
+    "RFC-0000:C-GUARD-DEF",
+    "RFC-0000:C-REFERENCE-HIERARCHY",
+    "RFC-0001:C-RFC-STATUS",
+    "RFC-0001:C-CLAUSE-STATUS",
+    "RFC-0002:C-RESOURCE-MODEL",
+    "RFC-0002:C-RESOURCES",
+    "RFC-0002:C-CRUD-VERBS",
+    "RFC-0002:C-EDIT-FIELD-CONTRACT",
+    "RFC-0002:C-SHOW-PROJECTION",
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "RFC-0002:C-COMPATIBILITY-BOUNDARY",
+    "RFC-0002:C-OUTPUT-FORMAT",
+    "RFC-0002:C-SEARCH-COMMAND",
+]
+signature = "d5c343b0380b223459bfb97e14c248f51abf3487ba62c40869b858028524f562"
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SCOPE.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-CONFORMANCE-CASE.toml",
+    "clauses/C-TRACEABILITY.toml",
+    "clauses/C-VALIDATION.toml",
+    "clauses/C-COMMAND-SURFACE.toml",
+    "clauses/C-TRACE-QUERY.toml",
+]
+
+[[changelog]]
+version = "0.1.1"
+date = "2026-07-27"
+notes = "Keep Case mutations local and recoverable"
+fixed = ["Limit Case mutation validation to the target and its direct dependencies"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-07-27"
+notes = "Define version-aware current Conformance Cases and declared traceability"
+added = [
+    "Conformance Case resource definition",
+    "Canonical Conformance Case command and edit surface",
+    "Case-owned Clause and Guard traceability bindings",
+    "Version-aware declared trace query and derived applicability states",
+]

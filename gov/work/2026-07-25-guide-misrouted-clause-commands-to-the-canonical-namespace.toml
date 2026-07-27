@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-25-002"
+title = "Guide misrouted Clause commands to the canonical namespace"
+status = "done"
+created = "2026-07-25"
+started = "2026-07-25"
+completed = "2026-07-25"
+refs = ["RFC-0002"]
+tags = [
+    "cli",
+    "skills-agents",
+    "testing",
+]
+
+[content]
+description = "Improve recovery from Clause operations sent through the RFC namespace while preserving one canonical Clause command path. The change covers targeted rejection diagnostics, agent-facing routing guidance, and regression tests."
+
+[[content.acceptance_criteria]]
+text = "Misrouted Clause references and Clause-content paths fail with a canonical govctl clause replacement command"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Invalid RFC namespace forms remain rejected and are not aliases or automatic redirects"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "CLI metadata and bundled skills teach Clause as a first-class command resource"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Regression tests and project verification guards pass"
+status = "done"
+category = "chore"

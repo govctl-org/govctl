@@ -1,6 +1,6 @@
 ---
-source: tests/test_lifecycle.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/lifecycle_tests/clause.rs
+expression: snapshot
 ---
 $ govctl rfc new Deprecate Clause RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -17,9 +17,13 @@ Deprecated clause: RFC-0001:C-ONE
 exit: 0
 
 $ govctl clause list
-┌────────┬──────────┬───────────┬────────────┬────────────┐
-│ Clause ┆ RFC      ┆ Kind      ┆ Status     ┆ Title      │
-╞════════╪══════════╪═══════════╪════════════╪════════════╡
-│ C-ONE  ┆ RFC-0001 ┆ normative ┆ deprecated ┆ Clause One │
-└────────┴──────────┴───────────┴────────────┴────────────┘
+[
+  {
+    "id": "C-ONE",
+    "rfc_id": "RFC-0001",
+    "kind": "normative",
+    "status": "deprecated",
+    "title": "Clause One"
+  }
+]
 exit: 0

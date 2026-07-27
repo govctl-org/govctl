@@ -80,19 +80,19 @@ fn test_rfc_content_signature_includes_clause_content() -> Result<(), Diagnostic
 }
 
 #[test]
-fn test_rfc_amended_accepts_legacy_full_signature_baseline() -> Result<(), Diagnostic> {
+fn test_rfc_amended_rejects_legacy_full_signature_baseline() -> Result<(), Diagnostic> {
     let mut rfc = test_rfc_index();
     rfc.rfc.signature = Some(compute_rfc_signature(&rfc)?);
 
-    assert!(!is_rfc_amended(&rfc));
+    assert!(is_rfc_amended(&rfc));
     Ok(())
 }
 
 #[test]
-fn test_migrated_legacy_signature_ignores_later_phase_changes() -> Result<(), Diagnostic> {
+fn test_content_signature_ignores_later_phase_changes() -> Result<(), Diagnostic> {
     let mut rfc = test_rfc_index();
     rfc.rfc.signature = Some(compute_rfc_signature(&rfc)?);
-    assert!(!is_rfc_amended(&rfc));
+    assert!(is_rfc_amended(&rfc));
 
     rfc.rfc.signature = Some(compute_rfc_content_signature(&rfc)?);
     rfc.rfc.phase = RfcPhase::Test;

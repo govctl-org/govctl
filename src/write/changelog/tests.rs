@@ -176,12 +176,16 @@ fn add_change_resolves_current_entry_by_version() -> Result<(), Box<dyn std::err
 }
 
 #[test]
-fn current_entry_resolution_rejects_duplicate_matches() {
+fn current_entry_resolution_rejects_duplicate_matches() -> Result<(), Box<dyn std::error::Error>> {
     let mut rfc = test_rfc();
     rfc.changelog.push(changelog_entry("0.2.0"));
 
-    let error = add_changelog_change(&mut rfc, "fix: ambiguous").unwrap_err();
+    let error = match add_changelog_change(&mut rfc, "fix: ambiguous") {
+        Ok(()) => return Err("duplicate changelog entries should fail".into()),
+        Err(error) => error,
+    };
 
     assert_eq!(error.code, DiagnosticCode::E0115RfcCurrentChangelogInvalid);
     assert!(error.message.contains("found 2"));
+    Ok(())
 }

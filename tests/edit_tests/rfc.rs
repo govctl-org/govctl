@@ -12,7 +12,7 @@ fn test_rfc_set_title() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Original Title"],
-            &["rfc", "set", "RFC-0001", "title", "New Title"],
+            &["rfc", "edit", "RFC-0001", "title", "--set", "New Title"],
             &["rfc", "list"],
         ],
     )?;
@@ -45,7 +45,7 @@ fn test_rfc_add_owner() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@newowner"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@newowner"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
     )?;
@@ -61,9 +61,9 @@ fn test_rfc_remove_owner() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
-            &["rfc", "remove", "RFC-0001", "owners", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners", "--remove", "@owner1"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
     )?;
@@ -79,8 +79,8 @@ fn test_rfc_remove_owner_by_index_canonical() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner2"],
             &["rfc", "edit", "RFC-0001", "owners[1]", "--remove"],
             &["rfc", "get", "RFC-0001", "owners"],
         ],
@@ -92,7 +92,7 @@ fn test_rfc_remove_owner_by_index_canonical() -> common::TestResult {
         output
     );
     assert!(
-        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @owner2"),
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user\n@owner2"),
         "output: {}",
         output
     );
@@ -108,7 +108,7 @@ fn test_rfc_add_ref() -> common::TestResult {
         &[
             &["rfc", "new", "Test RFC"],
             &["rfc", "new", "Referenced RFC"],
-            &["rfc", "add", "RFC-0001", "refs", "RFC-0002"],
+            &["rfc", "edit", "RFC-0001", "refs", "--add", "RFC-0002"],
             &["rfc", "get", "RFC-0001", "refs"],
         ],
     )?;
@@ -135,8 +135,8 @@ fn test_rfc_refs_reject_invalid_hierarchy_and_preserve_existing_value() -> commo
             &["rfc", "new", "Test RFC"],
             &["rfc", "new", "Referenced RFC"],
             &["adr", "new", "Lower Authority Decision"],
-            &["rfc", "add", "RFC-0001", "refs", "ADR-0001"],
-            &["rfc", "add", "RFC-0001", "refs", "RFC-0002"],
+            &["rfc", "edit", "RFC-0001", "refs", "--add", "ADR-0001"],
+            &["rfc", "edit", "RFC-0001", "refs", "--add", "RFC-0002"],
             &["rfc", "edit", "RFC-0001", "refs[0]", "--set", "ADR-0001"],
             &["rfc", "get", "RFC-0001", "refs"],
         ],
@@ -204,8 +204,8 @@ fn test_rfc_edit_set_owner_by_index_canonical() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner1"],
-            &["rfc", "add", "RFC-0001", "owners", "@owner2"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner1"],
+            &["rfc", "edit", "RFC-0001", "owners", "--add", "@owner2"],
             &[
                 "rfc",
                 "edit",
@@ -224,7 +224,7 @@ fn test_rfc_edit_set_owner_by_index_canonical() -> common::TestResult {
         output
     );
     assert!(
-        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user, @replacement"),
+        output.contains("$ govctl rfc get RFC-0001 owners\n@test-user\n@replacement"),
         "output: {}",
         output
     );
@@ -239,7 +239,7 @@ fn test_rfc_set_nonexistent_field() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "set", "RFC-0001", "nonexistent", "value"],
+            &["rfc", "edit", "RFC-0001", "nonexistent", "--set", "value"],
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
@@ -254,7 +254,7 @@ fn test_rfc_set_version_rejected() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "set", "RFC-0001", "version", "0.2.0"],
+            &["rfc", "edit", "RFC-0001", "version", "--set", "0.2.0"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -274,7 +274,7 @@ fn test_rfc_set_status_rejected() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "new", "Test RFC"],
-            &["rfc", "set", "RFC-0001", "status", "normative"],
+            &["rfc", "edit", "RFC-0001", "status", "--set", "normative"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -350,7 +350,7 @@ fn test_rfc_current_changelog_edit_resolves_by_version_and_preserves_lifecycle_f
                 "Second fix",
             ],
             &["rfc", "edit", "RFC-0001", "changelog.fixed[0]", "--remove"],
-            &["rfc", "get", "RFC-0001", "changelog"],
+            &["rfc", "get", "RFC-0001", "changelog", "--output", "json"],
         ],
     )?;
 
@@ -378,97 +378,6 @@ fn test_rfc_current_changelog_edit_resolves_by_version_and_preserves_lifecycle_f
             .and_then(toml::Value::as_str),
         Some("Second fix")
     );
-    Ok(())
-}
-
-#[test]
-fn test_rfc_changelog_edits_reject_legacy_signature_without_false_amendment() -> common::TestResult
-{
-    let temp_dir = init_project()?;
-    run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "new", "Legacy signature RFC"],
-            &[
-                "rfc",
-                "edit",
-                "RFC-0001",
-                "changelog.fixed",
-                "--add",
-                "Existing fix",
-            ],
-            &["rfc", "finalize", "RFC-0001", "normative"],
-            &["rfc", "render", "RFC-0001"],
-        ],
-    )?;
-
-    let rendered = std::fs::read_to_string(temp_dir.path().join("docs/rfc/RFC-0001.md"))?;
-    let legacy_signature = rendered
-        .lines()
-        .find_map(|line| {
-            line.trim()
-                .strip_prefix("<!-- SIGNATURE: sha256:")
-                .and_then(|value| value.strip_suffix(" -->"))
-        })
-        .ok_or("missing rendered RFC signature")?;
-    let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
-    let mut rfc: toml::Value = toml::from_str(&std::fs::read_to_string(&rfc_path)?)?;
-    rfc["govctl"]
-        .as_table_mut()
-        .ok_or("RFC metadata is not a table")?
-        .insert(
-            "signature".to_string(),
-            toml::Value::String(legacy_signature.to_string()),
-        );
-    std::fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
-    let before: toml::Value = toml::from_str(&std::fs::read_to_string(&rfc_path)?)?;
-
-    let output = run_commands(
-        temp_dir.path(),
-        &[
-            &[
-                "rfc",
-                "edit",
-                "RFC-0001",
-                "changelog.summary",
-                "--set",
-                "Must not be written",
-            ],
-            &[
-                "rfc",
-                "edit",
-                "RFC-0001",
-                "changelog.fixed",
-                "--add",
-                "Must not be added",
-            ],
-            &["rfc", "edit", "RFC-0001", "changelog.fixed[0]", "--remove"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "False amendment",
-            ],
-            &["rfc", "advance", "RFC-0001", "impl"],
-            &["rfc", "get", "RFC-0001", "phase"],
-        ],
-    )?;
-
-    assert_eq!(
-        output.matches("error[E0505]").count(),
-        3,
-        "output: {output}"
-    );
-    assert!(output.contains("error[E0104]"), "output: {output}");
-    assert!(output.contains("phase=spec"), "output: {output}");
-    assert!(
-        output.contains("$ govctl rfc get RFC-0001 phase\nimpl"),
-        "output: {output}"
-    );
-    let after: toml::Value = toml::from_str(&std::fs::read_to_string(&rfc_path)?)?;
-    assert_eq!(after["changelog"], before["changelog"]);
     Ok(())
 }
 
@@ -590,5 +499,31 @@ fn test_rfc_changelog_operations_reject_missing_current_entry_without_mutation()
     );
     assert!(output.contains("found 0"), "output: {output}");
     assert_eq!(std::fs::read(&rfc_path)?, before);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_rfc_edit_allows_symlinked_rfc_directory() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Original"]])?;
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let external_dir = temp_dir.path().join("external-rfc");
+    std::fs::rename(&rfc_dir, &external_dir)?;
+    symlink(&external_dir, &rfc_dir)?;
+    let external_rfc = external_dir.join("rfc.toml");
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["rfc", "edit", "RFC-0001", "title", "--set", "Redirected"]],
+    )?;
+
+    assert!(
+        output.contains("Set RFC-0001.title = Redirected"),
+        "{output}"
+    );
+    let rfc: toml::Value = toml::from_str(&std::fs::read_to_string(external_rfc)?)?;
+    assert_eq!(rfc["govctl"]["title"].as_str(), Some("Redirected"));
     Ok(())
 }

@@ -1,6 +1,6 @@
 ---
-source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/edit_tests/clause.rs
+expression: value
 ---
 $ govctl rfc new Test RFC
 Created RFC: gov/rfc/RFC-0001/rfc.toml
@@ -12,7 +12,7 @@ Created clause: gov/rfc/RFC-0001/clauses/C-TEST.toml
   Added to section 'Specification', path: clauses/C-TEST.toml
 exit: 0
 
-$ govctl clause set RFC-0001:C-TEST title New Title
+$ govctl clause edit RFC-0001:C-TEST title --set New Title
 Set RFC-0001:C-TEST.title = New Title
 exit: 0
 

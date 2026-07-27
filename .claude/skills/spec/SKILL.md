@@ -1,190 +1,107 @@
 ---
 name: spec
-description: "Maintain governance artifacts without implementation work. Use when: (1) Accepting or refining ADRs, (2) Clarifying or amending RFCs without code changes, (3) Governance-only docs/check/render updates"
+description: "Maintain RFC and ADR artifacts without implementation work"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <artifact-maintenance-task>
 ---
 
-# /spec - Governance Artifact Maintenance
+# Specification Maintenance
 
-Maintain governance artifacts for: `$ARGUMENTS`
+Maintain governance artifacts for `$ARGUMENTS` without implementing code or
+creating execution work.
 
-Use this workflow for spec-only governance work: refine or accept ADRs, clarify or amend RFCs, update artifact references, and validate/render governance output without implementing code.
+## Operational Baseline
 
-**Outputs:** Updated governance artifacts, completed artifact review, and validated rendered governance state.
+### Discovery
 
-**Artifact roles:** RFCs define obligations, ADRs explain decisions, and work items track execution. `/spec` only maintains the first two.
-
-## Critical Rules
-
-1. Artifact-only scope. Do not write implementation code in this workflow.
-2. No work item by default. This workflow is for governance maintenance, not implementation tracking.
-3. Ask permission before lifecycle-owned verbs: `govctl adr accept`, `govctl adr reject`, `govctl adr supersede`, `govctl rfc finalize`, and `govctl rfc bump`.
-4. Do not advance RFC phase out of `spec` here. Hand off to `/gov` when implementation-bearing work begins.
-5. Clarification-only RFC updates must not silently change behavior. If behavior changes, stop and route through `/discuss` and `/gov`.
-6. Never edit governed files directly. Use `govctl` verbs only.
-7. Validate with `govctl check`, and run `govctl render` when rendered docs should change.
-8. Use `/commit` for raw VCS operations. This workflow defines what to record, not how to invoke VCS directly.
-9. Do not let RFCs absorb implementation structure or let ADRs absorb work-item execution details. Preserve artifact roles while editing.
-10. Do not bump an RFC again merely because its current version is already in `spec`; edits there belong to that version candidate.
-
-## Quick Reference
+Establish artifact and lifecycle state first:
 
 ```bash
 govctl status
-govctl rfc list
-govctl rfc show <RFC-ID>
-govctl adr list
-govctl adr show <ADR-ID>
-
-govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: ..."
-govctl adr add <ADR-ID> alternatives "Other option: ..." --reject-reason "Why it was not chosen"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr accept <ADR-ID>
-
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF' ... EOF
-govctl rfc bump <RFC-ID> --patch -m "Clarify clause wording"
-govctl rfc get <RFC-ID> changelog
-govctl rfc edit <RFC-ID> changelog.summary --set "Clarify current version"
-govctl rfc finalize <RFC-ID> normative
-
-govctl check
-govctl render
-```
-
-## Workflow
-
-### 1. Classify the task
-
-Choose the narrowest fit:
-
-- **ADR maintenance**: refine a proposed ADR, add alternatives/refs, or accept it
-- **RFC clarification**: tighten wording or fill specification gaps without changing behavior
-- **RFC amendment**: change normative requirements without implementing them yet
-- **Governance-only cleanup**: fix artifact references, rendering output, or metadata
-
-If the task requires implementation, testing implementation behavior, or phase advancement beyond `spec`, stop and use `/gov`.
-
-### 2. Gather context
-
-```bash
-govctl status
+govctl search <topic>
 govctl rfc list
 govctl adr list
 ```
 
-Then read the relevant artifacts:
+Read the current projection with the resource `show` command and use `--history`
+only when obsolete content matters. Use `govctl <resource> --help` for current
+authoring and lifecycle syntax. In the govctl repository itself, invoke the
+development binary as `cargo run --quiet --`.
 
-```bash
-govctl rfc show <RFC-ID>
-govctl adr show <ADR-ID>
-```
+### Hard Stops
 
-Human-readable `show` defaults to the current projection and omits obsolete
-RFC, ADR, and Clause bodies. Use `--history` when auditing or amending a
-deprecated or superseded artifact. JSON, YAML, and TOML `show` output is always
-complete and cannot be combined with `--history`.
+- This workflow is artifact-only. Do not write implementation code, create Work
+  Items, or advance an RFC beyond `spec`.
+- RFCs own obligations; ADRs own design rationale. Do not put implementation
+  plans into either artifact.
+- Use canonical govctl resource commands rather than editing `gov/` files.
+  Clause operations use the root `govctl clause` namespace.
+- Obtain user authorization before lifecycle-owned or destructive artifact
+  operations, including acceptance/rejection, finalization, version changes,
+  deprecation, supersession, and deletion, unless already granted.
+- Stop when a clarification changes behavior, design remains unresolved, or the
+  task requires implementation. Route those cases to `discuss` or `gov`.
+- Stop lifecycle mutation when authoritative phase, signature baseline, or
+  required recovery state cannot be established.
 
-Before editing a normative RFC, inspect its current phase. The phase determines
-whether the edit remains in the current version candidate or must be released as
-a new version.
+## Decision Policy
 
-For artifact editing conventions, follow the appropriate writer skill:
+### Classify The Change
 
-- RFC changes -> **rfc-writer**
-- ADR changes -> **adr-writer**
+| Change                                          | Path                                             |
+| ----------------------------------------------- | ------------------------------------------------ |
+| Clarify an obligation without changing behavior | Edit and review the RFC                          |
+| Change, add, deprecate, or remove behavior      | Amend the RFC, then hand implementation to `gov` |
+| Refine rationale or alternatives                | Edit and review the ADR                          |
+| Resolve an open design question                 | Hand off to `discuss`                            |
+| Fix governance metadata or references           | Edit the owning artifact                         |
 
-### 3. Edit the artifacts
+Follow `rfc-writer` or `adr-writer` for artifact quality. Use the independent
+matching reviewer before treating content as ready for a lifecycle transition.
 
-Use `govctl` verbs only.
+### Respect Candidate Boundaries
 
-For ADR work:
+Inspect the RFC and its governing lifecycle clauses before editing:
 
-- Refine `context`, `alternatives`, `decision`, `consequences`, and `refs`
-- If the ADR is ready to become authoritative, ask permission before `govctl adr accept <ADR-ID>`
+- Draft RFC content remains in its initial candidate and is finalized rather
+  than version-bumped.
+- A normative RFC already in `spec` remains open for current-candidate
+  authoring; do not bump merely to retarget that candidate.
+- Editing sealed content after `spec` creates an amendment that needs an
+  authorized version-changing bump before later phase progression.
+- A post-`spec` RFC without a trustworthy sealed baseline requires the
+  documented migration or version-control restoration path, not an inferred
+  bump.
+- Deprecated RFC content is historical and is not edited or version-bumped.
 
-For RFC work:
+Clause `since` and version assignment are lifecycle-owned. Use the Clause
+lifecycle surface rather than rewriting history. Current-version changelog
+corrections use the canonical changelog edit path and do not replace a content
+amendment or lifecycle bump.
 
-- Edit clauses with `govctl clause edit`
-- If the RFC is draft, do not bump it; when ready, ask permission before `govctl rfc finalize <RFC-ID> normative`
-- If a normative RFC is in `spec`, edit the current version candidate directly; do not bump it again for those edits
-- If a normative RFC is in `impl`, `test`, or `stable`, an RFC or Clause edit creates an unversioned amendment; after review, ask permission before using `govctl rfc bump` to release it as the next version in `spec`
-- If a normative RFC in `impl`, `test`, or `stable` lacks a sealed signature, stop and run migration or restore the baseline; do not use a bump to infer it
-- If the RFC is deprecated, do not edit or version-bump it
-- Use `govctl rfc edit <RFC-ID> changelog.*` for current-version changelog corrections; these do not change version, phase, or the sealed content signature
-- Delete an unreferenced Clause only in a draft RFC or when it was introduced in the current normative `spec` candidate (`since` equals the RFC version); inherited Clauses require deprecation or supersession
+### Validate And Hand Off
 
-Semver guidance for RFC amendments:
+Run `govctl check` after substantive artifact edits and render affected
+projections. Resolve structural diagnostics and critical reviewer findings
+before requesting a lifecycle transition.
 
-- `--patch`: clarification or wording fix with no behavioral change
-- `--minor`: additive requirement or newly specified behavior
-- `--major`: breaking or incompatible requirement change
+Use:
 
-Every version-changing RFC bump must include a changelog summary via `-m`.
-`--change` without a bump level is changelog-only and cannot release an RFC or
-Clause content amendment.
+- `discuss` when the decision remains open;
+- `gov` when code or implementation tests are required;
+- `quick` only for unrelated non-behavioral cleanup outside governance
+  artifacts; and
+- `commit` for raw VCS operations.
 
-### 4. Review and validate
+## Completion Evidence
 
-Run the appropriate reviewer before finalizing artifact state:
+Spec maintenance is complete when:
 
-- RFC changes -> **rfc-reviewer**
-- ADR changes -> **adr-reviewer**
+- the artifact stays within its authority boundary;
+- lifecycle state and required authorization are explicit;
+- the matching reviewer has no unresolved critical finding;
+- `govctl check` passes and affected projections are current; and
+- the final response identifies changed artifacts, lifecycle state, review
+  result, and the correct next workflow.
 
-Then validate:
-
-```bash
-govctl check
-govctl render
-```
-
-Fix validation or reviewer issues before recording the result.
-
-### 5. Record the result
-
-Spec-only governance commits may be recorded without a work item.
-
-Use commit types that reflect artifact maintenance:
-
-- `docs(rfc)`: RFC drafting, clarification, or amendment
-- `docs(adr)`: ADR drafting or acceptance preparation
-- `chore(gov)`: governance metadata, refs, render output, or config cleanup
-
-Use `/commit` to record those changes.
-
-If the task grows into implementation work, stop here and hand off to `/gov`.
-
-## Handoff Rules
-
-- Use `/discuss` when the design itself is still unresolved
-- Use `/gov` when code or tests must change
-- Use `/quick` only for standalone non-behavioral cleanup outside governance artifacts
-
-## Examples
-
-### Accept a reviewed ADR
-
-1. Read the ADR with `govctl adr show <ADR-ID>`
-2. Run **adr-reviewer**
-3. Fix issues
-4. Ask permission, then run `govctl adr accept <ADR-ID>`
-5. Run `govctl check`
-
-### Clarify an RFC without changing behavior
-
-1. Inspect the RFC phase with `govctl rfc show <RFC-ID>`
-2. Edit the clause text with `govctl clause edit`
-3. Run **rfc-reviewer**
-4. For a draft RFC, keep the version and finalize when ready; for a normative RFC already in `spec`, keep the current version; for a normative RFC in `impl`, `test`, or `stable`, ask permission, then run `govctl rfc bump <RFC-ID> --patch -m "Clarify wording"`
-5. Run `govctl check` and `govctl render`
-
-### Prepare a deprecation plan without implementation
-
-1. Update the RFC language to mark the behavior deprecated
-2. Record the rationale and migration guidance
-3. Review and validate the artifact changes
-4. Hand off to `/gov` for actual implementation or removal work
+Leave unapproved artifacts in their existing draft/proposed lifecycle state.

@@ -12,11 +12,9 @@ use std::path::{Path, PathBuf};
 
 mod artifact;
 mod artifact_io;
-mod artifact_normalize;
 mod changelog;
 
 pub use artifact::{read_clause, read_rfc, write_clause, write_rfc};
-pub use artifact_normalize::{normalize_clause_value, normalize_rfc_value};
 pub use changelog::{
     BumpLevel, ParsedChange, add_changelog_change, bump_rfc_version, current_changelog_entry,
     current_changelog_entry_mut, today,

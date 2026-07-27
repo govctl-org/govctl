@@ -23,14 +23,11 @@ EXAMPLES:
         tag: String,
     },
     /// List all allowed tags and their usage counts
-    #[command(
-        visible_alias = "ls",
-        after_help = "\
+    #[command(after_help = "\
 EXAMPLES:
     govctl tag list
     govctl tag list -o json
-"
-    )]
+")]
     List {
         /// Output format
         #[arg(short = 'o', long, value_enum, default_value = "table")]

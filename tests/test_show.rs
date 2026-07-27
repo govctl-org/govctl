@@ -8,22 +8,17 @@ fn assert_success_with(output: &str, marker: &str) {
     assert!(output.contains("exit: 0"), "output: {output}");
 }
 
-fn successful_payload(output: &str) -> &str {
-    output
+fn successful_payload(output: &str) -> Result<&str, Box<dyn std::error::Error>> {
+    let payload = output
         .split_once('\n')
         .and_then(|(_, body)| body.strip_suffix("exit: 0\n\n"))
-        .expect("single successful command output")
-        .trim_end()
+        .ok_or_else(|| std::io::Error::other("missing successful command payload"))?;
+    Ok(payload.trim_end())
 }
 
-fn get_value(resource: &str, output: &str) -> serde_json::Value {
-    let payload = successful_payload(output);
-    if matches!(resource, "rfc" | "clause") {
-        serde_json::from_str(payload).expect("complete get JSON")
-    } else {
-        serde_json::to_value(toml::from_str::<toml::Value>(payload).expect("complete get TOML"))
-            .expect("TOML converts to JSON value")
-    }
+fn get_value(output: &str) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
+    let payload = successful_payload(output)?;
+    Ok(serde_json::from_str(payload)?)
 }
 
 #[test]
@@ -49,8 +44,33 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
     ];
 
     for (resource, id, identity_key, content_key, toml_content_marker) in resources {
-        let get = run_commands(temp_dir.path(), &[&[resource, "get", id]])?;
-        let expected = get_value(resource, &get);
+        let get = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "json"]],
+        )?;
+        let expected = get_value(&get)?;
+        let get_yaml = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "yaml"]],
+        )?;
+        let get_yaml_value: serde_json::Value =
+            serde_yaml::from_str(successful_payload(&get_yaml)?)?;
+        assert_eq!(get_yaml_value, expected, "resource: {resource}");
+
+        let get_toml = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "toml"]],
+        )?;
+        let get_toml_value = serde_json::to_value(toml::from_str::<toml::Value>(
+            successful_payload(&get_toml)?,
+        )?)?;
+        assert_eq!(get_toml_value, expected, "resource: {resource}");
+
+        let get_table = run_commands(
+            temp_dir.path(),
+            &[&[resource, "get", id, "--output", "table"]],
+        )?;
+        assert_success_with(&get_table, identity_key);
 
         let json = run_commands(
             temp_dir.path(),
@@ -58,8 +78,7 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
         )?;
         assert_success_with(&json, &format!("\"{identity_key}\""));
         assert!(json.contains(&format!("\"{content_key}\"")), "{json}");
-        let json_value: serde_json::Value =
-            serde_json::from_str(successful_payload(&json)).expect("show JSON");
+        let json_value: serde_json::Value = serde_json::from_str(successful_payload(&json)?)?;
         assert_eq!(json_value, expected, "resource: {resource}");
 
         let yaml = run_commands(
@@ -68,8 +87,7 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
         )?;
         assert_success_with(&yaml, &format!("{identity_key}:"));
         assert!(yaml.contains(&format!("{content_key}:")), "{yaml}");
-        let yaml_value: serde_json::Value =
-            serde_yaml::from_str(successful_payload(&yaml)).expect("show YAML");
+        let yaml_value: serde_json::Value = serde_yaml::from_str(successful_payload(&yaml)?)?;
         assert_eq!(yaml_value, expected, "resource: {resource}");
 
         let toml = run_commands(
@@ -83,10 +101,8 @@ fn test_show_structured_formats_are_complete_for_every_resource() -> common::Tes
         };
         assert_success_with(&toml, &toml_identity_marker);
         assert!(toml.contains(toml_content_marker), "{toml}");
-        let toml_value = serde_json::to_value(
-            toml::from_str::<toml::Value>(successful_payload(&toml)).expect("show TOML"),
-        )
-        .expect("TOML converts to JSON value");
+        let toml_value =
+            serde_json::to_value(toml::from_str::<toml::Value>(successful_payload(&toml)?)?)?;
         assert_eq!(toml_value, expected, "resource: {resource}");
 
         for format in ["json", "yaml", "toml"] {
@@ -136,7 +152,7 @@ fn test_rfc_show_filters_obsolete_content_but_render_keeps_history() -> common::
                 "--force",
             ],
             &["tag", "new", "projection"],
-            &["rfc", "add", "RFC-0001", "tags", "projection"],
+            &["rfc", "edit", "RFC-0001", "tags", "--add", "projection"],
         ],
     )?;
 
@@ -227,8 +243,8 @@ fn test_content_equivalent_resources_accept_explicit_human_projection_matrix() -
         )?;
         assert_success_with(&work_current, "Projection Work");
         assert_eq!(
-            successful_payload(&work_current),
-            successful_payload(&work_history),
+            successful_payload(&work_current)?,
+            successful_payload(&work_history)?,
             "work format: {format}"
         );
 
@@ -255,8 +271,8 @@ fn test_content_equivalent_resources_accept_explicit_human_projection_matrix() -
         )?;
         assert_success_with(&guard_current, "Projection Guard");
         assert_eq!(
-            successful_payload(&guard_current),
-            successful_payload(&guard_history),
+            successful_payload(&guard_current)?,
+            successful_payload(&guard_history)?,
             "guard format: {format}"
         );
     }
@@ -270,14 +286,49 @@ fn test_superseded_adr_show_requires_history_for_body_content() -> common::TestR
         temp_dir.path(),
         &[
             &["adr", "new", "Old Decision"],
-            &["adr", "set", "ADR-0001", "context", "OBSOLETE ADR CONTEXT"],
-            &["adr", "set", "ADR-0001", "decision", "Old decision"],
-            &["adr", "set", "ADR-0001", "consequences", "Old consequences"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "context",
+                "--set",
+                "OBSOLETE ADR CONTEXT",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "decision",
+                "--set",
+                "Old decision",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "consequences",
+                "--set",
+                "Old consequences",
+            ],
             &["adr", "accept", "ADR-0001", "--force"],
             &["adr", "new", "New Decision"],
-            &["adr", "set", "ADR-0002", "context", "New context"],
-            &["adr", "set", "ADR-0002", "decision", "New decision"],
-            &["adr", "set", "ADR-0002", "consequences", "New consequences"],
+            &["adr", "edit", "ADR-0002", "context", "--set", "New context"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0002",
+                "decision",
+                "--set",
+                "New decision",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0002",
+                "consequences",
+                "--set",
+                "New consequences",
+            ],
             &["adr", "accept", "ADR-0002", "--force"],
             &[
                 "adr",

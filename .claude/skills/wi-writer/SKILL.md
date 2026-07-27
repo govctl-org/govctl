@@ -1,241 +1,127 @@
 ---
 name: wi-writer
-description: "Write well-structured work items with proper acceptance criteria. Use when: (1) Creating work items, (2) Adding acceptance criteria, (3) User mentions work item, task, WI, or ticket"
+description: "Write durable work items with scoped descriptions, testable categorized acceptance criteria, governing references, and risk-matched guards"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: "[optional work-item topic]"
 ---
 
 # Work Item Writer
 
-Write work items with clear descriptions and actionable acceptance criteria.
+Define durable execution scope and completion evidence. Work Items are
+operational records, not normative specifications, design decisions, or
+round-by-round journals.
 
-## Invocation Mode
+This helper owns Work Item field quality. The invoking workflow owns code,
+lifecycle transitions, loop execution, and VCS operations.
 
-This helper skill may be used standalone or by `/gov`, `/quick`, or `/commit`.
-It is responsible for work-item content quality and field semantics, not code changes or VCS operations.
+## Discovery
 
-## Authority
-
-Work items track durable operational state: task scope, lifecycle, acceptance criteria, dependencies, references, and notes that should remain after closure.
-They are operational memory, not normative authority and not decision records.
-
-## Quick Reference
+Before creating or editing an item, inspect existing work and reusable guards:
 
 ```bash
-govctl work new --active "<title>"
-govctl work set <WI-ID> description "Task scope description"
-govctl work add <WI-ID> acceptance_criteria "<category>: <description>"
-govctl work add <WI-ID> notes "Durable constraint or retry rule"
-govctl work add <WI-ID> refs RFC-NNNN
-govctl work add <WI-ID> depends_on <BLOCKING-WI-ID>
-govctl work add <WI-ID> tags <tag>
-govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
-govctl work move <WI-ID> done
+govctl work list active
+govctl work list queue
+govctl work show <WI-ID>
+govctl guard list
+govctl loop list open
 ```
 
-## Work Item Structure
+Use `govctl work --help`, `govctl guard --help`, and subcommand help for current
+syntax and nested-field editing.
 
-### Title
+## Hard Stops
 
-Concise, action-oriented. Describes _what_ will be done.
+- Do not introduce product obligations in Work Item fields. New behavior,
+  validation, storage, compatibility, or lifecycle rules need governing RFC
+  authority.
+- Do not use an ADR-like explanation as a substitute for recording a design
+  choice in an ADR.
+- Do not put progress, commands run, validation output, review status, temporary
+  blockers, hypotheses, or next actions in `description` or `notes`.
+- Do not split a coherent outcome into Work Items for mechanical substeps.
+- Do not permanently delete a Work Item without explicit user authorization;
+  hand the destructive operation to the invoking workflow.
+- Stop when the task lacks the governing authority needed to define its
+  acceptance criteria.
 
-- Good: "Add validation for clause cross-references"
-- Bad: "Fix stuff" or "Work on the thing"
+## Field Policy
 
 ### Description
 
-**Purpose:** Task scope declaration — what needs to be done.
-
-Replace the placeholder immediately. One paragraph explaining:
-
-- What the work accomplishes
-- Why it's needed
-- Any relevant context
-
-**Important:** Description is for task scope, NOT execution tracking. Use loop state and round artifacts for execution trace, and `notes` only for closure-worthy durable learnings that belong on the work item.
-It must not introduce new product behavior requirements that are missing from the governing RFC or ADR.
-
-### Execution Trace
-
-**Where execution information goes now:**
-
-- Round-by-round execution trace belongs in loop state and round artifacts.
-- Durable lessons, constraints, and retry rules that should still matter after closure belong in `notes`.
-- Acceptance progress belongs in `acceptance_criteria` status.
-
-### Notes
-
-**Purpose:** Closure-worthy durable context — stable constraints, decisions, and retry rules that should remain useful after the work item is done.
-
-Use notes sparingly for:
-
-- Why an approach must not be retried because of a stable technical reason
-- Constraints or decisions future maintainers must obey
-- Important implementation facts that are not obvious from the final diff
-
-These notes may explain local execution constraints, but they do not override RFCs or accepted ADRs.
-Do not use notes for progress updates, commands run, validation output, current plans, next actions, temporary blockers, hypotheses, review status, or "remember to do X" TODOs.
-
-```bash
-govctl work add <WI-ID> notes "Do not retry the legacy JSON migration path; v0.9 intentionally rejects it"
-govctl work add <WI-ID> notes "Legacy inline journal entries must remain render-only for older work items"
-```
+State what the task will accomplish, why it is needed, and the relevant scope in
+one concise paragraph. It describes the execution target without restating
+normative contract language or tracking progress.
 
 ### Acceptance Criteria
 
-**Every criterion MUST have a category prefix** for changelog generation:
+Each criterion must be independently testable and use a changelog category:
+`add`, `fix`, `change`, `remove`, `deprecate`, `security`, or `chore`.
 
-| Prefix       | Changelog Section | Aliases                           |
-| ------------ | ----------------- | --------------------------------- |
-| `add:`       | Added             | `feat:`, `feature:`, `added:`     |
-| `fix:`       | Fixed             | `fixed:`                          |
-| `change:`    | Changed           | `changed:`, `refactor:`, `perf:`  |
-| `remove:`    | Removed           | `removed:`                        |
-| `deprecate:` | Deprecated        | `deprecated:`                     |
-| `security:`  | Security          | `sec:`                            |
-| `chore:`     | _(excluded)_      | `test:`, `docs:`, `ci:`, `build:` |
+Criteria describe observable task outcomes. They should be specific enough to
+decide done/not-done without prescribing incidental private structure. Use
+`chore` for internal validation or documentation outcomes that should not enter
+the release changelog.
 
-```bash
-# Feature work
-govctl work add <WI-ID> acceptance_criteria "add: Implement clause validation"
-govctl work add <WI-ID> acceptance_criteria "add: Error messages include clause ID"
+### Notes
 
-# Bug fix
-govctl work add <WI-ID> acceptance_criteria "fix: Duplicate clause detection"
+Use notes sparingly for closure-worthy constraints, durable implementation facts,
+or reasons an approach should not be retried. A note should remain useful after
+the item is done. A Work Item moved to `cancelled` records its cancellation
+reason here. Notes cannot override an RFC or accepted ADR.
 
-# Internal
-govctl work add <WI-ID> acceptance_criteria "chore: All tests pass"
-govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
-```
+Transient execution state belongs in loop rounds or the final response.
+Acceptance progress belongs in criterion status.
 
-### References
+### References And Dependencies
 
-Link to governing artifacts:
+Reference RFCs that authorize behavior and ADRs that constrain the approach.
+Use `depends_on` only for a hard execution ordering dependency. Informational
+relationships belong in `refs`.
 
-```bash
-govctl work add <WI-ID> refs RFC-0001
-govctl work add <WI-ID> refs ADR-0023
-```
+Create separate Work Items only for independently meaningful, reviewable
+outcomes. Keep helper extraction, fixtures, file moves, formatting, and similar
+mechanical work inside the parent item. Use a multi-item loop only when the batch
+contains multiple durable outcomes.
 
-### Dependencies and Batches
+## Verification Policy
 
-Create multiple work items only when each item is independently meaningful to future readers:
+Select guards from the changed surface, governing references, and acceptance
+criteria:
 
-- Each work item should represent a durable outcome, user-visible behavior, spec/ADR obligation, or independently reviewable deliverable.
-- Do not create work items for mechanical helper extraction, fixture sharing, file moves, module normalization, formatting, comment cleanup, snapshot reshaping, or other low-level execution steps.
-- For trivial cleanup or docs-only edits, no work item may be the right answer; follow the invoking workflow instead of inventing tracking.
-- For one coherent cleanup/refactor, prefer one coarse work item over many narrow slices.
-- Use `depends_on` only for hard execution ordering; keep `refs` for informational links.
-- Use a loop for non-trivial governed execution that needs local execution memory, including single-work-item execution after journal-style trace moved out of Work Item fields.
-- Use one multi-work-item loop only when there are multiple durable work items; do not use loops to justify creating mechanical work-item fragments.
-- Let govctl generate the loop ID with `govctl loop start <ROOT-WI-ID> [<ROOT-WI-ID>...]`; use the returned `LOOP-YYYY-MM-DD-NNN` ID for later loop commands.
-- Use `govctl loop list open` to discover existing non-terminal loops before resuming interrupted batch work.
+- Project `default_guards` are the intersection of checks needed by every Work
+  Item.
+- Work Item `required_guards` add reusable checks for this task's risk domains.
+- Prefer the narrowest guard that proves the relevant behavior.
+- Use full test or lint suites for cross-cutting changes or when narrower checks
+  cannot cover the blast radius.
+- Run one-off diagnostic commands directly rather than turning them into
+  completion guards.
 
-If the batch scope changes after the loop starts, update the same loop:
+Do not duplicate an effective guard as a plain command-success criterion merely
+to run it twice. A concise `chore` criterion may summarize validation outcomes
+that are not fully represented by guards.
 
-```bash
-govctl loop add <LOOP-ID> work <ROOT-WI-ID>
-govctl loop remove <LOOP-ID> work <ROOT-WI-ID>
-govctl loop replan <LOOP-ID>
-```
+Use `guard-writer` when a stable reusable check is missing.
 
-`work` is the editable loop work-item field. `wi` is accepted as a short alias, but examples should prefer `work`.
+## Quality Tests
 
-Do not hand-write descriptive loop IDs or encode time finer than the day in loop IDs.
+A Work Item is well formed when:
 
-## Field Semantics Summary
+- its title is concise and action-oriented;
+- its description is task scope rather than contract, rationale, or progress;
+- every criterion is categorized, specific, and testable;
+- references provide authority for user-visible behavior;
+- dependencies represent real execution ordering;
+- notes contain only durable post-closure context;
+- selected guards match the item's risk without broad default-suite inflation;
+  and
+- the item represents one durable outcome rather than a mechanical fragment.
 
-| Field                 | Purpose                | Update Pattern                               |
-| --------------------- | ---------------------- | -------------------------------------------- |
-| `description`         | Task scope declaration | Define once, rarely change                   |
-| `notes`               | Durable learnings      | Add only when useful after work-item closure |
-| `acceptance_criteria` | Completion criteria    | Define then tick                             |
+## Completion Evidence
 
-**Per ADR-0047:** Keep description focused on "what", notes on closure-worthy durable context, and execution trace outside the work item field surface.
-If you discover a missing requirement or unresolved design choice, stop and route that back to RFC/ADR work rather than inventing it inside the work item.
+Tick criteria only when their outcomes exist. The invoking workflow may move the
+item to `done` after all criteria are complete and effective guards pass. Do not
+manually rerun those same guards immediately before the transition.
 
-## Writing Rules
-
-### Authority Test
-
-Before adding description, notes, or acceptance criteria, apply these checks:
-
-- **Task scope:** Work item fields describe what this task must complete, not the product contract itself.
-- **Governing refs:** New user-visible behavior, CLI behavior, storage format, validation rule, compatibility rule, or lifecycle rule must be backed by RFC/ADR refs.
-- **Design destination:** If the text explains why a design option was chosen, move it to an ADR.
-- **Execution destination:** If the text records progress, commands run, validation output, review status, temporary blockers, hypotheses, or next actions, move it to loop state, round artifacts, or the final response.
-- **Durability:** Keep notes only when the fact should remain useful after the work item is closed.
-
-Examples:
-
-| Statement                                                                           | Destination                        |
-| ----------------------------------------------------------------------------------- | ---------------------------------- |
-| `changed: Reviewer agents include boundary findings for RFC/ADR/WI authority drift` | Work Item                          |
-| `The reviewer MUST emit Boundary Findings for every artifact review.`               | RFC, if this is a product contract |
-| `We will keep review policy in agent prompts rather than deterministic check code.` | ADR                                |
-| `Ran govctl check; next fix rfc-reviewer wording.`                                  | Loop evidence or final response    |
-
-### Acceptance Criteria Quality
-
-Each criterion should be:
-
-- **Specific** — "Add `validate_refs()` function" not "Add validation"
-- **Testable** — Can be verified as done/not-done with no ambiguity
-- **Independent** — Each criterion stands alone
-- **Categorized** — Always include the category prefix
-
-### Completion Flow
-
-Work items cannot be marked done without ticking all criteria:
-
-```bash
-# Tick criteria as you complete them
-govctl work tick <WI-ID> acceptance_criteria "<pattern>" -s done
-
-# When all criteria are done, close the work item
-govctl work move <WI-ID> done
-```
-
-### The `chore:` Pattern
-
-Always add at least one `chore:` criterion for validation:
-
-```bash
-govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
-```
-
-This ensures validation is an explicit gate, not an afterthought.
-
-### Guardable Command Checks
-
-Prefer verification guards over plain acceptance criteria for repeatable command-style checks.
-When a criterion is only "`cargo test` passes", "`clippy` passes", or another shell command succeeds, first check whether an existing guard already covers it.
-If so, require that guard through the work item's `[verification]` section instead of duplicating the command as a behavioral acceptance criterion.
-Use `verification.required_guards` for per-work-item guard requirements.
-
-Project-level `verification.default_guards` apply broadly to work-item completion when verification is enabled.
-Use work-item-level `verification.required_guards` to add task-specific guards on top of those defaults, not to repeat guards that already apply globally.
-Waivers apply to the effective guard set: project defaults plus work-item-specific required guards.
-
-```toml
-[verification]
-required_guards = ["GUARD-CARGO-TEST"]
-```
-
-Use acceptance criteria for observable task outcomes.
-Keep `chore:` criteria for validation summaries, especially when the validation is not fully enforced by a guard or the work item needs an explicit closure checklist item.
-
-## Common Mistakes
-
-| Mistake                            | Fix                                                                                                      |
-| ---------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| Missing category prefix            | Always use `add:`, `fix:`, `chore:`, etc.                                                                |
-| Placeholder description left in    | Replace immediately with real description                                                                |
-| Vague criteria: "Feature works"    | Specific: "add: CLI returns exit code 0 on success"                                                      |
-| No `chore:` criterion              | Add "chore: govctl check passes" or "chore: all tests pass"                                              |
-| No refs to governing artifacts     | Link RFCs/ADRs with `work add <WI-ID> refs`                                                              |
-| Description used for tracking      | Use loop state and round artifacts for execution trace                                                   |
-| Progress details stored as notes   | Keep `notes` durable; put transient round logs in loop state and round artifacts                         |
-| TODOs or next actions stored notes | Put next actions in loop state or the final response; use acceptance criteria for completion obligations |
-| Mechanical substeps become WIs     | Use no WI or one coarse WI; leave helper/test/file-move details to the commit diff                       |
-| Work item invents new requirements | Move those requirements into an RFC or ADR first                                                         |
+Run `govctl check` after substantive artifact edits. Use loop state for
+non-trivial execution memory and the `commit` skill for VCS operations.

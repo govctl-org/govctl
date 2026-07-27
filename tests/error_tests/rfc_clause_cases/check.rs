@@ -114,7 +114,6 @@ fn test_broken_superseded_check() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Broken Superseded Test"
 version = "1.0.0"
@@ -138,7 +137,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-OLD.toml",
         r#"[govctl]
-schema = 1
 id = "C-OLD"
 title = "Old Clause"
 kind = "normative"
@@ -155,7 +153,6 @@ text = "This clause is superseded."
         temp_dir.path(),
         "C-NEW.toml",
         r#"[govctl]
-schema = 1
 id = "C-NEW"
 title = "New Clause"
 kind = "normative"
@@ -179,7 +176,6 @@ fn test_superseded_clause_without_replacement_check() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Missing Replacement Test"
 version = "1.0.0"
@@ -203,7 +199,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-OLD.toml",
         r#"[govctl]
-schema = 1
 id = "C-OLD"
 title = "Old Clause"
 kind = "normative"
@@ -231,7 +226,6 @@ fn test_clause_supersession_cycle_check() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Supersession Cycle Test"
 version = "1.0.0"
@@ -255,7 +249,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-ONE.toml",
         r#"[govctl]
-schema = 1
 id = "C-ONE"
 title = "Clause One"
 kind = "normative"
@@ -272,7 +265,6 @@ text = "Clause one."
         temp_dir.path(),
         "C-TWO.toml",
         r#"[govctl]
-schema = 1
 id = "C-TWO"
 title = "Clause Two"
 kind = "normative"
@@ -303,7 +295,6 @@ fn test_cross_rfc_clause_supersession_cycle_check() -> common::TestResult {
         temp_dir.path(),
         "RFC-0001",
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "First RFC"
 version = "1.0.0"
@@ -326,7 +317,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "RFC-0002",
         r#"[govctl]
-schema = 1
 id = "RFC-0002"
 title = "Second RFC"
 version = "1.0.0"
@@ -350,7 +340,6 @@ added = ["Initial release"]
         "RFC-0001",
         "C-ONE.toml",
         r#"[govctl]
-schema = 1
 id = "C-ONE"
 title = "Clause One"
 kind = "normative"
@@ -367,7 +356,6 @@ text = "Clause one."
         "RFC-0002",
         "C-TWO.toml",
         r#"[govctl]
-schema = 1
 id = "C-TWO"
 title = "Clause Two"
 kind = "normative"
@@ -400,7 +388,6 @@ fn test_invalid_transition_check() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Invalid Transition Test"
 version = "0.1.0"
@@ -424,7 +411,6 @@ added = ["Initial draft"]
         temp_dir.path(),
         "C-TEST.toml",
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -448,7 +434,6 @@ fn test_rfc_plain_text_adr_reference_violates_hierarchy() -> common::TestResult 
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Plain ADR Reference"
 version = "1.0.0"
@@ -472,7 +457,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-TEST.toml",
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -487,7 +471,6 @@ text = "This RFC tries to cite ADR-0001 without brackets."
     write_adr_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Lower Authority"
 status = "accepted"
@@ -514,7 +497,6 @@ fn test_rfc_plain_text_nonexistent_adr_is_allowed() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Nonexistent ADR Mention"
 version = "1.0.0"
@@ -538,7 +520,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-TEST.toml",
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -564,7 +545,6 @@ fn test_proposed_adr_plain_text_known_rfc_reference_warns() -> common::TestResul
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Known RFC"
 version = "1.0.0"
@@ -588,7 +568,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-TEST.toml",
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -603,7 +582,6 @@ text = "Specification."
     write_adr_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Decision"
 status = "proposed"
@@ -652,7 +630,6 @@ fn test_proposed_adr_alternative_plain_text_known_rfc_references_warn() -> commo
     write_adr_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Decision"
 status = "proposed"
@@ -711,7 +688,6 @@ fn test_adr_bracketed_known_rfc_reference_does_not_warn() -> common::TestResult 
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Known RFC"
 version = "1.0.0"
@@ -735,7 +711,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-TEST.toml",
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -750,7 +725,6 @@ text = "Specification."
     write_adr_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Decision"
 status = "accepted"
@@ -777,7 +751,6 @@ fn test_rfc_changelog_plain_text_adr_reference_is_allowed() -> common::TestResul
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Changelog ADR Mention"
 version = "1.0.0"
@@ -802,7 +775,6 @@ added = ["Initial release mentions ADR-0001 as prose"]
         temp_dir.path(),
         "C-TEST.toml",
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -817,7 +789,6 @@ text = "This RFC clause does not cite lower authority artifacts."
     write_adr_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Lower Authority"
 status = "accepted"
@@ -843,7 +814,6 @@ fn test_rfc_bracketed_adr_reference_reports_once() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Bracket ADR Reference"
 version = "1.0.0"
@@ -867,7 +837,6 @@ added = ["Initial release"]
         temp_dir.path(),
         "C-TEST.toml",
         r#"[govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -882,7 +851,6 @@ text = "This RFC links to [[ADR-0001]]."
     write_adr_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Lower Authority"
 status = "accepted"
@@ -917,7 +885,6 @@ fn test_adr_plain_text_work_reference_violates_hierarchy() -> common::TestResult
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Governing RFC"
 version = "1.0.0"
@@ -934,7 +901,6 @@ title = "Overview"
     write_adr_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Plain Work Reference"
 status = "accepted"
@@ -951,7 +917,6 @@ consequences = "Consequences"
     fs::write(
         temp_dir.path().join("gov/work/2026-01-01-task.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Execution task"
 status = "queue"

@@ -1,5 +1,6 @@
 use super::adapter::{
-    AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter, WorkTomlAdapter,
+    AdrTomlAdapter, ClauseTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, RfcTomlAdapter,
+    WorkTomlAdapter,
 };
 use super::doc_target::{remove_doc_simple_list_field, rfc_changelog};
 use super::matching::MatchOptions;
@@ -20,6 +21,7 @@ pub fn remove_from_field(
     let plan = plan_mutation_target(id, field, edit_rules::Verb::Remove)?;
     let artifact = plan.artifact;
     let target = &plan.target;
+    target.ensure_supports(edit_rules::Verb::Remove, id)?;
     reject_match_flags_for_indexed_target(id, target, opts)?;
 
     match artifact {
@@ -65,6 +67,14 @@ pub fn remove_from_field(
             opts,
             op,
             ArtifactType::Guard,
+        )?,
+        ArtifactType::Conformance => remove_toml_field::<ConformanceTomlAdapter>(
+            config,
+            id,
+            target,
+            opts,
+            op,
+            ArtifactType::Conformance,
         )?,
     }
 

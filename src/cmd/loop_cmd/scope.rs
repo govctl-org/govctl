@@ -10,7 +10,6 @@ use crate::write::WriteOp;
 use std::collections::BTreeSet;
 
 const WORK_FIELD: &str = "work";
-const WI_FIELD_ALIAS: &str = "wi";
 
 pub fn replan(config: &Config, loop_id: &str, op: WriteOp) -> DiagnosticResult<Diagnostics> {
     mutate_scope(config, loop_id, ScopeMutation::Replan, &[], op)
@@ -121,7 +120,7 @@ fn loop_work_set(state: &LoopState) -> BTreeSet<String> {
 }
 
 fn ensure_work_field(field: &str) -> DiagnosticResult<()> {
-    if matches!(field, WORK_FIELD | WI_FIELD_ALIAS) {
+    if field == WORK_FIELD {
         return Ok(());
     }
     Err(Diagnostic::new(

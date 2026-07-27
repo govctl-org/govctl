@@ -1,12 +1,67 @@
+use crate::cmd::loop_cmd;
 use crate::config::Config;
-use crate::load::load_project;
+use crate::diagnostic::Diagnostics;
+use crate::load::load_project_with_warnings;
+use crate::loop_state::{LoopLifecycleState, LoopState};
+use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
 use serde::Serialize;
 
 #[derive(Serialize)]
 pub struct ProjectState {
+    pub counts: ProjectCounts,
     pub rfcs: Vec<RfcState>,
     pub adrs: Vec<AdrState>,
     pub work_items: Vec<WorkItemState>,
+    pub loops: Vec<LoopStateInfo>,
+}
+
+#[derive(Serialize)]
+pub struct ProjectCounts {
+    pub rfcs: RfcCounts,
+    pub adrs: AdrCounts,
+    pub work_items: WorkItemCounts,
+    pub loops: LoopCounts,
+}
+
+#[derive(Default, Serialize)]
+pub struct RfcCounts {
+    pub total: usize,
+    pub draft: usize,
+    pub normative: usize,
+    pub deprecated: usize,
+    pub spec: usize,
+    #[serde(rename = "impl")]
+    pub impl_phase: usize,
+    pub test: usize,
+    pub stable: usize,
+}
+
+#[derive(Default, Serialize)]
+pub struct AdrCounts {
+    pub total: usize,
+    pub proposed: usize,
+    pub accepted: usize,
+    pub rejected: usize,
+    pub superseded: usize,
+}
+
+#[derive(Default, Serialize)]
+pub struct WorkItemCounts {
+    pub total: usize,
+    pub queue: usize,
+    pub active: usize,
+    pub done: usize,
+    pub cancelled: usize,
+}
+
+#[derive(Default, Serialize)]
+pub struct LoopCounts {
+    pub total: usize,
+    pub pending: usize,
+    pub active: usize,
+    pub paused: usize,
+    pub completed: usize,
+    pub failed: usize,
 }
 
 #[derive(Serialize)]
@@ -32,170 +87,184 @@ pub struct WorkItemState {
 }
 
 #[derive(Serialize)]
-pub struct SuggestedAction {
-    pub command: String,
-    pub reason: String,
-    pub priority: String,
+pub struct LoopStateInfo {
+    pub id: String,
+    pub state: String,
+    pub next_action: String,
+    pub work: Vec<String>,
 }
 
 pub(super) struct DescribeContext {
     pub(super) project_state: ProjectState,
-    pub(super) suggested_actions: Vec<SuggestedAction>,
+    pub(super) suggested_actions: Vec<String>,
 }
 
-fn suggested_action(
-    command: impl Into<String>,
-    reason: impl Into<String>,
-    priority: &str,
-) -> SuggestedAction {
-    SuggestedAction {
-        command: command.into(),
-        reason: reason.into(),
-        priority: priority.to_string(),
+pub(super) fn load_context(config: &Config) -> Result<DescribeContext, Diagnostics> {
+    let load_result = load_project_with_warnings(config)?;
+    if !load_result.warnings.is_empty() {
+        return Err(load_result.warnings);
     }
-}
+    let index = load_result.index;
+    let loop_states = loop_cmd::load_loop_states(config).map_err(|diagnostic| vec![diagnostic])?;
 
-pub(super) fn load_context(config: &Config) -> Option<DescribeContext> {
-    let index = load_project(config).ok()?;
-
-    let rfcs: Vec<RfcState> = index
+    // [[RFC-0002:C-DESCRIBE-COMMAND]] keeps full counts but enumerates only
+    // state that can still affect current governance work.
+    let mut rfc_counts = RfcCounts::default();
+    let mut rfcs: Vec<_> = index
         .rfcs
         .iter()
-        .map(|r| RfcState {
-            id: r.rfc.rfc_id.clone(),
-            title: r.rfc.title.clone(),
-            status: r.rfc.status.as_ref().to_string(),
-            phase: r.rfc.phase.as_ref().to_string(),
+        .filter_map(|entry| {
+            rfc_counts.total += 1;
+            match entry.rfc.status {
+                RfcStatus::Draft => rfc_counts.draft += 1,
+                RfcStatus::Normative => rfc_counts.normative += 1,
+                RfcStatus::Deprecated => rfc_counts.deprecated += 1,
+            }
+            match entry.rfc.phase {
+                RfcPhase::Spec => rfc_counts.spec += 1,
+                RfcPhase::Impl => rfc_counts.impl_phase += 1,
+                RfcPhase::Test => rfc_counts.test += 1,
+                RfcPhase::Stable => rfc_counts.stable += 1,
+            }
+
+            let actionable = entry.rfc.status == RfcStatus::Draft
+                || (entry.rfc.status == RfcStatus::Normative
+                    && entry.rfc.phase != RfcPhase::Stable);
+            actionable.then(|| RfcState {
+                id: entry.rfc.rfc_id.clone(),
+                title: entry.rfc.title.clone(),
+                status: entry.rfc.status.as_ref().to_string(),
+                phase: entry.rfc.phase.as_ref().to_string(),
+            })
         })
         .collect();
+    rfcs.sort_by(|left, right| left.id.cmp(&right.id));
 
-    let adrs: Vec<AdrState> = index
+    let mut adr_counts = AdrCounts::default();
+    let mut adrs: Vec<_> = index
         .adrs
         .iter()
-        .map(|a| AdrState {
-            id: a.meta().id.clone(),
-            title: a.meta().title.clone(),
-            status: a.meta().status.as_ref().to_string(),
+        .filter_map(|entry| {
+            adr_counts.total += 1;
+            match entry.meta().status {
+                AdrStatus::Proposed => adr_counts.proposed += 1,
+                AdrStatus::Accepted => adr_counts.accepted += 1,
+                AdrStatus::Rejected => adr_counts.rejected += 1,
+                AdrStatus::Superseded => adr_counts.superseded += 1,
+            }
+
+            (entry.meta().status == AdrStatus::Proposed).then(|| AdrState {
+                id: entry.meta().id.clone(),
+                title: entry.meta().title.clone(),
+                status: entry.meta().status.as_ref().to_string(),
+            })
         })
         .collect();
+    adrs.sort_by(|left, right| left.id.cmp(&right.id));
 
-    let work_items: Vec<WorkItemState> = index
+    let mut work_item_counts = WorkItemCounts::default();
+    let mut work_items: Vec<_> = index
         .work_items
         .iter()
-        .map(|w| WorkItemState {
-            id: w.meta().id.clone(),
-            title: w.meta().title.clone(),
-            status: w.meta().status.as_ref().to_string(),
+        .filter_map(|entry| {
+            work_item_counts.total += 1;
+            match entry.meta().status {
+                WorkItemStatus::Queue => work_item_counts.queue += 1,
+                WorkItemStatus::Active => work_item_counts.active += 1,
+                WorkItemStatus::Done => work_item_counts.done += 1,
+                WorkItemStatus::Cancelled => work_item_counts.cancelled += 1,
+            }
+
+            matches!(
+                entry.meta().status,
+                WorkItemStatus::Queue | WorkItemStatus::Active
+            )
+            .then(|| WorkItemState {
+                id: entry.meta().id.clone(),
+                title: entry.meta().title.clone(),
+                status: entry.meta().status.as_ref().to_string(),
+            })
         })
         .collect();
+    work_items.sort_by(|left, right| left.id.cmp(&right.id));
 
-    let suggested_actions = generate_suggestions(&rfcs, &adrs, &work_items);
+    let loop_counts = count_loops(&loop_states);
+    let mut loops: Vec<_> = loop_states
+        .iter()
+        .filter(|state| is_non_terminal_loop(state.loop_meta.state))
+        .map(|state| LoopStateInfo {
+            id: state.loop_meta.id.clone(),
+            state: state.loop_meta.state.as_str().to_string(),
+            next_action: state.loop_meta.next_action.as_str().to_string(),
+            work: state.loop_meta.work.clone(),
+        })
+        .collect();
+    loops.sort_by(|left, right| left.id.cmp(&right.id));
+
     let project_state = ProjectState {
+        counts: ProjectCounts {
+            rfcs: rfc_counts,
+            adrs: adr_counts,
+            work_items: work_item_counts,
+            loops: loop_counts,
+        },
         rfcs,
         adrs,
         work_items,
+        loops,
     };
+    let suggested_actions = generate_suggestions(&project_state);
 
-    Some(DescribeContext {
+    Ok(DescribeContext {
         project_state,
         suggested_actions,
     })
 }
 
-/// Generate suggested actions based on project state
-fn generate_suggestions(
-    rfcs: &[RfcState],
-    adrs: &[AdrState],
-    work_items: &[WorkItemState],
-) -> Vec<SuggestedAction> {
-    let mut suggestions = Vec::new();
-
-    for rfc in rfcs {
-        if rfc.status == "draft" {
-            suggestions.push(suggested_action(
-                format!("govctl rfc finalize {} normative", rfc.id),
-                format!(
-                    "{} is in draft status. If the spec is complete, finalize it to make it binding.",
-                    rfc.id
-                ),
-                "medium",
-            ));
-        }
-
-        match (rfc.status.as_str(), rfc.phase.as_str()) {
-            ("normative", "spec") => {
-                suggestions.push(suggested_action(
-                    format!("govctl rfc advance {} impl", rfc.id),
-                    format!(
-                        "{} is normative but still in spec phase. Advance to impl when ready to implement.",
-                        rfc.id
-                    ),
-                    "high",
-                ));
-            }
-            ("normative", "impl") => {
-                suggestions.push(suggested_action(
-                    format!("govctl rfc advance {} test", rfc.id),
-                    format!(
-                        "{} is in impl phase. Advance to test when implementation is complete.",
-                        rfc.id
-                    ),
-                    "medium",
-                ));
-            }
-            ("normative", "test") => {
-                suggestions.push(suggested_action(
-                    format!("govctl rfc advance {} stable", rfc.id),
-                    format!(
-                        "{} is in test phase. Advance to stable when tests pass.",
-                        rfc.id
-                    ),
-                    "medium",
-                ));
-            }
-            _ => {}
+fn count_loops(states: &[LoopState]) -> LoopCounts {
+    let mut counts = LoopCounts::default();
+    for state in states {
+        counts.total += 1;
+        match state.loop_meta.state {
+            LoopLifecycleState::Pending => counts.pending += 1,
+            LoopLifecycleState::Active => counts.active += 1,
+            LoopLifecycleState::Paused => counts.paused += 1,
+            LoopLifecycleState::Completed => counts.completed += 1,
+            LoopLifecycleState::Failed => counts.failed += 1,
         }
     }
+    counts
+}
 
-    for adr in adrs {
-        if adr.status == "proposed" {
-            suggestions.push(suggested_action(
-                format!("govctl adr accept {}", adr.id),
-                format!(
-                    "{} is proposed. Accept it if the decision is approved.",
-                    adr.id
-                ),
-                "medium",
-            ));
-        }
-    }
+fn is_non_terminal_loop(state: LoopLifecycleState) -> bool {
+    matches!(
+        state,
+        LoopLifecycleState::Pending | LoopLifecycleState::Active | LoopLifecycleState::Paused
+    )
+}
 
-    let active_count = work_items.iter().filter(|w| w.status == "active").count();
-    let queue_count = work_items.iter().filter(|w| w.status == "queue").count();
-
-    if active_count == 0 && queue_count > 0 {
-        suggestions.push(suggested_action(
-            "govctl work list queue",
-            format!(
-                "No active work items but {} in queue. Consider activating one.",
-                queue_count
-            ),
-            "high",
-        ));
-    }
-
-    for work_item in work_items {
-        if work_item.status == "active" {
-            suggestions.push(suggested_action(
-                format!("govctl work move {} done", work_item.id),
-                format!(
-                    "{} is active. Mark it done when acceptance criteria are met.",
-                    work_item.id
-                ),
-                "low",
-            ));
-        }
-    }
-
-    suggestions
+fn generate_suggestions(state: &ProjectState) -> Vec<String> {
+    state
+        .rfcs
+        .iter()
+        .map(|rfc| format!("govctl rfc show {}", rfc.id))
+        .chain(
+            state
+                .adrs
+                .iter()
+                .map(|adr| format!("govctl adr show {}", adr.id)),
+        )
+        .chain(
+            state
+                .work_items
+                .iter()
+                .map(|work_item| format!("govctl work show {}", work_item.id)),
+        )
+        .chain(
+            state
+                .loops
+                .iter()
+                .map(|loop_state| format!("govctl loop resume {}", loop_state.id)),
+        )
+        .collect()
 }

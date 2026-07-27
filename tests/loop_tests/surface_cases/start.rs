@@ -172,7 +172,7 @@ fn test_loop_resume_completed_loop_reports_terminal_diagnostic() -> common::Test
         &[
             work_new_active("Root"),
             work_add_acceptance(&root_id, "add: ready"),
-            work_tick_acceptance_done(&root_id, "ready"),
+            work_tick_acceptance_done(&root_id, 0),
             loop_start_with_id(&loop_id, &[&root_id]),
             loop_run(&loop_id),
             work_move_done(&root_id),

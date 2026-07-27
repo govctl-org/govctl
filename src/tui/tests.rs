@@ -4,7 +4,7 @@ use super::*;
 fn test_project_load_error_prefers_error_diagnostic() {
     let diag = project_load_error(
         vec![
-            Diagnostic::new(DiagnosticCode::W0109WorkNoActive, "warning", "warn"),
+            Diagnostic::new(DiagnosticCode::W0103AdrNoRefs, "warning", "warn"),
             Diagnostic::new(DiagnosticCode::E0302AdrNotFound, "missing adr", "gov/adr"),
         ],
         std::path::Path::new("gov"),
@@ -18,14 +18,14 @@ fn test_project_load_error_prefers_error_diagnostic() {
 fn test_project_load_error_uses_warning_when_no_errors_exist() {
     let diag = project_load_error(
         vec![Diagnostic::new(
-            DiagnosticCode::W0109WorkNoActive,
+            DiagnosticCode::W0103AdrNoRefs,
             "warning only",
             "gov/work",
         )],
         std::path::Path::new("gov"),
     );
 
-    assert_eq!(diag.code, DiagnosticCode::W0109WorkNoActive);
+    assert_eq!(diag.code, DiagnosticCode::W0103AdrNoRefs);
     assert_eq!(diag.message, "warning only");
 }
 

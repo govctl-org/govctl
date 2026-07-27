@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn test_path_backward_compat() -> common::TestResult {
+fn test_storage_prefixed_paths_are_rejected() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
@@ -9,38 +9,55 @@ fn test_path_backward_compat() -> common::TestResult {
         &[
             &["adr", "new", "Compat Test"],
             // Implements [[ADR-0042]]: must have alternatives before setting decision
-            &["adr", "add", "ADR-0001", "alternatives", "Option A"],
-            &["adr", "add", "ADR-0001", "alternatives", "Option B"],
             &[
                 "adr",
-                "tick",
+                "edit",
                 "ADR-0001",
                 "alternatives",
-                "--at",
-                "0",
-                "-s",
+                "--add",
+                "Option A",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives",
+                "--add",
+                "Option B",
+            ],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "alternatives[0]",
+                "--tick",
                 "accepted",
             ],
             &[
                 "adr",
-                "tick",
+                "edit",
                 "ADR-0001",
-                "alternatives",
-                "--at",
-                "1",
-                "-s",
+                "alternatives[1]",
+                "--tick",
                 "rejected",
             ],
-            // Legacy dotted paths should still work
             &[
                 "adr",
-                "set",
+                "edit",
                 "ADR-0001",
                 "content.decision",
+                "--set",
                 "A dotted decision",
             ],
             &["adr", "get", "ADR-0001", "content.decision"],
-            &["adr", "set", "ADR-0001", "govctl.title", "Compat Title"],
+            &[
+                "adr",
+                "edit",
+                "ADR-0001",
+                "govctl.title",
+                "--set",
+                "Compat Title",
+            ],
             &["adr", "get", "ADR-0001", "govctl.title"],
         ],
     )?;

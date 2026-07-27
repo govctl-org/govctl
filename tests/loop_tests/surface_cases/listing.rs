@@ -139,7 +139,7 @@ fn test_loop_list_filters_resumable_aliases_and_limit() -> common::TestResult {
             loop_run(&paused_loop),
             work_new_active("Completed"),
             work_add_acceptance(&completed_root, "add: ready"),
-            work_tick_acceptance_done(&completed_root, "ready"),
+            work_tick_acceptance_done(&completed_root, 0),
             loop_start_with_id(&completed_loop, &[&completed_root]),
             loop_run(&completed_loop),
             work_move_done(&completed_root),

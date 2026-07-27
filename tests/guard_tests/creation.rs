@@ -8,8 +8,13 @@ fn test_guard_new_scaffolds_file() -> common::TestResult {
     assert!(output.contains("exit: 0"), "output: {}", output);
     assert!(output.contains("GUARD-CLIPPY-LINT"), "output: {}", output);
     assert!(
-        output.contains("verification.default_guards"),
-        "should hint about default_guards: {}",
+        output.contains("verification.required_guards --add GUARD-CLIPPY-LINT"),
+        "should prioritize per-work-item selection: {}",
+        output
+    );
+    assert!(
+        output.contains("Only if every work item needs this check"),
+        "should qualify project-default selection: {}",
         output
     );
 
@@ -35,6 +40,18 @@ fn test_guard_new_duplicate_rejected() -> common::TestResult {
         "should reject duplicate: {}",
         output
     );
+    Ok(())
+}
+
+#[test]
+fn test_guard_new_duplicate_dry_run_is_rejected() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_guard(temp_dir.path(), "GUARD-ECHO", "true")?;
+
+    let output = run_commands(temp_dir.path(), &[&["guard", "new", "echo", "--dry-run"]])?;
+    assert!(output.contains("exit: 1"), "output: {output}");
+    assert!(output.contains("error[E1003]"), "output: {output}");
+    assert!(!output.contains("Would write"), "output: {output}");
     Ok(())
 }
 

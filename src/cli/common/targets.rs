@@ -46,9 +46,10 @@ pub(crate) enum ListTarget {
     Adr,
     Work,
     Guard,
+    Conformance,
 }
 
-/// Output format for CLI command output per [[ADR-0017]]
+/// Output format for CLI command output per [[RFC-0002:C-OUTPUT-FORMAT]].
 #[derive(ValueEnum, Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum OutputFormat {
     /// Table format (default)
@@ -58,6 +59,41 @@ pub enum OutputFormat {
     Json,
     /// Plain text (one item per line)
     Plain,
+}
+
+/// Output formats available to resource `list` commands.
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ListOutputFormat {
+    /// Human-readable table
+    Table,
+    /// JSON array
+    Json,
+    /// YAML sequence
+    Yaml,
+}
+
+/// Output formats available to resource `get` commands.
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GetOutputFormat {
+    /// Human-readable table for complete resources
+    Table,
+    /// JSON structured data
+    Json,
+    /// YAML structured data
+    Yaml,
+    /// TOML structured data for complete resources
+    Toml,
+    /// Plain text for logical field values
+    Plain,
+}
+
+/// Output formats for scoped graph-style trace queries.
+#[derive(ValueEnum, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TraceOutputFormat {
+    /// Human-readable table
+    Table,
+    /// JSON structured data
+    Json,
 }
 
 /// Output formats available to resource `show` commands.

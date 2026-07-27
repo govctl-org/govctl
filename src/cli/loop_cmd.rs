@@ -81,17 +81,15 @@ NOTES:
     #[command(after_help = "\
 EXAMPLES:
     govctl loop add LOOP-2026-04-06-001 work WI-2026-04-06-002
-    govctl loop add LOOP-2026-04-06-001 wi WI-2026-04-06-002
 
 NOTES:
     - `work` is the editable loop work item field.
-    - `wi` is accepted as a shorthand field alias.
     - The resolved dependency closure is recomputed after changing work.
 ")]
     Add {
         /// Loop ID
         id: String,
-        /// Loop field name (`work`; `wi` alias)
+        /// Loop field name (`work`)
         field: String,
         /// Work item ID to add
         #[arg(value_name = "WI-ID")]
@@ -101,17 +99,15 @@ NOTES:
     #[command(after_help = "\
 EXAMPLES:
     govctl loop remove LOOP-2026-04-06-001 work WI-2026-04-06-002
-    govctl loop remove LOOP-2026-04-06-001 wi WI-2026-04-06-002
 
 NOTES:
     - `work` is the editable loop work item field.
-    - `wi` is accepted as a shorthand field alias.
     - The resolved dependency closure is recomputed after changing work.
 ")]
     Remove {
         /// Loop ID
         id: String,
-        /// Loop field name (`work`; `wi` alias)
+        /// Loop field name (`work`)
         field: String,
         /// Work item ID to remove
         #[arg(value_name = "WI-ID")]

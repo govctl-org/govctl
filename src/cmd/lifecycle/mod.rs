@@ -14,12 +14,9 @@ mod rfc_clause_versions;
 mod rfc_supersede;
 pub use adr::{accept_adr, reject_adr, validate_adr_completeness};
 pub use release::{cut_release, undo_release};
-pub(crate) use rfc::require_changelog_update_ready;
 pub use rfc::{advance, bump, finalize};
 
 /// Deprecate an artifact
-///
-/// Per [[ADR-0017]], destructive operations require confirmation unless `--force`.
 pub fn deprecate(
     config: &Config,
     id: &str,
@@ -39,14 +36,6 @@ pub fn deprecate(
         clause::deprecate_clause(config, id, op)
     } else if id.starts_with("RFC-") {
         rfc::deprecate_rfc(config, id, op)
-    } else if id.starts_with("ADR-") {
-        Err(Diagnostic::new(
-            DiagnosticCode::E0305AdrCannotDeprecate,
-            format!(
-                "ADRs cannot be deprecated. Use `govctl supersede {id} --by ADR-XXXX` instead."
-            ),
-            id,
-        ))
     } else {
         Err(Diagnostic::new(
             DiagnosticCode::E0813SupersedeNotSupported,
@@ -57,8 +46,6 @@ pub fn deprecate(
 }
 
 /// Supersede an artifact
-///
-/// Per [[ADR-0017]], destructive operations require confirmation unless `--force`.
 pub fn supersede(
     config: &Config,
     id: &str,

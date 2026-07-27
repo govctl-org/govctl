@@ -12,8 +12,8 @@ Created clause: gov/rfc/RFC-0001/clauses/C-TEST.toml
   Added to section 'Specification', path: clauses/C-TEST.toml
 exit: 0
 
-$ govctl clause edit RFC-0001:C-TEST --text Original normative behavior.
-Updated clause: RFC-0001:C-TEST
+$ govctl clause edit RFC-0001:C-TEST text --set Original normative behavior.
+Set RFC-0001:C-TEST.text = Original normative behavior.
 exit: 0
 
 $ govctl rfc finalize RFC-0001 normative
@@ -33,8 +33,8 @@ $ govctl rfc advance RFC-0001 stable
 Advanced RFC-0001 to phase: stable
 exit: 0
 
-$ govctl clause edit RFC-0001:C-TEST --text Updated normative behavior.
-Updated clause: RFC-0001:C-TEST
+$ govctl clause edit RFC-0001:C-TEST text --set Updated normative behavior.
+Set RFC-0001:C-TEST.text = Updated normative behavior.
 exit: 0
 
 $ govctl rfc bump RFC-0001 --change Added release note
@@ -42,11 +42,16 @@ Added change to RFC-0001 v0.1.0: Added release note
 exit: 0
 
 $ govctl rfc list
-┌───────────┬─────────┬───────────┬────────┬──────────┐
-│ RFC       ┆ Version ┆ Status    ┆ Phase  ┆ Title    │
-╞═══════════╪═════════╪═══════════╪════════╪══════════╡
-│ RFC-0001* ┆ 0.1.0   ┆ normative ┆ stable ┆ Test RFC │
-└───────────┴─────────┴───────────┴────────┴──────────┘
+[
+  {
+    "id": "RFC-0001*",
+    "version": "0.1.0",
+    "status": "normative",
+    "phase": "stable",
+    "title": "Test RFC",
+    "amended": true
+  }
+]
 exit: 0
 
 $ govctl rfc bump RFC-0001 --patch --summary Release amendment
@@ -54,9 +59,13 @@ Bumped RFC-0001 to 0.1.1
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬───────────┬───────┬──────────┐
-│ RFC      ┆ Version ┆ Status    ┆ Phase ┆ Title    │
-╞══════════╪═════════╪═══════════╪═══════╪══════════╡
-│ RFC-0001 ┆ 0.1.1   ┆ normative ┆ spec  ┆ Test RFC │
-└──────────┴─────────┴───────────┴───────┴──────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.1",
+    "status": "normative",
+    "phase": "spec",
+    "title": "Test RFC"
+  }
+]
 exit: 0

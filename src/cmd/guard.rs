@@ -2,12 +2,12 @@
 
 use super::guard_refs::{guard_reference_blockers, load_guard_by_id};
 use crate::ShowOutputFormat;
-use crate::cmd::output::{print_json, print_toml, print_yaml};
+use crate::cmd::confirmation::confirm_destructive_action;
+use crate::cmd::output::{print_json, print_toml, print_yaml, table_with_bold_headers};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{GuardCheck, GuardMeta, GuardSpec};
 use crate::parse::{load_guards, write_guard};
-use crate::render::RenderProjection;
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all};
 use slug::slugify;
@@ -32,15 +32,13 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<
     }
     let id = format!("GUARD-{slug}");
 
-    if !op.is_preview() {
-        let existing = load_guards(config)?;
-        if existing.iter().any(|g| g.spec.govctl.id == id) {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E1003GuardDuplicate,
-                format!("Guard already exists: {id}"),
-                &id,
-            ));
-        }
+    let existing = load_guards(config)?;
+    if existing.iter().any(|g| g.spec.govctl.id == id) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1003GuardDuplicate,
+            format!("Guard already exists: {id}"),
+            &id,
+        ));
     }
 
     let filename = slug.to_lowercase().replace('_', "-");
@@ -63,7 +61,10 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<
             config.display_path(&path).display()
         ));
         ui::hint(format!(
-            "To add to project defaults: edit gov/config.toml and add \"{id}\" to verification.default_guards"
+            "To require for an affected work item: govctl work edit <WI-ID> verification.required_guards --add {id}"
+        ));
+        ui::hint(format!(
+            "Only if every work item needs this check, add \"{id}\" to verification.default_guards in gov/config.toml"
         ));
     }
 
@@ -74,7 +75,7 @@ pub fn new_guard(config: &Config, title: &str, op: WriteOp) -> DiagnosticResult<
 pub fn delete_guard(
     config: &Config,
     id: &str,
-    _force: bool,
+    force: bool,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     let guard = load_guard_by_id(config, id)?;
@@ -98,6 +99,14 @@ pub fn delete_guard(
     }
 
     let path = guard.path.clone();
+    if !confirm_destructive_action(
+        force,
+        op,
+        &format!("Delete guard {id}?"),
+        "Deletion cancelled",
+    )? {
+        return Ok(vec![]);
+    }
     crate::write::delete_file(&path, op, Some(&config.display_path(&path)))?;
 
     if !op.is_preview() {
@@ -141,18 +150,39 @@ pub fn show_guard(
                 id,
             )?;
         }
-        ShowOutputFormat::Toml | ShowOutputFormat::Table | ShowOutputFormat::Plain => {
-            let _projection = if history {
-                RenderProjection::Archive
-            } else {
-                RenderProjection::Current
-            };
+        ShowOutputFormat::Toml => {
             print_toml(
                 &guard.spec,
                 DiagnosticCode::E1001GuardSchemaInvalid,
                 "Failed to serialize guard TOML",
                 id,
             )?;
+        }
+        ShowOutputFormat::Table => {
+            let mut table = table_with_bold_headers(&["Field", "Value"]);
+            table.add_row(["ID", guard.meta().id.as_str()]);
+            table.add_row(["Title", guard.meta().title.as_str()]);
+            table.add_row(["Refs", &guard.meta().refs.join("\n")]);
+            table.add_row(["Tags", &guard.meta().tags.join("\n")]);
+            table.add_row(["Command", guard.spec.check.command.as_str()]);
+            table.add_row(["Timeout", &guard.spec.check.timeout_secs.to_string()]);
+            table.add_row([
+                "Pattern",
+                guard.spec.check.pattern.as_deref().unwrap_or_default(),
+            ]);
+            println!("{table}");
+        }
+        ShowOutputFormat::Plain => {
+            println!("ID: {}", guard.meta().id);
+            println!("Title: {}", guard.meta().title);
+            println!("Refs: {}", guard.meta().refs.join(", "));
+            println!("Tags: {}", guard.meta().tags.join(", "));
+            println!("Command: {}", guard.spec.check.command);
+            println!("Timeout: {}", guard.spec.check.timeout_secs);
+            println!(
+                "Pattern: {}",
+                guard.spec.check.pattern.as_deref().unwrap_or_default()
+            );
         }
     }
 

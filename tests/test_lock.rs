@@ -41,6 +41,9 @@ fn create_config_with_timeout(
         r#"[project]
 name = "test-project"
 
+[schema]
+version = 3
+
 [paths]
 docs_output = "docs"
 
@@ -62,7 +65,6 @@ fn write_queue_work_item_for_lock_delete(
     fs::write(
         &work_file,
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Test Item"
 status = "queue"

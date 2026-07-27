@@ -2,9 +2,12 @@ use super::{OwnedEditAction, execute};
 use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::{DiagnosticResult, Diagnostics};
-use crate::model::{ChangelogCategory, ClauseKind, RfcPhase, WorkItemStatus};
+use crate::model::{ClauseKind, RfcPhase, WorkItemStatus};
 use crate::write::{BumpLevel, WriteOp};
-use crate::{FinalizeStatus, ListTarget, OutputFormat, RenderTarget, ShowOutputFormat};
+use crate::{
+    FinalizeStatus, GetOutputFormat, ListOutputFormat, ListTarget, OutputFormat, RenderTarget,
+    ShowOutputFormat, TraceOutputFormat,
+};
 use std::path::PathBuf;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,15 +27,6 @@ pub enum Scope {
     },
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct EditExtras {
-    pub category: Option<ChangelogCategory>,
-    pub scope: Option<String>,
-    pub pros: Vec<String>,
-    pub cons: Vec<String>,
-    pub reject_reason: Option<String>,
-}
-
 #[derive(Debug, Clone)]
 pub enum BuiltinOp {
     Init {
@@ -43,9 +37,7 @@ pub enum BuiltinOp {
         format: crate::SkillFormat,
         dir: Option<std::path::PathBuf>,
     },
-    Check {
-        has_active: bool,
-    },
+    Check,
     Status,
     RenderGlobal {
         target: RenderTarget,
@@ -124,6 +116,43 @@ pub enum BuiltinOp {
         loop_id: String,
         target_work_ids: Vec<String>,
     },
+    ConformanceList {
+        filter: Option<String>,
+        limit: Option<usize>,
+        output: Option<ListOutputFormat>,
+        tags: Vec<String>,
+    },
+    ConformanceGet {
+        id: String,
+        field: Option<String>,
+        output: Option<GetOutputFormat>,
+    },
+    ConformanceShow {
+        id: String,
+        output: ShowOutputFormat,
+        history: bool,
+    },
+    ConformanceNew {
+        title: String,
+        path: String,
+        selector: String,
+        requirements: Vec<String>,
+        guards: Vec<String>,
+        id: Option<String>,
+    },
+    ConformanceEdit {
+        id: String,
+        path: String,
+        action: OwnedEditAction,
+    },
+    ConformanceDelete {
+        id: String,
+        force: bool,
+    },
+    ConformanceTrace {
+        target: Option<String>,
+        output: Option<TraceOutputFormat>,
+    },
 }
 
 impl BuiltinOp {
@@ -139,6 +168,10 @@ impl BuiltinOp {
             | Self::LoopList { .. }
             | Self::LoopShow { .. }
             | Self::LoopResume { .. } => true,
+            Self::ConformanceList { .. }
+            | Self::ConformanceGet { .. }
+            | Self::ConformanceShow { .. }
+            | Self::ConformanceTrace { .. } => true,
             // [[RFC-0002:C-SEARCH-COMMAND]]: search may sync `.govctl/`
             // derived local state but must not mutate governed artifacts or
             // rendered docs; [[RFC-0004:C-DEFINITIONS]] keeps that outside the
@@ -177,15 +210,7 @@ pub enum CreateOp {
 
 #[derive(Debug, Clone)]
 pub enum EditOp {
-    Field {
-        action: OwnedEditAction,
-        extras: EditExtras,
-    },
-    ClauseLegacy {
-        text: Option<String>,
-        text_file: Option<PathBuf>,
-        stdin: bool,
-    },
+    Field { action: OwnedEditAction },
 }
 
 #[derive(Debug, Clone)]
@@ -225,11 +250,13 @@ pub enum Op {
     List {
         filter: Option<String>,
         limit: Option<usize>,
-        output: OutputFormat,
+        output: Option<ListOutputFormat>,
         /// Tags to filter by (artifact must have ALL specified tags) — [[RFC-0002:C-CRUD-VERBS]]
         tags: Vec<String>,
     },
-    Get,
+    Get {
+        output: Option<GetOutputFormat>,
+    },
     Show {
         output: ShowOutputFormat,
         history: bool,
@@ -248,7 +275,7 @@ impl Op {
     fn is_lock_free(&self) -> bool {
         match self {
             Self::Builtin(builtin) => builtin.is_lock_free(),
-            Self::Get | Self::List { .. } | Self::Show { .. } => true,
+            Self::Get { .. } | Self::List { .. } | Self::Show { .. } => true,
             _ => false,
         }
     }
@@ -267,7 +294,7 @@ pub struct CommandPlan {
 }
 
 impl CommandPlan {
-    pub(super) fn new(scope: Scope, op: Op) -> Self {
+    pub(crate) fn new(scope: Scope, op: Op) -> Self {
         Self { scope, op }
     }
 

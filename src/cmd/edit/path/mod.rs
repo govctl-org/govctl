@@ -1,9 +1,8 @@
-//! Path-based nested field addressing per [[ADR-0029]].
+//! Path-based nested field addressing per [[RFC-0002:C-EDIT-FIELD-CONTRACT]].
 //!
-//! Parses field paths like `alt[0].pros[1]` into structured segments
+//! Parses field paths like `alternatives[0].pros[1]` into structured segments
 //! for nested access into ADR alternatives, work item acceptance criteria, etc.
 
-use super::rules as edit_rules;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use winnow::Parser;
 use winnow::ascii::digit1;
@@ -19,7 +18,7 @@ struct RawPathSegment {
     index: Option<String>,
 }
 
-/// A single segment in a field path (e.g., `alt[0]` → name="alternatives", index=Some(0)).
+/// A single segment in a field path (e.g., `alternatives[0]`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PathSegment {
     pub name: String,
@@ -51,29 +50,6 @@ impl FieldPath {
     pub fn has_terminal_index(&self) -> bool {
         self.segments.last().is_some_and(|s| s.index.is_some())
     }
-
-    /// Normalize aliases on each path segment (`alt` -> `alternatives`, etc.).
-    #[cfg(test)]
-    pub fn normalize_aliases(mut self) -> Self {
-        for seg in &mut self.segments {
-            seg.name = normalize_segment_name(&seg.name);
-        }
-        self
-    }
-
-    /// Collapse legacy prefixes into their canonical field-path form.
-    ///
-    /// `content.decision` → `decision`, `govctl.status` → `status`, etc.
-    pub fn collapse_legacy_prefixes(mut self) -> Self {
-        if self.segments.len() >= 2 && self.segments[0].index.is_none() {
-            let prefix = self.segments[0].name.as_str();
-            let field = self.segments[1].name.as_str();
-            if edit_rules::can_collapse_legacy_prefix(prefix, field) {
-                self.segments.remove(0);
-            }
-        }
-        self
-    }
 }
 
 impl std::fmt::Display for FieldPath {
@@ -91,19 +67,13 @@ impl std::fmt::Display for FieldPath {
     }
 }
 
-/// Normalize a single field name, expanding aliases to canonical form.
-#[cfg(test)]
-fn normalize_segment_name(name: &str) -> String {
-    edit_rules::normalize_alias(name).to_string()
-}
-
 /// Parse a field path string into a `FieldPath`.
 ///
 /// Grammar: `segment ('.' segment | '[' index ']')*`
-/// where `segment` is `[a-z_][a-z0-9_]*` and `index` is `-?[0-9]+`.
+/// where `segment` is `[a-z_][a-z0-9_]*` and `index` is `[0-9]+`.
 #[cfg(test)]
 pub fn parse_field_path(input: &str) -> DiagnosticResult<FieldPath> {
-    parse_raw_field_path(input).map(FieldPath::normalize_aliases)
+    parse_raw_field_path(input)
 }
 
 /// Parse a field path string into raw segments, without alias normalization.
@@ -164,15 +134,8 @@ fn parse_name_raw(rest: &mut &str) -> Result<String, ParseErr> {
 }
 
 fn parse_index_text(rest: &mut &str) -> Result<String, ParseErr> {
-    let (sign, digits): (Option<char>, &str) =
-        delimited('[', (opt('-'), digit1), ']').parse_next(rest)?;
-
-    let mut idx = String::new();
-    if sign.is_some() {
-        idx.push('-');
-    }
-    idx.push_str(digits);
-    Ok(idx)
+    let digits: &str = delimited('[', digit1, ']').parse_next(rest)?;
+    Ok(digits.to_string())
 }
 
 fn is_name_start(c: char) -> bool {
@@ -183,18 +146,17 @@ fn is_name_char(c: char) -> bool {
     c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_'
 }
 
-/// Resolve an index (0-based, negative from end) against an array length.
+/// Resolve a zero-based index against an array length.
 pub fn resolve_index(idx: i32, len: usize) -> DiagnosticResult<usize> {
     let len_i = len as i32;
-    let actual = if idx < 0 { len_i + idx } else { idx };
-    if actual < 0 || actual >= len_i {
+    if idx < 0 || idx >= len_i {
         return Err(Diagnostic::new(
             DiagnosticCode::E0816PathIndexOutOfBounds,
             format!("Index {idx} out of range (array has {len} items)"),
             "path",
         ));
     }
-    Ok(actual as usize)
+    Ok(idx as usize)
 }
 
 #[cfg(test)]

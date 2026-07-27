@@ -1,6 +1,6 @@
 ---
 source: tests/test_move.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl work new Cancelled task --active
 Created work item: gov/work/<DATE>-cancelled-task.toml
@@ -12,9 +12,11 @@ Moved <DATE>-cancelled-task.toml to cancelled
 exit: 0
 
 $ govctl work list all
-┌───────────────────┬───────────┬────────────────┐
-│ ID                ┆ Status    ┆ Title          │
-╞═══════════════════╪═══════════╪════════════════╡
-│ WI-<DATE>-001 ┆ cancelled ┆ Cancelled task │
-└───────────────────┴───────────┴────────────────┘
+[
+  {
+    "id": "WI-<DATE>-001",
+    "status": "cancelled",
+    "title": "Cancelled task"
+  }
+]
 exit: 0

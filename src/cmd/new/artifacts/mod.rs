@@ -8,7 +8,7 @@ mod work;
 use crate::NewTarget;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
-use crate::schema::{ArtifactSchema, with_schema_header};
+use crate::schema::{ArtifactSchema, validate_toml_value, with_schema_header};
 use crate::write::{WriteOp, write_file};
 use serde::Serialize;
 use std::path::Path;
@@ -30,6 +30,14 @@ pub(super) fn write_new_artifact_toml<T: Serialize>(
             display_path.display().to_string(),
         )
     })?;
+    let raw = toml::from_str(&body).map_err(|err| {
+        Diagnostic::new(
+            schema_error,
+            format!("Failed to normalize {label} TOML: {err}"),
+            display_path.display().to_string(),
+        )
+    })?;
+    validate_toml_value(schema, config, path, &raw)?;
     let content = with_schema_header(schema, &body);
     write_file(path, &content, op, Some(&display_path))
 }

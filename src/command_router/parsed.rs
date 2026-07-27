@@ -15,9 +15,7 @@ impl CommandPlan {
                     dir: dir.clone(),
                 })))
             }
-            Commands::Check { has_active, .. } => Ok(global(Op::Builtin(BuiltinOp::Check {
-                has_active: *has_active,
-            }))),
+            Commands::Check { .. } => Ok(global(Op::Builtin(BuiltinOp::Check))),
             Commands::Status => Ok(global(Op::Builtin(BuiltinOp::Status))),
             Commands::Render {
                 target,
@@ -48,7 +46,7 @@ impl CommandPlan {
                 output: *output,
                 reindex: *reindex,
             }))),
-            Commands::Describe { context, .. } => Ok(global(Op::Builtin(BuiltinOp::Describe {
+            Commands::Describe { context } => Ok(global(Op::Builtin(BuiltinOp::Describe {
                 context: *context,
             }))),
             Commands::Completions { shell } => Ok(global(Op::Builtin(BuiltinOp::Completions {
@@ -64,6 +62,7 @@ impl CommandPlan {
             Commands::Adr { command } => command.to_plan(),
             Commands::Work { command } => command.to_plan(),
             Commands::Guard { command } => command.to_plan(),
+            Commands::Conformance { command } => command.to_plan(),
             Commands::Loop { command } => Ok(plan_loop_command(command)),
             Commands::Release(args) => plan_release_command(args),
             Commands::Tag { command } => Ok(plan_tag_command(command)),

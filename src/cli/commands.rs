@@ -1,7 +1,7 @@
 use super::help;
 use super::{
-    AdrCommand, ClauseCommand, GuardCommand, ListTarget, LoopCommand, OutputFormat, RenderTarget,
-    RfcCommand, SkillFormat, TagCommand, WorkCommand,
+    AdrCommand, ClauseCommand, ConformanceCommand, GuardCommand, ListTarget, LoopCommand,
+    OutputFormat, RenderTarget, RfcCommand, SkillFormat, TagCommand, WorkCommand,
 };
 use clap::{Args, Subcommand};
 use std::path::PathBuf;
@@ -60,30 +60,21 @@ pub(crate) enum Commands {
     },
 
     /// Validate all governed documents
-    #[command(visible_alias = "lint")]
     #[command(after_help = help::CHECK)]
     Check {
         /// Treat warnings as errors
         #[arg(short = 'W', long)]
         deny_warnings: bool,
-
-        /// Assert that an active work item exists (exits non-zero if none)
-        #[arg(long)]
-        has_active: bool,
     },
 
     /// Show summary counts
-    #[command(visible_alias = "stat")]
     #[command(after_help = help::STATUS)]
     Status,
 
     /// Render artifacts to markdown from SSOT (bulk operation)
     ///
     /// For single-item render, use: govctl rfc render <ID>, govctl adr render <ID>, etc.
-    #[command(
-        visible_alias = "gen",
-        after_help = help::RENDER
-    )]
+    #[command(after_help = help::RENDER)]
     Render {
         /// What to render: rfc (default), adr, work, changelog, or all
         #[arg(value_enum, default_value = "rfc")]
@@ -185,7 +176,6 @@ pub(crate) enum Commands {
     },
 
     /// Work item operations
-    #[command(visible_alias = "wi")]
     #[command(after_help = help::WORK)]
     Work {
         #[command(subcommand)]
@@ -199,6 +189,12 @@ pub(crate) enum Commands {
         command: GuardCommand,
     },
 
+    /// Conformance Case operations
+    Conformance {
+        #[command(subcommand)]
+        command: ConformanceCommand,
+    },
+
     /// Manage local release cuts
     #[command(after_help = help::RELEASE)]
     Release(ReleaseArgs),
@@ -209,9 +205,6 @@ pub(crate) enum Commands {
         /// Include project state and suggested actions
         #[arg(long)]
         context: bool,
-        /// Output format (currently only json is supported)
-        #[arg(short = 'o', long, default_value = "json")]
-        output: String,
     },
 
     /// Generate shell completion scripts

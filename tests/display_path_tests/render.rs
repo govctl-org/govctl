@@ -60,7 +60,6 @@ fn test_render_adr_display_path() -> common::TestResult {
     fs::write(
         adr_dir.join("ADR-0001-test-decision.toml"),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Test Decision"
 status = "proposed"
@@ -96,7 +95,6 @@ fn test_render_work_display_path() -> common::TestResult {
         work_dir.join(&work_filename),
         format!(
             r#"[govctl]
-schema = 1
 id = "{}"
 title = "Test Work"
 status = "active"

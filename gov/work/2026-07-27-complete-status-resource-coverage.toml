@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-009"
+title = "Complete status resource coverage"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = ["RFC-0002:C-GLOBAL-COMMANDS"]
+
+[content]
+description = "Correct the project status summary so every governed resource kind and terminal ADR outcome is represented and tested."
+
+[[content.acceptance_criteria]]
+text = "Status reports rejected ADRs and totals for verification guards and releases"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused status tests and repository validation pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

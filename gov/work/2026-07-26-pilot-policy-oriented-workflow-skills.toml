@@ -1,0 +1,52 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-002"
+title = "Pilot policy-oriented workflow skills"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "ADR-0057",
+    "ADR-0024",
+    "ADR-0056",
+]
+tags = [
+    "skills-agents",
+    "documentation",
+    "testing",
+]
+
+[content]
+description = "Pilot the policy-plus-discovery guidance model in the gov, commit, and discuss workflow skills, preserving operational safety and discoverability while removing duplicated procedure and command reference."
+
+[[content.acceptance_criteria]]
+text = "gov, commit, and discuss use a compact operational baseline and contextual decision policy"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Lifecycle authority, authorization stops, discovery routes, and completion evidence remain explicit"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Agent guidance documentation explains information ownership and staged progressive disclosure"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "CLI behavior tests cover the Work Item discovery routes used by pilot skills"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Stronger and weaker agent reviews report no safety-boundary blockers"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Project verification guards and pre-commit checks pass"
+status = "done"
+category = "chore"

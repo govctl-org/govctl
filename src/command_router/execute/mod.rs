@@ -7,7 +7,7 @@ use crate::cmd;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::write::WriteOp;
-use crate::{NewTarget, OutputFormat, ShowOutputFormat};
+use crate::{GetOutputFormat, ListOutputFormat, NewTarget, ShowOutputFormat};
 use builtin::execute_builtin;
 use render::execute_artifact_render;
 use scope::{ShowKind, extract_artifact_scope, extract_collection_scope, extract_target_scope};
@@ -63,7 +63,7 @@ fn execute_list(
     config: &Config,
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: Option<ListOutputFormat>,
     tags: &[String],
 ) -> CommandResult {
     cmd::list::list(
@@ -76,12 +76,16 @@ fn execute_list(
     )
 }
 
-fn execute_get(plan: &CommandPlan, config: &Config) -> CommandResult {
+fn execute_get(
+    plan: &CommandPlan,
+    config: &Config,
+    output: Option<GetOutputFormat>,
+) -> CommandResult {
     match &plan.scope {
-        Scope::Artifact { id, .. } => cmd::edit::get_field(config, id, None),
+        Scope::Artifact { id, .. } => cmd::edit::get_field(config, id, None, output),
         Scope::Target { id, target, .. } => {
             let path = target.display_path();
-            cmd::edit::get_field(config, id, Some(path.as_str()))
+            cmd::edit::get_field(config, id, Some(path.as_str()), output)
         }
         Scope::Global | Scope::Collection { .. } => Err(Diagnostic::new(
             DiagnosticCode::E0821InvalidCommandScope,
@@ -104,42 +108,22 @@ fn execute_show(
         ShowKind::Adr => cmd::render::show_adr(config, id, output, history),
         ShowKind::Work => cmd::render::show_work(config, id, output, history),
         ShowKind::Guard => cmd::guard::show_guard(config, id, output, history),
+        ShowKind::Conformance => cmd::conformance::show(config, id, output, history),
     }
 }
 
 fn execute_edit(plan: &CommandPlan, config: &Config, edit: &EditOp, op: WriteOp) -> CommandResult {
     match edit {
-        EditOp::Field { action, extras } => {
+        EditOp::Field { action } => {
             let (_, id, target) = extract_target_scope(&plan.scope)?;
             let path = target.display_path();
-            let pros = (!extras.pros.is_empty()).then(|| extras.pros.clone());
-            let cons = (!extras.cons.is_empty()).then(|| extras.cons.clone());
             cmd::edit::edit_field(cmd::edit::EditFieldRequest {
                 config,
                 id,
                 path: &path,
                 action,
-                category_override: extras.category,
-                pros,
-                cons,
-                reject_reason: extras.reject_reason.clone(),
                 op,
             })
-        }
-        EditOp::ClauseLegacy {
-            text,
-            text_file,
-            stdin,
-        } => {
-            let (_, id) = extract_artifact_scope(&plan.scope)?;
-            cmd::edit::edit_clause(
-                config,
-                id,
-                text.as_deref(),
-                text_file.as_deref(),
-                *stdin,
-                op,
-            )
         }
     }
 }
@@ -183,6 +167,7 @@ fn execute_delete(plan: &CommandPlan, config: &Config, force: bool, op: WriteOp)
         cmd::edit::ArtifactType::Clause => cmd::edit::delete_clause(config, id, force, op),
         cmd::edit::ArtifactType::WorkItem => cmd::edit::delete_work_item(config, id, force, op),
         cmd::edit::ArtifactType::Guard => cmd::guard::delete_guard(config, id, force, op),
+        cmd::edit::ArtifactType::Conformance => cmd::conformance::delete(config, id, force, op),
         cmd::edit::ArtifactType::Rfc | cmd::edit::ArtifactType::Adr => Err(Diagnostic::new(
             DiagnosticCode::E0822UnsupportedOperation,
             "delete is not supported for this artifact",
@@ -201,7 +186,7 @@ pub(super) fn execute_plan(plan: &CommandPlan, config: &Config, op: WriteOp) -> 
             output,
             tags,
         } => execute_list(plan, config, filter.as_deref(), *limit, *output, tags),
-        Op::Get => execute_get(plan, config),
+        Op::Get { output } => execute_get(plan, config, *output),
         Op::Show { output, history } => execute_show(plan, config, *output, *history),
         Op::Edit(edit) => execute_edit(plan, config, edit, op),
         Op::Lifecycle(lifecycle) => execute_lifecycle(plan, config, lifecycle, op),

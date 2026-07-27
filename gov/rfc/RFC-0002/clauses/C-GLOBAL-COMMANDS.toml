@@ -20,8 +20,8 @@ Syntax: `govctl init [--force]`
 
 Behavior:
 - Creates `gov/` directory structure
-- Generates `gov/config.toml`
-- Creates subdirectories for rfcs, adrs, work items, and verification guards
+- Generates `gov/config.toml` declaring project schema version 4
+- Creates subdirectories for RFCs, ADRs, Work Items, verification guards, and Conformance Cases
 - Installs bundled JSON Schema files under `gov/schema/`
 - MUST error if already initialized (unless `--force`)
 - MUST NOT install agent skills or agents (see `init-skills`)
@@ -34,15 +34,15 @@ Validates all governance artifacts across the project.
 Syntax: `govctl check [--deny-warnings]`
 
 Behavior:
-- Validates RFCs, ADRs, clauses, work items, releases, and verification guards
-- Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, release, and verification guard
+- Validates RFCs, ADRs, clauses, work items, releases, verification guards, and Conformance Cases
+- Implementations MUST define a corresponding machine-readable JSON Schema for each governance artifact type: RFC, clause, ADR, work item, release, verification guard, and Conformance Case
 - These schemas MUST be JSON files stored under `gov/schema/`
-- For TOML artifacts, MUST validate structure against the corresponding JSON Schema after parsing and normalization
+- For TOML artifacts, MUST validate the canonical structured layout against the corresponding JSON Schema after parsing
 - Checks state machine invariants
 - Verifies cross-references
 - Validates the semantic correctness of the optional `[verification]` section in `gov/config.toml`, including that configured default guard IDs resolve
 - Scans source code for references (if enabled in config)
-- If legacy JSON RFC or clause storage files are detected, MUST fail with a migration-required diagnostic that instructs users to run `govctl migrate` with a govctl version earlier than 0.9 before upgrading
+- MUST enforce the repository and unsupported-storage rules in [[RFC-0002:C-COMPATIBILITY-BOUNDARY]] before reporting successful validation
 - If any bundled JSON Schema file under `gov/schema/` is missing or differs from the current bundled schema, MUST report a schema-outdated diagnostic that instructs users to run `govctl migrate`
 - If any govctl-managed local-state `.gitignore` entry is missing or outdated, MUST report a project-support-outdated diagnostic that instructs users to run `govctl migrate`
 - Returns exit code 0 if valid, non-zero if errors
@@ -80,21 +80,9 @@ Behavior:
 
 **5. `govctl describe`**
 
-Outputs machine-readable CLI metadata for agent/tool integration.
+Provides machine-readable discovery for agent and tool integration as defined by [[RFC-0002:C-DESCRIBE-COMMAND]].
 
 Syntax: `govctl describe [--context]`
-
-Behavior:
-- Outputs JSON with command catalog
-- Includes workflow information
-- With `--context`: adds current project state and suggested actions
-- Enables machine agents and automation to discover capabilities safely
-
-**Stability Contract:**
-
-The JSON schema of `govctl describe` output MUST be versioned. The schema version MUST be included in the output. Backward-incompatible changes to the schema require a major version bump of govctl.
-
-This ensures agents and automation tools can rely on stable introspection.
 
 **6. `govctl completions`**
 
@@ -114,7 +102,8 @@ Syntax: `govctl migrate [--dry-run]`
 
 Behavior:
 - Reads the current schema version from `gov/config.toml` `[schema] version`
-- Runs all pending migration steps from the current version to the latest
+- Enforces the minimum supported schema version in [[RFC-0002:C-COMPATIBILITY-BOUNDARY]] before planning file operations
+- Runs all pending migration steps from a supported version to the latest
 - Each step produces a set of file operations executed transactionally
 - Bumps `[schema] version` in `gov/config.toml` after successful migration
 - MUST leave the repository unchanged if any step fails
@@ -122,7 +111,7 @@ Behavior:
 - MUST NOT perform heuristic project discovery or broad adoption tasks
 - MUST ensure all bundled JSON Schema files exist in `gov/schema/`, overwriting with the latest version regardless of schema version
 - MUST ensure local govctl state ignore entries are present in `.gitignore`, including `.govctl.lock` and `.govctl/`, regardless of schema version
-- In govctl 0.9 and later, MUST NOT convert legacy JSON RFC or clause storage; repositories with those files MUST be migrated with a govctl version earlier than 0.9 before upgrading
+- MUST enforce the migration and unsupported-storage behavior in [[RFC-0002:C-COMPATIBILITY-BOUNDARY]]
 
 **8. `govctl verify`**
 
@@ -173,9 +162,9 @@ Behavior:
 - `delete`: removes a tag from the allowed list. MUST error if any artifact still references the tag.
 - `list`: displays all registered tags with usage counts (how many artifacts reference each tag).
 
-Artifact-level tagging uses existing resource verbs on taggable types (rfc, clause, adr, work, guard):
-- `govctl {rfc|clause|adr|work|guard} add <ID> tags <tag>` - assign a tag to an artifact
-- `govctl {rfc|clause|adr|work|guard} remove <ID> tags <tag>` - remove a tag from an artifact
+Artifact-level tagging uses existing resource verbs on taggable types (rfc, clause, adr, work, guard, conformance):
+- `govctl {rfc|clause|adr|work|guard|conformance} edit <ID> tags --add <tag>` - assign a tag to an artifact
+- `govctl {rfc|clause|adr|work|guard|conformance} edit <ID> tags --remove <tag>` - remove a tag from an artifact
 
 **11. `govctl self-update`**
 
@@ -205,10 +194,10 @@ Behavior:
 
 Searches governed artifacts across the project by user-provided query text.
 
-Syntax: `govctl search <query>... [--type <rfc|clause|adr|work|guard>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
+Syntax: `govctl search <query>... [--type <rfc|clause|adr|work|guard|conformance>]... [--tag <tag>]... [-n <limit>] [-o <table|json|plain>] [--reindex]`
 
 Behavior:
-- Operates across RFCs, clauses, ADRs, work items, and verification guards according to [[RFC-0002:C-SEARCH-COMMAND]]
+- Operates across RFCs, clauses, ADRs, work items, verification guards, and Conformance Cases according to [[RFC-0002:C-SEARCH-COMMAND]]
 - MUST remain at the global namespace because it is project-level discovery across multiple governed resource types, not a resource-specific CRUD operation
 - MUST NOT be required as a universal resource verb under each artifact namespace unless a future RFC amendment explicitly adds scoped search aliases
 

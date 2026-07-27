@@ -1,350 +1,95 @@
 ---
 name: discuss
-description: Facilitate design discussion — research context, clarify requirements, draft RFC/ADR
+description: "Explore a governance design, resolve ambiguity, and draft RFC or ADR artifacts without implementation"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <topic-or-question>
 ---
 
-# /discuss — Design Discussion Workflow
+# Design Discussion
 
-Facilitate a design discussion about: `$ARGUMENTS`
+Understand `$ARGUMENTS`, relate it to existing governance, and produce only the
+design artifacts justified by the discussion.
 
-**Purpose:** Understand a design problem, research existing governance context, and produce draft RFC or ADR artifacts. This workflow is for the **spec phase** — no implementation, no work items.
+## Operational Baseline
 
-**Outputs:** Draft RFC and/or proposed ADR, then handoff to `/spec` or `/gov` as appropriate.
+### Discovery
 
-**Artifact roles:** RFCs define obligations, ADRs explain decisions, and work items track execution. Keep those authority boundaries intact while drafting.
-
----
-
-## QUICK REFERENCE
-
-```bash
-# Context discovery
-govctl status                             # Project overview
-govctl rfc list                           # List all RFCs
-govctl adr list                           # List all ADRs
-
-# RFC drafting
-govctl rfc new "<title>"                  # Create RFC (auto-assigns ID)
-govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
-clause text here
-EOF
-
-# ADR drafting
-govctl adr new "<title>"                  # Create ADR
-govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
-govctl adr add <ADR-ID> alternatives "Other option: Description" --reject-reason "Why it was not chosen"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> refs RFC-0001
-
-# Validation
-govctl check                              # Validate all artifacts
-```
-
----
-
-## CRITICAL RULES
-
-1. **Discussion-first** — Understand the problem before proposing solutions
-2. **Research existing context** — Check what RFCs/ADRs already exist and reference them
-3. **Draft only** — Never finalize RFCs or accept ADRs in this workflow
-4. **No work items** — This is spec phase; work items come later with `/gov`
-5. **Ask when unclear** — If requirements are ambiguous, ask clarifying questions
-6. **Quality over speed** — Produce complete, well-structured drafts
-7. **Reference format** — Always use `[[artifact-id]]` syntax when referencing artifacts (e.g., `[[RFC-0001]]`, `[[RFC-0001:C-FOO]]`) — in content fields AND code comments
-8. **No lifecycle verbs** — `accept`, `finalize`, `advance`, and `bump` belong to `/spec` or `/gov`
-9. **No raw VCS here** — If draft artifacts should be recorded, hand off to `/commit`
-10. **Keep artifact roles clean** — RFCs describe externally relevant behavior and constraints, ADRs describe trade-offs and rationale, and work items do not belong in this workflow
-
----
-
-## PHASE 0: CONTEXT DISCOVERY
-
-### 0.1 Survey Existing Governance
-
-Before discussing, understand what already exists:
+Start from repository context rather than a blank design:
 
 ```bash
 govctl status
+govctl search <topic>
 govctl rfc list
 govctl adr list
 ```
 
-### 0.2 Identify Relevant Artifacts
-
-Based on `$ARGUMENTS`, identify RFCs and ADRs that might be relevant:
-
-- **Related RFCs:** Specifications that touch the same domain
-- **Related ADRs:** Previous decisions that constrain options
-- **Superseded artifacts:** Old decisions that may need updating
-
-Read relevant artifacts to understand existing constraints and decisions.
-
-### 0.3 Note Project Configuration
-
-Read `gov/config.toml` to understand project-specific settings that may affect the design.
-
----
-
-## PHASE 1: CLASSIFICATION & DISCUSSION
-
-### 1.1 Classify the Topic
-
-Parse `$ARGUMENTS` and classify:
-
-| Type                  | Indicator                                    | Output                        |
-| --------------------- | -------------------------------------------- | ----------------------------- |
-| **New capability**    | "How should X work?", "Design Y feature"     | RFC                           |
-| **Design choice**     | "Should we use A or B?", "Decide between..." | ADR                           |
-| **Clarification**     | "What does RFC-NNNN mean by...?"             | Discussion only (no artifact) |
-| **RFC clarification** | "Clarify RFC-NNNN", "Tighten clause wording" | RFC update (spec-only)        |
-| **Amendment**         | "RFC-NNNN should change because..."          | RFC amendment                 |
-| **Deprecation**       | "Deprecate X", "Remove Y behavior"           | RFC amendment                 |
-| **Both**              | Complex feature with architectural decisions | RFC + ADR(s)                  |
-
-Use the authority test when drafting:
-
-- If the statement answers "what must be true?" -> RFC
-- If it answers "why this option?" -> ADR
-- If it answers "what are we doing right now?" -> not this workflow; that belongs in a work item
-
-### 1.2 Discussion Phase
-
-**If requirements are clear:** Proceed to Phase 2.
-
-**If requirements are ambiguous:** Ask clarifying questions before proceeding.
-
-Questions to consider:
-
-- What problem are we solving?
-- Who are the users/consumers?
-- What are the constraints (performance, compatibility, complexity)?
-- What are the trade-offs we're willing to make?
-- Are there existing patterns we should follow or deviate from?
-
-**Do not invent requirements.** If something is unspecified, ask.
-
-### 1.3 Design Exploration
-
-For complex topics, explore the design space:
-
-1. **Identify options:** What are the possible approaches?
-2. **Analyze trade-offs:** What does each option make easier/harder?
-3. **Check constraints:** What do existing RFCs/ADRs require or prohibit?
-4. **Recommend:** Which option best fits the project's needs?
-
-**If the decision is high-risk** (2+ competing options with non-obvious trade-offs, irreversible change, or cross-cutting impact), follow the **decision-analysis** skill for a structured premortem/backcast analysis. The analysis output maps directly to ADR fields — see the skill's "Output → ADR Mapping" section.
-
-Document this exploration — for ADRs, it should first become `alternatives` and only later become the final `decision`.
-
----
-
-## PHASE 2: DRAFT ARTIFACTS
-
-### 2.1 RFC Drafting (if needed)
-
-For structure, templates, and quality guidelines, follow the **rfc-writer** skill.
-
-```bash
-govctl rfc new "<title>"
-govctl clause new <RFC-ID>:C-<NAME> "<title>" -s "<section>" -k <kind>
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
-clause text
-EOF
-```
-
-### 2.2 ADR Drafting (if needed)
-
-For structure, templates, and quality guidelines, follow the **adr-writer** skill.
-
-```bash
-govctl adr new "<title>"
-govctl adr set <ADR-ID> context --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF' ... EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF' ... EOF
-govctl adr add <ADR-ID> refs RFC-NNNN
-```
-
-In this sequence, alternative `0` is the chosen option and alternative `1` is explicitly rejected.
-
-ADR drafting order:
-
-1. Write `context`
-2. Add and discuss `alternatives`
-3. Mark rejected and accepted alternatives
-4. Only then write `decision`
-5. Finish with `consequences`
-
-Historical backfills are the exception: if alternatives cannot be reconstructed, say so explicitly in `context` and write the best supported `decision`.
-
-### 2.3 RFC Amendment (for changes to existing specs)
-
-**When existing RFC needs modification:**
-
-```bash
-# Edit the clause content
-govctl clause edit <RFC-ID>:C-<NAME> text --stdin <<'EOF'
-Updated specification text.
-EOF
-
-# The RFC version may need bumping during /spec or /gov handoff
-# Do NOT bump version in /discuss — handoff owns lifecycle operations
-```
-
-**Note:** Amendments to normative RFCs require careful consideration. Document the rationale for the change.
-
-Clarification-only RFC updates that do not require implementation should hand off to `/spec`.
-Behavior-changing amendments, including feature deprecations or removals, should hand off to `/gov`.
-
-### 2.4 Validate Drafts
-
-After creating artifacts:
-
-```bash
-govctl check
-```
-
-Fix any validation errors before proceeding.
-
-### 2.5 Review Drafts
-
-Invoke the appropriate reviewer agent on each draft artifact:
-
-- **RFC drafted** → invoke the **rfc-reviewer** agent
-- **ADR drafted** → invoke the **adr-reviewer** agent
-
-Address Critical issues before handoff.
-
-### 2.6 Record (Optional)
-
-If draft artifacts should be recorded, use `/commit` with `docs(rfc): draft <RFC-ID> for <summary>` or `docs(adr): draft <ADR-ID> for <summary>`.
-
----
-
-## PHASE 3: HANDOFF
-
-### 3.1 Summary Report
-
-Present the discussion results:
-
-```
-=== DISCUSSION COMPLETE ===
-
-Topic: $ARGUMENTS
-
-Artifacts created:
-  - RFC-NNNN: <title> (draft, spec phase)
-  - ADR-NNNN: <title> (proposed)
-
-Key decisions:
-  - <summary of main design choices>
-
-Open questions:
-  - <any unresolved issues>
-
-Related artifacts referenced:
-  - RFC-XXXX: <title>
-  - ADR-YYYY: <title>
-```
-
-### 3.2 Next Steps
-
-Prompt the user for next action:
-
-```
-Ready to proceed?
-
-Options:
-  1. /gov "<summary>" — Start governed implementation workflow
-     - Creates work item
-     - Finalizes RFC (with permission)
-     - Implements, tests, completes
-
-  2. /spec "<summary>" — Maintain governance artifacts without implementation
-     - Accepts ADRs with permission
-     - Clarifies or amends RFCs without code changes
-     - Validates and renders governance output
-
-  3. Continue discussing — Refine the drafts further
-     - Ask follow-up questions
-     - Add more clauses or detail
-
-  4. Pause — Save drafts, return later
-     - Drafts can be recorded with `/commit` and resumed later
-
-If the only follow-up is standalone non-behavioral cleanup unrelated to the drafted RFC/ADR (for example, wording-only docs cleanup), `/quick` may be used separately. Do not use `/quick` to implement behavior from these drafts.
-```
-
----
-
-## ERROR HANDLING
-
-### When to Stop and Ask
-
-1. **Conflicting requirements** — existing RFCs/ADRs contradict each other
-2. **Scope unclear** — cannot determine what's in/out of scope
-3. **Missing context** — need information not available in codebase
-4. **Breaking change** — proposal would break existing normative behavior
-
-### When to Proceed
-
-1. **Minor ambiguity** — make reasonable assumption, document it
-2. **Style questions** — follow existing patterns in the codebase
-3. **Optional details** — defer to implementation phase
-
----
-
-## CONVENTIONS
-
-### Artifact References
-
-Use `[[artifact-id]]` syntax for inline references in content fields:
-
-```
-# Good - expands to clickable link when rendered
-context = "Per [[RFC-0001]], all RFCs must have a summary clause."
-
-# Also good for clauses
-decision = "Follow [[RFC-0001:C-SUMMARY]] structure."
-
-# Bad - plain text, not linked
-context = "Per RFC-0001, all RFCs must have a summary clause."
-```
-
-**Also use in source code comments** for implementation traceability:
-
-```rust
-// Implements [[RFC-0001:C-VALIDATION]]
-fn validate() { ... }
-
-// Per [[ADR-0005]], we chose X over Y
-```
-
-This enables `govctl check` to validate all references exist and are not deprecated.
-
-For RFC 2119 keywords and clause conventions, see the **rfc-writer** skill.
-For ADR structure and field conventions, see the **adr-writer** skill.
-
----
-
-## DISCUSSION CHECKLIST
-
-- [ ] Existing RFCs/ADRs surveyed
-- [ ] Topic classified (RFC, ADR, both, or neither)
-- [ ] Requirements clarified (asked questions if needed)
-- [ ] Design options explored
-- [ ] Draft artifact(s) created with complete structure
-- [ ] Validation passed (`govctl check`)
-- [ ] Summary presented
-- [ ] Next steps offered
-
-**BEGIN DISCUSSION NOW.**
+Read relevant current artifacts with `show`; use `--history` only when prior
+content matters. Use `govctl <resource> --help` for current authoring syntax. In
+the govctl repository itself, invoke the development binary as
+`cargo run --quiet --`.
+
+### Hard Stops
+
+- This is a design workflow: do not implement code or create Work Items.
+- Do not perform lifecycle or destructive artifact mutations here, including
+  acceptance/rejection, phase or version changes, deprecation, supersession,
+  and deletion.
+- Do not issue raw VCS commands; use the `commit` skill when drafts should be
+  recorded.
+- RFCs own obligations, ADRs own design rationale, and Work Items own execution.
+  Do not use one artifact to compensate for missing content in another.
+- Stop and ask when requirements conflict, a breaking consequence is
+  unacknowledged, or the available evidence cannot resolve a material ambiguity.
+
+## Decision Policy
+
+### Classify The Outcome
+
+| Question answered                            | Result                               |
+| -------------------------------------------- | ------------------------------------ |
+| What behavior or invariant must be true?     | RFC or RFC amendment                 |
+| Why was one design chosen over alternatives? | ADR                                  |
+| What does an existing artifact mean?         | Discussion or clarification          |
+| What work should be executed now?            | Hand off to `gov`; no Work Item here |
+
+Not every discussion needs an artifact. Prefer clarification in conversation
+when no durable obligation or decision changes.
+
+### Explore Before Concluding
+
+Identify constraints from existing RFCs and ADRs, then compare plausible
+options. Ask only questions whose answers materially change the design. For
+high-risk or difficult trade-offs, use `decision-analysis`.
+
+When drafting:
+
+- use `rfc-writer` for normative Clause quality;
+- use `adr-writer` and establish alternatives before the decision;
+- use root `govctl clause` commands for every Clause operation;
+- use `[[artifact-id]]` references in governed prose; and
+- keep implementation details out unless they are an external contract.
+
+Draft lifecycle operations belong to the later `spec` or `gov` handoff. A
+behavior-changing amendment needs governed implementation; a clarification with
+no implementation can use `spec`.
+
+### Review And Validate
+
+Run `govctl check` after substantive artifact edits. Ask the matching independent
+reviewer agent to assess each RFC or ADR draft, and resolve critical findings
+before presenting it as ready. Reviewer isolation is for semantic quality;
+govctl remains responsible for structural validation.
+
+## Completion Evidence
+
+Conclude with:
+
+- the problem and constraints understood;
+- options considered and the current recommendation;
+- draft artifacts created or changed, with status;
+- unresolved questions and material risks;
+- validation and reviewer results; and
+- the correct handoff: continue discussion, `spec`, `gov`, or `commit`.
+
+Leave artifacts in draft/proposed state until the user authorizes the owning
+lifecycle transition.

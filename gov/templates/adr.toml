@@ -13,7 +13,6 @@
 #   - refs: References to related RFCs, ADRs, or external docs
 
 [govctl]
-schema = 1
 id = "{{ID}}"
 title = "{{TITLE}}"
 status = "proposed"

@@ -1,0 +1,45 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-003"
+title = "Extend policy-oriented guidance to spec and quick"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "ADR-0057",
+    "ADR-0024",
+]
+tags = [
+    "skills-agents",
+    "documentation",
+]
+
+[content]
+description = "Apply the accepted policy-plus-discovery guidance model to the spec and quick workflow skills while preserving lifecycle authorization and escalation from trivial to governed work."
+
+[[content.acceptance_criteria]]
+text = "spec and quick use compact operational baselines and contextual decision policies"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Spec lifecycle authorization and artifact-authority boundaries remain explicit"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Quick escalates behavior, ambiguity, and durable work to the owning workflow"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Capability-tiered reviews report no safety-boundary blockers"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Project verification and pre-commit checks pass"
+status = "done"
+category = "chore"

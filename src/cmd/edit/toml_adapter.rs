@@ -1,8 +1,11 @@
 use super::adapter::{TomlAdapter, display_scope_for_dir};
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::model::{AdrEntry, GuardEntry, WorkItemEntry};
-use crate::parse::{load_work_items, write_adr, write_guard, write_work_item};
+use crate::model::{AdrEntry, ConformanceEntry, GuardEntry, WorkItemEntry};
+use crate::parse::{
+    load_conformance_cases, load_work_items, write_adr, write_conformance_case, write_guard,
+    write_work_item,
+};
 use crate::write::WriteOp;
 use std::path::PathBuf;
 
@@ -102,6 +105,41 @@ impl TomlAdapter for GuardTomlAdapter {
 
     fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()> {
         write_guard(
+            &entry.path,
+            &entry.spec,
+            op,
+            Some(&config.display_path(&entry.path)),
+        )
+    }
+}
+
+/// Conformance Case TOML adapter.
+pub struct ConformanceTomlAdapter;
+
+impl TomlAdapter for ConformanceTomlAdapter {
+    type Entry = ConformanceEntry;
+
+    fn load(config: &Config, id: &str) -> DiagnosticResult<Self::Entry> {
+        crate::artifact_catalog::load_conformance_by_id(config, id)
+    }
+
+    fn write(config: &Config, entry: &Self::Entry, op: WriteOp) -> DiagnosticResult<()> {
+        let mut cases = load_conformance_cases(config)?;
+        let current = cases
+            .iter_mut()
+            .find(|case| case.meta().id == entry.meta().id)
+            .ok_or_else(|| {
+                Diagnostic::new(
+                    DiagnosticCode::E1302ConformanceNotFound,
+                    format!("Conformance Case not found: {}", entry.meta().id),
+                    &entry.meta().id,
+                )
+            })?;
+        *current = entry.clone();
+
+        crate::cmd::conformance::validate_mutation(config, entry, &cases)?;
+
+        write_conformance_case(
             &entry.path,
             &entry.spec,
             op,

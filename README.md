@@ -32,6 +32,7 @@ It gives AI-assisted development a control plane that lives in your repo:
 - **ADRs** record why a design was chosen
 - **Work items** track execution and acceptance criteria
 - **Verification guards** enforce executable completion gates
+- **Conformance cases** map reusable acceptance scenarios to versioned RFC requirements and guards
 
 The point is not bureaucracy. The point is that AI-generated changes become **reviewable, traceable, and phase-gated**.
 
@@ -89,6 +90,9 @@ The CLI is the operating surface for agents:
 - resource-specific lifecycle verbs like `adr accept`, `rfc advance`, `rfc supersede`, and `work move`
 - path-first mutation through `edit`
 - explicit help text designed to act as a reliable command contract
+
+Clauses remain first-class `govctl clause` resources even though their IDs and
+storage are scoped by an RFC.
 
 This matters because agent workflows get better when the interface is stable, local, and inspectable.
 
@@ -179,9 +183,9 @@ govctl rfc get RFC-0001 status
 For precise artifact mutation, `govctl` provides a canonical path-first interface:
 
 ```bash
-govctl adr edit ADR-0038 content.decision --stdin
-govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
-govctl clause edit RFC-0002:C-CRUD-VERBS text --stdin
+govctl adr edit ADR-0038 decision --set --stdin
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
+govctl clause edit RFC-0002:C-CRUD-VERBS text --set --stdin
 ```
 
 This is not the product's identity. It is the low-level tool agents use to update governed artifacts precisely and consistently.
@@ -189,12 +193,13 @@ This is not the product's identity. It is the low-level tool agents use to updat
 ### Project-wide search
 
 Use `govctl search` to find governed artifacts across RFCs, clauses, ADRs,
-work items, and guards:
+work items, guards, and Conformance Cases:
 
 ```bash
 govctl search cache
 govctl search RFC-0002 --output json
 govctl search migration --type rfc --type adr --tag cli -n 5
+govctl search cache --type conformance
 ```
 
 Search uses a disposable local index under `.govctl/`. The TOML artifacts remain
@@ -228,13 +233,32 @@ Define reusable project defaults in `gov/config.toml`:
 ```toml
 [verification]
 enabled = true
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
+default_guards = ["GUARD-GOVCTL-CHECK"]
 ```
 
-You can also require extra guards on a specific work item or waive a guard with an explicit reason. See:
+Keep expensive or domain-specific checks out of the universal default set and
+require them on affected work items. You can also waive a guard with an explicit
+reason. See:
 
 - [Validation & Rendering](https://github.com/govctl-org/govctl/blob/main/docs/guide/validation.md#per-work-item-guards)
 - [Working with Work Items](https://github.com/govctl-org/govctl/blob/main/docs/guide/work-items.md#per-work-item-guards)
+
+### Requirement traceability
+
+Conformance Cases provide a stable, non-normative link from a versioned RFC
+Clause to a project-owned scenario and reusable Guards:
+
+```bash
+govctl conformance new "Cache expiry" \
+  --path tests/conformance/cache.toml \
+  --selector cache-expiry \
+  --requirement RFC-0012:C-CACHE-EXPIRY@1.2.0 \
+  --guard GUARD-CACHE-CONFORMANCE
+govctl conformance trace RFC-0012
+```
+
+They declare traceability; they do not execute tests or override RFC authority.
+See [Conformance Cases](docs/guide/conformance-cases.md).
 
 ### Brownfield adoption vs format migration
 
@@ -250,7 +274,10 @@ govctl migrate
 govctl check
 ```
 
-In govctl `0.9` and later, RFC and clause artifacts are TOML-only. `govctl migrate` no longer converts legacy RFC/clause JSON storage; migrate those repositories with govctl `<0.9` before upgrading.
+Schema version 3 is the minimum supported repository format; schema version 4
+enables Conformance Cases. Use a compatible earlier govctl version to migrate
+older repositories before upgrading. Legacy RFC and clause JSON storage is
+rejected explicitly.
 
 ### Interactive TUI
 

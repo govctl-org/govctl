@@ -2,7 +2,7 @@ use super::*;
 use serde_json::json;
 
 fn path(input: &str) -> Result<FieldPath, Box<dyn std::error::Error>> {
-    Ok(crate::cmd::edit::path::parse_field_path(input)?.collapse_legacy_prefixes())
+    Ok(crate::cmd::edit::path::parse_field_path(input)?)
 }
 
 #[test]

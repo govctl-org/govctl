@@ -23,11 +23,6 @@ fn current_schema_version(dir: &Path) -> Result<u32, Box<dyn std::error::Error>>
     Ok(u32::try_from(version)?)
 }
 
-fn latest_schema_version() -> Result<u32, Box<dyn std::error::Error>> {
-    let temp_dir = init_project()?;
-    current_schema_version(temp_dir.path())
-}
-
 fn write_legacy_rfc_project(dir: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
     let rfc_dir = dir.join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -82,7 +77,7 @@ fn test_migrate_rejects_legacy_json_storage() -> TestResult {
     let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
     assert!(output.contains("error[E0505]"), "output: {}", output);
     assert!(
-        output.contains("Use govctl <0.9 to run `govctl migrate` before upgrading."),
+        output.contains("Migrate this repository with a compatible earlier govctl version"),
         "output: {}",
         output
     );
@@ -111,7 +106,7 @@ fn test_migrate_dry_run_rejects_legacy_json_storage() -> TestResult {
     let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]])?;
     assert!(output.contains("error[E0505]"), "output: {}", output);
     assert!(
-        output.contains("Use govctl <0.9 to run `govctl migrate` before upgrading."),
+        output.contains("Migrate this repository with a compatible earlier govctl version"),
         "output: {}",
         output
     );
@@ -143,16 +138,13 @@ fn test_migrate_dry_run_rejects_legacy_json_storage() -> TestResult {
 }
 
 #[test]
-fn test_migrate_dry_run_previews_config_version_bump_without_artifact_changes() -> TestResult {
+fn test_migrate_dry_run_rejects_unsupported_schema_without_artifact_changes() -> TestResult {
     let temp_dir = init_project_v1()?;
-
-    // Create artifacts using govctl (already in new format with headers).
-    run_commands(temp_dir.path(), &[&["rfc", "new", "New Format RFC"]])?;
 
     let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]])?;
     assert!(
-        output.contains("Would write: gov/config.toml"),
-        "dry-run should preview config version bump as a file op: {output}"
+        output.contains("Project schema version 1 is unsupported (minimum: 3)"),
+        "output: {output}"
     );
 
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
@@ -221,6 +213,41 @@ fn test_migrate_syncs_stale_schema_file_at_current_version() -> TestResult {
 }
 
 #[test]
+fn test_migrate_schema_sync_failure_leaves_earlier_schema_unchanged() -> TestResult {
+    let temp_dir = init_project()?;
+    let rfc_schema = temp_dir.path().join("gov/schema/rfc.schema.json");
+    let clause_schema = temp_dir.path().join("gov/schema/clause.schema.json");
+    fs::write(&rfc_schema, "stale schema\n")?;
+    fs::remove_file(&clause_schema)?;
+    fs::create_dir(&clause_schema)?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+
+    assert!(output.contains("exit: 1"), "{output}");
+    assert_eq!(fs::read_to_string(&rfc_schema)?, "stale schema\n");
+    assert!(clause_schema.is_dir());
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_migrate_noop_does_not_require_schema_write_access() -> TestResult {
+    use std::os::unix::fs::PermissionsExt;
+
+    let temp_dir = init_project()?;
+    let schema_path = temp_dir.path().join("gov/schema/rfc.schema.json");
+    let original_permissions = fs::metadata(&schema_path)?.permissions();
+    fs::set_permissions(&schema_path, fs::Permissions::from_mode(0o444))?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+
+    fs::set_permissions(&schema_path, original_permissions)?;
+    assert!(output.contains("exit: 0"), "{output}");
+    assert!(output.contains("already at schema version"), "{output}");
+    Ok(())
+}
+
+#[test]
 fn test_migrate_dry_run_reports_would_sync_at_current_version() -> TestResult {
     let temp_dir = init_project()?;
     let expected_version = current_schema_version(temp_dir.path())?;
@@ -272,33 +299,29 @@ fn test_migrate_syncs_missing_local_state_gitignore_entry_at_current_version() -
 }
 
 #[test]
-fn test_migrate_bumps_version_even_without_file_changes() -> TestResult {
+fn test_migrate_rejects_unsupported_schema_even_without_file_changes() -> TestResult {
     let temp_dir = init_project_v1()?;
-    let expected_version = latest_schema_version()?;
 
-    // An empty project has no artifact rewrites, but still advances its schema version.
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
     assert!(config.contains("version = 1"));
 
     let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
     assert!(
-        output.contains(&format!("Schema version bumped to {expected_version}")),
-        "should bump version even with no file ops: {}",
-        output
+        output.contains("Project schema version 1 is unsupported (minimum: 3)"),
+        "output: {output}"
     );
 
     let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
     assert!(
-        config.contains(&format!("version = {expected_version}")),
-        "config should now be version {expected_version}: {}",
-        config
+        config.contains("version = 1"),
+        "unsupported config must remain unchanged: {config}"
     );
 
     Ok(())
 }
 
 #[test]
-fn test_migrate_rebaselines_legacy_rfc_signatures_without_bump() -> TestResult {
+fn test_migrate_rejects_schema_two_without_rebaselining_signatures() -> TestResult {
     let temp_dir = init_project()?;
     run_commands(
         temp_dir.path(),
@@ -318,7 +341,8 @@ fn test_migrate_rebaselines_legacy_rfc_signatures_without_bump() -> TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Stable normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
@@ -329,9 +353,6 @@ fn test_migrate_rebaselines_legacy_rfc_signatures_without_bump() -> TestResult {
 
     let rfc_path = temp_dir.path().join("gov/rfc/RFC-0001/rfc.toml");
     let mut rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
-    let original_version = rfc["govctl"]["version"].clone();
-    let original_phase = rfc["govctl"]["phase"].clone();
-    let original_changelog = rfc.get("changelog").cloned();
     rfc.get_mut("govctl")
         .and_then(toml::Value::as_table_mut)
         .ok_or("RFC govctl section is not a table")?
@@ -343,50 +364,14 @@ fn test_migrate_rebaselines_legacy_rfc_signatures_without_bump() -> TestResult {
     config["schema"]["version"] = toml::Value::Integer(2);
     fs::write(&config_path, toml::to_string_pretty(&config)?)?;
 
-    let blocked = run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "advance", "RFC-0001", "stable"],
-            &[
-                "rfc",
-                "bump",
-                "RFC-0001",
-                "--patch",
-                "--summary",
-                "Must migrate first",
-            ],
-        ],
-    )?;
-    assert_eq!(blocked.matches("error[E0505]").count(), 2, "{blocked}");
-    assert!(blocked.contains("Run `govctl migrate`"), "{blocked}");
-
+    let before = fs::read(&rfc_path)?;
     let migrated = run_commands(temp_dir.path(), &[&["migrate"]])?;
     assert!(
-        migrated.contains("v2 -> v3: RFC amendment content signatures"),
+        migrated.contains("Project schema version 2 is unsupported (minimum: 3)"),
         "{migrated}"
     );
-
-    let migrated_rfc: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
-    assert_eq!(migrated_rfc["govctl"]["version"], original_version);
-    assert_eq!(migrated_rfc["govctl"]["phase"], original_phase);
-    assert_eq!(migrated_rfc.get("changelog").cloned(), original_changelog);
-    assert_ne!(
-        migrated_rfc["govctl"]["signature"].as_str(),
-        Some("0000000000000000000000000000000000000000000000000000000000000000")
-    );
-    assert_eq!(current_schema_version(temp_dir.path())?, 3);
-
-    let advanced = run_commands(
-        temp_dir.path(),
-        &[
-            &["rfc", "advance", "RFC-0001", "stable"],
-            &["rfc", "get", "RFC-0001", "phase"],
-        ],
-    )?;
-    assert!(
-        advanced.contains("$ govctl rfc get RFC-0001 phase\nstable"),
-        "{advanced}"
-    );
+    assert_eq!(fs::read(&rfc_path)?, before);
+    assert_eq!(current_schema_version(temp_dir.path())?, 2);
 
     Ok(())
 }
@@ -399,7 +384,7 @@ fn test_check_rejects_legacy_json_storage() -> TestResult {
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
     assert!(output.contains("error[E0505]"), "output: {}", output);
     assert!(
-        output.contains("Use govctl <0.9 to run `govctl migrate` before upgrading."),
+        output.contains("Migrate this repository with a compatible earlier govctl version"),
         "output: {}",
         output
     );

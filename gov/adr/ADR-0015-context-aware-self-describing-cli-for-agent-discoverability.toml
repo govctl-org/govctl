@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0015"
 title = "Context-aware self-describing CLI for agent discoverability"
-status = "accepted"
+status = "superseded"
 date = "2026-01-18"
+superseded_by = "ADR-0058"
 refs = ["RFC-0000"]
 tags = ["cli"]
 

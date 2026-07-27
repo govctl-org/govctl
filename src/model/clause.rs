@@ -31,8 +31,6 @@ pub struct ClauseWire {
 /// Clause metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClauseMeta {
-    #[serde(default, rename = "schema", skip_serializing)]
-    _schema: u32,
     pub id: String,
     pub title: String,
     pub kind: ClauseKind,
@@ -58,7 +56,6 @@ impl From<ClauseSpec> for ClauseWire {
     fn from(s: ClauseSpec) -> Self {
         Self {
             govctl: ClauseMeta {
-                _schema: 1,
                 id: s.clause_id,
                 title: s.title,
                 kind: s.kind,

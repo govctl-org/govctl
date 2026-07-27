@@ -1,0 +1,11 @@
+#:schema ../schema/guard.schema.json
+
+[govctl]
+id = "GUARD-CONFORMANCE-TESTS"
+title = "Conformance tests"
+refs = ["RFC-0008"]
+tags = ["testing"]
+
+[check]
+command = "cargo test --test test_conformance"
+timeout_secs = 300

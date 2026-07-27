@@ -142,6 +142,7 @@ fn clause_anchor(rfc_id: &str, clause_id: &str) -> String {
 }
 
 /// Render a single clause
+#[cfg(test)]
 pub fn render_clause(out: &mut String, rfc_id: &str, clause: &ClauseEntry) {
     render_clause_with_projection(out, rfc_id, clause, RenderProjection::Archive);
 }

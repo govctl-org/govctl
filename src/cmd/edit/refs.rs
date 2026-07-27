@@ -23,7 +23,7 @@ pub(super) fn validate_ref_edit(
         ArtifactType::Rfc | ArtifactType::Adr | ArtifactType::WorkItem => {
             crate::validate::validate_artifact_ref_edit(config, owner_id, ref_id, owner_id)
         }
-        ArtifactType::Clause | ArtifactType::Guard => Ok(()),
+        ArtifactType::Clause | ArtifactType::Guard | ArtifactType::Conformance => Ok(()),
     }
 }
 

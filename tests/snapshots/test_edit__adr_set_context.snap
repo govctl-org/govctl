@@ -1,12 +1,12 @@
 ---
-source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/edit_tests/adr.rs
+expression: value
 ---
 $ govctl adr new Test Decision
 Created ADR: gov/adr/ADR-XXXX-test-decision.toml
 exit: 0
 
-$ govctl adr set ADR-0001 context New context for the decision
+$ govctl adr edit ADR-0001 context --set New context for the decision
 Set ADR-0001.context = New context for the decision
 exit: 0
 

@@ -15,13 +15,15 @@ mod rfc;
 mod tests;
 mod work;
 
-pub use adr::{render_adr, render_adr_with_projection, write_adr_md};
+#[cfg(test)]
+pub use adr::render_adr;
+pub use adr::{render_adr_with_projection, write_adr_md};
 pub use links::expand_inline_refs;
 use links::render_refs;
 use output::write_expanded_rendered_md;
-pub use rfc::{
-    render_clause, render_clause_with_projection, render_rfc_with_projection, write_rfc,
-};
+#[cfg(test)]
+pub use rfc::render_clause;
+pub use rfc::{render_clause_with_projection, render_rfc_with_projection, write_rfc};
 pub use work::{render_work_item, render_work_item_with_projection, write_work_item_md};
 
 /// Selects whether lifecycle-obsolete body content is included in human-readable output.

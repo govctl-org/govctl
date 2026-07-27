@@ -201,8 +201,6 @@ fn hex_encode(bytes: &[u8]) -> String {
 /// bumped to a new version. Content changes in `spec` belong to the open candidate.
 ///
 /// Returns `false` if signatures match (clean state) or if no signature is stored.
-/// Stored signatures created before content-only signatures are accepted as a
-/// legacy clean baseline when the full rendered-projection signature still matches.
 pub fn is_rfc_amended(rfc: &RfcIndex) -> bool {
     if rfc.rfc.phase == crate::model::RfcPhase::Spec {
         return false;
@@ -215,16 +213,5 @@ pub fn is_rfc_amended(rfc: &RfcIndex) -> bool {
     let Ok(current_content_sig) = compute_rfc_content_signature(rfc) else {
         return false;
     };
-    if stored_sig == &current_content_sig {
-        return false;
-    }
-
-    let Ok(current_full_sig) = compute_rfc_signature(rfc) else {
-        return false;
-    };
-    if stored_sig == &current_full_sig {
-        return false;
-    }
-
-    true
+    stored_sig != &current_content_sig
 }

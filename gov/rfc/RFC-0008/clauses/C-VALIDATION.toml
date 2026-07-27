@@ -1,0 +1,36 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-VALIDATION"
+title = "Conformance Validation"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["validation"]
+
+[content]
+text = """
+Project validation MUST validate every Conformance Case and the complete declared trace graph.
+
+Validation MUST report an error when:
+- a Case file fails its machine-readable schema;
+- a Case ID is duplicated or differs from its filename;
+- a title, path, or selector is empty;
+- a path is absolute, escapes the project root, resolves under the configured gov root, is missing, or does not resolve to a regular file;
+- two Cases use the same `(path, selector)` pair under the equality rule in [[RFC-0008:C-CONFORMANCE-CASE]];
+- a Case has no requirement binding;
+- a requirement `ref` is missing, is not a Clause, or identifies an informative Clause;
+- a requirement `version` is not present in the owning RFC changelog, predates the Clause `since` version, or differs from the current version of a draft RFC;
+- a requirement targets a pending Clause whose owning RFC is not draft;
+- a Case repeats the same requirement `ref`;
+- a Guard ID is missing or repeated within a Case;
+- a Case repeats a tag, or uses an unregistered or malformed tag; or
+- a Verification Guard `refs` entry identifies a Conformance Case.
+
+A pending Clause in a draft RFC has no `since` version. For such a Clause, validation MUST accept only a binding to the draft RFC current version. A pending Clause in a normative or deprecated RFC MUST NOT be a valid Case target because no RFC version owns it yet.
+
+A permanent Clause deletion MUST reject a Clause referenced by a Conformance Case and MUST identify the Case as a referrer. RFC or Clause status transitions and RFC version changes MUST NOT be rejected solely because they make a valid Case binding stale.
+
+A structurally valid stale, candidate, or provisional binding MUST NOT produce a project-validation diagnostic. An empty Case `guards` array MUST NOT produce a diagnostic. govctl validates identities, versions, paths, and typed edges; it MUST NOT claim to validate the opaque scenario semantics, selector resolution, or actual Guard execution.
+
+**Rationale:** Structural validation keeps declared traceability navigable and prevents silent data loss. Derived applicability avoids either blocking RFC evolution or forcing users to retarget stable Case IDs merely to keep the repository valid."""

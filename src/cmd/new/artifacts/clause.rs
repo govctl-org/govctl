@@ -62,6 +62,24 @@ pub(super) fn create(
     };
 
     let clause_path = config.clause_source_path(rfc_id, clause_name, "toml");
+    match std::fs::symlink_metadata(&clause_path) {
+        Ok(_) => {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0214ClauseAlreadyExists,
+                format!("Clause already exists: {clause_id}"),
+                clause_id,
+            ));
+        }
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {}
+        Err(err) => {
+            return Err(Diagnostic::io_error(
+                "read Clause storage metadata",
+                err,
+                config.display_path(&clause_path).display().to_string(),
+            ));
+        }
+    }
+    crate::load::validate_clause_storage_path(config, &clause_path).map_err(Diagnostic::from)?;
 
     let clause_wire: ClauseWire = clause.into();
 

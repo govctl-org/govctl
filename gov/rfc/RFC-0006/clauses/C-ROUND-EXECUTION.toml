@@ -48,7 +48,7 @@ When an open round exists, `loop run` MUST validate the round summary before adv
 - changed paths or explicitly state that no file changes were made
 - verification evidence, including existing `govctl verify --work WI-ID` or project guard output when applicable
 - blockers or open questions
-- note candidates that may become durable Work Item `notes` through explicit `govctl work add <WI-ID> notes ...`
+- note candidates that may become durable Work Item `notes` through explicit `govctl work edit <WI-ID> notes --add ...`
 
 If required summary evidence is missing, `loop run` MUST return a Diagnostic that names the round artifact to complete and MUST leave loop state unchanged.
 
@@ -58,4 +58,6 @@ If the relevant Work Items have already reached terminal Work Item lifecycle sta
 
 `loop run` MUST NOT infer loop failure, Work Item failure, or dependency blockage from the number of rounds opened or closed for a Work Item.
 
-Rationale: govctl can coordinate local execution state, Work Item metadata, dependency readiness, and verification evidence, but the agent performs implementation work. This keeps loop execution trace in local loop artifacts, preserves Work Items as durable outcome artifacts, and reuses existing `notes`, `depends_on`, `verify`, and `work move` mechanisms instead of inventing parallel systems. Retry budgets and repeated-invocation limits belong to callers such as skills, scripts, or humans because they decide how much autonomous execution is appropriate."""
+**Rationale:**
+
+govctl coordinates local execution state, Work Item metadata, dependency readiness, and verification evidence while the agent performs implementation work. This keeps loop execution trace in local loop artifacts and preserves Work Items as durable outcome artifacts. Retry budgets and repeated-invocation limits belong to callers because callers decide how much autonomous execution is appropriate."""

@@ -1,0 +1,11 @@
+#:schema ../schema/guard.schema.json
+
+[govctl]
+id = "GUARD-TUI-TESTS"
+title = "TUI tests"
+refs = ["RFC-0007"]
+tags = ["testing"]
+
+[check]
+command = "cargo test tui::"
+timeout_secs = 300

@@ -43,31 +43,11 @@ pub(super) fn validate_work_item_descriptions(
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0108WorkPlaceholderDescription,
                 format!(
-                    "Work item has placeholder description (hint: `govctl work set {} description \"...\"`)",
+                    "Work item has placeholder description (hint: `govctl work edit {} description --set \"...\"`)",
                     work.meta().id
                 ),
                 path_display,
             ));
         }
-    }
-}
-
-/// Report legacy inline execution history for migration awareness per [[ADR-0047]].
-pub(super) fn validate_work_item_legacy_inline_history(
-    index: &ProjectIndex,
-    config: &Config,
-    result: &mut ValidationResult,
-) {
-    for work in &index.work_items {
-        if work.spec.content.journal.is_empty() {
-            continue;
-        }
-
-        let path_display = config.display_path(&work.path).display().to_string();
-        result.diagnostics.push(Diagnostic::new(
-            DiagnosticCode::I0401WorkLegacyInlineHistory,
-            "Work item contains legacy inline execution history; move durable takeaways to notes and keep new execution trace in loop state.",
-            path_display,
-        ));
     }
 }

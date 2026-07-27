@@ -58,7 +58,15 @@ Manages reusable executable completion checks defined by [[RFC-0000:C-GUARD-DEF]
 - Storage: `gov/guard/` as individual TOML files
 - No lifecycle (guards are either present or removed)
 
-**6. `release` - Release Cut**
+**6. `conformance` - Conformance Case**
+
+Manages current non-normative acceptance-scenario declarations.
+
+- ID Format: `CONF-[A-Z][A-Z0-9-]*` (e.g., `CONF-RFC-BUMP`)
+- Storage: `gov/conformance/` as individual TOML files
+- No persistent lifecycle status
+
+**7. `release` - Release Cut**
 
 Manages local version-cut records and their included Work Item references.
 
@@ -82,7 +90,7 @@ All date-valued resource metadata fields (such as `created`, `updated`, `started
 
 **Tags:**
 
-RFCs, clauses, ADRs, Work Items, and guards MAY include an optional `tags` array in the `[govctl]` section. Each tag MUST be a string from the project's controlled vocabulary defined in `gov/config.toml` under `[tags] allowed`. Tags MUST match the pattern `[a-z][a-z0-9-]*` (lowercase kebab-case). Releases do not carry tags. `govctl check` MUST reject any artifact that references a tag not present in the allowed set.
+RFCs, clauses, ADRs, Work Items, guards, and Conformance Cases MAY include an optional `tags` array in the `[govctl]` section. Each tag MUST be a string from the project's controlled vocabulary defined in `gov/config.toml` under `[tags] allowed`. Tags MUST match the pattern `[a-z][a-z0-9-]*` (lowercase kebab-case). Releases do not carry tags. `govctl check` MUST reject any artifact that references a tag not present in the allowed set.
 
 **Future Extensions:**
 

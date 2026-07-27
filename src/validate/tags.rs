@@ -43,6 +43,11 @@ pub(super) fn validate_artifact_tags(
         check_tags(&work.spec.govctl.tags, &work.meta().id, &path);
     }
 
+    for case in &index.conformance_cases {
+        let path = config.display_path(&case.path).display().to_string();
+        check_tags(&case.meta().tags, &case.meta().id, &path);
+    }
+
     if let Ok(guard_result) = crate::parse::load_guards_with_warnings(config) {
         for guard in &guard_result.items {
             let path = config.display_path(&guard.path).display().to_string();

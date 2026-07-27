@@ -61,6 +61,8 @@ Commands MAY add format-specific flags (e.g., `--format-json-compact`) but MUST 
 
 `govctl status` is exempt from output format requirements and always produces human-readable tabular output intended for interactive use only.
 
+`govctl conformance trace` is a scoped exception and supports only `table` and `json`.
+
 **Consistency Requirements:**
 
 1. JSON/YAML/TOML output MUST match the internal schema exactly

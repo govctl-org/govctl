@@ -17,22 +17,12 @@ govctl <resource> <verb> [arguments] [flags]
 ```
 
 Where:
-- `<resource>` is a governance artifact type (rfc, adr, work, clause, release, guard)
-- `<verb>` is an operation on that resource (new, list, get, edit, delete, or resource-specific lifecycle operations)
-- `[arguments]` are positional parameters (typically IDs, titles, or values)
-- `[flags]` are optional modifiers (--filter, --output, --stdin, etc.)
+- `<resource>` is a governance artifact type such as `rfc`, `adr`, `work`, `clause`, `release`, or `guard`
+- `<verb>` is an operation defined for that resource, such as `new`, `list`, `get`, `show`, `edit`, `delete`, or a resource-specific lifecycle operation
+- `[arguments]` are positional parameters with stable roles
+- `[flags]` are modifiers defined by the selected operation
 
-**Rationale:**
-
-The resource-first structure (noun-first) provides several advantages over verb-first (operation-first):
-
-1. **Scoped Discovery:** `govctl rfc --help` shows only RFC operations, not all 30+ global commands
-2. **Namespace Clarity:** `govctl rfc finalize` is unambiguous; `govctl finalize` requires knowing it only applies to RFCs
-3. **Mental Model Alignment:** Users think "I want to work with RFCs" then "What can I do?", not "I want to finalize something, what can be finalized?"
-4. **Extensibility:** Adding `govctl rfc validate` doesn't pollute the global namespace
-5. **Industry Convention:** Docker, kubectl, git, cargo all use resource-scoping or similar patterns
-
-**Exceptions:**
+Only command and subcommand names defined by normative RFC clauses are part of the accepted CLI grammar. Implementations MUST reject alternative command-name and subcommand-name aliases. This restriction does not prohibit short option flags that are part of a documented command syntax.
 
 Global command exceptions are governed by [[RFC-0002:C-GLOBAL-COMMANDS]]. A command MAY remain at the global namespace when it operates across multiple resource types, performs project-level or CLI-level work, or manages local execution state that coordinates governed resources without becoming a governed artifact resource.
 
@@ -44,6 +34,6 @@ Release correction is a resource-first operation. Implementations MUST support `
 
 Both release forms MUST coexist. The token `undo` selects correction because it is not a valid semantic version; a semantic-version token selects release creation.
 
-**Implementation Note:**
+**Rationale:**
 
-For backwards compatibility during migration, verb-first aliases MAY be supported but MUST emit deprecation warnings. Full verb-first syntax MUST be removed in a major version release."""
+Resource-first organization provides scoped discovery, clear namespaces, stable argument roles, and room to extend one resource without polluting the global namespace. A canonical-only command vocabulary removes parser ambiguity and prevents documentation and agent metadata from teaching multiple spellings for the same operation."""

@@ -29,25 +29,34 @@ fn phase_style(phase: &str) -> Style {
 /// Main draw function
 pub fn draw(frame: &mut Frame, app: &mut App) {
     let area = frame.area();
+    let command_height = if chrome::shows_command_strip(app.view) {
+        3
+    } else {
+        0
+    };
     let chunks = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(3), // Header
+            Constraint::Length(command_height),
             Constraint::Min(5),    // Content
             Constraint::Length(3), // Footer
         ])
         .split(area);
 
     chrome::Header::new(app).render(frame, chunks[0]);
-    app.content_height = chunks[1].height;
+    if command_height > 0 {
+        chrome::CommandStrip::new(app).render(frame, chunks[1]);
+    }
+    app.content_height = chunks[2].height;
 
     let mut footer_status = None;
 
-    if let Some(viewport) = draw_content(frame, app, chunks[1]) {
+    if let Some(viewport) = draw_content(frame, app, chunks[2]) {
         footer_status = Some(viewport.footer_status(&mut app.scroll));
     }
 
-    chrome::Footer::new(app.view, footer_status.as_deref()).render(frame, chunks[2]);
+    chrome::Footer::new(app.view, footer_status.as_deref()).render(frame, chunks[3]);
 
     if app.show_help {
         help::draw_overlay(frame, app);
@@ -78,6 +87,10 @@ fn draw_content(frame: &mut Frame, app: &mut App, area: Rect) -> Option<DetailVi
         }
         View::GuardList => {
             lists::draw_guard(frame, app, area);
+            None
+        }
+        View::ConformanceList => {
+            lists::draw_conformance(frame, app, area);
             None
         }
         View::ReleaseList => {
@@ -117,6 +130,7 @@ fn draw_content(frame: &mut Frame, app: &mut App, area: Rect) -> Option<DetailVi
             Some(detail::draw_work(frame, app, area, idx))
         }
         View::GuardDetail(idx) => Some(detail::draw_guard(frame, app, area, idx)),
+        View::ConformanceDetail(idx) => Some(detail::draw_conformance(frame, app, area, idx)),
         View::ClauseDetail(rfc_idx, clause_idx) => {
             // Implements [[RFC-0003:C-DETAIL]]
             Some(detail::draw_clause(frame, app, area, rfc_idx, clause_idx))
@@ -145,11 +159,11 @@ fn wrapped_line_count(lines: &[Line], render_width: u16) -> usize {
         .sum()
 }
 
-fn rounded_block(title: &str) -> Block<'_> {
+fn panel_block(title: &str) -> Block<'_> {
     Block::default()
         .title(format!(" {} ", title))
         .borders(Borders::ALL)
-        .border_set(border::ROUNDED)
+        .border_set(border::PLAIN)
 }
 
 #[cfg(test)]

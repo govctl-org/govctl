@@ -7,7 +7,7 @@ fn test_guard_list() -> common::TestResult {
     let long_command = "echo 1234567890 1234567890 1234567890 1234567890 1234567890";
     write_guard(temp_dir.path(), "GUARD-BETA", long_command)?;
 
-    let output = run_commands(temp_dir.path(), &[&["guard", "list"]])?;
+    let output = run_commands(temp_dir.path(), &[&["guard", "list", "-o", "table"]])?;
     assert!(output.contains("exit: 0"), "output: {}", output);
     assert!(output.contains("GUARD-ALPHA"), "output: {}", output);
     assert!(output.contains("GUARD-BETA"), "output: {}", output);

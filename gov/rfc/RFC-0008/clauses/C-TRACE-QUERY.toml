@@ -1,0 +1,36 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-TRACE-QUERY"
+title = "Declared Trace Query"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+Implementations MUST support the resource-first query:
+
+```
+govctl conformance trace [TARGET] [--output <format>]
+```
+
+`TARGET` MAY be absent or identify one RFC, Clause, Conformance Case, or Verification Guard. An absent target MUST select all Cases. An RFC target MUST select Cases with at least one binding owned by that RFC. A Clause target MUST select Cases with a matching requirement `ref`. A Case target MUST select that Case. A Guard target MUST select Cases containing that Guard ID. Every selected Case record MUST retain all of its requirement and Guard bindings. An unknown or unsupported target MUST produce a diagnostic and a non-zero exit status.
+
+Each requirement binding MUST derive one requirement-applicability value:
+- `provisional` when its owning RFC is draft, the Clause is active, and the binding version equals the RFC current version;
+- `candidate` when its owning RFC is normative in `spec`, the Clause is active, the Clause has a `since` version, and the binding version equals the RFC current version;
+- `current` when its owning RFC is normative in `impl`, `test`, or `stable`, the Clause is active, the Clause has a `since` version, and the binding version equals the RFC current version; or
+- `stale` otherwise.
+
+A Case `requirement_applicability` value MUST be `stale` when any binding is stale. Otherwise it MUST be `provisional` when any binding is provisional. Otherwise it MUST be `candidate` when any binding is candidate. Otherwise it MUST be `current`. This value describes only the relationship to RFC versions and Clause lifecycle state. It MUST NOT imply that the path content, selector, Guard command, or execution result is current or valid.
+
+The logical result MUST be one collection of Case records. Each record MUST contain `id`, `title`, `tags`, `path`, `selector`, `requirements`, `guards`, and derived `requirement_applicability`. Each requirement record MUST contain `ref`, `version`, and its derived `requirement_applicability`. The command MUST NOT label any Case, Clause, or Guard as covered, passed, conformant, or evidenced.
+
+JSON output MUST encode the logical result as an object with a `cases` array. Table output MUST expose the same Case records in human-readable form. Cases MUST be sorted by ID. Tags and Guards MUST be unique and lexicographically sorted. Requirement records MUST be unique by `ref` and sorted by `ref` and then `version`.
+
+The command MUST support `table` and `json` output as a scoped exception to [[RFC-0002:C-OUTPUT-FORMAT]]. In a TTY the default MUST be `table`; outside a TTY the default MUST be `json`.
+
+The command MUST validate the complete Conformance Case graph before emitting data. Structural errors MUST produce a non-zero exit status and no partial result. Stale, candidate, or provisional bindings and Cases without Guards MUST remain successful trace results.
+
+**Rationale:** A single Case-oriented result is sufficient to derive every reverse relationship without materializing conflicting graph projections. Explicit applicability and vocabulary keep a declared mapping from being mistaken for execution evidence."""

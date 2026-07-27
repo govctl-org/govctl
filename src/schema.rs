@@ -12,7 +12,7 @@ pub struct SchemaTemplate {
     pub content: &'static str,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ArtifactSchema {
     Rfc,
     Clause,
@@ -20,6 +20,7 @@ pub enum ArtifactSchema {
     WorkItem,
     Release,
     Guard,
+    Conformance,
 }
 
 impl ArtifactSchema {
@@ -31,6 +32,7 @@ impl ArtifactSchema {
             Self::WorkItem => "work.schema.json",
             Self::Release => "release.schema.json",
             Self::Guard => "guard.schema.json",
+            Self::Conformance => "conformance.schema.json",
         }
     }
 
@@ -42,6 +44,7 @@ impl ArtifactSchema {
             Self::WorkItem => include_str!("../gov/schema/work.schema.json"),
             Self::Release => include_str!("../gov/schema/release.schema.json"),
             Self::Guard => include_str!("../gov/schema/guard.schema.json"),
+            Self::Conformance => include_str!("assets/conformance.schema.json"),
         }
     }
 
@@ -53,6 +56,7 @@ impl ArtifactSchema {
             Self::WorkItem => DiagnosticCode::E0401WorkSchemaInvalid,
             Self::Release => DiagnosticCode::E0704ReleaseSchemaInvalid,
             Self::Guard => DiagnosticCode::E1001GuardSchemaInvalid,
+            Self::Conformance => DiagnosticCode::E1301ConformanceSchemaInvalid,
         }
     }
 
@@ -64,6 +68,7 @@ impl ArtifactSchema {
             Self::WorkItem => "work item",
             Self::Release => "release",
             Self::Guard => "verification guard",
+            Self::Conformance => "conformance case",
         }
     }
 
@@ -77,6 +82,7 @@ impl ArtifactSchema {
             Self::WorkItem => "../schema/work.schema.json",
             Self::Release => "schema/release.schema.json",
             Self::Guard => "../schema/guard.schema.json",
+            Self::Conformance => "../schema/conformance.schema.json",
         }
     }
 }
@@ -110,6 +116,10 @@ pub const ARTIFACT_SCHEMA_TEMPLATES: &[SchemaTemplate] = &[
     SchemaTemplate {
         filename: "guard.schema.json",
         content: include_str!("../gov/schema/guard.schema.json"),
+    },
+    SchemaTemplate {
+        filename: "conformance.schema.json",
+        content: include_str!("assets/conformance.schema.json"),
     },
     SchemaTemplate {
         filename: "loop-state.schema.json",
@@ -180,15 +190,19 @@ fn validate_value(
     let schema_path = config.schema_dir().join(kind.filename());
     let schema_display = config.display_path(&schema_path).display().to_string();
 
-    let schema_text = match std::fs::read_to_string(&schema_path) {
-        Ok(text) => Cow::Owned(text),
-        Err(err) if err.kind() == ErrorKind::NotFound => Cow::Borrowed(kind.bundled_content()),
-        Err(err) => {
-            return Err(Diagnostic::new(
-                kind.diagnostic_code(),
-                format!("Failed to read schema file '{}': {}", schema_display, err),
-                schema_display,
-            ));
+    let schema_text = if kind == ArtifactSchema::Conformance && config.schema.version < 4 {
+        Cow::Borrowed(kind.bundled_content())
+    } else {
+        match std::fs::read_to_string(&schema_path) {
+            Ok(text) => Cow::Owned(text),
+            Err(err) if err.kind() == ErrorKind::NotFound => Cow::Borrowed(kind.bundled_content()),
+            Err(err) => {
+                return Err(Diagnostic::new(
+                    kind.diagnostic_code(),
+                    format!("Failed to read schema file '{}': {}", schema_display, err),
+                    schema_display,
+                ));
+            }
         }
     };
 

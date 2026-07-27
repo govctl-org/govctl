@@ -72,7 +72,7 @@ pub fn move_item(
                 DiagnosticCode::E0407WorkMissingCriteria,
                 format!(
                     "Cannot mark as done: no acceptance criteria defined.\n\
-                     Add criteria with: govctl add {} acceptance_criteria \"<criterion>\"",
+                     Add criteria with: govctl work edit {} acceptance_criteria --add \"fixed: <criterion>\"",
                     work_id
                 ),
                 work_id,

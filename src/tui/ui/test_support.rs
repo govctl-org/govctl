@@ -1,7 +1,8 @@
 use super::super::app::App;
 use crate::model::{
     AdrContent, AdrEntry, AdrMeta, AdrSpec, AdrStatus, ClauseEntry, ClauseKind, ClauseSpec,
-    ClauseStatus, ProjectIndex, RfcIndex, RfcPhase, RfcSpec, RfcStatus, WorkItemContent,
+    ClauseStatus, ConformanceContent, ConformanceEntry, ConformanceMeta, ConformanceSpec,
+    ProjectIndex, RequirementBinding, RfcIndex, RfcPhase, RfcSpec, RfcStatus, WorkItemContent,
     WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
 };
 use ratatui::buffer::Buffer;
@@ -47,6 +48,7 @@ pub(super) fn project_index(
         rfcs,
         adrs,
         work_items,
+        conformance_cases: vec![],
     }
 }
 
@@ -125,5 +127,33 @@ pub(super) fn work_item(
             verification: WorkItemVerification::default(),
         },
         path: PathBuf::from(format!("gov/work/{id}.toml")),
+    }
+}
+
+pub(super) fn conformance_case(
+    id: &str,
+    title: &str,
+    clause_ref: &str,
+    version: &str,
+    tags: &[&str],
+) -> ConformanceEntry {
+    ConformanceEntry {
+        spec: ConformanceSpec {
+            govctl: ConformanceMeta {
+                id: id.to_string(),
+                title: title.to_string(),
+                tags: tags.iter().map(|tag| tag.to_string()).collect(),
+            },
+            case: ConformanceContent {
+                path: "tests/conformance/case.toml".to_string(),
+                selector: "case::selector".to_string(),
+                requirements: vec![RequirementBinding {
+                    clause_ref: clause_ref.to_string(),
+                    version: version.to_string(),
+                }],
+                guards: vec!["GUARD-CONFORMANCE".to_string()],
+            },
+        },
+        path: PathBuf::from(format!("gov/conformance/{id}.toml")),
     }
 }

@@ -1,12 +1,9 @@
 use super::{
-    ToPlan, compile_common_add, compile_common_deprecate, compile_common_edit, compile_common_get,
-    compile_common_list, compile_common_remove, compile_common_render, compile_common_set,
-    compile_common_show, compile_common_supersede,
+    ToPlan, compile_common_deprecate, compile_common_edit, compile_common_get, compile_common_list,
+    compile_common_render, compile_common_show, compile_common_supersede,
 };
 use crate::cmd;
-use crate::command_router::{
-    CommandPlan, CreateOp, EditExtras, LifecycleOp, plan_create, plan_lifecycle,
-};
+use crate::command_router::{CommandPlan, CreateOp, LifecycleOp, plan_create, plan_lifecycle};
 use crate::diagnostic::DiagnosticResult;
 use crate::write::BumpLevel;
 use crate::{ListTarget, RfcCommand};
@@ -24,10 +21,7 @@ impl ToPlan for RfcCommand {
                     id: id.clone(),
                 },
             )),
-            RfcCommand::Edit(args) => compile_common_edit(args, EditExtras::default()),
-            RfcCommand::Set(args) => compile_common_set(args),
-            RfcCommand::Add(args) => compile_common_add(args, EditExtras::default()),
-            RfcCommand::Remove(args) => compile_common_remove(args),
+            RfcCommand::Edit(args) => compile_common_edit(args),
             RfcCommand::Bump {
                 id,
                 patch,

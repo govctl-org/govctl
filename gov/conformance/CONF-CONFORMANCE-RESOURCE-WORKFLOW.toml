@@ -1,0 +1,18 @@
+#:schema ../schema/conformance.schema.json
+
+[govctl]
+id = "CONF-CONFORMANCE-RESOURCE-WORKFLOW"
+title = "Conformance resource workflow"
+
+[case]
+path = "tests/test_conformance.rs"
+selector = "conformance_crud_trace_search_and_check_form_one_resource_path"
+guards = ["GUARD-CONFORMANCE-TESTS"]
+
+[[case.requirements]]
+ref = "RFC-0008:C-CONFORMANCE-CASE"
+version = "0.1.0"
+
+[[case.requirements]]
+ref = "RFC-0008:C-COMMAND-SURFACE"
+version = "0.1.0"

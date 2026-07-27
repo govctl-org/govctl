@@ -19,11 +19,9 @@ NOTES:
 pub(super) const CHECK: &str = r#"EXAMPLES:
     govctl check
     govctl check -W
-    govctl check --has-active
 
 NOTES:
     - `-W/--deny-warnings` treats warnings as errors.
-    - `--has-active` asserts that an active work item exists.
 "#;
 
 pub(super) const STATUS: &str = r#"EXAMPLES:
@@ -105,6 +103,9 @@ START HERE:
     - New RFC: `govctl rfc new "Title"`
     - Inspect one RFC: `govctl rfc get RFC-0001`
     - Render one RFC: `govctl rfc show RFC-0001`
+
+NOTES:
+    - Clause references such as `RFC-0001:C-SCOPE` are first-class `govctl clause` resources, not RFC subcommands or RFC edit paths.
 "#;
 
 pub(super) const CLAUSE: &str = r#"COMMON WORKFLOW:
@@ -117,26 +118,29 @@ pub(super) const CLAUSE: &str = r#"COMMON WORKFLOW:
 START HERE:
     - New clause: `govctl clause new RFC-0001:C-SCOPE "Scope"`
     - Inspect one clause: `govctl clause get RFC-0001:C-SCOPE`
+
+NOTES:
+    - Always use the root `govctl clause` namespace for Clause operations, even though Clause storage and IDs are scoped by an RFC.
 "#;
 
 pub(super) const ADR: &str = r#"COMMON WORKFLOW:
     1. `govctl adr list` to discover ADRs
     2. `govctl adr get <ID> ...` for metadata/fields
     3. `govctl adr show <ID>` for current rendered prose (`--history` for the archive)
-    4. `govctl adr edit/add/tick` to work through alternatives
+    4. `govctl adr edit` to work through alternatives
     5. `govctl adr accept/reject/...` for lifecycle
 
 START HERE:
     - New ADR: `govctl adr new "Title"`
     - Inspect one ADR: `govctl adr get ADR-0001`
-    - Move an alternative to accepted: `govctl adr tick ADR-0001 alternatives --at 0 -s accepted`
+    - Move an alternative to accepted: `govctl adr edit ADR-0001 alternatives[0] --tick accepted`
 "#;
 
 pub(super) const WORK: &str = r#"COMMON WORKFLOW:
     1. `govctl work list` to discover work items
     2. `govctl work get <ID> ...` for metadata/fields
-    3. `govctl work edit/add` to define scope and acceptance criteria
-    4. `govctl work tick` to update acceptance-criteria status
+    3. `govctl work edit` to define scope and acceptance criteria
+    4. `govctl work edit <ID> acceptance_criteria[N] --tick <status>` to update criterion status
     5. `govctl work move` to change lifecycle state
 
 START HERE:
@@ -148,7 +152,7 @@ START HERE:
 pub(super) const GUARD: &str = r#"COMMON WORKFLOW:
     1. `govctl guard list` to discover guards
     2. `govctl guard get <ID> ...` for metadata/fields
-    3. `govctl guard edit/set` to define checks
+    3. `govctl guard edit` to define checks
     4. `govctl verify <GUARD-ID>` or `govctl verify --work <WI-ID>` to run guards
 
 START HERE:
@@ -170,10 +174,9 @@ NOTES:
 pub(super) const DESCRIBE: &str = r#"EXAMPLES:
     govctl describe
     govctl describe --context
-    govctl describe -o json
 
 NOTES:
-    - `--context` includes current project state and suggested next actions.
+    - `--context` includes lifecycle counts, actionable records, and read-only discovery commands.
     - Output is intended for agents and tooling.
 "#;
 

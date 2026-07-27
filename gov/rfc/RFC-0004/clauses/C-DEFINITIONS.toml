@@ -10,9 +10,9 @@ tags = ["safety"]
 
 [content]
 text = """
-**Write command:** A govctl invocation that may create, modify, or delete files under the gov root, or write files under the docs root (e.g. render output). Any invocation that writes files under the docs root is a write command regardless of command name. Examples: rfc new, adr new, work new, rfc set, adr set, work set, rfc edit, adr edit, work edit, clause new, clause edit, rfc bump, rfc finalize, rfc advance, adr accept, work tick, work move, render.
+**Write command:** A govctl invocation that may create, modify, or delete files under the gov root, or write files under the docs root (e.g. render output). Any invocation that writes files under the docs root is a write command regardless of command name. Examples: rfc new, adr new, work new, clause new, guard new, rfc edit, adr edit, work edit, clause edit, guard edit, rfc bump, rfc finalize, rfc advance, adr accept, work move, render.
 
-**Read-only command:** A govctl invocation that does not modify gov or docs. Examples: rfc list, adr list, work list, rfc get, adr get, work get, check, status. The commands show and describe are read-only when they do not write to gov or docs (e.g. when they output only to stdout).
+**Read-only command:** A govctl invocation that does not modify gov or docs. Examples: rfc list, adr list, work list, clause list, guard list, rfc get, adr get, work get, clause get, guard get, check, status. The commands show and describe are read-only when they do not write to gov or docs (e.g. when they output only to stdout).
 
 **Concurrent invocations:** Two or more govctl processes running at the same time, such that their execution may overlap (e.g. multiple agent tasks, or a script spawning parallel govctl calls).
 

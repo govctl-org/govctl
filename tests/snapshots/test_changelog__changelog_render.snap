@@ -18,6 +18,15 @@ Work Items
   done         4
   Total        4
 
+Verification Guards
+  Total        0
+
+Conformance Cases
+  Total        0
+
+Releases
+  Total        1
+
 exit: 0
 
 $ govctl render changelog --dry-run

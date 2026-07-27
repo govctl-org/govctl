@@ -22,6 +22,18 @@ pub(super) fn clause_deletion_referrers(
     })?;
     referrers.extend(inline_clause_referrers(index, &inline_re, clause_id));
     referrers.extend(guard_referrers(config, clause_id)?);
+    referrers.extend(
+        crate::parse::load_conformance_cases(config)?
+            .into_iter()
+            .filter(|case| {
+                case.spec
+                    .case
+                    .requirements
+                    .iter()
+                    .any(|requirement| requirement.clause_ref == clause_id)
+            })
+            .map(|case| case.meta().id.clone()),
+    );
     referrers.sort();
     referrers.dedup();
     Ok(referrers)
@@ -103,8 +115,7 @@ fn inline_clause_referrers(
         let content = &work.spec.content;
         let mut direct_content = std::iter::once(&content.description)
             .chain(content.acceptance_criteria.iter().map(|item| &item.text))
-            .chain(content.notes.iter())
-            .chain(content.journal.iter().map(|entry| &entry.content));
+            .chain(content.notes.iter());
         if direct_content.any(|text| text_references(inline_re, text, target_id)) {
             referrers.push(work.spec.govctl.id.clone());
         }

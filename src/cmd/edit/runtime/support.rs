@@ -126,6 +126,7 @@ pub(super) fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str)
         ArtifactType::Adr => format!("Unknown ADR field: {field}"),
         ArtifactType::WorkItem => format!("Unknown work item field: {field}"),
         ArtifactType::Guard => format!("Unknown guard field: {field}"),
+        ArtifactType::Conformance => format!("Unknown Conformance Case field: {field}"),
     };
     Diagnostic::new(DiagnosticCode::E0803UnknownField, msg, id)
 }

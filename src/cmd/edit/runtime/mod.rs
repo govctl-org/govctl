@@ -6,13 +6,13 @@ mod spec;
 mod support;
 
 pub use self::list::{
-    add_simple_list_value, get_simple_list_item, remove_simple_list_values_with_matcher,
-    remove_simple_status_list_values_with_matcher, set_simple_list_item,
-    tick_simple_status_list_item_with_matcher,
+    add_simple_list_value, get_simple_list_item, get_simple_list_value,
+    remove_simple_list_values_with_matcher, remove_simple_status_list_values_with_matcher,
+    set_simple_list_item, tick_simple_status_list_item_with_matcher,
 };
 pub use nested::{
-    add_nested_list_value, get_nested_field, remove_nested_list_values, set_nested_field,
-    set_nested_list_item, tick_nested_list_item_with_matcher,
+    add_nested_list_value, get_nested_field, get_nested_value, remove_nested_list_values,
+    set_nested_field, set_nested_list_item, tick_nested_list_item_with_matcher,
 };
 
 use self::mutate::{apply_set, ensure_value_path_mut};
@@ -44,6 +44,20 @@ pub fn get_simple_field(
         return Err(unknown_field_error(artifact, field, id));
     };
     render_field(doc, spec, id)
+}
+
+pub fn get_simple_value(
+    artifact: ArtifactType,
+    doc: &Value,
+    field: &str,
+    id: &str,
+) -> DiagnosticResult<Value> {
+    let Some(spec) = simple_field_spec(artifact, field) else {
+        return Err(unknown_field_error(artifact, field, id));
+    };
+    Ok(support::value_at_path(doc, spec.path)
+        .cloned()
+        .unwrap_or(Value::Null))
 }
 
 /// Set a simple field on a serialized artifact document.

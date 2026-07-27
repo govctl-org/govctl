@@ -23,7 +23,6 @@ pub fn bump(
     changes: &[String],
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    require_rfc_content_signature_schema(config, rfc_id)?;
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let mut rfc = read_rfc(config, &rfc_path)?;
@@ -101,7 +100,6 @@ pub fn bump(
             ));
         }
         (None, None, false) => {
-            require_changelog_update_ready(config, &rfc_path, rfc_id)?;
             for change in changes {
                 add_changelog_change(&mut rfc, change)?;
             }
@@ -213,7 +211,6 @@ pub fn advance(
     phase: RfcPhase,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
-    require_rfc_content_signature_schema(config, rfc_id)?;
     let rfc_path = require_rfc_toml_path(config, rfc_id)?;
 
     let rfc = read_rfc(config, &rfc_path)?;
@@ -278,14 +275,6 @@ pub fn advance(
             .ok_or_else(|| missing_sealed_signature(rfc_id, "advance RFC phase"))?;
         if stored_signature == &current_signature {
             None
-        } else if crate::signature::compute_rfc_signature(&rfc_index)
-            .is_ok_and(|legacy| stored_signature == &legacy)
-        {
-            return Err(Diagnostic::new(
-                DiagnosticCode::E0505MigrationRequired,
-                "Cannot advance phase while the RFC has a legacy amendment signature. Run `govctl migrate` before advancing.",
-                rfc_id,
-            ));
         } else {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0114RfcPendingAmendment,
@@ -325,30 +314,19 @@ fn valid_rfc_phase_targets(phase: RfcPhase) -> &'static str {
     }
 }
 
-fn require_rfc_content_signature_schema(config: &Config, rfc_id: &str) -> DiagnosticResult<()> {
-    // Older schemas require the explicit migration path in [[RFC-0002:C-GLOBAL-COMMANDS]].
-    let required = crate::cmd::migrate::RFC_CONTENT_SIGNATURE_SCHEMA_VERSION;
-    if config.schema.version >= required {
-        return Ok(());
-    }
-
-    Err(Diagnostic::new(
-        DiagnosticCode::E0505MigrationRequired,
-        format!(
-            "RFC amendment signatures require schema version {required} (found {}). Run `govctl migrate` before bumping or advancing RFCs.",
-            config.schema.version
-        ),
-        rfc_id,
-    ))
-}
-
 fn write_lifecycle_rfc(
     config: &Config,
     rfc_path: &Path,
     rfc: &RfcSpec,
     op: WriteOp,
 ) -> DiagnosticResult<()> {
-    crate::write::write_rfc(rfc_path, rfc, op, Some(&config.display_path(rfc_path)))
+    crate::write::write_rfc(
+        config,
+        rfc_path,
+        rfc,
+        op,
+        Some(&config.display_path(rfc_path)),
+    )
 }
 
 fn ensure_rfc_has_content_amendment(
@@ -356,13 +334,12 @@ fn ensure_rfc_has_content_amendment(
     rfc_path: &Path,
     rfc_id: &str,
 ) -> DiagnosticResult<()> {
-    if !pending_clause_ids(config, rfc_path)?.is_empty() {
-        return Ok(());
-    }
-
     let rfc_index = crate::load::load_rfc(config, rfc_path)?;
     if rfc_index.rfc.signature.is_none() {
         return Err(missing_sealed_signature(rfc_id, "bump RFC version"));
+    }
+    if !pending_clause_ids(config, rfc_path)?.is_empty() {
+        return Ok(());
     }
     if crate::signature::is_rfc_amended(&rfc_index) {
         return Ok(());
@@ -379,34 +356,8 @@ fn missing_sealed_signature(rfc_id: &str, action: &str) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0505MigrationRequired,
         format!(
-            "Cannot {action} without a sealed RFC content signature. Run `govctl migrate` or restore the sealed signature baseline from version-control history."
+            "Cannot {action} without a sealed RFC content signature. Restore the sealed baseline from version-control history."
         ),
         rfc_id,
     )
-}
-
-pub(crate) fn require_changelog_update_ready(
-    config: &Config,
-    rfc_path: &Path,
-    rfc_id: &str,
-) -> DiagnosticResult<()> {
-    require_rfc_content_signature_schema(config, rfc_id)?;
-    let rfc_index = crate::load::load_rfc(config, rfc_path)?;
-    let Some(stored_signature) = &rfc_index.rfc.signature else {
-        return Ok(());
-    };
-    let content_signature = crate::signature::compute_rfc_content_signature(&rfc_index)?;
-    if stored_signature == &content_signature {
-        return Ok(());
-    }
-    if crate::signature::compute_rfc_signature(&rfc_index)
-        .is_ok_and(|legacy| stored_signature == &legacy)
-    {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0505MigrationRequired,
-            "Cannot update the changelog while the RFC has a legacy amendment signature. Migrate the repository signature baseline first.",
-            rfc_id,
-        ));
-    }
-    Ok(())
 }

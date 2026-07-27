@@ -65,7 +65,7 @@ fn test_tag_delete_referenced() -> TestResult {
         &[
             &["tag", "new", "caching"],
             &["adr", "new", "Test Decision"],
-            &["adr", "add", "ADR-0001", "tags", "caching"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "caching"],
             &["tag", "delete", "caching"],
         ],
     )?;
@@ -86,7 +86,7 @@ fn test_tag_list_plain_and_json_output() -> TestResult {
             &["tag", "new", "caching"],
             &["tag", "new", "security"],
             &["adr", "new", "Tagged Decision"],
-            &["adr", "add", "ADR-0001", "tags", "caching"],
+            &["adr", "edit", "ADR-0001", "tags", "--add", "caching"],
         ],
     )?;
 

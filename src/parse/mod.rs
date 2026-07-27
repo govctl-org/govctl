@@ -5,7 +5,8 @@ mod toml_io;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{
-    AdrEntry, AdrSpec, GuardEntry, GuardSpec, ReleasesFile, WorkItemEntry, WorkItemSpec,
+    AdrEntry, AdrSpec, ConformanceEntry, ConformanceSpec, GuardEntry, GuardSpec, ReleasesFile,
+    WorkItemEntry, WorkItemSpec,
 };
 use crate::schema::ArtifactSchema;
 use crate::write::WriteOp;
@@ -41,7 +42,6 @@ pub fn load_adr(config: &Config, path: &Path) -> Result<AdrEntry, Diagnostic> {
         DiagnosticCode::E0301AdrSchemaInvalid,
         "Invalid TOML",
         "Invalid ADR structure",
-        |_| {},
     )?;
 
     Ok(AdrEntry {
@@ -108,7 +108,6 @@ pub fn load_guard(config: &Config, path: &Path) -> Result<GuardEntry, Diagnostic
         DiagnosticCode::E1001GuardSchemaInvalid,
         "Invalid TOML",
         "Invalid verification guard structure",
-        |_| {},
     )?;
 
     Ok(GuardEntry {
@@ -126,24 +125,12 @@ pub fn load_work_item(config: &Config, path: &Path) -> Result<WorkItemEntry, Dia
         DiagnosticCode::E0401WorkSchemaInvalid,
         "Invalid TOML",
         "Invalid work item structure",
-        strip_legacy_inline_history_for_schema,
     )?;
 
     Ok(WorkItemEntry {
         spec,
         path: path.to_path_buf(),
     })
-}
-
-fn strip_legacy_inline_history_for_schema(raw: &mut toml::Value) {
-    let Some(content) = raw
-        .as_table_mut()
-        .and_then(|root| root.get_mut("content"))
-        .and_then(toml::Value::as_table_mut)
-    else {
-        return;
-    };
-    content.remove("journal");
 }
 
 /// Write a work item to TOML file
@@ -180,6 +167,90 @@ pub fn write_guard(
     )
 }
 
+/// Load all Conformance Cases from the conformance directory.
+pub fn load_conformance_cases(config: &Config) -> Result<Vec<ConformanceEntry>, Diagnostic> {
+    load_conformance_cases_with_warnings(config).map(|result| result.items)
+}
+
+/// Load all Conformance Cases, returning both items and parse warnings.
+pub fn load_conformance_cases_with_warnings(
+    config: &Config,
+) -> Result<LoadResult<ConformanceEntry>, Diagnostic> {
+    let dir = config.conformance_dir();
+    let entries = match std::fs::read_dir(&dir) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(LoadResult {
+                items: vec![],
+                warnings: vec![],
+            });
+        }
+        Err(error) => {
+            return Err(Diagnostic::io_error(
+                "read Conformance Case directory",
+                error,
+                config.display_path(&dir).display().to_string(),
+            ));
+        }
+    };
+    let mut items = Vec::new();
+    for entry in entries {
+        let path = entry
+            .map_err(|error| {
+                Diagnostic::io_error(
+                    "read Conformance Case directory entry",
+                    error,
+                    config.display_path(&dir).display().to_string(),
+                )
+            })?
+            .path();
+        if path
+            .extension()
+            .is_some_and(|extension| extension == "toml")
+        {
+            items.push(load_conformance_case(config, &path)?);
+        }
+    }
+    items.sort_by(|left, right| left.meta().id.cmp(&right.meta().id));
+    Ok(LoadResult {
+        items,
+        warnings: vec![],
+    })
+}
+
+/// Load one Conformance Case from TOML.
+pub fn load_conformance_case(config: &Config, path: &Path) -> Result<ConformanceEntry, Diagnostic> {
+    let spec = toml_io::load_toml_spec(
+        config,
+        path,
+        ArtifactSchema::Conformance,
+        DiagnosticCode::E1301ConformanceSchemaInvalid,
+        "Invalid TOML",
+        "Invalid Conformance Case structure",
+    )?;
+    Ok(ConformanceEntry {
+        spec,
+        path: path.to_path_buf(),
+    })
+}
+
+/// Write one Conformance Case to TOML.
+pub fn write_conformance_case(
+    path: &Path,
+    spec: &ConformanceSpec,
+    op: WriteOp,
+    display_path: Option<&Path>,
+) -> Result<(), Diagnostic> {
+    toml_io::write_toml_spec(
+        path,
+        ArtifactSchema::Conformance,
+        spec,
+        op,
+        display_path,
+        "Failed to serialize Conformance Case TOML",
+    )
+}
+
 /// Load releases from gov/releases.toml
 /// Returns empty ReleasesFile if file doesn't exist.
 /// Validates that all versions are valid semver.
@@ -196,7 +267,6 @@ pub fn load_releases(config: &Config) -> Result<ReleasesFile, Diagnostic> {
         DiagnosticCode::E0704ReleaseSchemaInvalid,
         "Invalid releases.toml",
         "Invalid release structure",
-        |_| {},
     )?;
 
     // Validate all versions are valid semver

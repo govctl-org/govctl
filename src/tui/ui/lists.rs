@@ -2,8 +2,9 @@ use super::super::app::App;
 use super::components::{
     PhaseCell, ResourceListRow, ResourceTable, ResourceTableSpec, StatusText, TagsCell,
 };
-use super::rounded_block;
+use super::panel_block;
 use crate::diagnostic::DiagnosticLevel;
+use crate::model::ConformanceApplicability;
 use ratatui::{
     prelude::*,
     widgets::{Paragraph, Row, Wrap},
@@ -22,9 +23,16 @@ pub(super) fn draw_rfc(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(10),
                 Constraint::Min(15),
             ],
+            compact_widths: vec![
+                Constraint::Length(10),
+                Constraint::Min(16),
+                Constraint::Length(12),
+                Constraint::Length(8),
+                Constraint::Length(0),
+            ],
             headers: &["ID", "Title", "Status", "Phase", "Tags"],
             header_color: Color::Cyan,
-            title: "📋 RFCs",
+            title: "RFC INDEX",
             border_color: Color::Blue,
         },
         |rfc| {
@@ -55,9 +63,15 @@ pub(super) fn draw_adr(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(14),
                 Constraint::Min(15),
             ],
+            compact_widths: vec![
+                Constraint::Length(10),
+                Constraint::Min(20),
+                Constraint::Length(12),
+                Constraint::Length(0),
+            ],
             headers: &["ID", "Title", "Status", "Tags"],
             header_color: Color::Green,
-            title: "📝 ADRs",
+            title: "ADR INDEX",
             border_color: Color::Green,
         },
         |adr| {
@@ -86,9 +100,15 @@ pub(super) fn draw_work(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(14),
                 Constraint::Min(15),
             ],
+            compact_widths: vec![
+                Constraint::Length(22),
+                Constraint::Min(14),
+                Constraint::Length(12),
+                Constraint::Length(0),
+            ],
             headers: &["ID", "Title", "Status", "Tags"],
             header_color: Color::Yellow,
-            title: "📌 Work Items",
+            title: "WORK QUEUE",
             border_color: Color::Yellow,
         },
         |item| {
@@ -119,9 +139,16 @@ pub(super) fn draw_clause(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(12),
                 Constraint::Min(12),
             ],
+            compact_widths: vec![
+                Constraint::Length(10),
+                Constraint::Length(14),
+                Constraint::Min(12),
+                Constraint::Length(11),
+                Constraint::Length(0),
+            ],
             headers: &["RFC", "Clause", "Title", "Status", "Tags"],
             header_color: Color::Magenta,
-            title: "Clauses",
+            title: "CLAUSE INDEX",
             border_color: Color::Magenta,
         },
         |entry| {
@@ -151,9 +178,15 @@ pub(super) fn draw_guard(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(10),
                 Constraint::Min(24),
             ],
+            compact_widths: vec![
+                Constraint::Length(18),
+                Constraint::Min(14),
+                Constraint::Length(8),
+                Constraint::Length(0),
+            ],
             headers: &["ID", "Title", "Timeout", "Command"],
             header_color: Color::LightBlue,
-            title: "Guards",
+            title: "GUARD MATRIX",
             border_color: Color::LightBlue,
         },
         |guard| {
@@ -166,6 +199,74 @@ pub(super) fn draw_guard(frame: &mut Frame, app: &mut App, area: Rect) {
         },
     )
     .render(frame, area, &mut app.table_state);
+}
+
+// Implements [[RFC-0007:C-CONFORMANCE-VIEWS]]: declared trace relationships are browsable.
+pub(super) fn draw_conformance(frame: &mut Frame, app: &mut App, area: Rect) {
+    let indices = app.list_indices();
+    let cases = app
+        .index
+        .conformance_cases
+        .iter()
+        .map(|case| crate::model::derive_conformance_trace(case, &app.index))
+        .collect::<Vec<_>>();
+    ResourceTable::from_indexed_items(
+        &cases,
+        &indices,
+        ResourceTableSpec {
+            widths: vec![
+                Constraint::Min(26),
+                Constraint::Min(16),
+                Constraint::Length(13),
+                Constraint::Min(20),
+                Constraint::Min(14),
+                Constraint::Min(13),
+            ],
+            compact_widths: vec![
+                Constraint::Length(28),
+                Constraint::Min(16),
+                Constraint::Length(12),
+                Constraint::Length(0),
+                Constraint::Length(0),
+                Constraint::Length(0),
+            ],
+            headers: &[
+                "ID",
+                "Title",
+                "Applicability",
+                "Scenario path",
+                "Selector",
+                "Guards",
+            ],
+            header_color: Color::LightMagenta,
+            title: "CASE TRACE",
+            border_color: Color::LightMagenta,
+        },
+        |case| {
+            Row::new(vec![
+                Line::from(case.id.clone()),
+                Line::from(case.title.clone()),
+                Line::styled(
+                    case.requirement_applicability.to_string(),
+                    applicability_style(case.requirement_applicability),
+                ),
+                Line::from(case.path.clone()),
+                Line::from(case.selector.clone()),
+                Line::from(case.guards.join(", ")),
+            ])
+        },
+    )
+    .render(frame, area, &mut app.table_state);
+}
+
+fn applicability_style(applicability: ConformanceApplicability) -> Style {
+    let color = match applicability {
+        ConformanceApplicability::Stale => Color::Red,
+        ConformanceApplicability::Provisional => Color::Yellow,
+        ConformanceApplicability::Candidate => Color::Cyan,
+        ConformanceApplicability::Current => Color::Green,
+    };
+    Style::default().fg(color).bold()
 }
 
 // Implements [[RFC-0007:C-COCKPIT-VIEWS]]: release browsing view.
@@ -181,9 +282,15 @@ pub(super) fn draw_release(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(8),
                 Constraint::Min(30),
             ],
+            compact_widths: vec![
+                Constraint::Length(10),
+                Constraint::Length(10),
+                Constraint::Length(6),
+                Constraint::Min(20),
+            ],
             headers: &["Version", "Date", "Refs", "Work Items"],
             header_color: Color::Cyan,
-            title: "Releases",
+            title: "RELEASE LOG",
             border_color: Color::Cyan,
         },
         |release| {
@@ -206,9 +313,10 @@ pub(super) fn draw_tag(frame: &mut Frame, app: &mut App, area: Rect) {
         &indices,
         ResourceTableSpec {
             widths: vec![Constraint::Min(20), Constraint::Length(8)],
+            compact_widths: vec![Constraint::Min(20), Constraint::Length(8)],
             headers: &["Tag", "Count"],
             header_color: Color::Magenta,
-            title: "Tags",
+            title: "TAG INDEX",
             border_color: Color::Magenta,
         },
         |tag| {
@@ -236,9 +344,17 @@ pub(super) fn draw_loop(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Length(16),
                 Constraint::Min(28),
             ],
+            compact_widths: vec![
+                Constraint::Length(20),
+                Constraint::Length(10),
+                Constraint::Length(6),
+                Constraint::Length(7),
+                Constraint::Length(12),
+                Constraint::Length(0),
+            ],
             headers: &["ID", "State", "Items", "Rounds", "Action", "Work"],
             header_color: Color::Yellow,
-            title: "Loops",
+            title: "LOOP CONTROL",
             border_color: Color::Yellow,
         },
         |entry| {
@@ -300,7 +416,7 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
         frame.render_widget(
             Paragraph::new(message)
                 .wrap(Wrap { trim: false })
-                .block(rounded_block("Search").border_style(Style::default().fg(Color::Red))),
+                .block(panel_block("SEARCH").border_style(Style::default().fg(Color::Red))),
             area,
         );
         return;
@@ -317,9 +433,15 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Min(28),
                 Constraint::Min(36),
             ],
+            compact_widths: vec![
+                Constraint::Length(7),
+                Constraint::Length(16),
+                Constraint::Min(20),
+                Constraint::Length(0),
+            ],
             headers: &["Kind", "ID", "Title", "Snippet"],
             header_color: Color::Green,
-            title: "Search",
+            title: "SEARCH",
             border_color: Color::Green,
         },
         |result| {
@@ -347,9 +469,15 @@ pub(super) fn draw_diagnostics(frame: &mut Frame, app: &mut App, area: Rect) {
                 Constraint::Min(44),
                 Constraint::Min(24),
             ],
+            compact_widths: vec![
+                Constraint::Length(8),
+                Constraint::Length(7),
+                Constraint::Min(28),
+                Constraint::Length(0),
+            ],
             headers: &["Level", "Code", "Message", "Target"],
             header_color: Color::Red,
-            title: "Diagnostics",
+            title: "DIAGNOSTICS",
             border_color: Color::Red,
         },
         |diagnostic| {

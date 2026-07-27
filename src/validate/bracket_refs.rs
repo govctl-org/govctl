@@ -7,7 +7,7 @@ use crate::model::{AdrStatus, ProjectIndex, RfcStatus, WorkItemStatus};
 use regex::Regex;
 use std::collections::HashSet;
 
-const BARE_ARTIFACT_ID_PATTERN: &str = r"\b(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3}))\b";
+const BARE_ARTIFACT_ID_PATTERN: &str = r"\b(RFC-\d{4}(?::C-[A-Z][A-Z0-9-]*)?|ADR-\d{4}|WI-\d{4}-\d{2}-\d{2}-(?:[a-f0-9]{4}(?:-\d{3})?|\d{3})|CONF-[A-Z][A-Z0-9-]*)\b";
 
 struct ReferenceScanner {
     bracket_re: Regex,
@@ -19,6 +19,20 @@ struct ReferenceScanner {
 struct TextSource<'a> {
     path: &'a str,
     field: &'a str,
+}
+
+#[derive(Clone, Copy)]
+struct ScanPolicy {
+    scan_bare_text: bool,
+    warn_on_bare_text: bool,
+}
+
+struct GovernedTextSource<'a> {
+    text: &'a str,
+    owner_id: &'a str,
+    path: String,
+    field: String,
+    policy: ScanPolicy,
 }
 
 /// Validate inline references in governed prose per [[RFC-0000:C-REFERENCE-HIERARCHY]].
@@ -55,41 +69,65 @@ pub(super) fn validate_bracket_reference_hierarchy(
         known_ids: artifact_ref_ids(index),
     };
 
+    for source in governed_text_sources(index, config) {
+        scan_reference_hierarchy(
+            &scanner,
+            source.text,
+            source.owner_id,
+            TextSource {
+                path: &source.path,
+                field: &source.field,
+            },
+            source.policy,
+            result,
+        );
+    }
+}
+
+fn governed_text_sources<'a>(
+    index: &'a ProjectIndex,
+    config: &Config,
+) -> Vec<GovernedTextSource<'a>> {
+    let mut sources = Vec::new();
+    collect_rfc_text_sources(index, config, &mut sources);
+    collect_adr_text_sources(index, config, &mut sources);
+    collect_work_text_sources(index, config, &mut sources);
+    sources
+}
+
+fn collect_rfc_text_sources<'a>(
+    index: &'a ProjectIndex,
+    config: &Config,
+    sources: &mut Vec<GovernedTextSource<'a>>,
+) {
     for rfc in &index.rfcs {
         let rfc_path = config.display_path(&rfc.path).display().to_string();
         let rid = rfc.rfc.rfc_id.as_str();
         let warn_on_bare_text = rfc.rfc.status == RfcStatus::Draft;
         for clause in &rfc.clauses {
-            let clause_path = config.display_path(&clause.path).display().to_string();
-            let field = format!("{} content.text", clause.spec.clause_id);
-            scan_rfc_reference_hierarchy(
-                &scanner,
-                &clause.spec.text,
-                rid,
-                TextSource {
-                    path: &clause_path,
-                    field: &field,
+            sources.push(GovernedTextSource {
+                text: &clause.spec.text,
+                owner_id: rid,
+                path: config.display_path(&clause.path).display().to_string(),
+                field: format!("{} content.text", clause.spec.clause_id),
+                policy: ScanPolicy {
+                    scan_bare_text: true,
+                    warn_on_bare_text,
                 },
-                true,
-                warn_on_bare_text,
-                result,
-            );
+            });
         }
         for (entry_index, entry) in rfc.rfc.changelog.iter().enumerate() {
             if let Some(ref notes) = entry.notes {
-                let field = format!("changelog[{entry_index}].notes");
-                scan_rfc_reference_hierarchy(
-                    &scanner,
-                    notes,
-                    rid,
-                    TextSource {
-                        path: &rfc_path,
-                        field: &field,
+                sources.push(GovernedTextSource {
+                    text: notes,
+                    owner_id: rid,
+                    path: rfc_path.clone(),
+                    field: format!("changelog[{entry_index}].notes"),
+                    policy: ScanPolicy {
+                        scan_bare_text: false,
+                        warn_on_bare_text: false,
                     },
-                    false,
-                    false,
-                    result,
-                );
+                });
             }
             let changelog_sections = [
                 ("added", &entry.added),
@@ -101,223 +139,137 @@ pub(super) fn validate_bracket_reference_hierarchy(
             ];
             for (section, lines) in changelog_sections {
                 for (line_index, line) in lines.iter().enumerate() {
-                    let field = format!("changelog[{entry_index}].{section}[{line_index}]");
-                    scan_rfc_reference_hierarchy(
-                        &scanner,
-                        line,
-                        rid,
-                        TextSource {
-                            path: &rfc_path,
-                            field: &field,
+                    sources.push(GovernedTextSource {
+                        text: line,
+                        owner_id: rid,
+                        path: rfc_path.clone(),
+                        field: format!("changelog[{entry_index}].{section}[{line_index}]"),
+                        policy: ScanPolicy {
+                            scan_bare_text: false,
+                            warn_on_bare_text: false,
                         },
-                        false,
-                        false,
-                        result,
-                    );
+                    });
                 }
             }
         }
     }
+}
 
+fn collect_adr_text_sources<'a>(
+    index: &'a ProjectIndex,
+    config: &Config,
+    sources: &mut Vec<GovernedTextSource<'a>>,
+) {
     for adr in &index.adrs {
         let adr_path = config.display_path(&adr.path).display().to_string();
         let aid = adr.meta().id.as_str();
         let warn_on_bare_text = adr.meta().status == AdrStatus::Proposed;
         let c = &adr.spec.content;
-        scan_adr_reference_hierarchy(
-            &scanner,
-            &c.context,
-            aid,
-            TextSource {
-                path: &adr_path,
-                field: "content.context",
-            },
+        let policy = ScanPolicy {
+            scan_bare_text: true,
             warn_on_bare_text,
-            result,
-        );
-        scan_adr_reference_hierarchy(
-            &scanner,
-            &c.decision,
-            aid,
-            TextSource {
-                path: &adr_path,
-                field: "content.decision",
+        };
+        sources.extend([
+            GovernedTextSource {
+                text: &c.context,
+                owner_id: aid,
+                path: adr_path.clone(),
+                field: "content.context".to_string(),
+                policy,
             },
-            warn_on_bare_text,
-            result,
-        );
-        scan_adr_reference_hierarchy(
-            &scanner,
-            &c.consequences,
-            aid,
-            TextSource {
-                path: &adr_path,
-                field: "content.consequences",
+            GovernedTextSource {
+                text: &c.decision,
+                owner_id: aid,
+                path: adr_path.clone(),
+                field: "content.decision".to_string(),
+                policy,
             },
-            warn_on_bare_text,
-            result,
-        );
+            GovernedTextSource {
+                text: &c.consequences,
+                owner_id: aid,
+                path: adr_path.clone(),
+                field: "content.consequences".to_string(),
+                policy,
+            },
+        ]);
         for (alt_index, alt) in c.alternatives.iter().enumerate() {
-            let alt_text_field = format!("content.alternatives[{alt_index}].text");
-            scan_adr_reference_hierarchy(
-                &scanner,
-                &alt.text,
-                aid,
-                TextSource {
-                    path: &adr_path,
-                    field: &alt_text_field,
-                },
-                warn_on_bare_text,
-                result,
-            );
+            sources.push(GovernedTextSource {
+                text: &alt.text,
+                owner_id: aid,
+                path: adr_path.clone(),
+                field: format!("content.alternatives[{alt_index}].text"),
+                policy,
+            });
             for (pro_index, p) in alt.pros.iter().enumerate() {
-                let pro_field = format!("content.alternatives[{alt_index}].pros[{pro_index}]");
-                scan_adr_reference_hierarchy(
-                    &scanner,
-                    p,
-                    aid,
-                    TextSource {
-                        path: &adr_path,
-                        field: &pro_field,
-                    },
-                    warn_on_bare_text,
-                    result,
-                );
+                sources.push(GovernedTextSource {
+                    text: p,
+                    owner_id: aid,
+                    path: adr_path.clone(),
+                    field: format!("content.alternatives[{alt_index}].pros[{pro_index}]"),
+                    policy,
+                });
             }
             for (con_index, cons) in alt.cons.iter().enumerate() {
-                let con_field = format!("content.alternatives[{alt_index}].cons[{con_index}]");
-                scan_adr_reference_hierarchy(
-                    &scanner,
-                    cons,
-                    aid,
-                    TextSource {
-                        path: &adr_path,
-                        field: &con_field,
-                    },
-                    warn_on_bare_text,
-                    result,
-                );
+                sources.push(GovernedTextSource {
+                    text: cons,
+                    owner_id: aid,
+                    path: adr_path.clone(),
+                    field: format!("content.alternatives[{alt_index}].cons[{con_index}]"),
+                    policy,
+                });
             }
             if let Some(ref rr) = alt.rejection_reason {
-                let rejection_field = format!("content.alternatives[{alt_index}].rejection_reason");
-                scan_adr_reference_hierarchy(
-                    &scanner,
-                    rr,
-                    aid,
-                    TextSource {
-                        path: &adr_path,
-                        field: &rejection_field,
-                    },
-                    warn_on_bare_text,
-                    result,
-                );
+                sources.push(GovernedTextSource {
+                    text: rr,
+                    owner_id: aid,
+                    path: adr_path.clone(),
+                    field: format!("content.alternatives[{alt_index}].rejection_reason"),
+                    policy,
+                });
             }
         }
     }
+}
 
+fn collect_work_text_sources<'a>(
+    index: &'a ProjectIndex,
+    config: &Config,
+    sources: &mut Vec<GovernedTextSource<'a>>,
+) {
     for work in &index.work_items {
         let work_path = config.display_path(&work.path).display().to_string();
         let wid = work.meta().id.as_str();
-        let warn_on_bare_text = work.meta().status != WorkItemStatus::Done;
+        let policy = ScanPolicy {
+            scan_bare_text: true,
+            warn_on_bare_text: work.meta().status != WorkItemStatus::Done,
+        };
         let content = &work.spec.content;
-        scan_work_reference_syntax(
-            &scanner,
-            &content.description,
-            wid,
-            TextSource {
-                path: &work_path,
-                field: "content.description",
-            },
-            warn_on_bare_text,
-            result,
-        );
+        sources.push(GovernedTextSource {
+            text: &content.description,
+            owner_id: wid,
+            path: work_path.clone(),
+            field: "content.description".to_string(),
+            policy,
+        });
         for (criterion_index, criterion) in content.acceptance_criteria.iter().enumerate() {
-            let criterion_field = format!("content.acceptance_criteria[{criterion_index}].text");
-            scan_work_reference_syntax(
-                &scanner,
-                &criterion.text,
-                wid,
-                TextSource {
-                    path: &work_path,
-                    field: &criterion_field,
-                },
-                warn_on_bare_text,
-                result,
-            );
+            sources.push(GovernedTextSource {
+                text: &criterion.text,
+                owner_id: wid,
+                path: work_path.clone(),
+                field: format!("content.acceptance_criteria[{criterion_index}].text"),
+                policy,
+            });
         }
         for (note_index, note) in content.notes.iter().enumerate() {
-            let note_field = format!("content.notes[{note_index}]");
-            scan_work_reference_syntax(
-                &scanner,
-                note,
-                wid,
-                TextSource {
-                    path: &work_path,
-                    field: &note_field,
-                },
-                warn_on_bare_text,
-                result,
-            );
+            sources.push(GovernedTextSource {
+                text: note,
+                owner_id: wid,
+                path: work_path.clone(),
+                field: format!("content.notes[{note_index}]"),
+                policy,
+            });
         }
     }
-}
-
-fn scan_rfc_reference_hierarchy(
-    scanner: &ReferenceScanner,
-    text: &str,
-    rfc_id: &str,
-    source: TextSource<'_>,
-    scan_bare_text: bool,
-    warn_on_bare_text: bool,
-    result: &mut ValidationResult,
-) {
-    scan_reference_hierarchy(
-        scanner,
-        text,
-        rfc_id,
-        source,
-        scan_bare_text,
-        warn_on_bare_text,
-        result,
-    );
-}
-
-fn scan_adr_reference_hierarchy(
-    scanner: &ReferenceScanner,
-    text: &str,
-    adr_id: &str,
-    source: TextSource<'_>,
-    warn_on_bare_text: bool,
-    result: &mut ValidationResult,
-) {
-    scan_reference_hierarchy(
-        scanner,
-        text,
-        adr_id,
-        source,
-        true,
-        warn_on_bare_text,
-        result,
-    );
-}
-
-fn scan_work_reference_syntax(
-    scanner: &ReferenceScanner,
-    text: &str,
-    work_id: &str,
-    source: TextSource<'_>,
-    warn_on_bare_text: bool,
-    result: &mut ValidationResult,
-) {
-    scan_reference_hierarchy(
-        scanner,
-        text,
-        work_id,
-        source,
-        true,
-        warn_on_bare_text,
-        result,
-    );
 }
 
 fn scan_reference_hierarchy(
@@ -325,8 +277,7 @@ fn scan_reference_hierarchy(
     text: &str,
     owner_id: &str,
     source: TextSource<'_>,
-    scan_bare_text: bool,
-    warn_on_bare_text: bool,
+    policy: ScanPolicy,
     result: &mut ValidationResult,
 ) {
     let mut bracket_ranges = Vec::new();
@@ -345,7 +296,7 @@ fn scan_reference_hierarchy(
         }
     }
 
-    if !scan_bare_text {
+    if !policy.scan_bare_text {
         return;
     }
 
@@ -364,7 +315,7 @@ fn scan_reference_hierarchy(
             continue;
         }
         match check_ref_hierarchy(owner_id, target, source.path, ReferenceSurface::BareText) {
-            Ok(()) if warn_on_bare_text => result.diagnostics.push(
+            Ok(()) if policy.warn_on_bare_text => result.diagnostics.push(
                 bare_artifact_reference_warning(owner_id, target, source, text, m.start()),
             ),
             Ok(()) => {}
@@ -468,8 +419,10 @@ mod tests {
                 path: "f",
                 field: "content.text",
             },
-            true,
-            true,
+            ScanPolicy {
+                scan_bare_text: true,
+                warn_on_bare_text: true,
+            },
             &mut result,
         );
 
@@ -494,8 +447,10 @@ mod tests {
                 path: "f",
                 field: "content.text",
             },
-            true,
-            true,
+            ScanPolicy {
+                scan_bare_text: true,
+                warn_on_bare_text: true,
+            },
             &mut result,
         );
 
@@ -517,8 +472,10 @@ mod tests {
                 path: "f",
                 field: "content.decision",
             },
-            true,
-            true,
+            ScanPolicy {
+                scan_bare_text: true,
+                warn_on_bare_text: true,
+            },
             &mut result,
         );
 
@@ -558,8 +515,10 @@ mod tests {
                 path: "f",
                 field: "content.decision",
             },
-            true,
-            true,
+            ScanPolicy {
+                scan_bare_text: true,
+                warn_on_bare_text: true,
+            },
             &mut result,
         );
 

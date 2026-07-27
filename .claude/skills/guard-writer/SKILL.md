@@ -1,144 +1,91 @@
 ---
 name: guard-writer
-description: "Write well-structured Verification Guards. Use when: (1) Creating a new guard, (2) Editing guard check commands or patterns, (3) User mentions guard, verification, or check"
+description: "Define reusable, non-interactive verification guards with stable commands and risk-matched scope"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: "[optional guard topic]"
 ---
 
 # Guard Writer
 
-Write Verification Guards — reusable executable completion checks per [[RFC-0000:C-GUARD-DEF]].
+Define reusable executable completion checks under
+[[RFC-0000:C-GUARD-DEF]]. This helper owns guard quality; the invoking workflow
+decides when a guard applies to a Work Item.
 
-## Invocation Mode
+## Discovery
 
-This helper skill may be used standalone or by `/gov` or `/spec`.
-It is responsible for guard definition and validation, not for deciding which workflow should execute the guard in day-to-day implementation.
-
-## Quick Reference
+Inspect existing guards and effective project policy before adding another:
 
 ```bash
-govctl guard new "<title>"
 govctl guard list
-govctl guard show GUARD-ID
-govctl guard set GUARD-ID check.command "new command"
-govctl guard set GUARD-ID check.timeout_secs 600
-govctl guard set GUARD-ID check.pattern "regex pattern"
-govctl guard add GUARD-ID refs RFC-NNNN
-govctl guard delete GUARD-ID
+govctl guard show <GUARD-ID>
+govctl work show <WI-ID>
 ```
 
-## Guard Structure
+Use `govctl guard --help` and subcommand help for current creation, editing, and
+deletion syntax. Inspect `gov/config.toml` for project defaults.
 
-Every guard is a TOML file under `gov/guard/` with two sections:
+## Hard Stops
 
-### `[govctl]` — Metadata
+- Do not create a guard for a one-off diagnostic.
+- Do not add a heavyweight or domain-specific guard to project defaults merely
+  because it is reusable.
+- Do not permanently delete a guard without explicit user authorization; hand
+  the destructive operation to the invoking workflow.
+- Do not use interactive commands, prompts, or TTY-dependent behavior.
+- Do not use repeated waivers to conceal an over-broad default.
+- Stop when the command does not provide stable evidence for a named risk.
 
-| Field   | Required | Description                          |
-| ------- | -------- | ------------------------------------ |
-| `id`    | yes      | Unique ID, format `GUARD-UPPER-CASE` |
-| `title` | yes      | Human-readable description           |
-| `refs`  | no       | Array of artifact references         |
+## Definition Policy
 
-### `[check]` — Execution
+A guard has metadata (`id`, `title`, optional artifact `refs`) and an executable
+check (`command`, optional `timeout_secs`, optional output `pattern`). Let
+`govctl guard` own serialization and field validation.
 
-| Field          | Required | Description                                     |
-| -------------- | -------- | ----------------------------------------------- |
-| `command`      | yes      | Shell command, runs from project root           |
-| `timeout_secs` | no       | Max seconds before failure (default: 300)       |
-| `pattern`      | no       | Regex matched case-insensitively against output |
+Choose a command that:
 
-## Examples
+- runs non-interactively from the project root;
+- verifies one named risk domain with a stable exit status;
+- uses the narrowest reliable test, lint, schema, or validation target;
+- has an intentional timeout for its expected cost; and
+- needs an output pattern only when exit status cannot prove the condition.
 
-### Basic test guard
+Keep commands simple and portable within the repository's supported
+environment. Reference the RFC or ADR whose requirement or decision the guard
+helps verify.
 
-```toml
-#:schema ../schema/guard.schema.json
+When a reusable scenario has a Conformance Case, add the Guard to that Case's
+`guards` field. Do not add `CONF-*` IDs to Guard `refs`; Cases own the derived
+Case-to-Guard edge.
 
-[govctl]
-id = "GUARD-CARGO-TEST"
-title = "cargo test passes"
-refs = ["RFC-0000", "RFC-0001"]
+## Scope Policy
 
-[check]
-command = "cargo test"
-timeout_secs = 300
-```
+Project `verification.default_guards` are the intersection of checks required
+by every Work Item. A default should be fast, stable, environment-independent,
+and relevant even to documentation-only work.
 
-### Guard with output pattern
+Use Work Item `verification.required_guards` for reusable checks selected from
+that item's changed surface, governing references, and acceptance criteria.
+Full suites belong on cross-cutting items, release checks, or changes whose
+blast radius cannot be covered by narrower guards.
 
-```toml
-#:schema ../schema/guard.schema.json
+Waivers need a specific reason and apply to the effective default plus
+Work-Item guard set. Repeated waivers are evidence that the guard's scope should
+be corrected.
 
-[govctl]
-id = "GUARD-NO-FIXME"
-title = "No FIXME comments in source"
+## Quality Tests
 
-[check]
-command = "! grep -r FIXME src/"
-pattern = "^$"
-```
+A guard is ready when:
 
-### Lint guard
+- its ID and metadata are clear and unique;
+- its command is non-interactive, deterministic enough for a completion gate,
+  and scoped to a named risk;
+- timeout and pattern settings have an explicit need;
+- references connect it to relevant governance;
+- its placement as a default or Work Item requirement matches actual scope; and
+- it does not duplicate an existing guard without a distinct purpose.
 
-```toml
-#:schema ../schema/guard.schema.json
+## Completion Evidence
 
-[govctl]
-id = "GUARD-CLIPPY"
-title = "clippy passes with no warnings"
-refs = ["RFC-0000"]
-
-[check]
-command = "cargo clippy --all-targets -- -D warnings"
-timeout_secs = 300
-```
-
-## Writing Guidelines
-
-1. **ID format**: `GUARD-` prefix followed by uppercase alphanumeric with hyphens
-2. **Commands must be non-interactive**: No prompts, no TTY requirements
-3. **Commands run from project root**: Use relative paths accordingly
-4. **Keep commands simple**: Prefer single commands; use `bash -c '...'` for pipelines
-5. **Set timeouts intentionally**: Long builds may need more than the 300s default
-6. **Use `pattern` sparingly**: Only when exit code alone is insufficient
-7. **Add `refs`**: Link guards to the RFCs/ADRs they verify
-
-## Integration with Work Items
-
-Guards can be required by work items and by project-level config:
-
-```toml
-# In gov/config.toml — applies to all work items
-[verification]
-enabled = true
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
-
-# In a work item — additional guards for that item
-[verification]
-required_guards = ["GUARD-CLIPPY"]
-```
-
-Work items can waive guards with a reason:
-
-```toml
-[[verification.waivers]]
-guard = "GUARD-CARGO-TEST"
-reason = "Documentation-only change, no code modified"
-```
-
-## Validation
-
-After creating or editing a guard, validate:
-
-```bash
-govctl check
-```
-
-This verifies:
-
-- Guard schema conformance
-- Unique guard IDs
-- Valid regex patterns
-- All referenced guard IDs in config and work items resolve
-
-If the guard should be committed, hand off to `/commit`.
+Run `govctl check` after creating or editing a guard. This validates schema,
+identity, references, and pattern syntax. Exercise the command itself when the
+guard is new or materially changed, then hand VCS work to the `commit` skill.

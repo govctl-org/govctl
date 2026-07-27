@@ -11,6 +11,7 @@ mod command_router;
 mod config;
 mod diagnostic;
 mod load;
+mod local_index;
 mod lock;
 mod loop_planner;
 mod loop_state;
@@ -39,7 +40,17 @@ use config::Config;
 use diagnostic::{Diagnostic, DiagnosticLevel, DiagnosticResult, Diagnostics};
 
 fn main() -> ExitCode {
-    let cli = Cli::parse();
+    let args: Vec<std::ffi::OsString> = std::env::args_os().collect();
+    if let Some(diag) = cli::misrouted_nested_clause(&args) {
+        ui::diagnostic(&diag);
+        return ExitCode::FAILURE;
+    }
+
+    let cli = Cli::parse_from(&args);
+    if let Some(diag) = cli::misrouted_clause_after_parse(&cli, &args) {
+        ui::diagnostic(&diag);
+        return ExitCode::FAILURE;
+    }
     let result = run(&cli);
 
     match result {
@@ -58,10 +69,6 @@ fn main() -> ExitCode {
                     cli.command,
                     Commands::Check {
                         deny_warnings: true,
-                        ..
-                    } | Commands::Check {
-                        has_active: true,
-                        ..
                     }
                 ) {
                     ExitCode::FAILURE
@@ -80,11 +87,25 @@ fn main() -> ExitCode {
 }
 
 fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
-    let config = Config::load(cli.config.as_deref())?;
-    let op = write::WriteOp::from_dry_run(cli.dry_run);
-
     // Convert parsed CLI command to canonical form
     let plan = command_router::CommandPlan::from_parsed(&cli.command, cli.dry_run)?;
+    let config = if cli.config.is_none() {
+        match &plan.op {
+            command_router::Op::Builtin(command_router::BuiltinOp::Init { force }) => {
+                Config::for_init(*force)?
+            }
+            _ => Config::load(None)?,
+        }
+    } else {
+        Config::load(cli.config.as_deref())?
+    };
+    if !matches!(
+        plan.op,
+        command_router::Op::Builtin(command_router::BuiltinOp::Migrate)
+    ) {
+        load::reject_unmigrated_conformance(&config)?;
+    }
+    let op = write::WriteOp::from_dry_run(cli.dry_run);
 
     let lock_disposition = plan.lock_disposition();
 

@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn test_work_legacy_inline_history_reports_info_and_passes_check() -> common::TestResult {
+fn test_work_legacy_inline_history_is_rejected() -> common::TestResult {
     let temp_dir = init_project()?;
 
     fs::write(
@@ -9,7 +9,6 @@ fn test_work_legacy_inline_history_reports_info_and_passes_check() -> common::Te
             .path()
             .join("gov/work/2026-01-01-legacy-history.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Legacy History"
 status = "queue"
@@ -28,21 +27,16 @@ content = "Historical execution detail"
         temp_dir.path(),
         &[&["check"], &["check", "--deny-warnings"]],
     )?;
-    assert!(output.contains("info[I0401]"), "output: {}", output);
     assert!(
-        output.contains("legacy inline execution history"),
+        output.contains("Additional properties are not allowed ('journal' was unexpected)"),
         "output: {}",
         output
     );
-    assert!(output.contains("notes"), "output: {}", output);
-    assert!(output.contains("loop state"), "output: {}", output);
-    assert!(output.contains("✓ All checks passed"), "output: {}", output);
-    assert!(output.contains("exit: 0"), "output: {}", output);
-    assert!(!output.contains("exit: 1"), "output: {}", output);
+    assert_eq!(output.matches("exit: 1").count(), 2, "output: {output}");
     Ok(())
 }
 
-/// Test: Work item files without legacy inline execution history do not report info
+/// Test: Work item files without legacy inline execution history pass.
 #[test]
 fn test_work_without_legacy_inline_history_has_no_info() -> common::TestResult {
     let temp_dir = init_project()?;
@@ -50,7 +44,6 @@ fn test_work_without_legacy_inline_history_has_no_info() -> common::TestResult {
     fs::write(
         temp_dir.path().join("gov/work/2026-01-01-normal.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Normal Work"
 status = "queue"
@@ -67,7 +60,6 @@ category = "added"
     )?;
 
     let output = run_commands(temp_dir.path(), &[&["check"]])?;
-    assert!(!output.contains("info[I0401]"), "output: {}", output);
     assert!(output.contains("exit: 0"), "output: {}", output);
     Ok(())
 }
@@ -82,7 +74,6 @@ fn test_work_plain_text_known_rfc_reference_warns() -> common::TestResult {
             .path()
             .join("gov/work/2026-01-01-bare-reference.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Bare Reference"
 status = "queue"
@@ -134,7 +125,6 @@ fn test_work_acceptance_and_notes_plain_text_known_rfc_reference_warns() -> comm
             .path()
             .join("gov/work/2026-01-01-bare-reference-fields.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Bare Reference Fields"
 status = "active"
@@ -189,7 +179,6 @@ fn test_done_work_plain_text_known_rfc_reference_is_allowed() -> common::TestRes
             .path()
             .join("gov/work/2026-01-01-done-bare-reference.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Done Bare Reference"
 status = "done"
@@ -224,7 +213,6 @@ fn test_check_rejects_unknown_work_dependency() -> common::TestResult {
             .path()
             .join("gov/work/2026-01-01-unknown-dependency.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Unknown Dependency"
 status = "queue"
@@ -253,7 +241,6 @@ fn test_check_rejects_work_dependency_cycle() -> common::TestResult {
     fs::write(
         temp_dir.path().join("gov/work/2026-01-01-cycle-a.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-001"
 title = "Cycle A"
 status = "queue"
@@ -267,7 +254,6 @@ description = "Work description"
     fs::write(
         temp_dir.path().join("gov/work/2026-01-01-cycle-b.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-002"
 title = "Cycle B"
 status = "queue"

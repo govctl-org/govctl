@@ -12,6 +12,7 @@ use crate::model::{AdrStatus, ProjectIndex};
 mod adr_projection;
 mod artifact_refs;
 mod bracket_refs;
+pub(crate) mod conformance;
 mod fields;
 mod lifecycle;
 mod reference_hierarchy;
@@ -28,7 +29,7 @@ use bracket_refs::validate_bracket_reference_hierarchy;
 use rfc::{validate_clause_references, validate_rfc};
 use signatures::validate_rfc_signatures;
 use tags::validate_artifact_tags;
-use work_items::{validate_work_item_descriptions, validate_work_item_legacy_inline_history};
+use work_items::validate_work_item_descriptions;
 
 pub(crate) use adr_projection::validate_adr_projection_ownership as validate_adr_projection;
 pub use artifact_refs::validate_artifact_ref_edit;
@@ -49,6 +50,7 @@ pub struct ValidationResult {
     pub clause_count: usize,
     pub adr_count: usize,
     pub work_count: usize,
+    pub conformance_count: usize,
 }
 
 /// Validate the entire project
@@ -58,6 +60,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
         clause_count: index.iter_clauses().count(),
         adr_count: index.adrs.len(),
         work_count: index.work_items.len(),
+        conformance_count: index.conformance_cases.len(),
         ..Default::default()
     };
 
@@ -79,7 +82,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0103AdrNoRefs,
                 format!(
-                    "ADR has no artifact references (hint: `govctl adr add {} refs RFC-XXXX`)",
+                    "ADR has no artifact references (hint: `govctl adr edit {} refs --add RFC-XXXX`)",
                     adr.meta().id
                 ),
                 adr_path_display.clone(),
@@ -91,7 +94,7 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
             result.diagnostics.push(Diagnostic::new(
                 DiagnosticCode::W0113AdrPlaceholderContext,
                 format!(
-                    "ADR has placeholder context (hint: `govctl adr set {} context \"...\"`)",
+                    "ADR has placeholder context (hint: `govctl adr edit {} context --set \"...\"`)",
                     adr.meta().id
                 ),
                 adr_path_display.clone(),
@@ -119,11 +122,15 @@ pub fn validate_project(index: &ProjectIndex, config: &Config) -> ValidationResu
     // Validate work item descriptions
     validate_work_item_descriptions(index, config, &mut result);
 
-    // Surface legacy inline execution history without blocking validation.
-    validate_work_item_legacy_inline_history(index, config, &mut result);
-
     // Validate tags against allowed set — [[RFC-0002:C-RESOURCES]]
     validate_artifact_tags(index, config, &mut result);
+    result
+        .diagnostics
+        .extend(conformance::validate_cases_with_index(
+            config,
+            &index.conformance_cases,
+            index,
+        ));
 
     result
 }

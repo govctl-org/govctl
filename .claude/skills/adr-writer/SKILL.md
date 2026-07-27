@@ -1,292 +1,112 @@
 ---
 name: adr-writer
-description: "Write effective Architecture Decision Records. Use when: (1) Creating a new ADR, (2) Recording a design decision, (3) User mentions ADR, decision, trade-off, or alternatives"
+description: "Write decision records that explain context, evaluated alternatives, chosen direction, and consequences without creating product obligations"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: "[optional ADR topic]"
 ---
 
 # ADR Writer
 
-Write ADRs that clearly capture context, alternatives, decisions, and consequences.
+Record why one design direction was chosen over alternatives, under what
+constraints, and with what consequences. ADRs justify decisions; they are not
+mini-RFCs or execution logs.
 
-## Invocation Mode
+This helper owns ADR content quality. Use `spec` or `gov` for acceptance,
+rejection, supersession, or implementation work.
 
-This helper skill may be used standalone or by `/discuss`, `/gov`, `/spec`, or `/migrate`.
-It is responsible for ADR content structure and quality, not ADR lifecycle verbs. Use `/spec` or `/gov` for `govctl adr accept`, `reject`, or `supersede`.
+## Discovery
 
-## Authority
-
-ADRs explain decisions: why one option was chosen over others, under what constraints, and with what consequences.
-They are justificatory artifacts, not normative mini-RFCs and not work-item execution logs.
-
-## Quick Reference
+Inspect related decisions and requirements before writing:
 
 ```bash
-govctl adr new "<title>"
-govctl adr set <ADR-ID> context --stdin <<'EOF'
-context text
-EOF
-govctl adr add <ADR-ID> alternatives "Option: Description"
-govctl adr add <ADR-ID> alternatives "Other option: Description" --reject-reason "Why it was not chosen"
-govctl adr tick <ADR-ID> alternatives --at 1 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 0 -s accepted
-govctl adr set <ADR-ID> decision --stdin <<'EOF'
-decision text
-EOF
-govctl adr set <ADR-ID> consequences --stdin <<'EOF'
-consequences text
-EOF
-govctl adr add <ADR-ID> refs RFC-NNNN
-govctl adr add <ADR-ID> tags <tag>
+govctl adr show <ADR-ID>
+govctl search <topic>
 ```
 
-## ADR Writing Order
+Use `govctl adr --help` and subcommand help for current creation and nested-field
+editing syntax. Use `govctl adr show <ADR-ID> --history` when superseded history
+matters.
 
-Use this order unless you are doing a historical backfill:
+## Hard Stops
 
-1. Write `context`
-2. Add `alternatives`
-3. Expand `pros` / `cons`
-4. Mark rejected options and record `rejection_reason`
-5. Mark the chosen option `accepted`
-6. Write `decision` as the conclusion of that discussion
-7. Write `consequences`
+- Do not accept, reject, or supersede an ADR from this helper.
+- Do not create externally visible behavior, validation, lifecycle, storage, or
+  compatibility obligations in ADR prose. Establish them in an RFC.
+- Do not store task scope, progress, commands run, validation output, or next
+  actions in an ADR.
+- Do not duplicate renderer-owned headings or structured alternatives in prose.
+- Stop when the governing requirement or the decision being made is unclear.
 
-The key rule is: **alternatives-first, decision-last**. Do not jump straight to a polished conclusion before the ADR shows what was actually considered.
+## Writing Policy
 
-Historical backfills are the exception: if alternatives are not recoverable, say so explicitly in `context` and write the best available `decision` from the surviving evidence.
+### Let The Decision Follow The Evidence
 
-## ADR Structure
+Write in this order for a new decision:
 
-Every ADR has three required fields and two optional fields:
+1. Describe the context, problem, constraints, and decision drivers.
+2. Add credible alternatives and their material pros and cons.
+3. Mark the chosen and rejected alternatives, recording why rejected options
+   lost.
+4. State the decision as the conclusion of that comparison.
+5. Record positive, negative, and neutral consequences.
 
-### 1. Context (required)
+For a historical backfill, distinguish recovered evidence from inference. When
+alternatives cannot be recovered, say so instead of inventing them.
 
-Explain the situation that requires a decision. Structure:
+The context should let a future reader understand why a decision was necessary.
+The alternatives should reflect real choices rather than straw options. The
+decision should be decisive and explain why the chosen option won. Consequences
+must include material costs and mitigations, not only benefits.
 
-> **Do NOT include `## Context` heading** — the renderer adds it automatically.
+### Preserve Artifact Authority
 
-```markdown
-[1-2 sentence summary of the situation]
+ADRs may reference requirements and explain how they constrain the choice, but
+RFCs own product obligations. Work Items own execution scope and acceptance
+criteria. Loop state and responses own transient execution evidence.
 
-### Problem Statement
+Normative keywords in quoted or referenced constraints do not transfer
+authority to the ADR. Rewrite accidental RFC-style obligation lists as decision
+rationale, or move the missing contract to its RFC.
 
-What specific issue are we addressing?
+Language-specific structures belong only when the concrete structure is central
+to the architectural choice. Prefer stable design properties over private
+implementation details.
 
-### Constraints
+### Respect Projection Ownership
 
-What existing RFCs, ADRs, or technical limitations restrict our options?
-```
+The canonical authoring surfaces are:
 
-**Key principle:** A reader 6 months from now must understand _why_ this decision was needed without asking anyone.
+| Content                                         | Owner                                 |
+| ----------------------------------------------- | ------------------------------------- |
+| Metadata and fixed section headings             | Renderer                              |
+| Reference inventory                             | `refs`                                |
+| Options, statuses, pros/cons, rejection reasons | `content.alternatives`                |
+| Explanatory prose                               | `context`, `decision`, `consequences` |
 
-### 2. Alternatives (recommended before writing `decision`)
+Do not include renderer-generated `Context`, `Decision`, `Consequences`, or
+`Alternatives Considered` headings in content fields. Do not restate structured
+alternative statuses, pros, cons, or rejection reasons in a parallel prose
+inventory. This boundary follows [[RFC-0000:C-ADR-PROJECTION-OWNERSHIP]].
 
-Document options considered before you write the final decision. Future readers need to know what was _not_ chosen and why.
+`govctl adr show` presents the current projection and hides a superseded ADR's
+body by default. `--history` restores the historical view; rendered Markdown
+remains complete.
 
-**Extended structure per ADR-0027:**
+## Quality Tests
 
-    [[content.alternatives]]
-    text = "Option A: Description"
-    status = "rejected"
-    pros = ["Advantage 1", "Advantage 2"]
-    cons = ["Disadvantage 1"]
-    rejection_reason = "Why this was not chosen"
+An ADR is ready when:
 
-**Field semantics:**
+- context identifies the actual problem, constraints, and decision drivers;
+- alternatives were evaluated before the conclusion, with at least one credible
+  rejected option for a new decision;
+- the decision states the chosen direction and why it prevailed;
+- consequences name meaningful benefits, costs, and mitigations;
+- RFC and ADR references connect the decision to its governing context;
+- no section invents normative product behavior or task execution state; and
+- project tags are applied when configured.
 
-- `text` (required): Description of the alternative
-- `status`: `considered` (default) | `accepted` | `rejected`
-- `pros`: List of advantages
-- `cons`: List of disadvantages
-- `rejection_reason`: Required when rejected
+## Completion Evidence
 
-**CLI commands:**
-
-```bash
-# Simple alternative
-govctl adr add <ADR-ID> alternatives "Option A: Use PostgreSQL"
-
-# With pros, cons, and rejection reason
-govctl adr add <ADR-ID> alternatives "Option B: Use Redis" \
-  --pro "Fast caching" --pro "Simple API" \
-  --con "Additional infrastructure" \
-  --reject-reason "Overkill for our scale"
-
-# Update alternative state after discussion
-govctl adr tick <ADR-ID> alternatives --at 0 -s rejected
-govctl adr tick <ADR-ID> alternatives --at 1 -s accepted
-govctl adr edit <ADR-ID> content.alternatives[0].pros --add "New advantage"
-govctl adr edit <ADR-ID> content.alternatives[0].cons --remove "Outdated disadvantage"
-```
-
-**When to add pros/cons:**
-
-- For significant decisions with multiple options
-- When trade-offs are non-obvious
-- To help future readers understand the evaluation process
-
-**Key principle:** Let the alternatives show the discussion. The chosen option should emerge there before you write the final decision prose.
-
-### 3. Decision (required)
-
-State the conclusion of the alternatives discussion and why it won. Structure:
-
-> **Do NOT include `## Decision` heading** — the renderer adds it automatically.
-
-```markdown
-We will **[action]** because:
-
-1. **Reason one:** Explanation
-2. **Reason two:** Explanation
-
-### Implementation Notes
-
-Specific guardrails for implementing this decision, not a task checklist.
-```
-
-**Key principle:** Write `decision` as the conclusion of the evaluated alternatives. Lead with the answer, but only after the ADR already shows what was considered.
-
-### 4. Consequences (required)
-
-Honest accounting of trade-offs. Structure:
-
-> **Do NOT include `## Consequences` heading** — the renderer adds it automatically.
-
-```markdown
-### Positive
-
-- Benefit one
-- Benefit two
-
-### Negative
-
-- Trade-off one (mitigation: ...)
-- Trade-off two (mitigation: ...)
-
-### Neutral
-
-- Side effect that is neither positive nor negative
-```
-
-**Key principle:** Every decision has downsides. If your Negative section is empty, you haven't thought hard enough.
-
-### 5. References (recommended)
-
-```bash
-govctl adr add <ADR-ID> refs RFC-0001
-govctl adr add <ADR-ID> refs ADR-0005
-```
-
-Link to artifacts that constrained or informed the decision. Use plain IDs (not `[[...]]` syntax) in the refs field.
-
-### Inspection Projections
-
-`govctl adr show <ADR-ID>` presents the current projection and omits the body of
-a superseded ADR. Use `govctl adr show <ADR-ID> --history` for a full historical
-review. Generated Markdown from `govctl render` remains complete.
-
-## Validation and Handoff
-
-- Run `govctl check` after substantive ADR edits
-- Use `adr-reviewer` before acceptance or handoff
-- Use `/spec` for ADR acceptance without implementation
-- Use `/gov` when the ADR accompanies implementation-bearing work
-
-## Writing Rules
-
-### Authority Test
-
-Before adding ADR content, apply these checks:
-
-- **Decision layer:** The ADR explains why one approach was chosen over alternatives.
-- **No new obligations:** New externally visible behavior, validation rules, lifecycle rules, storage contracts, or compatibility rules belong in an RFC.
-- **Referenced requirements:** If the decision implements or interprets a requirement, link the governing RFC clause in `refs` where practical.
-- **No execution memory:** Task scope, acceptance criteria, progress, validation output, and next actions belong in Work Items, loop state, round artifacts, or final responses.
-- **Careful keywords:** `MUST`, `SHOULD`, and `MAY` in ADR prose should describe constraints on the decision, not create product requirements.
-
-Examples:
-
-| Statement                                                                                                             | Destination                     |
-| --------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| `We will use SQLite FTS5 for the derived search index because it keeps search local and avoids a service dependency.` | ADR                             |
-| `The search command MUST refresh stale derived indexes before querying.`                                              | RFC                             |
-| `changed: Add stale-index refresh to search execution`                                                                | Work Item                       |
-| `Round 2 failed because the test fixture still used stale schema data.`                                               | Loop evidence or final response |
-
-### Quality Checklist
-
-- **Context is complete.** Problem statement, constraints, and decision drivers are present.
-- **Alternatives come first.** The discussion is visible in `alternatives` before the final decision prose settles the issue.
-- **Decision is decisive.** Starts with "We will..." — not "We might..." or "We could...".
-- **Consequences are honest.** Negative section is non-empty with mitigations.
-- **Alternatives are documented.** For new decisions, show the discussion in `alternatives` first and include at least one rejected option with reason. For historical backfills, document rejected options when known; otherwise state that they were not recoverable.
-- **References link to related artifacts.** Use `[[artifact-id]]` in content fields.
-- **Tagged.** If the project has `[tags]` configured, tag the ADR with relevant domain tags.
-- **Stay at the decision layer.** Capture the chosen approach and why, not full normative clause text or task-by-task execution detail.
-
-### What Belongs in an ADR
-
-- The problem that required a decision
-- Constraints and decision drivers
-- Alternatives considered and why they were accepted or rejected
-- The chosen approach, after the alternatives have been evaluated
-- Positive, negative, and neutral consequences
-
-### What Does Not Belong in an ADR
-
-- Full RFC-style obligation lists
-- Private code structure or language-specific type definitions unless they are central to the design decision itself
-- Work-item plans, implementation logs, or progress tracking
-
-### Content Field Formatting
-
-Use markdown within content fields. Wrap code/technical terms in backticks:
-
-```
-# Good
-decision = "We will preserve clause insertion order to keep rendered output stable across runs."
-
-# Bad — drifts into language-specific representation
-decision = "Use `HashMap<String, Vec<ClauseSpec>>` for clause storage"
-```
-
-## Rendering Rules
-
-Each semantic section has one canonical authoring surface:
-
-| Content                                             | Canonical owner                       |
-| --------------------------------------------------- | ------------------------------------- |
-| ADR title, metadata, and fixed section headings     | Renderer                              |
-| Reference inventory                                 | `refs`                                |
-| Options, statuses, pros/cons, and rejection reasons | `content.alternatives`                |
-| Explanatory body prose and allowed subsections      | `context`, `decision`, `consequences` |
-
-The renderer auto-generates structural elements from TOML metadata. **Do NOT include these in content fields:**
-
-- `## Context`, `## Decision`, `## Consequences` headings — auto-generated for each section
-- `## Alternatives Considered` heading — auto-generated if alternatives exist
-- `### Option Name (status)` headings — auto-generated from `alternatives[].text` + `status`
-- `- **Pros:**`, `- **Cons:**`, `- **Rejected because:**` — auto-generated from structured fields
-- ADR title (`# ADR-NNNN: Title`) — auto-generated from metadata
-
-Content fields should contain only the body prose and `[[...]]` references.
-Use structured alternatives as the only options inventory; do not add an `Options Considered` or `Alternatives Considered` subsection to prose. `govctl check` and `govctl adr accept` enforce this boundary for proposed ADRs per [[RFC-0000:C-ADR-PROJECTION-OWNERSHIP]].
-
-## Common Mistakes
-
-| Mistake                               | Fix                                                      |
-| ------------------------------------- | -------------------------------------------------------- |
-| `## Context` in content field         | Don't — the renderer adds section headings automatically |
-| `### Options Considered` in context   | Use structured `content.alternatives` only               |
-| Empty Negative section                | Every decision has trade-offs — document them            |
-| Decision written before alternatives  | Add and evaluate alternatives first; then write decision |
-| No alternatives for a new ADR         | Add at least one rejected option                         |
-| Historical ADR lacks rejected options | State that alternatives were not recoverable             |
-| Vague context: "We need to decide"    | Specific: "RFC-0002 requires X but doesn't specify how"  |
-| Decision buried in prose              | Lead with "We will **action**"                           |
-| Missing refs                          | Link to RFCs/ADRs that constrain the decision            |
-| ADR turns into a mini-RFC             | Move obligation details into an RFC                      |
-| ADR turns into a task plan            | Move execution detail into a work item                   |
-| ADR invents new product requirements  | Draft or amend the governing RFC first                   |
-| ADR records current progress          | Move transient execution details to loop evidence        |
+Run `govctl check` after substantive edits and use `adr-reviewer` before
+acceptance or handoff. Use `spec` for decision-only governance work and `gov`
+when the accepted decision accompanies implementation.

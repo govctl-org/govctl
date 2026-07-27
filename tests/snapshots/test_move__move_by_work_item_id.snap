@@ -1,6 +1,6 @@
 ---
 source: tests/test_move.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl work new Task with ID ref
 Created work item: gov/work/<DATE>-task-with-id-ref.toml
@@ -12,9 +12,11 @@ Moved <DATE>-task-with-id-ref.toml to active
 exit: 0
 
 $ govctl work list all
-┌───────────────────┬────────┬──────────────────┐
-│ ID                ┆ Status ┆ Title            │
-╞═══════════════════╪════════╪══════════════════╡
-│ WI-<DATE>-001 ┆ active ┆ Task with ID ref │
-└───────────────────┴────────┴──────────────────┘
+[
+  {
+    "id": "WI-<DATE>-001",
+    "status": "active",
+    "title": "Task with ID ref"
+  }
+]
 exit: 0

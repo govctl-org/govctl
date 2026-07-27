@@ -45,7 +45,6 @@ pub(super) fn load_toml_spec<T>(
     diagnostic_code: DiagnosticCode,
     invalid_toml_context: &str,
     invalid_structure_context: &str,
-    prepare_schema_value: impl FnOnce(&mut toml::Value),
 ) -> Result<T, Diagnostic>
 where
     T: DeserializeOwned,
@@ -60,9 +59,7 @@ where
             path.display().to_string(),
         )
     })?;
-    let mut schema_raw = raw.clone();
-    prepare_schema_value(&mut schema_raw);
-    validate_toml_value(schema, config, path, &schema_raw)?;
+    validate_toml_value(schema, config, path, &raw)?;
     raw.try_into().map_err(|e| {
         Diagnostic::new(
             diagnostic_code,

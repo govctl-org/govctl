@@ -24,7 +24,6 @@ fn write_rfc_fixture(
             r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "{title}"
 version = "{version}"
@@ -65,7 +64,6 @@ fn write_clause_fixture(
             r#"#:schema ../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "{id}"
 title = "{title}"
 kind = "normative"
@@ -230,17 +228,32 @@ fn test_delete_clause_safeguard_referenced_by_artifacts() -> TestResult {
 
     let commands: Vec<Vec<String>> = vec![
         command(&["rfc", "new", "Referencing RFC"]),
-        command(&["rfc", "add", "RFC-0002", "refs", "RFC-0001:C-DELETE"]),
+        command(&[
+            "rfc",
+            "edit",
+            "RFC-0002",
+            "refs",
+            "--add",
+            "RFC-0001:C-DELETE",
+        ]),
         command(&["adr", "new", "Referencing ADR"]),
-        command(&["adr", "add", "ADR-0001", "refs", "RFC-0001:C-DELETE"]),
+        command(&[
+            "adr",
+            "edit",
+            "ADR-0001",
+            "refs",
+            "--add",
+            "RFC-0001:C-DELETE",
+        ]),
         work_new("Referencing work item"),
         work_add_field(&work_id, "refs", "RFC-0001:C-DELETE"),
         command(&["guard", "new", "Clause guard"]),
         command(&[
             "guard",
-            "add",
+            "edit",
             "GUARD-CLAUSE-GUARD",
             "refs",
+            "--add",
             "RFC-0001:C-DELETE",
         ]),
         command(&["clause", "delete", "RFC-0001:C-DELETE", "-f"]),
@@ -323,7 +336,7 @@ fn test_delete_clause_reports_inline_and_supersession_referrers() -> TestResult 
             "adr",
             "edit",
             "ADR-0001",
-            "content.context",
+            "context",
             "--set",
             "Uses [[RFC-0001:C-DELETE]].",
         ]),

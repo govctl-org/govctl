@@ -80,8 +80,8 @@ Moving to `done` requires all verification guards to pass (see [Validation](./va
 ### Add Criteria
 
 ```bash
-govctl work add WI-2026-01-17-001 acceptance_criteria "chore: Unit tests pass"
-govctl work add WI-2026-01-17-001 acceptance_criteria "add: Documentation updated"
+govctl work edit WI-2026-01-17-001 acceptance_criteria --add "chore: Unit tests pass"
+govctl work edit WI-2026-01-17-001 acceptance_criteria --add "add: Documentation updated"
 ```
 
 Category prefixes (`add:`, `fix:`, `change:`, `chore:`, etc.) are required and drive changelog generation. Conventional-commit aliases like `feat:`, `refactor:`, `test:`, `docs:` are also accepted.
@@ -91,10 +91,10 @@ Canonical changelog categories are still the preferred form in stored artifacts.
 ### Mark Criteria Complete
 
 ```bash
-govctl work tick WI-2026-01-17-001 acceptance_criteria "Unit tests" -s done
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
 ```
 
-The pattern matches case-insensitively by substring.
+Checklist state changes address one item by index.
 
 ### Canonical Edit Paths
 
@@ -102,7 +102,7 @@ Most work item fields are accessible through the unified path-based edit interfa
 
 ```bash
 # Set scalar fields
-govctl work edit WI-2026-01-17-001 content.description --stdin <<'EOF'
+govctl work edit WI-2026-01-17-001 description --set --stdin <<'EOF'
 New description here
 EOF
 
@@ -112,21 +112,21 @@ govctl work edit WI-2026-01-17-001 depends_on --add WI-2026-01-16-001
 govctl work edit WI-2026-01-17-001 acceptance_criteria --add "fix: Handle edge case"
 
 # Remove by index
-govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --remove
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --remove
 
 # Tick checklist items
-govctl work edit WI-2026-01-17-001 content.acceptance_criteria[0] --tick done
-govctl work edit WI-2026-01-17-001 content.acceptance_criteria[1] --tick cancelled
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
+govctl work edit WI-2026-01-17-001 acceptance_criteria[1] --tick cancelled
 ```
 
-Path aliases are available for common fields:
+Edit paths use logical field names:
 
-| Alias         | Resolves to                               |
-| ------------- | ----------------------------------------- |
-| `description` | `content.description`                     |
-| `ac`          | `content.acceptance_criteria`             |
-| `notes`       | `content.notes`                           |
-| `category`    | `content.acceptance_criteria[i].category` |
+| Field               | Path                              |
+| ------------------- | --------------------------------- |
+| Description         | `description`                     |
+| Acceptance criteria | `acceptance_criteria`             |
+| Notes               | `notes`                           |
+| Criterion category  | `acceptance_criteria[i].category` |
 
 ## Dependencies and Execution Loops
 
@@ -200,6 +200,12 @@ This means:
 - project defaults from `gov/config.toml` still apply when verification is enabled
 - the work item cannot move to `done` until the effective required guards pass or are explicitly waived
 
+Project defaults should contain only the checks required by every Work Item.
+Choose additional guards from the Work Item's changed surface, governing
+references, and acceptance criteria. Prefer a narrow domain guard over a full
+test suite; require the full suite when the change crosses shared boundaries or
+cannot be covered reliably by narrower checks.
+
 To run the effective guard set for a single work item:
 
 ```bash
@@ -227,7 +233,7 @@ Waivers are per-work-item only. They do not disable the guard globally, and they
 Add closure-worthy durable notes for constraints or retry rules that should remain useful after the work item is done:
 
 ```bash
-govctl work add WI-2026-01-17-001 notes "Do not retry the old validation path; it fails on missing refs"
+govctl work edit WI-2026-01-17-001 notes --add "Do not retry the old validation path; it fails on missing refs"
 ```
 
 Do not use notes for progress updates, commands run, validation output, current plans, next actions, temporary blockers, or TODOs. Put transient execution trace in local loop state and round artifacts instead.
@@ -235,7 +241,7 @@ Do not use notes for progress updates, commands run, validation output, current 
 Nested path edits are also available for structured fields:
 
 ```bash
-govctl work edit WI-2026-01-17-001 "content.acceptance_criteria[0].category" --set fixed
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].category" --set fixed
 ```
 
 ## Removing Items
@@ -243,23 +249,20 @@ govctl work edit WI-2026-01-17-001 "content.acceptance_criteria[0].category" --s
 Remove items from array fields using flexible matching:
 
 ```bash
-# Substring match (default, case-insensitive)
-govctl work remove WI-2026-01-17-001 notes "edge case"
+# Exact value
+govctl work edit WI-2026-01-17-001 notes --remove "edge case"
 
-# Exact match
-govctl work remove WI-2026-01-17-001 notes "Discovered edge case in validation" --exact
+# Another exact value
+govctl work edit WI-2026-01-17-001 notes --remove "Discovered edge case in validation"
 
 # By index (0-based)
-govctl work remove WI-2026-01-17-001 notes --at 0
-
-# Negative index (from end)
-govctl work remove WI-2026-01-17-001 notes --at -1
+govctl work edit WI-2026-01-17-001 notes[0] --remove
 
 # Regex pattern
-govctl work remove WI-2026-01-17-001 refs "RFC-.*" --regex
+govctl work edit WI-2026-01-17-001 refs --remove "RFC-.*" --regex
 
-# Remove all matches
-govctl work remove WI-2026-01-17-001 refs "obsolete" --all
+# Remove every item
+govctl work edit WI-2026-01-17-001 refs --remove --all
 ```
 
 ## Deleting Work Items

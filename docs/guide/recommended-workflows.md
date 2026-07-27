@@ -31,6 +31,37 @@ When in doubt, ask what the text is trying to do:
 - "What are we doing in this task?" belongs in a Work Item.
 - "What happened in this round?" belongs in loop state or the final response.
 
+## Agent Guidance Model
+
+Bundled skills provide policy and discovery, not a second copy of the CLI
+manual. Each workflow skill keeps a compact operational baseline:
+
+- where to inspect current state and find deeper guidance;
+- hard stops for authority, authorization, and unsafe mutation;
+- policy for choosing the next action from repository context; and
+- evidence that defines completion.
+
+Information stays with its authoritative owner:
+
+| Information                                               | Primary owner                 |
+| --------------------------------------------------------- | ----------------------------- |
+| Normative behavior and lifecycle invariants               | RFCs                          |
+| Design rationale                                          | ADRs                          |
+| Repository-specific authority boundaries                  | Project instructions          |
+| Task strategy and escalation triggers                     | Workflow skills               |
+| Current syntax, state, validation, and available recovery | Canonical CLI surfaces        |
+| Explanation, examples, and uncommon recovery detail       | Guides and indexed references |
+
+Skills retain safety-critical triggers even when the full explanation lives
+elsewhere. Detailed material moves out of a skill only after it has a stable
+discovery route. If authoritative state or the named fallback is unavailable,
+the safe response is to stop before mutation rather than infer permission.
+
+This structure lets capable agents plan from live context while keeping weaker
+agents recoverable. Guidance changes should be staged and checked across both
+common paths and lifecycle-sensitive recovery paths before older instructions
+are removed.
+
 ## Small Changes
 
 Not every change needs every artifact.
@@ -95,13 +126,13 @@ Before implementation:
 
 ```bash
 govctl work new --active "Implement stale search index refresh"
-govctl work add WI-YYYY-MM-DD-NNN refs RFC-0002
-govctl work add WI-YYYY-MM-DD-NNN acceptance_criteria "changed: Search refreshes stale derived indexes before querying"
-govctl work add WI-YYYY-MM-DD-NNN acceptance_criteria "chore: govctl check passes"
-govctl check --has-active
+govctl work edit WI-YYYY-MM-DD-NNN refs --add RFC-0002
+govctl work edit WI-YYYY-MM-DD-NNN acceptance_criteria --add "changed: Search refreshes stale derived indexes before querying"
+govctl work edit WI-YYYY-MM-DD-NNN acceptance_criteria --add "chore: govctl check passes"
+govctl work list active
 ```
 
-During execution:
+Confirm the intended work item appears in the active list. During execution:
 
 - Tick acceptance criteria as they become true.
 - Add `notes` only for durable constraints or retry rules.
@@ -111,8 +142,8 @@ During execution:
 After execution:
 
 ```bash
-govctl work tick WI-YYYY-MM-DD-NNN acceptance_criteria "Search refreshes" -s done
-govctl work tick WI-YYYY-MM-DD-NNN acceptance_criteria "govctl check passes" -s done
+govctl work edit WI-YYYY-MM-DD-NNN acceptance_criteria[0] --tick done
+govctl work edit WI-YYYY-MM-DD-NNN acceptance_criteria[1] --tick done
 govctl work move WI-YYYY-MM-DD-NNN done
 ```
 
@@ -244,12 +275,15 @@ Model these as verification guards when they can be automated:
 
 ```bash
 govctl guard new "Requirement trace"
-govctl guard edit GUARD-REQUIREMENT-TRACE check.command --set "cargo run --bin trace-check"
+govctl guard edit GUARD-REQUIREMENT-TRACE command --set "cargo run --bin trace-check"
 govctl work edit WI-YYYY-MM-DD-NNN verification.required_guards --add GUARD-REQUIREMENT-TRACE
 ```
 
 Keep the guard domain-specific. govctl provides the governance structure; your
 project owns the language, framework, and protocol-specific checks.
+Project defaults are the checks every Work Item needs. Select heavier or
+domain-specific guards per Work Item, and reserve full suites for changes whose
+blast radius crosses the narrower domains.
 
 ## Common Pitfalls
 

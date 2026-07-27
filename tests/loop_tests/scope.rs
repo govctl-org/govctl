@@ -11,8 +11,7 @@ use crate::common::{
 use std::fs;
 
 #[test]
-fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() -> common::TestResult
-{
+fn test_loop_add_remove_rejects_noncanonical_fields() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let root_id = format!("WI-{date}-001");
     let extra_id = format!("WI-{date}-002");
@@ -58,25 +57,17 @@ fn test_loop_add_remove_work_field_accepts_wi_alias_and_rejects_unknown_field() 
 
     let wi_output = run_dynamic_commands(temp_dir.path(), &[loop_add_wi(&loop_id, &extra_id)])?;
 
-    assert!(
-        wi_output.contains(&format!("Updated loop {loop_id}")),
-        "{wi_output}"
-    );
-    let state_toml = fs::read_to_string(
-        temp_dir
-            .path()
-            .join(format!(".govctl/loops/{loop_id}/state.toml")),
-    )?;
-    assert_eq!(
-        loop_work(&toml::from_str(&state_toml)?)?,
-        vec![root_id.clone(), extra_id.clone()]
-    );
+    assert!(wi_output.contains("error[E0803]"), "{wi_output}");
+    assert!(wi_output.contains("Unknown loop field: wi"), "{wi_output}");
 
     let wi_remove_output =
         run_dynamic_commands(temp_dir.path(), &[loop_remove_wi(&loop_id, &extra_id)])?;
-
     assert!(
-        wi_remove_output.contains(&format!("Updated loop {loop_id}")),
+        wi_remove_output.contains("error[E0803]"),
+        "{wi_remove_output}"
+    );
+    assert!(
+        wi_remove_output.contains("Unknown loop field: wi"),
         "{wi_remove_output}"
     );
     let state_toml = fs::read_to_string(

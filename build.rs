@@ -129,28 +129,6 @@ fn render_edit_rules(spec: &EditOpsSpec) -> Result<String, Box<dyn Error>> {
         spec.version
     ));
 
-    out.push_str("define_alias_resolver! {\n");
-    for alias in &spec.aliases {
-        out.push_str(&format!(
-            "    ({:?}, {:?}),\n",
-            alias.alias, alias.canonical
-        ));
-    }
-    out.push_str("}\n\n");
-
-    out.push_str("define_legacy_prefix_resolver! {\n");
-    for rule in &spec.legacy_prefixes {
-        out.push_str(&format!("    ({:?}, [", rule.prefix));
-        for (idx, field) in rule.allowed_fields.iter().enumerate() {
-            if idx > 0 {
-                out.push_str(", ");
-            }
-            out.push_str(&format!("{field:?}"));
-        }
-        out.push_str("]),\n");
-    }
-    out.push_str("}\n\n");
-
     out.push_str("pub const SIMPLE_RULES: &[SimpleFieldRule] = &[\n");
     for field in &spec.simple_rules {
         let kind = match field.kind.as_str() {
@@ -242,6 +220,7 @@ fn render_nested_node_defs(
             out.push_str("    kind: NestedNodeKind::Scalar,\n");
             out.push_str(&format!("    verbs: {},\n", render_verbs_expr(verbs)));
             out.push_str("    text_key: None,\n");
+            out.push_str("    value_codec: None,\n");
             out.push_str(&format!(
                 "    set_mode: {},\n",
                 render_nested_scalar_mode_expr(set_mode.as_ref())?
@@ -271,6 +250,7 @@ fn render_nested_node_defs(
             out.push_str("    kind: NestedNodeKind::Object,\n");
             out.push_str(&format!("    verbs: {},\n", render_verbs_expr(verbs)));
             out.push_str("    text_key: None,\n");
+            out.push_str("    value_codec: None,\n");
             out.push_str("    set_mode: None,\n");
             out.push_str("    item: None,\n");
             out.push_str(&format!("    fields: {},\n", fields_const));
@@ -279,6 +259,7 @@ fn render_nested_node_defs(
         NestedNodeRule::List {
             verbs,
             text_key,
+            value_codec,
             item,
         } => {
             let item_const = format!("{const_name}_ITEM");
@@ -292,6 +273,18 @@ fn render_nested_node_defs(
                 "    text_key: {},\n",
                 match text_key {
                     Some(key) => format!("Some({key:?})"),
+                    None => "None".to_string(),
+                }
+            ));
+            out.push_str(&format!(
+                "    value_codec: {},\n",
+                match value_codec.as_deref() {
+                    Some("requirement_binding") => {
+                        "Some(NestedListValueCodec::RequirementBinding)".to_string()
+                    }
+                    Some(other) => {
+                        return Err(format!("unknown nested list value codec: {other}").into());
+                    }
                     None => "None".to_string(),
                 }
             ));
@@ -320,7 +313,10 @@ fn render_nested_scalar_mode_expr(mode: Option<&RuntimeSetMode>) -> Result<Strin
     match mode {
         None => Ok("None".to_string()),
         Some(RuntimeSetMode::String) => Ok("Some(NestedScalarMode::String)".to_string()),
-        Some(RuntimeSetMode::Integer) => Ok("Some(NestedScalarMode::Integer)".to_string()),
+        Some(RuntimeSetMode::Semver) => Ok("Some(NestedScalarMode::Semver)".to_string()),
+        Some(RuntimeSetMode::Integer) => {
+            Err("integer set mode is not supported for nested edit paths".into())
+        }
         Some(RuntimeSetMode::Enum {
             allowed,
             invalid_msg,
@@ -392,6 +388,7 @@ fn runtime_artifact_expr(artifact: &str) -> Result<&'static str, Box<dyn Error>>
         "adr" => Ok("ArtifactType::Adr"),
         "work" => Ok("ArtifactType::WorkItem"),
         "guard" => Ok("ArtifactType::Guard"),
+        "conformance" => Ok("ArtifactType::Conformance"),
         other => Err(format!("unknown runtime artifact in SSOT: {other}").into()),
     }
 }
@@ -457,6 +454,9 @@ fn runtime_set_expr(set: Option<&RuntimeSetRule>) -> Result<String, Box<dyn Erro
     let mode = match &set.mode {
         RuntimeSetMode::String => "SetMode::String".to_string(),
         RuntimeSetMode::Integer => "SetMode::Integer".to_string(),
+        RuntimeSetMode::Semver => {
+            return Err("semver set mode is only supported for nested edit paths".into());
+        }
         RuntimeSetMode::Enum {
             allowed,
             invalid_msg,

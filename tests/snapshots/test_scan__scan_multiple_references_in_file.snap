@@ -1,6 +1,6 @@
 ---
 source: tests/test_scan.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl check
 Checked:
@@ -9,6 +9,7 @@ Checked:
   0 ADRs
   0 work items
   0 verification guards
+  0 conformance cases
   1 source files scanned
   2 references found
 

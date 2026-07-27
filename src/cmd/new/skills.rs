@@ -91,7 +91,7 @@ pub fn sync_skills(
         }
 
         // Check if file exists and skip if not forcing
-        if path.exists() && !force && !op.is_preview() {
+        if path.exists() && !force {
             skipped += 1;
             if !op.is_preview() {
                 ui::sub_info(format!(

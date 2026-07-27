@@ -23,7 +23,6 @@ fn write_clause(
         path,
         format!(
             r#"[govctl]
-schema = 1
 id = "{clause_id}"
 title = "Cache Clause"
 kind = "normative"
@@ -46,7 +45,6 @@ fn write_search_rfc(dir: &Path) -> common::TestResult {
     fs::write(
         rfc_dir.join("rfc.toml"),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Cache Policy"
 version = "0.1.0"
@@ -80,7 +78,6 @@ fn write_adr(dir: &Path) -> common::TestResult {
     fs::write(
         dir.join("gov/adr/ADR-0001-cache-decision.toml"),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Cache Decision"
 status = "superseded"
@@ -110,7 +107,6 @@ fn write_work(dir: &Path, id: &str, title: &str, description: &str) -> common::T
         dir.join("gov/work/2026-01-01-search-work.toml"),
         format!(
             r#"[govctl]
-schema = 1
 id = "{id}"
 title = "{title}"
 status = "active"
@@ -138,7 +134,6 @@ fn write_work_with_journal(dir: &Path) -> common::TestResult {
     fs::write(
         dir.join("gov/work/2026-01-01-journal-work.toml"),
         r#"[govctl]
-schema = 1
 id = "WI-2026-01-01-002"
 title = "Journal Work"
 status = "active"
@@ -315,12 +310,15 @@ fn test_search_repairs_manifest_fts_divergence() -> common::TestResult {
 }
 
 #[test]
-fn test_search_does_not_index_legacy_work_journal() -> common::TestResult {
+fn test_search_rejects_legacy_work_journal() -> common::TestResult {
     let temp_dir = init_project()?;
     write_work_with_journal(temp_dir.path())?;
 
-    let rendered = run_commands(temp_dir.path(), &[&["work", "show", "WI-2026-01-01-002"]])?;
-    assert!(rendered.contains("journalonlytoken"), "{rendered}");
+    let checked = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(
+        checked.contains("Additional properties are not allowed ('journal' was unexpected)"),
+        "{checked}"
+    );
 
     let search = run_commands(
         temp_dir.path(),

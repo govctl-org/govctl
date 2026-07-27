@@ -91,7 +91,7 @@ All notable changes to this project will be documented in this file.
     let phase1_commands: Vec<Vec<String>> = vec![
         work_new_active("Govctl adoption"),
         work_add_acceptance(&wi1, "added: Governance structure per [[ADR-0014]]"),
-        work_tick_acceptance_done(&wi1, "Governance"),
+        work_tick_acceptance_done(&wi1, 0),
         work_move_done(&wi1),
         command(&["release", "1.0.0", "--date", "2026-03-01"]),
     ];
@@ -205,7 +205,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     let phase2_commands: Vec<Vec<String>> = vec![
         work_new_active("Breaking changes"),
         work_add_acceptance(&wi2, "changed: Response format to JSON"),
-        work_tick_acceptance_done(&wi2, "Response"),
+        work_tick_acceptance_done(&wi2, 0),
         work_move_done(&wi2),
         command(&["release", "2.0.0", "--date", "2026-03-14"]),
     ];

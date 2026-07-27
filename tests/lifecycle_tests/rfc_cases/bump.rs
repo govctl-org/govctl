@@ -316,7 +316,8 @@ fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
@@ -327,7 +328,8 @@ fn test_content_bump_restarts_stable_rfc_at_spec() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Updated normative behavior.",
             ],
             &[
@@ -573,7 +575,7 @@ fn test_bump_change_resolves_reordered_current_entry_without_version_change() ->
 }
 
 #[test]
-fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestResult {
+fn test_bump_change_preserves_schema_three_signature_baseline() -> common::TestResult {
     let temp_dir = init_project()?;
     run_commands(
         temp_dir.path(),
@@ -585,7 +587,7 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
     )?;
 
     let rendered = fs::read_to_string(temp_dir.path().join("docs/rfc/RFC-0001.md"))?;
-    let legacy_signature = rendered
+    let schema_three_signature = rendered
         .lines()
         .find_map(|line| {
             line.trim()
@@ -600,10 +602,10 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
         .ok_or("RFC metadata is not a table")?
         .insert(
             "signature".to_string(),
-            toml::Value::String(legacy_signature.to_string()),
+            toml::Value::String(schema_three_signature.to_string()),
         );
     fs::write(&rfc_path, toml::to_string_pretty(&rfc)?)?;
-    let before = fs::read(&rfc_path)?;
+    let before: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
 
     let output = run_commands(
         temp_dir.path(),
@@ -612,16 +614,23 @@ fn test_bump_change_rejects_legacy_signature_without_mutation() -> common::TestR
             "bump",
             "RFC-0001",
             "--change",
-            "fix: Must not rewrite signature",
+            "fix: Correct current changelog",
         ]],
     )?;
 
-    assert!(output.contains("error[E0505]"), "output: {output}");
     assert!(
-        output.contains("legacy amendment signature"),
+        output.contains("Added change to RFC-0001 v0.1.0"),
         "output: {output}"
     );
-    assert_eq!(fs::read(&rfc_path)?, before);
+    let after: toml::Value = toml::from_str(&fs::read_to_string(&rfc_path)?)?;
+    assert_eq!(after["govctl"]["signature"], before["govctl"]["signature"]);
+    assert_eq!(
+        after["changelog"][0]["fixed"]
+            .as_array()
+            .and_then(|items| items.first())
+            .and_then(toml::Value::as_str),
+        Some("Correct current changelog")
+    );
     Ok(())
 }
 
@@ -682,7 +691,10 @@ fn test_version_bump_rejects_missing_signature_and_preserves_pending_clause() ->
         output.contains("sealed RFC content signature"),
         "output: {output}"
     );
-    assert!(output.contains("govctl migrate"), "output: {output}");
+    assert!(
+        output.contains("Restore the sealed baseline from version-control history"),
+        "output: {output}"
+    );
     assert!(!output.contains("Bumped RFC-0001"), "output: {output}");
     assert!(!output.contains("Set C-PENDING.since"), "output: {output}");
     assert_eq!(fs::read(&rfc_path)?, rfc_before);
@@ -775,7 +787,8 @@ fn test_bump_change_does_not_clear_pending_amendment() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Original normative behavior.",
             ],
             &["rfc", "finalize", "RFC-0001", "normative"],
@@ -786,7 +799,8 @@ fn test_bump_change_does_not_clear_pending_amendment() -> common::TestResult {
                 "clause",
                 "edit",
                 "RFC-0001:C-TEST",
-                "--text",
+                "text",
+                "--set",
                 "Updated normative behavior.",
             ],
             &["rfc", "bump", "RFC-0001", "--change", "Added release note"],

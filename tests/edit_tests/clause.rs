@@ -35,7 +35,8 @@ fn test_clause_set_text() -> common::TestResult {
                 "clause",
                 "edit",
                 TEST_CLAUSE_ID,
-                "--text",
+                "text",
+                "--set",
                 "Updated clause text",
             ],
             SHOW_TEST_CLAUSE,
@@ -80,7 +81,14 @@ fn test_clause_set_title() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "title", "New Title"],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "title",
+                "--set",
+                "New Title",
+            ],
             SHOW_TEST_CLAUSE,
         ],
     )?;
@@ -187,7 +195,7 @@ fn test_clause_set_since_rejected() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "since", "0.1.0"],
+            &["clause", "edit", TEST_CLAUSE_ID, "since", "--set", "0.1.0"],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -200,7 +208,7 @@ fn test_clause_set_since_rejected() -> common::TestResult {
 }
 
 #[test]
-fn test_clause_set_text_sugar() -> common::TestResult {
+fn test_clause_edit_text() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let clause = new_test_clause("Test Clause");
 
@@ -209,7 +217,14 @@ fn test_clause_set_text_sugar() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "text", "new text"],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "text",
+                "--set",
+                "new text",
+            ],
             SHOW_TEST_CLAUSE,
         ],
     )?;
@@ -227,7 +242,14 @@ fn test_clause_set_status_rejected() -> common::TestResult {
         &[
             NEW_TEST_RFC,
             &clause,
-            &["clause", "set", TEST_CLAUSE_ID, "status", "deprecated"],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "status",
+                "--set",
+                "deprecated",
+            ],
         ],
     )?;
     assert!(output.contains("error[E0804]"), "output: {}", output);
@@ -247,9 +269,50 @@ fn test_clause_edit_nonexistent() -> common::TestResult {
         temp_dir.path(),
         &[
             NEW_TEST_RFC,
-            &["clause", "edit", "RFC-0001:C-NONEXISTENT", "--text", "Text"],
+            &[
+                "clause",
+                "edit",
+                "RFC-0001:C-NONEXISTENT",
+                "text",
+                "--set",
+                "Text",
+            ],
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_clause_edit_rejects_clause_symlink_outside_rfc() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    let clause = new_test_clause("Test Clause");
+    run_commands(temp_dir.path(), &[NEW_TEST_RFC, &clause])?;
+    let clause_path = temp_dir.path().join("gov/rfc/RFC-0001/clauses/C-TEST.toml");
+    let external_path = temp_dir.path().join("external-clause.toml");
+    std::fs::rename(&clause_path, &external_path)?;
+    symlink(&external_path, &clause_path)?;
+    let before = std::fs::read(&external_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["clause", "show", TEST_CLAUSE_ID],
+            &[
+                "clause",
+                "edit",
+                TEST_CLAUSE_ID,
+                "text",
+                "--set",
+                "Redirected",
+            ],
+        ],
+    )?;
+
+    assert_eq!(output.matches("error[E0204]").count(), 2, "{output}");
+    assert_eq!(std::fs::read(&external_path)?, before);
     Ok(())
 }

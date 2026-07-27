@@ -147,6 +147,109 @@ fn test_clause_new_rejects_deprecated_rfc_without_mutation() -> common::TestResu
 
 #[cfg(unix)]
 #[test]
+fn test_clause_new_rejects_clause_directory_symlink_outside_rfc() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let clauses_dir = rfc_dir.join("clauses");
+    let external_dir = temp_dir.path().join("external-clauses");
+    fs::rename(&clauses_dir, &external_dir)?;
+    symlink(&external_dir, &clauses_dir)?;
+    let rfc_path = rfc_dir.join("rfc.toml");
+    let rfc_before = fs::read(&rfc_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "clause",
+            "new",
+            "RFC-0001:C-ESCAPE",
+            "Escaped Clause",
+            "-s",
+            "Specification",
+            "-k",
+            "normative",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0204]"), "{output}");
+    assert!(output.contains("Invalid clause path"), "{output}");
+    assert!(!external_dir.join("C-ESCAPE.toml").exists());
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_clause_new_rejects_dangling_symlink_outside_rfc() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    run_commands(temp_dir.path(), &[&["rfc", "new", "Test RFC"]])?;
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let clause_path = rfc_dir.join("clauses/C-ESCAPE.toml");
+    let external_path = temp_dir.path().join("external-clause.toml");
+    symlink(&external_path, &clause_path)?;
+    let rfc_path = rfc_dir.join("rfc.toml");
+    let rfc_before = fs::read(&rfc_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&[
+            "clause",
+            "new",
+            "RFC-0001:C-ESCAPE",
+            "Escaped Clause",
+            "-s",
+            "Specification",
+            "-k",
+            "normative",
+        ]],
+    )?;
+
+    assert!(output.contains("error[E0214]"), "{output}");
+    assert!(!external_path.exists());
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn test_clause_new_rejects_existing_symlink_alias_without_mutation() -> common::TestResult {
+    use std::os::unix::fs::symlink;
+
+    let temp_dir = init_project()?;
+    run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["clause", "new", "RFC-0001:C-ORIGINAL", "Original Clause"],
+        ],
+    )?;
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    let original_path = rfc_dir.join("clauses/C-ORIGINAL.toml");
+    let alias_path = rfc_dir.join("clauses/C-ALIAS.toml");
+    symlink("C-ORIGINAL.toml", &alias_path)?;
+    let original_before = fs::read(&original_path)?;
+    let rfc_path = rfc_dir.join("rfc.toml");
+    let rfc_before = fs::read(&rfc_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["clause", "new", "RFC-0001:C-ALIAS", "Alias Clause"]],
+    )?;
+
+    assert!(output.contains("error[E0214]"), "{output}");
+    assert!(output.contains("Clause already exists"), "{output}");
+    assert_eq!(fs::read(&original_path)?, original_before);
+    assert_eq!(fs::read(&rfc_path)?, rfc_before);
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
 fn test_clause_new_rfc_write_failure_rolls_back_created_clause() -> common::TestResult {
     use std::os::unix::fs::PermissionsExt;
 

@@ -3,8 +3,6 @@ use serde::{Deserialize, Serialize};
 /// Verification Guard metadata section `[govctl]`
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GuardMeta {
-    #[serde(default, rename = "schema", skip_serializing)]
-    _schema: u32,
     pub id: String,
     pub title: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -16,7 +14,6 @@ pub struct GuardMeta {
 impl GuardMeta {
     pub fn new(id: impl Into<String>, title: impl Into<String>) -> Self {
         Self {
-            _schema: 1,
             id: id.into(),
             title: title.into(),
             refs: vec![],

@@ -1,0 +1,50 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-012"
+title = "Harden governed artifact creation paths"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "RFC-0000:C-RFC-DEF",
+    "RFC-0002:C-CRUD-VERBS",
+    "RFC-0002:C-RESOURCES",
+]
+
+[content]
+description = "Resolve verified creation-path validation gaps, align storage containment with the governing RFC boundary, and refresh affected release projections."
+
+[[content.acceptance_criteria]]
+text = "RFC creation rejects invalid or path-traversing explicit IDs and exhausted automatic numbering before filesystem mutation"
+status = "done"
+category = "security"
+
+[[content.acceptance_criteria]]
+text = "Clause creation rejects storage paths that resolve outside the containing RFC directory"
+status = "done"
+category = "security"
+
+[[content.acceptance_criteria]]
+text = "RFC and Clause loading enforce per-RFC Clause containment for configured storage roots"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused regression coverage and generated changelog projections are current"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Creation dry-runs apply the same non-mutating preflight validation as execution"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Clause creation rejects occupied logical targets without overwriting existing artifacts"
+status = "done"
+category = "fixed"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

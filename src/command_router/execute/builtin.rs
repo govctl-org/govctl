@@ -11,8 +11,7 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::InitSkills { force, format, dir } => {
             cmd::new::sync_skills(config, *force, format, dir.as_deref(), op)
         }
-        BuiltinOp::Check { has_active: true } => cmd::check::check_has_active(config),
-        BuiltinOp::Check { has_active: false } => cmd::check::check_all(config),
+        BuiltinOp::Check => cmd::check::check_all(config),
         BuiltinOp::Status => cmd::status::show_status(config),
         BuiltinOp::RenderGlobal {
             target,
@@ -76,5 +75,47 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             loop_id,
             target_work_ids,
         } => cmd::loop_cmd::run(config, loop_id, target_work_ids, op),
+        BuiltinOp::ConformanceList {
+            filter,
+            limit,
+            output,
+            tags,
+        } => cmd::conformance::list(config, filter.as_deref(), *limit, *output, tags),
+        BuiltinOp::ConformanceGet { id, field, output } => {
+            cmd::conformance::get(config, id, field.as_deref(), *output)
+        }
+        BuiltinOp::ConformanceShow {
+            id,
+            output,
+            history,
+        } => cmd::conformance::show(config, id, *output, *history),
+        BuiltinOp::ConformanceNew {
+            title,
+            path,
+            selector,
+            requirements,
+            guards,
+            id,
+        } => cmd::conformance::new_case(
+            config,
+            cmd::conformance::NewCaseRequest {
+                title,
+                path,
+                selector,
+                requirements,
+                guards,
+                id: id.as_deref(),
+            },
+            op,
+        ),
+        BuiltinOp::ConformanceEdit { id, path, action } => {
+            cmd::conformance::edit(config, id, path, action, op)
+        }
+        BuiltinOp::ConformanceDelete { id, force } => {
+            cmd::conformance::delete(config, id, *force, op)
+        }
+        BuiltinOp::ConformanceTrace { target, output } => {
+            cmd::conformance::trace(config, target.as_deref(), *output)
+        }
     }
 }

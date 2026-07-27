@@ -1,0 +1,24 @@
+---
+source: tests/test_help.rs
+expression: normalized
+---
+$ govctl adr reject --help
+Reject ADR (proposed → rejected)
+
+Usage: govctl adr reject [OPTIONS] <ID>
+
+Arguments:
+  <ID>  Artifact ID
+
+Options:
+  -C, --config <CONFIG>  Path to govctl config (TOML)
+      --dry-run          Dry run: preview changes without writing files
+  -h, --help             Print help
+
+EXAMPLES:
+    govctl adr reject ADR-0001
+
+NOTES:
+    - Reject the ADR itself when the proposal should not proceed.
+    - Use `govctl adr edit ADR-0001 alternatives[N] --tick rejected` to reject a specific alternative instead.
+exit: 0

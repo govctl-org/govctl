@@ -1,19 +1,22 @@
 ---
-source: tests/test_edit.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/edit_tests/adr.rs
+expression: value
 ---
 $ govctl adr new Original Title
 Created ADR: gov/adr/ADR-XXXX-original-title.toml
 exit: 0
 
-$ govctl adr set ADR-0001 title New Title
+$ govctl adr edit ADR-0001 title --set New Title
 Set ADR-0001.title = New Title
 exit: 0
 
 $ govctl adr list
-┌──────────┬──────────┬────────────┬───────────┐
-│ ADR      ┆ Status   ┆ Date       ┆ Title     │
-╞══════════╪══════════╪════════════╪═══════════╡
-│ ADR-0001 ┆ proposed ┆ <DATE> ┆ New Title │
-└──────────┴──────────┴────────────┴───────────┘
+[
+  {
+    "id": "ADR-0001",
+    "status": "proposed",
+    "date": "<DATE>",
+    "title": "New Title"
+  }
+]
 exit: 0

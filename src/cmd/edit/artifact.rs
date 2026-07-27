@@ -7,6 +7,7 @@ pub enum ArtifactType {
     Adr,
     WorkItem,
     Guard,
+    Conformance,
 }
 
 impl ArtifactType {
@@ -19,6 +20,8 @@ impl ArtifactType {
             Some(Self::Adr)
         } else if id.starts_with("GUARD-") {
             Some(Self::Guard)
+        } else if id.starts_with("CONF-") {
+            Some(Self::Conformance)
         } else if id.starts_with("WI-") || id.contains('-') {
             Some(Self::WorkItem)
         } else {
@@ -41,6 +44,7 @@ impl ArtifactType {
             Self::Adr => "adr",
             Self::WorkItem => "work",
             Self::Guard => "guard",
+            Self::Conformance => "conformance",
         }
     }
 }

@@ -44,12 +44,15 @@ pub enum DiagnosticCode {
     E0211ClauseStillReferenced,
     E0212ClauseSupersessionCycle,
     E0213ClauseSupersededByMissing,
+    E0214ClauseAlreadyExists,
 
     // ADR errors (E03xx)
     E0301AdrSchemaInvalid,
     E0302AdrNotFound,
     E0303AdrInvalidTransition,
     E0304AdrRefNotFound,
+    /// Retired; retained to preserve the diagnostic-code registry.
+    #[allow(dead_code)]
     E0305AdrCannotDeprecate,
     /// ADR refs or [[...]] targets WI-* — violates [[RFC-0000:C-REFERENCE-HIERARCHY]]
     E0306AdrReferenceHierarchy,
@@ -122,6 +125,14 @@ pub enum DiagnosticCode {
     E1209LoopWorkMismatch,
     E1210LoopExecutionFailed,
 
+    // Conformance Case errors (E13xx)
+    E1301ConformanceSchemaInvalid,
+    E1302ConformanceNotFound,
+    E1303ConformanceDuplicate,
+    E1304ConformanceInvalidId,
+    E1305ConformanceGraphInvalid,
+    E1306ConformanceStillReferenced,
+
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
     E0802ConflictingArgs,
@@ -148,6 +159,8 @@ pub enum DiagnosticCode {
 
     // General errors (E09xx)
     E0901IoError,
+    /// Retired; retained to preserve the diagnostic-code registry.
+    #[allow(dead_code)]
     E0902JsonParseError,
     E0903UnexpectedError,
 
@@ -160,6 +173,8 @@ pub enum DiagnosticCode {
     W0106RenderedReadError,
     W0107SourceRefOutdated,
     W0108WorkPlaceholderDescription,
+    /// Retired; retained to preserve the diagnostic-code registry.
+    #[allow(dead_code)]
     W0109WorkNoActive,
     W0110SchemaOutdated,
     W0111ProjectSupportOutdated,
@@ -169,6 +184,8 @@ pub enum DiagnosticCode {
     W0113AdrPlaceholderContext,
 
     // Informational diagnostics (I04xx)
+    /// Retired; retained to preserve the diagnostic-code registry.
+    #[allow(dead_code)]
     I0401WorkLegacyInlineHistory,
 }
 
@@ -190,6 +207,7 @@ mod tests {
     fn code_strings_match_representative_catalog_ids() {
         assert_eq!(DiagnosticCode::E0101RfcSchemaInvalid.code(), "E0101");
         assert_eq!(DiagnosticCode::E0201ClauseSchemaInvalid.code(), "E0201");
+        assert_eq!(DiagnosticCode::E0214ClauseAlreadyExists.code(), "E0214");
         assert_eq!(DiagnosticCode::E0301AdrSchemaInvalid.code(), "E0301");
         assert_eq!(DiagnosticCode::E0401WorkSchemaInvalid.code(), "E0401");
         assert_eq!(DiagnosticCode::E0501ConfigInvalid.code(), "E0501");
@@ -233,5 +251,13 @@ mod tests {
             DiagnosticCode::I0401WorkLegacyInlineHistory.level(),
             DiagnosticLevel::Info
         );
+    }
+
+    #[test]
+    fn retired_codes_keep_their_assignments() {
+        assert_eq!(DiagnosticCode::E0305AdrCannotDeprecate.code(), "E0305");
+        assert_eq!(DiagnosticCode::E0902JsonParseError.code(), "E0902");
+        assert_eq!(DiagnosticCode::W0109WorkNoActive.code(), "W0109");
+        assert_eq!(DiagnosticCode::I0401WorkLegacyInlineHistory.code(), "I0401");
     }
 }

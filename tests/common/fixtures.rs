@@ -20,12 +20,26 @@ pub fn init_project_at(schema_version: Option<u32>) -> Result<TempDir, Box<dyn s
         .env("NO_COLOR", "1")
         .env("GOVCTL_DEFAULT_OWNER", "@test-user");
 
-    if let Some(v) = schema_version {
-        cmd.env("GOVCTL_SCHEMA_VERSION", v.to_string());
-    }
-
     let result = cmd.output()?;
     assert!(result.status.success(), "govctl init failed");
+    if let Some(version) = schema_version {
+        let config_path = temp_dir.path().join("gov/config.toml");
+        let config = fs::read_to_string(&config_path)?;
+        let mut in_schema = false;
+        let mut lines = Vec::new();
+        for line in config.lines() {
+            let trimmed = line.trim();
+            if trimmed.starts_with('[') {
+                in_schema = trimmed == "[schema]";
+            }
+            if in_schema && trimmed.starts_with("version") {
+                lines.push(format!("version = {version}"));
+            } else {
+                lines.push(line.to_string());
+            }
+        }
+        fs::write(config_path, format!("{}\n", lines.join("\n")))?;
+    }
     Ok(temp_dir)
 }
 
@@ -94,7 +108,7 @@ pub fn write_guard_with_timeout(
         .map(|pattern| format!("pattern = \"{pattern}\"\n"))
         .unwrap_or_default();
     let content = format!(
-        "[govctl]\nschema = 1\nid = \"{guard_id}\"\ntitle = \"{guard_id}\"\n\n[check]\ncommand = \"{command}\"\ntimeout_secs = {timeout_secs}\n{pattern_line}"
+        "[govctl]\nid = \"{guard_id}\"\ntitle = \"{guard_id}\"\n\n[check]\ncommand = \"{command}\"\ntimeout_secs = {timeout_secs}\n{pattern_line}"
     );
     write_guard_content(dir, guard_id, &content)
 }
@@ -133,7 +147,6 @@ pub fn write_minimal_rfc(
     fs::create_dir_all(rfc_dir.join("clauses"))?;
     let content = format!(
         r#"[govctl]
-schema = 1
 id = "{rfc_id}"
 title = "{title}"
 version = "0.1.0"
@@ -163,7 +176,7 @@ pub fn write_canonical_guarded_work_item(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let waiver = guard_waiver(guard_id, waiver_reason);
     let content = format!(
-        "[govctl]\nschema = 1\nid = \"{work_id}\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done criteria\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]{waiver}"
+        "[govctl]\nid = \"{work_id}\"\ntitle = \"Guarded Item\"\nstatus = \"active\"\ncreated = \"2026-01-01\"\nstarted = \"2026-01-01\"\n\n[content]\ndescription = \"Guarded work item\"\n\n[[content.acceptance_criteria]]\ntext = \"done criteria\"\nstatus = \"done\"\ncategory = \"chore\"\n\n[verification]\nrequired_guards = [\"{guard_id}\"]{waiver}"
     );
     write_guarded_work_item_content(dir, &content)
 }

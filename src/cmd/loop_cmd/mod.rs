@@ -65,10 +65,7 @@ pub fn list(
     limit: Option<usize>,
     output: OutputFormat,
 ) -> DiagnosticResult<Diagnostics> {
-    let mut states = canonical_loop_ids(config)?
-        .into_iter()
-        .map(|loop_id| load_loop_state(config, &loop_id))
-        .collect::<DiagnosticResult<Vec<_>>>()?;
+    let mut states = load_loop_states(config)?;
     if let Some(filter) = filter {
         states.retain(|state| loop_list_filter_matches(state, filter));
     }
@@ -89,6 +86,13 @@ pub fn list(
         .collect::<Vec<_>>();
     print_loop_list(&entries, output);
     Ok(vec![])
+}
+
+pub(crate) fn load_loop_states(config: &Config) -> DiagnosticResult<Vec<LoopState>> {
+    canonical_loop_ids(config)?
+        .into_iter()
+        .map(|loop_id| load_loop_state(config, &loop_id))
+        .collect()
 }
 
 fn loop_list_filter_matches(state: &LoopState, filter: &str) -> bool {

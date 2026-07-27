@@ -16,9 +16,13 @@ Finalized RFC-0001 to status: deprecated
 exit: 0
 
 $ govctl rfc list
-┌──────────┬─────────┬────────────┬───────┬─────────┐
-│ RFC      ┆ Version ┆ Status     ┆ Phase ┆ Title   │
-╞══════════╪═════════╪════════════╪═══════╪═════════╡
-│ RFC-0001 ┆ 0.1.0   ┆ deprecated ┆ spec  ┆ Old RFC │
-└──────────┴─────────┴────────────┴───────┴─────────┘
+[
+  {
+    "id": "RFC-0001",
+    "version": "0.1.0",
+    "status": "deprecated",
+    "phase": "spec",
+    "title": "Old RFC"
+  }
+]
 exit: 0

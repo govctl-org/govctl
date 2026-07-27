@@ -1,12 +1,10 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Edit Operation Rules SSOT",
-  "description": "Single-source-of-truth rules for path normalization, validation, and handler table generation.",
+  "description": "Single-source-of-truth rules for canonical edit paths, validation, and handler table generation.",
   "type": "object",
   "required": [
     "version",
-    "aliases",
-    "legacy_prefixes",
     "simple_rules",
     "runtime_fields",
     "nested_rules",
@@ -16,16 +14,6 @@
     "version": {
       "type": "integer",
       "minimum": 1
-    },
-    "aliases": {
-      "type": "array",
-      "items": { "$ref": "#/definitions/aliasRule" },
-      "minItems": 1
-    },
-    "legacy_prefixes": {
-      "type": "array",
-      "items": { "$ref": "#/definitions/legacyPrefixRule" },
-      "minItems": 1
     },
     "simple_rules": {
       "type": "array",
@@ -49,47 +37,13 @@
   },
   "additionalProperties": false,
   "definitions": {
-    "aliasRule": {
-      "type": "object",
-      "required": ["alias", "canonical"],
-      "properties": {
-        "alias": {
-          "type": "string",
-          "pattern": "^[a-z_][a-z0-9_]*$"
-        },
-        "canonical": {
-          "type": "string",
-          "pattern": "^[a-z_][a-z0-9_]*$"
-        }
-      },
-      "additionalProperties": false
-    },
-    "legacyPrefixRule": {
-      "type": "object",
-      "required": ["prefix", "allowed_fields"],
-      "properties": {
-        "prefix": {
-          "type": "string",
-          "enum": ["content", "govctl"]
-        },
-        "allowed_fields": {
-          "type": "array",
-          "items": {
-            "type": "string",
-            "pattern": "^[a-z_][a-z0-9_]*$"
-          },
-          "minItems": 1
-        }
-      },
-      "additionalProperties": false
-    },
     "nestedRootRule": {
       "type": "object",
       "required": ["artifact", "root", "content_path", "node"],
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "adr", "work", "guard"]
+          "enum": ["rfc", "adr", "work", "guard", "conformance"]
         },
         "root": {
           "type": "string",
@@ -182,6 +136,12 @@
                 { "type": "null" }
               ]
             },
+            "value_codec": {
+              "oneOf": [
+                { "type": "string", "enum": ["requirement_binding"] },
+                { "type": "null" }
+              ]
+            },
             "item": { "$ref": "#/definitions/nestedNodeRule" }
           },
           "additionalProperties": false
@@ -194,7 +154,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work", "guard"]
+          "enum": ["rfc", "clause", "adr", "work", "guard", "conformance"]
         },
         "name": {
           "type": "string",
@@ -221,7 +181,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work", "guard"]
+          "enum": ["rfc", "clause", "adr", "work", "guard", "conformance"]
         },
         "name": {
           "type": "string",
@@ -326,6 +286,14 @@
         },
         {
           "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string", "enum": ["semver"] }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
           "required": ["type", "allowed", "invalid_msg", "code"],
           "properties": {
             "type": { "type": "string", "enum": ["enum"] },
@@ -352,7 +320,7 @@
       "properties": {
         "artifact": {
           "type": "string",
-          "enum": ["rfc", "clause", "adr", "work", "guard"]
+          "enum": ["rfc", "clause", "adr", "work", "guard", "conformance"]
         },
         "field": {
           "type": "string",

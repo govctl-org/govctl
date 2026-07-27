@@ -9,7 +9,14 @@ fn test_work_journal_field_surface_is_unavailable() -> common::TestResult {
         temp_dir.path(),
         &[
             &["work", "new", "Test Task"],
-            &["work", "add", &wi_id, "journal", "First progress update"],
+            &[
+                "work",
+                "edit",
+                &wi_id,
+                "journal",
+                "--add",
+                "First progress update",
+            ],
             &["work", "get", &wi_id, "journal"],
             &[
                 "work",
@@ -27,8 +34,8 @@ fn test_work_journal_field_surface_is_unavailable() -> common::TestResult {
                 "--set",
                 "Changed history",
             ],
-            &["work", "remove", &wi_id, "journal", "--all"],
-            &["work", "tick", &wi_id, "journal", "--at", "0"],
+            &["work", "edit", &wi_id, "journal", "--remove", "--all"],
+            &["work", "edit", &wi_id, "journal[0]", "--tick", "done"],
             &["work", "show", &wi_id],
         ],
     )?;

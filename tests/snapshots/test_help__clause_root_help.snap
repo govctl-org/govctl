@@ -8,12 +8,11 @@ Clause operations
 Usage: govctl clause [OPTIONS] <COMMAND>
 
 Commands:
-  list       List clauses [aliases: ls]
+  list       List clauses
   get        Get clause metadata or specific field
   show       Show rendered clause content
   new        Create a new clause
   edit       Canonical path-first clause edit entrypoint
-  set        Set clause field value
   delete     Delete clause
   deprecate  Deprecate clause
   supersede  Supersede clause
@@ -34,4 +33,7 @@ COMMON WORKFLOW:
 START HERE:
     - New clause: `govctl clause new RFC-0001:C-SCOPE "Scope"`
     - Inspect one clause: `govctl clause get RFC-0001:C-SCOPE`
+
+NOTES:
+    - Always use the root `govctl clause` namespace for Clause operations, even though Clause storage and IDs are scoped by an RFC.
 exit: 0

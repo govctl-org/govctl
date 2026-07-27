@@ -1,0 +1,51 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-009"
+title = "Close second pre-1.0 review findings"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "RFC-0000:C-PHASE-LIFECYCLE",
+    "RFC-0002:C-COMPATIBILITY-BOUNDARY",
+    "RFC-0002:C-NAMESPACE-RECOVERY",
+    "ADR-0057",
+]
+
+[content]
+description = "Resolve verified pre-1.0 review gaps in repository schema safety, Clause coverage, namespace recovery, and governance traceability."
+
+[[content.acceptance_criteria]]
+text = "Unsupported future schema versions and missing project configuration block repository mutation"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Every stored Clause participates in validation and RFC amendment signatures"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Namespace recovery recognizes only structurally valid Clause references"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "[[ADR-0057]] supersedes the conflicting [[ADR-0024]] guidance"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "The breaking compatibility Work Item references its governing ADR"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused regression tests, governance validation, and pre-commit checks pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

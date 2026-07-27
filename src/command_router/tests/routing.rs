@@ -68,34 +68,28 @@ fn test_target_resolves_get_and_edit_to_same_field_target() -> Result<(), Box<dy
     let get = crate::AdrCommand::Get(crate::CommonGetArgs {
         id: "ADR-0038".to_string(),
         field: Some("alternatives[1].status".to_string()),
+        output: None,
     })
     .to_plan()?;
-    let edit = crate::AdrCommand::Edit(crate::AdrEditArgs {
-        common: crate::CommonEditArgs {
-            id: "ADR-0038".to_string(),
-            path: "alternatives[1].status".to_string(),
-            action: EditActionArgs {
-                set: None,
-                add: None,
-                remove: None,
-                tick: Some(TickStatus::Accepted),
-                stdin: false,
-                at: None,
-                exact: false,
-                regex: false,
-                all: false,
-            },
+    let edit = crate::AdrCommand::Edit(crate::CommonEditArgs {
+        id: "ADR-0038".to_string(),
+        path: "alternatives[1].status".to_string(),
+        action: EditActionArgs {
+            set: None,
+            add: None,
+            remove: None,
+            tick: Some(TickStatus::Accepted),
+            stdin: false,
+            regex: false,
+            all: false,
         },
-        pro: vec![],
-        con: vec![],
-        reject_reason: None,
     })
     .to_plan()?;
 
     match ((&get.op, &get.scope), (&edit.op, &edit.scope)) {
         (
             (
-                Op::Get,
+                Op::Get { .. },
                 Scope::Target {
                     artifact: get_artifact,
                     id: get_id,
@@ -121,21 +115,25 @@ fn test_target_resolves_get_and_edit_to_same_field_target() -> Result<(), Box<dy
 }
 
 #[test]
-fn test_work_tick_defaults_status_to_done() -> Result<(), Box<dyn std::error::Error>> {
+fn test_work_tick_uses_indexed_edit_path() -> Result<(), Box<dyn std::error::Error>> {
     let cli = crate::Cli::parse_from([
         "govctl",
         "work",
-        "tick",
+        "edit",
         "WI-2026-04-07-001",
-        "acceptance_criteria",
-        "Criterion 1",
+        "acceptance_criteria[0]",
+        "--tick",
+        "done",
     ]);
 
     match cli.command {
         crate::Commands::Work {
-            command: crate::WorkCommand::Tick(crate::WorkTickArgs { status, .. }),
-        } => assert!(matches!(status, WorkTickStatus::Done)),
-        _ => return Err("expected work tick command".into()),
+            command: crate::WorkCommand::Edit(crate::CommonEditArgs { path, action, .. }),
+        } => {
+            assert_eq!(path, "acceptance_criteria[0]");
+            assert!(matches!(action.tick, Some(TickStatus::Done)));
+        }
+        _ => return Err("expected work edit command".into()),
     }
     Ok(())
 }

@@ -94,6 +94,11 @@ fn tag_summaries(config: &Config, index: &ProjectIndex) -> Vec<TuiTagSummary> {
             *counts.entry(tag.clone()).or_default() += 1;
         }
     }
+    for case in &index.conformance_cases {
+        for tag in &case.meta().tags {
+            *counts.entry(tag.clone()).or_default() += 1;
+        }
+    }
 
     counts
         .into_iter()
@@ -170,6 +175,9 @@ mod tests {
     use super::*;
     use crate::config::PathsConfig;
     use crate::loop_state::{LoopState, write_loop_state_with_op};
+    use crate::model::{
+        ConformanceContent, ConformanceEntry, ConformanceMeta, ConformanceSpec, RequirementBinding,
+    };
     use crate::write::WriteOp;
     use std::collections::BTreeMap;
 
@@ -240,6 +248,40 @@ mod tests {
                 .contains("Failed to read loop state directory")
         );
         Ok(())
+    }
+
+    #[test]
+    fn tag_summaries_include_conformance_case_tags() {
+        let mut config = Config::default();
+        config.tags.allowed = vec!["testing".to_string()];
+        let index = ProjectIndex {
+            conformance_cases: vec![ConformanceEntry {
+                spec: ConformanceSpec {
+                    govctl: ConformanceMeta {
+                        id: "CONF-TAGS".to_string(),
+                        title: "Tag summary case".to_string(),
+                        tags: vec!["testing".to_string()],
+                    },
+                    case: ConformanceContent {
+                        path: "tests/conformance/tags.toml".to_string(),
+                        selector: "tags::case".to_string(),
+                        requirements: vec![RequirementBinding {
+                            clause_ref: "RFC-0001:C-TAGS".to_string(),
+                            version: "0.1.0".to_string(),
+                        }],
+                        guards: vec![],
+                    },
+                },
+                path: "gov/conformance/CONF-TAGS.toml".into(),
+            }],
+            ..ProjectIndex::default()
+        };
+
+        let tags = tag_summaries(&config, &index);
+
+        assert_eq!(tags.len(), 1);
+        assert_eq!(tags[0].name, "testing");
+        assert_eq!(tags[0].count, 1);
     }
 
     fn loop_state(loop_id: &str, work_id: &str) -> crate::diagnostic::DiagnosticResult<LoopState> {

@@ -1,6 +1,6 @@
 use super::write_new_artifact_toml;
 use crate::config::Config;
-use crate::diagnostic::{DiagnosticCode, DiagnosticResult, Diagnostics};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{AdrContent, AdrMeta, AdrSpec, AdrStatus};
 use crate::schema::ArtifactSchema;
 use crate::ui;
@@ -28,6 +28,13 @@ pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> DiagnosticRes
         }
     }
 
+    if max_num >= 9999 {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0301AdrSchemaInvalid,
+            "ADR ID namespace exhausted at ADR-9999",
+            adr_dir.display().to_string(),
+        ));
+    }
     let next_num = max_num + 1;
     let adr_id = format!("ADR-{next_num:04}");
     let slug = slugify(title);

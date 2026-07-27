@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "0.15.0"
+version = "2.1.0"
 status = "normative"
-phase = "stable"
+phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-21"
+updated = "2026-07-27"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "9fd6a2dcabbea00d22440172c64fc4e539ea826c1fdd2a033b3d461192e200cc"
+signature = "7cbe44295116244b23a5ac3bab41c700895da6e3f0bff6f8cfc13a5615b5ea62"
 
 [[sections]]
 title = "Summary"
@@ -35,6 +35,69 @@ clauses = [
     "clauses/C-SELF-UPDATE.toml",
     "clauses/C-SEARCH-COMMAND.toml",
     "clauses/C-SHOW-PROJECTION.toml",
+    "clauses/C-COMPATIBILITY-BOUNDARY.toml",
+    "clauses/C-EDIT-FIELD-CONTRACT.toml",
+    "clauses/C-NAMESPACE-RECOVERY.toml",
+]
+
+[[sections]]
+title = "Global Commands"
+clauses = ["clauses/C-DESCRIBE-COMMAND.toml"]
+
+[[changelog]]
+version = "2.1.0"
+date = "2026-07-27"
+notes = "Integrate Conformance Cases into the resource model"
+added = ["Define the Conformance Case resource and canonical CRUD surface"]
+changed = ["Extend validation, search, tag, output, and migration contracts"]
+
+[[changelog]]
+version = "2.0.0"
+date = "2026-07-26"
+notes = "Define reliable agent introspection"
+changed = ["Derive describe command metadata from the compiled CLI and limit context to actionable state"]
+
+[[changelog]]
+version = "1.1.0"
+date = "2026-07-26"
+notes = "Define universal dry-run preflight semantics"
+changed = ["Require dry-runs to preserve execution validation and target selection"]
+
+[[changelog]]
+version = "1.0.4"
+date = "2026-07-26"
+notes = "Restore schema boundary formatting"
+fixed = ["Render repository schema rules as separate requirements"]
+
+[[changelog]]
+version = "1.0.3"
+date = "2026-07-26"
+notes = "Close repository schema validation gaps"
+fixed = ["Reject future schemas and existing projects with missing configuration"]
+
+[[changelog]]
+version = "1.0.2"
+date = "2026-07-26"
+notes = "Clarify schema-3 RFC signature semantics"
+changed = ["Define schema version 3 as the content-signature interpretation boundary"]
+
+[[changelog]]
+version = "1.0.1"
+date = "2026-07-25"
+notes = "Guide misrouted Clause commands to the canonical namespace"
+changed = ["Define deterministic recovery diagnostics for Clause commands sent through the RFC namespace"]
+
+[[changelog]]
+version = "1.0.0"
+date = "2026-07-25"
+notes = "Adopt the canonical-only compatibility boundary"
+changed = [
+    "Define the complete canonical edit path and selector contract",
+    "Diagnose recognized unsupported legacy storage before project operations succeed",
+]
+removed = [
+    "Remove sibling mutation verbs, command aliases, field aliases, wire-layout paths, and resource-specific edit flags",
+    "End migration support for project schemas below version 3 and remove legacy storage readers",
 ]
 
 [[changelog]]

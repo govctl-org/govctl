@@ -1,8 +1,7 @@
 use super::*;
 
 #[test]
-fn test_field_alias_ac() -> common::TestResult {
-    // 'ac' should resolve to 'acceptance_criteria'
+fn test_field_alias_ac_is_rejected() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
@@ -11,9 +10,10 @@ fn test_field_alias_ac() -> common::TestResult {
             &["work", "new", "Test Task"],
             &[
                 "work",
-                "add",
+                "edit",
                 &format!("WI-{}-001", date),
                 "ac",
+                "--add",
                 "add: Test criterion",
             ],
             &["work", "get", &format!("WI-{}-001", date), "ac"],
@@ -24,8 +24,7 @@ fn test_field_alias_ac() -> common::TestResult {
 }
 
 #[test]
-fn test_field_alias_desc() -> common::TestResult {
-    // 'desc' should resolve to 'description'
+fn test_field_alias_desc_is_rejected() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
@@ -34,9 +33,10 @@ fn test_field_alias_desc() -> common::TestResult {
             &["work", "new", "Test Task"],
             &[
                 "work",
-                "set",
+                "edit",
                 &format!("WI-{}-001", date),
                 "desc",
+                "--set",
                 "A description",
             ],
             &["work", "get", &format!("WI-{}-001", date), "desc"],
@@ -47,8 +47,7 @@ fn test_field_alias_desc() -> common::TestResult {
 }
 
 #[test]
-fn test_field_alias_desc_under_legacy_prefix() -> common::TestResult {
-    // content.desc should resolve to description on work items
+fn test_field_alias_under_storage_prefix_is_rejected() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
@@ -57,9 +56,10 @@ fn test_field_alias_desc_under_legacy_prefix() -> common::TestResult {
             &["work", "new", "Test Task"],
             &[
                 "work",
-                "set",
+                "edit",
                 &format!("WI-{}-001", date),
                 "content.desc",
+                "--set",
                 "Legacy-prefixed description",
             ],
             &["work", "get", &format!("WI-{}-001", date), "description"],
@@ -78,7 +78,7 @@ fn test_field_alias_desc_not_global_on_adr() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Alias Scope"],
-            &["adr", "set", "ADR-0001", "desc", "nope"],
+            &["adr", "edit", "ADR-0001", "desc", "--set", "nope"],
         ],
     )?;
     assert_edit_snapshot!(normalize_output(&output, temp_dir.path(), &date)?);

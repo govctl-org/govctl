@@ -24,7 +24,15 @@ pub fn tick_item(
     let plan = plan_mutation_target(id, field, edit_rules::Verb::Tick)?;
     let artifact = plan.artifact;
     let target = &plan.target;
+    target.ensure_supports(edit_rules::Verb::Tick, id)?;
     reject_match_flags_for_indexed_target(id, target, opts)?;
+    if !matches!(target, super::engine::ResolvedTarget::IndexedItem { .. }) {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0801MissingRequiredArg,
+            "Tick requires an indexed checklist path such as acceptance_criteria[0]",
+            id,
+        ));
+    }
 
     let status_str = match (artifact, status) {
         (ArtifactType::Adr, crate::TickStatus::Accepted) => "accepted",
@@ -47,7 +55,13 @@ pub fn tick_item(
                 id,
             ));
         }
-        (ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard, _) => {
+        (
+            ArtifactType::Rfc
+            | ArtifactType::Clause
+            | ArtifactType::Guard
+            | ArtifactType::Conformance,
+            _,
+        ) => {
             return Err(Diagnostic::new(
                 DiagnosticCode::E0813SupersedeNotSupported,
                 TICK_UNSUPPORTED_ARTIFACT_ERROR.replace("{id}", id),
@@ -74,7 +88,10 @@ pub fn tick_item(
             ArtifactType::WorkItem,
             status_str,
         )?,
-        ArtifactType::Rfc | ArtifactType::Clause | ArtifactType::Guard => {
+        ArtifactType::Rfc
+        | ArtifactType::Clause
+        | ArtifactType::Guard
+        | ArtifactType::Conformance => {
             unreachable!("handled above")
         }
     };

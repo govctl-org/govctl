@@ -22,7 +22,6 @@ fn setup_minimal_valid(dir: &Path, date: &str) -> common::TestResult {
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "Test RFC"
 version = "1.0.0"
@@ -47,7 +46,6 @@ added = ["Initial release"]
         r#"#:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-EXAMPLE"
 title = "Example Clause"
 kind = "normative"
@@ -63,7 +61,6 @@ text = "This is an example clause for testing."
     fs::write(
         dir.join("gov/adr/ADR-0001-test-decision.toml"),
         r#"[govctl]
-schema = 1
 id = "ADR-0001"
 title = "Test Decision"
 status = "accepted"
@@ -158,7 +155,34 @@ fn test_minimal_valid_list_work() -> common::TestResult {
 }
 
 #[test]
-fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
+fn test_work_list_status_filters() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    setup_minimal_valid(temp_dir.path(), &date)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "list", "active", "-o", "json"],
+            &["work", "list", "queue", "-o", "json"],
+        ],
+    )?;
+
+    assert!(
+        output.contains(&format!("\"id\": \"WI-{date}-001\""))
+            && output.contains("\"status\": \"active\"")
+            && output.contains("\"title\": \"Test work item\""),
+        "active filter should include the active Work Item: {output}"
+    );
+    assert_eq!(
+        output.matches("WI-").count(),
+        1,
+        "queue filter should not repeat the active Work Item: {output}"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_minimal_valid_list_json_and_yaml_output() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     setup_minimal_valid(temp_dir.path(), &date)?;
 
@@ -166,14 +190,16 @@ fn test_minimal_valid_list_json_and_plain_output() -> common::TestResult {
         temp_dir.path(),
         &[
             &["rfc", "list", "-o", "json"],
-            &["work", "list", "-o", "plain"],
+            &["work", "list", "-o", "yaml"],
         ],
     )?;
 
     assert!(output.contains("\"id\": \"RFC-0001\""), "output: {output}");
     assert!(output.contains("\"phase\": \"stable\""), "output: {output}");
     assert!(
-        output.contains(&format!("WI-{date}-001\tactive\tTest work item")),
+        output.contains(&format!("id: WI-{date}-001"))
+            && output.contains("status: active")
+            && output.contains("title: Test work item"),
         "output: {output}"
     );
     Ok(())
@@ -190,6 +216,58 @@ fn test_minimal_valid_status() -> common::TestResult {
         &date,
         &[&["status"]]
     );
+    Ok(())
+}
+
+#[test]
+fn test_status_covers_terminal_adrs_guards_and_releases() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    setup_minimal_valid(temp_dir.path(), &date)?;
+    let work_id = first_work_id(&date);
+
+    let output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            vec![
+                "adr".to_string(),
+                "new".to_string(),
+                "Rejected decision".to_string(),
+            ],
+            vec![
+                "adr".to_string(),
+                "reject".to_string(),
+                "ADR-0002".to_string(),
+            ],
+            vec![
+                "guard".to_string(),
+                "new".to_string(),
+                "Status guard".to_string(),
+            ],
+            vec![
+                "work".to_string(),
+                "edit".to_string(),
+                work_id.clone(),
+                "acceptance_criteria[0]".to_string(),
+                "--tick".to_string(),
+                "done".to_string(),
+            ],
+            vec![
+                "work".to_string(),
+                "move".to_string(),
+                work_id,
+                "done".to_string(),
+            ],
+            vec!["release".to_string(), "1.0.0".to_string()],
+            vec!["status".to_string()],
+        ],
+    )?;
+
+    assert!(output.contains("  rejected     1"), "{output}");
+    assert!(
+        output.contains("Verification Guards\n  Total        1"),
+        "{output}"
+    );
+    assert!(output.contains("Releases\n  Total        1"), "{output}");
     Ok(())
 }
 

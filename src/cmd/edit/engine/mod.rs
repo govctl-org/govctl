@@ -1,7 +1,7 @@
 //! V2 edit engine planning pipeline (ADR-0031 foundation).
 //!
 //! This module introduces a single entry point for edit request planning:
-//! `parse -> canonicalize -> resolve -> classify`.
+//! `parse -> resolve -> classify`.
 //! Execution remains in the command-specific handlers; this module owns the
 //! shared canonical planning step.
 
@@ -10,8 +10,8 @@ mod resolve;
 use self::resolve::resolve_target;
 use super::ArtifactType;
 use super::path::{self, FieldPath};
-use super::rules::{self as edit_rules, Verb};
-use crate::diagnostic::DiagnosticResult;
+use super::rules::Verb;
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TargetKind {
@@ -33,6 +33,7 @@ pub enum ResolvedTarget {
         path: FieldPath,
         kind: TargetKind,
         status_list: bool,
+        verbs: &'static [&'static str],
     },
     IndexedItem {
         origin: TargetOrigin,
@@ -41,6 +42,8 @@ pub enum ResolvedTarget {
         index: i32,
         item_kind: TargetKind,
         status_list: bool,
+        container_verbs: &'static [&'static str],
+        item_verbs: &'static [&'static str],
     },
 }
 
@@ -56,6 +59,48 @@ impl ResolvedTarget {
             Self::Node { path, .. } | Self::IndexedItem { path, .. } => path,
         }
     }
+
+    pub fn ensure_supports(&self, verb: Verb, id: &str) -> DiagnosticResult<()> {
+        if self.supports(verb) {
+            return Ok(());
+        }
+
+        let supported = [Verb::Set, Verb::Add, Verb::Remove, Verb::Tick]
+            .into_iter()
+            .filter(|candidate| self.supports(*candidate))
+            .map(|candidate| format!("--{}", candidate.as_str()))
+            .collect::<Vec<_>>();
+        let message = if supported.is_empty() {
+            format!("Path '{}' is read-only", self.display_path())
+        } else {
+            format!(
+                "Path '{}' does not support --{}. Supported operations: {}",
+                self.display_path(),
+                verb.as_str(),
+                supported.join(", ")
+            )
+        };
+        Err(Diagnostic::new(
+            DiagnosticCode::E0817PathTypeMismatch,
+            message,
+            id,
+        ))
+    }
+
+    fn supports(&self, verb: Verb) -> bool {
+        match self {
+            Self::Node { verbs, .. } => verbs.contains(&verb.as_str()),
+            Self::IndexedItem {
+                container_verbs,
+                item_verbs,
+                ..
+            } => match verb {
+                Verb::Get | Verb::Set => item_verbs.contains(&verb.as_str()),
+                Verb::Remove | Verb::Tick => container_verbs.contains(&verb.as_str()),
+                Verb::Add => false,
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -66,12 +111,12 @@ pub struct TargetPlan {
     pub target: Option<ResolvedTarget>,
 }
 
-/// Parse and canonicalize a user field expression using current path rules.
+/// Parse a canonical user field expression.
 pub fn parse_and_canonicalize_field(
-    artifact: ArtifactType,
+    _artifact: ArtifactType,
     field: &str,
 ) -> DiagnosticResult<FieldPath> {
-    path::parse_raw_field_path(field).map(|fp| canonicalize_field_path(artifact, fp))
+    path::parse_raw_field_path(field)
 }
 
 /// Build a command-handler-safe plan from command inputs.
@@ -109,65 +154,6 @@ fn plan_request_with_verb(
 
 fn resolve_artifact(id: &str) -> DiagnosticResult<ArtifactType> {
     ArtifactType::from_id(id).ok_or_else(|| ArtifactType::unknown_error(id))
-}
-
-fn canonicalize_field_path(artifact: ArtifactType, mut fp: FieldPath) -> FieldPath {
-    let artifact_key = artifact.rule_key();
-    // canonicalize_field_path intentionally canonicalizes root/second segments
-    // both before and after collapse_legacy_prefixes() so paths like
-    // content.alt[0].pro[0] still end up fully canonical after
-    // collapse_legacy_prefixes, canonicalize_root_segment, and
-    // canonicalize_subfield_segment interact.
-    if let Some(seg0) = fp.segments.first_mut() {
-        seg0.name = canonicalize_root_segment(artifact_key, &seg0.name);
-    }
-    if fp.segments.len() >= 2 {
-        let root = fp.segments[0].name.clone();
-        let seg1 = &mut fp.segments[1];
-        seg1.name = canonicalize_subfield_segment(artifact_key, &root, &seg1.name);
-    }
-    fp = fp.collapse_legacy_prefixes();
-    if let Some(seg0) = fp.segments.first_mut() {
-        seg0.name = canonicalize_root_segment(artifact_key, &seg0.name);
-    }
-    if fp.segments.len() >= 2 {
-        let root = fp.segments[0].name.clone();
-        let seg1 = &mut fp.segments[1];
-        seg1.name = canonicalize_subfield_segment(artifact_key, &root, &seg1.name);
-    }
-    fp
-}
-
-fn canonicalize_root_segment(artifact: &str, token: &str) -> String {
-    if is_known_root_field(artifact, token) {
-        return token.to_string();
-    }
-    let alias = edit_rules::normalize_alias(token);
-    if alias != token && is_known_root_field(artifact, alias) {
-        return alias.to_string();
-    }
-    token.to_string()
-}
-
-fn canonicalize_subfield_segment(artifact: &str, root: &str, token: &str) -> String {
-    if is_known_subfield(artifact, root, token) {
-        return token.to_string();
-    }
-    let alias = edit_rules::normalize_alias(token);
-    if alias != token && is_known_subfield(artifact, root, alias) {
-        return alias.to_string();
-    }
-    token.to_string()
-}
-
-fn is_known_root_field(artifact: &str, field: &str) -> bool {
-    edit_rules::simple_field_rule(artifact, field).is_some()
-        || edit_rules::nested_root_rule(artifact, field).is_some()
-}
-
-fn is_known_subfield(artifact: &str, root: &str, field: &str) -> bool {
-    edit_rules::nested_field_rule(artifact, root, field).is_some()
-        || edit_rules::can_collapse_legacy_prefix(root, field)
 }
 
 #[cfg(test)]

@@ -17,6 +17,8 @@ The artifact browsing views MUST preserve the existing RFC, ADR, and Work Item b
 
 The artifact browsing views SHOULD include verification guards, clauses, releases, and tags when those data sources can be loaded without violating [[RFC-0007:C-READ-ONLY]].
 
+Artifact detail views MUST use the `current` projection defined by [[RFC-0002:C-SHOW-PROJECTION]] so obsolete RFC, ADR, and Clause body content is omitted by default.
+
 The current view, selection context, active filter or query, and primary key bindings MUST remain visible or discoverable without leaving the TUI.
 
-**Rationale:** A cockpit should orient a human before asking them to drill into details. The top-level model makes newer governance concepts discoverable while preserving the older RFC/ADR/Work browsing workflows."""
+**Rationale:** A cockpit should orient a human before asking them to drill into details. Reusing the current projection keeps obsolete requirements from appearing authoritative, while the CLI retains explicit archival access. The top-level model makes newer governance concepts discoverable while preserving the older RFC/ADR/Work browsing workflows."""

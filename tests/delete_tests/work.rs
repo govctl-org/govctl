@@ -29,7 +29,7 @@ fn test_delete_work_safeguard_done() -> TestResult {
     let commands: Vec<Vec<String>> = vec![
         work_new_active("Completed work item"),
         work_add_acceptance(&wi1, "chore: Test criterion"),
-        work_tick_acceptance_done(&wi1, "Test"),
+        work_tick_acceptance_done(&wi1, 0),
         work_move_done(&wi1),
         work_delete_force(&wi1),
     ];
@@ -111,5 +111,25 @@ fn test_delete_work_safeguard_depended_on() -> TestResult {
         output
     );
     assert!(output.contains(&wi2), "output: {}", output);
+    Ok(())
+}
+
+#[test]
+fn test_delete_work_aborts_when_governed_referrers_fail_to_load() -> TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let work_id = first_work_id(&date);
+    run_dynamic_commands(temp_dir.path(), &[work_new("Keep on load failure")])?;
+    let work_path = fs::read_dir(temp_dir.path().join("gov/work"))?
+        .next()
+        .ok_or("missing work item")??
+        .path();
+    let rfc_dir = temp_dir.path().join("gov/rfc/RFC-0001");
+    fs::create_dir_all(rfc_dir.join("clauses"))?;
+    fs::write(rfc_dir.join("rfc.toml"), "not valid TOML")?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[work_delete_force(&work_id)])?;
+
+    assert!(output.contains("exit: 1"), "{output}");
+    assert!(work_path.exists(), "load failure must abort deletion");
     Ok(())
 }

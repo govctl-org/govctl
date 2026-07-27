@@ -7,6 +7,18 @@ fn fields_match_normalized_query(query: &str, fields: &[&str]) -> bool {
         .any(|field| field.to_ascii_lowercase().contains(query))
 }
 
+fn matching_indices<T>(
+    items: &[T],
+    has_query: bool,
+    mut matches_query: impl FnMut(&T) -> bool,
+) -> Vec<usize> {
+    items
+        .iter()
+        .enumerate()
+        .filter_map(|(index, item)| (!has_query || matches_query(item)).then_some(index))
+        .collect()
+}
+
 impl App {
     /// Get the total count of items in current list view (unfiltered)
     pub fn list_total_len(&self) -> usize {
@@ -16,6 +28,7 @@ impl App {
             View::AdrList => self.index.adrs.len(),
             View::WorkList => self.index.work_items.len(),
             View::GuardList => self.supplement.guards.len(),
+            View::ConformanceList => self.index.conformance_cases.len(),
             View::ReleaseList => self.supplement.releases.len(),
             View::TagList => self.supplement.tags.len(),
             View::Search => self.search_results.len(),
@@ -37,225 +50,134 @@ impl App {
         let query = self.filter_query.trim().to_ascii_lowercase();
         let has_query = !query.is_empty();
         self.cached_indices = match self.view {
-            View::RfcList => self
-                .index
-                .rfcs
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, rfc)| {
-                    if !has_query {
-                        return Some(idx);
-                    }
-                    if fields_match_normalized_query(
+            View::RfcList => matching_indices(&self.index.rfcs, has_query, |rfc| {
+                fields_match_normalized_query(
+                    &query,
+                    &[
+                        rfc.rfc.rfc_id.as_str(),
+                        rfc.rfc.title.as_str(),
+                        rfc.rfc.status.as_ref(),
+                        rfc.rfc.phase.as_ref(),
+                    ],
+                )
+            }),
+            View::ClauseList => matching_indices(&self.supplement.clauses, has_query, |entry| {
+                let clause = &entry.clause.spec;
+                fields_match_normalized_query(
+                    &query,
+                    &[
+                        entry.rfc_id.as_str(),
+                        clause.clause_id.as_str(),
+                        clause.title.as_str(),
+                        clause.status.as_ref(),
+                        clause.kind.as_ref(),
+                    ],
+                )
+            }),
+            View::AdrList => matching_indices(&self.index.adrs, has_query, |adr| {
+                let meta = adr.meta();
+                fields_match_normalized_query(
+                    &query,
+                    &[meta.id.as_str(), meta.title.as_str(), meta.status.as_ref()],
+                )
+            }),
+            View::WorkList => matching_indices(&self.index.work_items, has_query, |item| {
+                let meta = item.meta();
+                fields_match_normalized_query(
+                    &query,
+                    &[meta.id.as_str(), meta.title.as_str(), meta.status.as_ref()],
+                )
+            }),
+            View::GuardList => matching_indices(&self.supplement.guards, has_query, |guard| {
+                let meta = guard.meta();
+                fields_match_normalized_query(
+                    &query,
+                    &[
+                        meta.id.as_str(),
+                        meta.title.as_str(),
+                        guard.spec.check.command.as_str(),
+                    ],
+                )
+            }),
+            View::ConformanceList => {
+                matching_indices(&self.index.conformance_cases, has_query, |case| {
+                    let trace = crate::model::derive_conformance_trace(case, &self.index);
+                    let requirements = trace
+                        .requirements
+                        .iter()
+                        .map(|binding| {
+                            format!(
+                                "{}@{}",
+                                binding.clause_ref.as_str(),
+                                binding.version.as_str()
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" ");
+                    let applicability = trace.requirement_applicability.to_string();
+                    let guards = trace.guards.join(" ");
+                    fields_match_normalized_query(
                         &query,
                         &[
-                            rfc.rfc.rfc_id.as_str(),
-                            rfc.rfc.title.as_str(),
-                            rfc.rfc.status.as_ref(),
-                            rfc.rfc.phase.as_ref(),
+                            trace.id.as_str(),
+                            trace.title.as_str(),
+                            trace.path.as_str(),
+                            trace.selector.as_str(),
+                            applicability.as_str(),
+                            requirements.as_str(),
+                            guards.as_str(),
                         ],
-                    ) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
+                    )
                 })
-                .collect(),
-            View::ClauseList => self
-                .supplement
-                .clauses
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, entry)| {
-                    if !has_query {
-                        return Some(idx);
-                    }
-                    let clause = &entry.clause.spec;
-                    if fields_match_normalized_query(
+            }
+            View::ReleaseList => {
+                matching_indices(&self.supplement.releases, has_query, |release| {
+                    fields_match_normalized_query(
+                        &query,
+                        &[release.version.as_str(), release.date.as_str()],
+                    )
+                })
+            }
+            View::TagList => matching_indices(&self.supplement.tags, has_query, |tag| {
+                fields_match_normalized_query(&query, &[tag.name.as_str()])
+            }),
+            View::Search => matching_indices(&self.search_results, has_query, |result| {
+                fields_match_normalized_query(
+                    &query,
+                    &[
+                        result.kind.as_str(),
+                        result.id.as_str(),
+                        result.title.as_str(),
+                        result.snippet.as_str(),
+                    ],
+                )
+            }),
+            View::LoopList => matching_indices(&self.supplement.loops, has_query, |entry| {
+                let state = entry
+                    .state
+                    .as_ref()
+                    .map(|state| state.loop_meta.state.as_str())
+                    .unwrap_or("invalid");
+                let work = entry
+                    .state
+                    .as_ref()
+                    .map(|state| state.loop_meta.work.join(" "))
+                    .unwrap_or_default();
+                fields_match_normalized_query(&query, &[entry.id.as_str(), state, work.as_str()])
+            }),
+            View::DiagnosticList => {
+                matching_indices(&self.supplement.diagnostics, has_query, |diagnostic| {
+                    fields_match_normalized_query(
                         &query,
                         &[
-                            entry.rfc_id.as_str(),
-                            clause.clause_id.as_str(),
-                            clause.title.as_str(),
-                            clause.status.as_ref(),
-                            clause.kind.as_ref(),
+                            diagnostic.code.code(),
+                            diagnostic_level_label(diagnostic.level),
+                            diagnostic.message.as_str(),
+                            diagnostic.file.as_str(),
                         ],
-                    ) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
+                    )
                 })
-                .collect(),
-            View::AdrList => self
-                .index
-                .adrs
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, adr)| {
-                    if !has_query {
-                        return Some(idx);
-                    }
-                    let meta = adr.meta();
-                    if fields_match_normalized_query(
-                        &query,
-                        &[meta.id.as_str(), meta.title.as_str(), meta.status.as_ref()],
-                    ) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            View::WorkList => self
-                .index
-                .work_items
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, item)| {
-                    if !has_query {
-                        return Some(idx);
-                    }
-                    let meta = item.meta();
-                    if fields_match_normalized_query(
-                        &query,
-                        &[meta.id.as_str(), meta.title.as_str(), meta.status.as_ref()],
-                    ) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            View::GuardList => self
-                .supplement
-                .guards
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, guard)| {
-                    if !has_query {
-                        return Some(idx);
-                    }
-                    let meta = guard.meta();
-                    if fields_match_normalized_query(
-                        &query,
-                        &[
-                            meta.id.as_str(),
-                            meta.title.as_str(),
-                            guard.spec.check.command.as_str(),
-                        ],
-                    ) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            View::ReleaseList => self
-                .supplement
-                .releases
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, release)| {
-                    if !has_query
-                        || fields_match_normalized_query(
-                            &query,
-                            &[release.version.as_str(), release.date.as_str()],
-                        )
-                    {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            View::TagList => self
-                .supplement
-                .tags
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, tag)| {
-                    if !has_query || fields_match_normalized_query(&query, &[tag.name.as_str()]) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            View::Search => self
-                .search_results
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, result)| {
-                    if !has_query
-                        || fields_match_normalized_query(
-                            &query,
-                            &[
-                                result.kind.as_str(),
-                                result.id.as_str(),
-                                result.title.as_str(),
-                                result.snippet.as_str(),
-                            ],
-                        )
-                    {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            View::LoopList => self
-                .supplement
-                .loops
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, entry)| {
-                    if !has_query {
-                        return Some(idx);
-                    }
-                    let state = entry
-                        .state
-                        .as_ref()
-                        .map(|state| state.loop_meta.state.as_str())
-                        .unwrap_or("invalid");
-                    let work = entry
-                        .state
-                        .as_ref()
-                        .map(|state| state.loop_meta.work.join(" "))
-                        .unwrap_or_default();
-                    if fields_match_normalized_query(
-                        &query,
-                        &[entry.id.as_str(), state, work.as_str()],
-                    ) {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
-            View::DiagnosticList => self
-                .supplement
-                .diagnostics
-                .iter()
-                .enumerate()
-                .filter_map(|(idx, diagnostic)| {
-                    if !has_query
-                        || fields_match_normalized_query(
-                            &query,
-                            &[
-                                diagnostic.code.code(),
-                                diagnostic_level_label(diagnostic.level),
-                                diagnostic.message.as_str(),
-                                diagnostic.file.as_str(),
-                            ],
-                        )
-                    {
-                        Some(idx)
-                    } else {
-                        None
-                    }
-                })
-                .collect(),
+            }
             _ => Vec::new(),
         };
         self.indices_dirty = false;

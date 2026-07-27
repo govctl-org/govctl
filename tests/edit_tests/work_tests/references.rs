@@ -79,7 +79,7 @@ fn test_work_refs_validate_unknown_targets_and_accept_all_artifact_types() -> co
     );
     assert!(
         output.contains(&format!(
-            "$ govctl work get {first_id} refs\nRFC-0001, ADR-0001, {second_id}"
+            "$ govctl work get {first_id} refs\nRFC-0001\nADR-0001\n{second_id}"
         )),
         "output: {}",
         output

@@ -1,0 +1,49 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-008"
+title = "Consolidate shared command and TUI infrastructure"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0000:C-REFERENCE-HIERARCHY",
+    "RFC-0002:C-EDIT-FIELD-CONTRACT",
+    "RFC-0002:C-SEARCH-COMMAND",
+    "RFC-0007:C-COCKPIT-VIEWS",
+]
+
+[content]
+description = "Consolidate duplicated command, TUI, search-index, and governed-prose scanning infrastructure while preserving the behavior required by the governing RFCs."
+
+[[content.acceptance_criteria]]
+text = "Conformance Case edits use the shared edit contract and preserve the RFC-defined paths, validation, and diagnostics."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "TUI list-view capabilities and filtering avoid repeated view classification while preserving navigation, rendering, and search behavior."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Search and artifact catalog code share local-index infrastructure and keep all supported artifact kinds searchable."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Governed prose reference scanning separates source enumeration from policy-driven scanning without changing diagnostics."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused tests, repository validation, and pre-commit checks pass."
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = [
+    "GUARD-CARGO-TEST",
+    "GUARD-TUI-TESTS",
+]

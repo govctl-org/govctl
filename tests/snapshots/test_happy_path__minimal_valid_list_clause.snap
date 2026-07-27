@@ -1,11 +1,15 @@
 ---
 source: tests/test_happy_path.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+expression: value
 ---
 $ govctl clause list
-┌───────────┬──────────┬───────────┬────────┬────────────────┐
-│ Clause    ┆ RFC      ┆ Kind      ┆ Status ┆ Title          │
-╞═══════════╪══════════╪═══════════╪════════╪════════════════╡
-│ C-EXAMPLE ┆ RFC-0001 ┆ normative ┆ active ┆ Example Clause │
-└───────────┴──────────┴───────────┴────────┴────────────────┘
+[
+  {
+    "id": "C-EXAMPLE",
+    "rfc_id": "RFC-0001",
+    "kind": "normative",
+    "status": "active",
+    "title": "Example Clause"
+  }
+]
 exit: 0

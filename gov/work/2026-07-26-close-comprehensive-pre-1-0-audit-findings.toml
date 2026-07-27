@@ -1,0 +1,66 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-013"
+title = "Close comprehensive pre-1.0 audit findings"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "RFC-0002:C-COMPATIBILITY-BOUNDARY",
+    "RFC-0002:C-CRUD-VERBS",
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "ADR-0006",
+]
+
+[content]
+description = "Close the confirmed pre-1.0 audit findings in project discovery, resource mutation safety, migration atomicity, dry-run consistency, and CLI guidance, with focused regression coverage."
+
+[[content.acceptance_criteria]]
+text = "Project discovery and forced initialization reject incompatible or incomplete local governance state without falling through to an ancestor project."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Work Item deletion aborts when governed referrers cannot be loaded."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Migration support-file updates and schema migration operations roll back together on failure."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Resource creation rejects schema-invalid constructed artifacts before writing an authoritative artifact."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Creation dry-runs perform the same validation and target selection as execution without persistent mutation."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Guard deletion requires confirmation unless force is explicit."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Clause edit help documents an executable stdin form."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused regressions cover every confirmed finding."
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Governed projections and repository documentation remain current."
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

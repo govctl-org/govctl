@@ -1,0 +1,54 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-007"
+title = "Align reviewer agents with policy-oriented guidance"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "ADR-0057",
+    "ADR-0024",
+    "RFC-0000",
+]
+tags = [
+    "skills-agents",
+    "documentation",
+]
+
+[content]
+description = "Align the four independent governance reviewers with [[ADR-0057]] and [[ADR-0024]], reducing false absolutes while preserving semantic review, cognitive isolation, severity discipline, and artifact-authority boundaries."
+
+[[content.acceptance_criteria]]
+text = "RFC review distinguishes external contracts from private implementation detail without concrete-syntax false positives"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "ADR review evaluates decision evidence and projection ownership without requiring optional prose templates"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Work Item review evaluates durable scope, categorized outcomes, and effective guards without mandatory chore criteria or session-size rules"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Compliance review treats RFCs as conformance authority and ADRs as design-alignment evidence"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Capability-tiered scenarios report no authority-boundary blocker or identified false positive"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Project verification and pre-commit checks pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-GOVCTL-CHECK"]

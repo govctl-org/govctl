@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0037"
 title = "Canonical edit surface for nested artifact mutation"
-status = "accepted"
+status = "superseded"
 date = "2026-04-06"
+superseded_by = "ADR-0056"
 refs = [
     "ADR-0031",
     "ADR-0029",

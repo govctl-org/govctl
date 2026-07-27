@@ -1,6 +1,7 @@
 use super::output::output_list;
 use super::summaries::{AdrSummary, ClauseSummary, GuardSummary, RfcSummary, WorkItemSummary};
-use crate::OutputFormat;
+use crate::ListOutputFormat;
+use crate::diagnostic::DiagnosticResult;
 use crate::model::{GuardEntry, ProjectIndex, WorkItemStatus};
 use serde::Serialize;
 
@@ -8,9 +9,9 @@ pub(super) fn list_rfcs(
     index: &ProjectIndex,
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: ListOutputFormat,
     tags: &[String],
-) {
+) -> DiagnosticResult<()> {
     let mut rfcs: Vec<_> = index.rfcs.iter().collect();
 
     if let Some(f) = filter {
@@ -30,16 +31,16 @@ pub(super) fn list_rfcs(
         output,
         |rfc| RfcSummary::from_entry(rfc),
         RfcSummary::row,
-    );
+    )
 }
 
 pub(super) fn list_clauses(
     index: &ProjectIndex,
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: ListOutputFormat,
     tags: &[String],
-) {
+) -> DiagnosticResult<()> {
     let mut clauses: Vec<_> = index
         .iter_clauses()
         .map(|(rfc, clause)| (rfc.rfc.rfc_id.clone(), clause))
@@ -65,16 +66,16 @@ pub(super) fn list_clauses(
         output,
         |(rfc_id, clause)| ClauseSummary::from_entry(rfc_id, clause),
         ClauseSummary::row,
-    );
+    )
 }
 
 pub(super) fn list_adrs(
     index: &ProjectIndex,
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: ListOutputFormat,
     tags: &[String],
-) {
+) -> DiagnosticResult<()> {
     let mut adrs: Vec<_> = index.adrs.iter().collect();
 
     if let Some(f) = filter {
@@ -92,16 +93,16 @@ pub(super) fn list_adrs(
         output,
         |adr| AdrSummary::from_entry(adr),
         AdrSummary::row,
-    );
+    )
 }
 
 pub(super) fn list_guards(
     guards: &[GuardEntry],
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: ListOutputFormat,
     tags: &[String],
-) {
+) -> DiagnosticResult<()> {
     let mut items: Vec<_> = guards.iter().collect();
 
     if let Some(f) = filter {
@@ -119,16 +120,16 @@ pub(super) fn list_guards(
         output,
         |guard| GuardSummary::from_entry(guard),
         GuardSummary::row,
-    );
+    )
 }
 
 pub(super) fn list_work_items(
     index: &ProjectIndex,
     filter: Option<&str>,
     limit: Option<usize>,
-    output: OutputFormat,
+    output: ListOutputFormat,
     tags: &[String],
-) {
+) -> DiagnosticResult<()> {
     let mut items: Vec<_> = index.work_items.iter().collect();
 
     if let Some(f) = filter {
@@ -161,22 +162,23 @@ pub(super) fn list_work_items(
         output,
         |item| WorkItemSummary::from_entry(item),
         WorkItemSummary::row,
-    );
+    )
 }
 
 fn output_resource_list<T, S>(
     items: &mut Vec<T>,
     limit: Option<usize>,
     headers: &[&str],
-    output: OutputFormat,
+    output: ListOutputFormat,
     to_summary: impl Fn(&T) -> S,
     to_row: impl Fn(&S) -> Vec<String>,
-) where
+) -> DiagnosticResult<()>
+where
     S: Serialize,
 {
     apply_limit(items, limit);
     let summaries = items.iter().map(to_summary).collect::<Vec<_>>();
-    output_list(&summaries, headers, output, to_row);
+    output_list(&summaries, headers, output, to_row)
 }
 
 fn apply_limit<T>(items: &mut Vec<T>, limit: Option<usize>) {

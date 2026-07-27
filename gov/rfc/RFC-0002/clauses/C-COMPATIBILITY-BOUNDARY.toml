@@ -1,0 +1,48 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-COMPATIBILITY-BOUNDARY"
+title = "Compatibility Boundary"
+kind = "normative"
+status = "active"
+since = "1.0.0"
+
+[content]
+text = """
+This clause defines the compatibility boundary for the canonical-only breaking release.
+
+**CLI boundary:**
+
+- The CLI MUST accept only command names, subcommand names, field paths, and mutation flags defined by the current normative RFC clauses.
+- The CLI MUST reject compatibility aliases for command names and subcommand names.
+- The CLI MUST accept only the field paths defined by [[RFC-0002:C-EDIT-FIELD-CONTRACT]].
+- The CLI MUST reject field-path aliases and wire-layout prefixes such as `content.`, `govctl.`, and `check.`.
+- The CLI MUST reject resource-specific compatibility flags on the universal `edit` operation.
+
+**Repository boundary:**
+
+- Project schema version 3 MUST be the minimum supported project schema version, and the running binary’s current schema version MUST be the maximum supported project schema version.
+- Project schema version 4 MUST be the current schema version for implementations that support Conformance Cases. Version 4 adds Conformance Case storage and validation. Normal commands on a version 3 repository containing prospective Case files MUST reject the repository without mutation and instruct the user to run `govctl migrate`; migration MAY inspect those files under version 4 rules before updating the declared version.
+- Any command that loads an existing governance project MUST validate that the declared project schema version is within the supported inclusive range before reading or writing governed artifacts, generated documentation, or `.govctl` local state.
+- A repository whose `gov/config.toml` declares a schema version below 3 MUST be rejected. The rejection MUST leave `gov/`, generated documentation, and `.govctl` unchanged. The diagnostic MUST instruct the user to migrate the repository with a compatible earlier govctl version before upgrading.
+- A repository whose `gov/config.toml` declares a schema version newer than the running binary’s current schema version MUST be rejected without mutation. The diagnostic MUST instruct the user to upgrade govctl to a version that supports the repository schema.
+- If `gov/config.toml` is absent while `gov/` contains governance project state, the project schema cannot be established and normal project commands MUST reject the repository without mutation. The diagnostic MUST identify the missing configuration. A new project with no existing governance state MAY still be initialized.
+- RFC and Clause artifacts MUST use the structured TOML wire layout defined by their current schemas. The former flat RFC and Clause TOML layouts MUST be rejected.
+- RFC, Clause, ADR, Work Item, Guard, and Conformance Case TOML files MUST NOT contain the legacy `[govctl].schema` field.
+- Work Item TOML containing `content.journal` MUST be rejected.
+- Loading or rewriting a loop round TOML file containing `max_rounds` MUST be rejected.
+- Project schema version 3 establishes the content-signature interpretation for stored RFC signatures. RFC signatures stored for project schema version 3 or later MUST use the content-signature contract in [[RFC-0000:C-PHASE-LIFECYCLE]]. Repositories below version 3 MUST be migrated with a compatible earlier govctl version before the current binary loads their RFC baselines. The current binary MUST NOT infer a pre-version-3 signature algorithm from an untagged hash value.
+
+**Migration and safety:**
+
+- `govctl migrate` MUST support migration from project schema version 3 to each later schema version supported by the running binary.
+- `govctl migrate` MUST reject project schema versions below 3 without mutation. Its diagnostic MUST direct the user to a compatible earlier govctl version.
+- JSON RFC files matching `gov/rfc/RFC-NNNN/rfc.json` MUST produce an unsupported-storage diagnostic that identifies the path.
+- JSON Clause files matching `gov/rfc/RFC-NNNN/clauses/C-NAME.json` MUST produce an unsupported-storage diagnostic that identifies the path.
+- Project loading and validation MUST perform those JSON checks before reporting success. Recognized legacy JSON files MUST NOT be silently ignored.
+- Historical RFCs, Clauses, ADRs, Work Items, release records, and released changelog content that conform to the supported schemas MUST remain authoritative history.
+- Lifecycle status alone MUST NOT make a conforming historical artifact unsupported.
+
+**Rationale:**
+
+A single explicit boundary is smaller and more predictable than indefinitely carrying transitional parsers and CLI grammars. Requiring an earlier compatible binary for pre-baseline repositories preserves an upgrade path without making every future release understand every historical representation. Explicit unsupported-storage diagnostics prevent apparent success when governed data would otherwise be skipped."""

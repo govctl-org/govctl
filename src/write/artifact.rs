@@ -2,9 +2,8 @@
 
 use super::WriteOp;
 use super::artifact_io::{ArtifactIo, read_artifact, write_toml_artifact};
-use super::artifact_normalize::{normalize_clause_value, normalize_rfc_value};
 use crate::config::Config;
-use crate::diagnostic::{DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{ClauseSpec, ClauseWire, RfcSpec, RfcWire};
 use crate::schema::ArtifactSchema;
 use std::path::Path;
@@ -14,7 +13,6 @@ const RFC_IO: ArtifactIo = ArtifactIo {
     message_label: "RFC",
     schema: ArtifactSchema::Rfc,
     schema_error: DiagnosticCode::E0101RfcSchemaInvalid,
-    normalize_toml: normalize_rfc_value,
 };
 
 const CLAUSE_IO: ArtifactIo = ArtifactIo {
@@ -22,11 +20,9 @@ const CLAUSE_IO: ArtifactIo = ArtifactIo {
     message_label: "clause",
     schema: ArtifactSchema::Clause,
     schema_error: DiagnosticCode::E0201ClauseSchemaInvalid,
-    normalize_toml: normalize_clause_value,
 };
 
-/// Read RFC from file and validate its normalized structure.
-/// Handles both legacy flat format and new `[govctl]` wire format (TOML and JSON).
+/// Read an RFC from canonical structured TOML.
 pub fn read_rfc(config: &Config, path: &Path) -> DiagnosticResult<RfcSpec> {
     read_artifact::<RfcWire, RfcSpec>(config, path, &RFC_IO)
 }
@@ -34,6 +30,7 @@ pub fn read_rfc(config: &Config, path: &Path) -> DiagnosticResult<RfcSpec> {
 /// Write RFC to file in TOML only.
 /// TOML output uses the `[govctl]` wire format plus schema header.
 pub fn write_rfc(
+    _config: &Config,
     path: &Path,
     rfc: &RfcSpec,
     op: WriteOp,
@@ -51,20 +48,22 @@ pub fn write_rfc(
     )
 }
 
-/// Read clause from file and validate its normalized structure.
-/// Handles both legacy flat format and new `[govctl]` + `[content]` wire format.
+/// Read a clause from canonical structured TOML.
 pub fn read_clause(config: &Config, path: &Path) -> DiagnosticResult<ClauseSpec> {
+    crate::load::validate_clause_storage_path(config, path).map_err(Diagnostic::from)?;
     read_artifact::<ClauseWire, ClauseSpec>(config, path, &CLAUSE_IO)
 }
 
 /// Write clause to file in TOML only.
 /// TOML output uses the `[govctl]` + `[content]` wire format plus schema header.
 pub fn write_clause(
+    config: &Config,
     path: &Path,
     clause: &ClauseSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> DiagnosticResult<()> {
+    crate::load::validate_clause_storage_path(config, path).map_err(Diagnostic::from)?;
     let wire: ClauseWire = clause.clone().into();
     write_toml_artifact(
         path,

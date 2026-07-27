@@ -6,6 +6,8 @@ use crate::cmd::edit::rules::{
 };
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
+const SIMPLE_LIST_ITEM_VERBS: &[&str] = &["get", "set"];
+
 pub(super) fn resolve_target(
     artifact: ArtifactType,
     fp: &FieldPath,
@@ -31,6 +33,7 @@ pub(super) fn resolve_target(
             path: fp.clone(),
             kind: TargetKind::Scalar,
             status_list: false,
+            verbs: rule.verbs,
         }),
         (FieldKind::Scalar, Some(_)) => Err(path_type_error(
             id,
@@ -48,6 +51,7 @@ pub(super) fn resolve_target(
                 &seg.name,
                 Verb::Tick,
             ),
+            verbs: rule.verbs,
         }),
         (FieldKind::List, Some(index)) => Ok(ResolvedTarget::IndexedItem {
             origin: TargetOrigin::Simple,
@@ -65,6 +69,8 @@ pub(super) fn resolve_target(
                 &seg.name,
                 Verb::Tick,
             ),
+            container_verbs: rule.verbs,
+            item_verbs: SIMPLE_LIST_ITEM_VERBS,
         }),
     }
 }
@@ -90,7 +96,16 @@ fn resolve_nested_target(
                 .fields
                 .iter()
                 .find(|field| field.name == seg.name)
-                .ok_or_else(|| path_field_not_found(id, seg.name.as_str()))?;
+                .ok_or_else(|| {
+                    path_field_not_found(
+                        id,
+                        seg.name.as_str(),
+                        &FieldPath {
+                            segments: container_segments.clone(),
+                        },
+                        current_node,
+                    )
+                })?;
             current_node = child.node;
         }
 
@@ -121,6 +136,8 @@ fn resolve_nested_target(
                     index,
                     item_kind: map_nested_kind(item_node.kind),
                     status_list: edit_rules::nested_status_list_spec(current_node).is_some(),
+                    container_verbs: current_node.verbs,
+                    item_verbs: item_node.verbs,
                 });
             }
             current_node = current_node
@@ -135,6 +152,7 @@ fn resolve_nested_target(
                 path: fp.clone(),
                 kind: map_nested_kind(current_node.kind),
                 status_list: edit_rules::nested_status_list_spec(current_node).is_some(),
+                verbs: current_node.verbs,
             });
         }
     }
@@ -157,39 +175,51 @@ fn path_type_error(id: &str, message: impl Into<String>) -> Diagnostic {
     Diagnostic::new(DiagnosticCode::E0817PathTypeMismatch, message, id)
 }
 
-fn path_field_not_found(id: &str, field: &str) -> Diagnostic {
+fn path_field_not_found(
+    id: &str,
+    field: &str,
+    parent: &FieldPath,
+    node: &NestedNodeRule,
+) -> Diagnostic {
+    let known = edit_rules::nested_child_names(node).join(", ");
     Diagnostic::new(
         DiagnosticCode::E0815PathFieldNotFound,
-        format!("Unknown nested field '{field}'"),
+        format!("Unknown nested field '{field}' under '{parent}'. Known fields: {known}"),
         id,
     )
 }
 
 fn unknown_field_error(artifact: ArtifactType, field: &str, id: &str) -> Diagnostic {
+    let known = edit_rules::root_field_names(artifact.rule_key()).join(", ");
     let (code, msg, source) = match artifact {
         ArtifactType::Rfc => (
             DiagnosticCode::E0101RfcSchemaInvalid,
-            format!("Unknown field: {field}"),
+            format!("Unknown field: {field}. Known fields: {known}"),
             "",
         ),
         ArtifactType::Clause => (
             DiagnosticCode::E0201ClauseSchemaInvalid,
-            format!("Unknown field: {field}"),
+            format!("Unknown field: {field}. Known fields: {known}"),
             "",
         ),
         ArtifactType::Adr => (
             DiagnosticCode::E0803UnknownField,
-            format!("Unknown ADR field: {field}"),
+            format!("Unknown ADR field: {field}. Known fields: {known}"),
             id,
         ),
         ArtifactType::WorkItem => (
             DiagnosticCode::E0803UnknownField,
-            format!("Unknown work item field: {field}"),
+            format!("Unknown work item field: {field}. Known fields: {known}"),
             id,
         ),
         ArtifactType::Guard => (
             DiagnosticCode::E0803UnknownField,
-            format!("Unknown guard field: {field}"),
+            format!("Unknown guard field: {field}. Known fields: {known}"),
+            id,
+        ),
+        ArtifactType::Conformance => (
+            DiagnosticCode::E0803UnknownField,
+            format!("Unknown Conformance Case field: {field}. Known fields: {known}"),
             id,
         ),
     };

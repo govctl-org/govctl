@@ -5,7 +5,6 @@ use super::super::runtime as edit_runtime;
 use super::super::target_doc::{NestedGetMode, add_to_target_doc, render_target_from_doc};
 use super::super::target_doc_remove::{notify_removed, remove_target_from_doc};
 use super::{ArtifactType, deserialize_edit_doc, serialize_edit_doc};
-use crate::cmd::output::print_json;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::ChangelogEntry;
@@ -58,7 +57,7 @@ pub(in crate::cmd::edit) fn get(
     config: &Config,
     id: &str,
     target: &edit_engine::ResolvedTarget,
-) -> DiagnosticResult<()> {
+) -> DiagnosticResult<serde_json::Value> {
     let loaded = RfcTomlAdapter::load(config, id)?;
     let doc = current_changelog_doc(&loaded.data, id)?;
 
@@ -72,12 +71,10 @@ pub(in crate::cmd::edit) fn get(
         ));
     }
 
-    print_json(
-        doc.get("changelog").unwrap_or(&serde_json::Value::Null),
-        DiagnosticCode::E0903UnexpectedError,
-        "Failed to serialize current RFC changelog entry",
-        id,
-    )
+    Ok(doc
+        .get("changelog")
+        .cloned()
+        .unwrap_or(serde_json::Value::Null))
 }
 
 pub(in crate::cmd::edit) fn set(
@@ -88,7 +85,6 @@ pub(in crate::cmd::edit) fn set(
     op: WriteOp,
 ) -> DiagnosticResult<()> {
     let mut loaded = RfcTomlAdapter::load(config, id)?;
-    crate::cmd::lifecycle::require_changelog_update_ready(config, &loaded.path, id)?;
     let mut doc = current_changelog_doc(&loaded.data, id)?;
     edit_runtime::set_nested_field(ArtifactType::Rfc, &mut doc, target.path(), value, id)?;
     apply_current_changelog_doc(&mut loaded.data, doc, id)?;
@@ -103,7 +99,6 @@ pub(in crate::cmd::edit) fn add(
     op: WriteOp,
 ) -> DiagnosticResult<()> {
     let mut loaded = RfcTomlAdapter::load(config, id)?;
-    crate::cmd::lifecycle::require_changelog_update_ready(config, &loaded.path, id)?;
     let mut doc = current_changelog_doc(&loaded.data, id)?;
     add_to_target_doc(ArtifactType::Rfc, &mut doc, target, value, id)?;
     apply_current_changelog_doc(&mut loaded.data, doc, id)?;
@@ -117,22 +112,7 @@ pub(in crate::cmd::edit) fn remove(
     opts: &MatchOptions,
     op: WriteOp,
 ) -> DiagnosticResult<()> {
-    if !matches!(
-        target,
-        edit_engine::ResolvedTarget::IndexedItem {
-            origin: edit_engine::TargetOrigin::Nested,
-            ..
-        }
-    ) {
-        return Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            "RFC changelog removal requires an indexed current-category path",
-            id,
-        ));
-    }
-
     let mut loaded = RfcTomlAdapter::load(config, id)?;
-    crate::cmd::lifecycle::require_changelog_update_ready(config, &loaded.path, id)?;
     let mut doc = current_changelog_doc(&loaded.data, id)?;
     let (display_field, removed) =
         remove_target_from_doc(ArtifactType::Rfc, &mut doc, id, target, opts)?;

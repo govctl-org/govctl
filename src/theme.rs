@@ -28,7 +28,7 @@ pub fn status_semantic(status: &str) -> SemanticColor {
     match status {
         "normative" | "accepted" | "done" | "active" => SemanticColor::Success,
         "draft" | "proposed" | "queue" => SemanticColor::Warning,
-        "deprecated" | "superseded" | "cancelled" => SemanticColor::Muted,
+        "deprecated" | "rejected" | "superseded" | "cancelled" => SemanticColor::Muted,
         _ => SemanticColor::Neutral,
     }
 }
@@ -52,7 +52,7 @@ pub fn status_icon(status: &str) -> &'static str {
         "normative" | "accepted" | "done" => "●",
         "active" => "◉",
         "draft" | "proposed" | "queue" => "○",
-        "deprecated" | "superseded" | "cancelled" => "✗",
+        "deprecated" | "rejected" | "superseded" | "cancelled" => "✗",
         _ => "•",
     }
 }
@@ -98,5 +98,16 @@ impl SemanticColor {
             Self::Accent => ratatui::style::Color::Blue,
             Self::Neutral => ratatui::style::Color::Reset,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejected_status_uses_terminal_semantics() {
+        assert_eq!(status_semantic("rejected"), SemanticColor::Muted);
+        assert_eq!(status_icon("rejected"), "✗");
     }
 }

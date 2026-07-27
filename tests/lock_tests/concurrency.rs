@@ -112,23 +112,26 @@ fn test_concurrent_tick_commands_persist_all_acceptance_criteria_updates() -> co
         &[
             &[
                 "work",
-                "add",
+                "edit",
                 wi_id.as_str(),
                 "acceptance_criteria",
+                "--add",
                 "test: criterion one",
             ],
             &[
                 "work",
-                "add",
+                "edit",
                 wi_id.as_str(),
                 "acceptance_criteria",
+                "--add",
                 "test: criterion two",
             ],
             &[
                 "work",
-                "add",
+                "edit",
                 wi_id.as_str(),
                 "acceptance_criteria",
+                "--add",
                 "test: criterion three",
             ],
         ],
@@ -221,6 +224,7 @@ refs = ["WI-2026-01-01-001"]
 
     let lock = OpenOptions::new()
         .create(true)
+        .truncate(false)
         .read(true)
         .write(true)
         .open(temp_dir.path().join("gov/.govctl.lock"))?;

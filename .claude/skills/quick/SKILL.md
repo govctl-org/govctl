@@ -1,116 +1,70 @@
 ---
 name: quick
-description: "Execute the fast path for trivial changes with minimal governance ceremony. Use when: (1) User invokes /quick, (2) Change is doc-only or non-behavioral, (3) No RFC or ADR work is needed"
+description: "Execute a trivial non-behavioral change without unnecessary governance ceremony"
 allowed-tools: Read, Write, Edit, Bash, Glob, Grep, TodoWrite
 argument-hint: <what-to-do>
 ---
 
-# /quick - Fast Path Workflow
+# Quick Change
 
-Execute the lightweight workflow for: `$ARGUMENTS`
+Complete `$ARGUMENTS` only while it remains small, local, and non-behavioral.
 
-Use this only for trivial, non-behavioral changes such as typos, comments, docs fixes, or small internal cleanup.
+## Operational Baseline
 
-**Outputs:** Completed trivial non-behavioral change and validation evidence. Work-item updates are optional and only used when durable tracking already exists or is explicitly needed.
+### Discovery
 
-Do not use this for new behavior, RFC-governed work, or architecture decisions. If the task stops being trivial, switch to `/gov`.
+Use `govctl status` to confirm repository context. If task context names a Work
+Item, inspect it with `govctl work show <WI-ID>`; otherwise check
+`govctl work list active` and `govctl work list queue` only when an existing
+tracked task may already own the cleanup. Use resource `--help` for current
+syntax. In the govctl repository itself, invoke governance commands as
+`cargo run --quiet --`.
 
-## Critical Rules
+### Hard Stops
 
-1. Keep the fast path small. Do not invent governance work the change does not need.
-2. Do not create work-item noise. For trivial cleanup, docs fixes, typos, comments, and small internal maintenance, prefer no work item unless a matching active/queued item already exists or the user explicitly asks for one.
-3. If using a work item, read it with `govctl work show <WI-ID>`.
-4. Use work item fields correctly:
-   - `description`: scope and why
-   - `notes`: closure-worthy durable constraints or lessons only
-5. If the change becomes behavioral, ambiguous, or architectural, stop using `/quick` and switch to `/gov`.
-6. Use `/commit` for raw VCS operations. Do not embed `jj` or `git` procedures here.
-7. Do not create multiple work items for trivial cleanup batches. Use the commit diff as the record, or one coarse work item only when durable tracking is explicitly valuable.
+- Stop using this workflow when the change affects behavior, changes a
+  governance artifact, exposes an architectural choice, or depends on an
+  ambiguous requirement.
+- Do not create a Work Item merely to record a typo, comment, formatting fix,
+  or mechanical cleanup.
+- Do not perform artifact lifecycle or destructive operations.
+- Do not issue raw VCS commands; use the `commit` skill.
+- Stop before mutation when the task's scope or authority is no longer clear.
 
-## Workflow
+## Decision Policy
 
-### 1. Validate and classify
+| Situation                                                     | Action                               |
+| ------------------------------------------------------------- | ------------------------------------ |
+| Typo, comment, small guide fix, or local mechanical cleanup   | Continue with `quick`                |
+| Existing matching Work Item already owns the cleanup          | Preserve its scope and closure rules |
+| User explicitly needs durable tracking for the outcome        | Use at most one coarse Work Item     |
+| Governance artifact maintenance with no implementation        | Hand off to `spec`                   |
+| Open design or requirement ambiguity                          | Hand off to `discuss`                |
+| Behavior, implementation, or broader verification is involved | Hand off to `gov`                    |
 
-```bash
-govctl status
-```
+Activate a matching queued Work Item through its canonical lifecycle command
+only when it exactly owns the cleanup and the task remains trivial. Otherwise
+hand off to `gov`. Never implement under or attempt to close a queued item.
 
-- Confirm the change is still trivial and non-behavioral.
-- `/commit` will choose the raw VCS workflow if recording is needed.
+When a matching Work Item exists, keep acceptance criteria observable and notes
+durable. Transient progress belongs in an existing loop or the final response,
+not Work Item notes. Do not create a new loop for a trivial untracked change.
 
-### 2. Check optional work-item context
+Make the smallest coherent edit and run validation proportional to the affected
+surface. `govctl check` must pass in a governed repository. Run focused project
+checks when code or generated output is touched; if those checks reveal broader
+behavioral risk, switch to `gov`.
 
-```bash
-govctl work list pending
-```
+When closing a tracked Work Item, let `govctl work move <WI-ID> done` execute its
+effective guards instead of manually repeating them immediately beforehand.
 
-- Matching active item that fits this exact cleanup: use it
-- Matching queued item: `govctl work move <WI-ID> active`
-- No matching item: continue without a work item for trivial cleanup.
-- User explicitly wants tracking, or the cleanup has a durable reader-facing outcome: create at most one coarse work item.
-- Interrupted tracked batch work: run `govctl loop list open` before resuming so you use the persisted generated loop ID.
+## Completion Evidence
 
-If using a work item:
+The quick change is complete when:
 
-```bash
-govctl work show <WI-ID>
-govctl work set <WI-ID> description "Brief scope: what and why"
-govctl work add <WI-ID> acceptance_criteria "chore: govctl check passes"
-govctl work add <WI-ID> acceptance_criteria "<category>: <specific observable outcome for this trivial change>"
-```
+- it remains demonstrably non-behavioral and within the original scope;
+- affected focused checks and `govctl check` pass;
+- any existing Work Item accurately reflects the result and passes closure; and
+- the final response reports the edit and validation.
 
-The second criterion must be concrete and diff-specific. Examples:
-
-- `docs: CLI example uses the current subcommand name`
-- `chore: remove unused import from parser module`
-- `fix: typo in error message is corrected`
-
-### 3. Implement
-
-If using a work item, verify the active gate before editing:
-
-```bash
-govctl check --has-active
-```
-
-Otherwise, make the change without creating a work item. If code comments reference governance artifacts, use `[[artifact-id]]`.
-
-Run the relevant validation:
-
-```bash
-govctl check
-```
-
-If the work item is ready to close, do not run `govctl verify --work <WI-ID>`
-or manually repeat commands covered by its effective guards immediately before
-the move. `govctl work move <WI-ID> done` runs those guards as the final gate.
-Use standalone verification only when diagnosing a guard or leaving the work
-item active.
-
-If using a work item, add a note only when there is a durable lesson that should remain useful after closure:
-
-```bash
-govctl work add <WI-ID> notes "Do not use the old command name in generated examples; it was removed in v0.9"
-```
-
-Do not write progress, command output, review status, current plans, next actions, temporary blockers, or TODOs to `notes`. Transient execution progress belongs in loop state and round artifacts, not in work item fields.
-When a tracked cleanup batch gains or loses durable roots, use `govctl loop add <LOOP-ID> work <ROOT-WI-ID>`, `govctl loop remove <LOOP-ID> work <ROOT-WI-ID>`, or `govctl loop replan <LOOP-ID>` rather than creating a new loop for each small item. `wi` is accepted as a short alias for the loop `work` field, but examples should prefer `work`.
-
-### 4. Complete
-
-If a work item was used, tick matching criteria and move it to `done` only when
-all acceptance criteria are satisfied; the move runs its effective verification
-guards. Otherwise, keep it active. If no work item was used, skip this step.
-
-### 5. Record
-
-Record the implementation change with `/commit`, typically using `docs(scope)`, `chore(scope)`, or `fix(scope)` as appropriate. Include any work-item closure in this commit; do not create a separate closure commit by default.
-
-## Switch to /gov when
-
-- The change affects behavior
-- The governing RFC is unclear or missing
-- An ADR-level design choice appears
-- The task stops being obviously trivial
-
-**BEGIN EXECUTION NOW.**
+Use `commit` to record the coherent change.

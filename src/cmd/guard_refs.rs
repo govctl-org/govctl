@@ -41,6 +41,11 @@ pub(crate) fn guard_reference_blockers(
             }
         }
     }
+    for case in crate::parse::load_conformance_cases(config)? {
+        if case.spec.case.guards.iter().any(|id| id == guard_id) {
+            blockers.push(format!("Referenced by Conformance Case {}", case.meta().id));
+        }
+    }
 
     Ok(blockers)
 }

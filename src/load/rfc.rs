@@ -4,6 +4,7 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use crate::model::{ClauseEntry, ClauseWire, RfcIndex, RfcSpec, RfcWire};
 use crate::schema::{ArtifactSchema, validate_toml_value};
 use serde::de::DeserializeOwned;
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 
 /// Load all RFCs from the gov/rfc directory
@@ -52,41 +53,46 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
         )));
     }
 
+    let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::InternalIo {
+        file: rfc_path.display().to_string(),
+        message: "RFC path has no parent directory".to_string(),
+    })?;
+    let resolved_rfc_dir = canonicalize_path(rfc_dir, "resolve RFC directory")?;
+
     let rfc: RfcSpec = load_source_wire::<RfcWire>(
         config,
         rfc_path,
         SourceWireSpec {
             read_action: "read RFC",
             schema: ArtifactSchema::Rfc,
-            normalize_toml: crate::write::normalize_rfc_value,
             schema_error: rfc_schema_error,
+            decode_error: rfc_schema_error,
         },
     )?
     .into();
 
-    let rfc_dir = rfc_path.parent().ok_or_else(|| LoadError::InternalIo {
-        file: rfc_path.display().to_string(),
-        message: "RFC path has no parent directory".to_string(),
-    })?;
     reject_legacy_json_in_rfc_dir(config, rfc_dir).map_err(LoadError::Diagnostic)?;
-    let mut clauses = Vec::new();
 
+    let mut clause_paths = BTreeSet::new();
     for section in &rfc.sections {
-        for clause_path in &section.clauses {
-            if clause_path.contains("..") {
-                return Err(LoadError::ClausePathInvalid {
-                    file: rfc_path.display().to_string(),
-                    clause: clause_path.clone(),
-                });
-            }
-
-            let full_path = rfc_dir.join(clause_path);
-            if full_path.exists() {
-                let clause = super::load_clause(config, &full_path)?;
-                clauses.push(clause);
-            }
+        for clause_reference in &section.clauses {
+            clause_paths.insert(resolve_clause_reference(
+                rfc_dir,
+                &resolved_rfc_dir,
+                rfc_path,
+                clause_reference,
+            )?);
         }
     }
+    clause_paths.extend(clause_directory_paths(
+        rfc_dir,
+        &resolved_rfc_dir,
+        rfc_path,
+    )?);
+    let clauses = clause_paths
+        .into_iter()
+        .map(|path| super::load_clause(config, &path))
+        .collect::<Result<_, _>>()?;
 
     Ok(RfcIndex {
         rfc,
@@ -95,8 +101,160 @@ pub fn load_rfc(config: &Config, rfc_path: &Path) -> Result<RfcIndex, LoadError>
     })
 }
 
+fn resolve_clause_reference(
+    rfc_dir: &Path,
+    resolved_rfc_dir: &Path,
+    rfc_path: &Path,
+    reference: &str,
+) -> Result<PathBuf, LoadError> {
+    let path = Path::new(reference);
+    if path.as_os_str().is_empty()
+        || path.is_absolute()
+        || path.extension().and_then(|extension| extension.to_str()) != Some("toml")
+    {
+        return Err(invalid_clause_path(rfc_path, reference));
+    }
+
+    let path = rfc_dir.join(path);
+    let resolved = std::fs::canonicalize(&path).map_err(|err| {
+        if err.kind() == std::io::ErrorKind::NotFound {
+            invalid_clause_path(rfc_path, reference)
+        } else {
+            LoadError::Io {
+                file: path.display().to_string(),
+                action: "resolve clause path",
+                message: err.to_string(),
+            }
+        }
+    })?;
+    if !resolved.is_file() || !resolved.starts_with(resolved_rfc_dir) {
+        return Err(invalid_clause_path(rfc_path, reference));
+    }
+    Ok(path)
+}
+
+fn invalid_clause_path(rfc_path: &Path, reference: &str) -> LoadError {
+    LoadError::ClausePathInvalid {
+        file: rfc_path.display().to_string(),
+        clause: reference.to_string(),
+    }
+}
+
+fn canonicalize_path(path: &Path, action: &'static str) -> Result<PathBuf, LoadError> {
+    std::fs::canonicalize(path).map_err(|err| LoadError::Io {
+        file: path.display().to_string(),
+        action,
+        message: err.to_string(),
+    })
+}
+
+fn canonicalize_contained(
+    path: &Path,
+    root: &Path,
+    rfc_path: &Path,
+    reference: &str,
+    action: &'static str,
+) -> Result<PathBuf, LoadError> {
+    let resolved = canonicalize_path(path, action)?;
+    if !resolved.starts_with(root) {
+        return Err(invalid_clause_path(rfc_path, reference));
+    }
+    Ok(resolved)
+}
+
+/// Enforce the per-RFC Clause boundary from RFC-0000:C-RFC-DEF.
+pub(crate) fn validate_clause_storage_path(config: &Config, path: &Path) -> Result<(), LoadError> {
+    let relative = path
+        .strip_prefix(config.rfc_dir())
+        .map_err(|_| invalid_clause_path(path, &path.display().to_string()))?;
+    let rfc_component = relative
+        .components()
+        .next()
+        .filter(|component| matches!(component, std::path::Component::Normal(_)))
+        .ok_or_else(|| invalid_clause_path(path, &path.display().to_string()))?;
+    let rfc_dir = config.rfc_dir().join(rfc_component.as_os_str());
+    let resolved_rfc_dir = canonicalize_path(&rfc_dir, "resolve RFC directory")?;
+    let resolved_target = match std::fs::canonicalize(path) {
+        Ok(resolved) => resolved,
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
+            match std::fs::symlink_metadata(path) {
+                Ok(_) => return Err(invalid_clause_path(path, &path.display().to_string())),
+                Err(metadata_err) if metadata_err.kind() == std::io::ErrorKind::NotFound => {
+                    let parent = path
+                        .parent()
+                        .ok_or_else(|| invalid_clause_path(path, &path.display().to_string()))?;
+                    canonicalize_path(parent, "resolve Clause storage path")?
+                }
+                Err(metadata_err) => {
+                    return Err(LoadError::Io {
+                        file: path.display().to_string(),
+                        action: "read Clause storage metadata",
+                        message: metadata_err.to_string(),
+                    });
+                }
+            }
+        }
+        Err(err) => {
+            return Err(LoadError::Io {
+                file: path.display().to_string(),
+                action: "resolve Clause storage path",
+                message: err.to_string(),
+            });
+        }
+    };
+    if !resolved_target.starts_with(&resolved_rfc_dir) {
+        return Err(invalid_clause_path(path, &path.display().to_string()));
+    }
+    Ok(())
+}
+
+fn clause_directory_paths(
+    rfc_dir: &Path,
+    resolved_rfc_dir: &Path,
+    rfc_path: &Path,
+) -> Result<Vec<PathBuf>, LoadError> {
+    let clauses_dir = rfc_dir.join("clauses");
+    if !clauses_dir.exists() {
+        return Ok(vec![]);
+    }
+    canonicalize_contained(
+        &clauses_dir,
+        resolved_rfc_dir,
+        rfc_path,
+        &clauses_dir.display().to_string(),
+        "resolve clause directory",
+    )?;
+
+    let entries = std::fs::read_dir(&clauses_dir).map_err(|err| LoadError::Io {
+        file: clauses_dir.display().to_string(),
+        action: "read clause directory",
+        message: err.to_string(),
+    })?;
+    let mut paths = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|err| LoadError::Io {
+            file: clauses_dir.display().to_string(),
+            action: "read clause directory entry",
+            message: err.to_string(),
+        })?;
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) == Some("toml") {
+            canonicalize_contained(
+                &path,
+                resolved_rfc_dir,
+                rfc_path,
+                &path.display().to_string(),
+                "resolve clause path",
+            )?;
+            paths.push(path);
+        }
+    }
+    Ok(paths)
+}
+
 /// Load a single clause
 pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEntry, LoadError> {
+    validate_clause_storage_path(config, path)?;
     if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
         return Err(LoadError::Diagnostic(legacy_json_diagnostic(config, path)));
     }
@@ -107,8 +265,8 @@ pub(super) fn load_clause_file(config: &Config, path: &Path) -> Result<ClauseEnt
         SourceWireSpec {
             read_action: "read clause",
             schema: ArtifactSchema::Clause,
-            normalize_toml: crate::write::normalize_clause_value,
             schema_error: clause_schema_error,
+            decode_error: clause_schema_error,
         },
     )?
     .into();
@@ -136,18 +294,26 @@ pub fn reject_legacy_json_storage(config: &Config) -> DiagnosticResult<()> {
         return Ok(());
     }
 
-    let mut dirs: Vec<_> = std::fs::read_dir(&rfc_root)
-        .map_err(|err| {
+    let entries = std::fs::read_dir(&rfc_root).map_err(|err| {
+        Diagnostic::io_error(
+            "read RFC directory for legacy JSON scan",
+            err,
+            config.display_path(&rfc_root).display().to_string(),
+        )
+    })?;
+    let mut dirs = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|err| {
             Diagnostic::io_error(
-                "read RFC directory for legacy JSON scan",
+                "read RFC directory entry for legacy JSON scan",
                 err,
                 config.display_path(&rfc_root).display().to_string(),
             )
-        })?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| path.is_dir())
-        .collect();
+        })?;
+        if entry.path().is_dir() {
+            dirs.push(entry.path());
+        }
+    }
     dirs.sort();
 
     for dir in dirs {
@@ -167,18 +333,27 @@ fn reject_legacy_json_in_rfc_dir(config: &Config, rfc_dir: &Path) -> DiagnosticR
         return Ok(());
     }
 
-    let mut clauses: Vec<_> = std::fs::read_dir(&clauses_dir)
-        .map_err(|err| {
+    let entries = std::fs::read_dir(&clauses_dir).map_err(|err| {
+        Diagnostic::io_error(
+            "read clause directory for legacy JSON scan",
+            err,
+            config.display_path(&clauses_dir).display().to_string(),
+        )
+    })?;
+    let mut clauses = Vec::new();
+    for entry in entries {
+        let entry = entry.map_err(|err| {
             Diagnostic::io_error(
-                "read clause directory for legacy JSON scan",
+                "read clause directory entry for legacy JSON scan",
                 err,
                 config.display_path(&clauses_dir).display().to_string(),
             )
-        })?
-        .filter_map(Result::ok)
-        .map(|entry| entry.path())
-        .filter(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"))
-        .collect();
+        })?;
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
+            clauses.push(path);
+        }
+    }
     clauses.sort();
 
     if let Some(path) = clauses.first() {
@@ -190,7 +365,7 @@ fn reject_legacy_json_in_rfc_dir(config: &Config, rfc_dir: &Path) -> DiagnosticR
 fn legacy_json_diagnostic(config: &Config, path: &Path) -> Diagnostic {
     Diagnostic::new(
         DiagnosticCode::E0505MigrationRequired,
-        "Legacy RFC/clause JSON artifact storage is no longer supported. Use govctl <0.9 to run `govctl migrate` before upgrading.",
+        "Legacy RFC/clause JSON artifact storage is unsupported. Migrate this repository with a compatible earlier govctl version before upgrading.",
         config.display_path(path).display().to_string(),
     )
 }
@@ -206,8 +381,8 @@ fn read_source_file(path: &Path, action: &'static str) -> Result<String, LoadErr
 struct SourceWireSpec {
     read_action: &'static str,
     schema: ArtifactSchema,
-    normalize_toml: fn(&mut toml::Value),
     schema_error: fn(String, String) -> LoadError,
+    decode_error: fn(String, String) -> LoadError,
 }
 
 fn load_source_wire<Wire>(
@@ -238,17 +413,12 @@ fn load_toml_wire<Wire>(
 where
     Wire: DeserializeOwned,
 {
-    let mut raw: toml::Value = toml::from_str(content).map_err(|e| LoadError::Json {
-        file: path.display().to_string(),
-        message: e.to_string(),
-    })?;
-    (spec.normalize_toml)(&mut raw);
+    let raw: toml::Value = toml::from_str(content)
+        .map_err(|e| (spec.decode_error)(path.display().to_string(), e.to_string()))?;
     validate_toml_value(spec.schema, config, path, &raw)
         .map_err(|e| (spec.schema_error)(path.display().to_string(), e.message))?;
-    raw.try_into().map_err(|e| LoadError::Json {
-        file: path.display().to_string(),
-        message: e.to_string(),
-    })
+    raw.try_into()
+        .map_err(|e| (spec.decode_error)(path.display().to_string(), e.to_string()))
 }
 
 fn rfc_schema_error(file: String, message: String) -> LoadError {
@@ -262,9 +432,27 @@ fn clause_schema_error(file: String, message: String) -> LoadError {
 pub(crate) fn split_clause_id(clause_id: &str) -> Option<(&str, &str)> {
     let mut parts = clause_id.split(':');
     match (parts.next(), parts.next(), parts.next()) {
-        (Some(rfc_id), Some(clause_name), None) => Some((rfc_id, clause_name)),
+        (Some(rfc_id), Some(clause_name), None)
+            if valid_rfc_id(rfc_id) && valid_clause_name(clause_name) =>
+        {
+            Some((rfc_id, clause_name))
+        }
         _ => None,
     }
+}
+
+pub(crate) fn valid_rfc_id(id: &str) -> bool {
+    id.strip_prefix("RFC-")
+        .is_some_and(|suffix| suffix.len() == 4 && suffix.bytes().all(|byte| byte.is_ascii_digit()))
+}
+
+fn valid_clause_name(id: &str) -> bool {
+    id.strip_prefix("C-").is_some_and(|suffix| {
+        !suffix.is_empty()
+            && suffix
+                .bytes()
+                .all(|byte| byte.is_ascii_uppercase() || byte.is_ascii_digit() || byte == b'-')
+    })
 }
 
 fn find_rfc_in_dir(dir: &Path) -> Option<PathBuf> {

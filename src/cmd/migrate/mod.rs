@@ -7,24 +7,42 @@ use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticResult, Diagnostics};
 use crate::schema::ARTIFACT_SCHEMA_TEMPLATES;
 use crate::ui;
-use crate::write::{WriteOp, write_file};
+use crate::write::{WriteOp, with_file_transaction, write_file};
 use std::fs;
 
 mod ops;
-mod releases;
-mod rewrite;
-mod rfc_signatures;
 
 use ops::{FileOp, execute_ops, preview_ops};
-use releases::plan_release_upgrade;
-use rewrite::plan_toml_rewrites;
-use rfc_signatures::plan_rfc_signature_upgrade;
 
 /// Latest schema version. Bump when adding a new migration step.
-pub const CURRENT_SCHEMA_VERSION: u32 = 3;
+pub const CURRENT_SCHEMA_VERSION: u32 = 4;
+/// Oldest project schema accepted by this binary.
+pub const MIN_SUPPORTED_SCHEMA_VERSION: u32 = 3;
 
-/// First schema version whose RFC signatures are content-only amendment baselines.
-pub const RFC_CONTENT_SIGNATURE_SCHEMA_VERSION: u32 = 3;
+pub(crate) fn validate_supported_schema_version(
+    version: u32,
+    location: impl Into<String>,
+) -> DiagnosticResult<()> {
+    if version < MIN_SUPPORTED_SCHEMA_VERSION {
+        return Err(Diagnostic::new(
+            crate::diagnostic::DiagnosticCode::E0505MigrationRequired,
+            format!(
+                "Project schema version {version} is unsupported (minimum: {MIN_SUPPORTED_SCHEMA_VERSION}). Migrate this repository with a compatible earlier govctl version before upgrading."
+            ),
+            location,
+        ));
+    }
+    if version > CURRENT_SCHEMA_VERSION {
+        return Err(Diagnostic::new(
+            crate::diagnostic::DiagnosticCode::E0505MigrationRequired,
+            format!(
+                "Project schema version {version} is newer than this govctl supports (latest: {CURRENT_SCHEMA_VERSION}). Upgrade govctl before using this repository."
+            ),
+            location,
+        ));
+    }
+    Ok(())
+}
 
 /// A versioned migration step.
 struct MigrationStep {
@@ -35,34 +53,102 @@ struct MigrationStep {
 }
 
 /// All registered migrations, ordered by version.
-const MIGRATIONS: &[MigrationStep] = &[
-    MigrationStep {
-        from: 1,
-        to: 2,
-        name: "structured wire format and schema headers",
-        plan_fn: plan_v1_to_v2,
-    },
-    MigrationStep {
-        from: 2,
-        to: 3,
-        name: "RFC amendment content signatures",
-        plan_fn: plan_v2_to_v3,
-    },
-];
+const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
+    from: 3,
+    to: 4,
+    name: "enable Conformance Case resources",
+    plan_fn: plan_v3_to_v4,
+}];
+
+fn plan_v3_to_v4(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
+    validate_prospective_conformance_cases(config)?;
+    Ok(vec![])
+}
+
+fn validate_prospective_conformance_cases(config: &Config) -> DiagnosticResult<()> {
+    let cases = crate::parse::load_conformance_cases(config)?;
+    if cases.is_empty() {
+        return Ok(());
+    }
+    crate::validate::conformance::validate_cases(config, &cases)
+        .into_iter()
+        .next()
+        .map_or(Ok(()), Err)
+}
 
 // =============================================================================
 // Public API
 // =============================================================================
 
 pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
+    validate_supported_schema_version(
+        config.schema.version,
+        config
+            .display_path(&config.gov_root.join("config.toml"))
+            .display()
+            .to_string(),
+    )?;
     crate::load::reject_legacy_json_storage(config)?;
+
+    let mut support_paths = support_paths_to_sync(config)?;
+    if crate::cmd::project_support::local_state_gitignore_needs_sync(config)? {
+        support_paths.push(config.project_root().join(".gitignore"));
+    }
+    let support_path_refs = support_paths
+        .iter()
+        .map(std::path::PathBuf::as_path)
+        .collect::<Vec<_>>();
+    let schema_dir = config.schema_dir();
+    let schema_dir_existed = schema_dir.exists();
+    let result = with_file_transaction(&support_path_refs, op, || migrate_inner(config, op));
+    if result.is_err() && !schema_dir_existed && schema_dir.is_dir() {
+        let _ = std::fs::remove_dir(&schema_dir);
+    }
+    result
+}
+
+fn support_paths_to_sync(config: &Config) -> DiagnosticResult<Vec<std::path::PathBuf>> {
+    let mut paths = Vec::new();
+    for template in ARTIFACT_SCHEMA_TEMPLATES {
+        let path = config.schema_dir().join(template.filename);
+        match fs::read_to_string(&path) {
+            Ok(existing) if existing == template.content => {}
+            Ok(_) => paths.push(path),
+            Err(err) if err.kind() == std::io::ErrorKind::NotFound => paths.push(path),
+            Err(err) => {
+                return Err(Diagnostic::io_error(
+                    "read schema file",
+                    err,
+                    config.display_path(&path).display().to_string(),
+                ));
+            }
+        }
+    }
+    Ok(paths)
+}
+
+fn migrate_inner(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
+    let current = config.schema.version;
+    let pending: Vec<&MigrationStep> = MIGRATIONS
+        .iter()
+        .filter(|s| s.from >= current && s.to <= CURRENT_SCHEMA_VERSION)
+        .collect();
+
+    // Migration planning is the graph/schema preflight and must complete before
+    // support-file synchronization creates or changes anything.
+    let mut all_ops = Vec::new();
+    let mut step_names = Vec::new();
+    for step in &pending {
+        let ops = (step.plan_fn)(config)?;
+        step_names.push(format!("v{} -> v{}: {}", step.from, step.to, step.name));
+        all_ops.extend(ops);
+    }
 
     // Always sync bundled JSON Schemas regardless of schema version. [[ADR-0035]]
     let schemas_synced = sync_schemas(config, op)?;
     let gitignore_entries_synced =
         crate::cmd::project_support::ensure_local_state_gitignore_entries(config, op)?;
 
-    let current = config.schema.version;
     if current >= CURRENT_SCHEMA_VERSION {
         if schemas_synced > 0 || gitignore_entries_synced > 0 {
             let mut parts = Vec::new();
@@ -101,18 +187,6 @@ pub fn migrate(config: &Config, op: WriteOp) -> DiagnosticResult<Diagnostics> {
         return Ok(vec![]);
     }
 
-    let pending: Vec<&MigrationStep> = MIGRATIONS
-        .iter()
-        .filter(|s| s.from >= current && s.to <= CURRENT_SCHEMA_VERSION)
-        .collect();
-
-    let mut all_ops = Vec::new();
-    let mut step_names = Vec::new();
-    for step in &pending {
-        let ops = (step.plan_fn)(config)?;
-        step_names.push(format!("v{} -> v{}: {}", step.from, step.to, step.name));
-        all_ops.extend(ops);
-    }
     let config_path = config.gov_root.join("config.toml");
     all_ops.push(plan_config_version_bump(config, CURRENT_SCHEMA_VERSION)?);
 
@@ -205,33 +279,4 @@ fn plan_config_version_bump(config: &Config, new_version: u32) -> DiagnosticResu
         path,
         content: output,
     })
-}
-
-// =============================================================================
-// v1 -> v2: structured wire format + schema headers
-// =============================================================================
-
-fn plan_v1_to_v2(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
-    let mut ops = Vec::new();
-
-    // 1. Release metadata normalization
-    let mut skip_releases = false;
-    if let Some(release_ops) = plan_release_upgrade(config)? {
-        ops.extend(release_ops);
-        skip_releases = true;
-    }
-
-    // 2. Rewrite all TOML artifacts: add #:schema headers + strip govctl.schema
-    let rewrite_ops = plan_toml_rewrites(config, skip_releases)?;
-    ops.extend(rewrite_ops);
-
-    Ok(ops)
-}
-
-// =============================================================================
-// v2 -> v3: RFC amendment content signatures
-// =============================================================================
-
-fn plan_v2_to_v3(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
-    plan_rfc_signature_upgrade(config)
 }

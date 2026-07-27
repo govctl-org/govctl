@@ -33,6 +33,18 @@ fn normalized_check_output(
     Ok(normalize_output(&output, root, date)?)
 }
 
+#[test]
+fn test_malformed_rfc_toml_reports_rfc_schema_error() -> common::TestResult {
+    let temp_dir = init_project()?;
+    write_rfc_toml(temp_dir.path(), "[govctl\nid = \"RFC-0001\"\n")?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+
+    assert!(output.contains("error[E0101]"), "{output}");
+    assert!(!output.contains("error[E0902]"), "{output}");
+    Ok(())
+}
+
 /// Test: Valid RFC TOML in [govctl] wire format passes check
 #[test]
 fn test_valid_rfc_toml_wire_format() -> common::TestResult {
@@ -43,7 +55,6 @@ fn test_valid_rfc_toml_wire_format() -> common::TestResult {
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "Wire Format Test"
 version = "0.1.0"
@@ -76,7 +87,6 @@ fn test_valid_clause_toml_wire_format() -> common::TestResult {
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "Clause Wire Test"
 version = "0.1.0"
@@ -102,7 +112,6 @@ notes = "Initial version"
         r#"#:schema ../../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-TEST"
 title = "Test Clause"
 kind = "normative"
@@ -126,7 +135,6 @@ fn test_invalid_rfc_toml_wire_unknown_field() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Bad RFC"
 version = "0.1.0"
@@ -153,7 +161,6 @@ fn test_invalid_clause_toml_wire_unknown_field() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Clause Error Test"
 version = "0.1.0"
@@ -172,7 +179,6 @@ clauses = ["clauses/C-BAD.toml"]
         temp_dir.path(),
         "C-BAD.toml",
         r#"[govctl]
-schema = 1
 id = "C-BAD"
 title = "Bad Clause"
 kind = "normative"
@@ -195,7 +201,6 @@ fn test_invalid_rfc_toml_wire_missing_required() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Missing owners"
 version = "0.1.0"
@@ -220,7 +225,6 @@ fn test_invalid_clause_toml_wire_missing_text() -> common::TestResult {
     write_rfc_toml(
         temp_dir.path(),
         r#"[govctl]
-schema = 1
 id = "RFC-0001"
 title = "Missing text test"
 version = "0.1.0"
@@ -239,7 +243,6 @@ clauses = ["clauses/C-NOTEXT.toml"]
         temp_dir.path(),
         "C-NOTEXT.toml",
         r#"[govctl]
-schema = 1
 id = "C-NOTEXT"
 title = "No text"
 kind = "normative"
@@ -252,9 +255,9 @@ kind = "normative"
     Ok(())
 }
 
-/// Test: Legacy flat RFC TOML is still accepted via normalization
+/// Test: Legacy flat RFC TOML is rejected.
 #[test]
-fn test_legacy_flat_rfc_toml_accepted() -> common::TestResult {
+fn test_legacy_flat_rfc_toml_rejected() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     write_rfc_toml(
@@ -281,14 +284,15 @@ notes = "Initial version"
     Ok(())
 }
 
-/// Test: Legacy flat clause TOML is still accepted via normalization
+/// Test: Legacy flat clause TOML is rejected.
 #[test]
-fn test_legacy_flat_clause_toml_accepted() -> common::TestResult {
+fn test_legacy_flat_clause_toml_rejected() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     write_rfc_toml(
         temp_dir.path(),
-        r#"rfc_id = "RFC-0001"
+        r#"[govctl]
+id = "RFC-0001"
 title = "Flat Clause Test"
 version = "0.1.0"
 status = "draft"

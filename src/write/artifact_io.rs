@@ -10,7 +10,6 @@ pub(super) struct ArtifactIo {
     pub message_label: &'static str,
     pub schema: ArtifactSchema,
     pub schema_error: DiagnosticCode,
-    pub normalize_toml: fn(&mut toml::Value),
 }
 
 pub(super) fn read_artifact<Wire, Spec>(
@@ -31,7 +30,7 @@ where
     if path.extension().and_then(|ext| ext.to_str()) == Some("json") {
         return Err(Diagnostic::new(
             DiagnosticCode::E0505MigrationRequired,
-            "Legacy RFC/clause JSON artifact storage is no longer supported. Use govctl <0.9 to run `govctl migrate` before upgrading.",
+            "Legacy RFC/clause JSON artifact storage is unsupported. Migrate this repository with a compatible earlier govctl version before upgrading.",
             path.display().to_string(),
         ));
     }
@@ -43,14 +42,13 @@ where
         ));
     }
 
-    let mut raw: toml::Value = toml::from_str(&content).map_err(|err| {
+    let raw: toml::Value = toml::from_str(&content).map_err(|err| {
         Diagnostic::new(
             io.schema_error,
             format!("Failed to parse {} TOML: {err}", io.message_label),
             path.display().to_string(),
         )
     })?;
-    (io.normalize_toml)(&mut raw);
     validate_toml_value(io.schema, config, path, &raw)?;
     let wire: Wire = raw.try_into().map_err(|err| {
         Diagnostic::new(

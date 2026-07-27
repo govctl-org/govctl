@@ -76,11 +76,11 @@ govctl rfc edit RFC-0010 refs --add RFC-0001
 govctl rfc edit RFC-0010 owners --add "@co-maintainer"
 
 # Remove by index or pattern
-govctl rfc edit RFC-0010 refs --at 0 --remove
-govctl rfc edit RFC-0010 owners --remove "@old-owner" --exact
+govctl rfc edit RFC-0010 refs[0] --remove
+govctl rfc edit RFC-0010 owners --remove "@old-owner"
 
 # Edit clause text
-govctl clause edit RFC-0010:C-SCOPE text --stdin <<'EOF'
+govctl clause edit RFC-0010:C-SCOPE text --set --stdin <<'EOF'
 New clause text here
 EOF
 ```
@@ -92,6 +92,10 @@ Changelog-only corrections do not change the version and remain available
 through either `rfc edit ... changelog` or `rfc bump --change`.
 
 ## Working with Clauses
+
+Clauses are first-class CLI resources. Use the root `govctl clause` namespace
+for every Clause operation, even though Clause IDs and files are scoped by an
+RFC. `govctl rfc` operates on the RFC resource itself.
 
 ### Create a Clause
 
@@ -131,7 +135,7 @@ released by an RFC version bump.
 
 ```bash
 # From stdin (recommended for multi-line)
-govctl clause edit RFC-0010:C-SCOPE text --stdin <<'EOF'
+govctl clause edit RFC-0010:C-SCOPE text --set --stdin <<'EOF'
 The system MUST validate all inputs.
 The system SHOULD log validation failures.
 EOF
@@ -140,7 +144,7 @@ EOF
 govctl clause edit RFC-0010:C-SCOPE text --set "The system MUST validate all inputs."
 
 # From file
-govctl clause edit RFC-0010:C-SCOPE text --stdin < clause-text.md
+govctl clause edit RFC-0010:C-SCOPE text --set --stdin < clause-text.md
 ```
 
 ### Delete a Clause

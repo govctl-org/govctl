@@ -1,0 +1,62 @@
+---
+source: tests/test_help.rs
+expression: normalized
+---
+$ govctl work edit --help
+Canonical path-first edit entrypoint
+
+Usage: govctl work edit [OPTIONS] <ID> <PATH>
+
+Arguments:
+  <ID>
+          Artifact ID
+
+  <PATH>
+          Canonical field path
+
+Options:
+  -C, --config <CONFIG>
+          Path to govctl config (TOML)
+
+      --set [<SET>]
+          Set a scalar value (omit VALUE only when using --stdin)
+
+      --add [<ADD>]
+          Append a value to a list (omit VALUE only when using --stdin)
+
+      --dry-run
+          Dry run: preview changes without writing files
+
+      --remove [<REMOVE>]
+          Remove a matching value, or omit PATTERN when removing an indexed path
+
+      --tick <TICK>
+          Update checklist-style item status
+
+          Possible values:
+          - done:       Mark work items as done
+          - pending:    Mark work items as pending
+          - cancelled:  Mark work items as cancelled
+          - accepted:   Mark ADR alternatives as accepted
+          - considered: Mark ADR alternatives as considered
+          - rejected:   Mark ADR alternatives as rejected
+
+      --stdin
+          Read set/add value from stdin
+
+      --regex
+          Treat the remove value as a regular expression
+
+      --all
+          Remove every item from the addressed list
+
+  -h, --help
+          Print help (see a summary with '-h')
+
+EXAMPLES:
+    govctl work edit WI-<DATE>-001 description --set "Scope and why"
+    govctl work edit WI-<DATE>-001 depends_on --add WI-<DATE>-002
+    govctl work edit WI-<DATE>-001 acceptance_criteria --add "add: Implement feature X"
+    govctl work edit WI-<DATE>-001 acceptance_criteria[0] --tick done
+    govctl work edit WI-<DATE>-001 verification.required_guards --add GUARD-CARGO-TEST
+exit: 0

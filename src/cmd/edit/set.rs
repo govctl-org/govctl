@@ -1,4 +1,6 @@
-use super::adapter::{AdrTomlAdapter, ClauseTomlAdapter, GuardTomlAdapter, RfcTomlAdapter};
+use super::adapter::{
+    AdrTomlAdapter, ClauseTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, RfcTomlAdapter,
+};
 use super::doc_target::{set_clause_field, set_rfc_field};
 use super::engine as edit_engine;
 use super::path::FieldPath;
@@ -32,6 +34,7 @@ pub(super) fn apply_set_field(
     let fp = target.path();
     if enforce_verb_ownership {
         reject_verb_owned_set(artifact, fp, id)?;
+        target.ensure_supports(edit_rules::Verb::Set, id)?;
     }
     // Implements [[ADR-0042]]: block setting `decision` without complete alternatives
     if artifact == ArtifactType::Adr && fp.as_simple() == Some("decision") {
@@ -77,6 +80,15 @@ pub(super) fn apply_set_field(
             ArtifactType::Guard,
             !enforce_verb_ownership,
         )?,
+        ArtifactType::Conformance => set_toml_field::<ConformanceTomlAdapter>(
+            config,
+            id,
+            target,
+            value,
+            op,
+            ArtifactType::Conformance,
+            !enforce_verb_ownership,
+        )?,
     }
     Ok(())
 }
@@ -114,7 +126,7 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> Di
                 && fp.segments[1].name == "status"
             {
                 Some(
-                    "ADR alternative status is tick-owned. Use `govctl adr tick ... alternatives ...`.",
+                    "ADR alternative status is tick-owned. Use `govctl adr edit <ID> alternatives[N] --tick <status>`.",
                 )
             } else {
                 None
@@ -127,12 +139,15 @@ fn reject_verb_owned_set(artifact: ArtifactType, fp: &FieldPath, id: &str) -> Di
                 && fp.segments[0].name == "acceptance_criteria"
                 && fp.segments[1].name == "status"
             {
-                Some("Acceptance criteria status is tick-owned. Use `govctl work tick`.")
+                Some(
+                    "Acceptance criteria status is tick-owned. Use `govctl work edit <ID> acceptance_criteria[N] --tick <status>`.",
+                )
             } else {
                 None
             }
         }
         ArtifactType::Guard => None,
+        ArtifactType::Conformance => None,
     };
 
     if let Some(message) = msg {

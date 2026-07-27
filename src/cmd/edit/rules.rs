@@ -18,12 +18,17 @@ pub enum NestedNodeKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NestedScalarMode {
     String,
-    Integer,
+    Semver,
     Enum {
         allowed: &'static [&'static str],
         invalid_msg: &'static str,
         code: Option<DiagnosticCode>,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NestedListValueCodec {
+    RequirementBinding,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -37,6 +42,7 @@ pub struct NestedNodeRule {
     pub kind: NestedNodeKind,
     pub verbs: &'static [&'static str],
     pub text_key: Option<&'static str>,
+    pub value_codec: Option<NestedListValueCodec>,
     pub set_mode: Option<NestedScalarMode>,
     pub item: Option<&'static NestedNodeRule>,
     pub fields: &'static [NestedChildRule],
@@ -100,28 +106,6 @@ impl Verb {
     }
 }
 
-macro_rules! define_alias_resolver {
-    ($(($alias:literal, $canonical:literal)),* $(,)?) => {
-        pub fn normalize_alias(name: &str) -> &str {
-            match name {
-                $($alias => $canonical,)*
-                _ => name,
-            }
-        }
-    };
-}
-
-macro_rules! define_legacy_prefix_resolver {
-    ($(($prefix:literal, [$($field:literal),* $(,)?])),* $(,)?) => {
-        pub fn can_collapse_legacy_prefix(prefix: &str, field: &str) -> bool {
-            match prefix {
-                $($prefix => matches!(field, $($field)|*),)*
-                _ => false,
-            }
-        }
-    };
-}
-
 include!(concat!(env!("OUT_DIR"), "/edit_rules_generated.rs"));
 
 pub fn nested_root_rule(artifact: &str, root: &str) -> Option<&'static NestedRootRule> {
@@ -136,10 +120,38 @@ pub fn simple_field_rule(artifact: &str, field: &str) -> Option<&'static SimpleF
         .find(|rule| rule.artifact == artifact && rule.name == field)
 }
 
+pub fn root_field_names(artifact: &str) -> Vec<&'static str> {
+    let mut names = SIMPLE_RULES
+        .iter()
+        .filter(|rule| rule.artifact == artifact)
+        .map(|rule| rule.name)
+        .chain(
+            NESTED_RULES
+                .iter()
+                .filter(|rule| rule.artifact == artifact)
+                .map(|rule| rule.root),
+        )
+        .collect::<Vec<_>>();
+    names.sort_unstable();
+    names.dedup();
+    names
+}
+
+pub fn nested_child_names(node: &NestedNodeRule) -> Vec<&'static str> {
+    let mut names = node
+        .fields
+        .iter()
+        .map(|field| field.name)
+        .collect::<Vec<_>>();
+    names.sort_unstable();
+    names
+}
+
 pub fn simple_field_supports_verb(artifact: &str, field: &str, verb: Verb) -> bool {
     simple_field_rule(artifact, field).is_some_and(|rule| rule.verbs.contains(&verb.as_str()))
 }
 
+#[cfg(test)]
 pub fn nested_field_rule(
     artifact: &str,
     root: &str,
@@ -200,20 +212,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_aliases_generated() {
-        assert_eq!(normalize_alias("alt"), "alternatives");
-        assert_eq!(normalize_alias("reason"), "rejection_reason");
-        assert_eq!(normalize_alias("unknown"), "unknown");
-    }
-
-    #[test]
-    fn test_legacy_prefix_generation() {
-        assert!(can_collapse_legacy_prefix("content", "decision"));
-        assert!(!can_collapse_legacy_prefix("content", "nonexistent"));
-        assert!(!can_collapse_legacy_prefix("nope", "decision"));
-    }
-
-    #[test]
     fn test_nested_rule_lookup() -> Result<(), Box<dyn std::error::Error>> {
         let rule = nested_root_rule("adr", "alternatives").ok_or("rule should exist")?;
         assert_eq!(rule.node.kind, NestedNodeKind::List);
@@ -235,15 +233,6 @@ mod tests {
             "status",
             Verb::Add
         ));
-    }
-
-    #[test]
-    fn test_nested_object_root_lookup() -> Result<(), Box<dyn std::error::Error>> {
-        let rule = nested_root_rule("guard", "check").ok_or("rule should exist")?;
-        assert_eq!(rule.node.kind, NestedNodeKind::Object);
-        let child = nested_field_rule("guard", "check", "timeout_secs").ok_or("child exists")?;
-        assert_eq!(child.node.kind, NestedNodeKind::Scalar);
-        Ok(())
     }
 
     #[test]
@@ -286,6 +275,19 @@ mod tests {
             "superseded_by",
             Verb::Set
         ));
+    }
+
+    #[test]
+    fn test_conformance_requirement_rule_uses_structured_value_codec()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let rule = nested_root_rule("conformance", "requirements").ok_or("rule should exist")?;
+        assert_eq!(
+            rule.node.value_codec,
+            Some(NestedListValueCodec::RequirementBinding)
+        );
+        assert!(rule.node.verbs.contains(&"add"));
+        assert!(rule.node.verbs.contains(&"remove"));
+        Ok(())
     }
 
     #[test]

@@ -51,6 +51,26 @@ pub fn get_nested_field(
     render_nested_node(node, value, id)
 }
 
+pub fn get_nested_value(
+    artifact: ArtifactType,
+    doc: &Value,
+    fp: &FieldPath,
+    id: &str,
+) -> DiagnosticResult<Value> {
+    let root_name = &fp.segments[0].name;
+    let rule = resolve_nested_root(artifact, root_name, id)?;
+    let root_value = value_at_path(doc, rule.content_path);
+    let (_, value) = descend_get(
+        rule.node,
+        root_value,
+        &fp.segments[0],
+        &fp.segments[1..],
+        Verb::Get,
+        id,
+    )?;
+    Ok(value.cloned().unwrap_or(Value::Null))
+}
+
 pub fn set_nested_field(
     artifact: ArtifactType,
     doc: &mut Value,
@@ -96,15 +116,15 @@ fn apply_nested_scalar_set(
 ) -> DiagnosticResult<()> {
     match mode.unwrap_or(NestedScalarMode::String) {
         NestedScalarMode::String => *slot = Value::String(value.to_string()),
-        NestedScalarMode::Integer => {
-            let n: i64 = value.parse().map_err(|_| {
+        NestedScalarMode::Semver => {
+            semver::Version::parse(value).map_err(|_| {
                 Diagnostic::new(
                     DiagnosticCode::E0820InvalidFieldValue,
-                    format!("Invalid integer value for {}: {value}", id),
+                    format!("Invalid semantic version: {value}"),
                     id,
                 )
             })?;
-            *slot = Value::Number(serde_json::Number::from(n));
+            *slot = Value::String(value.to_string());
         }
         NestedScalarMode::Enum {
             allowed,

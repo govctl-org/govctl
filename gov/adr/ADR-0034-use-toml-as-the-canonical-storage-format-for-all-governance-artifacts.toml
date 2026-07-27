@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0034"
 title = "Use TOML as the canonical storage format for all governance artifacts"
-status = "accepted"
+status = "superseded"
 date = "2026-03-16"
+superseded_by = "ADR-0056"
 refs = [
     "ADR-0001",
     "ADR-0014",

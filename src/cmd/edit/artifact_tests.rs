@@ -33,8 +33,16 @@ fn test_artifact_type_work_item_by_prefix() {
 }
 
 #[test]
+fn test_artifact_type_conformance() {
+    assert_eq!(
+        ArtifactType::from_id("CONF-TRACE-CASE"),
+        Some(ArtifactType::Conformance)
+    );
+}
+
+#[test]
 fn test_artifact_type_work_item_by_hyphen() {
-    // Any ID with hyphen that doesn't match RFC/ADR/Clause is WorkItem.
+    // Any ID with hyphen that doesn't match a canonical artifact prefix is WorkItem.
     assert_eq!(
         ArtifactType::from_id("2026-01-17-add-tests"),
         Some(ArtifactType::WorkItem)

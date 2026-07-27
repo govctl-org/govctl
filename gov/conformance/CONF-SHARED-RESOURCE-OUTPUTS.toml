@@ -1,0 +1,18 @@
+#:schema ../schema/conformance.schema.json
+
+[govctl]
+id = "CONF-SHARED-RESOURCE-OUTPUTS"
+title = "Shared resource output contracts"
+
+[case]
+path = "tests/test_conformance.rs"
+selector = "conformance_read_outputs_and_string_list_removal_follow_shared_contracts"
+guards = ["GUARD-CONFORMANCE-TESTS"]
+
+[[case.requirements]]
+ref = "RFC-0008:C-COMMAND-SURFACE"
+version = "0.1.0"
+
+[[case.requirements]]
+ref = "RFC-0002:C-OUTPUT-FORMAT"
+version = "2.1.0"

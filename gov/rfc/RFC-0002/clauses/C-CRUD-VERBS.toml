@@ -13,111 +13,77 @@ tags = [
 
 [content]
 text = """
-All resource types MUST support the following CRUD (Create, Read, Update, Delete) verbs where applicable.
-
-Release records MUST NOT expose universal CRUD verbs. Their constrained creation and correction commands are defined by [[RFC-0002:C-LIFECYCLE-VERBS]].
+Governed artifact resources MUST expose the following universal operations where applicable. Release records MUST NOT expose these operations; their constrained creation and correction commands are defined by [[RFC-0002:C-LIFECYCLE-VERBS]].
 
 **1. `new` - Create Resource**
 
 Syntax: `govctl <resource> new <arguments>`
 
-Creates a new instance of the resource. Required arguments vary by resource type but typically include a title or primary identifier.
+`new` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. It MUST validate inputs. It MUST generate or validate the resource ID. It MUST initialize schema-defined defaults and create the canonical storage structure.
 
-MUST support for: rfc, adr, work, clause, guard
-Behavior:
-- Generates unique ID if not provided
-- Initializes resource with default values
-- Creates necessary filesystem structure
-- Validates inputs per resource schema
-
-Guard-specific: `govctl guard new "<title>"` scaffolds a new guard TOML file under `gov/guard/`. The generated ID is derived from the slugified title with a `GUARD-` prefix. The command SHOULD print a hint about adding the guard to `verification.default_guards` in `gov/config.toml`.
+Guard creation through `govctl guard new "<title>"` MUST scaffold a Guard TOML file under `gov/guard/`. The generated ID MUST use the `GUARD-` prefix. The command SHOULD print guidance for adding the Guard to project verification policy.
 
 **2. `list` - List Resources**
 
-Syntax: `govctl <resource> list [filter] [--tag <tag>[,<tag>...]]`
+Syntax: `govctl <resource> list [status] [--tag <tag>[,<tag>...]]`
 
-Lists all instances of the resource type. Optional filter narrows results.
-
-MUST support for: rfc, adr, work, clause, guard
-Behavior:
-- Returns tabular output by default
-- Supports filtering (exact match or substring)
-- Sorted by ID (lexicographic order)
-- MUST respect [[RFC-0002:C-OUTPUT-FORMAT]] flags
-- With `--tag`: filters results to artifacts that carry ALL specified tags. MUST support comma-separated tag values. Applies to rfc, clause, adr, work, and guard.
+`list` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. Results MUST be sorted lexicographically by ID. A positional status filter, where supported by the resource lifecycle, MUST accept only that resource's defined status values. Tag filtering MUST require every requested tag. Tag filtering MUST accept comma-separated tag values for taggable resource types. Output MUST follow [[RFC-0002:C-OUTPUT-FORMAT]].
 
 **3. `get` - Read Resource**
 
 Syntax: `govctl <resource> get <id> [field]`
 
-Retrieves a resource by ID. If field is specified, returns only that field value.
+`get` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. With no field, it returns the complete structured resource. With a field, it returns that logical field value. Unknown resources and fields MUST be rejected. Output MUST follow [[RFC-0002:C-OUTPUT-FORMAT]].
 
-MUST support for: rfc, adr, work, clause, guard
-Behavior:
-- Returns full resource if no field specified
-- Returns field value if field specified
-- MUST respect [[RFC-0002:C-OUTPUT-FORMAT]] flags
-- MUST error if resource or field does not exist
+Field identifiers exposed by `get` MUST be logical artifact field names rather than persisted table-layout paths. Renaming a logical field identifier requires a breaking govctl release.
 
-**Field Name Stability:**
+**4. `show` - Present Resource**
 
-Field names exposed via `get <id> <field>` MUST be stable identifiers defined by the resource schema. Field names MAY NOT be renamed without a major version bump of govctl.
+Syntax: `govctl <resource> show <id> [--history] [--output <format>]`
 
-**4. `edit` - Update Resource**
+`show` MUST be supported as defined by [[RFC-0002:C-SHOW-PROJECTION]].
 
-Syntax: `govctl <resource> edit <id> <path> --set <value>` or `govctl <resource> edit <id> <path> --set --stdin`
+**5. `edit` - Mutate Resource**
 
-Updates a single field addressed by a deterministic path expression. Values can be provided through an explicit mutation flag or via stdin for multiline content.
+Syntax:
 
-MUST support for: rfc, adr, work, clause, guard
-Behavior:
-- Simple fields: replace the value at the addressed path
-- Arrays and nested fields: MUST use deterministic path-based addressing, including indexed path expressions such as `content.alternatives[0].text`
-- MUST validate path syntax and reject unknown fields, invalid indices, and paths whose operation is not allowed by the resource schema
-- MUST validate values per field type before writing
-- MUST support `--stdin` with the explicit set operation for multiline content
+```
+govctl <resource> edit <id> <path> --set [<value>]
+govctl <resource> edit <id> <path> --add [<value>]
+govctl <resource> edit <id> <path> --remove [<pattern>]
+govctl <resource> edit <id> <path> --tick <status>
+```
 
-**5. `delete` - Delete Resource**
+`edit` MUST be supported for RFCs, ADRs, Work Items, Clauses, Guards, and Conformance Cases. It MUST be the only universal field-mutation subcommand for those resources. These resources MUST NOT expose `set`, `add`, `remove`, or `tick` as sibling mutation subcommands.
+
+An edit invocation MUST select exactly one mutation operation. `--stdin` MAY supply the value for `--set` or `--add`. Selectors and their exclusivity rules are defined by [[RFC-0002:C-EDIT-FIELD-CONTRACT]].
+
+A path MUST use a canonical logical path defined by [[RFC-0002:C-EDIT-FIELD-CONTRACT]]. Nested object and array traversal MUST use dotted and indexed segments such as `alternatives[0].pros`. The parser MUST consume the complete path. Unknown fields MUST be rejected. Invalid indices MUST be rejected. Aliases and wire-layout prefixes MUST be rejected. An operation not permitted for the addressed path MUST be rejected.
+
+The same edit grammar and flag roles MUST apply across supported resource types. Resource-specific compatibility flags MUST be rejected. Values MUST be validated against the addressed field type before writing. A failed edit MUST leave the artifact unchanged.
+
+**6. `delete` - Delete Resource**
 
 Syntax: `govctl <resource> delete <id>`
 
-Removes a resource permanently.
+`delete` MUST be supported for Work Items, Clauses, Guards, and Conformance Cases. RFCs and ADRs MUST use their lifecycle operations instead.
 
-MUST support for: work, clause, guard
-MUST NOT support for: rfc, adr (use lifecycle verbs instead)
+For Guards, deletion MUST reject references from Work Item verification requirements, Work Item waivers, project default Guards, and Conformance Case guard bindings.
 
-**Deletion Safety Constraints:**
+For Clauses, deletion MUST enforce [[RFC-0000:C-CLAUSE-DEF]] and report every governed referrer that prevents deletion.
 
-For guards:
-- MUST verify no Work Items reference the guard ID in `verification.required_guards` or `verification.waivers[*].guard` before deletion
-- MUST verify the guard is not listed in `verification.default_guards` in `gov/config.toml` before deletion
-- MUST error with list of referencing artifacts/config if any references exist
+For Work Items, deletion MUST require `queue` status and MUST reject any governed referrer.
 
-For clauses:
-- MUST enforce the deletion eligibility and referential-integrity requirements in [[RFC-0000:C-CLAUSE-DEF]]
-- MUST error with the list of referencing artifact IDs when references prevent deletion
+Deletion SHOULD require confirmation unless an explicit force option is provided. A delete operation MUST be atomic.
 
-For Work Items:
-- MUST only allow deletion if status is `queue`
-- MUST verify no other artifacts reference the Work Item ID before deletion
-- MUST error with list of referencing artifacts if any references exist
+**Consistency requirements:**
 
-**General Deletion Behavior:**
-- SHOULD require confirmation unless `--force` flag provided
-- MUST be atomic (either fully succeeds or fully fails)
+- ID arguments MUST precede field paths across resources.
+- Equivalent universal operations MUST use the same flag names and exit-code conventions.
+- Error messages MUST identify the rejected resource, field path, or value.
+- Input transport such as stdin MUST NOT change mutation semantics.
+- A mutating universal operation invoked with `--dry-run` MUST perform the same validation and target selection as execution, MUST report the planned mutation, and MUST leave persistent state unchanged.
 
 **Rationale:**
-Permanent deletion breaks referential integrity. These constraints ensure deletions are safe and do not leave dangling references in the governance graph. Release mutation is narrower than universal CRUD because only the newest local cut can be corrected.
 
-**Consistency Requirements:**
-
-1. All CRUD verbs MUST use the same flag names across resource types
-2. Error messages MUST follow the same format across all verbs
-3. Exit codes MUST be consistent (0 = success, non-zero = error)
-4. Stdin handling MUST work identically across all verbs that accept it
-
-**Forbidden Variations:**
-
-- MUST NOT use different verb names for the same operation (e.g., "show" vs "get")
-- MUST NOT reorder arguments between resource types (ID always comes before field)
-- MUST NOT have resource-specific flags for universal operations. Flags that filter by a cross-resource metadata field (e.g., `--tag`) are permitted on resources that carry that field."""
+A path-oriented mutation command lets users and agents select a field and then apply one permitted operation. A closed canonical field contract removes ambiguous spellings while retaining set, add, remove, and checklist-transition capabilities."""

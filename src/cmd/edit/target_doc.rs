@@ -73,6 +73,61 @@ pub(super) fn render_target_from_doc(
     }
 }
 
+pub(super) fn value_target_from_doc(
+    artifact: ArtifactType,
+    doc: &serde_json::Value,
+    target: &edit_engine::ResolvedTarget,
+    id: &str,
+    nested: NestedGetMode<'_>,
+) -> DiagnosticResult<serde_json::Value> {
+    match target {
+        edit_engine::ResolvedTarget::Node {
+            origin: edit_engine::TargetOrigin::Simple,
+            path,
+            ..
+        } => {
+            let simple = simple_get_path(
+                path,
+                id,
+                nested,
+                "simple node target should use a simple path",
+            )?;
+            edit_runtime::get_simple_value(artifact, doc, simple, id)
+        }
+        edit_engine::ResolvedTarget::IndexedItem {
+            origin: edit_engine::TargetOrigin::Simple,
+            container_path,
+            index,
+            ..
+        } => {
+            let simple = simple_get_path(
+                container_path,
+                id,
+                nested,
+                "simple indexed target should use a simple container path",
+            )?;
+            edit_runtime::get_simple_list_value(artifact, doc, simple, *index, id)
+        }
+        edit_engine::ResolvedTarget::Node {
+            origin: edit_engine::TargetOrigin::Nested,
+            path,
+            ..
+        }
+        | edit_engine::ResolvedTarget::IndexedItem {
+            origin: edit_engine::TargetOrigin::Nested,
+            path,
+            ..
+        } => match nested {
+            NestedGetMode::Allow => edit_runtime::get_nested_value(artifact, doc, path, id),
+            NestedGetMode::Reject(message) => Err(Diagnostic::new(
+                DiagnosticCode::E0817PathTypeMismatch,
+                message,
+                id,
+            )),
+        },
+    }
+}
+
 fn simple_get_path<'a>(
     path: &'a super::path::FieldPath,
     id: &str,

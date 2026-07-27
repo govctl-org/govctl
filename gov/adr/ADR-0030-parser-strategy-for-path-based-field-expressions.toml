@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0030"
 title = "Parser strategy for path-based field expressions"
-status = "accepted"
+status = "superseded"
 date = "2026-02-25"
+superseded_by = "ADR-0056"
 refs = [
     "ADR-0029",
     "ADR-0017",

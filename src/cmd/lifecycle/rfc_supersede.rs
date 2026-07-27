@@ -38,12 +38,14 @@ pub(super) fn supersede_rfc(
         op,
         || {
             write_rfc(
+                config,
                 &rfc_path,
                 &source,
                 op,
                 Some(&config.display_path(&rfc_path)),
             )?;
             write_rfc(
+                config,
                 &replacement_path,
                 &replacement,
                 op,

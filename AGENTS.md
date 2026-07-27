@@ -18,7 +18,7 @@ Do not invent behavior, skip governance gates, or deviate silently from specific
 
 ```
 .claude/                ← Agent configuration (SSOT for skills and agents)
-├── skills/                Workflow skills (gov, quick, discuss, commit, migrate) + writer skills (rfc-writer, adr-writer, wi-writer)
+├── skills/                Workflow skills (init, discuss, spec, gov, quick, commit, migrate, detach) + writer skills (rfc-writer, adr-writer, wi-writer, guard-writer)
 └── agents/                Reviewer agents (rfc-reviewer, adr-reviewer, wi-reviewer, compliance-checker)
 
 gov/                    ← Source of truth (governance artifacts)
@@ -141,6 +141,8 @@ Treat governance artifacts by authority, not by document size:
 - **RFC** defines obligations: what behavior, invariants, interfaces, and compatibility rules MUST be true.
 - **ADR** explains decisions: why one option was chosen over others, under what constraints, and with what consequences.
 - **Work Item** tracks execution: what this task is doing, what happened, and what remains before closure.
+- **Conformance Case** maps a project scenario to versioned RFC requirements and
+  reusable Guards without becoming normative authority.
 
 Use these boundaries consistently:
 
@@ -170,12 +172,14 @@ govctl rfc new "Title"          # New RFC
 govctl adr new "Title"          # New ADR
 govctl work new "Title"         # New work item
 govctl guard new "Title"        # New verification guard
+govctl conformance new "Title" --path <path> --selector <selector> --requirement <CLAUSE>@<VERSION>
 
 # Listing
 govctl rfc list                 # List RFCs
 govctl adr list                 # List ADRs
 govctl work list                # List work items
 govctl guard list               # List guards
+govctl conformance list         # List conformance cases
 
 # Work item dependencies
 govctl work edit WI-ID depends_on --add WI-BLOCKER
@@ -196,6 +200,7 @@ govctl adr show ADR-0001        # Show ADR
 govctl work show WI-ID          # Show work item
 govctl clause show RFC-0001:C-X # Show clause
 govctl guard show GUARD-ID      # Show guard
+govctl conformance trace [TARGET] # Query requirement-to-case-to-guard mappings
 
 # Interactive TUI (default-enabled)
 govctl tui                      # Read-only cockpit: artifacts, search, loops, diagnostics
@@ -205,10 +210,14 @@ govctl rfc finalize RFC-0001 normative
 govctl rfc advance RFC-0001 impl
 
 # Nested field editing (path-based per ADR-0029)
-govctl adr edit ADR-0001 content.alternatives[0].text --set "Updated option"
-govctl adr edit ADR-0001 content.alternatives[0].pros --add "New advantage"
-govctl work edit WI-001 content.acceptance_criteria[0].category --set fixed
+govctl adr edit ADR-0001 alternatives[0].text --set "Updated option"
+govctl adr edit ADR-0001 alternatives[0].pros --add "New advantage"
+govctl work edit WI-001 acceptance_criteria[0].category --set fixed
 ```
+
+Clauses are first-class CLI resources. Use the root `govctl clause` namespace
+for every Clause operation, even though Clause IDs and storage are scoped by an
+RFC.
 
 Before requesting review: `just pre-commit`
 
@@ -229,6 +238,7 @@ Workflow skills:
 | Quick   | `.claude/skills/quick/SKILL.md`   | Fast path for trivial changes      |
 | Commit  | `.claude/skills/commit/SKILL.md`  | VCS commit with govctl integration |
 | Migrate | `.claude/skills/migrate/SKILL.md` | Adopt govctl in existing projects  |
+| Detach  | `.claude/skills/detach/SKILL.md`  | Remove govctl from a project       |
 
 Writer/helper skills:
 

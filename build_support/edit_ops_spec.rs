@@ -8,24 +8,10 @@ use std::path::Path;
 #[derive(Debug, Deserialize)]
 pub(super) struct EditOpsSpec {
     pub(super) version: u32,
-    pub(super) aliases: Vec<AliasRule>,
-    pub(super) legacy_prefixes: Vec<LegacyPrefixRule>,
     pub(super) simple_rules: Vec<SimpleFieldRule>,
     pub(super) runtime_fields: Vec<RuntimeFieldRule>,
     pub(super) nested_rules: Vec<NestedRootRule>,
     pub(super) validation_rules: Vec<FieldValidationRule>,
-}
-
-#[derive(Debug, Deserialize)]
-pub(super) struct AliasRule {
-    pub(super) alias: String,
-    pub(super) canonical: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub(super) struct LegacyPrefixRule {
-    pub(super) prefix: String,
-    pub(super) allowed_fields: Vec<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -56,6 +42,7 @@ pub(super) enum NestedNodeRule {
     List {
         verbs: Vec<String>,
         text_key: Option<String>,
+        value_codec: Option<String>,
         item: Box<NestedNodeRule>,
     },
 }
@@ -96,6 +83,7 @@ pub(super) struct RuntimeSetRule {
 pub(super) enum RuntimeSetMode {
     String,
     Integer,
+    Semver,
     Enum {
         allowed: Vec<String>,
         invalid_msg: String,

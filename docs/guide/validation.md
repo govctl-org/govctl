@@ -94,7 +94,7 @@ When you run `govctl work move <WI-ID> done`, govctl executes each guard defined
 ```toml
 [verification]
 enabled = true
-default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
+default_guards = ["GUARD-GOVCTL-CHECK"]
 ```
 
 Each guard is a TOML file in `gov/guard/`:
@@ -103,12 +103,12 @@ Each guard is a TOML file in `gov/guard/`:
 #:schema ../schema/guard.schema.json
 
 [govctl]
-id = "GUARD-CARGO-TEST"
-title = "cargo test passes"
+id = "GUARD-LIFECYCLE-TESTS"
+title = "lifecycle tests pass"
 refs = ["RFC-0000"]
 
 [check]
-command = "cargo test"
+command = "cargo test --test lifecycle_tests"
 timeout_secs = 300
 ```
 
@@ -127,8 +127,8 @@ govctl guard list
 govctl guard show GUARD-MY-LINT
 
 # Set guard fields
-govctl guard edit GUARD-MY-LINT check.command --set "npm run lint"
-govctl guard edit GUARD-MY-LINT check.timeout_secs --set 60
+govctl guard edit GUARD-MY-LINT command --set "npm run lint"
+govctl guard edit GUARD-MY-LINT timeout_secs --set 60
 
 # Delete a guard (blocked if still referenced by work items or project defaults)
 govctl guard delete GUARD-MY-LINT
@@ -187,6 +187,30 @@ The effective required guard set for a work item is:
 - the project-level `default_guards` when verification is enabled
 - plus the work item's `verification.required_guards`
 - minus any explicitly waived guards
+
+### Choosing Guard Granularity
+
+Treat `default_guards` as the intersection of checks required by every Work
+Item, not as a catalog of everything the project can verify. A default guard
+should be necessary even for documentation-only work, fast enough for every
+completion gate, stable, and independent of optional services.
+
+Keep reusable checks narrow and name them for the risk domain they cover, such
+as lifecycle tests, schema tests, or CLI parsing tests. Add those guards to
+affected Work Items:
+
+```bash
+govctl work edit WI-2026-01-17-001 verification.required_guards --add GUARD-LIFECYCLE-TESTS
+```
+
+Full test suites, full lint suites, integration tests, and other expensive
+aggregate checks should remain available as guards, but normally be required
+only by Work Items that change shared infrastructure or cross multiple risk
+domains. One-off diagnostic commands do not need Guard artifacts.
+
+Repeated waivers are not a substitute for correct scope. If many unrelated Work
+Items waive the same default guard, remove it from `default_guards` and require
+it only where its risk applies.
 
 ### Guard Waivers
 
@@ -276,9 +300,13 @@ govctl provides a machine-readable command catalog for agent discoverability:
 
 ```bash
 govctl describe
-govctl describe --context   # Includes project context (RFCs, ADRs, active work items)
-govctl describe --output json
+govctl describe --context   # Adds counts and non-terminal project state
 ```
+
+The output includes a schema version and derives its command tree from the
+running CLI. Context mode omits terminal artifact details and offers only
+read-only discovery commands; use resource `show` commands or installed skills
+for deeper guidance.
 
 ## Self-Update
 
@@ -331,7 +359,7 @@ These are related but serve different purposes:
 
 Run `govctl migrate` when govctl reports an outdated schema version, missing or
 stale bundled schema files, or missing govctl-managed local-state `.gitignore`
-entries such as `.govctl.lock` and `.govctl/`. If a repository still contains
-legacy RFC or clause JSON storage, migrate it with govctl <0.9 before
-upgrading. Use the `/migrate` skill when bringing a legacy project under
-governance for the first time.
+entries such as `.govctl.lock` and `.govctl/`. Schema versions below 3 require
+migration with a compatible earlier govctl version before upgrading. Legacy RFC
+or clause JSON storage is rejected explicitly. Use the `/migrate` skill when
+bringing an existing project under governance for the first time.

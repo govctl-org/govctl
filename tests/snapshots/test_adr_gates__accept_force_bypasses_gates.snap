@@ -1,6 +1,6 @@
 ---
-source: tests/test_adr_gates.rs
-expression: normalized
+source: tests/adr_gate_tests/accept.rs
+expression: snapshot
 ---
 $ govctl adr new Test ADR
 Created ADR: gov/adr/ADR-XXXX-test-adr.toml
@@ -11,9 +11,12 @@ Accepted ADR: ADR-0001
 exit: 0
 
 $ govctl adr list
-┌──────────┬──────────┬────────────┬──────────┐
-│ ADR      ┆ Status   ┆ Date       ┆ Title    │
-╞══════════╪══════════╪════════════╪══════════╡
-│ ADR-0001 ┆ accepted ┆ <DATE> ┆ Test ADR │
-└──────────┴──────────┴────────────┴──────────┘
+[
+  {
+    "id": "ADR-0001",
+    "status": "accepted",
+    "date": "<DATE>",
+    "title": "Test ADR"
+  }
+]
 exit: 0

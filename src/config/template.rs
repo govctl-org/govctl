@@ -29,9 +29,11 @@ version = {schema_version}
 # id_strategy = "author-hash"
 
 # [verification]
-# Enable project-level default verification guards.
+# Enable guards required by every work item.
 # enabled = true
-# default_guards = ["GUARD-GOVCTL-CHECK", "GUARD-CARGO-TEST"]
+# default_guards = ["GUARD-GOVCTL-CHECK"]
+# Add heavier or domain-specific guards to verification.required_guards on
+# affected work items.
 
 # [source_scan]
 # Scan source files for [[artifact-id]] references during `govctl check`

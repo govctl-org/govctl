@@ -1,3 +1,4 @@
+use super::super::super::value_codec;
 use super::super::support::{
     remove_indices_preserving_order, set_object_string_field, status_list_text,
     string_list_item_text, type_mismatch,
@@ -54,6 +55,17 @@ pub fn add_nested_list_value(
             }
         }
         NestedNodeKind::Object => {
+            if let Some(codec) = node.value_codec {
+                let item = value_codec::decode(codec, value)?;
+                let encoded = value_codec::encode(codec, &item, id)?;
+                let duplicate = list.iter().any(|existing| {
+                    value_codec::encode(codec, existing, id).is_ok_and(|current| current == encoded)
+                });
+                if !duplicate {
+                    list.push(item);
+                }
+                return Ok(());
+            }
             let Some(text_key) = node.text_key else {
                 return Err(plain_string_for_structured_list(fp, id));
             };
@@ -97,7 +109,10 @@ pub fn remove_nested_list_values<F>(
     resolve: F,
 ) -> DiagnosticResult<Vec<String>>
 where
-    F: FnOnce(&[&str]) -> DiagnosticResult<Vec<usize>>,
+    F: FnOnce(
+        &[&str],
+        Option<crate::cmd::edit::rules::NestedListValueCodec>,
+    ) -> DiagnosticResult<Vec<usize>>,
 {
     let NestedListTarget {
         node,
@@ -106,9 +121,15 @@ where
     } = nested_list_target_mut(artifact, doc, fp, Verb::Remove, id, None)?;
 
     let texts = list_item_texts(node, item_rule, list, id)?;
-    let indices = resolve(&texts)?;
+    let text_refs = texts.iter().map(String::as_str).collect::<Vec<_>>();
+    let indices = resolve(&text_refs, node.value_codec)?;
+    value_codec::validate_remaining(
+        node.value_codec,
+        list.len().saturating_sub(indices.len()),
+        id,
+    )?;
     let removed = remove_indices_preserving_order(list, indices, |val| {
-        Ok(list_item_text(node, item_rule, val, id)?.to_string())
+        list_item_text(node, item_rule, val, id)
     })?;
     Ok(removed)
 }
@@ -138,8 +159,9 @@ where
     let spec = nested_status_list_spec(node)
         .ok_or_else(|| type_mismatch("Expected status list rule for tickable list", id))?;
     let texts = list_item_texts(node, item_rule, list, id)?;
-    let idx = resolve(&texts)?[0];
-    let text = texts[idx].to_string();
+    let text_refs = texts.iter().map(String::as_str).collect::<Vec<_>>();
+    let idx = resolve(&text_refs)?[0];
+    let text = texts[idx].clone();
     set_object_string_field(
         &mut list[idx],
         spec.status_key,
@@ -150,30 +172,35 @@ where
     Ok(text)
 }
 
-fn list_item_texts<'a>(
+fn list_item_texts(
     node: &NestedNodeRule,
     item_rule: &NestedNodeRule,
-    list: &'a [Value],
+    list: &[Value],
     id: &str,
-) -> DiagnosticResult<Vec<&'a str>> {
+) -> DiagnosticResult<Vec<String>> {
     list.iter()
         .map(|item| list_item_text(node, item_rule, item, id))
         .collect()
 }
 
-fn list_item_text<'a>(
+fn list_item_text(
     node: &NestedNodeRule,
     item_rule: &NestedNodeRule,
-    item: &'a Value,
+    item: &Value,
     id: &str,
-) -> DiagnosticResult<&'a str> {
+) -> DiagnosticResult<String> {
+    if let Some(codec) = node.value_codec {
+        return value_codec::encode(codec, item, id);
+    }
     match item_rule.kind {
-        NestedNodeKind::Scalar => string_list_item_text(item, "Expected string items in list", id),
+        NestedNodeKind::Scalar => {
+            string_list_item_text(item, "Expected string items in list", id).map(str::to_string)
+        }
         NestedNodeKind::Object => {
             let text_key = node
                 .text_key
                 .ok_or_else(|| type_mismatch("Expected text_key for object list", id))?;
-            status_list_text(item, text_key, id)
+            status_list_text(item, text_key, id).map(str::to_string)
         }
         NestedNodeKind::List => Err(type_mismatch("Expected scalar or object items in list", id)),
     }

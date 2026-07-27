@@ -16,14 +16,14 @@ pub(super) fn create(
 
     let rfc_id = match manual_id {
         Some(id) => {
-            if !id.starts_with("RFC-") {
+            if !crate::load::valid_rfc_id(id) {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0110RfcInvalidId,
-                    format!("RFC ID must start with 'RFC-' (got: {id})"),
+                    format!("Invalid RFC ID: {id} (expected RFC-NNNN)"),
                     id,
                 ));
             }
-            if !op.is_preview() && rfcs_dir.join(id).exists() {
+            if rfcs_dir.join(id).exists() {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0109RfcAlreadyExists,
                     format!("RFC already exists: {id}"),
@@ -40,13 +40,20 @@ pub(super) fn create(
                 .filter_map(|entry| {
                     let name = entry.file_name();
                     let name_str = name.to_string_lossy();
-                    name_str
-                        .strip_prefix("RFC-")
-                        .and_then(|s| s.parse::<u32>().ok())
+                    crate::load::valid_rfc_id(&name_str)
+                        .then(|| name_str.strip_prefix("RFC-")?.parse::<u32>().ok())
+                        .flatten()
                 })
                 .max()
                 .unwrap_or(0);
 
+            if max_num == 9999 {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0110RfcInvalidId,
+                    "RFC ID namespace exhausted at RFC-9999",
+                    rfcs_dir.display().to_string(),
+                ));
+            }
             format!("RFC-{:04}", max_num + 1)
         }
     };
@@ -54,7 +61,7 @@ pub(super) fn create(
     let rfc_dir = config.rfc_artifact_dir(&rfc_id);
     let clauses_dir = config.clause_dir(&rfc_id);
 
-    if !op.is_preview() && rfc_dir.exists() {
+    if rfc_dir.exists() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0109RfcAlreadyExists,
             format!("RFC already exists: {}", rfc_dir.display()),

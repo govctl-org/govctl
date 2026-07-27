@@ -45,29 +45,17 @@ fn test_init_skills_excludes_plugin_only_init_skill() -> common::TestResult {
 }
 
 #[test]
-fn test_wi_writer_recommends_verification_guards() -> common::TestResult {
+fn test_init_skills_dry_run_skips_existing_assets_without_force() -> common::TestResult {
     let temp_dir = init_project()?;
-
     run_commands(temp_dir.path(), &[&["init-skills"]])?;
+    let skill_path = temp_dir.path().join(".claude/skills/gov/SKILL.md");
+    let before = fs::read(&skill_path)?;
 
-    let wi_writer = temp_dir.path().join(".claude/skills/wi-writer/SKILL.md");
-    let content = fs::read_to_string(&wi_writer)?;
-    assert!(
-        content.contains("Guardable Command Checks"),
-        "wi-writer should include guard guidance for command-style checks"
-    );
-    assert!(
-        content.contains("verification.required_guards"),
-        "wi-writer should mention per-work-item verification guards"
-    );
-    assert!(
-        content.contains("verification.default_guards"),
-        "wi-writer should mention project-level default guards"
-    );
-    assert!(
-        content.contains("Project-level `verification.default_guards` apply broadly"),
-        "wi-writer should explain how default guards relate to per-work-item guards"
-    );
+    let output = run_commands(temp_dir.path(), &[&["init-skills", "--dry-run"]])?;
+
+    assert!(output.contains("exit: 0"), "{output}");
+    assert!(!output.contains("Would write"), "{output}");
+    assert_eq!(fs::read(&skill_path)?, before);
     Ok(())
 }
 
@@ -76,14 +64,15 @@ fn test_custom_agent_dir() -> common::TestResult {
     let temp_dir = init_project()?;
 
     let config_path = temp_dir.path().join("gov/config.toml");
-    let config_content = r#"[project]
-name = "test-project"
-
-[paths]
-docs_output = "docs"
-agent_dir = ".custom-agent"
-"#;
-    fs::write(&config_path, config_content)?;
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config["paths"]
+        .as_table_mut()
+        .ok_or("missing paths table")?
+        .insert(
+            "agent_dir".to_string(),
+            toml::Value::String(".custom-agent".to_string()),
+        );
+    fs::write(&config_path, toml::to_string_pretty(&config)?)?;
 
     run_commands(temp_dir.path(), &[&["init-skills", "-f"]])?;
 

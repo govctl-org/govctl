@@ -1,5 +1,7 @@
 use super::super::super::app::View;
-use super::super::test_support::{adr, project_index, render_app, rfc, work_item};
+use super::super::test_support::{
+    adr, clause, conformance_case, project_index, render_app, rfc, work_item,
+};
 use super::*;
 use crate::cmd::search::SearchResult;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -17,6 +19,8 @@ fn list_renderers_draw_table_rows() -> Result<(), Box<dyn std::error::Error>> {
     assert!(rendered.iter().any(|line| line.contains("RFC-0001")));
     assert!(rendered.iter().any(|line| line.contains("RFC title")));
     assert!(rendered.iter().any(|line| line.contains("normative")));
+    assert!(rendered.iter().any(|line| line.contains("▌ ")));
+    assert!(rendered.iter().any(|line| line.contains("1 RECORD")));
 
     let rendered = render_list(View::AdrList, draw_adr)?;
     assert!(rendered.iter().any(|line| line.contains("ADR-0001")));
@@ -47,6 +51,7 @@ fn cockpit_list_renderers_draw_search_loop_and_diagnostic_rows()
         snippet: "human cockpit".to_string(),
         score: None,
         status: Some("normative".to_string()),
+        scenario_path: None,
     });
     let rendered = render_list_app(app, draw_search)?;
     assert!(rendered.iter().any(|line| line.contains("human cockpit")));
@@ -142,6 +147,42 @@ fn supplemental_list_renderers_draw_clause_guard_release_and_tag_rows()
 }
 
 #[test]
+fn conformance_list_renders_trace_data_at_wide_and_narrow_widths()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut app = App::new(conformance_project_index());
+    app.view = View::ConformanceList;
+    let rendered = render_list_app_at(160, 10, app, draw_conformance)?;
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("CONF-CURRENT-CASE"))
+    );
+    assert!(rendered.iter().any(|line| line.contains("current")));
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("tests/conformance/case.toml"))
+    );
+    assert!(rendered.iter().any(|line| line.contains("case::selector")));
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("GUARD-CONFORMANCE"))
+    );
+
+    let mut app = App::new(conformance_project_index());
+    app.view = View::ConformanceList;
+    let rendered = render_list_app_at(72, 8, app, draw_conformance)?;
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("CONF-CURRENT-CASE"))
+    );
+    assert!(rendered.iter().any(|line| line.contains("current")));
+    Ok(())
+}
+
+#[test]
 fn loop_list_renderer_draws_invalid_loop_diagnostic() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::new(list_project_index());
     app.view = View::LoopList;
@@ -162,6 +203,33 @@ fn loop_list_renderer_draws_invalid_loop_diagnostic() -> Result<(), Box<dyn std:
     Ok(())
 }
 
+#[test]
+fn narrow_table_preserves_priority_columns_and_scroll_context()
+-> Result<(), Box<dyn std::error::Error>> {
+    let rfcs = (1..=8)
+        .map(|idx| {
+            rfc(
+                &format!("RFC-{idx:04}"),
+                &format!("RFC title {idx}"),
+                RfcStatus::Normative,
+                RfcPhase::Impl,
+                &["core"],
+            )
+        })
+        .collect();
+    let mut app = App::new(project_index(rfcs, vec![], vec![]));
+    app.view = View::RfcList;
+    app.selected = 7;
+    app.table_state.select(Some(7));
+
+    let rendered = render_list_app_at(72, 7, app, draw_rfc)?;
+
+    assert!(rendered.iter().any(|line| line.contains("normative")));
+    assert!(rendered.iter().any(|line| line.contains("8 RECORDS")));
+    assert!(rendered.iter().any(|line| line.contains("█")));
+    Ok(())
+}
+
 fn render_list(
     view: View,
     draw: fn(&mut Frame, &mut App, Rect),
@@ -177,7 +245,18 @@ fn render_list_app(
     app: App,
     draw: fn(&mut Frame, &mut App, Rect),
 ) -> Result<Vec<String>, Box<dyn std::error::Error>> {
-    let (_, rendered) = render_app(120, 10, app, |frame, app| draw(frame, app, frame.area()))?;
+    render_list_app_at(120, 10, app, draw)
+}
+
+fn render_list_app_at(
+    width: u16,
+    height: u16,
+    app: App,
+    draw: fn(&mut Frame, &mut App, Rect),
+) -> Result<Vec<String>, Box<dyn std::error::Error>> {
+    let (_, rendered) = render_app(width, height, app, |frame, app| {
+        draw(frame, app, frame.area());
+    })?;
     Ok(rendered)
 }
 
@@ -203,6 +282,28 @@ fn list_project_index() -> crate::model::ProjectIndex {
             &["cleanup"],
         )],
     )
+}
+
+fn conformance_project_index() -> crate::model::ProjectIndex {
+    let mut rfc = rfc(
+        "RFC-0001",
+        "RFC title",
+        RfcStatus::Normative,
+        RfcPhase::Impl,
+        &["core"],
+    );
+    let mut clause = clause("C-TEST", "Clause title", "Clause text");
+    clause.spec.since = Some("0.1.0".to_string());
+    rfc.clauses.push(clause);
+    let mut index = project_index(vec![rfc], vec![], vec![]);
+    index.conformance_cases.push(conformance_case(
+        "CONF-CURRENT-CASE",
+        "Current conformance case",
+        "RFC-0001:C-TEST",
+        "0.1.0",
+        &["testing"],
+    ));
+    index
 }
 
 fn loop_state() -> crate::diagnostic::DiagnosticResult<LoopState> {

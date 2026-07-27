@@ -1,0 +1,44 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-26-001"
+title = "Refine guard granularity and work-item selection guidance"
+status = "done"
+created = "2026-07-26"
+started = "2026-07-26"
+completed = "2026-07-26"
+refs = [
+    "RFC-0000:C-GUARD-DEF",
+    "RFC-0001:C-GATE-CONDITIONS",
+    "RFC-0002:C-VERIFY-CONFIG",
+]
+tags = [
+    "validation",
+    "skills-agents",
+]
+
+[content]
+description = "Refine Guard authoring, configuration examples, and agent workflow guidance so reusable checks are scoped by cost and risk, with heavyweight validation selected explicitly for affected Work Items."
+
+[[content.acceptance_criteria]]
+text = "Guard and Work Item skills define the universal-default intersection rule and select narrow risk-domain guards"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "User documentation, generated configuration guidance, and Guard creation recovery text prioritize per-Work-Item binding for non-universal checks"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "The repository default guard set excludes GUARD-CARGO-TEST and this Work Item explicitly requires it"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Skill, CLI, and governance regression tests pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

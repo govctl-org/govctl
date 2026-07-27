@@ -13,7 +13,6 @@ fn test_delete_work_dry_run_display_path() -> common::TestResult {
         work_dir.join(&work_filename),
         format!(
             r#"[govctl]
-schema = 1
 id = "{}"
 title = "Test Work to Delete"
 status = "queue"
@@ -49,7 +48,6 @@ fn test_delete_clause_dry_run_display_path() -> common::TestResult {
         r#"#:schema ../../schema/rfc.schema.json
 
 [govctl]
-schema = 1
 id = "RFC-0001"
 title = "Draft RFC"
 version = "0.1.0"
@@ -74,7 +72,6 @@ notes = "Initial draft"
         r#"#:schema ../../schema/clause.schema.json
 
 [govctl]
-schema = 1
 id = "C-TO-DELETE"
 title = "Clause To Delete"
 kind = "normative"
