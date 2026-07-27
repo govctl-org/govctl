@@ -43,6 +43,13 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Describe schema v1 reports tool version, parser-derived canonical command metadata, and phase order without a prescribed task sequence. (WI-2026-07-26-014)
 - Context enumerates only actionable RFCs, ADRs, Work Items, and non-terminal loops while reporting complete state counts. (WI-2026-07-26-014)
 - TUI artifact details use the current projection for obsolete RFC, ADR, and Clause content (WI-2026-07-27-001)
+- Dashboard presents governance lifecycle and operations as a responsive control-plane matrix (WI-2026-07-27-002)
+- TUI chrome, lists, and details use a consistent terminal-native visual vocabulary (WI-2026-07-27-002)
+- List views present filtering and result counts in a dedicated command strip (WI-2026-07-27-003)
+- Scroll position and record counts use consistent data-backed visual indicators (WI-2026-07-27-003)
+- Lifecycle states occupy stable semantic columns across RFC, ADR, and Work rows (WI-2026-07-27-004)
+- Governance navigation entries use an aligned tabular grid on wide and narrow terminals (WI-2026-07-27-004)
+- Execution activity and diagnostic health are presented as separate dashboard regions (WI-2026-07-27-004)
 
 ### Removed
 
@@ -78,6 +85,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 - TUI summaries and semantic styling cover every ADR and Work Item lifecycle status (WI-2026-07-27-001)
 - TUI key hints advertise detail navigation only for lists that support it (WI-2026-07-27-001)
 - All-target clippy validation passes without test-code lint exceptions (WI-2026-07-27-001)
+- Wide and narrow TestBackend renders preserve readable state, selection, and navigation (WI-2026-07-27-002)
+- Filter and search input remain legible for long values on common narrow terminals (WI-2026-07-27-003)
 
 ### Security
 
