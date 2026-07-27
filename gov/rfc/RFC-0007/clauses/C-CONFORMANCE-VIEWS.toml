@@ -1,0 +1,29 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-CONFORMANCE-VIEWS"
+title = "Conformance Case views"
+kind = "normative"
+status = "active"
+since = "0.4.0"
+tags = ["tui"]
+
+[content]
+text = """
+TUI v2 MUST expose Conformance Cases as a first-class read-only artifact view when the project schema supports Conformance Cases.
+
+The overview MUST show the number of Conformance Cases.
+
+The Conformance Case list MUST show each Case ID, title, aggregate requirement applicability, scenario path and selector, and associated Verification Guards.
+
+The Conformance Case detail view MUST show the Case ID, title, tags, scenario path and selector, all versioned requirement bindings with their derived applicability, the aggregate requirement applicability, and all associated Verification Guards.
+
+Requirement applicability MUST be derived according to [[RFC-0008:C-TRACE-QUERY]]. TUI v2 MUST NOT label a Case, requirement, or Guard as covered, passed, conformant, or evidenced.
+
+Selecting a Conformance Case search result MUST navigate to its detail view. When a diagnostic target identifies a Conformance Case, selecting that diagnostic SHOULD navigate to its detail view.
+
+Tag usage summaries MUST include Conformance Case tags.
+
+All Conformance Case views MUST follow [[RFC-0007:C-READ-ONLY]] and the resilient layout requirements in [[RFC-0007:C-HUMAN-UX]].
+
+**Rationale:** First-class Case browsing keeps requirement-to-scenario-to-Guard relationships visible in the same cockpit as other governed artifacts while preserving the declared-not-evidenced boundary."""

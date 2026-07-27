@@ -22,7 +22,10 @@ mod work;
 pub use adr::{AdrContent, AdrMeta, AdrSpec, AdrStatus, Alternative, AlternativeStatus};
 pub use changelog::{ChangelogCategory, ChangelogEntry};
 pub use clause::{ClauseKind, ClauseSpec, ClauseStatus, ClauseWire};
-pub use conformance::{ConformanceContent, ConformanceMeta, ConformanceSpec, RequirementBinding};
+pub use conformance::{
+    ConformanceApplicability, ConformanceContent, ConformanceMeta, ConformanceSpec,
+    ConformanceTraceCase, RequirementBinding, derive_conformance_trace,
+};
 pub use guard::{GuardCheck, GuardMeta, GuardSpec};
 pub use index::{
     AdrEntry, ClauseEntry, ConformanceEntry, GuardEntry, ProjectIndex, RfcIndex, WorkItemEntry,

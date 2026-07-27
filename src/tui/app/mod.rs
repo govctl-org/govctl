@@ -20,6 +20,7 @@ pub enum View {
     AdrList,
     WorkList,
     GuardList,
+    ConformanceList,
     ReleaseList,
     TagList,
     Search,
@@ -30,6 +31,7 @@ pub enum View {
     AdrDetail(usize),
     WorkDetail(usize),
     GuardDetail(usize),
+    ConformanceDetail(usize),
     /// Clause detail view: (rfc_index, clause_index)
     ClauseDetail(usize, usize),
 }
@@ -85,6 +87,9 @@ impl App {
         index.adrs.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
         index
             .work_items
+            .sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
+        index
+            .conformance_cases
             .sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
 
         Self {
@@ -240,6 +245,13 @@ impl App {
                 .position(|guard| guard.meta().id == result.id)
                 .map(View::GuardDetail)
                 .unwrap_or(View::Search),
+            "conformance" => self
+                .index
+                .conformance_cases
+                .iter()
+                .position(|case| case.meta().id == result.id)
+                .map(View::ConformanceDetail)
+                .unwrap_or(View::Search),
             _ => View::Search,
         };
         self.scroll = 0;
@@ -304,6 +316,16 @@ impl App {
             .find(|(_, guard)| file == self.config.display_path(&guard.path).display().to_string())
         {
             self.view = View::GuardDetail(idx);
+            return;
+        }
+        if let Some((idx, _)) = self
+            .index
+            .conformance_cases
+            .iter()
+            .enumerate()
+            .find(|(_, case)| file == self.config.display_path(&case.path).display().to_string())
+        {
+            self.view = View::ConformanceDetail(idx);
         }
     }
 }
@@ -315,8 +337,9 @@ mod tests {
     use crate::diagnostic::{Diagnostic, DiagnosticCode};
     use crate::loop_state::LoopState;
     use crate::model::{
-        ClauseEntry, ClauseKind, ClauseSpec, ClauseStatus, GuardCheck, GuardEntry, GuardMeta,
-        GuardSpec, ProjectIndex, RfcIndex, RfcPhase, RfcSpec, RfcStatus, WorkItemContent,
+        ClauseEntry, ClauseKind, ClauseSpec, ClauseStatus, ConformanceContent, ConformanceEntry,
+        ConformanceMeta, ConformanceSpec, GuardCheck, GuardEntry, GuardMeta, GuardSpec,
+        ProjectIndex, RequirementBinding, RfcIndex, RfcPhase, RfcSpec, RfcStatus, WorkItemContent,
         WorkItemEntry, WorkItemMeta, WorkItemSpec, WorkItemStatus, WorkItemVerification,
     };
     use crate::tui::data::TuiLoopEntry;
@@ -408,6 +431,26 @@ mod tests {
     }
 
     #[test]
+    fn conformance_search_result_enters_matching_detail_view() {
+        let mut app = App::new(project_index());
+        app.view = View::Search;
+        app.search_results.push(SearchResult {
+            kind: "conformance".to_string(),
+            id: "CONF-TUI".to_string(),
+            title: "TUI case".to_string(),
+            path: "gov/conformance/CONF-TUI.toml".to_string(),
+            snippet: "trace scenario".to_string(),
+            score: None,
+            status: None,
+            scenario_path: Some("tests/conformance/tui.toml".to_string()),
+        });
+
+        app.enter_search_result_at(0);
+
+        assert_eq!(app.view, View::ConformanceDetail(0));
+    }
+
+    #[test]
     fn diagnostic_target_enters_matching_work_detail() {
         let mut app = App::new(project_index());
         app.view = View::DiagnosticList;
@@ -451,6 +494,21 @@ mod tests {
         app.enter_diagnostic_target_at(0);
 
         assert_eq!(app.view, View::GuardDetail(0));
+    }
+
+    #[test]
+    fn diagnostic_target_enters_matching_conformance_detail() {
+        let mut app = App::new(project_index());
+        app.view = View::DiagnosticList;
+        app.supplement.diagnostics.push(Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            "conformance diagnostic",
+            "gov/conformance/CONF-TUI.toml",
+        ));
+
+        app.enter_diagnostic_target_at(0);
+
+        assert_eq!(app.view, View::ConformanceDetail(0));
     }
 
     #[test]
@@ -601,7 +659,29 @@ mod tests {
                 },
                 path: PathBuf::from("gov/work/WI-2026-06-06-001.toml"),
             }],
-            conformance_cases: vec![],
+            conformance_cases: vec![conformance_entry()],
+        }
+    }
+
+    fn conformance_entry() -> ConformanceEntry {
+        ConformanceEntry {
+            spec: ConformanceSpec {
+                govctl: ConformanceMeta {
+                    id: "CONF-TUI".to_string(),
+                    title: "TUI case".to_string(),
+                    tags: vec!["testing".to_string()],
+                },
+                case: ConformanceContent {
+                    path: "tests/conformance/tui.toml".to_string(),
+                    selector: "tui::case".to_string(),
+                    requirements: vec![RequirementBinding {
+                        clause_ref: "RFC-0001:C-TEST".to_string(),
+                        version: "0.1.0".to_string(),
+                    }],
+                    guards: vec!["GUARD-TEST".to_string()],
+                },
+            },
+            path: PathBuf::from("gov/conformance/CONF-TUI.toml"),
         }
     }
 

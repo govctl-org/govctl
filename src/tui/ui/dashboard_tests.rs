@@ -1,4 +1,6 @@
-use super::super::test_support::{adr, project_index, render_app, rfc, work_item};
+use super::super::test_support::{
+    adr, conformance_case, project_index, render_app, rfc, work_item,
+};
 use super::*;
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
 
@@ -26,6 +28,8 @@ fn wide_dashboard_draws_control_plane_sections_and_state() -> Result<(), Box<dyn
         "[s]",
         "[9]",
         "[t]",
+        "[x]",
+        "CASE TRACE",
     ] {
         assert!(
             rendered.iter().any(|line| line.contains(marker)),
@@ -102,7 +106,7 @@ fn narrow_dashboard_uses_compact_readable_layout() -> Result<(), Box<dyn std::er
 }
 
 fn dashboard_project_index() -> crate::model::ProjectIndex {
-    project_index(
+    let mut index = project_index(
         vec![
             rfc(
                 "RFC-0001",
@@ -145,5 +149,13 @@ fn dashboard_project_index() -> crate::model::ProjectIndex {
                 &[],
             ),
         ],
-    )
+    );
+    index.conformance_cases.push(conformance_case(
+        "CONF-DASHBOARD",
+        "Dashboard case",
+        "RFC-0002:C-DASHBOARD",
+        "0.1.0",
+        &["testing"],
+    ));
+    index
 }

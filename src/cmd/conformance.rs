@@ -8,8 +8,7 @@ use crate::cmd::output::{
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult, Diagnostics};
 use crate::model::{
-    ClauseStatus, ConformanceContent, ConformanceEntry, ConformanceMeta, ConformanceSpec,
-    RequirementBinding, RfcPhase, RfcStatus,
+    ConformanceContent, ConformanceEntry, ConformanceMeta, ConformanceSpec, RequirementBinding,
 };
 use crate::parse::{load_conformance_cases, write_conformance_case};
 use crate::ui;
@@ -375,7 +374,7 @@ pub fn trace(
     let mut records = cases
         .iter()
         .filter(|entry| target_matches(target, entry))
-        .map(|entry| trace_record(entry, &index))
+        .map(|entry| crate::model::derive_conformance_trace(entry, &index))
         .collect::<Vec<_>>();
     records.sort_by(|left, right| left.id.cmp(&right.id));
     let result = TraceResult { cases: records };
@@ -632,76 +631,6 @@ fn target_matches(target: Option<&str>, entry: &ConformanceEntry) -> bool {
     })
 }
 
-fn trace_record(entry: &ConformanceEntry, index: &crate::model::ProjectIndex) -> TraceCase {
-    let mut requirements = entry
-        .spec
-        .case
-        .requirements
-        .iter()
-        .map(|binding| TraceRequirement {
-            clause_ref: binding.clause_ref.clone(),
-            version: binding.version.clone(),
-            requirement_applicability: applicability(binding, index),
-        })
-        .collect::<Vec<_>>();
-    requirements.sort_by(|left, right| {
-        left.clause_ref
-            .cmp(&right.clause_ref)
-            .then_with(|| left.version.cmp(&right.version))
-    });
-    let mut tags = entry.meta().tags.clone();
-    tags.sort();
-    tags.dedup();
-    let mut guards = entry.spec.case.guards.clone();
-    guards.sort();
-    guards.dedup();
-    let requirement_applicability = requirements
-        .iter()
-        .map(|requirement| requirement.requirement_applicability)
-        .min()
-        .unwrap_or(Applicability::Stale);
-    TraceCase {
-        id: entry.meta().id.clone(),
-        title: entry.meta().title.clone(),
-        tags,
-        path: entry.spec.case.path.clone(),
-        selector: entry.spec.case.selector.clone(),
-        requirements,
-        guards,
-        requirement_applicability,
-    }
-}
-
-fn applicability(
-    binding: &RequirementBinding,
-    index: &crate::model::ProjectIndex,
-) -> Applicability {
-    let Some((rfc_id, clause_id)) = binding.clause_ref.split_once(':') else {
-        return Applicability::Stale;
-    };
-    let Some(rfc) = index.rfcs.iter().find(|entry| entry.rfc.rfc_id == rfc_id) else {
-        return Applicability::Stale;
-    };
-    let Some(clause) = rfc
-        .clauses
-        .iter()
-        .find(|entry| entry.spec.clause_id == clause_id)
-    else {
-        return Applicability::Stale;
-    };
-    if clause.spec.status != ClauseStatus::Active || binding.version != rfc.rfc.version {
-        return Applicability::Stale;
-    }
-    match (rfc.rfc.status, rfc.rfc.phase, clause.spec.since.is_some()) {
-        (RfcStatus::Draft, _, _) => Applicability::Provisional,
-        (RfcStatus::Normative, RfcPhase::Spec, true) => Applicability::Candidate,
-        (RfcStatus::Normative, RfcPhase::Impl | RfcPhase::Test | RfcPhase::Stable, true) => {
-            Applicability::Current
-        }
-        _ => Applicability::Stale,
-    }
-}
-
 fn load_by_id(config: &Config, id: &str) -> DiagnosticResult<ConformanceEntry> {
     crate::artifact_catalog::load_conformance_by_id(config, id)
 }
@@ -931,46 +860,5 @@ struct CaseSummary {
 
 #[derive(Serialize)]
 struct TraceResult {
-    cases: Vec<TraceCase>,
-}
-
-#[derive(Serialize)]
-struct TraceCase {
-    id: String,
-    title: String,
-    tags: Vec<String>,
-    path: String,
-    selector: String,
-    requirements: Vec<TraceRequirement>,
-    guards: Vec<String>,
-    requirement_applicability: Applicability,
-}
-
-#[derive(Serialize)]
-struct TraceRequirement {
-    #[serde(rename = "ref")]
-    clause_ref: String,
-    version: String,
-    requirement_applicability: Applicability,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
-#[serde(rename_all = "lowercase")]
-enum Applicability {
-    Stale,
-    Provisional,
-    Candidate,
-    Current,
-}
-
-impl std::fmt::Display for Applicability {
-    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let value = match self {
-            Self::Stale => "stale",
-            Self::Provisional => "provisional",
-            Self::Candidate => "candidate",
-            Self::Current => "current",
-        };
-        formatter.write_str(value)
-    }
+    cases: Vec<crate::model::ConformanceTraceCase>,
 }

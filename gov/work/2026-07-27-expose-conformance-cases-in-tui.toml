@@ -1,0 +1,39 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-007"
+title = "Expose Conformance Cases in TUI"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0007:C-CONFORMANCE-VIEWS",
+    "RFC-0008:C-TRACE-QUERY",
+]
+
+[content]
+description = "Expose Conformance Cases as first-class read-only TUI data across overview, browsing, navigation, diagnostics, and tag summaries under [[RFC-0007]]."
+
+[[content.acceptance_criteria]]
+text = "TUI overview and artifact browsing expose Conformance Case counts, list rows, and complete read-only detail data"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Conformance search results and diagnostics navigate to the corresponding Case detail"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "TUI tag usage counts include Conformance Case tags"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused TUI state and renderer tests cover navigation, applicability, and readable narrow layouts"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-TUI-TESTS"]

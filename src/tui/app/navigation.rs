@@ -79,6 +79,7 @@ impl App {
             View::AdrList => View::AdrDetail(real_idx),
             View::WorkList => View::WorkDetail(real_idx),
             View::GuardList => View::GuardDetail(real_idx),
+            View::ConformanceList => View::ConformanceDetail(real_idx),
             View::Search => {
                 self.enter_search_result_at(real_idx);
                 return;
@@ -104,12 +105,14 @@ impl App {
             View::AdrDetail(_) => View::AdrList,
             View::WorkDetail(_) => View::WorkList,
             View::GuardDetail(_) => View::GuardList,
+            View::ConformanceDetail(_) => View::ConformanceList,
             View::LoopDetail(_) => View::LoopList,
             View::RfcList
             | View::ClauseList
             | View::AdrList
             | View::WorkList
             | View::GuardList
+            | View::ConformanceList
             | View::ReleaseList
             | View::TagList
             | View::Search
@@ -141,6 +144,7 @@ impl App {
                 | View::AdrList
                 | View::WorkList
                 | View::GuardList
+                | View::ConformanceList
                 | View::ReleaseList
                 | View::TagList
                 | View::Search

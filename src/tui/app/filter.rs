@@ -16,6 +16,7 @@ impl App {
             View::AdrList => self.index.adrs.len(),
             View::WorkList => self.index.work_items.len(),
             View::GuardList => self.supplement.guards.len(),
+            View::ConformanceList => self.index.conformance_cases.len(),
             View::ReleaseList => self.supplement.releases.len(),
             View::TagList => self.supplement.tags.len(),
             View::Search => self.search_results.len(),
@@ -143,6 +144,48 @@ impl App {
                             meta.id.as_str(),
                             meta.title.as_str(),
                             guard.spec.check.command.as_str(),
+                        ],
+                    ) {
+                        Some(idx)
+                    } else {
+                        None
+                    }
+                })
+                .collect(),
+            View::ConformanceList => self
+                .index
+                .conformance_cases
+                .iter()
+                .enumerate()
+                .filter_map(|(idx, case)| {
+                    if !has_query {
+                        return Some(idx);
+                    }
+                    let trace = crate::model::derive_conformance_trace(case, &self.index);
+                    let requirements = trace
+                        .requirements
+                        .iter()
+                        .map(|binding| {
+                            format!(
+                                "{}@{}",
+                                binding.clause_ref.as_str(),
+                                binding.version.as_str()
+                            )
+                        })
+                        .collect::<Vec<_>>()
+                        .join(" ");
+                    let applicability = trace.requirement_applicability.to_string();
+                    let guards = trace.guards.join(" ");
+                    if fields_match_normalized_query(
+                        &query,
+                        &[
+                            trace.id.as_str(),
+                            trace.title.as_str(),
+                            trace.path.as_str(),
+                            trace.selector.as_str(),
+                            applicability.as_str(),
+                            requirements.as_str(),
+                            guards.as_str(),
                         ],
                     ) {
                         Some(idx)

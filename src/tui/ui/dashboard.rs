@@ -87,9 +87,9 @@ fn draw_compact(frame: &mut Frame, app: &App, area: Rect, counts: &DashboardCoun
     let rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(7),
+            Constraint::Length(6),
             Constraint::Length(4),
-            Constraint::Min(7),
+            Constraint::Min(8),
         ])
         .split(area);
     let control = Layout::default()
@@ -124,7 +124,7 @@ fn lifecycle_matrix(counts: &DashboardCounts, compact: bool) -> Table<'static> {
     let row_spacing = u16::from(!compact);
     let header = Row::new(["DOMAIN", "PENDING", "CURRENT", "CLOSED", "RETIRED"])
         .style(Style::default().fg(Color::DarkGray).bold())
-        .bottom_margin(1);
+        .bottom_margin(u16::from(!compact));
     let rows = vec![
         lifecycle_row(
             "RFC",
@@ -291,16 +291,16 @@ fn governance_index(app: &App, compact: bool) -> Table<'static> {
     let entries = [
         (
             ("r", "RFC INDEX", app.index.rfcs.len(), "requirements"),
-            (
+            Some((
                 "c",
                 "CLAUSE INDEX",
                 app.supplement.clauses.len(),
                 "obligations",
-            ),
+            )),
         ),
         (
             ("a", "ADR INDEX", app.index.adrs.len(), "decisions"),
-            ("w", "WORK QUEUE", app.index.work_items.len(), "outcomes"),
+            Some(("w", "WORK QUEUE", app.index.work_items.len(), "outcomes")),
         ),
         (
             (
@@ -309,21 +309,27 @@ fn governance_index(app: &App, compact: bool) -> Table<'static> {
                 app.supplement.guards.len(),
                 "verification",
             ),
-            ("9", "RELEASE LOG", app.supplement.releases.len(), "history"),
+            Some(("9", "RELEASE LOG", app.supplement.releases.len(), "history")),
         ),
         (
             ("t", "TAG INDEX", app.supplement.tags.len(), "taxonomy"),
-            ("s", "SEARCH", app.search_results.len(), "discovery"),
+            Some((
+                "x",
+                "CASE TRACE",
+                app.index.conformance_cases.len(),
+                "scenarios",
+            )),
         ),
         (
             ("l", "LOOP CONTROL", app.supplement.loops.len(), "execution"),
-            (
+            Some((
                 "d",
                 "DIAGNOSTICS",
                 app.supplement.diagnostics.len(),
                 "findings",
-            ),
+            )),
         ),
+        (("s", "SEARCH", app.search_results.len(), "discovery"), None),
     ];
 
     let (rows, widths) = if compact {
@@ -367,28 +373,43 @@ fn governance_index(app: &App, compact: bool) -> Table<'static> {
     )
 }
 
-fn compact_index_row(left: IndexEntry, right: IndexEntry) -> Row<'static> {
-    Row::new(vec![
-        index_key(left.0),
-        index_label(left.1),
-        index_count(left.2),
-        index_key(right.0),
-        index_label(right.1),
-        index_count(right.2),
-    ])
+fn compact_index_row(left: IndexEntry, right: Option<IndexEntry>) -> Row<'static> {
+    let mut cells = vec![index_key(left.0), index_label(left.1), index_count(left.2)];
+    if let Some(right) = right {
+        cells.extend([
+            index_key(right.0),
+            index_label(right.1),
+            index_count(right.2),
+        ]);
+    } else {
+        cells.extend([Cell::default(), Cell::default(), Cell::default()]);
+    }
+    Row::new(cells)
 }
 
-fn wide_index_row(left: IndexEntry, right: IndexEntry) -> Row<'static> {
-    Row::new(vec![
+fn wide_index_row(left: IndexEntry, right: Option<IndexEntry>) -> Row<'static> {
+    let mut cells = vec![
         index_key(left.0),
         index_label(left.1),
         index_count(left.2),
         index_purpose(left.3),
-        index_key(right.0),
-        index_label(right.1),
-        index_count(right.2),
-        index_purpose(right.3),
-    ])
+    ];
+    if let Some(right) = right {
+        cells.extend([
+            index_key(right.0),
+            index_label(right.1),
+            index_count(right.2),
+            index_purpose(right.3),
+        ]);
+    } else {
+        cells.extend([
+            Cell::default(),
+            Cell::default(),
+            Cell::default(),
+            Cell::default(),
+        ]);
+    }
+    Row::new(cells)
 }
 
 fn index_key(key: &'static str) -> Cell<'static> {

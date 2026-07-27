@@ -4,6 +4,7 @@ use super::components::{
 };
 use super::panel_block;
 use crate::diagnostic::DiagnosticLevel;
+use crate::model::ConformanceApplicability;
 use ratatui::{
     prelude::*,
     widgets::{Paragraph, Row, Wrap},
@@ -198,6 +199,74 @@ pub(super) fn draw_guard(frame: &mut Frame, app: &mut App, area: Rect) {
         },
     )
     .render(frame, area, &mut app.table_state);
+}
+
+// Implements [[RFC-0007:C-CONFORMANCE-VIEWS]]: declared trace relationships are browsable.
+pub(super) fn draw_conformance(frame: &mut Frame, app: &mut App, area: Rect) {
+    let indices = app.list_indices();
+    let cases = app
+        .index
+        .conformance_cases
+        .iter()
+        .map(|case| crate::model::derive_conformance_trace(case, &app.index))
+        .collect::<Vec<_>>();
+    ResourceTable::from_indexed_items(
+        &cases,
+        &indices,
+        ResourceTableSpec {
+            widths: vec![
+                Constraint::Min(26),
+                Constraint::Min(16),
+                Constraint::Length(13),
+                Constraint::Min(20),
+                Constraint::Min(14),
+                Constraint::Min(13),
+            ],
+            compact_widths: vec![
+                Constraint::Length(28),
+                Constraint::Min(16),
+                Constraint::Length(12),
+                Constraint::Length(0),
+                Constraint::Length(0),
+                Constraint::Length(0),
+            ],
+            headers: &[
+                "ID",
+                "Title",
+                "Applicability",
+                "Scenario path",
+                "Selector",
+                "Guards",
+            ],
+            header_color: Color::LightMagenta,
+            title: "CASE TRACE",
+            border_color: Color::LightMagenta,
+        },
+        |case| {
+            Row::new(vec![
+                Line::from(case.id.clone()),
+                Line::from(case.title.clone()),
+                Line::styled(
+                    case.requirement_applicability.to_string(),
+                    applicability_style(case.requirement_applicability),
+                ),
+                Line::from(case.path.clone()),
+                Line::from(case.selector.clone()),
+                Line::from(case.guards.join(", ")),
+            ])
+        },
+    )
+    .render(frame, area, &mut app.table_state);
+}
+
+fn applicability_style(applicability: ConformanceApplicability) -> Style {
+    let color = match applicability {
+        ConformanceApplicability::Stale => Color::Red,
+        ConformanceApplicability::Provisional => Color::Yellow,
+        ConformanceApplicability::Candidate => Color::Cyan,
+        ConformanceApplicability::Current => Color::Green,
+    };
+    Style::default().fg(color).bold()
 }
 
 // Implements [[RFC-0007:C-COCKPIT-VIEWS]]: release browsing view.

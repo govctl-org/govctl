@@ -3,9 +3,9 @@
 [govctl]
 id = "RFC-0007"
 title = "TUI v2 read-only cockpit"
-version = "0.3.0"
+version = "0.4.0"
 status = "normative"
-phase = "stable"
+phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-06-06"
 updated = "2026-07-27"
@@ -13,9 +13,10 @@ refs = [
     "RFC-0003",
     "RFC-0006",
     "RFC-0002",
+    "RFC-0008",
 ]
 tags = ["tui"]
-signature = "0b4392d0ab8768b9dbbce63473397c59d56d11c3f8c56f6a1a0b8ca2e439bf2d"
+signature = "d720247fb512228ae2dd645894e81c09fb936438c6b4b150889e01df61c29920"
 
 [[sections]]
 title = "Summary"
@@ -32,7 +33,14 @@ clauses = [
     "clauses/C-SEARCH.toml",
     "clauses/C-DIAGNOSTICS.toml",
     "clauses/C-HUMAN-UX.toml",
+    "clauses/C-CONFORMANCE-VIEWS.toml",
 ]
+
+[[changelog]]
+version = "0.4.0"
+date = "2026-07-27"
+notes = "Expose Conformance Cases in the TUI cockpit"
+added = ["Add read-only Conformance Case overview, list, detail, and navigation"]
 
 [[changelog]]
 version = "0.3.0"

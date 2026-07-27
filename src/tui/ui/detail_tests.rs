@@ -1,5 +1,7 @@
 use super::super::super::app::{App, View};
-use super::super::test_support::{adr, clause, project_index, render_app, rfc, work_item};
+use super::super::test_support::{
+    adr, clause, conformance_case, project_index, render_app, rfc, work_item,
+};
 use super::*;
 use crate::loop_state::{LoopState, LoopWorkItemStatus};
 use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
@@ -143,6 +145,31 @@ fn loop_detail_renders_dag_and_inspector_on_narrow_viewport()
     Ok(())
 }
 
+#[test]
+fn conformance_detail_renders_declared_trace_without_evidence_claims()
+-> Result<(), Box<dyn std::error::Error>> {
+    let mut app = App::new(detail_project_index());
+    app.view = View::ConformanceDetail(0);
+
+    let (_, rendered) = render_app(86, 20, app, |frame, app| {
+        draw_conformance(frame, app, frame.area(), 0);
+    })?;
+
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("CONF-CURRENT-CASE"))
+    );
+    assert!(rendered.iter().any(|line| line.contains("RFC-0001:C-TEST")));
+    assert!(rendered.iter().any(|line| line.contains("current")));
+    assert!(
+        rendered
+            .iter()
+            .any(|line| line.contains("GUARD-CONFORMANCE"))
+    );
+    Ok(())
+}
+
 fn render_detail(
     view: View,
     mut draw: impl FnMut(&mut Frame, &mut App, Rect),
@@ -174,8 +201,9 @@ fn detail_project_index() -> crate::model::ProjectIndex {
     );
     rfc.clauses
         .push(clause("C-TEST", "Clause title", "Clause text"));
+    rfc.clauses[0].spec.since = Some("0.1.0".to_string());
 
-    project_index(
+    let mut index = project_index(
         vec![rfc],
         vec![adr(
             "ADR-0001",
@@ -189,7 +217,15 @@ fn detail_project_index() -> crate::model::ProjectIndex {
             WorkItemStatus::Active,
             &["cleanup"],
         )],
-    )
+    );
+    index.conformance_cases.push(conformance_case(
+        "CONF-CURRENT-CASE",
+        "Current conformance case",
+        "RFC-0001:C-TEST",
+        "0.1.0",
+        &["testing"],
+    ));
+    index
 }
 
 fn sample_loop_state() -> crate::diagnostic::DiagnosticResult<LoopState> {

@@ -58,6 +58,7 @@ pub(super) fn handle_key(app: &mut App, key: KeyEvent) {
         | View::AdrList
         | View::WorkList
         | View::GuardList
+        | View::ConformanceList
         | View::ReleaseList
         | View::TagList
         | View::LoopList
@@ -82,6 +83,7 @@ pub(super) fn handle_key(app: &mut App, key: KeyEvent) {
         View::AdrDetail(_)
         | View::WorkDetail(_)
         | View::GuardDetail(_)
+        | View::ConformanceDetail(_)
         | View::ClauseDetail(_, _) => {
             handle_detail_keys(app, key);
         }
@@ -105,6 +107,8 @@ fn handle_dashboard_keys(app: &mut App, key: KeyEvent) {
         KeyCode::Char('4') | KeyCode::Char('w') => app.go_to(View::WorkList),
         // Implements [[RFC-0007:C-COCKPIT-VIEWS]]: dashboard entry point.
         KeyCode::Char('5') | KeyCode::Char('g') => app.go_to(View::GuardList),
+        // Implements [[RFC-0007:C-CONFORMANCE-VIEWS]]: dashboard entry point.
+        KeyCode::Char('x') => app.go_to(View::ConformanceList),
         // Implements [[RFC-0007:C-SEARCH]]: enter search with single-focus input.
         KeyCode::Char('6') | KeyCode::Char('s') => {
             app.go_to(View::Search);
@@ -258,6 +262,10 @@ mod tests {
         assert!(!app.should_quit);
         handle_key(&mut app, key(KeyCode::Esc));
         assert!(!app.show_help);
+
+        app.view = View::Dashboard;
+        handle_key(&mut app, key(KeyCode::Char('x')));
+        assert_eq!(app.view, View::ConformanceList);
     }
 
     #[test]

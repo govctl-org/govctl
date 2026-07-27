@@ -12,6 +12,7 @@ pub(super) fn shows_command_strip(view: View) -> bool {
             | View::AdrList
             | View::WorkList
             | View::GuardList
+            | View::ConformanceList
             | View::ReleaseList
             | View::TagList
             | View::Search
@@ -28,6 +29,7 @@ fn breadcrumb(app: &App) -> String {
         View::AdrList => "Dashboard > ADRs".to_string(),
         View::WorkList => "Dashboard > Work".to_string(),
         View::GuardList => "Dashboard > Guards".to_string(),
+        View::ConformanceList => "Dashboard > Cases".to_string(),
         View::ReleaseList => "Dashboard > Releases".to_string(),
         View::TagList => "Dashboard > Tags".to_string(),
         View::Search => "Dashboard > Search".to_string(),
@@ -63,6 +65,12 @@ fn breadcrumb(app: &App) -> String {
             .get(idx)
             .map(|guard| format!("Dashboard > Guards > {}", guard.meta().id))
             .unwrap_or_else(|| "Dashboard > Guards".to_string()),
+        View::ConformanceDetail(idx) => app
+            .index
+            .conformance_cases
+            .get(idx)
+            .map(|case| format!("Dashboard > Cases > {}", case.meta().id))
+            .unwrap_or_else(|| "Dashboard > Cases".to_string()),
         View::ClauseDetail(rfc_idx, clause_idx) => app
             .index
             .rfcs
@@ -113,6 +121,7 @@ fn header_status(app: &mut App) -> String {
         | View::AdrList
         | View::WorkList
         | View::GuardList
+        | View::ConformanceList
         | View::ReleaseList
         | View::TagList
         | View::Search
@@ -287,6 +296,8 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
             "ADRs",
             "w",
             "Work",
+            "x",
+            "Cases",
             "s",
             "Search",
             "l",
@@ -303,6 +314,7 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
         | View::AdrList
         | View::WorkList
         | View::GuardList
+        | View::ConformanceList
         | View::LoopList
         | View::DiagnosticList => &[
             "j/k", "Navigate", "Enter", "View", "Esc", "Back", "/", "Filter", "g/G", "Jump", "?",
@@ -342,6 +354,7 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
         View::AdrDetail(_)
         | View::WorkDetail(_)
         | View::GuardDetail(_)
+        | View::ConformanceDetail(_)
         | View::ClauseDetail(_, _) => &[
             "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
         ],
@@ -351,13 +364,14 @@ fn bindings_for_view(view: View) -> &'static [&'static str] {
 fn compact_bindings_for_view(view: View) -> &'static [&'static str] {
     match view {
         View::Dashboard => &[
-            "r", "RFC", "c", "Clause", "w", "Work", "s", "Search", "?", "Help", "q", "Quit",
+            "r", "RFC", "c", "Clause", "x", "Case", "s", "Search", "?", "Help", "q", "Quit",
         ],
         View::RfcList
         | View::ClauseList
         | View::AdrList
         | View::WorkList
         | View::GuardList
+        | View::ConformanceList
         | View::LoopList
         | View::DiagnosticList => &[
             "j/k", "Move", "Enter", "Open", "Esc", "Back", "/", "Filter", "?", "Help", "q", "Quit",
@@ -375,6 +389,7 @@ fn compact_bindings_for_view(view: View) -> &'static [&'static str] {
         View::AdrDetail(_)
         | View::WorkDetail(_)
         | View::GuardDetail(_)
+        | View::ConformanceDetail(_)
         | View::ClauseDetail(_, _) => &[
             "j/k", "Scroll", "^d/^u", "Page", "Esc", "Back", "?", "Help", "q", "Quit",
         ],
@@ -429,7 +444,9 @@ impl<'a> Footer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::test_support::{adr, clause, project_index, render_app, rfc, work_item};
+    use super::super::test_support::{
+        adr, clause, conformance_case, project_index, render_app, rfc, work_item,
+    };
     use super::*;
     use crate::loop_state::LoopState;
     use crate::model::{AdrStatus, RfcPhase, RfcStatus, WorkItemStatus};
@@ -447,6 +464,7 @@ mod tests {
             (View::AdrList, "Dashboard > ADRs"),
             (View::WorkList, "Dashboard > Work"),
             (View::GuardList, "Dashboard > Guards"),
+            (View::ConformanceList, "Dashboard > Cases"),
             (View::ReleaseList, "Dashboard > Releases"),
             (View::TagList, "Dashboard > Tags"),
             (View::Search, "Dashboard > Search"),
@@ -455,6 +473,10 @@ mod tests {
             (View::RfcDetail(0), "Dashboard > RFCs > RFC-0001"),
             (View::AdrDetail(0), "Dashboard > ADRs > ADR-0001"),
             (View::WorkDetail(0), "Dashboard > Work > WI-2026-01-01-001"),
+            (
+                View::ConformanceDetail(0),
+                "Dashboard > Cases > CONF-CHROME",
+            ),
             (
                 View::ClauseDetail(0, 0),
                 "Dashboard > RFCs > RFC-0001 > C-TEST",
@@ -563,6 +585,7 @@ mod tests {
             View::LoopDetail(0),
             View::RfcDetail(0),
             View::WorkDetail(0),
+            View::ConformanceDetail(0),
         ] {
             let line = keybind_line(bindings_for_view(view));
             assert!(line.width() > 0);
@@ -623,7 +646,7 @@ mod tests {
         );
         rfc.clauses
             .push(clause("C-TEST", "Clause title", "Clause text"));
-        let mut app = App::new(project_index(
+        let mut index = project_index(
             vec![rfc],
             vec![adr("ADR-0001", "ADR title", AdrStatus::Accepted, &[])],
             vec![work_item(
@@ -632,7 +655,15 @@ mod tests {
                 WorkItemStatus::Active,
                 &[],
             )],
+        );
+        index.conformance_cases.push(conformance_case(
+            "CONF-CHROME",
+            "Chrome case",
+            "RFC-0001:C-TEST",
+            "0.1.0",
+            &[],
         ));
+        let mut app = App::new(index);
 
         let work_id = "WI-2026-06-07-001";
         let mut dependencies = BTreeMap::new();

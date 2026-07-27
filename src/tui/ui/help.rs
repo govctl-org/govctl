@@ -28,6 +28,7 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
             lines.push(Line::from("  a      ADR list"));
             lines.push(Line::from("  w      Work list"));
             lines.push(Line::from("  g      Guard list"));
+            lines.push(Line::from("  x      Conformance Case list"));
             lines.push(Line::from("  s      Search"));
             lines.push(Line::from("  l      Loop list"));
             lines.push(Line::from("  d      Diagnostics"));
@@ -39,6 +40,7 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
         | View::AdrList
         | View::WorkList
         | View::GuardList
+        | View::ConformanceList
         | View::LoopList
         | View::DiagnosticList => {
             lines.push(Line::from("List"));
@@ -78,6 +80,7 @@ pub(super) fn draw_overlay(frame: &mut Frame, app: &App) {
         View::AdrDetail(_)
         | View::WorkDetail(_)
         | View::GuardDetail(_)
+        | View::ConformanceDetail(_)
         | View::ClauseDetail(_, _) => {
             lines.push(Line::from("Detail"));
             lines.push(Line::from("  j/k      Scroll line"));

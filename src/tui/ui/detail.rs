@@ -332,6 +332,45 @@ pub(super) fn draw_guard(
     MarkdownDetailPanel::new(&title, Color::LightBlue, app.scroll, &markdown).render(frame, area)
 }
 
+// Implements [[RFC-0007:C-CONFORMANCE-VIEWS]] without implying execution evidence.
+pub(super) fn draw_conformance(
+    frame: &mut Frame,
+    app: &mut App,
+    area: Rect,
+    idx: usize,
+) -> DetailViewport {
+    let Some(entry) = app.index.conformance_cases.get(idx) else {
+        return DetailViewport::new(0);
+    };
+    let case = crate::model::derive_conformance_trace(entry, &app.index);
+    let mut markdown = format!(
+        "# {}\n\n**ID:** {}\n\n**Requirement applicability:** {}\n\n\
+         **Scenario path:** `{}`\n\n**Selector:** `{}`\n",
+        case.title, case.id, case.requirement_applicability, case.path, case.selector
+    );
+    if !case.tags.is_empty() {
+        markdown.push_str(&format!("\n**Tags:** `{}`\n", case.tags.join("`, `")));
+    }
+    markdown.push_str("\n## Requirements\n");
+    for requirement in &case.requirements {
+        markdown.push_str(&format!(
+            "\n- `{}` at `{}`: **{}**\n",
+            requirement.clause_ref, requirement.version, requirement.requirement_applicability
+        ));
+    }
+    markdown.push_str("\n## Verification Guards\n");
+    if case.guards.is_empty() {
+        markdown.push_str("\nNone declared.\n");
+    } else {
+        for guard in &case.guards {
+            markdown.push_str(&format!("\n- `{guard}`\n"));
+        }
+    }
+
+    let title = format!("CASE // {}", case.id);
+    MarkdownDetailPanel::new(&title, Color::LightMagenta, app.scroll, &markdown).render(frame, area)
+}
+
 // Implements [[RFC-0007:C-LOOP-VIEWS]] and [[RFC-0007:C-LOOP-DAG]].
 pub(super) fn draw_loop(frame: &mut Frame, app: &mut App, area: Rect, idx: usize) {
     let Some(entry) = app.supplement.loops.get(idx) else {

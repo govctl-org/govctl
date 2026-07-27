@@ -89,6 +89,10 @@ fn draw_content(frame: &mut Frame, app: &mut App, area: Rect) -> Option<DetailVi
             lists::draw_guard(frame, app, area);
             None
         }
+        View::ConformanceList => {
+            lists::draw_conformance(frame, app, area);
+            None
+        }
         View::ReleaseList => {
             lists::draw_release(frame, app, area);
             None
@@ -126,6 +130,7 @@ fn draw_content(frame: &mut Frame, app: &mut App, area: Rect) -> Option<DetailVi
             Some(detail::draw_work(frame, app, area, idx))
         }
         View::GuardDetail(idx) => Some(detail::draw_guard(frame, app, area, idx)),
+        View::ConformanceDetail(idx) => Some(detail::draw_conformance(frame, app, area, idx)),
         View::ClauseDetail(rfc_idx, clause_idx) => {
             // Implements [[RFC-0003:C-DETAIL]]
             Some(detail::draw_clause(frame, app, area, rfc_idx, clause_idx))
