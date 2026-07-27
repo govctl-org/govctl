@@ -1,0 +1,18 @@
+#:schema ../schema/conformance.schema.json
+
+[govctl]
+id = "CONF-CONFORMANCE-DELETION-REFERRERS"
+title = "Conformance deletion referrers"
+
+[case]
+path = "tests/test_conformance.rs"
+selector = "clause_and_guard_deletion_report_conformance_case_referrers"
+guards = ["GUARD-CARGO-TEST"]
+
+[[case.requirements]]
+ref = "RFC-0008:C-TRACEABILITY"
+version = "0.1.0"
+
+[[case.requirements]]
+ref = "RFC-0008:C-VALIDATION"
+version = "0.1.0"

@@ -1,0 +1,14 @@
+#:schema ../schema/conformance.schema.json
+
+[govctl]
+id = "CONF-TRACE-APPLICABILITY-LIFECYCLE"
+title = "Trace applicability lifecycle"
+
+[case]
+path = "tests/test_conformance.rs"
+selector = "trace_applicability_tracks_rfc_and_clause_lifecycle_without_blocking_transitions"
+guards = ["GUARD-CARGO-TEST"]
+
+[[case.requirements]]
+ref = "RFC-0008:C-TRACE-QUERY"
+version = "0.1.0"
