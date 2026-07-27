@@ -33,7 +33,7 @@ The resource MUST support `list`, `get`, `show`, `edit`, and `delete` with the a
 
 Adding or exact-value removing a requirement MUST accept the same `<CLAUSE-ID>@<VERSION>` value used by `new`. Changing a requirement `ref` MUST use an add followed by removal of the old binding; it MUST NOT expose a scalar `requirements[i].ref` mutation that can create an invalid intermediate ref-version pair. Indexed removal MUST use `requirements[i] --remove`.
 
-Wire-layout prefixes such as `govctl.` and `case.` MUST be rejected. Every Case creation, edit, and deletion MUST validate the complete prospective project state before writing. An edit that would remove the final requirement binding MUST be rejected. Every failed creation, edit, or deletion MUST leave governed files unchanged.
+Wire-layout prefixes such as `govctl.` and `case.` MUST be rejected. Every Case creation and edit MUST validate the mutated Case's own fields, locator uniqueness, and direct Clause, Guard, tag, and scenario-path dependencies before writing. Case deletion MUST validate its governed referrers. Repository-wide consistency remains owned by `govctl check`; a Case mutation MUST NOT be rejected solely because an unrelated artifact or derived projection is invalid or stale. An edit that would remove the final requirement binding MUST be rejected. Every failed creation, edit, or deletion MUST leave governed files unchanged.
 
 Conformance Case tags MUST use the controlled vocabulary and syntax defined by [[RFC-0002:C-RESOURCES]]. `conformance list` MUST support the shared `--tag` filter. Cases MUST be included in `govctl tag list` usage counts, and `govctl tag delete` MUST reject a tag still used by a Case.
 

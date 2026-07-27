@@ -1,0 +1,35 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-27-010"
+title = "Keep Conformance mutations locally recoverable"
+status = "done"
+created = "2026-07-27"
+started = "2026-07-27"
+completed = "2026-07-27"
+refs = [
+    "RFC-0008:C-COMMAND-SURFACE",
+    "RFC-0008:C-VALIDATION",
+    "RFC-0002:C-CRUD-VERBS",
+]
+
+[content]
+description = "Replace whole-project preflight checks for Conformance Case mutations with target-local and direct-dependency validation so invalid neighboring artifacts remain repairable."
+
+[[content.acceptance_criteria]]
+text = "Conformance Case creation and editing validate the target, locator uniqueness, and direct dependencies without being blocked by unrelated project diagnostics"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Conformance Case deletion checks governed referrers without being blocked by unrelated project diagnostics"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Regression tests cover unrelated invalid Cases while preserving atomic rejection of invalid target mutations"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CONFORMANCE-TESTS"]

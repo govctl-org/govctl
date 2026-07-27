@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::{ClauseKind, ConformanceEntry, ProjectIndex, RfcStatus};
+use crate::model::{ClauseKind, ConformanceEntry, ProjectIndex, RfcIndex, RfcStatus};
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
@@ -67,65 +67,20 @@ pub(super) fn validate_cases_with_index(
             ));
         }
 
-        if entry.meta().title.trim().is_empty() {
-            diagnostics.push(invalid("Conformance Case title cannot be empty", &display));
-        }
-        validate_unique_values("tag", &entry.meta().tags, &display, &mut diagnostics);
-        for tag in &entry.meta().tags {
-            if !allowed_tags.contains(tag.as_str()) {
-                diagnostics.push(invalid(
-                    format!("Conformance Case '{id}' uses unregistered tag '{tag}'"),
-                    &display,
-                ));
-            }
-        }
-        if entry.spec.case.selector.trim().is_empty() {
-            diagnostics.push(invalid(
-                "Conformance Case selector cannot be empty",
-                &display,
-            ));
-        }
-        match canonical_scenario_path(config, &entry.spec.case.path) {
-            Ok(path) => {
-                let key = (path, entry.spec.case.selector.as_str());
-                if let Some(other) = locators.insert(key, id) {
-                    diagnostics.push(invalid(
-                        format!(
-                            "Conformance Cases '{other}' and '{id}' use the same path and selector"
-                        ),
-                        &display,
-                    ));
-                }
-            }
-            Err(message) => diagnostics.push(invalid(message, &display)),
-        }
-
-        if entry.spec.case.requirements.is_empty() {
-            diagnostics.push(invalid(
-                "Conformance Case must contain at least one requirement",
-                &display,
-            ));
-        }
-        let mut requirement_refs = HashSet::new();
-        for requirement in &entry.spec.case.requirements {
-            if !requirement_refs.insert(requirement.clause_ref.as_str()) {
+        if let Some(path) = validate_case_contents(
+            config,
+            entry,
+            &index.rfcs,
+            &guard_ids,
+            &allowed_tags,
+            &mut diagnostics,
+        ) {
+            let key = (path, entry.spec.case.selector.as_str());
+            if let Some(other) = locators.insert(key, id) {
                 diagnostics.push(invalid(
                     format!(
-                        "Conformance Case '{id}' repeats requirement '{}'",
-                        requirement.clause_ref
+                        "Conformance Cases '{other}' and '{id}' use the same path and selector"
                     ),
-                    &display,
-                ));
-                continue;
-            }
-            validate_requirement(index, requirement, &display, &mut diagnostics);
-        }
-
-        validate_unique_values("Guard", &entry.spec.case.guards, &display, &mut diagnostics);
-        for guard in &entry.spec.case.guards {
-            if !guard_ids.contains(guard.as_str()) {
-                diagnostics.push(invalid(
-                    format!("Conformance Case '{id}' references unknown Guard '{guard}'"),
                     &display,
                 ));
             }
@@ -150,8 +105,165 @@ pub(super) fn validate_cases_with_index(
     diagnostics
 }
 
+/// Validate one prospective Case without making unrelated project diagnostics
+/// part of the mutation boundary.
+pub(crate) fn validate_case_mutation(
+    config: &Config,
+    entry: &ConformanceEntry,
+    cases: &[ConformanceEntry],
+    rfcs: &[RfcIndex],
+) -> Vec<Diagnostic> {
+    let guards = match crate::parse::load_guards(config) {
+        Ok(guards) => guards,
+        Err(error) => return vec![error],
+    };
+    let guard_ids = guards
+        .iter()
+        .map(|guard| guard.meta().id.as_str())
+        .collect::<HashSet<_>>();
+    let allowed_tags = config
+        .tags
+        .allowed
+        .iter()
+        .map(String::as_str)
+        .collect::<HashSet<_>>();
+    let id = entry.meta().id.as_str();
+    let display = config.display_path(&entry.path).display().to_string();
+    let mut diagnostics = Vec::new();
+
+    if entry.path.file_stem().and_then(|stem| stem.to_str()) != Some(id) {
+        diagnostics.push(invalid(
+            format!("Conformance Case ID '{id}' must equal its filename stem"),
+            &display,
+        ));
+    }
+    if let Some(other) = cases
+        .iter()
+        .find(|other| other.path != entry.path && other.meta().id == id)
+    {
+        diagnostics.push(invalid(
+            format!(
+                "Duplicate Conformance Case ID '{id}' in '{}' and '{}'",
+                config.display_path(&other.path).display(),
+                display
+            ),
+            &display,
+        ));
+    }
+
+    if let Some(path) = validate_case_contents(
+        config,
+        entry,
+        rfcs,
+        &guard_ids,
+        &allowed_tags,
+        &mut diagnostics,
+    ) {
+        for other in cases.iter().filter(|other| other.path != entry.path) {
+            if other.spec.case.selector == entry.spec.case.selector
+                && canonical_scenario_path(config, &other.spec.case.path)
+                    .is_ok_and(|other_path| other_path == path)
+            {
+                diagnostics.push(invalid(
+                    format!(
+                        "Conformance Cases '{}' and '{id}' use the same path and selector",
+                        other.meta().id
+                    ),
+                    &display,
+                ));
+                break;
+            }
+        }
+    }
+
+    for guard in guards {
+        if guard.meta().refs.iter().any(|reference| reference == id) {
+            diagnostics.push(invalid(
+                format!(
+                    "Verification Guard '{}' cannot reference Conformance Case '{id}'",
+                    guard.meta().id
+                ),
+                &config.display_path(&guard.path).display().to_string(),
+            ));
+        }
+    }
+
+    diagnostics
+}
+
+fn validate_case_contents(
+    config: &Config,
+    entry: &ConformanceEntry,
+    rfcs: &[RfcIndex],
+    guard_ids: &HashSet<&str>,
+    allowed_tags: &HashSet<&str>,
+    diagnostics: &mut Vec<Diagnostic>,
+) -> Option<PathBuf> {
+    let id = entry.meta().id.as_str();
+    let display = config.display_path(&entry.path).display().to_string();
+
+    if entry.meta().title.trim().is_empty() {
+        diagnostics.push(invalid("Conformance Case title cannot be empty", &display));
+    }
+    validate_unique_values("tag", &entry.meta().tags, &display, diagnostics);
+    for tag in &entry.meta().tags {
+        if !allowed_tags.contains(tag.as_str()) {
+            diagnostics.push(invalid(
+                format!("Conformance Case '{id}' uses unregistered tag '{tag}'"),
+                &display,
+            ));
+        }
+    }
+    if entry.spec.case.selector.trim().is_empty() {
+        diagnostics.push(invalid(
+            "Conformance Case selector cannot be empty",
+            &display,
+        ));
+    }
+    let path = match canonical_scenario_path(config, &entry.spec.case.path) {
+        Ok(path) => Some(path),
+        Err(message) => {
+            diagnostics.push(invalid(message, &display));
+            None
+        }
+    };
+
+    if entry.spec.case.requirements.is_empty() {
+        diagnostics.push(invalid(
+            "Conformance Case must contain at least one requirement",
+            &display,
+        ));
+    }
+    let mut requirement_refs = HashSet::new();
+    for requirement in &entry.spec.case.requirements {
+        if !requirement_refs.insert(requirement.clause_ref.as_str()) {
+            diagnostics.push(invalid(
+                format!(
+                    "Conformance Case '{id}' repeats requirement '{}'",
+                    requirement.clause_ref
+                ),
+                &display,
+            ));
+            continue;
+        }
+        validate_requirement(rfcs, requirement, &display, diagnostics);
+    }
+
+    validate_unique_values("Guard", &entry.spec.case.guards, &display, diagnostics);
+    for guard in &entry.spec.case.guards {
+        if !guard_ids.contains(guard.as_str()) {
+            diagnostics.push(invalid(
+                format!("Conformance Case '{id}' references unknown Guard '{guard}'"),
+                &display,
+            ));
+        }
+    }
+
+    path
+}
+
 fn validate_requirement(
-    index: &ProjectIndex,
+    rfcs: &[RfcIndex],
     requirement: &crate::model::RequirementBinding,
     display: &str,
     diagnostics: &mut Vec<Diagnostic>,
@@ -166,7 +278,7 @@ fn validate_requirement(
         ));
         return;
     };
-    let Some(rfc) = index.rfcs.iter().find(|entry| entry.rfc.rfc_id == rfc_id) else {
+    let Some(rfc) = rfcs.iter().find(|entry| entry.rfc.rfc_id == rfc_id) else {
         diagnostics.push(invalid(
             format!("Requirement RFC '{rfc_id}' does not exist"),
             display,

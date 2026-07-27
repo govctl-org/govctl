@@ -137,23 +137,7 @@ impl TomlAdapter for ConformanceTomlAdapter {
             })?;
         *current = entry.clone();
 
-        let mut index = crate::load::load_project(config).map_err(|errors| {
-            errors.into_iter().next().unwrap_or_else(|| {
-                Diagnostic::new(
-                    DiagnosticCode::E1305ConformanceGraphInvalid,
-                    "Failed to load project for Conformance Case validation",
-                    "conformance",
-                )
-            })
-        })?;
-        index.conformance_cases = cases;
-        if let Some(error) = crate::validate::validate_project(&index, config)
-            .diagnostics
-            .into_iter()
-            .find(|diagnostic| diagnostic.level == crate::diagnostic::DiagnosticLevel::Error)
-        {
-            return Err(error);
-        }
+        crate::cmd::conformance::validate_mutation(config, entry, &cases)?;
 
         write_conformance_case(
             &entry.path,

@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0008"
 title = "Conformance Case and Declared Traceability Model"
-version = "0.1.0"
+version = "0.1.1"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
@@ -25,7 +25,7 @@ refs = [
     "RFC-0002:C-OUTPUT-FORMAT",
     "RFC-0002:C-SEARCH-COMMAND",
 ]
-signature = "903eb80a4f6b56b67a3efd4de184d6b16fdd3597a7dc6b57173649839c6ef22f"
+signature = "d5c343b0380b223459bfb97e14c248f51abf3487ba62c40869b858028524f562"
 
 [[sections]]
 title = "Summary"
@@ -40,6 +40,12 @@ clauses = [
     "clauses/C-COMMAND-SURFACE.toml",
     "clauses/C-TRACE-QUERY.toml",
 ]
+
+[[changelog]]
+version = "0.1.1"
+date = "2026-07-27"
+notes = "Keep Case mutations local and recoverable"
+fixed = ["Limit Case mutation validation to the target and its direct dependencies"]
 
 [[changelog]]
 version = "0.1.0"

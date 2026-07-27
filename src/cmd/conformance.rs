@@ -69,7 +69,7 @@ pub fn new_case(
         path: path.clone(),
     };
     cases.push(entry.clone());
-    validate_prospective(config, &cases)?;
+    validate_mutation(config, &entry, &cases)?;
 
     if !config.conformance_dir().exists() && !op.is_preview() {
         create_dir_all(
@@ -280,7 +280,6 @@ pub fn delete(
             id,
         ));
     }
-    validate_prospective(config, &cases)?;
     if !confirm_destructive_action(
         force,
         op,
@@ -297,27 +296,18 @@ pub fn delete(
 }
 
 fn case_reference_blockers(config: &Config, id: &str) -> DiagnosticResult<Vec<String>> {
-    let index = crate::load::load_project(config).map_err(|errors| {
-        errors.into_iter().next().unwrap_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E0903UnexpectedError,
-                "Failed to load project before Conformance Case deletion",
-                id,
-            )
-        })
-    })?;
     let mut blockers = Vec::new();
-    for rfc in &index.rfcs {
+    for rfc in crate::load::load_rfcs(config).map_err(Diagnostic::from)? {
         if rfc.rfc.refs.iter().any(|reference| reference == id) {
             blockers.push(rfc.rfc.rfc_id.clone());
         }
     }
-    for adr in &index.adrs {
+    for adr in crate::parse::load_adrs(config)? {
         if adr.meta().refs.iter().any(|reference| reference == id) {
             blockers.push(adr.meta().id.clone());
         }
     }
-    for work in &index.work_items {
+    for work in crate::parse::load_work_items(config)? {
         if work.meta().refs.iter().any(|reference| reference == id) {
             blockers.push(work.meta().id.clone());
         }
@@ -416,21 +406,15 @@ pub fn trace(
     Ok(vec![])
 }
 
-fn validate_prospective(config: &Config, cases: &[ConformanceEntry]) -> DiagnosticResult<()> {
-    let mut index = crate::load::load_project(config).map_err(|errors| {
-        errors.into_iter().next().unwrap_or_else(|| {
-            Diagnostic::new(
-                DiagnosticCode::E1305ConformanceGraphInvalid,
-                "Failed to load project for Conformance Case validation",
-                "conformance",
-            )
-        })
-    })?;
-    index.conformance_cases = cases.to_vec();
-    crate::validate::validate_project(&index, config)
-        .diagnostics
+pub(crate) fn validate_mutation(
+    config: &Config,
+    entry: &ConformanceEntry,
+    cases: &[ConformanceEntry],
+) -> DiagnosticResult<()> {
+    let rfcs = crate::load::load_rfcs(config).map_err(Diagnostic::from)?;
+    crate::validate::conformance::validate_case_mutation(config, entry, cases, &rfcs)
         .into_iter()
-        .find(|diagnostic| diagnostic.level == crate::diagnostic::DiagnosticLevel::Error)
+        .next()
         .map_or(Ok(()), Err)
 }
 

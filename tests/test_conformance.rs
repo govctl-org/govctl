@@ -93,7 +93,7 @@ fn conformance_crud_trace_search_and_check_form_one_resource_path() -> common::T
 }
 
 #[test]
-fn conformance_mutations_validate_the_prospective_graph_before_writing() -> common::TestResult {
+fn conformance_mutations_validate_the_target_before_writing() -> common::TestResult {
     let temp_dir = init_project()?;
     establish_requirement(temp_dir.path())?;
     let created = run_commands(
@@ -151,6 +151,110 @@ fn conformance_mutations_validate_the_prospective_graph_before_writing() -> comm
             .join("gov/conformance/CONF-DUPLICATE-LOCATOR.toml")
             .exists()
     );
+    Ok(())
+}
+
+#[test]
+fn conformance_mutations_ignore_an_unrelated_invalid_case() -> common::TestResult {
+    let temp_dir = init_project()?;
+    establish_requirement(temp_dir.path())?;
+    let setup = run_commands(
+        temp_dir.path(),
+        &[
+            &[
+                "conformance",
+                "new",
+                "Broken Neighbor",
+                "--path",
+                "scenario.txt",
+                "--selector",
+                "broken",
+                "--requirement",
+                "RFC-0001:C-REQ@0.1.0",
+            ],
+            &[
+                "conformance",
+                "new",
+                "Editable Case",
+                "--path",
+                "scenario.txt",
+                "--selector",
+                "edit",
+                "--requirement",
+                "RFC-0001:C-REQ@0.1.0",
+            ],
+            &[
+                "conformance",
+                "new",
+                "Deletable Case",
+                "--path",
+                "scenario.txt",
+                "--selector",
+                "delete",
+                "--requirement",
+                "RFC-0001:C-REQ@0.1.0",
+            ],
+        ],
+    )?;
+    assert!(!setup.contains("exit: 1"), "{setup}");
+
+    let neighbor = temp_dir
+        .path()
+        .join("gov/conformance/CONF-BROKEN-NEIGHBOR.toml");
+    let invalid = fs::read_to_string(&neighbor)?.replace("0.1.0", "9.9.9");
+    fs::write(&neighbor, invalid)?;
+
+    let mutations = run_commands(
+        temp_dir.path(),
+        &[
+            &[
+                "conformance",
+                "new",
+                "Created During Repair",
+                "--path",
+                "scenario.txt",
+                "--selector",
+                "create",
+                "--requirement",
+                "RFC-0001:C-REQ@0.1.0",
+            ],
+            &[
+                "conformance",
+                "edit",
+                "CONF-EDITABLE-CASE",
+                "title",
+                "--set",
+                "Edited During Repair",
+            ],
+            &["conformance", "delete", "CONF-DELETABLE-CASE", "--force"],
+        ],
+    )?;
+    assert!(!mutations.contains("exit: 1"), "{mutations}");
+    assert!(
+        temp_dir
+            .path()
+            .join("gov/conformance/CONF-CREATED-DURING-REPAIR.toml")
+            .exists()
+    );
+    assert!(
+        fs::read_to_string(
+            temp_dir
+                .path()
+                .join("gov/conformance/CONF-EDITABLE-CASE.toml")
+        )?
+        .contains("Edited During Repair")
+    );
+    assert!(
+        !temp_dir
+            .path()
+            .join("gov/conformance/CONF-DELETABLE-CASE.toml")
+            .exists()
+    );
+
+    let checked = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(checked.contains("exit: 1"), "{checked}");
+    assert!(checked.contains("E1305"), "{checked}");
+    assert!(checked.contains("9.9.9"), "{checked}");
     Ok(())
 }
 
