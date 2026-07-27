@@ -10,111 +10,84 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-07-27
+
+0.15.0 introduces first-class Conformance Cases for tracing versioned RFC
+requirements to project-owned scenarios and reusable verification guards. It
+also establishes a canonical-only compatibility baseline ahead of 1.0, adds
+low-noise agent introspection, and refreshes the read-only governance TUI.
+
 ### Added
 
-- Schema version 4 initialization and migration preserve valid Conformance Case files and reject invalid prospective graphs atomically (WI-2026-07-27-005)
-- Conformance Case list, get, show, new, edit, and delete commands enforce the canonical resource and mutation contracts (WI-2026-07-27-005)
-- Project validation covers Case identity, locators, requirement versions, authority restrictions, Guard bindings, deletion referrers, and applicability prerequisites (WI-2026-07-27-005)
-- Conformance trace returns deterministic filtered table and JSON records with provisional, candidate, current, and stale applicability (WI-2026-07-27-005)
-- Search, tags, status, command discovery, and shell completion surfaces include Conformance Cases with unambiguous source and scenario paths (WI-2026-07-27-005)
-- Repository Conformance Cases bind representative integration scenarios to their governing RFC versions and the suite-scoped GUARD-CONFORMANCE-TESTS (WI-2026-07-27-006)
-- Conformance trace queries expose deterministic current Case, requirement, and Guard relationships for the dogfood set (WI-2026-07-27-006)
-- TUI overview and artifact browsing expose Conformance Case counts, list rows, and complete read-only detail data (WI-2026-07-27-007)
+- Added `conformance` as a first-class resource with `new`, `list`, `get`,
+  `show`, `edit`, and `delete` commands. Cases declare a stable relationship
+  between versioned RFC Clauses, project scenarios, and reusable Guards without
+  becoming normative authority or a test runner.
+- Added `govctl conformance trace` with deterministic table and JSON output,
+  requirement and Guard filters, and provisional, candidate, current, and stale
+  applicability states.
+- Added project schema version 4 for Conformance Case storage and validation,
+  including transactional migration from schema version 3.
+- Integrated Conformance Cases into validation, search, tags, status, command
+  discovery, shell completion, and the TUI.
+- Added repository-owned Conformance Cases that exercise the traceability model
+  against representative govctl integration scenarios.
 
 ### Changed
 
-- Unsupported legacy storage is diagnosed explicitly instead of being silently ignored (WI-2026-07-25-001)
-- CLI help, describe metadata, diagnostic hints, bundled skills, and hand-authored guides use only retained canonical interfaces (WI-2026-07-25-001)
-- Misrouted Clause references and Clause-content paths fail with a canonical govctl clause replacement command (WI-2026-07-25-002)
-- CLI metadata and bundled skills teach Clause as a first-class command resource (WI-2026-07-25-002)
-- Guard and Work Item skills define the universal-default intersection rule and select narrow risk-domain guards (WI-2026-07-26-001)
-- User documentation, generated configuration guidance, and Guard creation recovery text prioritize per-Work-Item binding for non-universal checks (WI-2026-07-26-001)
-- The repository default guard set excludes GUARD-CARGO-TEST and this Work Item explicitly requires it (WI-2026-07-26-001)
-- gov, commit, and discuss use a compact operational baseline and contextual decision policy (WI-2026-07-26-002)
-- Lifecycle authority, authorization stops, discovery routes, and completion evidence remain explicit (WI-2026-07-26-002)
-- Agent guidance documentation explains information ownership and staged progressive disclosure (WI-2026-07-26-002)
-- spec and quick use compact operational baselines and contextual decision policies (WI-2026-07-26-003)
-- Spec lifecycle authorization and artifact-authority boundaries remain explicit (WI-2026-07-26-003)
-- Quick escalates behavior, ambiguity, and durable work to the owning workflow (WI-2026-07-26-003)
-- RFC, ADR, Work Item, and Guard writer skills use compact policy and discovery baselines (WI-2026-07-26-004)
-- Artifact authority, field semantics, lifecycle handoff, and content-quality boundaries remain explicit (WI-2026-07-26-004)
-- Duplicated command recipes, templates, and examples defer to canonical discovery surfaces (WI-2026-07-26-004)
-- Brownfield migration uses a compact policy and discovery baseline instead of a fixed command recipe (WI-2026-07-26-005)
-- Historical evidence, uncertainty, user scope selection, and duplicate avoidance remain explicit (WI-2026-07-26-005)
-- Lifecycle authorization, optional source annotation, incremental completion, and failure recovery remain explicit (WI-2026-07-26-005)
-- Init guidance preserves installation, overwrite authorization, discovery, and verification boundaries (WI-2026-07-26-006)
-- Detach guidance uses ownership-aware inventory, collision-safe archival, explicit confirmation, and recoverable mutations (WI-2026-07-26-006)
-- Decision analysis scales with risk and maps obligations, rationale, and execution evidence to their authoritative artifacts (WI-2026-07-26-006)
-- RFC review distinguishes external contracts from private implementation detail without concrete-syntax false positives (WI-2026-07-26-007)
-- ADR review evaluates decision evidence and projection ownership without requiring optional prose templates (WI-2026-07-26-007)
-- Work Item review evaluates durable scope, categorized outcomes, and effective guards without mandatory chore criteria or session-size rules (WI-2026-07-26-007)
-- Compliance review treats RFCs as conformance authority and ADRs as design-alignment evidence (WI-2026-07-26-007)
-- Replaced compatibility ADRs are marked superseded by the decisions that replaced them (WI-2026-07-26-008)
-- [ADR-0057](docs/adr/ADR-0057.md) supersedes the conflicting [ADR-0024](docs/adr/ADR-0024.md) guidance (WI-2026-07-26-009)
-- Describe schema v1 reports tool version, parser-derived canonical command metadata, and phase order without a prescribed task sequence. (WI-2026-07-26-014)
-- Context enumerates only actionable RFCs, ADRs, Work Items, and non-terminal loops while reporting complete state counts. (WI-2026-07-26-014)
-- TUI artifact details use the current projection for obsolete RFC, ADR, and Clause content (WI-2026-07-27-001)
-- Dashboard presents governance lifecycle and operations as a responsive control-plane matrix (WI-2026-07-27-002)
-- TUI chrome, lists, and details use a consistent terminal-native visual vocabulary (WI-2026-07-27-002)
-- List views present filtering and result counts in a dedicated command strip (WI-2026-07-27-003)
-- Scroll position and record counts use consistent data-backed visual indicators (WI-2026-07-27-003)
-- Lifecycle states occupy stable semantic columns across RFC, ADR, and Work rows (WI-2026-07-27-004)
-- Governance navigation entries use an aligned tabular grid on wide and narrow terminals (WI-2026-07-27-004)
-- Execution activity and diagnostic health are presented as separate dashboard regions (WI-2026-07-27-004)
-- Conformance Case edits use the shared edit contract and preserve the RFC-defined paths, validation, and diagnostics. (WI-2026-07-27-008)
-- TUI list-view capabilities and filtering avoid repeated view classification while preserving navigation, rendering, and search behavior. (WI-2026-07-27-008)
-- Search and artifact catalog code share local-index infrastructure and keep all supported artifact kinds searchable. (WI-2026-07-27-008)
-- Governed prose reference scanning separates source enumeration from policy-driven scanning without changing diagnostics. (WI-2026-07-27-008)
+- `govctl describe` now emits versioned, parser-owned command metadata and can
+  include concise actionable project context with `--context`.
+- Bundled skills and reviewer agents now use compact policy-and-discovery
+  guidance. Heavyweight Guards are selected per Work Item unless they are truly
+  universal project defaults.
+- Misrouted Clause operations now fail with the corresponding canonical
+  `govctl clause` command instead of leaving agents to guess the namespace.
+- The TUI now presents aligned lifecycle matrices, separate execution and
+  diagnostic regions, a dedicated filter strip, stable scroll indicators, and
+  consistent wide and narrow layouts.
+- Project status now includes rejected ADRs, Verification Guard totals, and
+  release totals.
 
 ### Removed
 
-- CLI compatibility surfaces superseded by the governing amendment are removed while the canonical edit interface retains equivalent artifact mutation outcomes (WI-2026-07-25-001)
-- Obsolete artifact readers, ignored legacy fields, migration steps, and signature fallbacks are removed according to the amended schema support baseline (WI-2026-07-25-001)
-- Release documentation identifies removed compatibility surfaces and the required repository upgrade baseline (WI-2026-07-25-001)
-- The unsupported ADR deprecate command is absent from parsing, help, and routing (WI-2026-07-26-008)
+- Removed compatibility command aliases, field-path aliases, wire-layout
+  prefixes such as `content.`, `govctl.`, and `check.`, and resource-specific
+  mutation flags superseded by the canonical `edit` interface.
+- Removed legacy flat RFC and Clause TOML readers, ignored legacy fields,
+  obsolete migration steps, and pre-schema-3 signature inference.
+- Removed the unsupported `govctl adr deprecate` command.
 
 ### Fixed
 
-- User and agent guidance uses only canonical edit commands (WI-2026-07-25-001)
-- Schema version 3 is the explicit RFC content-signature interpretation boundary and lifecycle checks do not infer hash origin from an untagged value (WI-2026-07-26-008)
-- Unsupported future schema versions and missing project configuration block repository mutation (WI-2026-07-26-009)
-- Every stored Clause participates in validation and RFC amendment signatures (WI-2026-07-26-009)
-- Namespace recovery recognizes only structurally valid Clause references (WI-2026-07-26-009)
-- Explicit and ancestor missing-config paths cannot select or mutate the wrong project (WI-2026-07-26-010)
-- RFC loading rejects dangling or storage-escaping Clause references before any mutation (WI-2026-07-26-010)
-- Partial initialization detection recognizes artifact symlinks without selecting an ancestor project (WI-2026-07-26-010)
-- RFC-conforming relative Clause filenames remain loadable (WI-2026-07-26-010)
-- Init without an explicit config targets the current directory without selecting an ancestor project (WI-2026-07-26-011)
-- Missing explicit configuration and malformed RFC TOML emit accurate diagnostics (WI-2026-07-26-011)
-- RFC and Clause loading enforce per-RFC Clause containment for configured storage roots (WI-2026-07-26-012)
-- Creation dry-runs apply the same non-mutating preflight validation as execution (WI-2026-07-26-012)
-- Clause creation rejects occupied logical targets without overwriting existing artifacts (WI-2026-07-26-012)
-- Project discovery and forced initialization reject incompatible or incomplete local governance state without falling through to an ancestor project. (WI-2026-07-26-013)
-- Work Item deletion aborts when governed referrers cannot be loaded. (WI-2026-07-26-013)
-- Migration support-file updates and schema migration operations roll back together on failure. (WI-2026-07-26-013)
-- Resource creation rejects schema-invalid constructed artifacts before writing an authoritative artifact. (WI-2026-07-26-013)
-- Creation dry-runs perform the same validation and target selection as execution without persistent mutation. (WI-2026-07-26-013)
-- Guard deletion requires confirmation unless force is explicit. (WI-2026-07-26-013)
-- Clause edit help documents an executable stdin form. (WI-2026-07-26-013)
-- Context loading failures are reported instead of silently omitting requested state. (WI-2026-07-26-014)
-- TUI summaries and semantic styling cover every ADR and Work Item lifecycle status (WI-2026-07-27-001)
-- TUI key hints advertise detail navigation only for lists that support it (WI-2026-07-27-001)
-- All-target clippy validation passes without test-code lint exceptions (WI-2026-07-27-001)
-- Wide and narrow TestBackend renders preserve readable state, selection, and navigation (WI-2026-07-27-002)
-- Filter and search input remain legible for long values on common narrow terminals (WI-2026-07-27-003)
-- Conformance search results and diagnostics navigate to the corresponding Case detail (WI-2026-07-27-007)
-- TUI tag usage counts include Conformance Case tags (WI-2026-07-27-007)
-- Status reports rejected ADRs and totals for verification guards and releases (WI-2026-07-27-009)
-- Conformance Case creation and editing validate the target, locator uniqueness, and direct dependencies without being blocked by unrelated project diagnostics (WI-2026-07-27-010)
-- Conformance Case deletion checks governed referrers without being blocked by unrelated project diagnostics (WI-2026-07-27-010)
-- Unknown root and nested edit fields report valid fields for the applicable resource or path level (WI-2026-07-27-011)
-- Unsupported edit operations report the addressed path and its permitted operations (WI-2026-07-27-011)
+- Project discovery, explicit configuration, and forced initialization no longer
+  fall through to an ancestor project when local governance state is incomplete
+  or incompatible.
+- RFC loading, Clause loading, and amendment signatures now cover every stored
+  Clause while rejecting dangling and storage-escaping paths.
+- Artifact creation, deletion, migration, and dry-run paths perform equivalent
+  validation and preserve prior state when a multi-file operation fails.
+- Conformance Case mutations validate the target and direct dependencies
+  without making unrelated invalid Cases impossible to repair.
+- Invalid edit paths now list valid fields, and unsupported operations identify
+  the permitted operations for the addressed path.
+- TUI filtering, lifecycle styling, navigation hints, search navigation, and
+  narrow-layout rendering now remain consistent across supported resources.
 
 ### Security
 
-- Loading an RFC or Clause rejects Clause storage that resolves outside its containing RFC directory (WI-2026-07-26-011)
-- RFC creation rejects invalid or path-traversing explicit IDs and exhausted automatic numbering before filesystem mutation (WI-2026-07-26-012)
-- Clause creation rejects storage paths that resolve outside the containing RFC directory (WI-2026-07-26-012)
+- RFC and Clause creation and loading reject path traversal and any Clause
+  storage that resolves outside its containing RFC directory before mutation.
+
+### Upgrade Notes
+
+- Run `govctl migrate` to upgrade a schema version 3 repository to schema
+  version 4, then run `govctl check`.
+- Repositories below schema version 3 must first be upgraded with a compatible
+  earlier govctl release. Legacy RFC or Clause JSON storage is now rejected
+  explicitly instead of being ignored.
+- Replace removed mutation aliases and storage-layout paths with
+  `govctl <resource> edit <id> <path> <operation>`. Clause operations always use
+  the root `govctl clause` namespace.
 
 ## [0.14.2] - 2026-07-25
 
