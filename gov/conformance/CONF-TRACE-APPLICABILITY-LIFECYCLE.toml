@@ -7,7 +7,7 @@ title = "Trace applicability lifecycle"
 [case]
 path = "tests/test_conformance.rs"
 selector = "trace_applicability_tracks_rfc_and_clause_lifecycle_without_blocking_transitions"
-guards = ["GUARD-CARGO-TEST"]
+guards = ["GUARD-CONFORMANCE-TESTS"]
 
 [[case.requirements]]
 ref = "RFC-0008:C-TRACE-QUERY"

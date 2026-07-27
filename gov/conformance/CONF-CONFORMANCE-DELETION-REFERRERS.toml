@@ -7,7 +7,7 @@ title = "Conformance deletion referrers"
 [case]
 path = "tests/test_conformance.rs"
 selector = "clause_and_guard_deletion_report_conformance_case_referrers"
-guards = ["GUARD-CARGO-TEST"]
+guards = ["GUARD-CONFORMANCE-TESTS"]
 
 [[case.requirements]]
 ref = "RFC-0008:C-TRACEABILITY"

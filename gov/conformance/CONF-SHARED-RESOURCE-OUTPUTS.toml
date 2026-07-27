@@ -7,7 +7,7 @@ title = "Shared resource output contracts"
 [case]
 path = "tests/test_conformance.rs"
 selector = "conformance_read_outputs_and_string_list_removal_follow_shared_contracts"
-guards = ["GUARD-CARGO-TEST"]
+guards = ["GUARD-CONFORMANCE-TESTS"]
 
 [[case.requirements]]
 ref = "RFC-0008:C-COMMAND-SURFACE"

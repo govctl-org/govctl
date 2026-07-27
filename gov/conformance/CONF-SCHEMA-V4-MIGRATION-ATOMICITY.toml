@@ -7,7 +7,7 @@ title = "Schema v4 migration atomicity"
 [case]
 path = "tests/test_conformance.rs"
 selector = "schema_three_requires_atomic_migration_for_prospective_cases"
-guards = ["GUARD-CARGO-TEST"]
+guards = ["GUARD-CONFORMANCE-TESTS"]
 
 [[case.requirements]]
 ref = "RFC-0008:C-CONFORMANCE-CASE"

@@ -15,13 +15,14 @@ refs = [
     "RFC-0008:C-TRACE-QUERY",
     "RFC-0002:C-COMPATIBILITY-BOUNDARY",
     "RFC-0002:C-OUTPUT-FORMAT",
+    "RFC-0000:C-GUARD-DEF",
 ]
 
 [content]
 description = "Establish a representative set of repository-owned Conformance Cases over existing integration scenarios so the project exercises its own declared traceability workflow before the next release."
 
 [[content.acceptance_criteria]]
-text = "Repository Conformance Cases bind representative integration scenarios to their governing RFC versions and GUARD-CARGO-TEST"
+text = "Repository Conformance Cases bind representative integration scenarios to their governing RFC versions and the suite-scoped GUARD-CONFORMANCE-TESTS"
 status = "done"
 category = "added"
 
@@ -34,3 +35,6 @@ category = "added"
 text = "Project validation and the existing integration suite pass with the repository-owned Cases present"
 status = "done"
 category = "chore"
+
+[verification]
+required_guards = ["GUARD-CONFORMANCE-TESTS"]
