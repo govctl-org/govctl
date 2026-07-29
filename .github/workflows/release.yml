@@ -18,7 +18,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -82,7 +82,7 @@ jobs:
           } > release-notes.md
 
       - name: Upload release notes
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-notes
           path: release-notes.md
@@ -90,7 +90,7 @@ jobs:
 
   # Build binaries for all platforms
   build:
-    name: Build ${{ matrix.target }}${{ matrix.suffix }}
+    name: Build ${{ matrix.target }}
     needs: verify
     runs-on: ${{ matrix.os }}
     strategy:
@@ -116,7 +116,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -150,7 +150,7 @@ jobs:
 
           cd dist
           tar -czvf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
-          echo "ASSET=${ARCHIVE_NAME}.tar.gz" >> $GITHUB_ENV
+          echo "ASSET=${ARCHIVE_NAME}.tar.gz" >> "$GITHUB_ENV"
 
       - name: Prepare artifacts (Windows)
         if: runner.os == 'Windows'
@@ -167,7 +167,7 @@ jobs:
           echo "ASSET=${ARCHIVE_NAME}.zip" >> $env:GITHUB_ENV
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ env.ASSET }}
           path: dist/${{ env.ASSET }}
@@ -183,10 +183,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
       - name: Download all artifacts
-        uses: actions/download-artifact@v7
+        uses: actions/download-artifact@v8
         with:
           path: artifacts
           merge-multiple: true
@@ -195,10 +195,10 @@ jobs:
         run: ls -la artifacts/
 
       - name: Extract version
-        run: echo "VERSION=v${{ needs.verify.outputs.version }}" >> $GITHUB_ENV
+        run: echo "VERSION=v${{ needs.verify.outputs.version }}" >> "$GITHUB_ENV"
 
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           name: ${{ env.VERSION }}
           draft: false
