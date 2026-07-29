@@ -234,6 +234,7 @@ Add closure-worthy durable notes for constraints or retry rules that should rema
 
 ```bash
 govctl work edit WI-2026-01-17-001 notes --add "Do not retry the old validation path; it fails on missing refs"
+govctl work edit WI-2026-01-17-001 notes[0] --set "Retry only after the referenced RFC is normative"
 ```
 
 Do not use notes for progress updates, commands run, validation output, current plans, next actions, temporary blockers, or TODOs. Put transient execution trace in local loop state and round artifacts instead.

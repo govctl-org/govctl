@@ -5,6 +5,7 @@ use super::doc_target::{set_clause_field, set_rfc_field};
 use super::engine as edit_engine;
 use super::path::FieldPath;
 use super::rules as edit_rules;
+use super::tags::validate_tag_edit;
 use super::toml_target::{set_toml_field, set_work_toml_field};
 use super::{ArtifactType, plan_mutation_target};
 use crate::config::Config;
@@ -36,6 +37,7 @@ pub(super) fn apply_set_field(
         reject_verb_owned_set(artifact, fp, id)?;
         target.ensure_supports(edit_rules::Verb::Set, id)?;
     }
+    validate_tag_edit(config, target, value, id)?;
     // Implements [[ADR-0042]]: block setting `decision` without complete alternatives
     if artifact == ArtifactType::Adr && fp.as_simple() == Some("decision") {
         crate::cmd::lifecycle::validate_adr_completeness(config, id)?;

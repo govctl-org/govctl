@@ -294,3 +294,35 @@ fn test_indexed_target_combines_item_and_container_operations()
     );
     Ok(())
 }
+
+#[test]
+fn test_indexed_set_support_follows_list_item_shape() -> Result<(), Box<dyn std::error::Error>> {
+    for (id, path) in [
+        ("RFC-0001", "owners[0]"),
+        ("RFC-0001", "changelog.fixed[0]"),
+        ("ADR-0001", "alternatives[0].pros[0]"),
+        ("WI-2026-01-01-001", "notes[0]"),
+        ("WI-2026-01-01-001", "verification.required_guards[0]"),
+    ] {
+        let target = plan_mutation_request(id, path, Verb::Set)?
+            .target
+            .ok_or("mutation target should exist")?;
+        target.ensure_supports(Verb::Set, id)?;
+    }
+
+    for (id, path) in [
+        ("ADR-0001", "alternatives[0]"),
+        ("WI-2026-01-01-001", "acceptance_criteria[0]"),
+        ("WI-2026-01-01-001", "verification.waivers[0]"),
+        ("CONF-CASE", "requirements[0]"),
+    ] {
+        let target = plan_mutation_request(id, path, Verb::Set)?
+            .target
+            .ok_or("mutation target should exist")?;
+        assert!(
+            target.ensure_supports(Verb::Set, id).is_err(),
+            "structured list item should reject indexed set: {path}"
+        );
+    }
+    Ok(())
+}

@@ -24,10 +24,8 @@ Each resource MUST support these paths and operations:
 | ADR | `alternatives` | `--add`, `--remove`, `--tick` |
 | ADR | `alternatives[i].text`, `alternatives[i].rejection_reason` | `--set` |
 | ADR | `alternatives[i].pros`, `alternatives[i].cons` | `--add`, `--remove` |
-| ADR | `alternatives[i].pros[j]`, `alternatives[i].cons[j]` | `--set`, `--remove` |
 | Work Item | `title`, `description` | `--set` |
 | Work Item | `refs`, `depends_on`, `tags`, `notes` | `--add`, `--remove` |
-| Work Item | `notes[i]` | `--set`, `--remove` |
 | Work Item | `acceptance_criteria` | `--add`, `--remove`, `--tick` |
 | Work Item | `acceptance_criteria[i].text`, `acceptance_criteria[i].category` | `--set` |
 | Work Item | `verification.required_guards` | `--add`, `--remove` |
@@ -42,11 +40,14 @@ Each resource MUST support these paths and operations:
 | Conformance Case | `requirements[i]` | `--remove` |
 | Conformance Case | `requirements[i].version` | `--set` |
 
+Every listed list path whose items are scalar values also defines an indexed `<list-path>[i]` path supporting `--set` and `--remove`. Indexed scalar replacement MUST replace exactly one item in place, preserve the list length and item position, and apply before persistence the same value and reference validation as `--add` on the owning list. Structured list items MUST NOT inherit direct `--set`; their listed child paths remain the only scalar replacement surface.
+
 For Conformance Case `requirements`, `--remove` MUST select either one exact `<CLAUSE-ID>@<VERSION>` value or one indexed path. `--regex` and `--all` MUST be rejected for this object-valued, non-empty list.
 
 List selection MUST use only these canonical forms:
 
 ```
+govctl <resource> edit <id> <scalar-list-path>[<index>] --set <value>
 govctl <resource> edit <id> <list-path>[<index>] --remove
 govctl <resource> edit <id> <list-path> --remove <exact-value>
 govctl <resource> edit <id> <list-path> --remove <pattern> --regex
@@ -62,4 +63,4 @@ The logical Guard paths `command`, `timeout_secs`, and `pattern` map to persiste
 
 **Rationale:**
 
-A closed list gives scripts and agents one discoverable interface and makes removal of aliases testable. Logical paths keep the command contract independent of TOML table layout while lifecycle and verification commands retain ownership of constrained transitions."""
+A closed list gives scripts and agents one discoverable interface and makes removal of aliases testable. Uniform indexed replacement gives scalar lists one predictable correction operation without exposing structured item replacement. Logical paths keep the command contract independent of TOML table layout while lifecycle and verification commands retain ownership of constrained transitions."""

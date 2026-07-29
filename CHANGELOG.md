@@ -10,6 +10,30 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-07-29
+
+0.16.0 makes indexed scalar-list editing uniform across the canonical `edit`
+surface and closes validation gaps discovered while exercising that contract.
+
+### Changed
+
+- Canonical scalar-list items can now be replaced in place with
+  `<list-path>[<index>] --set <value>`. Replacement preserves list length and
+  position; structured list items still require an explicitly listed child
+  path.
+- RFC changelog categories and Work Item required Guards now support the same
+  indexed replacement model as owners, references, tags, notes, and ADR
+  pros/cons.
+- The edit capability build now rejects mutable nested scalar-list definitions
+  that omit indexed replacement support.
+
+### Fixed
+
+- Fixed indexed replacement for Work Item notes and other nested scalar lists;
+  these paths previously passed command planning but failed during mutation.
+- Indexed tag replacement now rejects unregistered values before writing the
+  artifact, matching the validation applied by `--add`.
+
 ## [0.15.0] - 2026-07-27
 
 0.15.0 introduces first-class Conformance Cases for tracing versioned RFC

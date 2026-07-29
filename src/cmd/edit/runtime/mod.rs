@@ -12,7 +12,7 @@ pub use self::list::{
 };
 pub use nested::{
     add_nested_list_value, get_nested_field, get_nested_value, remove_nested_list_values,
-    set_nested_field, set_nested_list_item, tick_nested_list_item_with_matcher,
+    set_nested_field, tick_nested_list_item_with_matcher,
 };
 
 use self::mutate::{apply_set, ensure_value_path_mut};

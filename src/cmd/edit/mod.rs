@@ -19,6 +19,7 @@ mod request;
 pub mod rules;
 pub mod runtime;
 mod set;
+mod tags;
 mod target_doc;
 mod target_doc_remove;
 mod tick;

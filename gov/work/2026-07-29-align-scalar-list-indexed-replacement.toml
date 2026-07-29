@@ -1,0 +1,41 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-29-003"
+title = "Align scalar-list indexed replacement"
+status = "done"
+created = "2026-07-29"
+started = "2026-07-29"
+completed = "2026-07-29"
+refs = ["RFC-0002:C-EDIT-FIELD-CONTRACT"]
+
+[content]
+description = "Align the canonical scalar-list replacement contract, edit capabilities, prospective validation, and regression coverage."
+
+[[content.acceptance_criteria]]
+text = "Canonical contract defines indexed replacement for scalar-valued list items"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Canonical nested scalar-list items support in-place indexed replacement"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Indexed tag replacement rejects unregistered values before persistence"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Integration coverage verifies allowed scalar replacement and structured-list rejection"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "User guide documents in-place indexed replacement for scalar list items"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

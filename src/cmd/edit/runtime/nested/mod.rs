@@ -3,8 +3,7 @@ mod render;
 mod traverse;
 
 pub use self::list::{
-    add_nested_list_value, remove_nested_list_values, set_nested_list_item,
-    tick_nested_list_item_with_matcher,
+    add_nested_list_value, remove_nested_list_values, tick_nested_list_item_with_matcher,
 };
 use self::render::render_nested_node;
 use self::traverse::{descend_get, descend_mut, ensure_node_path_mut};

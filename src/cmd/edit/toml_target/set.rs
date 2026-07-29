@@ -102,6 +102,7 @@ where
         },
         edit_engine::ResolvedTarget::IndexedItem {
             origin,
+            path,
             container_path,
             index,
             item_kind: edit_engine::TargetKind::Scalar,
@@ -114,14 +115,7 @@ where
                 edit_runtime::set_simple_list_item(artifact, &mut doc, simple, *index, value, id)?;
             }
             edit_engine::TargetOrigin::Nested => {
-                edit_runtime::set_nested_list_item(
-                    artifact,
-                    &mut doc,
-                    container_path,
-                    *index,
-                    value,
-                    id,
-                )?;
+                edit_runtime::set_nested_field(artifact, &mut doc, path, value, id)?;
             }
         },
         _ => {

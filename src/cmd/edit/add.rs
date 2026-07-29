@@ -6,6 +6,7 @@ use super::doc_target::{add_doc_simple_list_field, rfc_changelog};
 use super::engine as edit_engine;
 use super::refs::{is_refs_target, validate_ref_edit};
 use super::rules as edit_rules;
+use super::tags::validate_tag_edit;
 use super::target_doc::add_to_target_doc;
 use super::toml_target::{is_work_dependency_target, validate_work_dependency_edit};
 use super::{ArtifactType, deserialize_edit_doc, plan_mutation_target, serialize_edit_doc};
@@ -112,10 +113,8 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
     let target = &plan.target;
     target.ensure_supports(edit_rules::Verb::Add, id)?;
 
-    // Validate tags against controlled vocabulary at add time — [[RFC-0002:C-RESOURCES]]
-    if fp.as_simple() == Some("tags") {
-        crate::cmd::tag::validate_registered_tag(config, value, id)?;
-    }
+    // [[RFC-0002:C-EDIT-FIELD-CONTRACT]] requires equivalent add/set validation.
+    validate_tag_edit(config, target, value, id)?;
     if is_refs_target(target) {
         validate_ref_edit(config, artifact, id, value)?;
     }

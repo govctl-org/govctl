@@ -278,6 +278,9 @@ govctl rfc edit RFC-0010 title --set "Updated title"
 # Add to an array
 govctl adr edit ADR-0003 refs --add RFC-0010
 
+# Replace a scalar list item in place
+govctl rfc edit RFC-0010 owners[0] --set "@new-owner"
+
 # Remove by index
 govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --remove
 

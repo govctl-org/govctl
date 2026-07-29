@@ -39,6 +39,33 @@ fn test_work_set_title() -> common::TestResult {
 }
 
 #[test]
+fn test_work_set_indexed_note() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let id = first_work_id(&date);
+
+    common::run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Test Task"),
+            work_add_field(&id, "notes", "original note"),
+            work_add_field(&id, "notes", "untouched note"),
+        ],
+    )?;
+
+    let output = common::run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_set_field(&id, "notes[0]", "replacement note"),
+            work_get_field(&id, "notes"),
+        ],
+    )?;
+    assert!(output.contains("replacement note"), "output: {output}");
+    assert!(output.contains("untouched note"), "output: {output}");
+    assert!(!output.contains("original note"), "output: {output}");
+    Ok(())
+}
+
+#[test]
 fn test_work_get_falls_back_to_partial_filename_starting_with_wi() -> common::TestResult {
     let temp_dir = init_project()?;
     std::fs::write(

@@ -232,6 +232,46 @@ fn test_rfc_edit_set_owner_by_index_canonical() -> common::TestResult {
 }
 
 #[test]
+fn test_rfc_indexed_tag_set_validates_before_persistence() -> common::TestResult {
+    let temp_dir = init_project()?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["rfc", "new", "Test RFC"],
+            &["tag", "new", "original"],
+            &["tag", "new", "replacement"],
+            &["rfc", "edit", "RFC-0001", "tags", "--add", "original"],
+            &["rfc", "edit", "RFC-0001", "tags[0]", "--set", "replacement"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "tags[0]",
+                "--set",
+                "unregistered",
+            ],
+            &["rfc", "get", "RFC-0001", "tags"],
+        ],
+    )?;
+
+    assert!(
+        output.contains("Set RFC-0001.tags[0] = replacement"),
+        "output: {output}"
+    );
+    assert!(output.contains("error[E1105]"), "output: {output}");
+    assert!(
+        output.contains("$ govctl rfc get RFC-0001 tags\nreplacement"),
+        "output: {output}"
+    );
+    assert!(
+        !output.contains("Set RFC-0001.tags[0] = unregistered"),
+        "output: {output}"
+    );
+    Ok(())
+}
+
+#[test]
 fn test_rfc_set_nonexistent_field() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
@@ -349,14 +389,22 @@ fn test_rfc_current_changelog_edit_resolves_by_version_and_preserves_lifecycle_f
                 "--add",
                 "Second fix",
             ],
-            &["rfc", "edit", "RFC-0001", "changelog.fixed[0]", "--remove"],
+            &[
+                "rfc",
+                "edit",
+                "RFC-0001",
+                "changelog.fixed[0]",
+                "--set",
+                "Corrected first fix",
+            ],
+            &["rfc", "edit", "RFC-0001", "changelog.fixed[1]", "--remove"],
             &["rfc", "get", "RFC-0001", "changelog", "--output", "json"],
         ],
     )?;
 
     assert!(output.contains("\"summary\": \"Corrected summary\""));
-    assert!(output.contains("\"Second fix\""));
-    assert!(!output.contains("\"First fix\""));
+    assert!(output.contains("\"Corrected first fix\""));
+    assert!(!output.contains("\"Second fix\""));
 
     let after: toml::Value = toml::from_str(&std::fs::read_to_string(&rfc_path)?)?;
     for field in ["version", "phase", "signature"] {
@@ -376,7 +424,7 @@ fn test_rfc_current_changelog_edit_resolves_by_version_and_preserves_lifecycle_f
             .as_array()
             .and_then(|items| items.first())
             .and_then(toml::Value::as_str),
-        Some("Second fix")
+        Some("Corrected first fix")
     );
     Ok(())
 }

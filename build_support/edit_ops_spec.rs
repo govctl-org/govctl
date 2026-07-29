@@ -110,6 +110,7 @@ pub(super) fn load_edit_ops_spec(
     validate_spec_against_schema(&schema_value, &spec_value)?;
     let spec: EditOpsSpec = serde_json::from_value(spec_value)?;
     validate_runtime_fields(&spec)?;
+    validate_nested_scalar_list_items(&spec)?;
     Ok(spec)
 }
 
@@ -166,6 +167,43 @@ fn validate_runtime_fields(spec: &EditOpsSpec) -> Result<(), Box<dyn Error>> {
                 key
             )
             .into());
+        }
+    }
+    Ok(())
+}
+
+fn validate_nested_scalar_list_items(spec: &EditOpsSpec) -> Result<(), Box<dyn Error>> {
+    for root in &spec.nested_rules {
+        validate_nested_scalar_list_node(&root.node, &format!("{}:{}", root.artifact, root.root))?;
+    }
+    Ok(())
+}
+
+fn validate_nested_scalar_list_node(
+    node: &NestedNodeRule,
+    path: &str,
+) -> Result<(), Box<dyn Error>> {
+    match node {
+        NestedNodeRule::Scalar { .. } => {}
+        NestedNodeRule::Object { fields, .. } => {
+            for field in fields {
+                validate_nested_scalar_list_node(&field.node, &format!("{path}.{}", field.name))?;
+            }
+        }
+        NestedNodeRule::List { verbs, item, .. } => {
+            if let NestedNodeRule::Scalar {
+                verbs: item_verbs, ..
+            } = item.as_ref()
+            {
+                let mutable = verbs.iter().any(|verb| verb == "add" || verb == "remove");
+                if mutable && !item_verbs.iter().any(|verb| verb == "set") {
+                    return Err(format!(
+                        "mutable scalar-list item is missing set capability: {path}"
+                    )
+                    .into());
+                }
+            }
+            validate_nested_scalar_list_node(item, &format!("{path}[]"))?;
         }
     }
     Ok(())

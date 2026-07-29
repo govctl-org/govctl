@@ -10,6 +10,11 @@ fn work_edit_remove_required_guard(id: &str, guard: &str) -> Vec<String> {
     command(&["work", "edit", id, REQUIRED_GUARDS, "--remove", guard])
 }
 
+fn work_edit_set_required_guard(id: &str, index: usize, guard: &str) -> Vec<String> {
+    let field = format!("{REQUIRED_GUARDS}[{index}]");
+    command(&["work", "edit", id, &field, "--set", guard])
+}
+
 fn work_edit_set_waiver_reason(id: &str, index: usize, reason: &str) -> Vec<String> {
     let field = format!("verification.waivers[{index}].reason");
     command(&["work", "edit", id, &field, "--set", reason])
@@ -25,6 +30,7 @@ fn test_work_edit_required_guards_add_get_remove() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let id = first_work_id(&date);
     common::write_guard(temp_dir.path(), "GUARD-EDIT", "true")?;
+    common::write_guard(temp_dir.path(), "GUARD-REPLACEMENT", "true")?;
 
     let output = common::run_dynamic_commands(
         temp_dir.path(),
@@ -32,7 +38,9 @@ fn test_work_edit_required_guards_add_get_remove() -> common::TestResult {
             work_new("Guarded Task"),
             work_edit_add_required_guard(&id, "GUARD-EDIT"),
             work_get_field(&id, REQUIRED_GUARDS),
-            work_edit_remove_required_guard(&id, "GUARD-EDIT"),
+            work_edit_set_required_guard(&id, 0, "GUARD-REPLACEMENT"),
+            work_get_field(&id, REQUIRED_GUARDS),
+            work_edit_remove_required_guard(&id, "GUARD-REPLACEMENT"),
             work_get_field(&id, REQUIRED_GUARDS),
         ],
     )?;
@@ -53,7 +61,21 @@ fn test_work_edit_required_guards_add_get_remove() -> common::TestResult {
     );
     assert!(
         output.contains(&format!(
-            "Removed 'GUARD-EDIT' from {id}.verification.required_guards"
+            "Set {id}.verification.required_guards[0] = GUARD-REPLACEMENT"
+        )),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains(&format!(
+            "$ govctl work get {id} verification.required_guards\nGUARD-REPLACEMENT"
+        )),
+        "output: {}",
+        output
+    );
+    assert!(
+        output.contains(&format!(
+            "Removed 'GUARD-REPLACEMENT' from {id}.verification.required_guards"
         )),
         "output: {}",
         output

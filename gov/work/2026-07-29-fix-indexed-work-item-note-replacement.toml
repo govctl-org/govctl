@@ -1,0 +1,26 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-29-001"
+title = "Fix indexed Work Item note replacement"
+status = "done"
+created = "2026-07-29"
+started = "2026-07-29"
+completed = "2026-07-29"
+refs = ["RFC-0002:C-EDIT-FIELD-CONTRACT"]
+
+[content]
+description = "Restore indexed Work Item note replacement and cover the RFC-defined edit behavior with an integration test."
+
+[[content.acceptance_criteria]]
+text = "Replacing notes[N] updates only the selected Work Item note"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Integration coverage verifies indexed note replacement and persisted output"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

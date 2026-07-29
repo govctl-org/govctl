@@ -27,11 +27,11 @@ Option A Revised
 exit: 0
 
 $ govctl adr edit ADR-0001 alternatives[0].pros[0] --set Very fast
-error[E0817]: Path does not support verb 'set' (ADR-0001)
-exit: 1
+Set ADR-0001.alternatives[0].pros[0] = Very fast
+exit: 0
 
 $ govctl adr get ADR-0001 alternatives[0].pros[0]
-Fast
+Very fast
 exit: 0
 
 $ govctl adr edit ADR-0001 alternatives[0].rejection_reason --set Superseded by Option B

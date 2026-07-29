@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "2.1.0"
+version = "2.2.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-27"
+updated = "2026-07-29"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "7cbe44295116244b23a5ac3bab41c700895da6e3f0bff6f8cfc13a5615b5ea62"
+signature = "edd8c1e14485390c6a990d9f0f2dd422ba4b68938e99560abed4a0154d25f5c5"
 
 [[sections]]
 title = "Summary"
@@ -43,6 +43,13 @@ clauses = [
 [[sections]]
 title = "Global Commands"
 clauses = ["clauses/C-DESCRIBE-COMMAND.toml"]
+
+[[changelog]]
+version = "2.2.0"
+date = "2026-07-29"
+notes = "Define uniform indexed replacement for scalar-valued lists"
+added = ["Define in-place indexed replacement for canonical scalar-list paths"]
+fixed = ["Require replacement values to pass owning-list validation before persistence"]
 
 [[changelog]]
 version = "2.1.0"

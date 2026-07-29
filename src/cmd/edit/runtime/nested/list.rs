@@ -6,7 +6,7 @@ use super::super::support::{
 use super::resolve_nested_root;
 use super::traverse::{default_value_for_node, descend_mut, ensure_node_path_mut};
 use crate::cmd::edit::ArtifactType;
-use crate::cmd::edit::path::{self, FieldPath};
+use crate::cmd::edit::path::FieldPath;
 use crate::cmd::edit::rules::{NestedNodeKind, NestedNodeRule, Verb, nested_status_list_spec};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use serde_json::Value;
@@ -203,32 +203,6 @@ fn list_item_text(
             status_list_text(item, text_key, id).map(str::to_string)
         }
         NestedNodeKind::List => Err(type_mismatch("Expected scalar or object items in list", id)),
-    }
-}
-
-pub fn set_nested_list_item(
-    artifact: ArtifactType,
-    doc: &mut Value,
-    fp: &FieldPath,
-    index: i32,
-    value: &str,
-    id: &str,
-) -> DiagnosticResult<()> {
-    let NestedListTarget {
-        item_rule, list, ..
-    } = nested_list_target_mut(artifact, doc, fp, Verb::Set, id, None)?;
-    let resolved = path::resolve_index(index, list.len())?;
-    match item_rule.kind {
-        NestedNodeKind::Scalar => {
-            list[resolved] = Value::String(value.to_string());
-            Ok(())
-        }
-        NestedNodeKind::Object => Err(Diagnostic::new(
-            DiagnosticCode::E0817PathTypeMismatch,
-            format!("Cannot set object path '{}[{}]' directly", fp, index),
-            id,
-        )),
-        NestedNodeKind::List => Err(type_mismatch("Expected scalar list item", id)),
     }
 }
 
