@@ -1,0 +1,20 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-IGNORE-MIGRATION"
+title = "Ignore Configuration Migration"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+Project schema version 5 MUST establish the source-selection and ignore contract in this RFC. Normal project commands other than `govctl migrate` that load a version 4 project MUST reject the project without mutation and instruct the user to run `govctl migrate`. Project-independent commands MUST NOT require repository migration. Migration from version 4 to version 5 MUST follow the transactional and dry-run behavior in [[RFC-0002:C-GLOBAL-COMMANDS]].
+
+The version 5 configuration MUST remove `source_scan.exclude`. When that legacy list is non-empty, migration MUST place each entry as one root `.govignore` rule, preserving array order and placing the migrated rules before any pre-existing `.govignore` content. A leading `!` or `#` that was a literal character in a legacy entry MUST be escaped when written as an ignore-file rule. A legacy entry containing a carriage return or line feed MUST cause migration to fail without mutation and identify that entry.
+
+Pre-existing `.govignore` content MUST remain byte-for-byte unchanged after the inserted migration block. The version 5 source-scan migration step MUST NOT modify `.gitignore`; independent project-support synchronization required by [[RFC-0002:C-GLOBAL-COMMANDS]] MAY modify `.gitignore` in the same `govctl migrate` invocation.
+
+Migrated entries adopt Git gitignore matching semantics in version 5. Migration MUST NOT claim that their match sets remain identical to the legacy glob matcher. `govctl migrate --dry-run` MUST show the resulting configuration and `.govignore` changes before they are applied.
+
+When the legacy list is empty, migration MUST remove the field without creating `.govignore`. A version 5 project without a `.govignore` file MUST be valid and MUST behave as though it has no governance-specific ignore rules. A version 5 configuration that contains `source_scan.exclude` MUST be rejected without mutation, and the diagnostic MUST identify the unsupported field."""

@@ -1,0 +1,40 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0059"
+title = "Use project-root selection with layered ignore rules"
+status = "accepted"
+date = "2026-07-30"
+refs = [
+    "RFC-0009",
+    "ADR-0009",
+]
+tags = ["validation"]
+
+[content]
+context = "[[ADR-0009]] selected source files through configured roots and extensions. Large repositories exposed the cost of enumerating excluded subtrees before applying exclusions, while users also needed familiar precedence and re-inclusion semantics across project defaults and governance-specific overrides. [[RFC-0009]] defines the replacement selection contract."
+decision = "Replace [[ADR-0009]] with project-root traversal constrained by positive include patterns and layered gitignore-compatible ignore files. This direction was chosen because it applies exclusion during traversal and gives projects one established rule model for baseline and governance-specific selection."
+consequences = "Positive: excluded subtrees can be pruned before enumeration, and repository conventions remain reusable. Negative: selection behavior spans configuration plus ignore files, so debugging precedence requires considering both. Replacing roots, extensions, and exclusions changes the schema and can change the selected file set; [[RFC-0009:C-IGNORE-MIGRATION]] owns that compatibility boundary. Neutral: source-reference extraction and validation remain separate from file selection."
+
+[[content.alternatives]]
+text = "Walk the project root using positive include patterns and layered gitignore-compatible rules."
+status = "accepted"
+pros = [
+    "Prunes irrelevant directories before enumeration.",
+    "Reuses a familiar precedence and re-inclusion model.",
+]
+cons = ["Selection now depends on ordered ignore files in addition to configuration."]
+
+[[content.alternatives]]
+text = "Retain configured roots and extensions while applying layered gitignore-compatible rules during traversal."
+status = "rejected"
+pros = ["Keeps explicit coarse traversal bounds and reduces configuration migration."]
+cons = ["Maintains separate roots, extensions, positive selection, and ignore concepts for one file-selection decision."]
+rejection_reason = "Traversal-time pruning solves the performance issue, but retaining independent roots and extension axes adds configuration surface that positive path patterns already express."
+
+[[content.alternatives]]
+text = "Use project-root positive include patterns with a dedicated .govignore only."
+status = "rejected"
+pros = ["Keeps governance selection isolated from Git configuration."]
+cons = ["Duplicates repository-wide exclusions and lets source scanning drift from established project boundaries."]
+rejection_reason = "Reusing .gitignore as a baseline avoids duplicating the dominant repository exclusion policy while .govignore remains an explicit override layer."

@@ -1,0 +1,45 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-29-004"
+title = "Adopt gitignore-compatible source scanning"
+status = "done"
+created = "2026-07-29"
+started = "2026-07-29"
+completed = "2026-07-30"
+refs = [
+    "RFC-0002",
+    "RFC-0009",
+    "ADR-0059",
+]
+
+[content]
+description = "Replace post-walk source exclusions with pruned ignore-aware traversal, migrate schema 4 source-scan configuration to schema 5, and update the associated tests and guidance under the governing RFCs."
+
+[[content.acceptance_criteria]]
+text = "Select source files through positive include patterns and merged .gitignore/.govignore traversal with excluded-directory pruning"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Migrate schema 4 source_scan.exclude entries into root .govignore rules and establish schema 5 configuration"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Report invalid include rules, reached ignore-file failures, unpruned traversal failures, and selected-file read or decoding failures without following symbolic links"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Cover ignore precedence, re-inclusion, pruning, migration, and dry-run behavior with focused tests"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Update configuration examples, user documentation, and bundled agent guidance for schema 5 source scanning"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

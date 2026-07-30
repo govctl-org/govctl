@@ -1,0 +1,20 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-TRAVERSAL"
+title = "Traversal and Pruning"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+The final ignore decision for a reached directory MUST be evaluated before enumerating its child entries. When the final decision excludes a directory, source traversal MUST prune the directory without enumerating its descendants.
+
+A re-inclusion that targets a descendant of an excluded directory MUST have no effect unless every excluded ancestor is also re-included by rules available from reached directories. Ignore files beneath a pruned directory MUST NOT be read and MUST NOT re-include that directory or its descendants.
+
+Source traversal MUST NOT follow symbolic links.
+
+While source scanning is enabled, an invalid include rule, an unreadable or invalid ignore file discovered in a reached directory, an error while traversing a directory that was not pruned, or a read or decoding error for a selected regular file MUST produce a validation diagnostic. Source reference validation MUST NOT report success after such an error.
+
+A directory named `.git` MUST be treated as repository metadata and pruned before its child entries are enumerated, regardless of `source_scan.include` or ignore-file rules."""

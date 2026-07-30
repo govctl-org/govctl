@@ -302,7 +302,7 @@ requirements = [{ ref = "RFC-0001:C-REQ", version = "0.1.0" }]
             .join("gov/conformance/CONF-EXISTING.toml")
             .exists()
     );
-    assert!(fs::read_to_string(temp_dir.path().join("gov/config.toml"))?.contains("version = 4"));
+    assert!(fs::read_to_string(temp_dir.path().join("gov/config.toml"))?.contains("version = 5"));
     Ok(())
 }
 

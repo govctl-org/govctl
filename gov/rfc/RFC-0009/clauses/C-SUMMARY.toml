@@ -1,0 +1,11 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SUMMARY"
+title = "Source Scan Model"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = "Source reference scanning has two independent path-selection layers. The source-scan include list defines the positive scan domain. Repository `.gitignore` files and governance-specific `.govignore` files define traversal exclusions and explicit re-inclusions. Keeping these layers separate lets projects reuse established ignore policy, override it for governance evidence, and avoid enumerating excluded directory trees."

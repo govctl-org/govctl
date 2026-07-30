@@ -1,0 +1,34 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-30-002"
+title = "Make validation line-ending independent"
+status = "done"
+created = "2026-07-30"
+started = "2026-07-30"
+completed = "2026-07-30"
+refs = [
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "ADR-0003",
+]
+
+[content]
+description = "Make bundled-schema freshness checks and deterministic RFC projection signatures insensitive to repository line-ending conversion, preserving cross-platform validation under [[RFC-0002:C-GLOBAL-COMMANDS]] and [[ADR-0003]]."
+
+[[content.acceptance_criteria]]
+text = "Bundled schema freshness validation treats LF and CRLF copies as equivalent"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Deterministic RFC signatures are identical for semantically equivalent LF and CRLF source text"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused regression tests and native Windows smoke validation pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

@@ -251,8 +251,14 @@ a new version lifecycle:
 # Bump version with changelog entry
 govctl rfc bump RFC-0010 --patch -m "Fix typo in clause C-SCOPE"
 govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
-govctl rfc bump RFC-0010 --major -m "Breaking change to API contract"
+govctl rfc bump RFC-0010 --major -m "Publish the stable 1.0 contract"
 ```
+
+The bump flags select literal SemVer components; they are not remapped impact
+labels. For an RFC at `0.y.z`, use `--minor` for a breaking pre-1.0 amendment
+that starts the next `0.(y+1).0` line, and reserve `--major` for the deliberate
+transition to `1.0.0`. Use `--patch` for amendments that remain compatible
+within the current `0.y` line.
 
 A content-changing bump starts the new version in `spec` only from `impl`, `test`,
 or `stable`. RFC and Clause content can continue changing during that `spec` phase

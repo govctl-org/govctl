@@ -1,0 +1,48 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0060"
+title = "Build releases with Zig and preserve target aliases"
+status = "accepted"
+date = "2026-07-30"
+refs = [
+    "RFC-0002:C-SELF-UPDATE",
+    "ADR-0041",
+    "RFC-0002:C-PRE-1-RELEASE-TARGET-COMPATIBILITY",
+]
+tags = ["release"]
+
+[content]
+context = "[[ADR-0041]] aligned self-update and cargo-binstall with five target-specific assets built on native and cross runners. Cross-built candidates for the six targets now governed by [[RFC-0002:C-PRE-1-RELEASE-TARGET-COMPATIBILITY]] ran successfully on matching native OS and architecture runners during evaluation. The remaining design question is how to produce those binaries and preserve the pre-1.0 target aliases without retaining duplicate toolchains or obscuring canonical compiler provenance."
+decision = "Replace [[ADR-0041]]'s build and distribution choice with one pinned Linux Zig build environment for the canonical targets defined by [[RFC-0002:C-PRE-1-RELEASE-TARGET-COMPATIBILITY]]. Produce each compatibility alias by repackaging its mapped canonical executable rather than compiling a legacy variant. This direction keeps canonical artifact names aligned with compilation targets while confining pre-1.0 compatibility names to the packaging boundary. Because cross-compilation alone does not establish runtime compatibility, retain native OS and architecture coverage as a risk mitigation."
+consequences = "Positive: one build environment reduces runner and toolchain divergence, Linux binaries become portable musl executables, Windows ARM gains a release path, and the RFC-governed aliases preserve pre-1.0 update paths without duplicate builds. Negative: 0.x releases carry four duplicate archives and depend on a pinned Zig container plus an auditable macOS SDK source; native smoke runners remain necessary. Alias filenames describe compatibility identity rather than compiler provenance, which can confuse SBOM, attestation, and debugging consumers; the canonical archive remains the provenance source and byte equality keeps the mapping verifiable. Neutral: macOS target names remain unchanged, and the alias mechanism ends at the RFC's 1.0 boundary."
+
+[[content.alternatives]]
+text = "Build six canonical Zig targets and publish compatibility alias archives from the same binaries."
+status = "accepted"
+pros = [
+    "Preserves old updater and cargo-binstall asset resolution without retaining duplicate toolchains.",
+    "Keeps canonical artifact names truthful to their compilation targets.",
+]
+cons = ["Adds four duplicate archives to every release."]
+
+[[content.alternatives]]
+text = "Replace legacy GNU and MSVC assets with only the new Zig target assets."
+status = "rejected"
+pros = ["Publishes the smallest possible asset set."]
+cons = ["Breaks updates from binaries that still request legacy target names."]
+rejection_reason = "An immutable older updater cannot discover a renamed asset in the latest release, so a one-time bridge release is insufficient for users who skip versions."
+
+[[content.alternatives]]
+text = "Retain the existing native and cross-runner release build matrix."
+status = "rejected"
+pros = ["Preserves the current five asset targets without compatibility packaging."]
+cons = ["Retains divergent toolchains, scarce macOS build usage, and no Windows ARM artifact."]
+rejection_reason = "The spike demonstrated that one pinned Linux build environment can produce all required binaries while native smoke jobs preserve runtime evidence."
+
+[[content.alternatives]]
+text = "Publish only the established GNU and MSVC asset names and map newly built updaters to those distribution identifiers."
+status = "rejected"
+pros = ["Avoids duplicate archives while preserving filenames known to older clients."]
+cons = ["Makes canonical asset names misrepresent the compilation target and requires permanent updater target mapping."]
+rejection_reason = "Keeping truthful canonical target archives makes build provenance inspectable, while temporary duplicate packaging is bounded to pre-1.0 releases by the governing RFC."

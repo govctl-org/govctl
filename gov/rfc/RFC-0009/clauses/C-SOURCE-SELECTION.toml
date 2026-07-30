@@ -1,0 +1,18 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SOURCE-SELECTION"
+title = "Source Selection"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+When `source_scan.enabled` is false, source reference validation MUST NOT enumerate project source paths.
+
+When source reference validation is enabled, a regular file is eligible for content scanning only when its normalized project-relative path matches at least one `source_scan.include` entry and its final ignore decision is not excluded. Normalized paths MUST use `/` as the separator, MUST omit a leading `./`, and MUST be matched case-sensitively on every platform.
+
+Each include entry represents one positive Git gitignore path pattern evaluated from the project root. A leading `/` anchors the pattern to the project root. A pattern with no `/` MUST match at any depth. A trailing `/` MUST select regular-file descendants of a matching directory. An empty entry or an unescaped leading `!` MUST be rejected. Because include entries are configuration values rather than ignore-file lines, a leading `#` MUST be treated as a pattern character rather than a comment marker. Git escaping and wildcard forms, including `*`, `?`, character classes, and `**`, MUST retain their gitignore meanings.
+
+An empty include list MUST select no files. An ignore re-inclusion MUST NOT admit a file that is outside the positive include domain."""

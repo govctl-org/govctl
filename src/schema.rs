@@ -139,7 +139,7 @@ pub fn installed_schema_diagnostics(config: &Config) -> Diagnostics {
         let path = config.schema_dir().join(template.filename);
         let display = config.display_path(&path).display().to_string();
         match std::fs::read_to_string(&path) {
-            Ok(existing) if existing == template.content => {}
+            Ok(existing) if normalized_text_eq(&existing, template.content) => {}
             Ok(_) => diagnostics.push(stale_schema_diagnostic(&display)),
             Err(err) if err.kind() == ErrorKind::NotFound => {
                 diagnostics.push(stale_schema_diagnostic(&display));
@@ -148,6 +148,10 @@ pub fn installed_schema_diagnostics(config: &Config) -> Diagnostics {
         }
     }
     diagnostics
+}
+
+fn normalized_text_eq(left: &str, right: &str) -> bool {
+    left == right || left.replace("\r\n", "\n") == right.replace("\r\n", "\n")
 }
 
 fn stale_schema_diagnostic(display_path: &str) -> Diagnostic {
@@ -249,4 +253,18 @@ fn validate_value(
         ),
         artifact_display,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::normalized_text_eq;
+
+    #[test]
+    fn schema_content_comparison_ignores_crlf_conversion() {
+        assert!(normalized_text_eq(
+            "line one\nline two\n",
+            "line one\r\nline two\r\n"
+        ));
+        assert!(!normalized_text_eq("line one\n", "line two\r\n"));
+    }
 }

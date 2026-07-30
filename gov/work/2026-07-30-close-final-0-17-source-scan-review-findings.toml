@@ -1,0 +1,35 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-30-006"
+title = "Close final 0.17 source scan review findings"
+status = "done"
+created = "2026-07-30"
+started = "2026-07-30"
+completed = "2026-07-30"
+refs = [
+    "RFC-0009:C-TRAVERSAL",
+    "RFC-0009:C-IGNORE-RULES",
+    "RFC-0009:C-REFERENCE-REPORTING",
+]
+
+[content]
+description = "Close the remaining valid source-scan review findings for 0.17 through metadata pruning, occurrence-specific diagnostics, and focused regression coverage."
+
+[[content.acceptance_criteria]]
+text = "Source scanning prunes .git metadata directories before enumerating their contents"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Invalid governed-text pattern matches retain occurrence-specific diagnostic positions"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Tests cover cross-file ignore precedence, symlink non-following, and .git pruning without vacuous scan counts"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

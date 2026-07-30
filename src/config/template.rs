@@ -39,7 +39,8 @@ version = {schema_version}
 # Scan source files for [[artifact-id]] references during `govctl check`
 # enabled = false
 # include = ["src/**/*.rs", "crates/**/*.rs", "**/*.md"]
-# exclude = []
+# Project .gitignore files are applied by default. Add governance-specific
+# exclusions or re-inclusions to .govignore using gitignore syntax.
 
 # [concurrency]
 # Maximum seconds to wait for exclusive lock before failing (default: 30)

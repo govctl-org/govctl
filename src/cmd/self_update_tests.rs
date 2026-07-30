@@ -78,6 +78,17 @@ fn test_invalid_latest_version_errors() {
 }
 
 #[test]
+fn test_usable_github_token_rejects_empty_values() {
+    assert_eq!(usable_github_token(None), None);
+    assert_eq!(usable_github_token(Some(String::new())), None);
+    assert_eq!(usable_github_token(Some(" \t".to_string())), None);
+    assert_eq!(
+        usable_github_token(Some("token".to_string())),
+        Some("token".to_string())
+    );
+}
+
+#[test]
 fn test_unix_archive_bin_path_matches_release_layout() {
     assert_eq!(
         render_bin_path_in_archive("0.8.4", "aarch64-apple-darwin", "govctl"),
@@ -128,36 +139,49 @@ fn test_release_metadata_uses_matching_archive_layout() -> Result<(), Box<dyn st
         bin_dir,
         "govctl-v{ version }-{ target }/{ bin }{ binary-ext }"
     );
-    let windows_pkg_url = binstall
+    let overrides = binstall
         .get("overrides")
-        .and_then(|overrides| overrides.get("x86_64-pc-windows-msvc"))
-        .and_then(|windows| windows.get("pkg-url"))
-        .and_then(toml::Value::as_str)
-        .ok_or("missing package.metadata.binstall.overrides.x86_64-pc-windows-msvc.pkg-url")?;
-    assert_eq!(
-        windows_pkg_url,
-        "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.zip"
-    );
-    let windows_pkg_fmt = binstall
-        .get("overrides")
-        .and_then(|overrides| overrides.get("x86_64-pc-windows-msvc"))
-        .and_then(|windows| windows.get("pkg-fmt"))
-        .and_then(toml::Value::as_str)
-        .ok_or("missing package.metadata.binstall.overrides.x86_64-pc-windows-msvc.pkg-fmt")?;
-    assert_eq!(windows_pkg_fmt, "zip");
-
-    let release_workflow = std::fs::read_to_string(format!(
-        "{}/.github/workflows/release.yml",
-        env!("CARGO_MANIFEST_DIR")
-    ))?;
-    assert!(
-        release_workflow.contains(r#"ARCHIVE_NAME="govctl-${VERSION}-${{ matrix.target }}""#),
-        "Unix release archive directory must match self-update and cargo-binstall layout"
-    );
-    assert!(
-        release_workflow.contains(r#"$ARCHIVE_NAME = "govctl-${VERSION}-${{ matrix.target }}""#),
-        "Windows release archive directory must match self-update and cargo-binstall layout"
-    );
+        .and_then(toml::Value::as_table)
+        .ok_or("missing package.metadata.binstall.overrides")?;
+    for (target, distribution_target) in [
+        ("x86_64-pc-windows-msvc", "x86_64-pc-windows-gnu"),
+        ("aarch64-pc-windows-msvc", "aarch64-pc-windows-gnullvm"),
+        ("x86_64-pc-windows-gnu", "x86_64-pc-windows-gnu"),
+        ("aarch64-pc-windows-gnullvm", "aarch64-pc-windows-gnullvm"),
+    ] {
+        let windows = overrides
+            .get(target)
+            .ok_or_else(|| format!("missing cargo-binstall override for {target}"))?;
+        let pkg_url = windows
+            .get("pkg-url")
+            .and_then(toml::Value::as_str)
+            .ok_or_else(|| format!("missing cargo-binstall pkg-url for {target}"))?;
+        let expected_pkg_url = if target == distribution_target {
+            "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.zip".to_string()
+        } else {
+            format!(
+                "{{ repo }}/releases/download/v{{ version }}/govctl-v{{ version }}-{distribution_target}.zip"
+            )
+        };
+        assert_eq!(pkg_url, expected_pkg_url);
+        let expected_bin_dir = if target == distribution_target {
+            bin_dir.to_string()
+        } else {
+            format!("govctl-v{{ version }}-{distribution_target}/{{ bin }}{{ binary-ext }}")
+        };
+        assert_eq!(
+            windows
+                .get("bin-dir")
+                .and_then(toml::Value::as_str)
+                .unwrap_or(bin_dir),
+            expected_bin_dir
+        );
+        let pkg_fmt = windows
+            .get("pkg-fmt")
+            .and_then(toml::Value::as_str)
+            .ok_or_else(|| format!("missing cargo-binstall pkg-fmt for {target}"))?;
+        assert_eq!(pkg_fmt, "zip");
+    }
 
     Ok(())
 }

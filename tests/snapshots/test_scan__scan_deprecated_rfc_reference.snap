@@ -13,5 +13,5 @@ Checked:
   1 source files scanned
   1 references found
 
-warning[W0107]: Outdated reference: RFC-0001 (deprecated) (hint: update comment or remove [[...]]) (src/main.rs)
+warning[W0107]: Outdated reference: RFC-0001 (deprecated) (hint: update comment or remove [[...]]) (src/main.rs:1:17)
 exit: 0

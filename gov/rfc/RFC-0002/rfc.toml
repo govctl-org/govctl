@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "2.2.0"
+version = "3.1.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-29"
+updated = "2026-07-30"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "edd8c1e14485390c6a990d9f0f2dd422ba4b68938e99560abed4a0154d25f5c5"
+signature = "b4da6e112950da68e7db1aa874aa125ac2694455f306a0726746a0ed35e1220f"
 
 [[sections]]
 title = "Summary"
@@ -38,11 +38,44 @@ clauses = [
     "clauses/C-COMPATIBILITY-BOUNDARY.toml",
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
     "clauses/C-NAMESPACE-RECOVERY.toml",
+    "clauses/C-PRE-1-RELEASE-TARGET-COMPATIBILITY.toml",
 ]
 
 [[sections]]
 title = "Global Commands"
 clauses = ["clauses/C-DESCRIBE-COMMAND.toml"]
+
+[[changelog]]
+version = "3.1.0"
+date = "2026-07-30"
+notes = "Define pre-1.0 release target compatibility"
+added = ["Define canonical prebuilt targets and compatibility aliases through 0.x"]
+removed = ["End legacy target alias publication at 1.0.0"]
+
+[[changelog]]
+version = "3.0.3"
+date = "2026-07-30"
+notes = "Clarify rollback target boundary"
+fixed = ["Separate target restoration from best-effort temporary-state cleanup"]
+
+[[changelog]]
+version = "3.0.2"
+date = "2026-07-30"
+notes = "Narrow recovery boundary to rollback failure"
+fixed = ["Keep temporary transaction cleanup best-effort without redefining migration results"]
+
+[[changelog]]
+version = "3.0.1"
+date = "2026-07-30"
+notes = "Define migration recovery failure boundary"
+fixed = ["Preserve recovery backups and report E0903 when rollback or cleanup fails"]
+
+[[changelog]]
+version = "3.0.0"
+date = "2026-07-30"
+notes = "Adopt schema v5 source scan ignore semantics"
+changed = ["Define schema v5 as the current repository format"]
+removed = ["Replace source_scan.exclude with gitignore-compatible .govignore rules"]
 
 [[changelog]]
 version = "2.2.0"

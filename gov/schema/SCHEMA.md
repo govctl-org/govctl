@@ -431,7 +431,7 @@ The project schema version is declared once in `gov/config.toml`:
 
 ```toml
 [schema]
-version = 3
+version = 5
 ```
 
 Artifact TOML files do not contain their own schema-version field. Schema

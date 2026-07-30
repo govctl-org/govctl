@@ -1,0 +1,18 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-IGNORE-RULES"
+title = "Ignore Sources and Precedence"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+Source traversal MUST evaluate `.gitignore` and `.govignore` files located at the project root and in reached descendant directories. Both file types MUST use Git gitignore pattern syntax, including comments, escaping, directory-only patterns, ordered matches, and `!` re-inclusion. Matching MUST use normalized project-relative paths and MUST NOT depend on whether a path is tracked by Git or whether the project root is a Git repository.
+
+When matching rules conflict, a matching `.govignore` rule MUST take precedence over a matching `.gitignore` rule. Within one file type, a rule in a deeper directory MUST take precedence over a rule inherited from an ancestor directory. Within one ignore file, the last matching rule MUST win.
+
+When the winning rule is a re-inclusion, the path MUST become non-excluded unless an ancestor remains excluded. Otherwise, a winning exclusion MUST keep the path excluded. After ignore resolution, `source_scan.include` MUST be applied only to decide whether a non-excluded regular file is eligible for content scanning; it MUST NOT prevent traversal through a non-excluded directory.
+
+Source traversal MUST NOT consult ignore rules outside the project root, user-level or global Git ignore configuration, `.git/info/exclude`, or generic `.ignore` files. A path MUST NOT be excluded solely because its name is hidden."""

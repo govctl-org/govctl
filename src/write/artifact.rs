@@ -30,22 +30,14 @@ pub fn read_rfc(config: &Config, path: &Path) -> DiagnosticResult<RfcSpec> {
 /// Write RFC to file in TOML only.
 /// TOML output uses the `[govctl]` wire format plus schema header.
 pub fn write_rfc(
-    _config: &Config,
+    config: &Config,
     path: &Path,
     rfc: &RfcSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> DiagnosticResult<()> {
     let wire: RfcWire = rfc.clone().into();
-    write_toml_artifact(
-        path,
-        &wire,
-        ArtifactSchema::Rfc,
-        DiagnosticCode::E0101RfcSchemaInvalid,
-        "RFC",
-        op,
-        display_path,
-    )
+    write_toml_artifact(config, path, &wire, &RFC_IO, op, display_path)
 }
 
 /// Read a clause from canonical structured TOML.
@@ -65,13 +57,5 @@ pub fn write_clause(
 ) -> DiagnosticResult<()> {
     crate::load::validate_clause_storage_path(config, path).map_err(Diagnostic::from)?;
     let wire: ClauseWire = clause.clone().into();
-    write_toml_artifact(
-        path,
-        &wire,
-        ArtifactSchema::Clause,
-        DiagnosticCode::E0201ClauseSchemaInvalid,
-        "clause",
-        op,
-        display_path,
-    )
+    write_toml_artifact(config, path, &wire, &CLAUSE_IO, op, display_path)
 }

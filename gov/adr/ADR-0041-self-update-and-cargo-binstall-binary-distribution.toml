@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0041"
 title = "Self-update and cargo-binstall binary distribution"
-status = "accepted"
+status = "superseded"
 date = "2026-04-13"
+superseded_by = "ADR-0060"
 refs = [
     "RFC-0002",
     "ADR-0018",

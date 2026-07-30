@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-30-003"
+title = "Authenticate self-update API requests"
+status = "done"
+created = "2026-07-30"
+started = "2026-07-30"
+completed = "2026-07-30"
+refs = ["RFC-0002:C-SELF-UPDATE"]
+
+[content]
+description = "Complete the authenticated GitHub API path already defined by [[RFC-0002:C-SELF-UPDATE]] and exercise it in release-platform smoke validation."
+
+[[content.acceptance_criteria]]
+text = "Self-update check and update requests use a non-empty GITHUB_TOKEN when available"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Release-platform self-update probes authenticate with the job token and fail on API errors"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Focused tests, project guards, and cross-platform smoke validation pass"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

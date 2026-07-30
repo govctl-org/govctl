@@ -1,6 +1,6 @@
 [package]
 name = "govctl"
-version = "0.16.0"
+version = "0.17.0"
 edition = "2024"
 rust-version = "1.96"
 description = "Project governance CLI for RFC, ADR, and Work Item management"
@@ -46,6 +46,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 serde_yaml = "0.9"
 toml = "1"
+toml_edit = "0.25.13"
 
 # Validation and versioning
 jsonschema = "0.45"
@@ -72,8 +73,7 @@ pulldown-cmark = "0.13"
 rusqlite = { version = "0.40", features = ["bundled"] }
 
 # File system traversal
-walkdir = "2"
-globset = "0.4"
+ignore = "0.4"
 tempfile = "3"
 
 # Process-level file locking (for concurrent write safety per RFC-0004)
@@ -100,13 +100,27 @@ insta = { version = "1", features = ["yaml"] }
 regex = "1"
 chrono = "0.4"
 
-# [[ADR-0041]] governs package.metadata.binstall archive naming, including the Windows override in package.metadata.binstall.overrides.x86_64-pc-windows-msvc.
+# [[ADR-0060]] governs the canonical Zig targets and pre-1.0 compatibility aliases used by cargo-binstall.
 [package.metadata.binstall]
 pkg-url = "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.tar.gz"
 bin-dir = "govctl-v{ version }-{ target }/{ bin }{ binary-ext }"
 pkg-fmt = "tgz"
 
 [package.metadata.binstall.overrides.x86_64-pc-windows-msvc]
+pkg-url = "{ repo }/releases/download/v{ version }/govctl-v{ version }-x86_64-pc-windows-gnu.zip"
+bin-dir = "govctl-v{ version }-x86_64-pc-windows-gnu/{ bin }{ binary-ext }"
+pkg-fmt = "zip"
+
+[package.metadata.binstall.overrides.aarch64-pc-windows-msvc]
+pkg-url = "{ repo }/releases/download/v{ version }/govctl-v{ version }-aarch64-pc-windows-gnullvm.zip"
+bin-dir = "govctl-v{ version }-aarch64-pc-windows-gnullvm/{ bin }{ binary-ext }"
+pkg-fmt = "zip"
+
+[package.metadata.binstall.overrides.x86_64-pc-windows-gnu]
+pkg-url = "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.zip"
+pkg-fmt = "zip"
+
+[package.metadata.binstall.overrides.aarch64-pc-windows-gnullvm]
 pkg-url = "{ repo }/releases/download/v{ version }/govctl-v{ version }-{ target }.zip"
 pkg-fmt = "zip"
 
