@@ -1,6 +1,7 @@
 use crate::config::Config;
-use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
+use crate::diagnostic::DiagnosticResult;
 use crate::model::ProjectIndex;
+use crate::reference_pattern;
 use regex::Regex;
 
 pub(super) fn clause_deletion_referrers(
@@ -10,16 +11,13 @@ pub(super) fn clause_deletion_referrers(
 ) -> DiagnosticResult<Vec<String>> {
     let mut referrers = project_referrers(index, clause_id, None, false);
     referrers.extend(clause_supersession_referrers(index, clause_id));
-    let inline_re = Regex::new(&config.source_scan.pattern).map_err(|err| {
-        Diagnostic::new(
-            DiagnosticCode::E0501ConfigInvalid,
-            format!("Invalid source_scan.pattern regex: {err}"),
-            config
-                .display_path(&config.gov_root.join("config.toml"))
-                .display()
-                .to_string(),
-        )
-    })?;
+    let inline_re = reference_pattern::compile(
+        &config.source_scan.pattern,
+        config
+            .display_path(&config.gov_root.join("config.toml"))
+            .display()
+            .to_string(),
+    )?;
     referrers.extend(inline_clause_referrers(index, &inline_re, clause_id));
     referrers.extend(guard_referrers(config, clause_id)?);
     referrers.extend(
@@ -127,7 +125,7 @@ fn inline_clause_referrers(
 fn text_references(inline_re: &Regex, text: &str, target_id: &str) -> bool {
     inline_re
         .captures_iter(text)
-        .filter_map(|captures| captures.get(1))
+        .filter_map(|captures| reference_pattern::target_capture(&captures).ok())
         .any(|target| target.as_str() == target_id)
 }
 

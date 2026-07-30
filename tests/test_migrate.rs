@@ -23,6 +23,31 @@ fn current_schema_version(dir: &Path) -> Result<u32, Box<dyn std::error::Error>>
     Ok(u32::try_from(version)?)
 }
 
+fn write_schema_four_source_scan(
+    dir: &Path,
+    exclude: toml::Value,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let config_path = dir.join("gov/config.toml");
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config["schema"]["version"] = toml::Value::Integer(4);
+    config
+        .as_table_mut()
+        .ok_or("config is not a table")?
+        .insert(
+            "source_scan".to_string(),
+            toml::Value::Table(toml::map::Map::from_iter([
+                ("enabled".to_string(), toml::Value::Boolean(true)),
+                (
+                    "include".to_string(),
+                    toml::Value::Array(vec![toml::Value::String("src/**/*.rs".to_string())]),
+                ),
+                ("exclude".to_string(), exclude),
+            ])),
+        );
+    fs::write(config_path, toml::to_string_pretty(&config)?)?;
+    Ok(())
+}
+
 fn write_legacy_rfc_project(dir: &std::path::Path) -> Result<(), Box<dyn std::error::Error>> {
     let rfc_dir = dir.join("gov/rfc/RFC-0001");
     fs::create_dir_all(rfc_dir.join("clauses"))?;
@@ -400,5 +425,189 @@ fn test_check_rejects_legacy_json_storage() -> TestResult {
         config
     );
 
+    Ok(())
+}
+
+#[test]
+fn test_migrate_v4_source_excludes_to_govignore() -> TestResult {
+    let temp_dir = init_project()?;
+    write_schema_four_source_scan(
+        temp_dir.path(),
+        toml::Value::Array(vec![
+            toml::Value::String("target/".to_string()),
+            toml::Value::String("!literal".to_string()),
+            toml::Value::String("#literal".to_string()),
+        ]),
+    )?;
+    fs::write(temp_dir.path().join(".govignore"), "existing-rule\n")?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(output.contains("v4 -> v5"), "{output}");
+    assert_eq!(current_schema_version(temp_dir.path())?, 5);
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
+    assert!(!config.contains("exclude"), "{config}");
+    assert_eq!(
+        fs::read_to_string(temp_dir.path().join(".govignore"))?,
+        "target/\n\\!literal\n\\#literal\nexisting-rule\n"
+    );
+    Ok(())
+}
+
+#[test]
+fn test_migrate_v4_preserves_config_comments_and_section_order() -> TestResult {
+    let temp_dir = init_project()?;
+    write_schema_four_source_scan(
+        temp_dir.path(),
+        toml::Value::Array(vec![toml::Value::String("target/".to_string())]),
+    )?;
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let config = fs::read_to_string(&config_path)?
+        .replacen("version = 4", "version = 4 # schema version", 1)
+        .replacen("[source_scan]", "# source scan settings\n[source_scan]", 1);
+    let sections_before = config
+        .lines()
+        .filter(|line| line.starts_with('['))
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    fs::write(&config_path, config)?;
+
+    run_commands(temp_dir.path(), &[&["migrate"]])?;
+
+    let migrated = fs::read_to_string(&config_path)?;
+    let sections_after = migrated
+        .lines()
+        .filter(|line| line.starts_with('['))
+        .map(str::to_owned)
+        .collect::<Vec<_>>();
+    assert!(
+        migrated.contains("version = 5 # schema version"),
+        "{migrated}"
+    );
+    assert!(migrated.contains("# source scan settings"), "{migrated}");
+    assert!(!migrated.contains("exclude"), "{migrated}");
+    assert_eq!(sections_after, sections_before);
+    Ok(())
+}
+
+#[test]
+fn test_migrate_v4_empty_excludes_does_not_create_govignore() -> TestResult {
+    let temp_dir = init_project()?;
+    write_schema_four_source_scan(temp_dir.path(), toml::Value::Array(vec![]))?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(output.contains("v4 -> v5"), "{output}");
+    assert_eq!(current_schema_version(temp_dir.path())?, 5);
+    assert!(!temp_dir.path().join(".govignore").exists());
+    let config = fs::read_to_string(temp_dir.path().join("gov/config.toml"))?;
+    assert!(!config.contains("exclude"), "{config}");
+    Ok(())
+}
+
+#[test]
+fn test_migrate_v4_source_excludes_dry_run_reports_without_writing() -> TestResult {
+    let temp_dir = init_project()?;
+    write_schema_four_source_scan(
+        temp_dir.path(),
+        toml::Value::Array(vec![toml::Value::String("target/".to_string())]),
+    )?;
+    fs::write(temp_dir.path().join(".govignore"), "existing-rule\n")?;
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let govignore_path = temp_dir.path().join(".govignore");
+    let config_before = fs::read(&config_path)?;
+    let govignore_before = fs::read(&govignore_path)?;
+    let lock_path = temp_dir.path().join("gov/.govctl.lock");
+    if lock_path.exists() {
+        fs::remove_file(&lock_path)?;
+    }
+
+    let output = run_commands(temp_dir.path(), &[&["--dry-run", "migrate"]])?;
+    assert!(output.contains("Would write: .govignore"), "{output}");
+    assert!(output.contains("Would write: gov/config.toml"), "{output}");
+    assert_eq!(fs::read(&config_path)?, config_before);
+    assert_eq!(fs::read(&govignore_path)?, govignore_before);
+    assert!(!lock_path.exists());
+    Ok(())
+}
+
+#[test]
+fn test_migrate_v4_rejects_multiline_exclude_without_mutation() -> TestResult {
+    let temp_dir = init_project()?;
+    write_schema_four_source_scan(
+        temp_dir.path(),
+        toml::Value::Array(vec![toml::Value::String("bad\nrule".to_string())]),
+    )?;
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let config_before = fs::read(&config_path)?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(output.contains("error[E0501]"), "{output}");
+    assert!(output.contains("source_scan.exclude[0]"), "{output}");
+    assert_eq!(fs::read(&config_path)?, config_before);
+    assert!(!temp_dir.path().join(".govignore").exists());
+    Ok(())
+}
+
+#[test]
+fn test_schema_v5_rejects_residual_source_scan_exclude() -> TestResult {
+    let temp_dir = init_project()?;
+    let config_path = temp_dir.path().join("gov/config.toml");
+    let mut config: toml::Value = toml::from_str(&fs::read_to_string(&config_path)?)?;
+    config
+        .as_table_mut()
+        .ok_or("config is not a table")?
+        .insert(
+            "source_scan".to_string(),
+            toml::Value::Table(toml::map::Map::from_iter([(
+                "exclude".to_string(),
+                toml::Value::Array(vec![]),
+            )])),
+        );
+    fs::write(&config_path, toml::to_string_pretty(&config)?)?;
+    let before = fs::read(&config_path)?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"], &["migrate"]])?;
+    assert_eq!(output.matches("error[E0501]").count(), 2, "{output}");
+    assert!(output.contains("source_scan.exclude"), "{output}");
+    assert_eq!(fs::read(&config_path)?, before);
+    Ok(())
+}
+
+#[test]
+fn test_schema_v4_normal_command_requires_migration_without_mutation() -> TestResult {
+    let temp_dir = init_project()?;
+    write_schema_four_source_scan(temp_dir.path(), toml::Value::Array(vec![]))?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["work", "new", "--active", "Must not be created"]],
+    )?;
+    assert!(output.contains("error[E0505]"), "{output}");
+    assert!(output.contains("govctl migrate"), "{output}");
+    assert_eq!(fs::read_dir(temp_dir.path().join("gov/work"))?.count(), 0);
+    Ok(())
+}
+
+#[test]
+fn test_schema_v4_gate_precedes_full_config_load_but_not_project_independent_commands() -> TestResult
+{
+    let temp_dir = init_project()?;
+    write_schema_four_source_scan(
+        temp_dir.path(),
+        toml::Value::String("not-an-array".to_string()),
+    )?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[
+            &["work", "new", "--active", "Must not be created"],
+            &["describe"],
+            &["completions", "bash"],
+        ],
+    )?;
+    assert_eq!(output.matches("error[E0505]").count(), 1, "{output}");
+    assert!(!output.contains("Failed to parse config"), "{output}");
+    assert!(output.contains("\"schema_version\": 1"), "{output}");
+    assert!(output.contains("_govctl()"), "{output}");
+    assert_eq!(fs::read_dir(temp_dir.path().join("gov/work"))?.count(), 0);
     Ok(())
 }

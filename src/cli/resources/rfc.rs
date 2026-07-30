@@ -87,7 +87,8 @@ EXAMPLES:
 NOTES:
     - Version-changing bumps require a normative RFC in impl, test, or stable with a sealed signature.
     - While an RFC is in spec, continue authoring the current version candidate instead of bumping again.
-    - Choose one of `--patch`, `--minor`, or `--major` when releasing a content amendment.
+    - Bump flags select literal SemVer components; they are not remapped impact labels.
+    - For 0.y.z, use `--minor` for a breaking pre-1.0 amendment; `--major` deliberately advances to 1.0.0.
     - `--change` without a bump level updates the current changelog entry without changing version.
     - Use `-m/--summary` for a release summary and `-c/--change` for detailed entries.
 ")]

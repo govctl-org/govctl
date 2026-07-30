@@ -1,6 +1,7 @@
 //! Deterministic JSON serialization for signature computation.
 
 use serde_json::Value;
+use std::borrow::Cow;
 
 /// Canonicalize a JSON value:
 /// - Object keys sorted alphabetically, recursively
@@ -19,7 +20,8 @@ fn write_canonical_json(value: &Value, out: &mut String) {
         Value::Bool(false) => out.push_str("false"),
         Value::Number(num) => out.push_str(&num.to_string()),
         Value::String(s) => {
-            if let Ok(escaped) = serde_json::to_string(s) {
+            let normalized = normalize_line_endings(s);
+            if let Ok(escaped) = serde_json::to_string(&normalized) {
                 out.push_str(&escaped);
             }
         }
@@ -49,5 +51,13 @@ fn write_canonical_json(value: &Value, out: &mut String) {
             }
             out.push('}');
         }
+    }
+}
+
+fn normalize_line_endings(value: &str) -> Cow<'_, str> {
+    if value.contains("\r\n") {
+        Cow::Owned(value.replace("\r\n", "\n"))
+    } else {
+        Cow::Borrowed(value)
     }
 }

@@ -62,9 +62,13 @@ pub fn self_update(check_only: bool) -> DiagnosticResult<Diagnostics> {
 }
 
 fn check_version(current: &str) -> DiagnosticResult<Diagnostics> {
-    let releases = self_update::backends::github::ReleaseList::configure()
-        .repo_owner(REPO_OWNER)
-        .repo_name(REPO_NAME)
+    let mut builder = self_update::backends::github::ReleaseList::configure();
+    builder.repo_owner(REPO_OWNER).repo_name(REPO_NAME);
+    if let Some(token) = github_token() {
+        builder.auth_token(&token);
+    }
+
+    let releases = builder
         .build()
         .map_err(|err| self_update_error("configure GitHub release check", err))?
         .fetch()
@@ -102,13 +106,19 @@ fn check_version(current: &str) -> DiagnosticResult<Diagnostics> {
 fn perform_update(current: &str) -> DiagnosticResult<Diagnostics> {
     let show_progress = std::io::stdout().is_terminal();
 
-    let status = self_update::backends::github::Update::configure()
+    let mut builder = self_update::backends::github::Update::configure();
+    builder
         .repo_owner(REPO_OWNER)
         .repo_name(REPO_NAME)
         .bin_name(BIN_NAME)
         .bin_path_in_archive(SELF_UPDATE_BIN_PATH_IN_ARCHIVE)
         .show_download_progress(show_progress)
-        .current_version(current)
+        .current_version(current);
+    if let Some(token) = github_token() {
+        builder.auth_token(&token);
+    }
+
+    let status = builder
         .build()
         .map_err(|err| self_update_error("configure self-update", err))?
         .update()
@@ -123,6 +133,14 @@ fn perform_update(current: &str) -> DiagnosticResult<Diagnostics> {
     }
 
     Ok(vec![])
+}
+
+fn github_token() -> Option<String> {
+    usable_github_token(std::env::var("GITHUB_TOKEN").ok())
+}
+
+fn usable_github_token(token: Option<String>) -> Option<String> {
+    token.filter(|value| !value.trim().is_empty())
 }
 
 fn self_update_error(action: &str, err: impl std::fmt::Display) -> Diagnostic {

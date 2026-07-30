@@ -6,11 +6,10 @@ default_owner = "@govctl-org"
 name = "govctl"
 
 [schema]
-version = 4
+version = 5
 
 [source_scan]
 enabled = true
-exclude = []
 include = ["src/**/*.rs"]
 
 [tags]

@@ -17,6 +17,7 @@ mod loop_planner;
 mod loop_state;
 mod model;
 mod parse;
+mod reference_pattern;
 mod render;
 mod resource_plan;
 mod scan;
@@ -89,20 +90,32 @@ fn main() -> ExitCode {
 fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
     // Convert parsed CLI command to canonical form
     let plan = command_router::CommandPlan::from_parsed(&cli.command, cli.dry_run)?;
-    let config = if cli.config.is_none() {
+    let project_independent = matches!(
+        &plan.op,
+        command_router::Op::Builtin(command_router::BuiltinOp::Completions { .. })
+            | command_router::Op::Builtin(command_router::BuiltinOp::SelfUpdate { .. })
+            | command_router::Op::Builtin(command_router::BuiltinOp::Describe { context: false })
+    );
+    let is_migrate = matches!(
+        &plan.op,
+        command_router::Op::Builtin(command_router::BuiltinOp::Migrate)
+    );
+    let config = if project_independent {
+        Config::default()
+    } else if cli.config.is_none() {
         match &plan.op {
             command_router::Op::Builtin(command_router::BuiltinOp::Init { force }) => {
                 Config::for_init(*force)?
             }
+            _ if is_migrate => Config::load_for_migration(None)?,
             _ => Config::load(None)?,
         }
+    } else if is_migrate {
+        Config::load_for_migration(cli.config.as_deref())?
     } else {
         Config::load(cli.config.as_deref())?
     };
-    if !matches!(
-        plan.op,
-        command_router::Op::Builtin(command_router::BuiltinOp::Migrate)
-    ) {
+    if !is_migrate {
         load::reject_unmigrated_conformance(&config)?;
     }
     let op = write::WriteOp::from_dry_run(cli.dry_run);
@@ -125,12 +138,7 @@ fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
                 })?;
             }
         }
-        if op.is_preview()
-            && matches!(
-                plan.op,
-                command_router::Op::Builtin(command_router::BuiltinOp::Init { .. })
-            )
-        {
+        if op.is_preview() {
             None
         } else {
             Some(lock::acquire_gov_lock(&config)?)

@@ -4,6 +4,7 @@ use crate::artifact_index::artifact_ref_ids;
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
 use crate::model::{AdrStatus, ProjectIndex, RfcStatus, WorkItemStatus};
+use crate::reference_pattern;
 use regex::Regex;
 use std::collections::HashSet;
 
@@ -41,14 +42,16 @@ pub(super) fn validate_bracket_reference_hierarchy(
     config: &Config,
     result: &mut ValidationResult,
 ) {
-    let bracket_re = match Regex::new(&config.source_scan.pattern) {
+    let bracket_re = match reference_pattern::compile(
+        &config.source_scan.pattern,
+        config
+            .display_path(&config.gov_root.join("config.toml"))
+            .display()
+            .to_string(),
+    ) {
         Ok(r) => r,
-        Err(e) => {
-            result.diagnostics.push(Diagnostic::new(
-                DiagnosticCode::E0501ConfigInvalid,
-                format!("Invalid source_scan.pattern for bracket reference scan: {e}"),
-                "gov/config.toml".to_string(),
-            ));
+        Err(diagnostic) => {
+            result.diagnostics.push(diagnostic);
             return;
         }
     };
@@ -282,11 +285,26 @@ fn scan_reference_hierarchy(
 ) {
     let mut bracket_ranges = Vec::new();
     for caps in scanner.bracket_re.captures_iter(text) {
-        if let Some(full) = caps.get(0) {
+        let match_start = caps.get(0).map(|full| {
             bracket_ranges.push(full.range());
-        }
-        let Some(m) = caps.get(1) else {
-            continue;
+            full.start()
+        });
+        let m = match reference_pattern::target_capture(&caps) {
+            Ok(target) => target,
+            Err(error) => {
+                let (line, byte_column) = match_start
+                    .map(|offset| source_line_and_byte_column(text, offset))
+                    .unwrap_or((1, 1));
+                result.diagnostics.push(Diagnostic::new(
+                    DiagnosticCode::E0501ConfigInvalid,
+                    format!(
+                        "Invalid source_scan.pattern match in {field} at line {line}, byte column {byte_column}: {error}",
+                        field = source.field,
+                    ),
+                    source.path,
+                ));
+                continue;
+            }
         };
         let target = m.as_str();
         if let Err(diagnostic) =
@@ -343,13 +361,19 @@ fn bare_artifact_reference_warning(
 }
 
 fn source_line_context(text: &str, byte_offset: usize) -> (usize, String) {
-    let line = text[..byte_offset].bytes().filter(|b| *b == b'\n').count() + 1;
+    let (line, _) = source_line_and_byte_column(text, byte_offset);
     let line_start = text[..byte_offset].rfind('\n').map_or(0, |idx| idx + 1);
     let line_end = text[byte_offset..]
         .find('\n')
         .map_or(text.len(), |idx| byte_offset + idx);
     let context = collapse_context_whitespace(&text[line_start..line_end]);
     (line, truncate_context(&context))
+}
+
+fn source_line_and_byte_column(text: &str, byte_offset: usize) -> (usize, usize) {
+    let line = text[..byte_offset].bytes().filter(|b| *b == b'\n').count() + 1;
+    let line_start = text[..byte_offset].rfind('\n').map_or(0, |idx| idx + 1);
+    (line, byte_offset - line_start + 1)
 }
 
 fn collapse_context_whitespace(line: &str) -> String {
@@ -523,6 +547,55 @@ mod tests {
         );
 
         assert!(result.diagnostics.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn invalid_bracket_matches_report_distinct_positions() -> DiagnosticResult<()> {
+        let bracket_re = Regex::new(r"\[\[(RFC-\d{4})?\]\]").map_err(|err| {
+            Diagnostic::new(
+                DiagnosticCode::E0903UnexpectedError,
+                format!("test bracket regex must compile: {err}"),
+                "test",
+            )
+        })?;
+        let scanner = ReferenceScanner {
+            bracket_re,
+            bare_re: bare_re()?,
+            known_ids: HashSet::new(),
+        };
+        let mut result = ValidationResult::default();
+
+        scan_reference_hierarchy(
+            &scanner,
+            "[[]] and [[]]",
+            "RFC-0001",
+            TextSource {
+                path: "f",
+                field: "content.text",
+            },
+            ScanPolicy {
+                scan_bare_text: false,
+                warn_on_bare_text: false,
+            },
+            &mut result,
+        );
+
+        assert_eq!(result.diagnostics.len(), 2);
+        assert!(
+            result.diagnostics[0]
+                .message
+                .contains("content.text at line 1, byte column 1"),
+            "message: {}",
+            result.diagnostics[0].message
+        );
+        assert!(
+            result.diagnostics[1]
+                .message
+                .contains("content.text at line 1, byte column 10"),
+            "message: {}",
+            result.diagnostics[1].message
+        );
         Ok(())
     }
 }

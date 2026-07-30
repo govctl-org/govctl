@@ -15,7 +15,7 @@ mod ops;
 use ops::{FileOp, execute_ops, preview_ops};
 
 /// Latest schema version. Bump when adding a new migration step.
-pub const CURRENT_SCHEMA_VERSION: u32 = 4;
+pub const CURRENT_SCHEMA_VERSION: u32 = 5;
 /// Oldest project schema accepted by this binary.
 pub const MIN_SUPPORTED_SCHEMA_VERSION: u32 = 3;
 
@@ -53,12 +53,20 @@ struct MigrationStep {
 }
 
 /// All registered migrations, ordered by version.
-const MIGRATIONS: &[MigrationStep] = &[MigrationStep {
-    from: 3,
-    to: 4,
-    name: "enable Conformance Case resources",
-    plan_fn: plan_v3_to_v4,
-}];
+const MIGRATIONS: &[MigrationStep] = &[
+    MigrationStep {
+        from: 3,
+        to: 4,
+        name: "enable Conformance Case resources",
+        plan_fn: plan_v3_to_v4,
+    },
+    MigrationStep {
+        from: 4,
+        to: 5,
+        name: "adopt source scan ignore files",
+        plan_fn: plan_v4_to_v5,
+    },
+];
 
 fn plan_v3_to_v4(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
     validate_prospective_conformance_cases(config)?;
@@ -74,6 +82,54 @@ fn validate_prospective_conformance_cases(config: &Config) -> DiagnosticResult<(
         .into_iter()
         .next()
         .map_or(Ok(()), Err)
+}
+
+fn plan_v4_to_v5(config: &Config) -> DiagnosticResult<Vec<FileOp>> {
+    let Some(patterns) = config.source_scan.legacy_exclude.as_ref() else {
+        return Ok(vec![]);
+    };
+    if patterns.is_empty() {
+        return Ok(vec![]);
+    }
+
+    let mut migrated = String::new();
+    for (index, pattern) in patterns.iter().enumerate() {
+        if pattern.contains(['\r', '\n']) {
+            return Err(Diagnostic::new(
+                crate::diagnostic::DiagnosticCode::E0501ConfigInvalid,
+                format!(
+                    "Cannot migrate source_scan.exclude[{index}]: ignore rules cannot contain carriage returns or line feeds"
+                ),
+                config
+                    .display_path(&config.gov_root.join("config.toml"))
+                    .display()
+                    .to_string(),
+            ));
+        }
+        if pattern.starts_with(['!', '#']) {
+            migrated.push('\\');
+        }
+        migrated.push_str(pattern);
+        migrated.push('\n');
+    }
+
+    let path = config.project_root().join(".govignore");
+    let existing = match fs::read_to_string(&path) {
+        Ok(content) => content,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(error) => {
+            return Err(Diagnostic::io_error(
+                "read .govignore for migration",
+                error,
+                config.display_path(&path).display().to_string(),
+            ));
+        }
+    };
+    migrated.push_str(&existing);
+    Ok(vec![FileOp::Write {
+        path,
+        content: migrated,
+    }])
 }
 
 // =============================================================================
@@ -248,35 +304,41 @@ fn plan_config_version_bump(config: &Config, new_version: u32) -> DiagnosticResu
     let display_path = config.display_path(&path).display().to_string();
     let content = fs::read_to_string(&path)
         .map_err(|err| Diagnostic::io_error("read config for migration", err, &display_path))?;
-
-    let mut lines: Vec<String> = content.lines().map(String::from).collect();
-    let mut in_schema = false;
-    let mut found = false;
-
-    for line in &mut lines {
-        let trimmed = line.trim();
-        if trimmed.starts_with('[') {
-            in_schema = trimmed == "[schema]";
-        }
-        if in_schema && trimmed.starts_with("version") && trimmed.contains('=') {
-            *line = format!("version = {new_version}");
-            found = true;
-            break;
-        }
+    let mut document = content.parse::<toml_edit::DocumentMut>().map_err(|error| {
+        Diagnostic::new(
+            crate::diagnostic::DiagnosticCode::E0501ConfigInvalid,
+            format!("Failed to parse config for migration: {error}"),
+            &display_path,
+        )
+    })?;
+    let schema = document
+        .entry("schema")
+        .or_insert(toml_edit::table())
+        .as_table_mut()
+        .ok_or_else(|| {
+            Diagnostic::new(
+                crate::diagnostic::DiagnosticCode::E0501ConfigInvalid,
+                "Config field schema must be a table",
+                &display_path,
+            )
+        })?;
+    let version = schema
+        .entry("version")
+        .or_insert(toml_edit::value(i64::from(new_version)));
+    let decor = version.as_value().map(|value| value.decor().clone());
+    *version = toml_edit::value(i64::from(new_version));
+    if let (Some(decor), Some(value)) = (decor, version.as_value_mut()) {
+        *value.decor_mut() = decor;
     }
-
-    if !found {
-        lines.push(String::new());
-        lines.push("[schema]".to_string());
-        lines.push(format!("version = {new_version}"));
-    }
-
-    let mut output = lines.join("\n");
-    if !output.ends_with('\n') {
-        output.push('\n');
+    if new_version >= 5
+        && let Some(source_scan) = document
+            .get_mut("source_scan")
+            .and_then(toml_edit::Item::as_table_mut)
+    {
+        source_scan.remove("exclude");
     }
     Ok(FileOp::Write {
         path,
-        content: output,
+        content: document.to_string(),
     })
 }

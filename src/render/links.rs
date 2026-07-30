@@ -1,4 +1,4 @@
-use regex::Regex;
+use crate::reference_pattern;
 
 /// Generate a markdown link for an artifact reference.
 ///
@@ -60,12 +60,12 @@ pub(super) fn expand_inline_refs_with_linker<F>(text: &str, pattern: &str, linke
 where
     F: Fn(&str) -> String,
 {
-    let Ok(re) = Regex::new(pattern) else {
+    let Ok(re) = reference_pattern::compile(pattern, "gov/config.toml") else {
         return text.to_string();
     };
 
     re.replace_all(text, |caps: &regex::Captures| {
-        if let Some(artifact_id) = caps.get(1) {
+        if let Ok(artifact_id) = reference_pattern::target_capture(caps) {
             linker(artifact_id.as_str())
         } else {
             caps.get(0).map_or("", |m| m.as_str()).to_string()

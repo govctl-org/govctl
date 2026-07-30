@@ -1,0 +1,16 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-REFERENCE-REPORTING"
+title = "Source Reference Reporting"
+kind = "normative"
+status = "active"
+since = "0.2.0"
+
+[content]
+text = """
+A configured `source_scan.pattern` MUST compile successfully and MUST define capture group 1 as the artifact-reference target. `govctl check` MUST report E0501 when either condition is not met, whether or not source-file traversal is enabled. Every full match MUST produce a present, non-empty capture group 1; otherwise source scanning MUST report E0501 and MUST NOT treat that match as a reference.
+
+A diagnostic about an unknown or outdated detected source reference MUST identify the normalized project-relative source path and the one-based line and byte-column position at which capture group 1 starts.
+
+Source-reference diagnostics MUST be ordered by ascending normalized path, line, and byte column, with diagnostic code and captured target as ascending tie-breakers. Diagnostics with the same code, normalized path, capture-start position, and captured target MUST be emitted once."""

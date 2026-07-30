@@ -1,0 +1,51 @@
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0009"
+title = "Source Scan Selection and Ignore Semantics"
+version = "0.3.0"
+status = "normative"
+phase = "stable"
+owners = ["@govctl-org"]
+created = "2026-07-29"
+updated = "2026-07-30"
+refs = ["RFC-0002"]
+signature = "60a6abd5423ef994ba30eafe545328d28b80f996f1804dc9adc78c059bea00a1"
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-SOURCE-SELECTION.toml",
+    "clauses/C-IGNORE-RULES.toml",
+    "clauses/C-TRAVERSAL.toml",
+    "clauses/C-IGNORE-MIGRATION.toml",
+    "clauses/C-REFERENCE-REPORTING.toml",
+]
+
+[[changelog]]
+version = "0.3.0"
+date = "2026-07-30"
+notes = "Exclude Git metadata from source traversal"
+changed = ["Prune .git directories before enumerating their contents"]
+
+[[changelog]]
+version = "0.2.0"
+date = "2026-07-30"
+notes = "Make source-reference diagnostics precise and deterministic"
+added = ["Define reference-pattern validation and source locations"]
+changed = ["Order and deduplicate source-reference diagnostics"]
+
+[[changelog]]
+version = "0.1.1"
+date = "2026-07-30"
+notes = "Close source traversal failure gaps"
+fixed = ["Treat selected source read and decoding failures as validation errors"]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-07-29"
+notes = "Initial draft"

@@ -41,8 +41,30 @@ Configure scanning in `gov/config.toml`:
 [source_scan]
 enabled = true
 include = ["src/**/*.rs"]
-exclude = []
 ```
+
+`include` is the positive scan domain and uses Git gitignore path-pattern
+semantics. Project `.gitignore` files provide the baseline exclusions.
+Governance-specific exclusions and re-inclusions belong in `.govignore` files:
+
+```gitignore
+# Skip generated source evidence
+generated/
+
+# Restore one governed subtree excluded by .gitignore
+!fixtures/
+!fixtures/governed/
+```
+
+`.govignore` uses normal gitignore ordering and `!` re-inclusion, and its rules
+take precedence over `.gitignore`. Re-including a descendant requires
+re-including each excluded parent directory. govctl prunes excluded directories
+before reading their contents.
+
+An optional `source_scan.pattern` override must be a valid regular expression
+whose capture group 1 returns the complete artifact ID for every match. Unknown
+and outdated reference diagnostics report the normalized source path followed
+by a one-based line and byte column.
 
 ## Controlled-Vocabulary Tags
 
@@ -350,12 +372,12 @@ This upgrades TOML artifact file formats (e.g., adding `#:schema` headers or nor
 
 These are related but serve different purposes:
 
-|            | `govctl migrate`                                                           | `/migrate` skill                                      |
-| ---------- | -------------------------------------------------------------------------- | ----------------------------------------------------- |
-| **What**   | Upgrade existing govctl artifacts to current format                        | Adopt govctl in an existing project                   |
-| **When**   | After updating govctl version                                              | When starting governance in a brownfield repo         |
-| **Effect** | Syncs TOML artifacts, schemas, and govctl local-state `.gitignore` entries | Discovers decisions, backfills ADRs, annotates source |
-| **Risk**   | Low — transactional, reversible                                            | Medium — requires human review of generated ADRs      |
+|            | `govctl migrate`                                                             | `/migrate` skill                                      |
+| ---------- | ---------------------------------------------------------------------------- | ----------------------------------------------------- |
+| **What**   | Upgrade existing govctl artifacts to current format                          | Adopt govctl in an existing project                   |
+| **When**   | After updating govctl version                                                | When starting governance in a brownfield repo         |
+| **Effect** | Syncs TOML artifacts, schemas, ignore configuration, and local support files | Discovers decisions, backfills ADRs, annotates source |
+| **Risk**   | Low — transactional, reversible                                              | Medium — requires human review of generated ADRs      |
 
 Run `govctl migrate` when govctl reports an outdated schema version, missing or
 stale bundled schema files, or missing govctl-managed local-state `.gitignore`

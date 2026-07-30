@@ -88,31 +88,38 @@ jobs:
           path: release-notes.md
           retention-days: 1
 
-  # Build binaries for all platforms
   build:
     name: Build ${{ matrix.target }}
     needs: verify
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/rust-cross/cargo-zigbuild@sha256:b8f4954230e4393922593838728213f54557207df9cc06f4063005268fbc0da3
     strategy:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            os: ubuntu-latest
+          - target: x86_64-unknown-linux-musl
+            binary: govctl
             archive: tar.gz
-          - target: aarch64-unknown-linux-gnu
-            os: ubuntu-latest
+            alias: x86_64-unknown-linux-gnu
+          - target: aarch64-unknown-linux-musl
+            binary: govctl
             archive: tar.gz
-            cross: true
+            alias: aarch64-unknown-linux-gnu
           - target: x86_64-apple-darwin
-            os: macos-latest
+            binary: govctl
             archive: tar.gz
           - target: aarch64-apple-darwin
-            os: macos-latest
+            binary: govctl
             archive: tar.gz
-          - target: x86_64-pc-windows-msvc
-            os: windows-latest
+          - target: x86_64-pc-windows-gnu
+            binary: govctl.exe
             archive: zip
+            alias: x86_64-pc-windows-msvc
+          - target: aarch64-pc-windows-gnullvm
+            binary: govctl.exe
+            archive: zip
+            alias: aarch64-pc-windows-msvc
 
     steps:
       - name: Checkout
@@ -123,60 +130,220 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Install cross (for cross-compilation)
-        if: matrix.cross
-        run: cargo install cross --git https://github.com/cross-rs/cross
+      - name: Build
+        shell: bash
+        run: cargo zigbuild --release --locked --target "${{ matrix.target }}"
 
-      - name: Build binary
+      - name: Install ZIP packaging tool
+        if: matrix.archive == 'zip'
         shell: bash
         run: |
-          if [ "${{ matrix.cross }}" = "true" ]; then
-            cross build --release --target ${{ matrix.target }}
-          else
-            cargo build --release --target ${{ matrix.target }}
+          apt-get update
+          apt-get install --yes --no-install-recommends zip
+
+      - name: Package
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          TARGET: ${{ matrix.target }}
+          BINARY: ${{ matrix.binary }}
+          ARCHIVE: ${{ matrix.archive }}
+          ALIAS: ${{ matrix.alias }}
+        run: |
+          package_target() {
+            local distribution_target="$1"
+            local name="govctl-v${VERSION}-${distribution_target}"
+
+            mkdir -p "dist/${name}"
+            cp "target/${TARGET}/release/${BINARY}" "dist/${name}/"
+            cp README.md LICENSE* "dist/${name}/" 2>/dev/null || true
+
+            if [ "${ARCHIVE}" = "zip" ]; then
+              (cd dist && zip -qr "${name}.zip" "${name}")
+            else
+              tar -C dist -czf "dist/${name}.tar.gz" "${name}"
+            fi
+          }
+
+          package_target "${TARGET}"
+          if [ "${VERSION%%.*}" = "0" ] && [ -n "${ALIAS}" ]; then
+            package_target "${ALIAS}"
           fi
-
-      - name: Prepare artifacts (Unix)
-        if: runner.os != 'Windows'
-        shell: bash
-        run: |
-          VERSION="${GITHUB_REF#refs/tags/}"
-          BINARY="govctl"
-          ARCHIVE_NAME="govctl-${VERSION}-${{ matrix.target }}"
-
-          mkdir -p "dist/${ARCHIVE_NAME}"
-          cp "target/${{ matrix.target }}/release/${BINARY}" "dist/${ARCHIVE_NAME}/"
-          cp README.md LICENSE* "dist/${ARCHIVE_NAME}/" 2>/dev/null || true
-
-          cd dist
-          tar -czvf "${ARCHIVE_NAME}.tar.gz" "${ARCHIVE_NAME}"
-          echo "ASSET=${ARCHIVE_NAME}.tar.gz" >> "$GITHUB_ENV"
-
-      - name: Prepare artifacts (Windows)
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $VERSION = $env:GITHUB_REF -replace 'refs/tags/', ''
-          $ARCHIVE_NAME = "govctl-${VERSION}-${{ matrix.target }}"
-
-          New-Item -ItemType Directory -Force -Path "dist\${ARCHIVE_NAME}"
-          Copy-Item "target\${{ matrix.target }}\release\govctl.exe" "dist\${ARCHIVE_NAME}\"
-          Copy-Item README.md, LICENSE* -Destination "dist\${ARCHIVE_NAME}\" -ErrorAction SilentlyContinue
-
-          Compress-Archive -Path "dist\${ARCHIVE_NAME}" -DestinationPath "dist\${ARCHIVE_NAME}.zip"
-          echo "ASSET=${ARCHIVE_NAME}.zip" >> $env:GITHUB_ENV
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ env.ASSET }}
-          path: dist/${{ env.ASSET }}
+          name: ${{ matrix.target }}
+          path: |
+            dist/*.tar.gz
+            dist/*.zip
+          if-no-files-found: error
           retention-days: 1
 
-  # Create GitHub release with all artifacts
+  smoke-cross:
+    name: Smoke ${{ matrix.target }}
+    needs: [verify, build]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            alias: x86_64-unknown-linux-gnu
+            os: ubuntu-latest
+            archive: tar.gz
+            binary: govctl
+          - target: aarch64-unknown-linux-musl
+            alias: aarch64-unknown-linux-gnu
+            os: ubuntu-24.04-arm
+            archive: tar.gz
+            binary: govctl
+          - target: x86_64-pc-windows-gnu
+            alias: x86_64-pc-windows-msvc
+            os: windows-latest
+            archive: zip
+            binary: govctl.exe
+          - target: aarch64-pc-windows-gnullvm
+            alias: aarch64-pc-windows-msvc
+            os: windows-11-arm
+            archive: zip
+            binary: govctl.exe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: ${{ matrix.target }}
+          path: artifact
+
+      - name: Extract and verify archive layouts
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          TARGET: ${{ matrix.target }}
+          ALIAS: ${{ matrix.alias }}
+          ARCHIVE: ${{ matrix.archive }}
+          BINARY: ${{ matrix.binary }}
+        run: |
+          extract_target() {
+            local distribution_target="$1"
+            local name="govctl-v${VERSION}-${distribution_target}"
+            if [ "${ARCHIVE}" = "zip" ]; then
+              unzip -q "artifact/${name}.zip" -d extracted
+            else
+              tar -xzf "artifact/${name}.tar.gz" -C extracted
+            fi
+          }
+
+          mkdir extracted
+          extract_target "${TARGET}"
+          if [ "${VERSION%%.*}" = "0" ]; then
+            extract_target "${ALIAS}"
+            cmp \
+              "extracted/govctl-v${VERSION}-${TARGET}/${BINARY}" \
+              "extracted/govctl-v${VERSION}-${ALIAS}/${BINARY}"
+          elif compgen -G "artifact/*-${ALIAS}.*" >/dev/null; then
+            echo "Compatibility alias ${ALIAS} must not be published for ${VERSION}" >&2
+            exit 1
+          fi
+
+      - name: Smoke compatibility
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          TARGET: ${{ matrix.target }}
+          BINARY: ${{ matrix.binary }}
+        run: |
+          BINARY_PATH="extracted/govctl-v${VERSION}-${TARGET}/${BINARY}"
+          if [ "${RUNNER_OS}" != "Windows" ]; then
+            chmod +x "${BINARY_PATH}"
+          fi
+          "${BINARY_PATH}" --version
+          "${BINARY_PATH}" check
+
+      - name: Probe self-update API
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          TARGET: ${{ matrix.target }}
+          BINARY: ${{ matrix.binary }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          BINARY_PATH="extracted/govctl-v${VERSION}-${TARGET}/${BINARY}"
+          "${BINARY_PATH}" self-update --check
+
+  smoke-macos:
+    name: Smoke macOS artifacts
+    needs: [verify, build]
+    runs-on: macos-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Download x86_64 artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: x86_64-apple-darwin
+          path: artifact
+
+      - name: Download aarch64 artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: aarch64-apple-darwin
+          path: artifact
+
+      - name: Extract artifacts
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          mkdir extracted
+          for TARGET in x86_64-apple-darwin aarch64-apple-darwin; do
+            NAME="govctl-v${VERSION}-${TARGET}"
+            tar -xzf "artifact/${NAME}.tar.gz" -C extracted
+            chmod +x "extracted/${NAME}/govctl"
+          done
+
+      - name: Smoke compatibility
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          ARM_BINARY="extracted/govctl-v${VERSION}-aarch64-apple-darwin/govctl"
+          X86_BINARY="extracted/govctl-v${VERSION}-x86_64-apple-darwin/govctl"
+
+          "${ARM_BINARY}" --version
+          "${ARM_BINARY}" check
+          arch -x86_64 "${X86_BINARY}" --version
+          arch -x86_64 "${X86_BINARY}" check
+
+      - name: Probe self-update API
+        shell: bash
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          ARM_BINARY="extracted/govctl-v${VERSION}-aarch64-apple-darwin/govctl"
+          X86_BINARY="extracted/govctl-v${VERSION}-x86_64-apple-darwin/govctl"
+
+          "${ARM_BINARY}" self-update --check
+          arch -x86_64 "${X86_BINARY}" self-update --check
+
   release:
     name: Create Release
-    needs: [verify, build]
+    needs: [verify, build, smoke-cross, smoke-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write

@@ -61,22 +61,29 @@ where
 }
 
 pub(super) fn write_toml_artifact<Wire: Serialize>(
+    config: &Config,
     path: &Path,
     wire: &Wire,
-    schema: ArtifactSchema,
-    schema_error: DiagnosticCode,
-    message_label: &str,
+    io: &ArtifactIo,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> DiagnosticResult<()> {
     let diagnostic_path = display_path.unwrap_or(path);
     let body = toml::to_string_pretty(wire).map_err(|err| {
         Diagnostic::new(
-            schema_error,
-            format!("Failed to serialize {message_label} TOML: {err}"),
+            io.schema_error,
+            format!("Failed to serialize {} TOML: {err}", io.message_label),
             diagnostic_path.display().to_string(),
         )
     })?;
-    let content = with_schema_header(schema, &body);
+    let raw = toml::from_str(&body).map_err(|err| {
+        Diagnostic::new(
+            io.schema_error,
+            format!("Failed to normalize {} TOML: {err}", io.message_label),
+            diagnostic_path.display().to_string(),
+        )
+    })?;
+    validate_toml_value(io.schema, config, path, &raw)?;
+    let content = with_schema_header(io.schema, &body);
     write_file(path, &content, op, display_path)
 }

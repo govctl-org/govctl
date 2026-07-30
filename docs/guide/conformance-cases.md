@@ -65,8 +65,8 @@ Cases also participate in `govctl search`, controlled-vocabulary tags,
 
 ## Schema Migration
 
-Conformance Cases require project schema version 4. Upgrade an existing project
-with:
+Conformance Cases were introduced in project schema version 4. Upgrade an
+existing project to the current schema with:
 
 ```bash
 govctl migrate

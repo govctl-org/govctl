@@ -13,5 +13,5 @@ Checked:
   1 source files scanned
   2 references found
 
-error[E0107]: Unknown artifact reference: RFC-9999 (src/main.rs)
+error[E0107]: Unknown artifact reference: RFC-9999 (src/main.rs:1:34)
 exit: 1

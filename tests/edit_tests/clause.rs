@@ -72,6 +72,25 @@ fn test_clause_edit_text_canonical() -> common::TestResult {
 }
 
 #[test]
+fn test_clause_edit_rejects_schema_invalid_text_without_writing() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let clause = new_test_clause("Test Clause");
+    run_commands(temp_dir.path(), &[NEW_TEST_RFC, &clause])?;
+    let clause_path = temp_dir.path().join("gov/rfc/RFC-0001/clauses/C-TEST.toml");
+    let before = std::fs::read(&clause_path)?;
+
+    let output = run_commands(
+        temp_dir.path(),
+        &[&["clause", "edit", TEST_CLAUSE_ID, "text", "--set", ""]],
+    )?;
+
+    assert!(output.contains("error[E0201]"), "{output}");
+    assert!(output.contains("is shorter than 1 character"), "{output}");
+    assert_eq!(std::fs::read(clause_path)?, before);
+    Ok(())
+}
+
+#[test]
 fn test_clause_set_title() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
     let clause = new_test_clause("Original Title");

@@ -24,6 +24,14 @@ fn test_canonicalize_nested_objects() -> Result<(), Box<dyn std::error::Error>> 
 }
 
 #[test]
+fn test_canonicalize_normalizes_crlf_in_string_values() {
+    let lf = serde_json::json!({"text": "line one\nline two\n"});
+    let crlf = serde_json::json!({"text": "line one\r\nline two\r\n"});
+
+    assert_eq!(canonicalize_json(&lf), canonicalize_json(&crlf));
+}
+
+#[test]
 fn test_extract_signature() {
     let md = r#"---
 status: normative
@@ -76,6 +84,22 @@ fn test_rfc_content_signature_includes_clause_content() -> Result<(), Diagnostic
     rfc.clauses[0].spec.text = "Updated normative behavior.".to_string();
 
     assert_ne!(compute_rfc_content_signature(&rfc)?, baseline);
+    Ok(())
+}
+
+#[test]
+fn test_rfc_signatures_ignore_crlf_conversion() -> Result<(), Diagnostic> {
+    let lf = test_rfc_index();
+    let mut crlf = lf.clone();
+    crlf.clauses[0].spec.text = "Original normative\r\nbehavior.".to_string();
+
+    let mut normalized_lf = lf;
+    normalized_lf.clauses[0].spec.text = "Original normative\nbehavior.".to_string();
+
+    assert_eq!(
+        compute_rfc_signature(&normalized_lf)?,
+        compute_rfc_signature(&crlf)?
+    );
     Ok(())
 }
 

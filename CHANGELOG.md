@@ -10,6 +10,69 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-07-30
+
+0.17.0 makes source-reference scanning scale with repository shape by pruning
+excluded paths during traversal, and replaces platform-specific release builds
+with one validated Zig pipeline for six canonical targets. Governance-specific
+ignore rules, precise diagnostics, and compatibility packaging keep both large
+repositories and existing pre-1.0 installations on a direct upgrade path.
+
+### Changed
+
+- Source scanning now walks the project root using `source_scan.include` as its
+  positive domain, project `.gitignore` files as baseline exclusions, and
+  higher-priority `.govignore` files for governance-specific exclusions and
+  re-inclusions.
+- Custom `source_scan.pattern` expressions now use one validated contract:
+  capture group 1 must produce a non-empty artifact ID for every match.
+- Unknown and outdated source references now report normalized
+  `path:line:byte-column` locations in deterministic order.
+- Release binaries are built in one pinned Zig environment for x86_64 and ARM64
+  Linux, macOS, and Windows targets, then exercised on matching native runners
+  before publication.
+- Linux releases now use static musl binaries. Windows releases use GNU on
+  x86_64 and gnullvm on ARM64, while cargo-binstall maps Windows hosts to the
+  corresponding canonical archive.
+
+### Fixed
+
+- Excluded directories are pruned before their contents are visited, avoiding
+  the previous cost of walking large generated or dependency trees and
+  filtering them afterward.
+- Git metadata directories are pruned before traversal, so source scanning does
+  not enumerate repository object storage.
+- Source scanning no longer silently skips invalid include or ignore rules,
+  traversal failures, unreadable or undecodable selected files, or malformed
+  reference captures. Duplicate diagnostics for the same occurrence are
+  collapsed.
+- Invalid pattern matches in governed text retain field and occurrence
+  positions instead of collapsing distinct diagnostics.
+- Bundled-schema freshness checks and RFC content signatures now treat LF and
+  CRLF source text consistently across platforms.
+- Schema migration now preserves comments and unrelated formatting in
+  `gov/config.toml` while applying required field changes.
+- Self-update API requests use `GITHUB_TOKEN` when available, avoiding
+  unauthenticated GitHub rate limits in automated environments.
+
+### Security
+
+- Cross-platform release smoke jobs now use read-only repository permissions
+  and discard checkout credentials after fetching source.
+
+### Upgrade Notes
+
+- Project schema version 5 removes `source_scan.exclude`. Run `govctl migrate`
+  from schema version 4; existing entries are converted, in order, into root
+  `.govignore` rules.
+- `.govignore` follows normal gitignore ordering and `!` re-inclusion semantics
+  and takes precedence over `.gitignore`. Re-including a descendant requires
+  re-including each excluded parent directory.
+- Every remaining 0.x release publishes legacy Linux GNU and Windows MSVC asset
+  aliases containing the canonical binary, so older self-update clients can
+  cross the target transition. These aliases end at `1.0.0`, including its
+  prereleases.
+
 ## [0.16.0] - 2026-07-29
 
 0.16.0 makes indexed scalar-list editing uniform across the canonical `edit`

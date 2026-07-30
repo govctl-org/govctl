@@ -1,0 +1,41 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-30-001"
+title = "Make source reference diagnostics precise and deterministic"
+status = "done"
+created = "2026-07-30"
+started = "2026-07-30"
+completed = "2026-07-30"
+refs = ["RFC-0009"]
+
+[content]
+description = "Consolidate source-reference pattern validation and retain precise, deterministic occurrence locations for validation diagnostics under [[RFC-0009]]."
+
+[[content.acceptance_criteria]]
+text = "Validate the configured reference pattern through one shared contract and reject a missing capture group with E0501"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Report unknown and outdated source references with normalized one-based line and byte-column locations"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Sort source-reference diagnostics deterministically and collapse duplicate diagnostics at the same location"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Cover pattern validation, Unicode-aware byte positions, ordering, and duplicate suppression with focused tests"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Update source-scan guidance for precise diagnostic locations and pattern requirements"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

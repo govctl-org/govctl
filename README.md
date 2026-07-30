@@ -274,10 +274,11 @@ govctl migrate
 govctl check
 ```
 
-Schema version 3 is the minimum supported repository format; schema version 4
-enables Conformance Cases. Use a compatible earlier govctl version to migrate
-older repositories before upgrading. Legacy RFC and clause JSON storage is
-rejected explicitly.
+Schema version 3 is the minimum supported repository format. Schema version 5
+uses project `.gitignore` files plus `.govignore` for source-scan exclusions and
+re-inclusions; `govctl migrate` upgrades supported repositories. Use a
+compatible earlier govctl version for repositories below schema 3. Legacy RFC
+and clause JSON storage is rejected explicitly.
 
 ### Interactive TUI
 

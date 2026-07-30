@@ -1,4 +1,5 @@
 use std::process::{Child, Command};
+#[cfg(unix)]
 use std::time::Duration;
 
 #[cfg(unix)]

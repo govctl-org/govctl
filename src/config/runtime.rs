@@ -8,6 +8,14 @@ impl Config {
     /// All relative paths in the config are resolved relative to the project root
     /// (the parent of gov/config.toml), not the current working directory.
     pub fn load(path: Option<&Path>) -> DiagnosticResult<Self> {
+        Self::load_inner(path, false)
+    }
+
+    pub fn load_for_migration(path: Option<&Path>) -> DiagnosticResult<Self> {
+        Self::load_inner(path, true)
+    }
+
+    fn load_inner(path: Option<&Path>, allow_outdated_schema: bool) -> DiagnosticResult<Self> {
         let config_path = if let Some(path) = path {
             let path = PathBuf::from(path);
             if !path_entry_exists(&path)? {
@@ -46,6 +54,13 @@ impl Config {
                 schema_version,
                 config_path.display().to_string(),
             )?;
+            if schema_version == 4 && !allow_outdated_schema {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0505MigrationRequired,
+                    "Schema version 4 is outdated. Run `govctl migrate` to upgrade to schema version 5.",
+                    config_path.display().to_string(),
+                ));
+            }
             let mut config: Config = raw.try_into().map_err(|err| {
                 Diagnostic::new(
                     DiagnosticCode::E0501ConfigInvalid,
@@ -53,6 +68,13 @@ impl Config {
                     config_path.display().to_string(),
                 )
             })?;
+            if schema_version >= 5 && config.source_scan.legacy_exclude.is_some() {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0501ConfigInvalid,
+                    "Unsupported config field for schema version 5: source_scan.exclude",
+                    config_path.display().to_string(),
+                ));
+            }
 
             resolve_project_paths(&mut config, &config_path);
 

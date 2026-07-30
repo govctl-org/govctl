@@ -1,6 +1,6 @@
 //! Configuration loading and management.
 //!
-//! Implements [[ADR-0009]] configurable source code reference scanning.
+//! Implements [[RFC-0009]] source scan selection and ignore semantics.
 
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -193,12 +193,12 @@ pub struct SourceScanConfig {
     /// Enable source code scanning (default: false)
     #[serde(default)]
     pub enabled: bool,
-    /// Glob patterns for files to include (e.g., "src/**/*.rs")
+    /// Positive gitignore-style patterns for files to include.
     #[serde(default = "default_scan_include")]
     pub include: Vec<String>,
-    /// Glob patterns for files to exclude (e.g., "**/tests/**")
-    #[serde(default)]
-    pub exclude: Vec<String>,
+    /// Schema-v4 exclusion patterns retained only for migration.
+    #[serde(default, rename = "exclude", skip_serializing)]
+    pub(crate) legacy_exclude: Option<Vec<String>>,
     /// Regex pattern with capture group 1 for artifact ID
     #[serde(default = "default_scan_pattern")]
     pub pattern: String,
@@ -227,7 +227,7 @@ impl Default for SourceScanConfig {
         Self {
             enabled: false,
             include: default_scan_include(),
-            exclude: vec![],
+            legacy_exclude: None,
             pattern: default_scan_pattern(),
         }
     }

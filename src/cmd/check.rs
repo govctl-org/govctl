@@ -6,6 +6,7 @@ use crate::diagnostic::{
 };
 use crate::load::load_project_with_warnings;
 use crate::parse::{load_guards_with_warnings, load_releases};
+use crate::reference_pattern;
 use crate::scan::scan_source_refs;
 use crate::schema::installed_schema_diagnostics;
 use crate::ui;
@@ -87,6 +88,15 @@ pub(crate) fn collect_diagnostics(
     }
     all_diagnostics.extend(installed_schema_diagnostics(config));
     all_diagnostics.extend(crate::cmd::project_support::local_state_gitignore_diagnostics(config));
+    if let Err(diagnostic) = reference_pattern::compile(
+        &config.source_scan.pattern,
+        config
+            .display_path(&config.gov_root.join("config.toml"))
+            .display()
+            .to_string(),
+    ) {
+        all_diagnostics.push(diagnostic);
+    }
 
     // Load project (with warnings for parse errors)
     let load_result = match load_project_with_warnings(config) {
@@ -108,7 +118,7 @@ pub(crate) fn collect_diagnostics(
     summary.adr_count = result.adr_count;
     summary.work_count = result.work_count;
     summary.conformance_count = result.conformance_count;
-    all_diagnostics.extend(result.diagnostics);
+    extend_with_pattern_dedup(&mut all_diagnostics, result.diagnostics);
 
     match load_guards_with_warnings(config) {
         Ok(result) => {
@@ -137,7 +147,27 @@ pub(crate) fn collect_diagnostics(
     let scan_result = scan_source_refs(config, &index);
     summary.files_scanned = scan_result.files_scanned;
     summary.refs_found = scan_result.refs_found;
-    all_diagnostics.extend(scan_result.diagnostics);
+    extend_with_pattern_dedup(&mut all_diagnostics, scan_result.diagnostics);
 
     Ok((all_diagnostics, summary))
+}
+
+fn extend_with_pattern_dedup(
+    diagnostics: &mut Diagnostics,
+    additional: impl IntoIterator<Item = Diagnostic>,
+) {
+    for diagnostic in additional {
+        let duplicate_pattern_error = diagnostic.code == DiagnosticCode::E0501ConfigInvalid
+            && diagnostic
+                .message
+                .starts_with("Invalid source_scan.pattern")
+            && diagnostics.iter().any(|existing| {
+                existing.code == diagnostic.code
+                    && existing.file == diagnostic.file
+                    && existing.message == diagnostic.message
+            });
+        if !duplicate_pattern_error {
+            diagnostics.push(diagnostic);
+        }
+    }
 }

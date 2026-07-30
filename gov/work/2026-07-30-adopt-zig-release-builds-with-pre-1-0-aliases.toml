@@ -1,0 +1,54 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-30-004"
+title = "Adopt Zig release builds with pre-1.0 aliases"
+status = "done"
+created = "2026-07-30"
+started = "2026-07-30"
+completed = "2026-07-30"
+refs = [
+    "RFC-0002:C-PRE-1-RELEASE-TARGET-COMPATIBILITY",
+    "ADR-0060",
+]
+
+[content]
+description = "Implement [[RFC-0002:C-PRE-1-RELEASE-TARGET-COMPATIBILITY]] and [[ADR-0060]] in the formal release workflow, replacing the validated spike while preserving the bounded pre-1.0 update path."
+
+[[content.acceptance_criteria]]
+text = "The formal release workflow builds all six canonical targets from the pinned Linux Zig environment."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Every 0.x release packages the four compatibility aliases with the governed layout and byte-identical executables."
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Releases at 1.0.0 and later, including prereleases, omit the pre-1.0 compatibility aliases."
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Native Linux, Windows, and macOS smoke jobs gate release creation on canonical artifact execution and authenticated self-update checks."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Cargo-binstall metadata resolves canonical and compatibility Windows targets to ZIP assets."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "The temporary Zig release spike workflow is removed after the formal path is validated."
+status = "done"
+category = "removed"
+
+[[content.acceptance_criteria]]
+text = "Release workflow lint and focused metadata tests pass."
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

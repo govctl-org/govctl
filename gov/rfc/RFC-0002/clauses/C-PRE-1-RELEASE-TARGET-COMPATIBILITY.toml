@@ -1,0 +1,37 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-PRE-1-RELEASE-TARGET-COMPATIBILITY"
+title = "Pre-1.0 Release Target Compatibility"
+kind = "normative"
+status = "active"
+since = "3.1.0"
+
+[content]
+text = """
+For govctl release versions at or after 0.17.0 whose SemVer major component is zero, the canonical prebuilt-binary target set is:
+
+- `x86_64-unknown-linux-musl`
+- `aarch64-unknown-linux-musl`
+- `x86_64-apple-darwin`
+- `aarch64-apple-darwin`
+- `x86_64-pc-windows-gnu`
+- `aarch64-pc-windows-gnullvm`
+
+Every release in that scope MUST also publish compatibility alias archives with these mappings:
+
+- `x86_64-unknown-linux-gnu` -> `x86_64-unknown-linux-musl`
+- `aarch64-unknown-linux-gnu` -> `aarch64-unknown-linux-musl`
+- `x86_64-pc-windows-msvc` -> `x86_64-pc-windows-gnu`
+- `aarch64-pc-windows-msvc` -> `aarch64-pc-windows-gnullvm`
+
+`{version}` below denotes the complete SemVer release version without a leading `v`; the `v` shown in each template is literal. For every canonical or alias target identifier listed by this Clause, release archives MUST use this layout:
+
+- Linux and macOS targets: asset filename `govctl-v{version}-{target}.tar.gz`, gzip-compressed tar format, one root directory named `govctl-v{version}-{target}`, and executable path `govctl-v{version}-{target}/govctl`.
+- Windows targets: asset filename `govctl-v{version}-{target}.zip`, ZIP format, one root directory named `govctl-v{version}-{target}`, and executable path `govctl-v{version}-{target}/govctl.exe`.
+
+For each compatibility mapping, the executable bytes at the alias executable path MUST equal the executable bytes at the mapped canonical executable path for the same release version.
+
+The alias set applies to every release in this pre-1.0 transition window so legacy-target self-update clients and package installers can cross the target transition even when versions are skipped.
+
+A release version whose SemVer major component is one or greater, including a prerelease such as `1.0.0-rc.1`, MUST NOT publish the four compatibility alias target archives defined by this Clause. A pre-1.0 installation that has not crossed the target transition before that breaking boundary may require reinstallation through another distribution channel."""

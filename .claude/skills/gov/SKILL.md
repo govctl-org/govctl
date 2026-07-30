@@ -95,6 +95,11 @@ Keep implementation scoped to the Work Item and governing artifacts. When work
 reveals a specification defect, repair the specification through the authorized
 lifecycle rather than silently deviating.
 
+When source reference scanning is enabled, express its positive domain in
+`source_scan.include`. Project `.gitignore` files provide baseline exclusions;
+put governance-specific exclusions and re-inclusions in `.govignore`. A custom
+`source_scan.pattern` uses capture group 1 as the artifact ID for every match.
+
 Run the narrowest useful checks while developing. Before closing the Work Item,
 do not manually repeat guards that `govctl work move <WI-ID> done` is about to
 run. Standalone verification is for diagnosis or evidence while the item remains

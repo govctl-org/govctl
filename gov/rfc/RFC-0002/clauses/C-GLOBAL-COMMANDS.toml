@@ -20,7 +20,7 @@ Syntax: `govctl init [--force]`
 
 Behavior:
 - Creates `gov/` directory structure
-- Generates `gov/config.toml` declaring project schema version 4
+- Generates `gov/config.toml` declaring project schema version 5
 - Creates subdirectories for RFCs, ADRs, Work Items, verification guards, and Conformance Cases
 - Installs bundled JSON Schema files under `gov/schema/`
 - MUST error if already initialized (unless `--force`)
@@ -105,8 +105,11 @@ Behavior:
 - Enforces the minimum supported schema version in [[RFC-0002:C-COMPATIBILITY-BOUNDARY]] before planning file operations
 - Runs all pending migration steps from a supported version to the latest
 - Each step produces a set of file operations executed transactionally
+- With `--dry-run`, MUST perform the same schema checks, repository validation, project-support discovery, and migration planning as execution; MUST report every planned file operation; and MUST leave persistent project and local state unchanged
 - Bumps `[schema] version` in `gov/config.toml` after successful migration
-- MUST leave the repository unchanged if any step fails
+- If a migration operation fails after changing any target, implementation MUST attempt rollback before returning
+- When rollback succeeds, implementation MUST leave every migration target file unchanged and return the original operation failure
+- If rollback fails, implementation MUST return E0903, identify that restoration may be incomplete and where recovery backups were retained, MUST NOT report migration success, and MUST NOT discard the recovery backups
 - MUST be safe to run on an already-migrated repository and report a no-op result
 - MUST NOT perform heuristic project discovery or broad adoption tasks
 - MUST ensure all bundled JSON Schema files exist in `gov/schema/`, overwriting with the latest version regardless of schema version

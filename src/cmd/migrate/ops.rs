@@ -59,23 +59,40 @@ pub(super) fn execute_ops(config: &Config, ops: &[FileOp]) -> DiagnosticResult<(
 
     fs::create_dir_all(&stage_root)
         .map_err(|err| io_error(&stage_root, "create migration stage directory", err))?;
-    fs::create_dir_all(&backup_root)
-        .map_err(|err| io_error(&backup_root, "create migration backup directory", err))?;
+    if let Err(err) = fs::create_dir_all(&backup_root) {
+        let operation_error = io_error(&backup_root, "create migration backup directory", err);
+        cleanup_dir(&stage_root);
+        return Err(operation_error);
+    }
 
     // Stage: write all new content to staging area
     if let Err(err) = materialize_stage(&stage_root, ops) {
-        let _ = fs::remove_dir_all(&stage_root);
-        let _ = fs::remove_dir_all(&backup_root);
+        cleanup_transaction_state(&stage_root, &backup_root);
         return Err(err);
     }
 
     // Commit: backup originals then apply staged content
     let result = commit_ops(&stage_root, &backup_root, ops);
-    let _ = fs::remove_dir_all(&stage_root);
-    if result.is_ok() {
-        let _ = fs::remove_dir_all(&backup_root);
+    match result {
+        Ok(_) => {
+            cleanup_transaction_state(&stage_root, &backup_root);
+            Ok(())
+        }
+        Err(CommitFailure::RolledBack(err)) => {
+            cleanup_transaction_state(&stage_root, &backup_root);
+            Err(err)
+        }
+        Err(CommitFailure::RollbackFailed {
+            operation_error,
+            rollback_error,
+        }) => Err(retain_recovery_error(
+            config,
+            operation_error,
+            rollback_error,
+            &stage_root,
+            &backup_root,
+        )),
     }
-    result
 }
 
 fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> DiagnosticResult<()> {
@@ -89,7 +106,11 @@ fn materialize_stage(stage_root: &Path, ops: &[FileOp]) -> DiagnosticResult<()> 
     Ok(())
 }
 
-fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> DiagnosticResult<()> {
+fn commit_ops(
+    stage_root: &Path,
+    backup_root: &Path,
+    ops: &[FileOp],
+) -> Result<Vec<AppliedOp>, CommitFailure> {
     let mut applied: Vec<AppliedOp> = Vec::new();
 
     let result = (|| -> DiagnosticResult<()> {
@@ -105,8 +126,6 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
                         })?;
                     }
                     let staged = stage_root.join(format!("{i}"));
-                    fs::copy(&staged, path)
-                        .map_err(|err| io_error(path, "apply migrated file", err))?;
                     if existed {
                         applied.push(AppliedOp::Restore {
                             path: path.clone(),
@@ -115,15 +134,17 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
                     } else {
                         applied.push(AppliedOp::RemoveCreated { path: path.clone() });
                     }
+                    fs::copy(&staged, path)
+                        .map_err(|err| io_error(path, "apply migrated file", err))?;
                 }
                 FileOp::Delete { path } => {
                     if backup_existing_file(path, &backup_path, "backup file before deletion")? {
-                        fs::remove_file(path)
-                            .map_err(|err| io_error(path, "delete migrated legacy file", err))?;
                         applied.push(AppliedOp::Restore {
                             path: path.clone(),
                             backup_path,
                         });
+                        fs::remove_file(path)
+                            .map_err(|err| io_error(path, "delete migrated legacy file", err))?;
                     }
                 }
             }
@@ -131,22 +152,69 @@ fn commit_ops(stage_root: &Path, backup_root: &Path, ops: &[FileOp]) -> Diagnost
         Ok(())
     })();
 
-    if result.is_err() {
-        for op in applied.iter().rev() {
-            match op {
-                AppliedOp::Restore { path, backup_path } => {
-                    let _ = fs::copy(backup_path, path);
-                }
-                AppliedOp::RemoveCreated { path } => {
-                    if path.exists() {
-                        let _ = fs::remove_file(path);
-                    }
-                }
-            }
+    match result {
+        Ok(()) => Ok(applied),
+        Err(operation_error) => match rollback_applied(&applied) {
+            Ok(()) => Err(CommitFailure::RolledBack(operation_error)),
+            Err(rollback_error) => Err(CommitFailure::RollbackFailed {
+                operation_error,
+                rollback_error,
+            }),
+        },
+    }
+}
+
+fn retain_recovery_error(
+    config: &Config,
+    operation_error: Diagnostic,
+    rollback_error: Diagnostic,
+    stage_root: &Path,
+    backup_root: &Path,
+) -> Diagnostic {
+    cleanup_dir(stage_root);
+    let backup_display = config.display_path(backup_root).display().to_string();
+    Diagnostic::new(
+        DiagnosticCode::E0903UnexpectedError,
+        format!(
+            "{}; transaction rollback failed; repository restoration may be incomplete: {}; recovery backup retained at {}",
+            operation_error.message, rollback_error.message, backup_display
+        ),
+        backup_display,
+    )
+}
+
+fn rollback_applied(applied: &[AppliedOp]) -> DiagnosticResult<()> {
+    let mut first_error = None;
+    for op in applied.iter().rev() {
+        let result = match op {
+            AppliedOp::Restore { path, backup_path } => fs::copy(backup_path, path)
+                .map(|_| ())
+                .map_err(|err| io_error(path, "restore file during migration rollback", err)),
+            AppliedOp::RemoveCreated { path } => match fs::remove_file(path) {
+                Ok(()) => Ok(()),
+                Err(err) if err.kind() == io::ErrorKind::NotFound => Ok(()),
+                Err(err) => Err(io_error(
+                    path,
+                    "remove created file during migration rollback",
+                    err,
+                )),
+            },
+        };
+        if first_error.is_none() {
+            first_error = result.err();
         }
     }
 
-    result
+    first_error.map_or(Ok(()), Err)
+}
+
+fn cleanup_transaction_state(stage_root: &Path, backup_root: &Path) {
+    cleanup_dir(stage_root);
+    cleanup_dir(backup_root);
+}
+
+fn cleanup_dir(path: &Path) {
+    let _ = fs::remove_dir_all(path);
 }
 
 fn backup_existing_file(path: &Path, backup_path: &Path, action: &str) -> DiagnosticResult<bool> {
@@ -160,6 +228,14 @@ fn backup_existing_file(path: &Path, backup_path: &Path, action: &str) -> Diagno
 enum AppliedOp {
     Restore { path: PathBuf, backup_path: PathBuf },
     RemoveCreated { path: PathBuf },
+}
+
+enum CommitFailure {
+    RolledBack(Diagnostic),
+    RollbackFailed {
+        operation_error: Diagnostic,
+        rollback_error: Diagnostic,
+    },
 }
 
 fn io_error(path: &Path, action: &str, err: io::Error) -> Diagnostic {
