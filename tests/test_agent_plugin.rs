@@ -88,6 +88,15 @@ fn fake_runtime_path(root: &Path) -> Result<OsString, Box<dyn std::error::Error>
     fs::create_dir_all(&bin)?;
     let script = r#"#!/bin/sh
 printf '%s %s\n' "${0##*/}" "$*" >> "$AGENT_PLUGIN_LOG"
+case " $* " in
+  *" --help "*) ;;
+  *)
+    if [ -f "${AGENT_PLUGIN_LOG}.fail-${0##*/}" ]; then
+      printf 'simulated %s failure\n' "${0##*/}" >&2
+      exit 9
+    fi
+    ;;
+esac
 exit 0
 "#;
     for runtime in ["codex", "claude"] {
@@ -113,6 +122,33 @@ fn marketplace_root_from_log(log: &str) -> Result<PathBuf, std::io::Error> {
 
 #[cfg(unix)]
 #[test]
+fn agent_doctor_preflights_all_selected_runtimes() -> common::TestResult {
+    let temp = tempfile::tempdir()?;
+    let home = temp.path().join("home");
+    let log_path = temp.path().join("agent.log");
+    let output = run_agent(
+        temp.path(),
+        &home,
+        fake_runtime_path(temp.path())?,
+        &log_path,
+        &["agent", "doctor", "all"],
+    )?;
+
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let log = fs::read_to_string(log_path)?;
+    assert!(log.lines().any(|line| line.starts_with("codex ")));
+    assert!(log.lines().any(|line| line.starts_with("claude ")));
+    assert!(log.lines().all(|line| line.ends_with("--help")));
+    assert!(!home.exists());
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
 fn agent_dry_run_preflights_without_persistent_writes() -> common::TestResult {
     let temp = tempfile::tempdir()?;
     let home = temp.path().join("home");
@@ -131,8 +167,36 @@ fn agent_dry_run_preflights_without_persistent_writes() -> common::TestResult {
         String::from_utf8_lossy(&output.stderr)
     );
     let log = fs::read_to_string(log_path)?;
+    assert!(!log.is_empty(), "dry run should preflight both runtimes");
     assert!(log.lines().all(|line| line.ends_with("--help")));
     assert!(!home.exists());
+    Ok(())
+}
+
+#[cfg(unix)]
+#[test]
+fn agent_batch_failure_reports_failed_and_skipped_runtimes() -> common::TestResult {
+    let temp = tempfile::tempdir()?;
+    let home = temp.path().join("home");
+    let log_path = temp.path().join("agent.log");
+    fs::write(
+        format!("{}.fail-codex", log_path.display()),
+        "fail mutation",
+    )?;
+    let output = run_agent(
+        temp.path(),
+        &home,
+        fake_runtime_path(temp.path())?,
+        &log_path,
+        &["agent", "install", "all"],
+    )?;
+
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("E1401"));
+    assert!(stderr.contains("codex failed"));
+    assert!(stderr.contains("claude skipped"));
+    assert!(!home.join(".codex/agents").exists());
     Ok(())
 }
 
@@ -321,6 +385,17 @@ fn session_start_discovers_parent_project_and_reports_active_work() -> common::T
         "{}",
         String::from_utf8_lossy(&created.stderr)
     );
+    let work_id = common::first_work_id(&common::today());
+    let loop_started = Command::new(env!("CARGO_BIN_EXE_govctl"))
+        .args(["loop", "start", &work_id])
+        .current_dir(temp.path())
+        .env("NO_COLOR", "1")
+        .output()?;
+    assert!(
+        loop_started.status.success(),
+        "{}",
+        String::from_utf8_lossy(&loop_started.stderr)
+    );
     let nested = temp.path().join("src/nested");
     fs::create_dir_all(&nested)?;
 
@@ -336,7 +411,44 @@ fn session_start_discovers_parent_project_and_reports_active_work() -> common::T
     assert!(context.contains("govctl project:"));
     assert!(context.contains("Active work:"));
     assert!(context.contains("Hook context work"));
+    assert!(context.contains("Open loops:"));
+    assert!(context.contains("pending round 0, next start"), "{context}");
     assert!(!context.contains("project_state"));
+    Ok(())
+}
+
+#[test]
+fn session_start_preserves_active_work_alongside_load_warnings() -> common::TestResult {
+    let temp = common::init_project()?;
+    let created = Command::new(env!("CARGO_BIN_EXE_govctl"))
+        .args(["work", "new", "Visible despite warning", "--active"])
+        .current_dir(temp.path())
+        .env("GOVCTL_DEFAULT_OWNER", "@test-user")
+        .env("NO_COLOR", "1")
+        .output()?;
+    assert!(
+        created.status.success(),
+        "{}",
+        String::from_utf8_lossy(&created.stderr)
+    );
+    fs::write(
+        temp.path().join("gov/work/malformed.toml"),
+        "not valid toml = [",
+    )?;
+
+    let output = run_hook(
+        temp.path(),
+        &["agent", "hook", "session-start"],
+        serde_json::json!({
+            "cwd": temp.path(),
+            "hook_event_name": "SessionStart"
+        }),
+    )?;
+    let context = hook_context(&output)?;
+    assert!(context.contains("Visible despite warning"));
+    assert!(context.contains("Work Item load warnings:"));
+    assert!(context.contains("E0401"));
+    assert!(!context.contains("could not be loaded"));
     Ok(())
 }
 

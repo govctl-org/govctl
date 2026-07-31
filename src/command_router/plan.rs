@@ -171,6 +171,8 @@ impl BuiltinOp {
             | Self::Describe { .. }
             | Self::Completions { .. }
             | Self::SelfUpdate { .. }
+            // [[RFC-0002:C-AGENT-INTEGRATION]]: agent operations manage
+            // user-scoped runtime integration, not governed project state.
             | Self::Agent { .. }
             | Self::AgentHook { .. }
             | Self::TagList { .. }

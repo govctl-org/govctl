@@ -44,6 +44,8 @@ pub fn manage(
 fn doctor(selector: AgentSelector) -> DiagnosticResult<Diagnostics> {
     let mut failures = Vec::new();
     for runtime in selector.runtimes() {
+        // Update is the broadest readiness probe: Claude checks both native
+        // install and update support, while Codex validates its install path.
         match check_runtime(*runtime, AgentPluginOperation::Update) {
             Ok(()) => ui::sub_info(format!("{} agent operations are ready", runtime.id())),
             Err(message) => failures.push(format!("{}: {message}", runtime.id())),

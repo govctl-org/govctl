@@ -13,13 +13,14 @@ text = """
 
 **Syntax**
 
-```
+```text
 govctl agent doctor <codex|claude|all>
 govctl agent install <codex|claude|all>
 govctl agent update <codex|claude|all>
+govctl agent hook <session-start|pre-tool-use>
 ```
 
-The runtime selector is required. `all` selects Codex and Claude.
+The runtime selector is required for `doctor`, `install`, and `update`; `all` selects Codex and Claude. `hook` is an internal adapter entry point used by bundled runtime manifests. It takes no runtime selector, consumes the native event payload as JSON on standard input, and emits the applicable non-blocking hook response as JSON on standard output. It MUST remain hidden from user-facing command discovery.
 
 **Shared behavior**
 

@@ -38,9 +38,7 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::Describe { context } => cmd::describe::describe(config, *context),
         BuiltinOp::SelfUpdate { check } => cmd::self_update::self_update(*check),
         BuiltinOp::Completions { shell } => {
-            use crate::Cli;
-            use clap::CommandFactory;
-            let mut cmd = Cli::command();
+            let mut cmd = completion_command();
             clap_complete::generate(*shell, &mut cmd, "govctl", &mut std::io::stdout());
             Ok(vec![])
         }
@@ -122,5 +120,46 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::ConformanceTrace { target, output } => {
             cmd::conformance::trace(config, target.as_deref(), *output)
         }
+    }
+}
+
+fn completion_command() -> clap::Command {
+    use crate::Cli;
+    use clap::CommandFactory;
+
+    Cli::command().mut_subcommand("agent", |agent| {
+        let visible = agent
+            .get_subcommands()
+            .filter(|subcommand| !subcommand.is_hide_set())
+            .cloned()
+            .collect::<Vec<_>>();
+        // [[RFC-0002:C-AGENT-INTEGRATION]]: the bundled hook adapter is an
+        // internal protocol entry point, so completions expose management only.
+        clap::Command::new("agent")
+            .about("Manage the user-scoped govctl agent integration")
+            .subcommands(visible)
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::completion_command;
+
+    #[test]
+    fn completion_tree_excludes_internal_agent_commands() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let command = completion_command();
+        let agent = command
+            .get_subcommands()
+            .find(|subcommand| subcommand.get_name() == "agent")
+            .ok_or_else(|| std::io::Error::other("missing agent command"))?;
+        assert_eq!(
+            agent
+                .get_subcommands()
+                .map(clap::Command::get_name)
+                .collect::<Vec<_>>(),
+            ["doctor", "install", "update"]
+        );
+        Ok(())
     }
 }

@@ -31,7 +31,13 @@ impl Config {
     /// Existing governance state still identifies the project when its config
     /// is missing or invalid, which keeps recovery hooks scoped correctly.
     pub(crate) fn governed_root_from(start: &Path) -> DiagnosticResult<Option<PathBuf>> {
-        let mut current = start.to_path_buf();
+        let mut current = if start.is_absolute() {
+            start.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?
+                .join(start)
+        };
         loop {
             let gov_root = current.join("gov");
             if path_entry_exists(&gov_root.join("config.toml"))?

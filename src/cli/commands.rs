@@ -87,7 +87,10 @@ pub(crate) enum Commands {
         dir: Option<PathBuf>,
     },
 
-    /// Manage the user-scoped govctl agent integration
+    /// Manage the user-scoped govctl agent integration.
+    ///
+    /// [[RFC-0002:C-AGENT-INTEGRATION]] defines the command contract;
+    /// [[RFC-0002:C-GLOBAL-COMMANDS]] keeps it in the global namespace.
     #[command(after_help = help::AGENT)]
     Agent {
         #[command(subcommand)]

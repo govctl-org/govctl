@@ -208,9 +208,11 @@ Behavior:
 
 Manages the user-scoped govctl agent integration.
 
-Syntax: `govctl agent <doctor|install|update> <codex|claude|all>`
+Syntax:
+- `govctl agent <doctor|install|update> <codex|claude|all>`
+- `govctl agent hook <session-start|pre-tool-use>` (internal adapter)
 
-Behavior is defined by [[RFC-0002:C-AGENT-INTEGRATION]].
+Behavior, including the internal adapter exception to runtime selection, is defined by [[RFC-0002:C-AGENT-INTEGRATION]].
 
 **Rationale:**
 

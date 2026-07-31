@@ -77,5 +77,30 @@ text = "Focused tests cover runtime-specific hook assets, governed-project disco
 status = "done"
 category = "chore"
 
+[[content.acceptance_criteria]]
+text = "The normative agent command grammar defines the bundled internal hook adapter entry points and their runtime-selector exception."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Session-start context retains actionable project state when non-fatal Work Item warnings exist, and patch-header paths tolerate platform line endings."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Governed-project discovery handles relative starting paths and lexical normalization preserves filesystem roots."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused tests cover dry-run preflight execution, advisory-scope boundaries, and hook path normalization without asserting documentation prose."
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Shell completion generation omits the internal agent hook adapter while retaining public management subcommands."
+status = "done"
+category = "fixed"
+
 [verification]
 required_guards = ["GUARD-CARGO-TEST"]

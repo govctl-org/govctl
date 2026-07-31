@@ -3,7 +3,7 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.4.0"
+version = "3.5.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "14e9acd1aa7fd2632b06eac77fa6e61e05c18cddfceb7969a5718ec0c4fb9114"
+signature = "d55103e00864241a0c95b47251aff7573c382342b3797b7c3fc0df2340da3e64"
 
 [[sections]]
 title = "Summary"
@@ -47,6 +47,12 @@ clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
 ]
+
+[[changelog]]
+version = "3.5.0"
+date = "2026-07-31"
+notes = "Define the internal agent hook adapter command contract"
+added = ["Specify hook event syntax, JSON invocation, and the runtime-selector exception"]
 
 [[changelog]]
 version = "3.4.0"

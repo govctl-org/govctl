@@ -66,9 +66,7 @@ fn handle_session_start(input: &HookInput) -> DiagnosticResult<Diagnostics> {
 fn session_context(config: &Config) -> DiagnosticResult<String> {
     crate::load::reject_unmigrated_conformance(config)?;
     let work_result = crate::parse::load_work_items_with_warnings(config)?;
-    if let Some(diagnostic) = work_result.warnings.into_iter().next() {
-        return Err(diagnostic);
-    }
+    let warnings = work_result.warnings;
     let mut active_work = work_result
         .items
         .into_iter()
@@ -94,6 +92,13 @@ fn session_context(config: &Config) -> DiagnosticResult<String> {
         config.project.name,
         config.project_root().display()
     )];
+    if !warnings.is_empty() {
+        lines.push("Work Item load warnings:".to_string());
+        for diagnostic in warnings.iter().take(HOOK_ITEM_LIMIT) {
+            lines.push(format!("- {diagnostic}"));
+        }
+        append_omitted_count(&mut lines, warnings.len());
+    }
     if active_work.is_empty() && loops.is_empty() {
         lines.push("No active Work Item or open loop.".to_string());
         return Ok(bound_context(lines.join("\n")));
@@ -191,6 +196,7 @@ fn patch_path(line: &str) -> Option<&str> {
     ]
     .iter()
     .find_map(|prefix| line.strip_prefix(prefix))
+    .map(str::trim)
 }
 
 fn is_lifecycle_managed_path(project_root: &Path, cwd: &Path, path: &Path) -> bool {
@@ -232,7 +238,12 @@ fn normalize_path(path: &Path) -> PathBuf {
         match component {
             Component::CurDir => {}
             Component::ParentDir => {
-                normalized.pop();
+                if !matches!(
+                    normalized.components().next_back(),
+                    Some(Component::RootDir | Component::Prefix(_)) | None
+                ) {
+                    normalized.pop();
+                }
             }
             Component::Prefix(_) | Component::RootDir | Component::Normal(_) => {
                 normalized.push(component.as_os_str());
@@ -278,6 +289,12 @@ mod tests {
     }
 
     #[test]
+    fn hook_context_at_the_character_limit_is_unchanged() {
+        let context = "x".repeat(HOOK_CONTEXT_CHAR_LIMIT);
+        assert_eq!(bound_context(context.clone()), context);
+    }
+
+    #[test]
     fn invalid_projects_still_scope_managed_artifact_edits()
     -> Result<(), Box<dyn std::error::Error>> {
         let temp = tempfile::tempdir()?;
@@ -294,6 +311,65 @@ mod tests {
             }),
         };
         assert!(managed_edit_target(&project_root, &input));
+        Ok(())
+    }
+
+    #[test]
+    fn advisory_scope_excludes_unmanaged_paths() {
+        let project_root = Path::new("/project");
+        let cwd = Path::new("/project");
+
+        assert!(!is_lifecycle_managed_path(
+            project_root,
+            cwd,
+            Path::new("src/main.rs")
+        ));
+        assert!(!is_lifecycle_managed_path(
+            project_root,
+            cwd,
+            Path::new("gov/config.toml")
+        ));
+        assert!(!is_lifecycle_managed_path(
+            project_root,
+            cwd,
+            Path::new("gov/releases.toml/extra")
+        ));
+    }
+
+    #[test]
+    fn command_payload_detects_trimmed_patch_paths() {
+        let project_root = Path::new("/project");
+        let input = HookInput {
+            cwd: project_root.to_path_buf(),
+            tool_input: serde_json::json!({
+                "command": "*** Begin Patch\r\n*** Update File: gov/releases.toml  \r\n*** End Patch\r\n",
+            }),
+        };
+
+        assert!(managed_edit_target(project_root, &input));
+    }
+
+    #[test]
+    fn normalization_preserves_filesystem_root() {
+        assert_eq!(
+            normalize_path(Path::new("/../gov/work/example.toml")),
+            Path::new("/gov/work/example.toml")
+        );
+    }
+
+    #[test]
+    fn governed_root_discovery_accepts_relative_paths() -> Result<(), Box<dyn std::error::Error>> {
+        let current = std::env::current_dir()?;
+        let temp = tempfile::tempdir_in(&current)?;
+        std::fs::create_dir_all(temp.path().join("gov/work"))?;
+        std::fs::write(temp.path().join("gov/config.toml"), "invalid = [")?;
+        let relative = temp.path().strip_prefix(&current)?.join("nested");
+        std::fs::create_dir_all(current.join(&relative))?;
+
+        assert_eq!(
+            Config::governed_root_from(&relative)?,
+            Some(temp.path().to_path_buf())
+        );
         Ok(())
     }
 }
