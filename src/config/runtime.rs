@@ -15,6 +15,42 @@ impl Config {
         Self::load_inner(path, true)
     }
 
+    /// Discover and load the governed project containing `start`.
+    ///
+    /// Unlike `load(None)`, this returns `None` when no project exists. Hook
+    /// adapters use this to stay silent in unmanaged working directories.
+    pub(crate) fn discover_from(start: &Path) -> DiagnosticResult<Option<Self>> {
+        let Some(config_path) = Self::find_config_from(start.to_path_buf())? else {
+            return Ok(None);
+        };
+        Self::load(Some(&config_path)).map(Some)
+    }
+
+    /// Find the nearest governed project root without loading its config.
+    ///
+    /// Existing governance state still identifies the project when its config
+    /// is missing or invalid, which keeps recovery hooks scoped correctly.
+    pub(crate) fn governed_root_from(start: &Path) -> DiagnosticResult<Option<PathBuf>> {
+        let mut current = if start.is_absolute() {
+            start.to_path_buf()
+        } else {
+            std::env::current_dir()
+                .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?
+                .join(start)
+        };
+        loop {
+            let gov_root = current.join("gov");
+            if path_entry_exists(&gov_root.join("config.toml"))?
+                || contains_governance_state(&gov_root)?
+            {
+                return Ok(Some(current));
+            }
+            if !current.pop() {
+                return Ok(None);
+            }
+        }
+    }
+
     fn load_inner(path: Option<&Path>, allow_outdated_schema: bool) -> DiagnosticResult<Self> {
         let config_path = if let Some(path) = path {
             let path = PathBuf::from(path);
@@ -61,6 +97,10 @@ impl Config {
                     config_path.display().to_string(),
                 ));
             }
+            let agent_dir_explicit = raw
+                .get("paths")
+                .and_then(toml::Value::as_table)
+                .is_some_and(|paths| paths.contains_key("agent_dir"));
             let mut config: Config = raw.try_into().map_err(|err| {
                 Diagnostic::new(
                     DiagnosticCode::E0501ConfigInvalid,
@@ -68,6 +108,7 @@ impl Config {
                     config_path.display().to_string(),
                 )
             })?;
+            config.agent_dir_explicit = agent_dir_explicit;
             if schema_version >= 5 && config.source_scan.legacy_exclude.is_some() {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0501ConfigInvalid,
@@ -103,19 +144,20 @@ impl Config {
 
     /// Find a config file by walking up the directory tree.
     fn find_config() -> DiagnosticResult<Option<PathBuf>> {
-        let mut current = std::env::current_dir()
+        let current = std::env::current_dir()
             .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?;
-        loop {
-            let config_path = current.join("gov/config.toml");
-            if path_entry_exists(&config_path)? {
-                return Ok(Some(config_path));
-            }
-            if contains_governance_state(&current.join("gov"))? {
-                return Err(missing_config_diagnostic(&config_path));
-            }
-            if !current.pop() {
-                return Ok(None);
-            }
+        Self::find_config_from(current)
+    }
+
+    fn find_config_from(current: PathBuf) -> DiagnosticResult<Option<PathBuf>> {
+        let Some(project_root) = Self::governed_root_from(&current)? else {
+            return Ok(None);
+        };
+        let config_path = project_root.join("gov/config.toml");
+        if path_entry_exists(&config_path)? {
+            Ok(Some(config_path))
+        } else {
+            Err(missing_config_diagnostic(&config_path))
         }
     }
 

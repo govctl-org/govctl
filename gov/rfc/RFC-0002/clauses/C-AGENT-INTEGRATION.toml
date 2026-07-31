@@ -1,0 +1,51 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-AGENT-INTEGRATION"
+title = "Agent Integration Management"
+kind = "normative"
+status = "active"
+since = "3.2.0"
+
+[content]
+text = """
+`govctl agent` manages the user-scoped govctl agent integration independently of project governance state.
+
+**Syntax**
+
+```text
+govctl agent doctor <codex|claude|all>
+govctl agent install <codex|claude|all>
+govctl agent update <codex|claude|all>
+govctl agent hook <session-start|pre-tool-use>
+```
+
+The runtime selector is required for `doctor`, `install`, and `update`; `all` selects Codex and Claude. `hook` is an internal adapter entry point used by bundled runtime manifests. It takes no runtime selector, consumes the native event payload as JSON on standard input, and emits the applicable non-blocking hook response as JSON on standard output. It MUST remain hidden from user-facing command discovery.
+
+**Shared behavior**
+
+- These commands MUST work without an initialized govctl project.
+- `doctor` MUST be read-only. It MUST verify that every selected runtime exposes the native plugin operations required by `install` and `update`, and it MUST exit non-zero when any selected runtime is unavailable or incompatible.
+- `install` and `update` MUST use plugin assets bundled with the running govctl version. They MUST materialize those assets at a persistent user-scoped support path before registering that path as a native marketplace source.
+- The materialized plugin version MUST equal the running govctl version.
+- `install` MUST preserve an existing Codex reviewer-role file rather than replacing it.
+- `update` MUST replace the govctl reviewer-role files for Codex with the bundled projection.
+- When `all` is selected, request validation and native-operation preflight MUST complete for both runtimes before the first native mutation. The command MUST exit non-zero unless every selected runtime succeeds, and failure output MUST identify completed, failed, and skipped runtime work without claiming cross-runtime atomicity.
+- With global `--dry-run`, `install` and `update` MUST perform target resolution and readiness checks, report planned persistent writes and native operations, and leave persistent state unchanged.
+- Successful `install` and `update` MUST tell the user that a new agent session is required before refreshed integration is available.
+
+**Client projections**
+
+- Claude MUST receive the bundled skills, Claude Markdown reviewer agents, and hooks through its native plugin mechanism.
+- Codex MUST receive the bundled common skills and hooks through its native plugin mechanism.
+- Codex reviewer agents MUST be installed separately as standalone TOML files in the selected user's Codex agent directory. Every generated role MUST contain `name`, `description`, and `developer_instructions`, and review-only roles MUST select a read-only sandbox mode.
+- The bundled plugin MUST select a runtime-specific hook manifest for each client. Shared governance behavior MUST be adapted to the client's supported event fields and output protocol rather than relying on one shared hook document.
+
+**Bundled hook behavior**
+
+- On `SessionStart`, the hook adapter MUST resolve the event working directory with the same upward project-discovery semantics as other govctl commands.
+- If no governed project is found, `SessionStart` MUST succeed without model-visible output. If governance state is found but cannot be loaded, it MUST provide concise, non-blocking recovery context. For a valid governed project, it MUST provide bounded, actionable context about current active Work Items and non-terminal loops without running project-wide validation.
+- Before a direct file-edit tool changes lifecycle-managed RFC, Clause, ADR, Work Item, Guard, Conformance Case, or release artifacts, `PreToolUse` MUST provide non-blocking guidance to prefer a canonical govctl command when that command can express the change. The hook MUST allow the tool call to proceed, MUST acknowledge direct editing as the recovery path for unsupported operations, and MUST recommend `govctl check` after such an edit.
+- Bundled hooks MUST NOT run project-wide validation on `Stop` or after every file edit. Hook advice is a recoverability aid and MUST NOT be treated as an enforcement boundary.
+
+The existing `govctl init-skills` command remains the project-local and custom-directory projection path. Agent plugin management MUST NOT change its overwrite or destination semantics."""

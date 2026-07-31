@@ -16,6 +16,21 @@ NOTES:
     - Use `--force` to overwrite existing generated assets.
 "#;
 
+pub(super) const AGENT: &str = r#"EXAMPLES:
+    govctl agent doctor codex
+    govctl agent install claude
+    govctl agent update all
+    govctl --dry-run agent update codex
+
+NOTES:
+    - Manages the user-scoped integration and does not require a govctl project.
+    - Both runtimes receive plugin skills and hooks; Codex reviewer roles use
+      standalone TOML files.
+    - Session hooks add context only inside a governed project. Direct artifact
+      edits receive advisory guidance but are not blocked.
+    - Start a new agent session after install or update.
+"#;
+
 pub(super) const CHECK: &str = r#"EXAMPLES:
     govctl check
     govctl check -W

@@ -94,6 +94,8 @@ fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
         &plan.op,
         command_router::Op::Builtin(command_router::BuiltinOp::Completions { .. })
             | command_router::Op::Builtin(command_router::BuiltinOp::SelfUpdate { .. })
+            | command_router::Op::Builtin(command_router::BuiltinOp::Agent { .. })
+            | command_router::Op::Builtin(command_router::BuiltinOp::AgentHook { .. })
             | command_router::Op::Builtin(command_router::BuiltinOp::Describe { context: false })
     );
     let is_migrate = matches!(

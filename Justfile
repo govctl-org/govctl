@@ -170,6 +170,8 @@ _bump-plugin new_version:
     mv .claude-plugin/marketplace.json.tmp .claude-plugin/marketplace.json
     jq --arg v "{{ new_version }}" '.version = $v' .claude/.claude-plugin/plugin.json > .claude/.claude-plugin/plugin.json.tmp
     mv .claude/.claude-plugin/plugin.json.tmp .claude/.claude-plugin/plugin.json
+    jq --arg v "{{ new_version }}" '.version = $v' .claude/.codex-plugin/plugin.json > .claude/.codex-plugin/plugin.json.tmp
+    mv .claude/.codex-plugin/plugin.json.tmp .claude/.codex-plugin/plugin.json
 
 [private]
 _bump-releases new_version:

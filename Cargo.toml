@@ -12,8 +12,11 @@ readme = "README.md"
 keywords = ["governance", "rfc", "cli", "adr", "specification"]
 categories = ["command-line-utilities", "development-tools"]
 include = [
+    ".claude-plugin/*",
     ".claude/.claude-plugin/*",
+    ".claude/.codex-plugin/*",
     ".claude/agents/*",
+    ".claude/hooks/*",
     ".claude/skills/**/*",
     "gov/schema/*.json",
     "gov/templates/*",
@@ -40,6 +43,8 @@ ansi-to-tui = ["dep:ansi-to-tui"]
 # CLI framework
 clap = { version = "4", features = ["derive"] }
 clap_complete = "4"
+agent-plugin-installer = { version = "0.6.1", features = ["clap"] }
+directories = "6"
 
 # Serialization (JSON/TOML)
 serde = { version = "1", features = ["derive"] }

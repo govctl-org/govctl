@@ -10,6 +10,26 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- The adopted workflow installs and updates govctl agent integration through each client's native mechanism while retaining Claude Markdown agents and Codex TOML agents as distinct projections. (WI-2026-07-31-001)
+- Session-start context is silent outside governed projects, distinguishes invalid governed state, and reports compact actionable state without running full validation. (WI-2026-07-31-001)
+
+### Changed
+
+- Generated Codex reviewer definitions follow the current Codex custom-agent contract and use explicit review-only execution constraints where supported. (WI-2026-07-31-001)
+- Workflow skills identify the exact reviewer agent type at delegation points that require deterministic routing. (WI-2026-07-31-001)
+- Claude and Codex plugin hooks use runtime-specific manifests and protocol adapters while sharing govctl governance semantics. (WI-2026-07-31-001)
+- Direct edits to lifecycle-managed artifacts receive non-blocking canonical-path guidance, and no stop hook repeats project-wide validation. (WI-2026-07-31-001)
+- The normative agent command grammar defines the bundled internal hook adapter entry points and their runtime-selector exception. (WI-2026-07-31-001)
+
+### Fixed
+
+- Codex format installation honors the RFC-defined format-implied .codex directory when no explicit directory is configured. (WI-2026-07-31-001)
+- Session-start context retains actionable project state when non-fatal Work Item warnings exist, and patch-header paths tolerate platform line endings. (WI-2026-07-31-001)
+- Governed-project discovery handles relative starting paths and lexical normalization preserves filesystem roots. (WI-2026-07-31-001)
+- Shell completion generation omits the internal agent hook adapter while retaining public management subcommands. (WI-2026-07-31-001)
+
 ## [0.17.0] - 2026-07-30
 
 0.17.0 makes source-reference scanning scale with repository shape by pruning

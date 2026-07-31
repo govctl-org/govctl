@@ -7,7 +7,7 @@ mod loop_cmd;
 mod recovery;
 mod resources;
 
-pub(crate) use commands::{Commands, ReleaseArgs, ReleaseCommand};
+pub(crate) use commands::{AgentCommand, AgentHookEvent, Commands, ReleaseArgs, ReleaseCommand};
 pub(crate) use common::*;
 pub(crate) use loop_cmd::LoopCommand;
 pub(crate) use recovery::{misrouted_clause_after_parse, misrouted_nested_clause};

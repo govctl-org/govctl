@@ -37,6 +37,13 @@ pub enum BuiltinOp {
         format: crate::SkillFormat,
         dir: Option<std::path::PathBuf>,
     },
+    Agent {
+        operation: agent_plugin_installer::AgentPluginOperation,
+        selector: agent_plugin_installer::AgentSelector,
+    },
+    AgentHook {
+        event: crate::AgentHookEvent,
+    },
     Check,
     Status,
     RenderGlobal {
@@ -164,6 +171,10 @@ impl BuiltinOp {
             | Self::Describe { .. }
             | Self::Completions { .. }
             | Self::SelfUpdate { .. }
+            // [[RFC-0002:C-AGENT-INTEGRATION]]: agent operations manage
+            // user-scoped runtime integration, not governed project state.
+            | Self::Agent { .. }
+            | Self::AgentHook { .. }
             | Self::TagList { .. }
             | Self::LoopList { .. }
             | Self::LoopShow { .. }

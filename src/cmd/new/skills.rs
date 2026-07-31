@@ -59,7 +59,7 @@ pub fn sync_skills(
             agent_dir_owned = dir.to_path_buf();
             &agent_dir_owned
         }
-    } else if config.paths.agent_dir != crate::config::default_agent_dir() {
+    } else if config.agent_dir_explicit {
         // Config has an explicit agent_dir
         &config.paths.agent_dir
     } else {

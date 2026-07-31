@@ -120,6 +120,8 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E1304ConformanceInvalidId => "E1304",
         DiagnosticCode::E1305ConformanceGraphInvalid => "E1305",
         DiagnosticCode::E1306ConformanceStillReferenced => "E1306",
+        // E14xx - Agent integration
+        DiagnosticCode::E1401AgentIntegrationFailed => "E1401",
         // E08xx - CLI/Command
         DiagnosticCode::E0801MissingRequiredArg => "E0801",
         DiagnosticCode::E0802ConflictingArgs => "E0802",

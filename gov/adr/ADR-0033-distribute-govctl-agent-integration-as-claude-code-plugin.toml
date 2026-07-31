@@ -3,8 +3,9 @@
 [govctl]
 id = "ADR-0033"
 title = "Distribute govctl agent integration as Claude Code plugin"
-status = "accepted"
+status = "superseded"
 date = "2026-03-04"
+superseded_by = "ADR-0061"
 refs = [
     "ADR-0015",
     "ADR-0024",

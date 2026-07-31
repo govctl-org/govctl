@@ -1,6 +1,6 @@
 use super::{BuiltinOp, CommandPlan, Op, global};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::{Commands, LoopCommand, ReleaseArgs, ReleaseCommand, TagCommand};
+use crate::{AgentCommand, Commands, LoopCommand, ReleaseArgs, ReleaseCommand, TagCommand};
 
 impl CommandPlan {
     pub fn from_parsed(cmd: &Commands, global_dry_run: bool) -> DiagnosticResult<Self> {
@@ -14,6 +14,24 @@ impl CommandPlan {
                     format: format.clone(),
                     dir: dir.clone(),
                 })))
+            }
+            Commands::Agent { command } => {
+                let op = match command {
+                    AgentCommand::Doctor { runtime } => BuiltinOp::Agent {
+                        operation: agent_plugin_installer::AgentPluginOperation::Doctor,
+                        selector: *runtime,
+                    },
+                    AgentCommand::Install { runtime } => BuiltinOp::Agent {
+                        operation: agent_plugin_installer::AgentPluginOperation::Install,
+                        selector: *runtime,
+                    },
+                    AgentCommand::Update { runtime } => BuiltinOp::Agent {
+                        operation: agent_plugin_installer::AgentPluginOperation::Update,
+                        selector: *runtime,
+                    },
+                    AgentCommand::Hook { event } => BuiltinOp::AgentHook { event: *event },
+                };
+                Ok(global(Op::Builtin(op)))
             }
             Commands::Check { .. } => Ok(global(Op::Builtin(BuiltinOp::Check))),
             Commands::Status => Ok(global(Op::Builtin(BuiltinOp::Status))),

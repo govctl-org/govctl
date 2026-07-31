@@ -15,6 +15,7 @@ struct AgentFrontmatter {
 struct CodexAgentRole {
     name: String,
     description: String,
+    sandbox_mode: String,
     developer_instructions: String,
 }
 
@@ -39,6 +40,7 @@ pub fn generate_codex_agent_templates() -> Result<(), Box<dyn Error>> {
         let role = CodexAgentRole {
             name: frontmatter.name.clone(),
             description: frontmatter.description.clone(),
+            sandbox_mode: "read-only".to_string(),
             developer_instructions: body.to_string(),
         };
 

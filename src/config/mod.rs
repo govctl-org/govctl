@@ -17,6 +17,9 @@ pub struct Config {
     /// Absolute path to `gov/` — not configurable, derived from config file location.
     #[serde(skip)]
     pub gov_root: PathBuf,
+    /// Whether `paths.agent_dir` was present in the loaded config.
+    #[serde(skip)]
+    pub agent_dir_explicit: bool,
     #[serde(default)]
     pub project: ProjectConfig,
     #[serde(default)]
@@ -39,6 +42,7 @@ impl Default for Config {
     fn default() -> Self {
         Self {
             gov_root: PathBuf::from("gov"),
+            agent_dir_explicit: false,
             project: ProjectConfig::default(),
             paths: PathsConfig::default(),
             schema: SchemaConfig::default(),

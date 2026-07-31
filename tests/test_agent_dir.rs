@@ -103,23 +103,30 @@ fn test_codex_format_agents() -> common::TestResult {
 
     run_commands(temp_dir.path(), &[&["init-skills", "--format", "codex"]])?;
 
-    assert!(temp_dir.path().join(".claude/skills/gov/SKILL.md").exists());
+    assert!(temp_dir.path().join(".codex/skills/gov/SKILL.md").exists());
 
-    let toml_agent = temp_dir.path().join(".claude/agents/rfc-reviewer.toml");
+    let toml_agent = temp_dir.path().join(".codex/agents/rfc-reviewer.toml");
     assert!(
         toml_agent.exists(),
         "codex format should write .toml agents"
     );
     let content = fs::read_to_string(&toml_agent)?;
-    assert!(content.contains("name = \"rfc-reviewer\""));
-    assert!(content.contains("developer_instructions"));
+    let agent: toml::Value = toml::from_str(&content)?;
+    assert_eq!(agent["name"].as_str(), Some("rfc-reviewer"));
+    assert!(agent["description"].as_str().is_some());
+    assert!(agent["developer_instructions"].as_str().is_some());
+    assert_eq!(agent["sandbox_mode"].as_str(), Some("read-only"));
 
     assert!(
         !temp_dir
             .path()
-            .join(".claude/agents/rfc-reviewer.md")
+            .join(".codex/agents/rfc-reviewer.md")
             .exists(),
         "codex format should not write .md agents"
+    );
+    assert!(
+        !temp_dir.path().join(".claude").exists(),
+        "format-implied Codex output should not use the Claude directory"
     );
     Ok(())
 }

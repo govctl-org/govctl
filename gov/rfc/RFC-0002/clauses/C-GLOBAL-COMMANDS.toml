@@ -204,6 +204,16 @@ Behavior:
 - MUST remain at the global namespace because it is project-level discovery across multiple governed resource types, not a resource-specific CRUD operation
 - MUST NOT be required as a universal resource verb under each artifact namespace unless a future RFC amendment explicitly adds scoped search aliases
 
+**14. `govctl agent`**
+
+Manages the user-scoped govctl agent integration.
+
+Syntax:
+- `govctl agent <doctor|install|update> <codex|claude|all>`
+- `govctl agent hook <session-start|pre-tool-use>` (internal adapter)
+
+Behavior, including the internal adapter exception to runtime selection, is defined by [[RFC-0002:C-AGENT-INTEGRATION]].
+
 **Rationale:**
 
 These commands are global because they:
@@ -226,6 +236,8 @@ These commands are global because they:
 `govctl loop` qualifies because it manages local execution state that coordinates work items and verification guards without making loop state a governed resource (criterion 5).
 
 `govctl search` qualifies because it performs project-level discovery across multiple governed resource types (criterion 1).
+
+`govctl agent` qualifies because it manages CLI-level integration state for external agent runtimes without becoming a governed artifact resource (criterion 3).
 
 **Future Additions:**
 

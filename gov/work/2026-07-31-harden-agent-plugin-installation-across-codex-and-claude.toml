@@ -1,0 +1,106 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-07-31-001"
+title = "Harden agent plugin installation across Codex and Claude"
+status = "done"
+created = "2026-07-31"
+started = "2026-07-31"
+completed = "2026-07-31"
+refs = [
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "ADR-0033",
+    "ADR-0035",
+    "RFC-0002:C-AGENT-INTEGRATION",
+    "ADR-0061",
+]
+tags = [
+    "skills-agents",
+    "plugin",
+]
+
+[content]
+description = "Establish and implement a reliable agent plugin installation and update workflow across Claude and Codex, using agent-plugin-installer where it simplifies native client orchestration while preserving client-specific agent definitions. The scope also closes the confirmed Codex default-directory defect and updates focused validation and user guidance."
+
+[[content.acceptance_criteria]]
+text = "Codex format installation honors the RFC-defined format-implied .codex directory when no explicit directory is configured."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Governance artifacts record the selected cross-client installation design and authorize any new user-visible command or behavior before implementation."
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "The adopted workflow installs and updates govctl agent integration through each client's native mechanism while retaining Claude Markdown agents and Codex TOML agents as distinct projections."
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Generated Codex reviewer definitions follow the current Codex custom-agent contract and use explicit review-only execution constraints where supported."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Workflow skills identify the exact reviewer agent type at delegation points that require deterministic routing."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused tests validate destination selection, structured Codex agent output, and install/update behavior without asserting prose wording."
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Installation documentation explains client-specific assets, supported install and update paths, and session refresh requirements."
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Claude and Codex plugin hooks use runtime-specific manifests and protocol adapters while sharing govctl governance semantics."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Session-start context is silent outside governed projects, distinguishes invalid governed state, and reports compact actionable state without running full validation."
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Direct edits to lifecycle-managed artifacts receive non-blocking canonical-path guidance, and no stop hook repeats project-wide validation."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Focused tests cover runtime-specific hook assets, governed-project discovery, unmanaged silence, invalid-project diagnostics, and advisory mutation handling."
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "The normative agent command grammar defines the bundled internal hook adapter entry points and their runtime-selector exception."
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "Session-start context retains actionable project state when non-fatal Work Item warnings exist, and patch-header paths tolerate platform line endings."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Governed-project discovery handles relative starting paths and lexical normalization preserves filesystem roots."
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused tests cover dry-run preflight execution, advisory-scope boundaries, and hook path normalization without asserting documentation prose."
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "Shell completion generation omits the internal agent hook adapter while retaining public management subcommands."
+status = "done"
+category = "fixed"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]
