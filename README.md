@@ -140,24 +140,27 @@ Initialize governance, then install or load the agent workflows for your tool:
 - `/quick <task>` for intentionally small changes
 - `/commit` to record work with governance checks
 
-For Claude Code plugin installation:
+Check that the target agent runtime is ready, then install the bundled
+integration:
 
 ```bash
-/plugin marketplace add govctl-org/govctl
-/plugin install govctl@govctl
-/govctl:init
+govctl agent doctor claude
+govctl agent install claude
 ```
 
-For a global Codex installation:
+For Codex:
 
 ```bash
-mkdir -p ~/.codex
-cd ~/.codex
-govctl init
-govctl init-skills --format codex --dir .
+govctl agent doctor codex
+govctl agent install codex
 ```
 
-This keeps the govctl-managed workspace, generated skills, and generated agents inside `~/.codex` instead of writing governance files into your home directory.
+Use `govctl agent update <claude|codex|all>` after upgrading govctl, then start
+a new agent session. Both clients receive skills and hooks through their native
+plugin mechanism. Claude also loads its Markdown reviewer agents from the
+plugin; Codex receives standalone read-only TOML reviewer roles. Runtime-specific
+hooks add compact context only in governed projects and advise, rather than
+block, direct governance-artifact edits.
 
 ### A concrete example
 

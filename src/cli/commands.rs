@@ -6,6 +6,34 @@ use super::{
 use clap::{Args, Subcommand};
 use std::path::PathBuf;
 
+#[derive(clap::ValueEnum, Clone, Copy, Debug)]
+pub(crate) enum AgentHookEvent {
+    SessionStart,
+    PreToolUse,
+}
+
+#[derive(Subcommand, Clone, Copy, Debug)]
+pub(crate) enum AgentCommand {
+    /// Check whether native agent plugin operations are available
+    Doctor {
+        /// Agent runtime to inspect
+        runtime: agent_plugin_installer::AgentSelector,
+    },
+    /// Install the bundled govctl agent integration
+    Install {
+        /// Agent runtime to configure
+        runtime: agent_plugin_installer::AgentSelector,
+    },
+    /// Update the installed govctl agent integration
+    Update {
+        /// Agent runtime to refresh
+        runtime: agent_plugin_installer::AgentSelector,
+    },
+    /// Handle a bundled native-client hook event
+    #[command(hide = true)]
+    Hook { event: AgentHookEvent },
+}
+
 #[derive(Subcommand)]
 pub(crate) enum ReleaseCommand {
     /// Undo the newest local release cut
@@ -57,6 +85,13 @@ pub(crate) enum Commands {
         /// Override output directory (default: agent_dir from config, or format-implied)
         #[arg(long)]
         dir: Option<PathBuf>,
+    },
+
+    /// Manage the user-scoped govctl agent integration
+    #[command(after_help = help::AGENT)]
+    Agent {
+        #[command(subcommand)]
+        command: AgentCommand,
     },
 
     /// Validate all governed documents

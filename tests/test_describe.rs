@@ -99,6 +99,17 @@ fn describe_reports_versioned_parser_derived_shape() -> common::TestResult {
     let commands = value["commands"]
         .as_array()
         .ok_or_else(|| missing("command array"))?;
+    let agent = command_named(commands, "agent")?;
+    let agent_subcommands = agent["subcommands"]
+        .as_array()
+        .ok_or_else(|| missing("agent subcommands"))?;
+    assert_eq!(
+        agent_subcommands
+            .iter()
+            .map(|command| command["name"].as_str())
+            .collect::<Vec<_>>(),
+        [Some("doctor"), Some("install"), Some("update")]
+    );
     let rfc = command_named(commands, "rfc")?;
     let edit = command_named(
         rfc["subcommands"]

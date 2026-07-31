@@ -56,8 +56,9 @@ development binary as `cargo run --quiet --`.
 | Resolve an open design question                 | Hand off to `discuss`                            |
 | Fix governance metadata or references           | Edit the owning artifact                         |
 
-Follow `rfc-writer` or `adr-writer` for artifact quality. Use the independent
-matching reviewer before treating content as ready for a lifecycle transition.
+Follow `rfc-writer` or `adr-writer` for artifact quality. Use `rfc-reviewer`
+for RFCs, `adr-reviewer` for ADRs, and `wi-reviewer` for Work Items before
+treating substantively changed content as ready for a lifecycle transition.
 
 ### Respect Candidate Boundaries
 
@@ -99,7 +100,7 @@ Spec maintenance is complete when:
 
 - the artifact stays within its authority boundary;
 - lifecycle state and required authorization are explicit;
-- the matching reviewer has no unresolved critical finding;
+- the artifact's named reviewer has no unresolved critical finding;
 - `govctl check` passes and affected projections are current; and
 - the final response identifies changed artifacts, lifecycle state, review
   result, and the correct next workflow.

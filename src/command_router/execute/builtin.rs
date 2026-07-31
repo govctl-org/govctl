@@ -11,6 +11,11 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::InitSkills { force, format, dir } => {
             cmd::new::sync_skills(config, *force, format, dir.as_deref(), op)
         }
+        BuiltinOp::Agent {
+            operation,
+            selector,
+        } => cmd::agent::manage(*operation, *selector, op),
+        BuiltinOp::AgentHook { event } => cmd::agent_hooks::handle_hook(*event),
         BuiltinOp::Check => cmd::check::check_all(config),
         BuiltinOp::Status => cmd::status::show_status(config),
         BuiltinOp::RenderGlobal {

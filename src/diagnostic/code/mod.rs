@@ -133,6 +133,9 @@ pub enum DiagnosticCode {
     E1305ConformanceGraphInvalid,
     E1306ConformanceStillReferenced,
 
+    // Agent integration errors (E14xx)
+    E1401AgentIntegrationFailed,
+
     // CLI/Command errors (E08xx)
     E0801MissingRequiredArg,
     E0802ConflictingArgs,
@@ -218,6 +221,7 @@ mod tests {
         assert_eq!(DiagnosticCode::E1001GuardSchemaInvalid.code(), "E1001");
         assert_eq!(DiagnosticCode::E1101TagInvalidFormat.code(), "E1101");
         assert_eq!(DiagnosticCode::E1201LoopStateInvalid.code(), "E1201");
+        assert_eq!(DiagnosticCode::E1401AgentIntegrationFailed.code(), "E1401");
         assert_eq!(DiagnosticCode::W0101RfcNoChangelog.code(), "W0101");
         assert_eq!(DiagnosticCode::W0111ProjectSupportOutdated.code(), "W0111");
         assert_eq!(DiagnosticCode::W0112BareArtifactReference.code(), "W0112");

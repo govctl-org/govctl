@@ -341,22 +341,49 @@ govctl self-update --check  # Check for newer version without downloading
 
 Supports `GITHUB_TOKEN` environment variable for authenticated API requests.
 
-## Agent Skill Installation
+## Agent Integration
 
-Install or update govctl's agent skills and reviewer agents for your AI coding tool:
+Install or update govctl's user-scoped integration through the agent runtime's
+native plugin mechanism:
 
 ```bash
-# Claude Code (default)
-govctl init-skills
+govctl agent doctor all
+govctl agent install claude
+govctl agent install codex
+govctl agent update all
+```
 
-# Codex CLI
+`doctor` is read-only. `install` preserves existing Codex reviewer-role files;
+`update` refreshes govctl's installed role files. Start a new agent session
+after installation or update so the runtime reloads its integration. Both
+runtimes load bundled skills and hooks from their native plugin. Claude also
+loads Markdown reviewer agents from that plugin; Codex reviewer agents are
+standalone TOML roles managed by the same command.
+
+Claude and Codex load separate hook manifests so each client receives fields
+and output in its native protocol. At session start, govctl uses normal upward
+project discovery and injects compact active-work and loop context only when the
+working directory belongs to a governed project. It stays silent in unmanaged
+directories and reports damaged governance state as non-blocking recovery
+context.
+
+Before a direct edit to lifecycle-managed artifacts, the hook advises using the
+resource-specific CLI when it can express the change. The edit is never blocked:
+direct editing remains the recovery path for unsupported operations, followed by
+`govctl check`. The plugin does not run project-wide validation at the end of
+every turn.
+
+Use `init-skills` only when a project-local or custom-directory copy is needed:
+
+```bash
+govctl init-skills --format claude
 govctl init-skills --format codex
-
-# Custom output directory
 govctl init-skills --dir /path/to/agent-config
 ```
 
-This writes bundled workflow skills, writer/helper skills, and reviewer agents to the configured agent directory. Use `--format codex` when the destination expects Codex agent-role TOML files instead of Claude-style Markdown agents.
+This direct projection does not register a native user plugin. It writes
+bundled workflow skills, writer/helper skills, and reviewer agents to the
+resolved destination.
 
 ## Schema Migration
 

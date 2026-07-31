@@ -103,7 +103,8 @@ put governance-specific exclusions and re-inclusions in `.govignore`. A custom
 Run the narrowest useful checks while developing. Before closing the Work Item,
 do not manually repeat guards that `govctl work move <WI-ID> done` is about to
 run. Standalone verification is for diagnosis or evidence while the item remains
-active. Use `compliance-checker` when RFC-governed behavior changes materially.
+active. Use the `compliance-checker` agent, not an artifact reviewer, when
+RFC-governed implementation behavior changes materially.
 
 Recover from diagnostics by changing the failing assumption or approach. Do not
 repeat the same failed command without new evidence.

@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.1.0"
+version = "3.4.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-30"
+updated = "2026-07-31"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "b4da6e112950da68e7db1aa874aa125ac2694455f306a0726746a0ed35e1220f"
+signature = "14e9acd1aa7fd2632b06eac77fa6e61e05c18cddfceb7969a5718ec0c4fb9114"
 
 [[sections]]
 title = "Summary"
@@ -43,7 +43,31 @@ clauses = [
 
 [[sections]]
 title = "Global Commands"
-clauses = ["clauses/C-DESCRIBE-COMMAND.toml"]
+clauses = [
+    "clauses/C-DESCRIBE-COMMAND.toml",
+    "clauses/C-AGENT-INTEGRATION.toml",
+]
+
+[[changelog]]
+version = "3.4.0"
+date = "2026-07-31"
+notes = "Adapt bundled hooks to Claude and Codex runtimes"
+changed = [
+    "Define runtime-specific hook manifests and shared governance semantics",
+    "Replace per-turn validation with governed-project context and advisory edit guidance",
+]
+
+[[changelog]]
+version = "3.3.0"
+date = "2026-07-31"
+notes = "Clarify native agent plugin projections"
+added = ["Require Codex hooks to load through its native plugin"]
+
+[[changelog]]
+version = "3.2.0"
+date = "2026-07-31"
+notes = "Add native agent integration management"
+added = ["Define agent doctor, install, and update commands"]
 
 [[changelog]]
 version = "3.1.0"

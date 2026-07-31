@@ -75,9 +75,10 @@ no implementation can use `spec`.
 
 ### Review And Validate
 
-Run `govctl check` after substantive artifact edits. Ask the matching independent
-reviewer agent to assess each RFC or ADR draft, and resolve critical findings
-before presenting it as ready. Reviewer isolation is for semantic quality;
+Run `govctl check` after substantive artifact edits. Use `rfc-reviewer` for an
+RFC draft, `adr-reviewer` for an ADR draft, and `wi-reviewer` for a Work Item
+when independent semantic review is warranted. Resolve critical findings before
+presenting the artifact as ready. Reviewer isolation is for semantic quality;
 govctl remains responsible for structural validation.
 
 ## Completion Evidence

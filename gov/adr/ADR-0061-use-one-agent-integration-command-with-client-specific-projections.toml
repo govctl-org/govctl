@@ -1,0 +1,47 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0061"
+title = "Use one agent integration command with client-specific projections"
+status = "accepted"
+date = "2026-07-31"
+refs = [
+    "RFC-0002:C-AGENT-INTEGRATION",
+    "ADR-0033",
+    "ADR-0035",
+]
+tags = [
+    "skills-agents",
+    "plugin",
+]
+
+[content]
+context = "govctl currently offers two disconnected installation paths. Claude users install a native plugin that carries skills, reviewer agents, and hooks, while Codex users run `init-skills --format codex` to project shared skills and generated TOML reviewer roles. Codex native plugins carry skills and hooks but do not define standalone custom-agent roles, so treating the clients as one package model leaves Codex reviews unavailable or stale. Manual native CLI instructions also duplicate marketplace, preflight, partial-failure, and update handling that the agent-plugin-installer crate already centralizes."
+decision = """
+Use one `govctl agent` command group as the user-facing facade for doctor, install, and update operations. Materialize the plugin assets bundled with the running binary at a stable user-scoped support path and delegate native marketplace/plugin orchestration to agent-plugin-installer. Both clients receive skills and hooks through their native plugin mechanism. Claude also loads its Markdown reviewer agents from the plugin, while Codex receives reviewer roles through a separate generated TOML projection because its custom-agent contract uses standalone files. Retain `init-skills` for project-local and custom-directory copies.
+
+Package separate Claude and Codex hook manifests because their event fields and output contracts differ. Route both manifests to a small govctl adapter that owns shared project discovery and context semantics. Keep hooks limited to compact governed-project context at session start and non-blocking guidance before direct edits to lifecycle-managed artifacts; do not use stop hooks for repeated validation."""
+consequences = "Positive: users get one discoverable workflow, plugin content stays aligned with the running govctl version, native client diagnostics remain structured, and Codex reviewer roles use the format Codex actually loads. Runtime-specific hook manifests avoid accidental protocol compatibility, while the shared adapter keeps governance semantics aligned and stays silent outside governed projects. Negative: Codex installation still has a second projection step behind the facade, update can replace the four govctl-owned reviewer-role files, and the binary gains a small orchestration dependency plus persistent support files. Hook guidance is intentionally advisory and therefore cannot enforce canonical mutation paths. Neutral: Claude and Codex remain different internally, existing manual plugin commands continue to work, direct editing remains available when the CLI lacks an operation, and `init-skills` remains available for local or non-plugin consumers."
+
+[[content.alternatives]]
+text = "Use one agent integration command with client-specific projections."
+status = "accepted"
+pros = [
+    "Gives users one workflow while preserving the formats each client actually loads.",
+    "Keeps bundled plugin assets and generated reviewer roles on the running govctl version.",
+]
+cons = ["Requires a Codex-specific role projection behind the common facade."]
+
+[[content.alternatives]]
+text = "Expand init-skills with native plugin lifecycle flags."
+status = "rejected"
+pros = ["Reuses an existing command name."]
+cons = ["Mixes project-local file projection, user-global plugin state, overwrite flags, and lifecycle operations in one option matrix."]
+rejection_reason = "The combined surface makes install and update intent less recoverable and weakens the existing single-purpose init-skills contract."
+
+[[content.alternatives]]
+text = "Rely entirely on each client's native plugin package."
+status = "rejected"
+pros = ["Minimizes govctl-side projection code."]
+cons = ["Codex native plugins do not provide standalone custom-agent TOML roles."]
+rejection_reason = "The approach installs common skills but does not deliver the reviewer agents that are part of the govctl workflow."

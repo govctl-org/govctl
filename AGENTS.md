@@ -167,6 +167,11 @@ govctl check                    # Validate all artifacts
 govctl status                   # Project overview
 govctl search <query>           # Search all governed artifacts
 
+# User-scoped agent integration
+govctl agent doctor all
+govctl agent install <codex|claude|all>
+govctl agent update <codex|claude|all>
+
 # Creating artifacts
 govctl rfc new "Title"          # New RFC
 govctl adr new "Title"          # New ADR
