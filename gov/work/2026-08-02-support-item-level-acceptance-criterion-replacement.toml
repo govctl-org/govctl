@@ -1,0 +1,39 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-08-02-001"
+title = "Support item-level acceptance criterion replacement"
+status = "done"
+created = "2026-08-02"
+started = "2026-08-02"
+completed = "2026-08-02"
+refs = ["RFC-0002:C-EDIT-FIELD-CONTRACT"]
+
+[content]
+description = "Implement and document the [[RFC-0002]] item-level acceptance-criterion replacement surface so agents can correct criteria without reconstructing checklist state."
+
+[[content.acceptance_criteria]]
+text = "Item-level acceptance-criterion set updates text and recognized category prefixes while preserving checklist status"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "Plain or unrecognized-prefix input replaces literal criterion text without changing its category or status"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Focused tests cover prefixed, fallback, literal child-path, empty-value, and invalid-index behavior"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "CLI help, user guidance, and bundled agent guidance show the supported correction paths"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = [
+    "GUARD-CARGO-TEST",
+    "GUARD-GOVCTL-CHECK",
+]

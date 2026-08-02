@@ -24,6 +24,10 @@ pub fn parse_changelog_change(change: &str) -> DiagnosticResult<ParsedChange> {
     changelog::parse_changelog_change(change)
 }
 
+pub fn parse_changelog_change_with_fallback(change: &str) -> DiagnosticResult<ParsedChange> {
+    changelog::parse_changelog_change_with_fallback(change)
+}
+
 /// Write operation mode.
 ///
 /// Controls whether write operations execute or just preview.

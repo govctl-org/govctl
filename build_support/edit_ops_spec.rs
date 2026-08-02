@@ -37,6 +37,7 @@ pub(super) enum NestedNodeRule {
     },
     Object {
         verbs: Vec<String>,
+        set_mode: Option<String>,
         fields: Vec<NestedFieldRule>,
     },
     List {
@@ -82,6 +83,7 @@ pub(super) struct RuntimeSetRule {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub(super) enum RuntimeSetMode {
     String,
+    NonEmptyString,
     Integer,
     Semver,
     Enum {
@@ -110,7 +112,7 @@ pub(super) fn load_edit_ops_spec(
     validate_spec_against_schema(&schema_value, &spec_value)?;
     let spec: EditOpsSpec = serde_json::from_value(spec_value)?;
     validate_runtime_fields(&spec)?;
-    validate_nested_scalar_list_items(&spec)?;
+    validate_nested_rules(&spec)?;
     Ok(spec)
 }
 
@@ -172,22 +174,30 @@ fn validate_runtime_fields(spec: &EditOpsSpec) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn validate_nested_scalar_list_items(spec: &EditOpsSpec) -> Result<(), Box<dyn Error>> {
+fn validate_nested_rules(spec: &EditOpsSpec) -> Result<(), Box<dyn Error>> {
     for root in &spec.nested_rules {
-        validate_nested_scalar_list_node(&root.node, &format!("{}:{}", root.artifact, root.root))?;
+        validate_nested_node(&root.node, &format!("{}:{}", root.artifact, root.root))?;
     }
     Ok(())
 }
 
-fn validate_nested_scalar_list_node(
-    node: &NestedNodeRule,
-    path: &str,
-) -> Result<(), Box<dyn Error>> {
+fn validate_nested_node(node: &NestedNodeRule, path: &str) -> Result<(), Box<dyn Error>> {
     match node {
         NestedNodeRule::Scalar { .. } => {}
-        NestedNodeRule::Object { fields, .. } => {
+        NestedNodeRule::Object {
+            verbs,
+            set_mode,
+            fields,
+        } => {
+            let settable = verbs.iter().any(|verb| verb == "set");
+            if settable != set_mode.is_some() {
+                return Err(format!(
+                    "object set capability and set_mode must be declared together: {path}"
+                )
+                .into());
+            }
             for field in fields {
-                validate_nested_scalar_list_node(&field.node, &format!("{path}.{}", field.name))?;
+                validate_nested_node(&field.node, &format!("{path}.{}", field.name))?;
             }
         }
         NestedNodeRule::List { verbs, item, .. } => {
@@ -203,7 +213,7 @@ fn validate_nested_scalar_list_node(
                     .into());
                 }
             }
-            validate_nested_scalar_list_node(item, &format!("{path}[]"))?;
+            validate_nested_node(item, &format!("{path}[]"))?;
         }
     }
     Ok(())

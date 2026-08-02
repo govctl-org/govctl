@@ -215,10 +215,14 @@ govctl rfc finalize RFC-0001 normative
 govctl rfc advance RFC-0001 impl
 
 # Nested field editing (path-based per ADR-0029)
-govctl adr edit ADR-0001 alternatives[0].text --set "Updated option"
-govctl adr edit ADR-0001 alternatives[0].pros --add "New advantage"
-govctl work edit WI-001 acceptance_criteria[0].category --set fixed
+govctl adr edit ADR-0001 "alternatives[0].text" --set "Updated option"
+govctl adr edit ADR-0001 "alternatives[0].pros" --add "New advantage"
+govctl work edit WI-001 "acceptance_criteria[0]" --set "fix: Correct criterion"
+govctl work edit WI-001 "acceptance_criteria[0].category" --set fixed
 ```
+
+Quote every CLI path containing brackets. Pass rich text containing backticks,
+`$()`, or other shell syntax through `--stdin` so the shell cannot interpret it.
 
 Clauses are first-class CLI resources. Use the root `govctl clause` namespace
 for every Clause operation, even though Clause IDs and storage are scoped by an

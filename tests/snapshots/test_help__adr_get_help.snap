@@ -41,5 +41,5 @@ VALID FIELDS:
 EXAMPLES:
     govctl adr get ADR-0001
     govctl adr get ADR-0001 decision
-    govctl adr get ADR-0001 alternatives[0].status
+    govctl adr get ADR-0001 "alternatives[0].status"
 exit: 0

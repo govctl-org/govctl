@@ -18,12 +18,18 @@ pub enum NestedNodeKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum NestedScalarMode {
     String,
+    NonEmptyString,
     Semver,
     Enum {
         allowed: &'static [&'static str],
         invalid_msg: &'static str,
         code: Option<DiagnosticCode>,
     },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NestedObjectSetMode {
+    AcceptanceCriterion,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -44,6 +50,7 @@ pub struct NestedNodeRule {
     pub text_key: Option<&'static str>,
     pub value_codec: Option<NestedListValueCodec>,
     pub set_mode: Option<NestedScalarMode>,
+    pub object_set_mode: Option<NestedObjectSetMode>,
     pub item: Option<&'static NestedNodeRule>,
     pub fields: &'static [NestedChildRule],
 }

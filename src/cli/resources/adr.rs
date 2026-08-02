@@ -28,7 +28,7 @@ VALID FIELDS:
 EXAMPLES:
     govctl adr get ADR-0001
     govctl adr get ADR-0001 decision
-    govctl adr get ADR-0001 alternatives[0].status
+    govctl adr get ADR-0001 \"alternatives[0].status\"
 ")]
     Get(CommonGetArgs),
     /// Show rendered ADR content
@@ -62,8 +62,8 @@ EXAMPLES:
     govctl adr edit ADR-0001 decision --set \"We will ...\"
     govctl adr edit ADR-0001 consequences --set \"Trade-off summary\"
     govctl adr edit ADR-0001 alternatives --add \"Option A\"
-    govctl adr edit ADR-0001 alternatives[0].pros --add \"Readable\"
-    govctl adr edit ADR-0001 alternatives[0] --tick accepted
+    govctl adr edit ADR-0001 \"alternatives[0].pros\" --add \"Readable\"
+    govctl adr edit ADR-0001 \"alternatives[0]\" --tick accepted
 ")]
     Edit(CommonEditArgs),
     /// Accept ADR (proposed → accepted)
@@ -92,7 +92,7 @@ EXAMPLES:
 
 NOTES:
     - Reject the ADR itself when the proposal should not proceed.
-    - Use `govctl adr edit ADR-0001 alternatives[N] --tick rejected` to reject a specific alternative instead.
+    - Use `govctl adr edit ADR-0001 \"alternatives[N]\" --tick rejected` to reject a specific alternative instead.
 ")]
     Reject(CommonIdArgs),
     /// Supersede ADR

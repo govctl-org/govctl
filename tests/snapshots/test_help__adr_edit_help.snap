@@ -57,6 +57,6 @@ EXAMPLES:
     govctl adr edit ADR-0001 decision --set "We will ..."
     govctl adr edit ADR-0001 consequences --set "Trade-off summary"
     govctl adr edit ADR-0001 alternatives --add "Option A"
-    govctl adr edit ADR-0001 alternatives[0].pros --add "Readable"
-    govctl adr edit ADR-0001 alternatives[0] --tick accepted
+    govctl adr edit ADR-0001 "alternatives[0].pros" --add "Readable"
+    govctl adr edit ADR-0001 "alternatives[0]" --tick accepted
 exit: 0

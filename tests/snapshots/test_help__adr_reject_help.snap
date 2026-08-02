@@ -20,5 +20,5 @@ EXAMPLES:
 
 NOTES:
     - Reject the ADR itself when the proposal should not proceed.
-    - Use `govctl adr edit ADR-0001 alternatives[N] --tick rejected` to reject a specific alternative instead.
+    - Use `govctl adr edit ADR-0001 "alternatives[N]" --tick rejected` to reject a specific alternative instead.
 exit: 0

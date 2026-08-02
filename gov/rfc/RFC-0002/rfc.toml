@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.5.0"
+version = "3.6.0"
 status = "normative"
-phase = "impl"
+phase = "test"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-07-31"
+updated = "2026-08-02"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "d55103e00864241a0c95b47251aff7573c382342b3797b7c3fc0df2340da3e64"
+signature = "d0dba4f59762cac471b5c2a0396d5d7ed754d4dc3b190bbf08b0bae89313ffd7"
 
 [[sections]]
 title = "Summary"
@@ -47,6 +47,12 @@ clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
 ]
+
+[[changelog]]
+version = "3.6.0"
+date = "2026-08-02"
+notes = "Make acceptance-criterion text correction ergonomic"
+added = ["Define item-level acceptance-criterion replacement with category-prefix parsing"]
 
 [[changelog]]
 version = "3.5.0"
