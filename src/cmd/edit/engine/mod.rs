@@ -10,7 +10,7 @@ mod resolve;
 use self::resolve::resolve_target;
 use super::ArtifactType;
 use super::path::{self, FieldPath};
-use super::rules::Verb;
+use super::rules::{NestedObjectSetMode, Verb};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,6 +41,7 @@ pub enum ResolvedTarget {
         container_path: FieldPath,
         index: i32,
         item_kind: TargetKind,
+        object_set_mode: Option<NestedObjectSetMode>,
         status_list: bool,
         container_verbs: &'static [&'static str],
         item_verbs: &'static [&'static str],

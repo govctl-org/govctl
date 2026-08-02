@@ -64,6 +64,7 @@ pub(super) fn resolve_target(
             },
             index,
             item_kind: TargetKind::Scalar,
+            object_set_mode: None,
             status_list: edit_rules::simple_field_supports_verb(
                 artifact.rule_key(),
                 &seg.name,
@@ -135,6 +136,7 @@ fn resolve_nested_target(
                     },
                     index,
                     item_kind: map_nested_kind(item_node.kind),
+                    object_set_mode: item_node.object_set_mode,
                     status_list: edit_rules::nested_status_list_spec(current_node).is_some(),
                     container_verbs: current_node.verbs,
                     item_verbs: item_node.verbs,

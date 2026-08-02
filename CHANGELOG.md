@@ -10,6 +10,14 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- Item-level acceptance-criterion set updates text and recognized category prefixes while preserving checklist status (WI-2026-08-02-001)
+
+### Fixed
+
+- Plain or unrecognized-prefix input replaces literal criterion text without changing its category or status (WI-2026-08-02-001)
+
 ## [0.18.0] - 2026-07-31
 
 0.18.0 makes govctl's agent integration a first-class, user-scoped feature.

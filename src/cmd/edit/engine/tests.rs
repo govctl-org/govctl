@@ -158,6 +158,7 @@ fn test_plan_mutation_request_classifies_nested_root_item_target()
             },
             index: 0,
             item_kind: TargetKind::Object,
+            object_set_mode: None,
             status_list: true,
             container_verbs: &["get", "add", "remove", "tick"],
             item_verbs: &["get"],
@@ -200,6 +201,7 @@ fn test_plan_mutation_request_classifies_nested_list_item_target()
             },
             index: 1,
             item_kind: TargetKind::Scalar,
+            object_set_mode: None,
             status_list: false,
             container_verbs: &["get", "add", "remove"],
             item_verbs: &["get", "set"],
@@ -302,6 +304,7 @@ fn test_indexed_set_support_follows_list_item_shape() -> Result<(), Box<dyn std:
         ("RFC-0001", "changelog.fixed[0]"),
         ("ADR-0001", "alternatives[0].pros[0]"),
         ("WI-2026-01-01-001", "notes[0]"),
+        ("WI-2026-01-01-001", "acceptance_criteria[0]"),
         ("WI-2026-01-01-001", "verification.required_guards[0]"),
     ] {
         let target = plan_mutation_request(id, path, Verb::Set)?
@@ -312,7 +315,6 @@ fn test_indexed_set_support_follows_list_item_shape() -> Result<(), Box<dyn std:
 
     for (id, path) in [
         ("ADR-0001", "alternatives[0]"),
-        ("WI-2026-01-01-001", "acceptance_criteria[0]"),
         ("WI-2026-01-01-001", "verification.waivers[0]"),
         ("CONF-CASE", "requirements[0]"),
     ] {
@@ -324,5 +326,22 @@ fn test_indexed_set_support_follows_list_item_shape() -> Result<(), Box<dyn std:
             "structured list item should reject indexed set: {path}"
         );
     }
+    Ok(())
+}
+
+#[test]
+fn test_acceptance_criterion_set_handler_is_ssot_driven() -> Result<(), Box<dyn std::error::Error>>
+{
+    let target = plan_mutation_request("WI-2026-01-01-001", "acceptance_criteria[0]", Verb::Set)?
+        .target
+        .ok_or("acceptance criterion target missing")?;
+
+    assert!(matches!(
+        target,
+        ResolvedTarget::IndexedItem {
+            object_set_mode: Some(NestedObjectSetMode::AcceptanceCriterion),
+            ..
+        }
+    ));
     Ok(())
 }

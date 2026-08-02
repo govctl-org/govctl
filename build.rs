@@ -42,6 +42,7 @@ fn main() {
     // Edit rules SSOT + schema (ADR-0030)
     println!("cargo:rerun-if-changed=gov/schema/edit-ops.schema.json");
     println!("cargo:rerun-if-changed=gov/schema/edit-ops.json");
+    println!("cargo:rerun-if-changed=build_support/edit_ops_spec.rs");
 
     generate_skill_assets().expect("failed to generate skill asset manifest");
     generate_plugin_assets().expect("failed to generate agent plugin asset manifest");
@@ -270,11 +271,16 @@ fn render_nested_node_defs(
                 "    set_mode: {},\n",
                 render_nested_scalar_mode_expr(set_mode.as_ref())?
             ));
+            out.push_str("    object_set_mode: None,\n");
             out.push_str("    item: None,\n");
             out.push_str("    fields: &[],\n");
             out.push_str("};\n\n");
         }
-        NestedNodeRule::Object { verbs, fields } => {
+        NestedNodeRule::Object {
+            verbs,
+            set_mode,
+            fields,
+        } => {
             for field in fields {
                 let child_const = format!("{const_name}_{}", sanitize_const_fragment(&field.name));
                 render_nested_node_defs(out, &child_const, &field.node)?;
@@ -297,6 +303,18 @@ fn render_nested_node_defs(
             out.push_str("    text_key: None,\n");
             out.push_str("    value_codec: None,\n");
             out.push_str("    set_mode: None,\n");
+            out.push_str(&format!(
+                "    object_set_mode: {},\n",
+                match set_mode.as_deref() {
+                    Some("acceptance_criterion") => {
+                        "Some(NestedObjectSetMode::AcceptanceCriterion)"
+                    }
+                    Some(other) => {
+                        return Err(format!("unknown nested object set mode: {other}").into());
+                    }
+                    None => "None",
+                }
+            ));
             out.push_str("    item: None,\n");
             out.push_str(&format!("    fields: {},\n", fields_const));
             out.push_str("};\n\n");
@@ -334,6 +352,7 @@ fn render_nested_node_defs(
                 }
             ));
             out.push_str("    set_mode: None,\n");
+            out.push_str("    object_set_mode: None,\n");
             out.push_str(&format!("    item: Some(&{}),\n", item_const));
             out.push_str("    fields: &[],\n");
             out.push_str("};\n\n");
@@ -358,6 +377,9 @@ fn render_nested_scalar_mode_expr(mode: Option<&RuntimeSetMode>) -> Result<Strin
     match mode {
         None => Ok("None".to_string()),
         Some(RuntimeSetMode::String) => Ok("Some(NestedScalarMode::String)".to_string()),
+        Some(RuntimeSetMode::NonEmptyString) => {
+            Ok("Some(NestedScalarMode::NonEmptyString)".to_string())
+        }
         Some(RuntimeSetMode::Semver) => Ok("Some(NestedScalarMode::Semver)".to_string()),
         Some(RuntimeSetMode::Integer) => {
             Err("integer set mode is not supported for nested edit paths".into())
@@ -498,6 +520,9 @@ fn runtime_set_expr(set: Option<&RuntimeSetRule>) -> Result<String, Box<dyn Erro
     };
     let mode = match &set.mode {
         RuntimeSetMode::String => "SetMode::String".to_string(),
+        RuntimeSetMode::NonEmptyString => {
+            return Err("non-empty string set mode is only supported for nested edit paths".into());
+        }
         RuntimeSetMode::Integer => "SetMode::Integer".to_string(),
         RuntimeSetMode::Semver => {
             return Err("semver set mode is only supported for nested edit paths".into());

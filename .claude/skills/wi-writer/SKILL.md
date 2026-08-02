@@ -62,6 +62,12 @@ decide done/not-done without prescribing incidental private structure. Use
 `chore` for internal validation or documentation outcomes that should not enter
 the release changelog.
 
+Correct an existing criterion with
+`govctl work edit <ID> acceptance_criteria[N] --set <value>`. A recognized
+category prefix updates both text and category; other input updates only text.
+The operation preserves checklist status. Use the `.text` child path when a
+recognized prefix must remain literal text, and use `--tick` for status changes.
+
 ### Notes
 
 Use notes sparingly for closure-worthy constraints, durable implementation facts,

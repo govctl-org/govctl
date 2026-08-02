@@ -88,6 +88,23 @@ Category prefixes (`add:`, `fix:`, `change:`, `chore:`, etc.) are required and d
 
 Canonical changelog categories are still the preferred form in stored artifacts. The conventional-commit aliases are accepted as input sugar and normalized into the changelog model.
 
+### Correct Criteria
+
+Set an indexed criterion directly to correct its text. A recognized category
+prefix updates the category at the same time; input without one preserves the
+existing category. Both forms preserve checklist status.
+
+```bash
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --set "fix: Handle empty input"
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --set "Handle empty input"
+```
+
+Use the child path when a recognized prefix must remain literal text:
+
+```bash
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].text" --set "fix: shown to the user"
+```
+
 ### Mark Criteria Complete
 
 ```bash
@@ -242,6 +259,7 @@ Do not use notes for progress updates, commands run, validation output, current 
 Nested path edits are also available for structured fields:
 
 ```bash
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --set "fix: Handle edge case"
 govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].category" --set fixed
 ```
 

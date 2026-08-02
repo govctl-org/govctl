@@ -19,6 +19,12 @@ pub struct ParsedChange {
     pub explicit: bool,
 }
 
+#[derive(Debug, Clone, Copy)]
+enum UnknownPrefix {
+    Reject,
+    TreatAsText,
+}
+
 /// Parse a change string with optional prefix (per ADR-0012).
 ///
 /// Format: `[prefix:] message`
@@ -28,6 +34,18 @@ pub struct ParsedChange {
 ///
 /// Returns error if prefix is present but invalid.
 pub fn parse_changelog_change(change: &str) -> DiagnosticResult<ParsedChange> {
+    parse_changelog_change_with_policy(change, UnknownPrefix::Reject)
+}
+
+/// Parse a recognized changelog prefix, treating other input as literal text.
+pub fn parse_changelog_change_with_fallback(change: &str) -> DiagnosticResult<ParsedChange> {
+    parse_changelog_change_with_policy(change, UnknownPrefix::TreatAsText)
+}
+
+fn parse_changelog_change_with_policy(
+    change: &str,
+    unknown_prefix: UnknownPrefix,
+) -> DiagnosticResult<ParsedChange> {
     if let Some(colon_pos) = change.find(':') {
         let prefix = change[..colon_pos].trim();
         let message = change[colon_pos + 1..].trim();
@@ -46,7 +64,7 @@ pub fn parse_changelog_change(change: &str) -> DiagnosticResult<ParsedChange> {
                     message: message.to_string(),
                     explicit: true,
                 });
-            } else {
+            } else if matches!(unknown_prefix, UnknownPrefix::Reject) {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0808InvalidPrefix,
                     format!(

@@ -281,6 +281,9 @@ govctl adr edit ADR-0003 refs --add RFC-0010
 # Replace a scalar list item in place
 govctl rfc edit RFC-0010 owners[0] --set "@new-owner"
 
+# Correct criterion text and optionally its category
+govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --set "fix: Handle edge case"
+
 # Remove by index
 govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --remove
 
@@ -294,6 +297,7 @@ Nested object fields use dot-delimited paths:
 ```bash
 govctl adr edit ADR-0003 decision --set "We will use Redis"
 govctl adr edit ADR-0003 "alternatives[0].pros" --add "Low latency"
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].text" --set "Literal criterion text"
 govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].category" --set fixed
 ```
 

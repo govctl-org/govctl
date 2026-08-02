@@ -115,6 +115,16 @@ fn apply_nested_scalar_set(
 ) -> DiagnosticResult<()> {
     match mode.unwrap_or(NestedScalarMode::String) {
         NestedScalarMode::String => *slot = Value::String(value.to_string()),
+        NestedScalarMode::NonEmptyString => {
+            if value.is_empty() {
+                return Err(Diagnostic::new(
+                    DiagnosticCode::E0805EmptyValue,
+                    "Value cannot be empty",
+                    id,
+                ));
+            }
+            *slot = Value::String(value.to_string());
+        }
         NestedScalarMode::Semver => {
             semver::Version::parse(value).map_err(|_| {
                 Diagnostic::new(

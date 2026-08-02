@@ -110,6 +110,12 @@
               },
               "minItems": 1
             },
+            "set_mode": {
+              "oneOf": [
+                { "type": "string", "enum": ["acceptance_criterion"] },
+                { "type": "null" }
+              ]
+            },
             "fields": {
               "type": "array",
               "items": { "$ref": "#/definitions/nestedFieldRule" }
@@ -273,6 +279,14 @@
           "required": ["type"],
           "properties": {
             "type": { "type": "string", "enum": ["string"] }
+          },
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "type": "string", "enum": ["non_empty_string"] }
           },
           "additionalProperties": false
         },

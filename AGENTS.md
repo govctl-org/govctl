@@ -217,6 +217,7 @@ govctl rfc advance RFC-0001 impl
 # Nested field editing (path-based per ADR-0029)
 govctl adr edit ADR-0001 alternatives[0].text --set "Updated option"
 govctl adr edit ADR-0001 alternatives[0].pros --add "New advantage"
+govctl work edit WI-001 acceptance_criteria[0] --set "fix: Correct criterion"
 govctl work edit WI-001 acceptance_criteria[0].category --set fixed
 ```
 

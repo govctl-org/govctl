@@ -71,6 +71,7 @@ EXAMPLES:
     govctl work edit WI-2026-04-06-001 description --set \"Scope and why\"
     govctl work edit WI-2026-04-06-001 depends_on --add WI-2026-04-06-002
     govctl work edit WI-2026-04-06-001 acceptance_criteria --add \"add: Implement feature X\"
+    govctl work edit WI-2026-04-06-001 acceptance_criteria[0] --set \"fix: Correct edge case\"
     govctl work edit WI-2026-04-06-001 acceptance_criteria[0] --tick done
     govctl work edit WI-2026-04-06-001 verification.required_guards --add GUARD-CARGO-TEST
 ")]

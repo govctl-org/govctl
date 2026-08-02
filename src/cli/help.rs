@@ -155,8 +155,9 @@ pub(super) const WORK: &str = r#"COMMON WORKFLOW:
     1. `govctl work list` to discover work items
     2. `govctl work get <ID> ...` for metadata/fields
     3. `govctl work edit` to define scope and acceptance criteria
-    4. `govctl work edit <ID> acceptance_criteria[N] --tick <status>` to update criterion status
-    5. `govctl work move` to change lifecycle state
+    4. `govctl work edit <ID> acceptance_criteria[N] --set <text>` to correct a criterion
+    5. `govctl work edit <ID> acceptance_criteria[N] --tick <status>` to update criterion status
+    6. `govctl work move` to change lifecycle state
 
 START HERE:
     - New work item: `govctl work new "Title"`

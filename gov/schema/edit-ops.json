@@ -833,14 +833,15 @@
         "text_key": "text",
         "item": {
           "kind": "object",
-          "verbs": ["get"],
+          "verbs": ["get", "set"],
+          "set_mode": "acceptance_criterion",
           "fields": [
             {
               "name": "text",
               "node": {
                 "kind": "scalar",
                 "verbs": ["get", "set"],
-                "set_mode": { "type": "string" }
+                "set_mode": { "type": "non_empty_string" }
               }
             },
             {

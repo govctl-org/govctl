@@ -51,16 +51,32 @@ pub enum ChangelogCategory {
 }
 
 impl ChangelogCategory {
-    /// Canonical category prefixes shown in error messages and docs.
-    /// All verb forms for consistency with imperative acceptance criteria.
+    /// Accepted category prefixes shown in error messages and docs.
     pub const VALID_PREFIXES: &'static [&'static str] = &[
         "add",
-        "fix",
+        "added",
+        "feat",
+        "feature",
         "change",
-        "remove",
+        "changed",
+        "refactor",
+        "perf",
         "deprecate",
+        "deprecated",
+        "remove",
+        "removed",
+        "fix",
+        "fixed",
         "security",
+        "sec",
         "chore",
+        "internal",
+        "test",
+        "tests",
+        "doc",
+        "docs",
+        "ci",
+        "build",
     ];
 
     pub const RELEASE_CHANGELOG_SECTIONS: &'static [(Self, &'static str)] = &[
