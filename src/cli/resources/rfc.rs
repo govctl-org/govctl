@@ -69,7 +69,7 @@ NOTES:
 EXAMPLES:
     govctl rfc edit RFC-0001 changelog.summary --set \"Clarify retry behavior\"
     govctl rfc edit RFC-0001 changelog.fixed --add \"Correct timeout wording\"
-    govctl rfc edit RFC-0001 changelog.fixed[0] --remove
+    govctl rfc edit RFC-0001 \"changelog.fixed[0]\" --remove
     govctl rfc edit RFC-0001 refs --add RFC-0002
 
 NOTES:

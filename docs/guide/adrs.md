@@ -73,17 +73,17 @@ govctl adr edit ADR-0003 context --set --stdin < context.md
 
 # Array fields — add, remove, tick
 govctl adr edit ADR-0003 refs --add RFC-0010
-govctl adr edit ADR-0003 refs[0] --remove
+govctl adr edit ADR-0003 "refs[0]" --remove
 
 # Nested alternatives
 govctl adr edit ADR-0003 alternatives --add "Option C: Use etcd"
 govctl adr edit ADR-0003 "alternatives[0].pros" --add "Fast reads"
 govctl adr edit ADR-0003 "alternatives[0].cons" --add "Operational cost"
-govctl adr edit ADR-0003 alternatives[0] --tick accepted
+govctl adr edit ADR-0003 "alternatives[0]" --tick accepted
 govctl adr edit ADR-0003 "alternatives[0].rejection_reason" --set "Too complex"
 
 # Tick alternative status
-govctl adr edit ADR-0003 alternatives[0] --tick accepted
+govctl adr edit ADR-0003 "alternatives[0]" --tick accepted
 ```
 
 Edit paths use logical field names:
@@ -126,8 +126,8 @@ proposed → accepted → superseded
 Before accepting, the ADR must have at least 2 alternatives with 1 accepted and 1 rejected per [[ADR-0042]]:
 
 ```bash
-govctl adr edit ADR-0003 alternatives[0] --tick accepted
-govctl adr edit ADR-0003 alternatives[1] --tick rejected
+govctl adr edit ADR-0003 "alternatives[0]" --tick accepted
+govctl adr edit ADR-0003 "alternatives[1]" --tick rejected
 
 govctl adr accept ADR-0003
 ```

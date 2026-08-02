@@ -187,7 +187,7 @@ For precise artifact mutation, `govctl` provides a canonical path-first interfac
 
 ```bash
 govctl adr edit ADR-0038 decision --set --stdin
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --tick done
 govctl clause edit RFC-0002:C-CRUD-VERBS text --set --stdin
 ```
 

@@ -69,14 +69,14 @@ govctl rfc bump RFC-0010 --minor -m "Add new clause for edge case"
 govctl rfc get RFC-0010 changelog
 govctl rfc edit RFC-0010 changelog.summary --set "Clarify edge-case behavior"
 govctl rfc edit RFC-0010 changelog.fixed --add "Correct timeout wording"
-govctl rfc edit RFC-0010 changelog.fixed[0] --remove
+govctl rfc edit RFC-0010 "changelog.fixed[0]" --remove
 
 # Add to array fields
 govctl rfc edit RFC-0010 refs --add RFC-0001
 govctl rfc edit RFC-0010 owners --add "@co-maintainer"
 
 # Remove by index or pattern
-govctl rfc edit RFC-0010 refs[0] --remove
+govctl rfc edit RFC-0010 "refs[0]" --remove
 govctl rfc edit RFC-0010 owners --remove "@old-owner"
 
 # Edit clause text

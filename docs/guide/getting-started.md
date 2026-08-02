@@ -271,6 +271,10 @@ Run `govctl migrate` for supported schema upgrades and bundled-file synchronizat
 
 Editable artifact fields use a unified path-based edit interface:
 
+Quote every path containing brackets so shells such as zsh do not expand it as
+a glob. For rich text containing backticks, `$()`, or other shell syntax, use
+`--stdin` so the shell does not interpret the value.
+
 ```bash
 # Set a scalar value
 govctl rfc edit RFC-0010 title --set "Updated title"
@@ -279,17 +283,17 @@ govctl rfc edit RFC-0010 title --set "Updated title"
 govctl adr edit ADR-0003 refs --add RFC-0010
 
 # Replace a scalar list item in place
-govctl rfc edit RFC-0010 owners[0] --set "@new-owner"
+govctl rfc edit RFC-0010 "owners[0]" --set "@new-owner"
 
 # Correct criterion text and optionally its category
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --set "fix: Handle edge case"
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --set "fix: Handle edge case"
 
 # Remove by index
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --remove
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --remove
 
 # Tick checklist items
-govctl adr edit ADR-0003 alternatives[0] --tick accepted
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
+govctl adr edit ADR-0003 "alternatives[0]" --tick accepted
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --tick done
 ```
 
 Nested object fields use dot-delimited paths:

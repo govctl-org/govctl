@@ -42,6 +42,6 @@ VALID FIELDS:
 EXAMPLES:
     govctl work get WI-<DATE>-001
     govctl work get WI-<DATE>-001 description
-    govctl work get WI-<DATE>-001 acceptance_criteria[0].status
+    govctl work get WI-<DATE>-001 "acceptance_criteria[0].status"
     govctl work get WI-<DATE>-001 verification.required_guards
 exit: 0

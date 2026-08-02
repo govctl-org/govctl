@@ -63,10 +63,12 @@ decide done/not-done without prescribing incidental private structure. Use
 the release changelog.
 
 Correct an existing criterion with
-`govctl work edit <ID> acceptance_criteria[N] --set <value>`. A recognized
+`govctl work edit <ID> "acceptance_criteria[N]" --set <value>`. A recognized
 category prefix updates both text and category; other input updates only text.
 The operation preserves checklist status. Use the `.text` child path when a
 recognized prefix must remain literal text, and use `--tick` for status changes.
+Quote every path containing brackets. Use `--stdin` for rich text containing
+backticks, `$()`, or other shell syntax.
 
 ### Notes
 

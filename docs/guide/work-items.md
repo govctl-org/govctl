@@ -108,7 +108,7 @@ govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].text" --set "fix: sho
 ### Mark Criteria Complete
 
 ```bash
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --tick done
 ```
 
 Checklist state changes address one item by index.
@@ -129,11 +129,11 @@ govctl work edit WI-2026-01-17-001 depends_on --add WI-2026-01-16-001
 govctl work edit WI-2026-01-17-001 acceptance_criteria --add "fix: Handle edge case"
 
 # Remove by index
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --remove
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --remove
 
 # Tick checklist items
-govctl work edit WI-2026-01-17-001 acceptance_criteria[0] --tick done
-govctl work edit WI-2026-01-17-001 acceptance_criteria[1] --tick cancelled
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[0]" --tick done
+govctl work edit WI-2026-01-17-001 "acceptance_criteria[1]" --tick cancelled
 ```
 
 Edit paths use logical field names:
@@ -251,7 +251,7 @@ Add closure-worthy durable notes for constraints or retry rules that should rema
 
 ```bash
 govctl work edit WI-2026-01-17-001 notes --add "Do not retry the old validation path; it fails on missing refs"
-govctl work edit WI-2026-01-17-001 notes[0] --set "Retry only after the referenced RFC is normative"
+govctl work edit WI-2026-01-17-001 "notes[0]" --set "Retry only after the referenced RFC is normative"
 ```
 
 Do not use notes for progress updates, commands run, validation output, current plans, next actions, temporary blockers, or TODOs. Put transient execution trace in local loop state and round artifacts instead.
@@ -275,7 +275,7 @@ govctl work edit WI-2026-01-17-001 notes --remove "edge case"
 govctl work edit WI-2026-01-17-001 notes --remove "Discovered edge case in validation"
 
 # By index (0-based)
-govctl work edit WI-2026-01-17-001 notes[0] --remove
+govctl work edit WI-2026-01-17-001 "notes[0]" --remove
 
 # Regex pattern
 govctl work edit WI-2026-01-17-001 refs --remove "RFC-.*" --regex

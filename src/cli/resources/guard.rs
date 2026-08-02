@@ -57,7 +57,7 @@ NOTES:
 EXAMPLES:
     govctl guard edit GUARD-0001 command --set \"cargo test\"
     govctl guard edit GUARD-0001 refs --add RFC-0001
-    govctl guard edit GUARD-0001 refs[0] --remove
+    govctl guard edit GUARD-0001 \"refs[0]\" --remove
 ")]
     Edit(CommonEditArgs),
     /// Delete a verification guard

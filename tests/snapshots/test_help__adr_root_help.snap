@@ -34,5 +34,5 @@ COMMON WORKFLOW:
 START HERE:
     - New ADR: `govctl adr new "Title"`
     - Inspect one ADR: `govctl adr get ADR-0001`
-    - Move an alternative to accepted: `govctl adr edit ADR-0001 alternatives[0] --tick accepted`
+    - Move an alternative to accepted: `govctl adr edit ADR-0001 "alternatives[0]" --tick accepted`
 exit: 0

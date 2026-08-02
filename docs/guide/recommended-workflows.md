@@ -142,8 +142,8 @@ Confirm the intended work item appears in the active list. During execution:
 After execution:
 
 ```bash
-govctl work edit WI-YYYY-MM-DD-NNN acceptance_criteria[0] --tick done
-govctl work edit WI-YYYY-MM-DD-NNN acceptance_criteria[1] --tick done
+govctl work edit WI-YYYY-MM-DD-NNN "acceptance_criteria[0]" --tick done
+govctl work edit WI-YYYY-MM-DD-NNN "acceptance_criteria[1]" --tick done
 govctl work move WI-YYYY-MM-DD-NNN done
 ```
 

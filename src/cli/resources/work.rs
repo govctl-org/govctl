@@ -32,7 +32,7 @@ VALID FIELDS:
 EXAMPLES:
     govctl work get WI-2026-04-06-001
     govctl work get WI-2026-04-06-001 description
-    govctl work get WI-2026-04-06-001 acceptance_criteria[0].status
+    govctl work get WI-2026-04-06-001 \"acceptance_criteria[0].status\"
     govctl work get WI-2026-04-06-001 verification.required_guards
 ")]
     Get(CommonGetArgs),
@@ -71,8 +71,8 @@ EXAMPLES:
     govctl work edit WI-2026-04-06-001 description --set \"Scope and why\"
     govctl work edit WI-2026-04-06-001 depends_on --add WI-2026-04-06-002
     govctl work edit WI-2026-04-06-001 acceptance_criteria --add \"add: Implement feature X\"
-    govctl work edit WI-2026-04-06-001 acceptance_criteria[0] --set \"fix: Correct edge case\"
-    govctl work edit WI-2026-04-06-001 acceptance_criteria[0] --tick done
+    govctl work edit WI-2026-04-06-001 \"acceptance_criteria[0]\" --set \"fix: Correct edge case\"
+    govctl work edit WI-2026-04-06-001 \"acceptance_criteria[0]\" --tick done
     govctl work edit WI-2026-04-06-001 verification.required_guards --add GUARD-CARGO-TEST
 ")]
     Edit(CommonEditArgs),
@@ -84,7 +84,7 @@ EXAMPLES:
 
 NOTES:
     - `done` requires acceptance criteria and effective guards to pass.
-    - Use `work edit ... acceptance_criteria[N] --tick` to update criterion status.
+    - Use `work edit ... \"acceptance_criteria[N]\" --tick` to update criterion status.
 ")]
     Move {
         /// Work item file path or ID
