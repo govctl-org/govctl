@@ -10,13 +10,24 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-08-02
+
+0.19.0 makes acceptance-criterion corrections direct and state-preserving.
+Agents can replace an indexed criterion without reconstructing its checklist
+state, while copyable examples now avoid common shell-expansion traps.
+
 ### Added
 
-- Item-level acceptance-criterion set updates text and recognized category prefixes while preserving checklist status (WI-2026-08-02-001)
+- `govctl work edit <ID> "acceptance_criteria[N]" --set <value>` replaces a
+  criterion in place. Recognized prefixes update its changelog category; plain
+  or unrecognized-prefix input updates only its text. Checklist status is
+  preserved in both cases.
 
-### Fixed
+### Changed
 
-- Plain or unrecognized-prefix input replaces literal criterion text without changing its category or status (WI-2026-08-02-001)
+- CLI help, user guides, and bundled agent guidance quote indexed edit paths to
+  prevent shell glob expansion and recommend `--stdin` for rich text containing
+  shell-sensitive syntax.
 
 ## [0.18.0] - 2026-07-31
 
