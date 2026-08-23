@@ -222,3 +222,145 @@ fn test_loop_run_closes_blocked_round_as_paused_then_opens_next_round() -> commo
     assert_eq!(loop_item_round_count(&state_toml, &root_id)?, 2);
     Ok(())
 }
+
+#[test]
+fn test_loop_run_recovers_stale_state_without_overwriting_submitted_round() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
+    let marker = "UNIQUE-MARKER-DO-NOT-LOSE";
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Root"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_run(&loop_id),
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+    submit_round_summary(
+        temp_dir.path(),
+        &loop_id,
+        1,
+        &[marker],
+        &["gov/work"],
+        &["verification recorded"],
+        &[],
+    )?;
+    rewind_loop_state_before_open(temp_dir.path(), &loop_id, &root_id)?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+    assert!(output.contains("exit: 0"), "{output}");
+    assert!(
+        output.contains(&format!("Opened round 1 for loop {loop_id}")),
+        "{output}"
+    );
+
+    let round_toml = read_round_record(temp_dir.path(), &loop_id, &root_id, 1)?;
+    assert!(round_toml.contains(marker), "{round_toml}");
+    assert!(
+        round_toml.contains("status = \"submitted\""),
+        "{round_toml}"
+    );
+
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("current_round = 1"), "{state_toml}");
+    assert_eq!(loop_item_status(&state_toml, &root_id)?, "active");
+    assert_eq!(loop_item_round_count(&state_toml, &root_id)?, 1);
+
+    let close_output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+    assert!(close_output.contains("exit: 0"), "{close_output}");
+    let round_toml = read_round_record(temp_dir.path(), &loop_id, &root_id, 1)?;
+    assert!(round_toml.contains(marker), "{round_toml}");
+    assert!(round_toml.contains("status = \"closed\""), "{round_toml}");
+    Ok(())
+}
+
+#[test]
+fn test_loop_run_rejects_existing_closed_round_without_overwrite() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
+    let marker = "CLOSED-ROUND-EVIDENCE";
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[
+            work_new("Root"),
+            loop_start_with_id(&loop_id, &[&root_id]),
+            loop_run(&loop_id),
+        ],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+    submit_round_summary(
+        temp_dir.path(),
+        &loop_id,
+        1,
+        &[marker],
+        &["gov/work"],
+        &["verification recorded"],
+        &[],
+    )?;
+    let close_output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+    assert!(close_output.contains("exit: 0"), "{close_output}");
+    rewind_loop_state_before_open(temp_dir.path(), &loop_id, &root_id)?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+    assert!(output.contains("error[E1201]"), "{output}");
+    assert!(output.contains("already exists and is closed"), "{output}");
+    assert!(
+        output.contains(&format!(".govctl/loops/{loop_id}/rounds/round-001.toml")),
+        "{output}"
+    );
+
+    let round_toml = read_round_record(temp_dir.path(), &loop_id, &root_id, 1)?;
+    assert!(round_toml.contains(marker), "{round_toml}");
+    assert!(round_toml.contains("status = \"closed\""), "{round_toml}");
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("current_round = 0"), "{state_toml}");
+    assert_eq!(loop_item_status(&state_toml, &root_id)?, "pending");
+    Ok(())
+}
+
+#[test]
+fn test_loop_run_rejects_invalid_existing_round_without_overwrite() -> common::TestResult {
+    let (temp_dir, date) = init_project_with_date()?;
+    let root_id = format!("WI-{date}-001");
+    let loop_id = loop_id(&date, 1);
+
+    let setup_output = run_dynamic_commands(
+        temp_dir.path(),
+        &[work_new("Root"), loop_start_with_id(&loop_id, &[&root_id])],
+    )?;
+    assert!(setup_output.contains("exit: 0"), "{setup_output}");
+
+    let rounds_dir = temp_dir
+        .path()
+        .join(format!(".govctl/loops/{loop_id}/rounds"));
+    fs::create_dir_all(&rounds_dir)?;
+    let round_path = rounds_dir.join("round-001.toml");
+    fs::write(&round_path, "not valid loop round")?;
+
+    let output = run_dynamic_commands(temp_dir.path(), &[loop_run(&loop_id)])?;
+    assert!(output.contains("error[E1201]"), "{output}");
+    assert!(
+        fs::read_to_string(&round_path)?.contains("not valid loop round"),
+        "round file was rewritten"
+    );
+    let state_toml = fs::read_to_string(
+        temp_dir
+            .path()
+            .join(format!(".govctl/loops/{loop_id}/state.toml")),
+    )?;
+    assert!(state_toml.contains("current_round = 0"), "{state_toml}");
+    Ok(())
+}

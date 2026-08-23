@@ -1,0 +1,41 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-08-23-001"
+title = "Prevent loop run from overwriting existing round artifacts"
+status = "done"
+created = "2026-08-23"
+started = "2026-08-23"
+completed = "2026-08-23"
+refs = [
+    "RFC-0006:C-ROUND-EXECUTION",
+    "RFC-0006:C-LOOP-RESUMPTION",
+    "RFC-0006:C-LOOP-STATE-STORAGE",
+]
+tags = ["lifecycle"]
+
+[content]
+description = "Stop loop run from replacing an existing round artifact when state.toml still has a stale current_round, and complete an interrupted open by pointing loop state at that open or submitted round without rewriting it."
+
+[[content.acceptance_criteria]]
+text = "loop run does not overwrite an existing round artifact when current_round has not recorded that round"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "loop run completes an interrupted open by recording the existing open or submitted round in state.toml without rewriting the round file"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "loop run rejects a closed or invalid round artifact at the next round number without mutating the file or loop state"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "loop execution tests cover stale current_round against an existing round file"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

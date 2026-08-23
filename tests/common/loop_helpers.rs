@@ -131,6 +131,42 @@ pub fn submit_round_summary(
     Ok(())
 }
 
+pub fn rewind_loop_state_before_open(
+    dir: &Path,
+    loop_id: &str,
+    work_id: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let path = dir.join(format!(".govctl/loops/{loop_id}/state.toml"));
+    let mut value: toml::Value = toml::from_str(&fs::read_to_string(&path)?)?;
+    let loop_table = value
+        .get_mut("loop")
+        .and_then(toml::Value::as_table_mut)
+        .ok_or("missing loop table")?;
+    loop_table.insert(
+        "state".to_string(),
+        toml::Value::String("pending".to_string()),
+    );
+    loop_table.insert("current_round".to_string(), toml::Value::Integer(0));
+    loop_table.insert(
+        "next_action".to_string(),
+        toml::Value::String("start".to_string()),
+    );
+    let item = value
+        .get_mut("items")
+        .and_then(toml::Value::as_table_mut)
+        .and_then(|items| items.get_mut(work_id))
+        .and_then(toml::Value::as_table_mut)
+        .ok_or_else(|| format!("missing loop item table for {work_id}"))?;
+    item.insert(
+        "status".to_string(),
+        toml::Value::String("pending".to_string()),
+    );
+    item.insert("round_count".to_string(), toml::Value::Integer(0));
+    item.insert("last_round".to_string(), toml::Value::Integer(0));
+    fs::write(path, toml::to_string_pretty(&value)?)?;
+    Ok(())
+}
+
 fn string_array(values: &[&str]) -> toml::Value {
     toml::Value::Array(
         values

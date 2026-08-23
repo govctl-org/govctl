@@ -125,16 +125,14 @@ fn open_round(
     reflect_terminal_work_statuses(config, state)?;
     propagate_blocked_outcomes(state)?;
 
+    let round_number = next_round_number(state)?;
+    if let Some(record) = existing_round_record(config, &state.loop_meta.id, round_number)? {
+        return complete_interrupted_open(config, state, record, target_work_ids, op);
+    }
+
     let ready_work = ready_work_for_round(state, target_work_ids)?;
     if !ready_work.is_empty() {
-        let round_number = next_round_number(state)?;
-        state.loop_meta.current_round = round_number;
-        state.loop_meta.next_action = LoopNextAction::WriteSummary;
-        for work_id in &ready_work {
-            state.set_item_status(work_id, LoopWorkItemStatus::Active)?;
-            state.record_item_round(work_id, round_number)?;
-        }
-
+        apply_opened_round_to_state(state, round_number, &ready_work)?;
         let record = LoopRoundRecord::open(state.loop_meta.id.clone(), round_number, ready_work);
         write_loop_round_record(config, &record, op)?;
         write_loop_state_with_op(config, state, op)?;
@@ -155,6 +153,82 @@ fn open_round(
         ));
     }
     Ok(vec![])
+}
+
+fn existing_round_record(
+    config: &Config,
+    loop_id: &str,
+    round_number: u32,
+) -> DiagnosticResult<Option<LoopRoundRecord>> {
+    match load_loop_round_record(config, loop_id, round_number) {
+        Ok(record) => Ok(Some(record)),
+        Err(err) if err.code == DiagnosticCode::E1202LoopStateNotFound => Ok(None),
+        Err(err) => Err(err),
+    }
+}
+
+fn complete_interrupted_open(
+    config: &Config,
+    state: &mut LoopState,
+    record: LoopRoundRecord,
+    target_work_ids: &[String],
+    op: WriteOp,
+) -> DiagnosticResult<Diagnostics> {
+    let path = loop_round_path(
+        config,
+        &record.round_meta.loop_id,
+        record.round_meta.round_number,
+    )?;
+    if record.round_meta.status == LoopRoundStatus::Closed {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E1201LoopStateInvalid,
+            format!(
+                "Loop round artifact already exists and is closed: {}; loop.current_round is {}",
+                config.display_path(&path).display(),
+                state.loop_meta.current_round
+            ),
+            state.loop_meta.id.clone(),
+        ));
+    }
+    validate_open_round_target_selector(state, &record, target_work_ids)?;
+    for work_id in &record.round_meta.work {
+        if !state.items.contains_key(work_id) {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E1201LoopStateInvalid,
+                format!(
+                    "Existing round {} work item '{work_id}' is not part of loop '{}'",
+                    record.round_meta.round_number, state.loop_meta.id
+                ),
+                state.loop_meta.id.clone(),
+            ));
+        }
+    }
+
+    apply_opened_round_to_state(
+        state,
+        record.round_meta.round_number,
+        &record.round_meta.work,
+    )?;
+    write_loop_state_with_op(config, state, op)?;
+    print_opened_round(config, &record)?;
+    print_loop("Loop", state)?;
+    Ok(vec![])
+}
+
+fn apply_opened_round_to_state(
+    state: &mut LoopState,
+    round_number: u32,
+    work_ids: &[String],
+) -> DiagnosticResult<()> {
+    state.loop_meta.current_round = round_number;
+    state.loop_meta.next_action = LoopNextAction::WriteSummary;
+    for work_id in work_ids {
+        if !is_terminal_item(state, work_id) {
+            state.set_item_status(work_id, LoopWorkItemStatus::Active)?;
+        }
+        state.record_item_round(work_id, round_number)?;
+    }
+    Ok(())
 }
 
 fn close_round(
