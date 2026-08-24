@@ -10,6 +10,19 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.19.1] - 2026-08-24
+
+0.19.1 keeps loop round evidence when `loop run` is retried after a partial
+open. A stale `current_round` no longer causes the next open to replace an
+existing round artifact.
+
+### Fixed
+
+- `govctl loop run` does not overwrite `rounds/round-NNN.toml` when that file
+  already exists and `loop.current_round` has not recorded it. An open or
+  submitted artifact is resumed by updating loop state only; a closed or
+  invalid artifact is rejected without mutation.
+
 ## [0.19.0] - 2026-08-02
 
 0.19.0 makes acceptance-criterion corrections direct and state-preserving.
