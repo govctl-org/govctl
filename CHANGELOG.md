@@ -10,6 +10,20 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.19.2] - 2026-09-06
+
+0.19.2 keeps directories that are not governed by govctl clean. Read-only
+commands no longer leave local state behind or pretend an ungoverned
+directory is an empty governed project.
+
+### Fixed
+
+- `govctl status` outside a governed project now exits non-zero with a
+  diagnostic stating that no govctl project was found, instead of printing
+  a zeroed dashboard. (WI-2026-09-06-001)
+- `govctl search` and the `<resource> show` commands no longer create
+  `.govctl/` local index state outside a governed project. (WI-2026-09-06-001)
+
 ## [0.19.1] - 2026-08-24
 
 0.19.1 keeps loop round evidence when `loop run` is retried after a partial

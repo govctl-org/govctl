@@ -1,6 +1,6 @@
 {
   "name": "govctl",
-  "version": "0.19.1",
+  "version": "0.19.2",
   "description": "Governed workflow skills for govctl",
   "skills": "./skills/",
   "hooks": "./hooks/codex.json"
