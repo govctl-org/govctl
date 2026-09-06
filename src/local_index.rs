@@ -21,6 +21,16 @@ pub(crate) fn open_database(
     action: &'static str,
 ) -> DiagnosticResult<(Connection, PathBuf)> {
     let path = database_path(config);
+    if !config.governed {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0502PathNotFound,
+            format!(
+                "No govctl project found in the current directory or its parents; refusing to create local state at {}. Run 'govctl init' to initialize one.",
+                path.display()
+            ),
+            path.display().to_string(),
+        ));
+    }
     let parent = path.parent().ok_or_else(|| {
         Diagnostic::new(
             DiagnosticCode::E0901IoError,

@@ -157,6 +157,13 @@ impl StatusPrinter {
 
 /// Show summary status
 pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
+    if !config.governed {
+        return Err(crate::diagnostic::Diagnostic::new(
+            crate::diagnostic::DiagnosticCode::E0502PathNotFound,
+            "No govctl project found in the current directory or its parents. Run 'govctl init' to initialize one.",
+            config.gov_root.display().to_string(),
+        ));
+    }
     let index = match load_project(config) {
         Ok(idx) => idx,
         Err(diags) => return Ok(diags),

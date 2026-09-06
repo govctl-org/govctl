@@ -621,6 +621,7 @@ mod tests {
     fn test_config(root: &Path) -> Config {
         Config {
             gov_root: root.join("gov"),
+            governed: true,
             ..Config::default()
         }
     }

@@ -1,0 +1,31 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-06-001"
+title = "Keep ungoverned directories free of govctl state"
+status = "done"
+created = "2026-09-06"
+started = "2026-09-06"
+completed = "2026-09-06"
+refs = [
+    "RFC-0002",
+    "ADR-0039",
+]
+
+[content]
+description = "Fix GitHub issue #45: read-only commands misbehave in directories that are not governed by govctl. `govctl status` prints a zeroed dashboard that implies an empty governed project, and `govctl search` plus the `<resource> show` catalog lookup create `.govctl/index.db` local state in arbitrary directories. Make the affected commands detect the absence of a governed project: `status` reports a clear not-a-govctl-project diagnostic, and local index creation is refused outside a governed project."
+
+[[content.acceptance_criteria]]
+text = "govctl status in a directory with no governed project exits non-zero with a diagnostic stating that no govctl project was found"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl search and resource show commands no longer create .govctl/ local state outside a governed project"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "regression tests cover the ungoverned-directory behavior of status, search, and show"
+status = "done"
+category = "chore"

@@ -109,6 +109,7 @@ impl Config {
                 )
             })?;
             config.agent_dir_explicit = agent_dir_explicit;
+            config.governed = true;
             if schema_version >= 5 && config.source_scan.legacy_exclude.is_some() {
                 return Err(Diagnostic::new(
                     DiagnosticCode::E0501ConfigInvalid,
