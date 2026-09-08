@@ -41,6 +41,9 @@ Release entries are curated summaries for readers. Work item traceability remain
 - W0114 is emitted whenever trunk-scope enforcement is inactive, including when the trunk command itself subsequently fails (WI-2026-09-08-007)
 - read-only registry sessions emit a corruption warning instead of silently swallowing undecodable records (WI-2026-09-08-007)
 - moving a work item out of active status removes all presence records for that work item, not only the invoking workspace's own (WI-2026-09-08-007)
+- claim steal writes the claim record before its audit event, so a failed steal leaves no orphan audit (WI-2026-09-08-008)
+- a corrupt reservation record is quarantined aside once and skipped with a warning instead of degrading every later allocation (WI-2026-09-08-008)
+- a supersede that fails after acquiring its first claim releases that claim before returning the error (WI-2026-09-08-008)
 
 ## [0.19.2] - 2026-09-06
 
