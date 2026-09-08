@@ -52,7 +52,9 @@ owns the same evidence.
 
 References should identify RFC obligations and ADR constraints actually used by
 the work. `depends_on` should represent hard execution order, not an
-informational relationship.
+informational relationship. Per [[RFC-0000:C-REFERENCE-HIERARCHY]], a Work Item
+may reference RFCs and ADRs but must never reference a Conformance Case,
+whether in `refs` or as an inline `[[...]]` link.
 
 Notes are optional except where the resource contract requires durable context,
 such as a cancellation reason. They should contain closure-worthy constraints

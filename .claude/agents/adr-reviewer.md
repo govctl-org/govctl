@@ -48,6 +48,13 @@ but its prose does not become a second source of product requirements.
 Language-specific structure is acceptable only when that concrete structure is
 central to the architectural decision rather than incidental task detail.
 
+Apply the reference hierarchy in [[RFC-0000:C-REFERENCE-HIERARCHY]]: an ADR
+must never reference a Work Item or a Conformance Case, whether in `refs` or
+as an inline `[[...]]` link. References from the ADR up to the RFCs it
+implements are the correct direction; when an RFC's behavior depends on the
+decision under review, flag a missing ADR-to-RFC reference rather than
+suggesting that the RFC link down to the ADR.
+
 ### Projection Ownership
 
 Apply [[RFC-0000:C-ADR-PROJECTION-OWNERSHIP]]. The renderer owns fixed headings,

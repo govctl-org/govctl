@@ -58,6 +58,13 @@ obligation or rationale and use appropriate precision. A reference to
 historical or deprecated material is not inherently wrong; assess whether the
 context intends history or current authority.
 
+Apply the reference hierarchy in [[RFC-0000:C-REFERENCE-HIERARCHY]]: an RFC
+must never reference an ADR, a Work Item, or a Conformance Case, whether in
+`refs` or as an inline `[[...]]` link. Flag any such reference as a violation,
+and never recommend adding one. When depended-on rationale or a trade-off
+record lives in an ADR, the correct fix is a reference from that ADR back to
+the RFC, which is outside the artifact under review.
+
 For amendments, distinguish clarification from behavior change and check that
 the described compatibility and version consequences are coherent. Do not
 infer raw source syntax from rendered output when `govctl check` or a field view
