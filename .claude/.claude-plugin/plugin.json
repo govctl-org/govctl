@@ -1,6 +1,6 @@
 {
   "name": "govctl",
-  "version": "0.19.2",
+  "version": "0.20.0",
   "description": "Governed workflow skills, reviewer agents, and lifecycle hooks for govctl",
   "hooks": "./hooks/claude.json"
 }

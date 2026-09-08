@@ -10,40 +10,56 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.20.0] - 2026-09-08
+
+0.20.0 implements RFC-0010: multi-workspace coordination for parallel agents.
+Repositories that drive agents in separate git worktrees or jj workspaces of one
+clone now share a coordination registry living in VCS-shared storage, while
+governance content stays versioned with the branch. Single-checkout and
+non-version-controlled projects behave exactly as before.
+
 ### Added
 
-- every CLI command is classified as workspace, branch-content, or trunk scoped in the command router (WI-2026-09-08-001)
-- govctl release and govctl migrate refuse to run in a secondary git worktree with a diagnostic naming the primary workspace (WI-2026-09-08-001)
-- jj projects can name the primary workspace in gov/config.toml; when undeterminable with VCS present, trunk commands warn and proceed (WI-2026-09-08-001)
-- artifact creation in two workspaces of one clone never assigns the same RFC, ADR, or work item ID (WI-2026-09-08-002)
-- allocation consults the clone's shared version-control history, so IDs of merged or deleted artifacts are never reused (WI-2026-09-08-002)
-- bump/finalize/advance/deprecate/supersede fail without mutation when another workspace holds a live claim on a mutated RFC (WI-2026-09-08-003)
-- content edits on a claimed RFC warn without blocking (WI-2026-09-08-003)
-- claims expire after a configurable inactivity period and support explicit release and audited takeover (WI-2026-09-08-003)
-- activating a work item registers a presence record visible from other workspaces (WI-2026-09-08-004)
-- govctl status lists work items actively claimed by other workspaces, without changing output when no other workspace exists (WI-2026-09-08-004)
-- an unconfigured jj repository treats its default workspace as primary, so trunk commands are refused in added workspaces without configuration (WI-2026-09-08-006)
-
-### Changed
-
-- workspace.primary config names a jj workspace by name instead of an absolute path (WI-2026-09-08-006)
+- Every command is classified as workspace, branch-content, or trunk scoped.
+  `govctl release`, `govctl release undo`, and `govctl migrate` are
+  trunk-scoped and refuse to run outside the primary workspace, with a
+  diagnostic naming it. (WI-2026-09-08-001)
+- The primary workspace is detected from git metadata automatically; jj
+  projects treat the workspace named `default` as primary and can override it
+  with `[workspace] primary = "<name>"` in `gov/config.toml`.
+  (WI-2026-09-08-001, WI-2026-09-08-006)
+- Artifact creation reserves generated IDs in a per-clone registry, so two
+  workspaces can never assign the same RFC, ADR, or work item ID. Allocation
+  consults shared version-control history, so IDs of merged or deleted
+  artifacts are never reused. (WI-2026-09-08-002)
+- `rfc bump`, `finalize`, `advance`, `deprecate`, and `supersede` acquire an
+  exclusive claim on every RFC they mutate and fail without mutation when
+  another workspace holds a live claim; content edits warn without blocking.
+  Claims expire after a configurable inactivity period and can be released or
+  taken over with the new `govctl claim list/release/steal` commands, with
+  takeovers recorded in an audit trail. (WI-2026-09-08-003)
+- `govctl status` lists work items actively claimed by other workspaces in a
+  new "Active in Other Workspaces" section; output is unchanged when no other
+  workspace is active. (WI-2026-09-08-004)
 
 ### Fixed
 
-- commands in a directory without version control behave exactly as before with no warning (WI-2026-09-08-001)
-- registry write failure or corruption with VCS present degrades to current behavior with a warning instead of failing the command (WI-2026-09-08-002)
-- status and claim list never block on the registry lock and never serialize against each other (C-REGISTRY) (WI-2026-09-08-005)
-- registry is functional in jj secondary workspaces by following the .jj/repo pointer file (C-REGISTRY) (WI-2026-09-08-005)
-- reservations are pruned only when the artifact is witnessed in shared version-control history (C-ID-RESERVATION) (WI-2026-09-08-005)
-- bare-repo and nested VCS layouts resolve workspace context toward Undeterminable with a warning instead of silently misidentifying the primary workspace (C-COMMAND-SCOPE) (WI-2026-09-08-005)
-- loop execution and read-only claim commands are classified workspace-scoped per C-COMMAND-SCOPE definitions (WI-2026-09-08-005)
-- no machine-specific paths need to be committed to gov/config.toml for trunk enforcement to work on other machines (WI-2026-09-08-006)
-- W0114 is emitted whenever trunk-scope enforcement is inactive, including when the trunk command itself subsequently fails (WI-2026-09-08-007)
-- read-only registry sessions emit a corruption warning instead of silently swallowing undecodable records (WI-2026-09-08-007)
-- moving a work item out of active status removes all presence records for that work item, not only the invoking workspace's own (WI-2026-09-08-007)
-- claim steal writes the claim record before its audit event, so a failed steal leaves no orphan audit (WI-2026-09-08-008)
-- a corrupt reservation record is quarantined aside once and skipped with a warning instead of degrading every later allocation (WI-2026-09-08-008)
-- a supersede that fails after acquiring its first claim releases that claim before returning the error (WI-2026-09-08-008)
+- Read-only commands never block on the registry lock, and detected registry
+  corruption or write failure degrades to single-checkout behavior with a
+  warning instead of failing the command. (WI-2026-09-08-005,
+  WI-2026-09-08-007)
+- The registry works in jj secondary workspaces by following the `.jj/repo`
+  pointer file. (WI-2026-09-08-005)
+- Reservations are pruned only once the artifact is witnessed in shared
+  version-control history, closing an ID-reuse window for unmerged deletions.
+  (WI-2026-09-08-005)
+- Bare-repo and nested VCS layouts resolve workspace detection toward a
+  warning instead of silently misidentifying the primary workspace.
+  (WI-2026-09-08-005)
+- Registry edge cases: claim steal records its audit event only after the
+  transfer succeeds, corrupt reservations are quarantined aside once instead
+  of degrading every later allocation, and a failed supersede releases the
+  claims it already acquired. (WI-2026-09-08-008)
 
 ## [0.19.2] - 2026-09-06
 
