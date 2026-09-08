@@ -1,0 +1,21 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-ID-RESERVATION"
+title = "Cross-workspace ID reservation"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["collaboration"]
+
+[content]
+text = """
+A branch-content command that creates a governed artifact with a generated identifier MUST atomically reserve that identifier in the coordination registry as part of creation, and the reservation MUST record the owning workspace.
+
+Two artifact creations in different workspaces of the same clone MUST NOT be assigned the same identifier, regardless of when their respective branches merge. This extends the concurrent-invocation uniqueness required by [[RFC-0004:C-CONCURRENT-WRITE]] from same-checkout processes to across-workspace sequences. Across clones — where no shared registry exists — identifier strategies that derive collision-safe identifiers from author identity or randomness remain the available mitigation.
+
+Identifier allocation MUST take as its input the union of three witnesses: the identifiers present in the invoking workspace's gov tree, the identifiers bound by live reservations in the registry, and the identifiers recorded in the clone's shared version-control history. An identifier is recorded in shared history when a governed-artifact source path bearing that identifier exists in any commit reachable from the clone's shared storage. Allocation MUST choose the next identifier monotonically within the numbering scheme of the artifact type, so identifiers stay sortable and predictable for humans. Because shared history is visible to every workspace of the clone, a merged artifact witnesses its identifier even to workspaces on stale branches.
+
+A reservation for a newly created artifact MUST be honored as live while the artifact file exists at the owning workspace's recorded path. The reservation MAY be discarded only once the artifact is recorded in the clone's shared version-control history, from which point the history entry is the uniqueness witness for every workspace.
+
+**Rationale:** Sequential identifiers are a deliberate readability choice for RFCs and ADRs. Reservation preserves that choice under parallel branch work by moving the collision point from merge time — where renumbering breaks references — to creation time, where an atomic shared record costs nothing. Defining the allocation input as local tree plus reservations plus shared history keeps the uniqueness guarantee intact across the reservation's entire lifecycle, including after its discard."""

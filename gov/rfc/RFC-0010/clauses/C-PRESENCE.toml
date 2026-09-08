@@ -1,0 +1,21 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-PRESENCE"
+title = "Cross-workspace presence"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["collaboration"]
+
+[content]
+text = """
+Activating a work item — or creating one directly in active status — in any workspace MUST register a presence record in the coordination registry naming the work item and the owning workspace.
+
+`govctl status` MUST surface work items with live presence records owned by other workspaces of the clone, identifying both the work item and the owning workspace, so an agent can tell which items are being worked on elsewhere before starting new work.
+
+Presence records follow the liveness rules of [[RFC-0010:C-ARTIFACT-CLAIM]]: they record a last-activity timestamp, are refreshed by invocations in the owning workspace, and expire after the same configurable inactivity period.
+
+Presence is advisory visibility, not exclusion: it MUST NOT block activating or editing the same work item in another workspace. Where hard coordination for work items is wanted, projects use work item dependency and assignment workflows rather than presence.
+
+**Rationale:** The common multi-agent failure is two agents unknowingly doing the same work. A live, shared view of active work removes the invisibility without turning advisory information into a locking protocol."""

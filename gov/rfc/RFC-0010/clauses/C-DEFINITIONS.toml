@@ -1,0 +1,26 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-DEFINITIONS"
+title = "Definitions"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+**Working tree / workspace:** A distinct checkout of a repository clone that shares version-control metadata with the clone's other working trees — a linked git worktree or a jj workspace. A workspace is identified by the absolute path of its working-tree root. Moving or renaming a workspace therefore invalidates its registry records, which expire under the liveness rules below and are recreated by new activity from the moved workspace.
+
+**Primary workspace:** The working tree designated as the canonical location for trunk-scoped commands. For git, the main working tree (the one containing the repository's shared metadata directory). For VCS tools whose workspaces are peers, the workspace named by project configuration.
+
+**Shared repository storage:** Storage provided by the version-control system that is common to every working tree of a clone, such as the git common directory or the jj repository store. It is distinct from any working tree's checked-out files. **Shared version-control history** is the commit history recorded in that shared storage and visible to every workspace of the clone.
+
+**Coordination registry:** Local, per-clone state in shared repository storage that records ID reservations, artifact claims, and presence records. The registry is coordination state, not a governed artifact, and is never committed to version control.
+
+**ID reservation:** An atomic registry record that binds a not-yet-merged artifact ID to the workspace that generated it. Reservation liveness is defined by [[RFC-0010:C-ID-RESERVATION]] through the existence of the artifact file at the owning workspace's recorded path, not by an activity timestamp.
+
+**Artifact claim:** An exclusive registry record binding an existing RFC to the workspace performing version-semantics operations on it.
+
+**Presence record:** A registry record indicating that a workspace is actively working on a specific work item.
+
+**Live record:** A claim or presence record whose owning workspace path still exists and whose recorded activity has not exceeded the configured inactivity period."""

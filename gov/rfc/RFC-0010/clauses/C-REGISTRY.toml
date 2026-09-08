@@ -1,0 +1,21 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-REGISTRY"
+title = "Shared coordination registry"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["collaboration"]
+
+[content]
+text = """
+The coordination registry MUST be stored in shared repository storage so that every workspace of a clone observes and updates the same records. The registry MUST be namespaced per governed project root, so a clone hosting multiple governed projects keeps independent registries.
+
+The registry MUST NOT be stored inside any workspace's working tree, under the gov root, or under rendered documentation directories. Registry records are local coordination state: they are not governed artifacts, MUST NOT be committed to version control, and MUST NOT be treated as an authoritative source over TOML governance artifacts. The registry MAY inform only coordination-facing output — the presence overlay in `govctl status` and reservation or claim diagnostics — and MUST NOT alter the parsed content, status fields, or lifecycle state of governed artifacts as loaded from their TOML sources.
+
+Concurrent registry updates from parallel processes across workspaces MUST be atomic: two concurrent invocations MUST NOT produce lost, duplicated, or interleaved registry records. This coordination mechanism is distinct from, and does not replace, the concurrency mechanism required by [[RFC-0004]] for mutations of the gov tree. Registry access MUST NOT block read-only commands.
+
+Because multiple working trees are themselves a version-control facility, a directory without version control cannot host more than one workspace. Commands in such a directory MUST silently use single-checkout behavior; coordination is not merely inactive but inapplicable, and no warning is emitted. Degraded detection MUST resolve toward caution: when version-control metadata is present but unreadable, or its presence cannot be reliably determined, commands MUST behave as if version control were present and shared storage were unavailable — that is, degrade with a warning — rather than taking the silent no-VCS path. Under the same caution rule, a registry write failure or detected registry corruption with version control present MUST degrade to single-checkout behavior and MUST emit a warning, since the clone may host other workspaces whose coordination state is now stale. Registry loss or corruption MUST NOT make governed artifacts unusable; the consequence is limited to losing the uniqueness and visibility guarantees of this RFC until the registry is repopulated by new activity.
+
+**Rationale:** Placing coordination state in VCS-shared storage gives every workspace of a clone a single rendezvous point without a daemon or network service, while keeping the working tree — and therefore pull requests — free of operational state. Because the storage is VCS metadata rather than a checked-out file, the registry requires no ignore rules. Warning on registry failure when version control is present surfaces a real coordination gap, while staying silent without version control avoids punishing single-checkout projects for a facility they cannot use."""

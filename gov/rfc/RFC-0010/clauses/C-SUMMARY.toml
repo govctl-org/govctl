@@ -1,0 +1,20 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-SUMMARY"
+title = "Summary"
+kind = "informative"
+status = "active"
+since = "0.1.0"
+
+[content]
+text = """
+This RFC specifies how govctl coordinates governance work when one repository clone hosts multiple concurrent working trees — git worktrees or jj workspaces — driven by parallel agents.
+
+**Scope:** Applies to every govctl command invocation in any working tree of a clone that hosts more than one working tree. It covers command scope classification, a shared coordination registry, cross-workspace ID reservation, exclusive claims for version-semantics operations, and cross-workspace presence visibility.
+
+**Backward compatibility:** Single-checkout repositories are unaffected: with exactly one working tree, coordination reduces to the behavior defined by [[RFC-0004]]. Without version control, multiple workspaces cannot exist, so commands silently behave as they always have. One deliberate exception: because allocation consults shared version-control history, identifiers of deleted artifacts are not reused, which protects historical references from dangling onto unrelated successors.
+
+**Specification outline:** Commands are classified as workspace, branch-content, or trunk scoped, and trunk-scoped commands are refused outside the primary workspace. A per-clone coordination registry holds ID reservations, artifact claims, and presence records. ID reservation makes cross-branch ID collisions impossible by construction; claims make concurrent version-semantics changes to the same RFC visible and serialized; presence lets agents in one workspace see active work in others.
+
+**Rationale:** Governance artifacts remain versioned with the branch so that changes travel through pull request review, while coordination state — which is live, operational, and not reviewable — is shared per clone. Without this split, parallel agents in separate worktrees collide on sequential IDs, cannot see each other's active work, and can silently bump or finalize the same RFC."""

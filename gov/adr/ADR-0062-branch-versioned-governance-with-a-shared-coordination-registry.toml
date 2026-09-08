@@ -1,0 +1,101 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0062"
+title = "Branch-versioned governance with a shared coordination registry"
+status = "accepted"
+date = "2026-09-08"
+refs = [
+    "RFC-0010",
+    "RFC-0004",
+    "ADR-0020",
+    "ADR-0025",
+]
+tags = ["collaboration"]
+
+[content]
+context = """
+Multi-agent parallel development increasingly runs agents in separate working trees of one repository clone — git worktrees or jj workspaces — so that each agent works on its own branch without disturbing the others. govctl's current design assumes a single checkout in four ways:
+
+1. The gov-root lock file adopted in [[ADR-0025]] to satisfy [[RFC-0004]] lives inside the checkout, so it provides no mutual exclusion across working trees; [[ADR-0025]] deliberately scoped it to same-repository concurrent processes.
+2. Sequential identifiers for RFCs and ADRs collide when two branches create artifacts in parallel. [[ADR-0020]] added collision-safe work item ID strategies, which cover work items across parallel branches and clones, but RFC/ADR numbering remains unaddressed.
+3. Shared mutable files such as releases.toml and the changelog receive edits from every branch and conflict at merge time.
+4. Agents in separate working trees cannot see each other's active work items, so two agents may silently duplicate the same work.
+
+Two requirements pull in opposite directions. Coordination state — ID allocation, active-work visibility, version-change exclusion — wants a single live source shared by all agents. Governance content — RFC and ADR text — must remain versioned with the branch so changes travel through pull request review, which rules out moving gov/ to a shared singleton outside the tree.
+
+**Decision drivers:** pull-request review of governance content is non-negotiable; the target scenario is same-machine parallel agents sharing version-control metadata; no daemon or network service is acceptable (per [[ADR-0025]]); single-checkout behavior must remain unchanged.
+
+The normative behavior decided here is specified in [[RFC-0010]]."""
+decision = """
+Adopt branch-versioned governance with a shared per-clone coordination registry.
+
+Governance artifacts stay exactly where they are: `gov/` remains versioned with the branch, and every content change travels through pull request review. Coordination state moves out of the working tree into a registry stored in VCS-shared repository storage — the git common directory or the jj repository store — namespaced per governed project root, so all working trees of a clone observe and update the same records without a daemon.
+
+The two coordination mechanisms compose by layer: the [[RFC-0004]] concurrency mechanism serializes mutations of the gov tree within one checkout, while the registry coordinates allocation, claims, and presence across working trees of the clone.
+
+Three mechanisms live in the registry. ID reservation binds each newly generated artifact identifier to its owning workspace at creation time, which removes cross-branch numbering collisions by construction. Artifact claims give version-semantics operations on an RFC — bump, finalize, advance, deprecate, supersede — exclusive, expiring ownership, while plain content edits receive only a non-blocking warning; claims can be released or taken over explicitly, and takeovers are recorded. Presence records publish which work items each workspace is actively executing, surfaced through `govctl status`.
+
+Commands are classified by scope. Read-only and local-execution commands run in any workspace. Content commands run in any workspace subject to reservation and claims. Release cutting and governance-format migration run only in the primary workspace and refuse elsewhere with an actionable diagnostic. When shared storage or the primary workspace cannot be determined, commands degrade to single-checkout behavior with a warning."""
+consequences = """
+**Positive:**
+
+- Parallel agents in separate worktrees can create RFCs, ADRs, and work items without ever colliding on identifiers, so merging parallel branches introduces only new files.
+- Two agents can no longer unknowingly bump or finalize the same RFC in parallel, and each agent can see which work items other workspaces are executing.
+- Release cutting and format migration gain a single point of execution, replacing a class of merge conflicts on shared files with an explicit, actionable refusal.
+- Governance content keeps its pull request review path and its audit link to code history.
+
+**Negative:**
+
+- The registry is a second coordination mechanism beside the [[RFC-0004]] gov-root lock, with its own atomicity, liveness, and expiry rules to implement and maintain.
+- Registry state is not fully derivable from governed artifacts: losing it reverts the system to pre-registry collision risk for unmerged work until new activity repopulates it.
+- Claim expiry relies on inactivity periods, so a crashed agent's claim can block a live claim holder until expiry or an explicit takeover.
+- Coordination covers one clone only; cross-clone work items rely on [[ADR-0020]] identifier strategies, while cross-clone RFC/ADR numbering rests on merge discipline alone.
+
+**Neutral:**
+
+- Work item activation becomes visible immediately through the registry, while the work item file's status field catches up at merge time; tooling that reads status treats the registry view as the live overlay.
+- No merge drivers or post-merge reconciliation commands are introduced, because reservation and trunk-scoping remove the conflicts they would have addressed."""
+
+[[content.alternatives]]
+text = "Keep governance artifacts versioned with the branch and add a shared per-clone coordination registry holding ID reservations, artifact claims, and presence records"
+status = "accepted"
+pros = [
+    "Governance content stays in the branch and travels through pull request review unchanged",
+    "ID collisions across parallel branches are prevented at creation time, so merges of new artifacts are pure additions",
+    "Agents gain cross-workspace visibility of active work and exclusive claims on RFC version-semantics operations",
+    "No daemon or network service; the registry lives in VCS-shared storage that already exists",
+    "Single-checkout and no-VCS behavior is unchanged apart from a warning",
+]
+cons = [
+    "Introduces a second coordination mechanism alongside the [[RFC-0004]] gov-root lock, with its own liveness and expiry rules",
+    "Work item status is eventually consistent: activation is a live registry record until the branch merge lands the file change",
+    "Clone-level coordination only; cross-clone work items rely on [[ADR-0020]] identifier strategies, while cross-clone RFC/ADR numbering rests on merge discipline alone",
+]
+
+[[content.alternatives]]
+text = "Share a single governance root across all workspaces of a clone, redirecting every worktree's gov/ to the primary checkout"
+status = "rejected"
+pros = ["Single live source of truth; the existing gov-root lock becomes global across workspaces with no new mechanism"]
+cons = [
+    "Governance content is no longer versioned with the branch, so pull requests cannot carry or review RFC and ADR changes",
+    "Checking out an old branch would show current governance state, breaking the audit link between decisions and code history",
+]
+rejection_reason = "Violates the non-negotiable driver that governance content must remain branch-versioned and reviewable in pull requests."
+
+[[content.alternatives]]
+text = "Split gov/ physically: content artifacts stay branch-versioned while coordination artifacts move to a shared location"
+status = "rejected"
+pros = ["Gives content and coordination state their natural storage without an overlay layer"]
+cons = [
+    "gov/ becomes part local, part redirected, which complicates configuration resolution and the mental model",
+    "The content-versus-coordination classification is disputed: work item criteria read like content, while guards must travel with the code they verify",
+]
+rejection_reason = "Split-tree complexity and a contested artifact classification buy little over the registry overlay, which leaves gov/ untouched."
+
+[[content.alternatives]]
+text = "Documentation-only discipline: recommend collision-safe ID strategies and one-agent-per-worktree conventions without tooling changes"
+status = "rejected"
+pros = ["No implementation cost"]
+cons = ["RFC and ADR numbering still collides across branches, and agents still cannot see each other's active work"]
+rejection_reason = "Leaves the collision and invisibility problems in place and depends on every agent consistently following convention."

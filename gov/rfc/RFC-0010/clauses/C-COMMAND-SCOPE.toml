@@ -1,0 +1,23 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-COMMAND-SCOPE"
+title = "Command scope classification"
+kind = "normative"
+status = "active"
+since = "0.1.0"
+tags = ["collaboration"]
+
+[content]
+text = """
+Every govctl command that reads or writes governed artifacts or coordination state has exactly one scope: workspace, branch-content, or trunk. This classification applies to every command in the CLI surface defined by [[RFC-0002]], and any command added to that surface MUST be assigned exactly one scope at the time it is added.
+
+**Workspace scope.** Read-only and local-execution commands such as `status`, `check`, `list`, `show`, `search`, `verify`, `describe`, and loop execution. Workspace-scoped commands MUST run in any workspace and MUST NOT mutate governed artifacts.
+
+**Branch-content scope.** Commands that create or mutate governed artifacts in the invoking workspace's working tree, including artifact creation, content editing, lifecycle transitions, and rendering. Branch-content commands MUST run in any workspace, subject to the reservation and claim rules of [[RFC-0010:C-ID-RESERVATION]] and [[RFC-0010:C-ARTIFACT-CLAIM]].
+
+**Trunk scope.** Exactly the commands that cut a release or migrate the repository's governance format are trunk-scoped. A trunk-scoped command invoked outside the primary workspace MUST refuse to execute, MUST leave governed and coordination state unchanged, and MUST report a diagnostic that identifies the primary workspace.
+
+The primary workspace MUST be determined from version-control metadata when the VCS defines a main working tree. Where the VCS treats workspaces as peers, project configuration MUST be able to name the primary workspace; when version control is present but no primary workspace can be determined, trunk-scoped commands MUST proceed as if the current workspace were primary and MUST emit a warning that trunk-scope enforcement is inactive. Without version control, multiple workspaces cannot exist, so trunk-scope enforcement is inapplicable and commands proceed silently, consistent with [[RFC-0010:C-REGISTRY]] degradation.
+
+**Rationale:** Release cutting and format migration rewrite the canonical line of project history and must have a single point of execution, while content work benefits from running wherever the agent's branch lives. Refusing trunk operations in secondary workspaces replaces an entire class of merge conflicts with an explicit, actionable error. The warning is reserved for the case where enforcement is expected but impossible; a project without version control has no second workspace to protect against."""

@@ -1,0 +1,36 @@
+#:schema ../../schema/rfc.schema.json
+
+[govctl]
+id = "RFC-0010"
+title = "Multi-workspace coordination for parallel agents"
+version = "0.1.0"
+status = "normative"
+phase = "spec"
+owners = ["@govctl-org"]
+created = "2026-09-08"
+updated = "2026-09-08"
+refs = [
+    "RFC-0004",
+    "RFC-0002",
+]
+tags = ["collaboration"]
+
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = [
+    "clauses/C-DEFINITIONS.toml",
+    "clauses/C-COMMAND-SCOPE.toml",
+    "clauses/C-REGISTRY.toml",
+    "clauses/C-ID-RESERVATION.toml",
+    "clauses/C-ARTIFACT-CLAIM.toml",
+    "clauses/C-PRESENCE.toml",
+]
+
+[[changelog]]
+version = "0.1.0"
+date = "2026-09-08"
+notes = "Initial normative version"
