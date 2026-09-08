@@ -1,0 +1,29 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-003"
+title = "Add artifact claims for RFC version-semantics operations"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+depends_on = ["WI-2026-09-08-002"]
+
+[content]
+description = "Implement RFC-0010:C-ARTIFACT-CLAIM. Version-semantics operations on an RFC (bump, finalize, advance, deprecate, supersede) acquire an exclusive registry claim on every RFC they mutate, failing without mutation when another workspace holds a live claim. Content edits emit a non-blocking warning when another workspace holds a live claim. Claims record owning workspace and last-activity timestamp, refresh on invocations in the owning workspace, expire after a configurable inactivity period, and support explicit release and recorded takeover."
+
+[[content.acceptance_criteria]]
+text = "bump/finalize/advance/deprecate/supersede fail without mutation when another workspace holds a live claim on a mutated RFC"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "content edits on a claimed RFC warn without blocking"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "claims expire after a configurable inactivity period and support explicit release and audited takeover"
+status = "done"
+category = "added"

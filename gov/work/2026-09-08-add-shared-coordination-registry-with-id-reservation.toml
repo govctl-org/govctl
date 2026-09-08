@@ -1,0 +1,34 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-002"
+title = "Add shared coordination registry with ID reservation"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+depends_on = ["WI-2026-09-08-001"]
+
+[content]
+description = "Implement RFC-0010:C-REGISTRY storage and C-ID-RESERVATION. Add the per-clone coordination registry under VCS shared storage, namespaced per governed project root, with one record file per reservation and a single flock for atomic allocation. Artifact-creating commands reserve generated IDs atomically as part of creation, choosing the next ID monotonically from the union of the local gov tree, live reservations, and the clone's shared version-control history. Registry write failure or detected corruption with VCS present degrades to single-checkout behavior with a warning."
+notes = [
+    "Scope: three-witness allocation applies to sequential-ID artifacts (rfc new, adr new, work new). Guard and conformance IDs are slug-derived (collision errors rather than renumbering), so reservation there would require allocation redesign; left unchanged.",
+    "History witness: git only, via git log --all --diff-filter=A -p over the gov tree (added id lines across all refs, including unmerged worktree branches). jj has no equivalent cheap query wired up; jj projects still get registry reservations and local-tree witnessing. Registry namespace hashes the repo-relative gov root so all workspaces of one project share one registry while monorepo projects stay isolated.",
+    "Liveness: a reservation is live while the recorded artifact file exists; dead records are lazily pruned under the allocation lock, and merged/committed artifacts are thereafter witnessed by shared history.",
+]
+
+[[content.acceptance_criteria]]
+text = "artifact creation in two workspaces of one clone never assigns the same RFC, ADR, or work item ID"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "allocation consults the clone's shared version-control history, so IDs of merged or deleted artifacts are never reused"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "registry write failure or corruption with VCS present degrades to current behavior with a warning instead of failing the command"
+status = "done"
+category = "fixed"

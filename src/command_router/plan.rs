@@ -160,6 +160,16 @@ pub enum BuiltinOp {
         target: Option<String>,
         output: Option<TraceOutputFormat>,
     },
+    /// List artifact claims — [[RFC-0010:C-ARTIFACT-CLAIM]].
+    ClaimList,
+    /// Release a claim held by this workspace.
+    ClaimRelease {
+        id: String,
+    },
+    /// Take over a claim held by another workspace (audited).
+    ClaimSteal {
+        id: String,
+    },
 }
 
 impl BuiltinOp {
@@ -183,6 +193,11 @@ impl BuiltinOp {
             | Self::ConformanceGet { .. }
             | Self::ConformanceShow { .. }
             | Self::ConformanceTrace { .. } => true,
+            // [[RFC-0010:C-ARTIFACT-CLAIM]]: claim commands mutate only
+            // coordination state in shared VCS storage (serialized by the
+            // registry allocation lock), never the gov tree, so they stay
+            // outside the gov-root write-lock class.
+            Self::ClaimList | Self::ClaimRelease { .. } | Self::ClaimSteal { .. } => true,
             // [[RFC-0002:C-SEARCH-COMMAND]]: search may sync `.govctl/`
             // derived local state but must not mutate governed artifacts or
             // rendered docs; [[RFC-0004:C-DEFINITIONS]] keeps that outside the
@@ -298,6 +313,19 @@ pub enum LockDisposition {
     GovRootExclusive,
 }
 
+/// Command scope for multi-workspace coordination — [[RFC-0010:C-COMMAND-SCOPE]].
+///
+/// Every command has exactly one scope. Trunk-scoped commands (`release`,
+/// `migrate`) run only in the primary workspace; branch-content commands
+/// mutate governed artifacts and run in any workspace; workspace-scoped
+/// commands are read-only or local-execution and run anywhere.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommandScope {
+    Workspace,
+    BranchContent,
+    Trunk,
+}
+
 #[derive(Debug, Clone)]
 pub struct CommandPlan {
     pub scope: Scope,
@@ -314,6 +342,42 @@ impl CommandPlan {
             LockDisposition::None
         } else {
             LockDisposition::GovRootExclusive
+        }
+    }
+
+    /// Classify the command per [[RFC-0010:C-COMMAND-SCOPE]].
+    pub fn command_scope(&self) -> CommandScope {
+        match &self.op {
+            Op::Builtin(
+                BuiltinOp::Migrate | BuiltinOp::ReleaseCut { .. } | BuiltinOp::ReleaseUndo { .. },
+            ) => CommandScope::Trunk,
+            // [[RFC-0010:C-COMMAND-SCOPE]]: read-only and local-execution
+            // commands are workspace scoped. `claim list` only reads
+            // coordination state, and loop commands manage local execution
+            // state under `.govctl/`, never governed artifacts.
+            Op::Builtin(
+                BuiltinOp::ClaimList
+                | BuiltinOp::LoopStart { .. }
+                | BuiltinOp::LoopList { .. }
+                | BuiltinOp::LoopShow { .. }
+                | BuiltinOp::LoopResume { .. }
+                | BuiltinOp::LoopReplan { .. }
+                | BuiltinOp::LoopAdd { .. }
+                | BuiltinOp::LoopRemove { .. }
+                | BuiltinOp::LoopRun { .. },
+            ) => CommandScope::Workspace,
+            // [[RFC-0010:C-COMMAND-SCOPE]]: claim release and steal mutate
+            // coordination state only; they are branch-content scoped for
+            // enforcement purposes but stay lock-free (see
+            // `BuiltinOp::is_lock_free`), never acquiring the gov-root write
+            // lock.
+            Op::Builtin(BuiltinOp::ClaimRelease { .. } | BuiltinOp::ClaimSteal { .. }) => {
+                CommandScope::BranchContent
+            }
+            _ if matches!(self.lock_disposition(), LockDisposition::GovRootExclusive) => {
+                CommandScope::BranchContent
+            }
+            _ => CommandScope::Workspace,
         }
     }
 

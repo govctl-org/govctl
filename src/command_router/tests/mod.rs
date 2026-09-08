@@ -13,3 +13,4 @@ mod edit_action;
 mod help;
 mod lock_disposition;
 mod routing;
+mod scope;

@@ -164,7 +164,7 @@ Never blur these roles:
 # Validation & status
 govctl render all               # Render all artifacts
 govctl check                    # Validate all artifacts
-govctl status                   # Project overview
+govctl status                   # Project overview (+ work items active in other workspaces, RFC-0010)
 govctl search <query>           # Search all governed artifacts
 
 # User-scoped agent integration
@@ -196,6 +196,11 @@ govctl loop run LOOP-YYYY-MM-DD-NNN
 govctl loop add LOOP-YYYY-MM-DD-NNN work WI-ID
 govctl loop remove LOOP-YYYY-MM-DD-NNN work WI-ID
 govctl loop replan LOOP-YYYY-MM-DD-NNN
+
+# Cross-workspace artifact claims (RFC-0010)
+govctl claim list               # Claims held across this clone's workspaces
+govctl claim release RFC-0001   # Release a claim held by this workspace
+govctl claim steal RFC-0001     # Take over another workspace's claim (audited)
 
 # Viewing artifacts (styled markdown to stdout)
 govctl rfc show RFC-0001        # Show RFC

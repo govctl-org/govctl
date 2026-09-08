@@ -3,6 +3,7 @@
 pub mod agent;
 pub(crate) mod agent_hooks;
 pub mod check;
+pub mod claim;
 pub(crate) mod confirmation;
 pub mod conformance;
 pub mod describe;

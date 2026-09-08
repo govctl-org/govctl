@@ -1,6 +1,8 @@
 use super::{BuiltinOp, CommandPlan, Op, global};
 use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
-use crate::{AgentCommand, Commands, LoopCommand, ReleaseArgs, ReleaseCommand, TagCommand};
+use crate::{
+    AgentCommand, ClaimCommand, Commands, LoopCommand, ReleaseArgs, ReleaseCommand, TagCommand,
+};
 
 impl CommandPlan {
     pub fn from_parsed(cmd: &Commands, global_dry_run: bool) -> DiagnosticResult<Self> {
@@ -82,6 +84,7 @@ impl CommandPlan {
             Commands::Guard { command } => command.to_plan(),
             Commands::Conformance { command } => command.to_plan(),
             Commands::Loop { command } => Ok(plan_loop_command(command)),
+            Commands::Claim { command } => Ok(plan_claim_command(command)),
             Commands::Release(args) => plan_release_command(args),
             Commands::Tag { command } => Ok(plan_tag_command(command)),
         }
@@ -157,6 +160,15 @@ fn plan_tag_command(command: &TagCommand) -> CommandPlan {
         TagCommand::New { tag } => BuiltinOp::TagNew { tag: tag.clone() },
         TagCommand::Delete { tag } => BuiltinOp::TagDelete { tag: tag.clone() },
         TagCommand::List { output } => BuiltinOp::TagList { output: *output },
+    };
+    global(Op::Builtin(op))
+}
+
+fn plan_claim_command(command: &ClaimCommand) -> CommandPlan {
+    let op = match command {
+        ClaimCommand::List => BuiltinOp::ClaimList,
+        ClaimCommand::Release { id } => BuiltinOp::ClaimRelease { id: id.clone() },
+        ClaimCommand::Steal { id } => BuiltinOp::ClaimSteal { id: id.clone() },
     };
     global(Op::Builtin(op))
 }

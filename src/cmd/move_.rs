@@ -134,6 +134,21 @@ pub fn move_item(
         Some(&config.display_path(&work_path)),
     )?;
 
+    // [[RFC-0010:C-PRESENCE]]: entering active status registers this
+    // workspace's presence record; leaving it removes the record. Advisory
+    // coordination state only — the work item's TOML is already written and
+    // the move never fails because of the registry.
+    let mut warnings = vec![];
+    if status == WorkItemStatus::Active {
+        let mut presence = crate::registry::PresenceSession::begin(config, op.is_preview());
+        presence.register(&entry.spec.govctl.id, &entry.spec.govctl.title);
+        warnings.extend(presence.into_warnings());
+    } else if previous_status == WorkItemStatus::Active {
+        let mut presence = crate::registry::PresenceSession::begin(config, op.is_preview());
+        presence.remove(&entry.spec.govctl.id);
+        warnings.extend(presence.into_warnings());
+    }
+
     if !op.is_preview() {
         let filename = work_path
             .file_name()
@@ -142,7 +157,7 @@ pub fn move_item(
         ui::moved(&filename, status.as_ref());
     }
 
-    Ok(vec![])
+    Ok(warnings)
 }
 
 fn valid_work_targets(status: WorkItemStatus) -> &'static str {

@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-006"
+title = "Identify primary workspace by name with jj default fallback"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+
+[content]
+description = "Redesign the [workspace] primary configuration introduced in WI-2026-09-08-001. The current absolute-path value cannot be committed to a shared repository because it is machine-specific. Change it to a jj workspace name, and when no primary is configured, treat the workspace named `default` (jj's initial workspace in every repository) as the primary, per the amended RFC-0010:C-COMMAND-SCOPE. Only when neither a configured name nor a `default` workspace exists does detection fall back to Undeterminable (warn and proceed)."
+
+[[content.acceptance_criteria]]
+text = "workspace.primary config names a jj workspace by name instead of an absolute path"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "an unconfigured jj repository treats its default workspace as primary, so trunk commands are refused in added workspaces without configuration"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "no machine-specific paths need to be committed to gov/config.toml for trunk enforcement to work on other machines"
+status = "done"
+category = "fixed"

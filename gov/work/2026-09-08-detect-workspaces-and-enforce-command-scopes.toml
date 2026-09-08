@@ -1,0 +1,33 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-001"
+title = "Detect workspaces and enforce command scopes"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+
+[content]
+description = "Implement RFC-0010:C-COMMAND-SCOPE and the workspace detection half of C-REGISTRY. Detect whether the current directory is a git worktree or jj workspace of a clone, locate the VCS shared storage (git common dir / jj repo store), and identify the primary workspace (git main worktree automatically; jj via project configuration). Classify every CLI command as workspace, branch-content, or trunk scoped in the command router, and make release and migrate refuse to run in a secondary workspace with an actionable diagnostic. Degradation: no VCS means silent single-checkout behavior; VCS present but primary undeterminable or detection unreliable means degrade with a warning."
+
+[[content.acceptance_criteria]]
+text = "every CLI command is classified as workspace, branch-content, or trunk scoped in the command router"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl release and govctl migrate refuse to run in a secondary git worktree with a diagnostic naming the primary workspace"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "jj projects can name the primary workspace in gov/config.toml; when undeterminable with VCS present, trunk commands warn and proceed"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "commands in a directory without version control behave exactly as before with no warning"
+status = "done"
+category = "fixed"

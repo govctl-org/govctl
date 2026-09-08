@@ -1,0 +1,24 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-004"
+title = "Add cross-workspace presence overlay to status"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+depends_on = ["WI-2026-09-08-002"]
+
+[content]
+description = "Implement RFC-0010:C-PRESENCE. Activating a work item (or creating one active) registers a presence record naming the work item and owning workspace. govctl status surfaces work items with live presence records owned by other workspaces. Presence follows the claim liveness rules and never blocks operations."
+
+[[content.acceptance_criteria]]
+text = "activating a work item registers a presence record visible from other workspaces"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "govctl status lists work items actively claimed by other workspaces, without changing output when no other workspace exists"
+status = "done"
+category = "added"

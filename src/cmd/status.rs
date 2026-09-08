@@ -145,6 +145,34 @@ impl StatusPrinter {
         }
     }
 
+    /// Work items with a live presence record owned by another workspace of
+    /// this clone — the [[RFC-0010:C-PRESENCE]] overlay. Absent entirely when
+    /// no foreign presence exists, keeping single-checkout output unchanged.
+    fn foreign_work(&self, foreign: &[crate::registry::Presence]) {
+        if foreign.is_empty() {
+            return;
+        }
+
+        self.section_header("Active in Other Workspaces");
+        for presence in foreign {
+            if self.colors {
+                println!(
+                    "  {} {} ({})",
+                    presence.id.cyan().bold(),
+                    presence.title,
+                    presence.workspace.display()
+                );
+            } else {
+                println!(
+                    "  {} {} ({})",
+                    presence.id,
+                    presence.title,
+                    presence.workspace.display()
+                );
+            }
+        }
+    }
+
     fn pending_phase_count(&self, label: &str, count: usize) {
         print!("{label}:");
         if count > 0 {
@@ -241,6 +269,15 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
 
     printer.active_work(&active_items);
 
+    // [[RFC-0010:C-PRESENCE]]: surface work items actively worked on in other
+    // workspaces of this clone. Advisory visibility only; the read session is
+    // lock-free per [[RFC-0010:C-REGISTRY]], and registry failures degrade to
+    // warnings and never fail status.
+    let mut presence = crate::registry::PresenceSession::begin_readonly(config);
+    let foreign = presence.foreign();
+    printer.foreign_work(&foreign);
+    let warnings = presence.into_warnings();
+
     printer.section_header("Verification Guards");
     printer.total_line(guards.len());
 
@@ -251,5 +288,5 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     printer.total_line(releases.releases.len());
 
     println!();
-    Ok(vec![])
+    Ok(warnings)
 }

@@ -12,7 +12,10 @@ pub(super) fn level(code: &DiagnosticCode) -> DiagnosticLevel {
         | DiagnosticCode::W0110SchemaOutdated
         | DiagnosticCode::W0111ProjectSupportOutdated
         | DiagnosticCode::W0112BareArtifactReference
-        | DiagnosticCode::W0113AdrPlaceholderContext => DiagnosticLevel::Warning,
+        | DiagnosticCode::W0113AdrPlaceholderContext
+        | DiagnosticCode::W0114TrunkScopeEnforcementInactive
+        | DiagnosticCode::W0115RegistryDegraded
+        | DiagnosticCode::W0116ArtifactClaimHeld => DiagnosticLevel::Warning,
         DiagnosticCode::I0401WorkLegacyInlineHistory => DiagnosticLevel::Info,
         _ => DiagnosticLevel::Error,
     }
@@ -145,6 +148,8 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::E0820InvalidFieldValue => "E0820",
         DiagnosticCode::E0821InvalidCommandScope => "E0821",
         DiagnosticCode::E0822UnsupportedOperation => "E0822",
+        DiagnosticCode::E0823TrunkScopeViolation => "E0823",
+        DiagnosticCode::E0824ArtifactClaimed => "E0824",
         // E09xx - General
         DiagnosticCode::E0901IoError => "E0901",
         DiagnosticCode::E0902JsonParseError => "E0902",
@@ -161,6 +166,9 @@ pub(super) fn code(code: &DiagnosticCode) -> &'static str {
         DiagnosticCode::W0111ProjectSupportOutdated => "W0111",
         DiagnosticCode::W0112BareArtifactReference => "W0112",
         DiagnosticCode::W0113AdrPlaceholderContext => "W0113",
+        DiagnosticCode::W0114TrunkScopeEnforcementInactive => "W0114",
+        DiagnosticCode::W0115RegistryDegraded => "W0115",
+        DiagnosticCode::W0116ArtifactClaimHeld => "W0116",
         // I04xx - Work Item info
         DiagnosticCode::I0401WorkLegacyInlineHistory => "I0401",
     }

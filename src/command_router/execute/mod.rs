@@ -29,16 +29,22 @@ fn execute_create(config: &Config, create: &CreateOp, op: WriteOp) -> CommandRes
             title,
             section,
             kind,
-        } => cmd::new::create(
-            config,
-            &NewTarget::Clause {
-                clause_id: clause_id.clone(),
-                title: title.clone(),
-                section: section.clone(),
-                kind: *kind,
-            },
-            op,
-        ),
+        } => {
+            // [[RFC-0010:C-ARTIFACT-CLAIM]]: clause authoring is content work;
+            // a foreign live claim on the parent RFC warns without blocking.
+            let mut diags = claim_content_warnings(config, rfc_id_of_clause(clause_id), op);
+            diags.extend(cmd::new::create(
+                config,
+                &NewTarget::Clause {
+                    clause_id: clause_id.clone(),
+                    title: title.clone(),
+                    section: section.clone(),
+                    kind: *kind,
+                },
+                op,
+            )?);
+            Ok(diags)
+        }
         CreateOp::Adr { title } => cmd::new::create(
             config,
             &NewTarget::Adr {
@@ -115,15 +121,25 @@ fn execute_show(
 fn execute_edit(plan: &CommandPlan, config: &Config, edit: &EditOp, op: WriteOp) -> CommandResult {
     match edit {
         EditOp::Field { action } => {
-            let (_, id, target) = extract_target_scope(&plan.scope)?;
+            let (artifact, id, target) = extract_target_scope(&plan.scope)?;
             let path = target.display_path();
-            cmd::edit::edit_field(cmd::edit::EditFieldRequest {
+            // [[RFC-0010:C-ARTIFACT-CLAIM]]: content edits on an RFC claimed
+            // by another workspace warn without blocking.
+            let mut diags = match artifact {
+                cmd::edit::ArtifactType::Rfc => claim_content_warnings(config, id, op),
+                cmd::edit::ArtifactType::Clause => {
+                    claim_content_warnings(config, rfc_id_of_clause(id), op)
+                }
+                _ => vec![],
+            };
+            diags.extend(cmd::edit::edit_field(cmd::edit::EditFieldRequest {
                 config,
                 id,
                 path: &path,
                 action,
                 op,
-            })
+            })?);
+            Ok(diags)
         }
     }
 }
@@ -135,7 +151,12 @@ fn execute_lifecycle(
     op: WriteOp,
 ) -> CommandResult {
     let (artifact, id) = extract_artifact_scope(&plan.scope)?;
-    match lifecycle {
+    // [[RFC-0010:C-ARTIFACT-CLAIM]]: RFC version-semantics operations acquire
+    // exclusive claims before mutating and fail without mutation when another
+    // workspace holds a live claim; clause lifecycle operations are content
+    // work and warn without blocking.
+    let mut diags = coordinate_claims(config, artifact, id, lifecycle, op)?;
+    diags.extend(match lifecycle {
         LifecycleOp::Bump {
             level,
             summary,
@@ -158,13 +179,76 @@ fn execute_lifecycle(
         LifecycleOp::MoveWork { file_or_id, status } => {
             cmd::move_::move_item(config, file_or_id, *status, op)
         }
+    }?);
+    Ok(diags)
+}
+
+/// Claim coordination for lifecycle operations — [[RFC-0010:C-ARTIFACT-CLAIM]].
+///
+/// RFC-scoped bump/finalize/advance/deprecate acquire a claim on the RFC;
+/// RFC supersede acquires claims on both the superseded and the superseding
+/// RFC. Clause-scoped deprecate/supersede are content operations on the
+/// parent RFC and receive soft warnings only.
+fn coordinate_claims(
+    config: &Config,
+    artifact: cmd::edit::ArtifactType,
+    id: &str,
+    lifecycle: &LifecycleOp,
+    op: WriteOp,
+) -> CommandResult {
+    let is_rfc = artifact == cmd::edit::ArtifactType::Rfc;
+    let hard_ids: Vec<&str> = match lifecycle {
+        LifecycleOp::Bump { .. } | LifecycleOp::Finalize { .. } | LifecycleOp::Advance { .. }
+            if is_rfc =>
+        {
+            vec![id]
+        }
+        LifecycleOp::Deprecate { .. } if is_rfc => vec![id],
+        LifecycleOp::Supersede { by, .. } if is_rfc => vec![id, by],
+        _ => vec![],
+    };
+    let soft_ids: Vec<&str> = match lifecycle {
+        LifecycleOp::Deprecate { .. } | LifecycleOp::Supersede { .. }
+            if artifact == cmd::edit::ArtifactType::Clause =>
+        {
+            vec![rfc_id_of_clause(id)]
+        }
+        _ => vec![],
+    };
+    if hard_ids.is_empty() && soft_ids.is_empty() {
+        return Ok(vec![]);
     }
+    let mut session = crate::registry::ClaimSession::begin(config, op.is_preview());
+    session.acquire(&hard_ids)?;
+    let mut diags = session.foreign_claim_warnings(&soft_ids);
+    diags.extend(session.into_warnings());
+    Ok(diags)
+}
+
+/// Parent RFC of a clause ID (`RFC-0001:C-FOO` → `RFC-0001`).
+fn rfc_id_of_clause(id: &str) -> &str {
+    id.split(':').next().unwrap_or(id)
+}
+
+/// Soft claim warnings for content operations on an RFC —
+/// [[RFC-0010:C-ARTIFACT-CLAIM]].
+fn claim_content_warnings(config: &Config, rfc_id: &str, op: WriteOp) -> Diagnostics {
+    let mut session = crate::registry::ClaimSession::begin(config, op.is_preview());
+    let mut diags = session.foreign_claim_warnings(&[rfc_id]);
+    diags.extend(session.into_warnings());
+    diags
 }
 
 fn execute_delete(plan: &CommandPlan, config: &Config, force: bool, op: WriteOp) -> CommandResult {
     let (artifact, id) = extract_artifact_scope(&plan.scope)?;
     match artifact {
-        cmd::edit::ArtifactType::Clause => cmd::edit::delete_clause(config, id, force, op),
+        cmd::edit::ArtifactType::Clause => {
+            // [[RFC-0010:C-ARTIFACT-CLAIM]]: clause deletion is content work;
+            // a foreign live claim on the parent RFC warns without blocking.
+            let mut diags = claim_content_warnings(config, rfc_id_of_clause(id), op);
+            diags.extend(cmd::edit::delete_clause(config, id, force, op)?);
+            Ok(diags)
+        }
         cmd::edit::ArtifactType::WorkItem => cmd::edit::delete_work_item(config, id, force, op),
         cmd::edit::ArtifactType::Guard => cmd::guard::delete_guard(config, id, force, op),
         cmd::edit::ArtifactType::Conformance => cmd::conformance::delete(config, id, force, op),

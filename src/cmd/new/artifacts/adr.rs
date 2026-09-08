@@ -12,6 +12,12 @@ pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> DiagnosticRes
     let display_adr_dir = config.display_path(&adr_dir);
     create_dir_all(&adr_dir, op, Some(&display_adr_dir))?;
 
+    // [[RFC-0010:C-ID-RESERVATION]]: reserve the generated ID in the shared
+    // registry and allocate from the union of the local tree, live
+    // reservations, and shared history. Degrades to local-only with a
+    // warning when the registry is unavailable.
+    let mut reservation = crate::registry::ReservationSession::begin(config, op.is_preview());
+
     let mut max_num = 0u32;
     if let Ok(entries) = std::fs::read_dir(&adr_dir) {
         for entry in entries.flatten() {
@@ -27,6 +33,7 @@ pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> DiagnosticRes
             }
         }
     }
+    let max_num = reservation.max_witnessed("ADR-", max_num);
 
     if max_num >= 9999 {
         return Err(Diagnostic::new(
@@ -60,10 +67,11 @@ pub(super) fn create(config: &Config, title: &str, op: WriteOp) -> DiagnosticRes
         "ADR",
         op,
     )?;
+    reservation.record(&adr_id, &adr_path);
 
     if !op.is_preview() {
         ui::created("ADR", &config.display_path(&adr_path));
     }
 
-    Ok(vec![])
+    Ok(reservation.into_warnings())
 }

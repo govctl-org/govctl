@@ -23,10 +23,17 @@ pub(super) fn create(
     let date = today();
     let slug = slugify(title);
 
+    // [[RFC-0010:C-ID-RESERVATION]]: reserve the generated ID in the shared
+    // registry and allocate from the union of the local tree, live
+    // reservations, and shared history. Degrades to local-only with a
+    // warning when the registry is unavailable.
+    let mut reservation = crate::registry::ReservationSession::begin(config, op.is_preview());
+
     let work_id = match config.work_item.id_strategy {
         IdStrategy::Sequential => {
             let id_prefix = format!("WI-{date}-");
-            let max_seq = find_max_sequence(config, &id_prefix)?;
+            let max_seq =
+                reservation.max_witnessed(&id_prefix, find_max_sequence(config, &id_prefix)?);
             reject_exhausted_sequence(max_seq, &id_prefix, &work_dir)?;
             format!("WI-{date}-{:03}", max_seq + 1)
         }
@@ -34,7 +41,8 @@ pub(super) fn create(
             let author_hash =
                 IdStrategy::get_author_hash().unwrap_or_else(IdStrategy::generate_random_suffix);
             let id_prefix = format!("WI-{date}-{author_hash}-");
-            let max_seq = find_max_sequence(config, &id_prefix)?;
+            let max_seq =
+                reservation.max_witnessed(&id_prefix, find_max_sequence(config, &id_prefix)?);
             reject_exhausted_sequence(max_seq, &id_prefix, &work_dir)?;
             format!("WI-{date}-{author_hash}-{:03}", max_seq + 1)
         }
@@ -84,6 +92,17 @@ pub(super) fn create(
         "work item",
         op,
     )?;
+    reservation.record(&work_id, &work_path);
+
+    let mut warnings = reservation.into_warnings();
+
+    // [[RFC-0010:C-PRESENCE]]: a work item created directly in active status
+    // registers a presence record naming this workspace. Advisory only.
+    if status == WorkItemStatus::Active {
+        let mut presence = crate::registry::PresenceSession::begin(config, op.is_preview());
+        presence.register(&work_id, title);
+        warnings.extend(presence.into_warnings());
+    }
 
     if !op.is_preview() {
         let display_path = config.display_path(&work_path);
@@ -91,7 +110,7 @@ pub(super) fn create(
         ui::sub_info(format!("ID: {work_id}"));
     }
 
-    Ok(vec![])
+    Ok(warnings)
 }
 
 fn reject_exhausted_sequence(

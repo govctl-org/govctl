@@ -107,6 +107,22 @@ NOTES:
     - `loop run` records and validates round evidence; Work Item lifecycle changes use `work move`.
 "#;
 
+pub(super) const CLAIM: &str = r#"EXAMPLES:
+    govctl claim list
+    govctl claim release RFC-0001
+    govctl claim steal RFC-0001
+
+NOTES:
+    - Claims are local coordination state in shared version-control storage;
+      they are never committed and never mutate governed artifacts.
+    - Version-semantics operations (bump, finalize, advance, deprecate,
+      supersede) acquire exclusive claims; content edits only warn.
+    - A claim expires after `[workspace] claim_ttl_days` of inactivity
+      (default 7) or when the owning workspace path no longer exists.
+    - `release` frees a claim held by this workspace; `steal` takes over a
+      claim held by another workspace and records an audit event.
+"#;
+
 pub(super) const RFC: &str = r#"COMMON WORKFLOW:
     1. `govctl rfc list` to discover RFCs
     2. `govctl rfc get <ID> ...` for metadata/fields

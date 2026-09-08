@@ -17,7 +17,9 @@ pub(crate) type OwnedMatchOptions = cmd::edit::MatchOptionsOwned;
 pub(crate) type OwnedEditAction = cmd::edit::OwnedEditAction;
 
 pub(crate) use edit_action::owned_edit_action;
-pub use plan::{BuiltinOp, CommandPlan, CreateOp, EditOp, LifecycleOp, LockDisposition, Op, Scope};
+pub use plan::{
+    BuiltinOp, CommandPlan, CommandScope, CreateOp, EditOp, LifecycleOp, LockDisposition, Op, Scope,
+};
 
 fn artifact_scope(artifact: cmd::edit::ArtifactType, id: &str) -> Scope {
     Scope::Artifact {

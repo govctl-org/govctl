@@ -14,6 +14,12 @@ pub(super) fn create(
 ) -> DiagnosticResult<Diagnostics> {
     let rfcs_dir = config.rfc_dir();
 
+    // [[RFC-0010:C-ID-RESERVATION]]: reserve the generated ID in the shared
+    // registry and allocate from the union of the local tree, live
+    // reservations, and shared history. Degrades to local-only with a
+    // warning when the registry is unavailable.
+    let mut reservation = crate::registry::ReservationSession::begin(config, op.is_preview());
+
     let rfc_id = match manual_id {
         Some(id) => {
             if !crate::load::valid_rfc_id(id) {
@@ -33,7 +39,7 @@ pub(super) fn create(
             id.to_string()
         }
         None => {
-            let max_num = std::fs::read_dir(&rfcs_dir)
+            let local_max = std::fs::read_dir(&rfcs_dir)
                 .into_iter()
                 .flatten()
                 .flatten()
@@ -46,6 +52,7 @@ pub(super) fn create(
                 })
                 .max()
                 .unwrap_or(0);
+            let max_num = reservation.max_witnessed("RFC-", local_max);
 
             if max_num == 9999 {
                 return Err(Diagnostic::new(
@@ -119,6 +126,7 @@ pub(super) fn create(
         "RFC",
         op,
     )?;
+    reservation.record(&rfc_id, &rfc_toml);
 
     if !op.is_preview() {
         ui::created("RFC", &config.display_path(&rfc_toml));
@@ -128,5 +136,5 @@ pub(super) fn create(
         ));
     }
 
-    Ok(vec![])
+    Ok(reservation.into_warnings())
 }

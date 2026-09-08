@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-005"
+title = "Fix RFC-0010 conformance findings from compliance audit"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+
+[content]
+description = "Fix conformance findings from the compliance audit of the RFC-0010 implementation. Two critical violations: read-only commands (status, claim list) block on the exclusive registry lock, contradicting C-REGISTRY's MUST NOT; and the registry is inoperative in jj secondary workspaces because `.jj/repo` there is a pointer file, not a directory, so shared storage is never found. Warnings to fix in the same pass: reservation pruning must not discard records whose artifact is not yet witnessed in shared history (C-ID-RESERVATION precondition); bare-repo and separate-git-dir layouts must not misidentify a primary workspace (resolve toward Undeterminable); VCS detection must not let an enclosing git tree mask a jj workspace; and the scope classification of loop and claim commands must match the C-COMMAND-SCOPE definitions."
+
+[[content.acceptance_criteria]]
+text = "status and claim list never block on the registry lock and never serialize against each other (C-REGISTRY)"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "registry is functional in jj secondary workspaces by following the .jj/repo pointer file (C-REGISTRY)"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "reservations are pruned only when the artifact is witnessed in shared version-control history (C-ID-RESERVATION)"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "bare-repo and nested VCS layouts resolve workspace context toward Undeterminable with a warning instead of silently misidentifying the primary workspace (C-COMMAND-SCOPE)"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "loop execution and read-only claim commands are classified workspace-scoped per C-COMMAND-SCOPE definitions"
+status = "done"
+category = "fixed"

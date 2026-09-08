@@ -43,6 +43,23 @@ pub(crate) enum ReleaseCommand {
     },
 }
 
+/// Artifact-claim management — [[RFC-0010:C-ARTIFACT-CLAIM]].
+#[derive(Subcommand)]
+pub(crate) enum ClaimCommand {
+    /// List artifact claims held across this clone's workspaces
+    List,
+    /// Release a claim held by this workspace
+    Release {
+        /// RFC ID whose claim to release
+        id: String,
+    },
+    /// Take over a claim held by another workspace (records an audit event)
+    Steal {
+        /// RFC ID whose claim to take over
+        id: String,
+    },
+}
+
 #[derive(Args)]
 #[command(
     arg_required_else_help = true,
@@ -190,6 +207,17 @@ pub(crate) enum Commands {
     Loop {
         #[command(subcommand)]
         command: LoopCommand,
+    },
+
+    /// Manage RFC artifact claims across this clone's workspaces.
+    ///
+    /// [[RFC-0010:C-ARTIFACT-CLAIM]] defines the claim contract; the command
+    /// stays global per [[RFC-0002:C-GLOBAL-COMMANDS]] criterion 4 (it manages
+    /// local coordination state, not a governed resource).
+    #[command(after_help = help::CLAIM)]
+    Claim {
+        #[command(subcommand)]
+        command: ClaimCommand,
     },
 
     /// RFC operations

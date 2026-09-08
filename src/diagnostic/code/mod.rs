@@ -159,6 +159,11 @@ pub enum DiagnosticCode {
     E0820InvalidFieldValue,
     E0821InvalidCommandScope,
     E0822UnsupportedOperation,
+    /// Trunk-scoped command invoked outside the primary workspace — [[RFC-0010:C-COMMAND-SCOPE]]
+    E0823TrunkScopeViolation,
+    /// Version-semantics operation blocked by a live artifact claim held by
+    /// another workspace — [[RFC-0010:C-ARTIFACT-CLAIM]].
+    E0824ArtifactClaimed,
 
     // General errors (E09xx)
     E0901IoError,
@@ -185,6 +190,14 @@ pub enum DiagnosticCode {
     W0112BareArtifactReference,
     /// ADR context still contains the generated placeholder text.
     W0113AdrPlaceholderContext,
+    /// VCS present but primary workspace undeterminable; trunk-scope enforcement inactive.
+    W0114TrunkScopeEnforcementInactive,
+    /// Coordination registry unavailable or corrupt with VCS present;
+    /// degraded to single-checkout behavior — [[RFC-0010:C-REGISTRY]].
+    W0115RegistryDegraded,
+    /// Content edit on an RFC with a live artifact claim held by another
+    /// workspace; never blocks — [[RFC-0010:C-ARTIFACT-CLAIM]].
+    W0116ArtifactClaimHeld,
 
     // Informational diagnostics (I04xx)
     /// Retired; retained to preserve the diagnostic-code registry.

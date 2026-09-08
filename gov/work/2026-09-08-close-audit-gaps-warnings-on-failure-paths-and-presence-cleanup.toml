@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-007"
+title = "Close audit gaps: warnings on failure paths and presence cleanup"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+
+[content]
+description = "Close the remaining warnings from the second compliance audit of the RFC-0010 implementation. The trunk-scope warning (W0114) is currently dropped when the trunk command itself fails downstream, though C-COMMAND-SCOPE requires it whenever enforcement is inactive. Read-only registry sessions silently swallow corrupt claim/presence records, though C-REGISTRY requires a warning on detected corruption when version control is present. And a workspace completing another workspace's active work item leaves the originator's presence record live-but-stale until TTL, which undercuts the purpose of the presence overlay."
+
+[[content.acceptance_criteria]]
+text = "W0114 is emitted whenever trunk-scope enforcement is inactive, including when the trunk command itself subsequently fails"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "read-only registry sessions emit a corruption warning instead of silently swallowing undecodable records"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "moving a work item out of active status removes all presence records for that work item, not only the invoking workspace's own"
+status = "done"
+category = "fixed"

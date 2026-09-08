@@ -120,6 +120,9 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
         BuiltinOp::ConformanceTrace { target, output } => {
             cmd::conformance::trace(config, target.as_deref(), *output)
         }
+        BuiltinOp::ClaimList => cmd::claim::list(config),
+        BuiltinOp::ClaimRelease { id } => cmd::claim::release(config, id, op),
+        BuiltinOp::ClaimSteal { id } => cmd::claim::steal(config, id, op),
     }
 }
 

@@ -18,6 +18,7 @@ mod loop_state;
 mod model;
 mod parse;
 mod reference_pattern;
+mod registry;
 mod render;
 mod resource_plan;
 mod scan;
@@ -29,6 +30,7 @@ mod theme;
 mod ui;
 mod validate;
 mod verification;
+mod workspace;
 mod write;
 
 #[cfg(feature = "tui")]
@@ -120,10 +122,14 @@ fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
     if !is_migrate {
         load::reject_unmigrated_conformance(&config)?;
     }
+
+    // [[RFC-0010:C-COMMAND-SCOPE]]: trunk-scoped commands run only in the
+    // primary workspace of a clone.
+    let trunk_warning = enforce_trunk_scope(&plan, &config)?;
+
     let op = write::WriteOp::from_dry_run(cli.dry_run);
 
     let lock_disposition = plan.lock_disposition();
-
     // Acquire gov-root exclusive lock for mutating operations (RFC-0004)
     let _guard = if matches!(
         lock_disposition,
@@ -150,5 +156,55 @@ fn run(cli: &Cli) -> DiagnosticResult<Diagnostics> {
     };
 
     // Execute via canonical command pattern (single execution path)
-    plan.execute(&config, op)
+    match plan.execute(&config, op) {
+        Ok(mut diags) => {
+            if let Some(warning) = trunk_warning {
+                diags.insert(0, warning);
+            }
+            Ok(diags)
+        }
+        Err(diag) => {
+            // [[RFC-0010:C-COMMAND-SCOPE]]: the enforcement-inactive warning
+            // must be emitted even when the trunk command itself fails
+            // downstream.
+            if let Some(warning) = trunk_warning {
+                ui::diagnostic(&warning);
+            }
+            Err(diag)
+        }
+    }
+}
+
+/// Enforce trunk-scope placement per [[RFC-0010:C-COMMAND-SCOPE]].
+///
+/// Returns a warning when version control is present but the primary
+/// workspace cannot be determined; fails when the current directory is a
+/// secondary workspace. Directories without version control proceed silently.
+fn enforce_trunk_scope(
+    plan: &command_router::CommandPlan,
+    config: &Config,
+) -> DiagnosticResult<Option<Diagnostic>> {
+    if plan.command_scope() != command_router::CommandScope::Trunk {
+        return Ok(None);
+    }
+    let cwd = std::env::current_dir()
+        .map_err(|err| Diagnostic::io_error("resolve current directory", err, "."))?;
+    match workspace::detect(&cwd, config) {
+        workspace::WorkspaceContext::Secondary { primary } => Err(Diagnostic::new(
+            diagnostic::DiagnosticCode::E0823TrunkScopeViolation,
+            format!(
+                "Trunk-scoped commands (release, release undo, migrate) must run in the primary workspace: {}",
+                primary.display()
+            ),
+            cwd.display().to_string(),
+        )),
+        workspace::WorkspaceContext::Undeterminable => Ok(Some(Diagnostic::new(
+            diagnostic::DiagnosticCode::W0114TrunkScopeEnforcementInactive,
+            "Version control is present but the primary workspace cannot be determined; \
+             trunk-scope enforcement is inactive. Set workspace.primary in gov/config.toml \
+             to name the primary workspace.",
+            cwd.display().to_string(),
+        ))),
+        workspace::WorkspaceContext::Primary | workspace::WorkspaceContext::NoVcs => Ok(None),
+    }
 }

@@ -40,6 +40,8 @@ pub struct Config {
     pub concurrency: ConcurrencyConfig,
     #[serde(default)]
     pub tags: TagsConfig,
+    #[serde(default)]
+    pub workspace: WorkspaceConfig,
 }
 
 impl Default for Config {
@@ -56,6 +58,40 @@ impl Default for Config {
             verification: VerificationConfig::default(),
             concurrency: ConcurrencyConfig::default(),
             tags: TagsConfig::default(),
+            workspace: WorkspaceConfig::default(),
+        }
+    }
+}
+
+/// Workspace coordination configuration.
+///
+/// Implements [[RFC-0010:C-COMMAND-SCOPE]] primary-workspace naming for VCS
+/// tools (such as jj) whose workspaces are peers with no inherent primary,
+/// and the configurable claim inactivity period of
+/// [[RFC-0010:C-ARTIFACT-CLAIM]].
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WorkspaceConfig {
+    /// Name of the primary jj workspace. A name (not a path) keeps the
+    /// versioned config machine-independent; when unset, jj's initial
+    /// `default` workspace is the primary. Ignored for git, whose main
+    /// working tree is the primary by definition.
+    #[serde(default)]
+    pub primary: Option<String>,
+    /// Days of inactivity after which a workspace's artifact claims expire
+    /// and no longer block other workspaces (default: 7).
+    #[serde(default = "default_claim_ttl_days")]
+    pub claim_ttl_days: u64,
+}
+
+fn default_claim_ttl_days() -> u64 {
+    7
+}
+
+impl Default for WorkspaceConfig {
+    fn default() -> Self {
+        Self {
+            primary: None,
+            claim_ttl_days: default_claim_ttl_days(),
         }
     }
 }
