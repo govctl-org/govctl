@@ -40,6 +40,11 @@ const PRESENCE_DIR: &str = "presence";
 /// Directory holding append-only audit events; never pruned, so claim
 /// takeovers stay auditable after the transferred claim expires.
 const AUDIT_DIR: &str = "audit";
+/// Directory holding undecodable records moved out of the active
+/// directories. Quarantine preserves the record for forensics while keeping
+/// later invocations from tripping over it again; it is never pruned
+/// automatically and records here are never deleted by govctl.
+const CORRUPT_DIR: &str = "corrupt";
 /// Backoff between try_lock attempts (mirrors src/lock.rs).
 const POLL_INTERVAL: Duration = Duration::from_millis(100);
 
@@ -378,6 +383,10 @@ impl ReservationSession {
     /// discarding a reservation only once the artifact is recorded there.
     /// An unwitnessed record (uncommitted deletion, or a deleted workspace
     /// holding unmerged work) stays reserved so the ID cannot be reallocated.
+    /// An undecodable record is quarantined aside and skipped with a warning,
+    /// so one corrupt file cannot degrade every later allocation —
+    /// [[RFC-0010:C-REGISTRY]] limits corruption to losing the uniqueness
+    /// guarantee for the affected record.
     fn live_reservations(&mut self) -> Result<Vec<Reservation>, String> {
         let dir = {
             let Some(active) = self.inner.as_ref() else {
@@ -394,8 +403,10 @@ impl ReservationSession {
             if path.extension().is_none_or(|ext| ext != "toml") {
                 continue;
             }
-            let record = read_reservation(&path)?;
-            records.push((path, record));
+            match read_reservation(&path) {
+                Ok(record) => records.push((path, record)),
+                Err(reason) => self.quarantine_corrupt_reservation(&path, reason)?,
+            }
         }
         let witnessed = self.history_ids()?;
         let mut live = Vec::new();
@@ -410,6 +421,41 @@ impl ReservationSession {
             }
         }
         Ok(live)
+    }
+
+    /// Move an undecodable reservation record into the registry's `corrupt/`
+    /// directory — never delete it — and warn. After quarantine the record
+    /// no longer poisons later allocations; the uniqueness guarantee for its
+    /// ID is knowingly weakened, per the degradation rule of
+    /// [[RFC-0010:C-REGISTRY]].
+    fn quarantine_corrupt_reservation(
+        &mut self,
+        path: &Path,
+        reason: String,
+    ) -> Result<(), String> {
+        let root = self
+            .inner
+            .as_ref()
+            .map(|active| active.root.clone())
+            .unwrap_or_default();
+        let target = quarantine_path(&root, path)?;
+        std::fs::rename(path, &target).map_err(|err| {
+            format!(
+                "cannot quarantine the corrupt reservation at {}: {err}",
+                path.display()
+            )
+        })?;
+        self.warnings.push(Diagnostic::new(
+            DiagnosticCode::W0115RegistryDegraded,
+            format!(
+                "Detected a corrupt reservation record ({reason}); it was moved aside \
+                 to {} and skipped. Uniqueness of its ID across workspaces of this \
+                 clone is not guaranteed until the registry is repopulated.",
+                target.display()
+            ),
+            path.display().to_string(),
+        ));
+        Ok(())
     }
 
     /// Artifact IDs recorded in the clone's shared version-control history.
@@ -479,6 +525,10 @@ pub struct ClaimSession {
     inner: Option<OpenedRegistry>,
     ttl: Duration,
     warnings: Vec<Diagnostic>,
+    /// Claims newly acquired by this session (created or taken over from an
+    /// expired or foreign record), so a failed multi-RFC operation can
+    /// release them before returning its error.
+    acquired: Vec<String>,
 }
 
 impl ClaimSession {
@@ -499,6 +549,7 @@ impl ClaimSession {
             inner: None,
             ttl: claim_ttl(config),
             warnings: vec![],
+            acquired: vec![],
         };
         match open(config, preview) {
             OpenOutcome::Inactive => {}
@@ -534,7 +585,9 @@ impl ClaimSession {
     /// Acquire an exclusive claim on every RFC in `ids` —
     /// [[RFC-0010:C-ARTIFACT-CLAIM]]. A live claim held by another workspace
     /// fails the command before any mutation with a diagnostic naming the
-    /// claiming workspace. Claims persist as expiring ownership: they are
+    /// claiming workspace; claims this invocation already acquired are
+    /// released first, so a failed multi-RFC acquisition (e.g. supersede)
+    /// leaves no claim behind. Claims persist as expiring ownership: they are
     /// refreshed by activity in the owning workspace and released
     /// explicitly, by takeover, or by expiry.
     pub fn acquire(&mut self, ids: &[&str]) -> DiagnosticResult<()> {
@@ -555,6 +608,7 @@ impl ClaimSession {
                 && claim.workspace != repo_root
                 && claim_is_live(claim, self.ttl, now)
             {
+                self.release_acquired();
                 return Err(claim_conflict(id, claim, self.ttl));
             }
             // Free, expired, or already ours: (re)acquire and refresh.
@@ -567,8 +621,33 @@ impl ClaimSession {
                 self.degrade(reason, &path);
                 return Ok(());
             }
+            // Track claims this invocation newly created or took over, so a
+            // failing operation can release them. A refresh of a claim this
+            // workspace already held is not tracked: it predates the
+            // invocation and must survive a rollback.
+            if existing.is_none_or(|prior| prior.workspace != repo_root) {
+                self.acquired.push((*id).to_string());
+            }
         }
         Ok(())
+    }
+
+    /// Release claims newly acquired by this session, best-effort. Used to
+    /// roll back an operation that fails after acquiring its claims: the
+    /// invocation did no version-semantics work, so its claims must not stay
+    /// behind. Claims this workspace held before the session are untouched.
+    pub fn release_acquired(&mut self) {
+        let Some((root, repo_root)) = self.handle() else {
+            self.acquired.clear();
+            return;
+        };
+        for id in std::mem::take(&mut self.acquired) {
+            let path = claim_path(&root, &id);
+            // Remove only a record this workspace still owns.
+            if matches!(read_claim(&path), Ok(Some(claim)) if claim.workspace == repo_root) {
+                let _ = std::fs::remove_file(&path);
+            }
+        }
     }
 
     /// Non-blocking warnings for content edits on RFCs with a live claim
@@ -692,6 +771,8 @@ impl ClaimSession {
     /// Take over a claim — [[RFC-0010:C-ARTIFACT-CLAIM]]. Taking over a
     /// claim recorded under another workspace (live or expired) appends an
     /// audit event naming both workspaces; audit events are never pruned.
+    /// The claim record is written before its audit event, so a failed write
+    /// leaves no audit entry for a transfer that never happened.
     pub fn steal(&mut self, id: &str) -> DiagnosticResult<StealOutcome> {
         let Some((root, repo_root)) = self.handle() else {
             return Ok(StealOutcome::Taken);
@@ -707,27 +788,15 @@ impl ClaimSession {
                 ));
             }
         };
-        if let Some(claim) = &existing {
-            if claim.workspace == repo_root && claim_is_live(claim, self.ttl, now_secs()) {
+        let prior_foreign = match &existing {
+            Some(claim)
+                if claim.workspace == repo_root && claim_is_live(claim, self.ttl, now_secs()) =>
+            {
                 return Ok(StealOutcome::AlreadyHeld);
             }
-            if claim.workspace != repo_root {
-                let event = AuditEvent {
-                    event: "takeover".to_string(),
-                    id: id.to_string(),
-                    from_workspace: claim.workspace.clone(),
-                    to_workspace: repo_root.clone(),
-                    timestamp: now_secs(),
-                };
-                write_audit_event(&root, &event).map_err(|reason| {
-                    Diagnostic::new(
-                        DiagnosticCode::E0901IoError,
-                        reason,
-                        root.display().to_string(),
-                    )
-                })?;
-            }
-        }
+            Some(claim) if claim.workspace != repo_root => Some(claim.workspace.clone()),
+            _ => None,
+        };
         let claim = Claim {
             id: id.to_string(),
             workspace: repo_root.clone(),
@@ -736,6 +805,23 @@ impl ClaimSession {
         write_claim(&root, &claim).map_err(|reason| {
             Diagnostic::new(DiagnosticCode::E0901IoError, reason, id.to_string())
         })?;
+        // The transfer happened; only now record it in the audit trail.
+        if let Some(from_workspace) = prior_foreign {
+            let event = AuditEvent {
+                event: "takeover".to_string(),
+                id: id.to_string(),
+                from_workspace,
+                to_workspace: repo_root.clone(),
+                timestamp: now_secs(),
+            };
+            write_audit_event(&root, &event).map_err(|reason| {
+                Diagnostic::new(
+                    DiagnosticCode::E0901IoError,
+                    reason,
+                    root.display().to_string(),
+                )
+            })?;
+        }
         Ok(StealOutcome::Taken)
     }
 
@@ -950,6 +1036,38 @@ fn read_reservation(path: &Path) -> Result<Reservation, String> {
         .map_err(|err| format!("cannot read the reservation at {}: {err}", path.display()))?;
     toml::from_str(&content)
         .map_err(|err| format!("corrupt reservation at {}: {err}", path.display()))
+}
+
+/// A free quarantine target for `path` under the registry's `corrupt/`
+/// directory, keeping the original file name where possible. The caller
+/// holds the allocation lock, so the existence check cannot race another
+/// govctl process.
+fn quarantine_path(root: &Path, path: &Path) -> Result<PathBuf, String> {
+    let dir = root.join(CORRUPT_DIR);
+    std::fs::create_dir_all(&dir).map_err(|err| {
+        format!(
+            "cannot create the quarantine directory at {}: {err}",
+            dir.display()
+        )
+    })?;
+    let name = path
+        .file_name()
+        .map(|name| name.to_string_lossy().into_owned())
+        .ok_or_else(|| format!("cannot quarantine {}: no file name", path.display()))?;
+    for attempt in 0..100u32 {
+        let candidate = if attempt == 0 {
+            dir.join(&name)
+        } else {
+            dir.join(format!("{name}.{attempt}"))
+        };
+        if !candidate.exists() {
+            return Ok(candidate);
+        }
+    }
+    Err(format!(
+        "cannot find a free quarantine name for {}",
+        path.display()
+    ))
 }
 
 /// Configured claim inactivity period — [[RFC-0010:C-ARTIFACT-CLAIM]].
@@ -1331,6 +1449,21 @@ mod tests {
         let path = temp.path().join("broken.toml");
         std::fs::write(&path, "not = [valid").unwrap();
         assert!(read_reservation(&path).unwrap_err().contains("corrupt"));
+    }
+
+    #[test]
+    fn quarantine_path_keeps_the_file_name_and_never_overwrites() {
+        let temp = tempfile::TempDir::new().unwrap();
+        let root = temp.path();
+        let source = root.join(RESERVATIONS_DIR).join("ADR-0001.toml");
+        let first = quarantine_path(root, &source).unwrap();
+        assert_eq!(first, root.join(CORRUPT_DIR).join("ADR-0001.toml"));
+        // An existing quarantined record is preserved; the next quarantine of
+        // the same file name picks a suffixed target.
+        std::fs::write(&first, "broken").unwrap();
+        let second = quarantine_path(root, &source).unwrap();
+        assert_ne!(first, second);
+        assert_eq!(std::fs::read_to_string(&first).unwrap(), "broken");
     }
 
     #[test]

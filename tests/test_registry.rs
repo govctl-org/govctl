@@ -315,12 +315,65 @@ fn corrupt_reservation_degrades_with_warning() -> TestResult {
         stderr.contains("W0115"),
         "expected registry corruption warning: {stderr}"
     );
-    // Degraded allocation still advances past the local tree's ADR-0001.
+    // Allocation still advances past the local tree's ADR-0001.
     assert!(
         main.path()
             .join("gov/adr/ADR-0002-second-adr.toml")
             .exists()
     );
+    Ok(())
+}
+
+#[test]
+fn corrupt_reservation_is_quarantined_once_and_skipped() -> TestResult {
+    if !tool_available("git") {
+        return Ok(());
+    }
+    let main = init_git_project()?;
+    run_govctl(main.path(), &["adr", "new", "First ADR"])?;
+
+    let registry = registry_dirs(main.path())?
+        .into_iter()
+        .next()
+        .ok_or("registry must exist after the first reservation")?;
+    let corrupt = registry.join("reservations/corrupt.toml");
+    std::fs::write(&corrupt, "not = [valid")?;
+
+    // The first allocation quarantines the record aside — never deleting it —
+    // and warns once.
+    let output = run_govctl(main.path(), &["adr", "new", "Second ADR"])?;
+    let first_stderr = stderr(&output);
+    assert!(
+        first_stderr.contains("W0115"),
+        "expected registry corruption warning: {first_stderr}"
+    );
+    assert!(
+        !corrupt.exists(),
+        "the corrupt record must leave the active reservations directory"
+    );
+    let quarantined: Vec<PathBuf> = std::fs::read_dir(registry.join("corrupt"))?
+        .flatten()
+        .map(|entry| entry.path())
+        .collect();
+    assert_eq!(
+        quarantined.len(),
+        1,
+        "expected one quarantined record: {quarantined:?}"
+    );
+    assert_eq!(
+        std::fs::read_to_string(&quarantined[0])?,
+        "not = [valid",
+        "quarantine preserves the corrupt record for forensics"
+    );
+
+    // Later allocations no longer trip over the quarantined record.
+    let output = run_govctl(main.path(), &["adr", "new", "Third ADR"])?;
+    let stderr = stderr(&output);
+    assert!(
+        !stderr.contains("W0115"),
+        "the quarantined record must not degrade later allocations: {stderr}"
+    );
+    assert!(main.path().join("gov/adr/ADR-0003-third-adr.toml").exists());
     Ok(())
 }
 

@@ -394,6 +394,132 @@ fn steal_transfers_claim_and_records_audit_event() -> TestResult {
 }
 
 #[test]
+fn failed_steal_leaves_no_orphan_audit_event() -> TestResult {
+    if !tool_available("git") {
+        return Ok(());
+    }
+    let main = init_git_project_with_rfc()?;
+    let holder = TempDir::new()?;
+    let secondary = add_worktree(main.path(), &holder, "secondary")?;
+    run_govctl(main.path(), &["rfc", "finalize", "RFC-0001", "normative"])?;
+
+    // Make the claim record unwritable so the takeover's claim write fails;
+    // the audit event must not be recorded for a transfer that never
+    // happened.
+    let claim_file = registry_dir(main.path())?.join("claims/RFC-0001.toml");
+    let mut permissions = std::fs::metadata(&claim_file)?.permissions();
+    permissions.set_readonly(true);
+    std::fs::set_permissions(&claim_file, permissions)?;
+
+    let output = govctl(&secondary, &["claim", "steal", "RFC-0001"])?;
+
+    let mut permissions = std::fs::metadata(&claim_file)?.permissions();
+    #[allow(clippy::permissions_set_readonly_false)]
+    permissions.set_readonly(false);
+    std::fs::set_permissions(&claim_file, permissions)?;
+
+    assert!(
+        !output.status.success(),
+        "steal must fail when the claim record cannot be written"
+    );
+    let claim = read_claim(main.path(), "RFC-0001")?;
+    let main_root = std::fs::canonicalize(main.path())?;
+    assert!(
+        claim.contains(&main_root.display().to_string()),
+        "the failed steal must not transfer the claim: {claim}"
+    );
+    let audit_dir = registry_dir(main.path())?.join("audit");
+    let events = match std::fs::read_dir(&audit_dir) {
+        Ok(entries) => entries.count(),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => 0,
+        Err(err) => return Err(err.into()),
+    };
+    assert_eq!(
+        events, 0,
+        "a failed steal must leave no orphan audit event in {audit_dir:?}"
+    );
+    Ok(())
+}
+
+#[test]
+fn failed_supersede_releases_claim_acquired_by_the_invocation() -> TestResult {
+    if !tool_available("git") {
+        return Ok(());
+    }
+    let main = init_git_project_with_rfc()?;
+    run_govctl(main.path(), &["rfc", "finalize", "RFC-0001", "normative"])?;
+    run_govctl(main.path(), &["rfc", "new", "Replacement RFC"])?;
+    run_tool(main.path(), "git", &["add", "."])?;
+    run_tool(
+        main.path(),
+        "git",
+        &["commit", "-m", "normative + replacement"],
+    )?;
+    // Main holds nothing: the supersede must acquire both claims itself.
+    run_govctl(main.path(), &["claim", "release", "RFC-0001"])?;
+    let holder = TempDir::new()?;
+    let secondary = add_worktree(main.path(), &holder, "secondary")?;
+    run_govctl(&secondary, &["rfc", "finalize", "RFC-0002", "normative"])?;
+
+    // The secondary's live claim on the replacement fails the supersede
+    // after main's invocation already acquired the claim on RFC-0001; that
+    // claim must be released rather than left behind.
+    let output = govctl(
+        main.path(),
+        &[
+            "rfc",
+            "supersede",
+            "RFC-0001",
+            "--by",
+            "RFC-0002",
+            "--force",
+        ],
+    )?;
+    assert!(!output.status.success());
+    assert!(
+        stderr(&output).contains("E0824"),
+        "expected claim error: {}",
+        stderr(&output)
+    );
+    let claims = registry_dir(main.path())?.join("claims");
+    assert!(
+        !claims.join("RFC-0001.toml").exists(),
+        "the failing invocation must release the claim it acquired on RFC-0001"
+    );
+    let replacement = std::fs::read_to_string(claims.join("RFC-0002.toml"))?;
+    let secondary_root = std::fs::canonicalize(&secondary)?;
+    assert!(
+        replacement.contains(&secondary_root.display().to_string()),
+        "the other workspace's claim must be untouched: {replacement}"
+    );
+    let rfc_toml = std::fs::read_to_string(main.path().join("gov/rfc/RFC-0001/rfc.toml"))?;
+    assert!(
+        rfc_toml.contains("status = \"normative\""),
+        "blocked supersede must not mutate the superseded RFC: {rfc_toml}"
+    );
+
+    // A supersede failing after acquisition for a non-registry reason (here:
+    // a nonexistent replacement) likewise leaves no claim behind.
+    let output = govctl(
+        main.path(),
+        &[
+            "rfc",
+            "supersede",
+            "RFC-0001",
+            "--by",
+            "RFC-0099",
+            "--force",
+        ],
+    )?;
+    assert!(!output.status.success());
+    assert!(
+        !claims.join("RFC-0001.toml").exists() && !claims.join("RFC-0099.toml").exists(),
+        "a supersede failing after acquisition must release its claims"
+    );
+    Ok(())
+}
+
+#[test]
 fn claim_list_shows_live_and_expired_claims() -> TestResult {
     if !tool_available("git") {
         return Ok(());

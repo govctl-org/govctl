@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-08-008"
+title = "Harden registry claim and reservation edge cases"
+status = "done"
+created = "2026-09-08"
+started = "2026-09-08"
+completed = "2026-09-08"
+refs = ["RFC-0010"]
+
+[content]
+description = "Fix the implementation-quality issues the compliance audit raised against the RFC-0010 registry that are cheap and user-visible. Steal currently writes its audit event before the claim record, so a failed write leaves an audit of a transfer that never happened. A single corrupt reservation record makes every subsequent allocation degrade with a warning forever, requiring manual cleanup. And a supersede that fails midway leaves the claim it already acquired on the first RFC behind. Out of scope: --config targeting another workspace's tree (needs design), registration-time presence titles (cosmetic), and the namespace hash width (negligible collision risk)."
+
+[[content.acceptance_criteria]]
+text = "claim steal writes the claim record before its audit event, so a failed steal leaves no orphan audit"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "a corrupt reservation record is quarantined aside once and skipped with a warning instead of degrading every later allocation"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "a supersede that fails after acquiring its first claim releases that claim before returning the error"
+status = "done"
+category = "fixed"

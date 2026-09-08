@@ -155,8 +155,8 @@ fn execute_lifecycle(
     // exclusive claims before mutating and fail without mutation when another
     // workspace holds a live claim; clause lifecycle operations are content
     // work and warn without blocking.
-    let mut diags = coordinate_claims(config, artifact, id, lifecycle, op)?;
-    diags.extend(match lifecycle {
+    let (mut claim_session, mut diags) = coordinate_claims(config, artifact, id, lifecycle, op)?;
+    let result = match lifecycle {
         LifecycleOp::Bump {
             level,
             summary,
@@ -179,7 +179,23 @@ fn execute_lifecycle(
         LifecycleOp::MoveWork { file_or_id, status } => {
             cmd::move_::move_item(config, file_or_id, *status, op)
         }
-    }?);
+    };
+    match result {
+        Ok(op_diags) => diags.extend(op_diags),
+        Err(err) => {
+            // The operation failed before completing its version-semantics
+            // work: release the claims this invocation acquired (e.g. the
+            // first of a supersede's two claims) rather than leaving them
+            // behind. On success they persist as designed.
+            if let Some(session) = &mut claim_session {
+                session.release_acquired();
+            }
+            return Err(err);
+        }
+    }
+    if let Some(session) = claim_session {
+        diags.extend(session.into_warnings());
+    }
     Ok(diags)
 }
 
@@ -189,13 +205,16 @@ fn execute_lifecycle(
 /// RFC supersede acquires claims on both the superseded and the superseding
 /// RFC. Clause-scoped deprecate/supersede are content operations on the
 /// parent RFC and receive soft warnings only.
+///
+/// Returns the claim session alongside the diagnostics so the caller can
+/// release newly acquired claims when the operation itself fails.
 fn coordinate_claims(
     config: &Config,
     artifact: cmd::edit::ArtifactType,
     id: &str,
     lifecycle: &LifecycleOp,
     op: WriteOp,
-) -> CommandResult {
+) -> DiagnosticResult<(Option<crate::registry::ClaimSession>, Diagnostics)> {
     let is_rfc = artifact == cmd::edit::ArtifactType::Rfc;
     let hard_ids: Vec<&str> = match lifecycle {
         LifecycleOp::Bump { .. } | LifecycleOp::Finalize { .. } | LifecycleOp::Advance { .. }
@@ -216,13 +235,12 @@ fn coordinate_claims(
         _ => vec![],
     };
     if hard_ids.is_empty() && soft_ids.is_empty() {
-        return Ok(vec![]);
+        return Ok((None, vec![]));
     }
     let mut session = crate::registry::ClaimSession::begin(config, op.is_preview());
     session.acquire(&hard_ids)?;
-    let mut diags = session.foreign_claim_warnings(&soft_ids);
-    diags.extend(session.into_warnings());
-    Ok(diags)
+    let diags = session.foreign_claim_warnings(&soft_ids);
+    Ok((Some(session), diags))
 }
 
 /// Parent RFC of a clause ID (`RFC-0001:C-FOO` → `RFC-0001`).
