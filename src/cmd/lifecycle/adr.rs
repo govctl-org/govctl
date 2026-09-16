@@ -47,9 +47,10 @@ fn load_lifecycle_adr(config: &Config, adr_id: &str) -> DiagnosticResult<AdrEntr
         .ok_or_else(|| adr_not_found(adr_id))
 }
 
-/// Validate ADR alternatives completeness per [[ADR-0042]].
+/// Validate ADR alternatives completeness per [[ADR-0063]].
 ///
-/// Requires at least 2 alternatives, with at least 1 accepted and 1 rejected.
+/// Requires at least 1 accepted alternative; requires at least 1 rejected
+/// alternative only when 2 or more alternatives exist.
 pub fn validate_adr_completeness(config: &Config, adr_id: &str) -> DiagnosticResult<()> {
     let entry = load_lifecycle_adr(config, adr_id)?;
 
@@ -57,20 +58,19 @@ pub fn validate_adr_completeness(config: &Config, adr_id: &str) -> DiagnosticRes
     let has_accepted = alts.iter().any(|a| a.status == AlternativeStatus::Accepted);
     let has_rejected = alts.iter().any(|a| a.status == AlternativeStatus::Rejected);
 
-    if alts.len() < 2 || !has_accepted || !has_rejected {
-        let mut missing = vec![];
-        if alts.len() < 2 {
-            missing.push(format!(
-                "at least 2 alternatives required (found {})",
-                alts.len()
-            ));
-        }
-        if !has_accepted {
-            missing.push("at least 1 accepted alternative required".into());
-        }
-        if !has_rejected {
-            missing.push("at least 1 rejected alternative required".into());
-        }
+    let mut missing = vec![];
+    if alts.is_empty() {
+        missing.push("at least 1 alternative required (found 0)".to_string());
+    }
+    if !has_accepted {
+        missing.push("at least 1 accepted alternative required".into());
+    }
+    if alts.len() >= 2 && !has_rejected {
+        missing.push(
+            "at least 1 rejected alternative required when 2 or more alternatives exist".into(),
+        );
+    }
+    if !missing.is_empty() {
         return Err(Diagnostic::new(
             DiagnosticCode::E0303AdrInvalidTransition,
             format!(
@@ -83,9 +83,25 @@ pub fn validate_adr_completeness(config: &Config, adr_id: &str) -> DiagnosticRes
     Ok(())
 }
 
+/// Validate that an ADR has at least 1 alternative per [[ADR-0063]].
+///
+/// Write-time gate: setting `decision` requires at least 1 alternative.
+pub fn validate_adr_has_alternatives(config: &Config, adr_id: &str) -> DiagnosticResult<()> {
+    let entry = load_lifecycle_adr(config, adr_id)?;
+
+    if entry.spec.content.alternatives.is_empty() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0303AdrInvalidTransition,
+            "ADR alternatives incomplete: at least 1 alternative required (found 0)",
+            adr_id,
+        ));
+    }
+    Ok(())
+}
+
 /// Accept an ADR
 ///
-/// Per [[ADR-0042]], validates alternatives completeness unless `force` is set.
+/// Per [[ADR-0063]], validates alternatives completeness unless `force` is set.
 pub fn accept_adr(
     config: &Config,
     adr_id: &str,
@@ -117,7 +133,7 @@ pub fn accept_adr(
         return Err(diagnostic);
     }
 
-    // Implements [[ADR-0042]]: validate alternatives completeness before acceptance
+    // Implements [[ADR-0063]]: validate alternatives completeness before acceptance
     if !force {
         validate_adr_completeness(config, adr_id)?;
     }

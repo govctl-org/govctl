@@ -216,7 +216,7 @@ fn test_adr_set_decision() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            // Implements [[ADR-0042]]: must have alternatives before setting decision
+            // Implements [[ADR-0063]]: must have alternatives before setting decision
             &[
                 "adr",
                 "edit",

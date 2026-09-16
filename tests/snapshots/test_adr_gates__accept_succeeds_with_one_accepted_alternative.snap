@@ -1,0 +1,34 @@
+---
+source: tests/adr_gate_tests/accept.rs
+expression: snapshot
+---
+$ govctl adr new Test ADR
+Created ADR: gov/adr/ADR-XXXX-test-adr.toml
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives --add Option A
+Added 'Option A' to ADR-0001.alternatives
+exit: 0
+
+$ govctl adr edit ADR-0001 alternatives[0] --tick accepted
+Marked 'Option A' as accepted
+exit: 0
+
+$ govctl adr edit ADR-0001 decision --set We chose Option A.
+Set ADR-0001.decision = We chose Option A.
+exit: 0
+
+$ govctl adr accept ADR-0001
+Accepted ADR: ADR-0001
+exit: 0
+
+$ govctl adr list
+[
+  {
+    "id": "ADR-0001",
+    "status": "accepted",
+    "date": "<DATE>",
+    "title": "Test ADR"
+  }
+]
+exit: 0

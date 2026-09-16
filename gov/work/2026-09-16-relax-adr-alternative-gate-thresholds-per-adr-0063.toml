@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-16-001"
+title = "Relax ADR alternative gate thresholds per ADR-0063"
+status = "done"
+created = "2026-09-16"
+started = "2026-09-16"
+completed = "2026-09-16"
+refs = ["ADR-0063"]
+
+[content]
+description = "Implement the gate relaxation decided in ADR-0063, which supersedes ADR-0042. Today the write-time gate blocks setting an ADR's decision unless at least two alternatives exist with at least one rejected, and the accept gate requires at least two alternatives with at least one accepted and one rejected. Under the new rule, writing decision requires at least one alternative, and accepting requires at least one accepted alternative plus — only when two or more alternatives exist — at least one rejected alternative. The --force bypass on accept for historical backfills stays unchanged."
+
+[[content.acceptance_criteria]]
+text = "setting an ADR decision is blocked only when no alternatives exist, not when fewer than two exist or none is rejected"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "adr accept requires at least one accepted alternative and requires a rejected alternative only when two or more alternatives exist"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "gate tests in tests/adr_gate_tests cover the relaxed thresholds and the unchanged --force bypass"
+status = "done"
+category = "chore"

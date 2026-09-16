@@ -3,14 +3,14 @@
 [govctl]
 id = "ADR-0042"
 title = "Enforce ADR writing order with structural gates"
-status = "accepted"
+status = "superseded"
 date = "2026-04-14"
+superseded_by = "ADR-0063"
 refs = [
     "ADR-0027",
     "RFC-0001",
 ]
 tags = ["validation"]
-
 
 [content]
 context = """

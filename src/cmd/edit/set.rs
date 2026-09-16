@@ -38,9 +38,9 @@ pub(super) fn apply_set_field(
         target.ensure_supports(edit_rules::Verb::Set, id)?;
     }
     validate_tag_edit(config, target, value, id)?;
-    // Implements [[ADR-0042]]: block setting `decision` without complete alternatives
+    // Implements [[ADR-0063]]: block setting `decision` without any alternatives
     if artifact == ArtifactType::Adr && fp.as_simple() == Some("decision") {
-        crate::cmd::lifecycle::validate_adr_completeness(config, id)?;
+        crate::cmd::lifecycle::validate_adr_has_alternatives(config, id)?;
     }
     match artifact {
         ArtifactType::Adr => set_toml_field::<AdrTomlAdapter>(

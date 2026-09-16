@@ -14,14 +14,14 @@ $ govctl adr edit ADR-0001 alternatives --add Option B
 Added 'Option B' to ADR-0001.alternatives
 exit: 0
 
-$ govctl adr edit ADR-0001 alternatives[0] --tick accepted
-Marked 'Option A' as accepted
+$ govctl adr edit ADR-0001 alternatives[0] --tick rejected
+Marked 'Option A' as rejected
 exit: 0
 
-$ govctl adr edit ADR-0001 alternatives[1] --tick accepted
-Marked 'Option B' as accepted
+$ govctl adr edit ADR-0001 alternatives[1] --tick rejected
+Marked 'Option B' as rejected
 exit: 0
 
 $ govctl adr edit ADR-0001 decision --set We chose A.
-error[E0303]: ADR alternatives incomplete: at least 1 rejected alternative required. Use --force to bypass for historical backfills. (ADR-0001)
-exit: 1
+Set ADR-0001.decision = We chose A.
+exit: 0

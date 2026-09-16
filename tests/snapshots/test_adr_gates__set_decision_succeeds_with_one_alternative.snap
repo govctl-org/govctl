@@ -15,5 +15,5 @@ Marked 'Option A' as accepted
 exit: 0
 
 $ govctl adr edit ADR-0001 decision --set We chose A.
-error[E0303]: ADR alternatives incomplete: at least 2 alternatives required (found 1); at least 1 rejected alternative required. Use --force to bypass for historical backfills. (ADR-0001)
-exit: 1
+Set ADR-0001.decision = We chose A.
+exit: 0

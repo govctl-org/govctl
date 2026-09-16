@@ -123,7 +123,7 @@ proposed → accepted → superseded
 
 ### Accept a Decision
 
-Before accepting, the ADR must have at least 2 alternatives with 1 accepted and 1 rejected per [[ADR-0042]]:
+Before accepting, the ADR must have at least 1 accepted alternative per [[ADR-0063]]; when 2 or more alternatives exist, at least 1 must also be rejected:
 
 ```bash
 govctl adr edit ADR-0003 "alternatives[0]" --tick accepted

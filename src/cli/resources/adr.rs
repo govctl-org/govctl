@@ -75,7 +75,8 @@ EXAMPLES:
 NOTES:
     - Use this when discussion is complete and the ADR becomes governing.
     - Mark the selected alternative as `accepted` before accepting the ADR.
-    - Requires at least 2 alternatives (1 accepted, 1 rejected) per [[ADR-0042]].
+    - Requires at least 1 accepted alternative per [[ADR-0063]]; with 2 or more
+      alternatives, at least 1 must also be rejected.
     - Use --force for historical backfills where alternatives cannot be reconstructed.
 ")]
     Accept {

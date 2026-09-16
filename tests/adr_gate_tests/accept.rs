@@ -15,9 +15,9 @@ fn test_accept_blocked_without_alternatives() -> common::TestResult {
     Ok(())
 }
 
-/// Accepting an ADR with only 1 alternative must fail (need at least 2).
+/// Accepting an ADR with 1 accepted alternative must succeed per [[ADR-0063]].
 #[test]
-fn test_accept_blocked_with_only_one_alternative() -> common::TestResult {
+fn test_accept_succeeds_with_one_accepted_alternative() -> common::TestResult {
     let normalized = run_gate_commands(&[
         &["adr", "new", "Test ADR"],
         &[
@@ -36,10 +36,68 @@ fn test_accept_blocked_with_only_one_alternative() -> common::TestResult {
             "--tick",
             "accepted",
         ],
+        &[
+            "adr",
+            "edit",
+            "ADR-0001",
+            "decision",
+            "--set",
+            "We chose Option A.",
+        ],
+        &["adr", "accept", "ADR-0001"],
+        &["adr", "list"],
+    ])?;
+
+    assert_no_gate_error(&normalized, "accept with one accepted alternative");
+    assert_adr_gate_snapshot!(normalized);
+    Ok(())
+}
+
+/// Accepting an ADR with 2 alternatives but none rejected must fail per [[ADR-0063]].
+#[test]
+fn test_accept_blocked_without_rejected_with_two_alternatives() -> common::TestResult {
+    let normalized = run_gate_commands(&[
+        &["adr", "new", "Test ADR"],
+        &[
+            "adr",
+            "edit",
+            "ADR-0001",
+            "alternatives",
+            "--add",
+            "Option A",
+        ],
+        &[
+            "adr",
+            "edit",
+            "ADR-0001",
+            "alternatives",
+            "--add",
+            "Option B",
+        ],
+        // Both accepted, none rejected
+        &[
+            "adr",
+            "edit",
+            "ADR-0001",
+            "alternatives[0]",
+            "--tick",
+            "accepted",
+        ],
+        &[
+            "adr",
+            "edit",
+            "ADR-0001",
+            "alternatives[1]",
+            "--tick",
+            "accepted",
+        ],
         &["adr", "accept", "ADR-0001"],
     ])?;
 
-    assert_gate_error(&normalized, "accept with one alternative");
+    assert_gate_error(
+        &normalized,
+        "accept with two alternatives and none rejected",
+    );
     assert_adr_gate_snapshot!(normalized);
     Ok(())
 }

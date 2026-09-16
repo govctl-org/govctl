@@ -24,9 +24,9 @@ fn test_set_decision_blocked_without_alternatives() -> common::TestResult {
     Ok(())
 }
 
-/// Setting `decision` with only 1 alternative (accepted) must fail - need at least 2.
+/// Setting `decision` with only 1 alternative (accepted) must succeed per [[ADR-0063]].
 #[test]
-fn test_set_decision_blocked_with_only_one_alternative() -> common::TestResult {
+fn test_set_decision_succeeds_with_one_alternative() -> common::TestResult {
     let normalized = run_gate_commands(&[
         &["adr", "new", "Test ADR"],
         &[
@@ -55,14 +55,14 @@ fn test_set_decision_blocked_with_only_one_alternative() -> common::TestResult {
         ],
     ])?;
 
-    assert_gate_error(&normalized, "decision with one alternative");
+    assert_no_gate_error(&normalized, "decision with one alternative");
     assert_adr_gate_snapshot!(normalized);
     Ok(())
 }
 
-/// Setting `decision` with 2 alternatives but none rejected must fail.
+/// Setting `decision` with 2 alternatives but none rejected must succeed per [[ADR-0063]].
 #[test]
-fn test_set_decision_blocked_without_rejected() -> common::TestResult {
+fn test_set_decision_succeeds_without_rejected() -> common::TestResult {
     let normalized = run_gate_commands(&[
         &["adr", "new", "Test ADR"],
         &[
@@ -108,7 +108,7 @@ fn test_set_decision_blocked_without_rejected() -> common::TestResult {
         ],
     ])?;
 
-    assert_gate_error(&normalized, "decision without rejected alternative");
+    assert_no_gate_error(&normalized, "decision without rejected alternative");
     assert_adr_gate_snapshot!(normalized);
     Ok(())
 }
@@ -165,9 +165,9 @@ fn test_set_decision_succeeds_with_complete_alternatives() -> common::TestResult
     Ok(())
 }
 
-/// Setting `decision` with 2 alternatives but none accepted must fail.
+/// Setting `decision` with 2 alternatives but none accepted must succeed per [[ADR-0063]].
 #[test]
-fn test_set_decision_blocked_without_accepted() -> common::TestResult {
+fn test_set_decision_succeeds_without_accepted() -> common::TestResult {
     let normalized = run_gate_commands(&[
         &["adr", "new", "Test ADR"],
         &[
@@ -212,7 +212,7 @@ fn test_set_decision_blocked_without_accepted() -> common::TestResult {
         ],
     ])?;
 
-    assert_gate_error(&normalized, "decision without accepted alternative");
+    assert_no_gate_error(&normalized, "decision without accepted alternative");
     assert_adr_gate_snapshot!(normalized);
     Ok(())
 }

@@ -10,6 +10,11 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Changed
+
+- setting an ADR decision is blocked only when no alternatives exist, not when fewer than two exist or none is rejected (WI-2026-09-16-001)
+- adr accept requires at least one accepted alternative and requires a rejected alternative only when two or more alternatives exist (WI-2026-09-16-001)
+
 ## [0.20.0] - 2026-09-08
 
 0.20.0 implements RFC-0010: multi-workspace coordination for parallel agents.

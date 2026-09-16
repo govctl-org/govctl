@@ -1,4 +1,4 @@
-//! Integration tests for ADR writing-order gates per [[ADR-0042]].
+//! Integration tests for ADR writing-order gates per [[ADR-0063]].
 //!
 //! Covers: decision gate (set), accept gate, --force bypass.
 

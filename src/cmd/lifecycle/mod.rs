@@ -12,7 +12,7 @@ mod release;
 mod rfc;
 mod rfc_clause_versions;
 mod rfc_supersede;
-pub use adr::{accept_adr, reject_adr, validate_adr_completeness};
+pub use adr::{accept_adr, reject_adr, validate_adr_has_alternatives};
 pub use release::{cut_release, undo_release};
 pub use rfc::{advance, bump, finalize};
 

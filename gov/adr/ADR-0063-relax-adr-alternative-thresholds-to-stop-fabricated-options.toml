@@ -1,0 +1,50 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0063"
+title = "Relax ADR alternative thresholds to stop fabricated options"
+status = "accepted"
+date = "2026-09-16"
+refs = [
+    "ADR-0042",
+    "ADR-0027",
+]
+tags = ["validation"]
+
+[content]
+context = """
+External user feedback (September 2026) reports that current models produce bloated ADRs of 100-200 lines: three or four alternatives with two or three pros and cons each, even when only one viable option exists. The structural root cause is the gate threshold established in [[ADR-0042]]: writing `decision` requires at least two alternatives with at least one rejected, and `adr accept` requires at least one accepted and one rejected alternative.
+
+For genuinely uncontested decisions — one viable direction, no real second option — that threshold cannot be met honestly. Agents satisfy it by fabricating straw options and boilerplate trade-offs, which is worse than no alternatives: fabricated deliberation is noise for human reviewers and misrepresents the decision record. The `--force` escape hatch becomes routine rather than exceptional, which erodes the gate habit [[ADR-0042]] was designed to build.
+
+[[ADR-0042]]'s core protection remains worth keeping: the write-time gate is what prevents conclusion-first writing, and it costs nothing when a real choice exists. The defect is only the rejected-alternative quota."""
+decision = "Relax the alternative thresholds established by [[ADR-0042]] while keeping its two-gate structure. Writing `decision` requires at least one alternative. Accepting an ADR requires at least one accepted alternative, and — only when two or more alternatives exist — at least one rejected alternative, so the losing option of a real comparison is always marked. The `--force` escape hatch for historical backfills is unchanged. [[ADR-0042]] is superseded by this decision."
+consequences = """
+**Positive:** uncontested decisions produce short, honest ADRs again; the fabrication pressure that caused the reported bloat is removed at its structural root, complementing the softened adr-writer and adr-reviewer wording; gate bypass stays exceptional.
+
+**Negative:** uncontested ADRs no longer demonstrate deliberation structurally. Mitigation: the adr-writer skill requires stating the uncontested nature plainly, and the reviewer flags fabricated-looking padding instead.
+
+**Neutral:** existing accepted ADRs are unaffected; the gates apply only to future writes and acceptances, as before."""
+
+[[content.alternatives]]
+text = "Keep both gates but require only one accepted alternative; require a rejected alternative only when two or more alternatives exist"
+status = "accepted"
+pros = [
+    "Removes the fabrication driver: uncontested decisions pass honestly with only the chosen option recorded",
+    "Keeps the write-time gate, the only structural barrier against conclusion-first writing",
+]
+cons = ["Uncontested ADRs state rather than demonstrate deliberation"]
+
+[[content.alternatives]]
+text = "Remove both gates entirely and rely on skill guidance"
+status = "rejected"
+pros = ["No enforcement surface to maintain"]
+cons = ["Conclusion-first writing returns; nothing prevents assertion-as-decision"]
+rejection_reason = "The write-time gate costs nothing when a real choice exists and is the only structural protection [[ADR-0042]] provided that remains worth keeping."
+
+[[content.alternatives]]
+text = "Keep the gates unchanged and rely on softened skill wording"
+status = "rejected"
+pros = ["No code change"]
+cons = ["The accept gate is a hard refusal, so agents still fabricate a rejected option to pass it"]
+rejection_reason = "Soft guidance cannot counteract a hard gate that requires content which may not exist."

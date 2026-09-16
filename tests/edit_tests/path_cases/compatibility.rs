@@ -8,7 +8,7 @@ fn test_storage_prefixed_paths_are_rejected() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Compat Test"],
-            // Implements [[ADR-0042]]: must have alternatives before setting decision
+            // Implements [[ADR-0063]]: must have alternatives before setting decision
             &[
                 "adr",
                 "edit",

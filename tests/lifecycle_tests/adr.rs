@@ -15,7 +15,7 @@ fn test_accept_proposed_adr() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            // Implements [[ADR-0042]]: must have alternatives before accepting
+            // Implements [[ADR-0063]]: must have alternatives before accepting
             &[
                 "adr",
                 "edit",
@@ -81,7 +81,7 @@ fn test_accept_already_accepted_fails() -> common::TestResult {
         temp_dir.path(),
         &[
             &["adr", "new", "Test Decision"],
-            // Implements [[ADR-0042]]: must have alternatives before accepting
+            // Implements [[ADR-0063]]: must have alternatives before accepting
             &[
                 "adr",
                 "edit",
