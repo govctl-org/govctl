@@ -27,6 +27,12 @@ decision drivers. The alternatives should represent credible choices and expose
 the trade-offs that affected selection. The decision should be a defensible
 conclusion from that evidence, not an answer retrofitted with straw options.
 
+An uncontested decision stated plainly is complete: do not demand rejected
+options that never existed. Bloat is a defect in its own right — flag
+quota-filling alternatives, boilerplate pros and cons that did not influence
+the outcome, and context a reviewer does not need. ADRs are written for human
+review and should stay short.
+
 Historical backfills may lack recoverable alternatives or rationale. They
 should distinguish recovered fact from inference rather than inventing missing
 history.
@@ -69,16 +75,18 @@ Report as **Critical** when the ADR:
 
 - lacks a discernible decision or supporting problem;
 - invents product obligations that need RFC authority;
-- presents a chosen option without credible evaluation for a new decision;
-- fabricates historical rationale or alternatives;
+- fabricates alternatives, rationale, or pros and cons that were never
+  genuinely considered;
 - materially conceals or misrepresents known costs, risks, or trade-offs;
 - duplicates renderer-owned semantic sections; or
 - substitutes task execution or progress for durable decision rationale.
 
 Use **Warning** for material but non-blocking incompleteness in context,
-trade-offs, consequences, references, or mitigation. Use **Suggestion** for
-optional clarity or presentation improvements. Do not fail an ADR for omitting
-an optional prose shape when the decision evidence is complete.
+trade-offs, consequences, references, or mitigation, and for bloat that buries
+an otherwise sound decision. Use **Suggestion** for optional clarity or
+presentation improvements. Do not fail an ADR for omitting rejected options
+that never existed, nor for omitting an optional prose shape when the decision
+evidence is complete.
 
 ## Output
 

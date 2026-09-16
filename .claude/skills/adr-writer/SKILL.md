@@ -44,7 +44,11 @@ matters.
 Write in this order for a new decision:
 
 1. Describe the context, problem, constraints, and decision drivers.
-2. Add credible alternatives and their material pros and cons.
+2. Add the alternatives that were genuinely considered, with only the pros
+   and cons that materially influenced the outcome. Never pad to a quota:
+   one strong rejected option beats three fabricated ones, and when only one
+   viable direction exists, say so in a sentence instead of inventing
+   alternatives.
 3. Mark the chosen and rejected alternatives, recording why rejected options
    lost.
 4. State the decision as the conclusion of that comparison.
@@ -57,6 +61,13 @@ The context should let a future reader understand why a decision was necessary.
 The alternatives should reflect real choices rather than straw options. The
 decision should be decisive and explain why the chosen option won. Consequences
 must include material costs and mitigations, not only benefits.
+
+### Keep It Short
+
+ADRs are written for human review. A typical ADR is a few dozen lines, not
+hundreds. Cut background the reader already has, alternatives nobody
+seriously considered, and pros/cons that did not influence the outcome.
+Bloat is a defect: it hides the decision it is meant to record.
 
 ### Preserve Artifact Authority
 
@@ -97,12 +108,14 @@ remains complete.
 An ADR is ready when:
 
 - context identifies the actual problem, constraints, and decision drivers;
-- alternatives were evaluated before the conclusion, with at least one credible
-  rejected option for a new decision;
+- alternatives were evaluated before the conclusion — every one a real option
+  that was actually considered, with an uncontested decision stating so
+  plainly instead of fabricating rejected options;
 - the decision states the chosen direction and why it prevailed;
 - consequences name meaningful benefits, costs, and mitigations;
 - RFC and ADR references connect the decision to its governing context;
-- no section invents normative product behavior or task execution state; and
+- no section invents normative product behavior or task execution state;
+- the record stays short enough for comfortable human review; and
 - project tags are applied when configured.
 
 ## Completion Evidence
