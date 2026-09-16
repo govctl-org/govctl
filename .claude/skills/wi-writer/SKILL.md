@@ -52,15 +52,21 @@ State what the task will accomplish, why it is needed, and the relevant scope in
 one concise paragraph. It describes the execution target without restating
 normative contract language or tracking progress.
 
+Write in terms of what exists today: behavior, components, and artifacts by
+their role. Do not name types, functions, fields, or files that do not exist
+yet — a reader cannot resolve a forward reference, and the implementing agent
+owns those names. When a planned concept needs a name, introduce its role
+first ("a per-clone coordination registry"), not its planned identifier.
+
 ### Acceptance Criteria
 
 Each criterion must be independently testable and use a changelog category:
 `add`, `fix`, `change`, `remove`, `deprecate`, `security`, or `chore`.
 
 Criteria describe observable task outcomes. They should be specific enough to
-decide done/not-done without prescribing incidental private structure. Use
-`chore` for internal validation or documentation outcomes that should not enter
-the release changelog.
+decide done/not-done without prescribing incidental private structure, and they
+name outcomes, never planned symbol names. Use `chore` for internal validation
+or documentation outcomes that should not enter the release changelog.
 
 Correct an existing criterion with
 `govctl work edit <ID> "acceptance_criteria[N]" --set <value>`. A recognized

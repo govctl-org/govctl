@@ -27,6 +27,11 @@ delivered, why it is needed, and its relevant boundary. Judge scope by
 coherence, independent review value, and durable history, not whether one agent
 can finish it in a single session.
 
+Flag forward references: descriptions or criteria that name types, functions,
+fields, or files not yet present in the codebase without first describing
+their role. Forward references read as noise to human reviewers and mislead
+implementing agents into treating planned names as fixed decisions.
+
 Product obligations require RFC authority. Design choice and trade-off
 rationale belong in an ADR. Mechanical helper extraction, fixtures, file moves,
 formatting, or other internal steps normally stay inside the parent outcome.
@@ -74,9 +79,9 @@ Report as **Critical** when the Work Item:
   verification coverage is missing.
 
 Use **Warning** for material categorization, reference, guard-scope,
-duplication, or durable-note issues that do not invalidate the item. Use
-**Suggestion** for optional wording improvements. Do not enforce stylistic
-formatting or arbitrary session size.
+duplication, forward-reference, or durable-note issues that do not invalidate
+the item. Use **Suggestion** for optional wording improvements. Do not enforce
+stylistic formatting or arbitrary session size.
 
 ## Output
 
