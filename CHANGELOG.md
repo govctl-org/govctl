@@ -10,10 +10,29 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-09-16
+
+0.20.1 stops agents from fabricating ADR alternatives. The ADR-0042 gate
+thresholds required a rejected alternative even for genuinely uncontested
+decisions, which produced bloated ADRs full of straw options. ADR-0063
+supersedes ADR-0042 and relaxes both gates.
+
 ### Changed
 
-- setting an ADR decision is blocked only when no alternatives exist, not when fewer than two exist or none is rejected (WI-2026-09-16-001)
-- adr accept requires at least one accepted alternative and requires a rejected alternative only when two or more alternatives exist (WI-2026-09-16-001)
+- Writing an ADR `decision` is blocked only when no alternatives exist, not
+  when fewer than two exist or none is rejected. (WI-2026-09-16-001)
+- `govctl adr accept` requires at least one accepted alternative and requires
+  a rejected alternative only when two or more alternatives exist.
+  (WI-2026-09-16-001)
+
+### Fixed
+
+- The adr-writer skill no longer demands at least one rejected option, treats
+  bloat as a defect, and the adr-reviewer flags fabricated or quota-filling
+  alternatives instead of requiring them.
+- The wi-writer skill bans forward references to symbols that do not yet
+  exist, and the wi-reviewer flags them, so work items describe planned
+  concepts by role rather than by planned identifier.
 
 ## [0.20.0] - 2026-09-08
 
