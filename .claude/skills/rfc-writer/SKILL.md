@@ -69,6 +69,20 @@ itself contractual. It should not prescribe private field layouts, language
 types, function signatures, helper names, module organization, implementation
 steps, or validation logs.
 
+### Specify Outcomes, Not Procedure
+
+An RFC constrains behavior, not implementation. Pseudo-code is a defect even
+when written in prose and free of language types: step sequences, internal
+data flow, caching or lookup strategy, and "first compute X, then derive Y"
+phrasing bind the implementation without adding anything an observer can test.
+State the observable result, the invariant, or the error instead.
+
+Constrain order only when the order itself is observable, such as output
+sequence, side-effect ordering, or which error wins. Leave behavior that no
+consumer depends on unspecified, or grant latitude with MAY, rather than
+pinning the first plausible design. An obligation the implementation cannot
+yet justify will be contradicted by the code and force an amendment.
+
 The renderer owns RFC and Clause headings, Clause `since`, supersession markers,
 and other structural metadata. Clause text contains only specification prose,
 rationale, and artifact references.
@@ -107,6 +121,8 @@ Before handoff:
 
 - every normative statement passes the observable, implementation-independent,
   and testable contract test;
+- no Clause prescribes an internal procedure or ordering that an observer
+  cannot detect;
 - content does not duplicate renderer-owned structure or another artifact's
   authority;
 - references and project tags are current;

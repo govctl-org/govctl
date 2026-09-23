@@ -33,6 +33,13 @@ quota-filling alternatives, boilerplate pros and cons that did not influence
 the outcome, and context a reviewer does not need. ADRs are written for human
 review and should stay short.
 
+Check decision altitude. An ADR should settle direction, boundaries, and
+constraints that are costly to reverse, not low-level choices that only
+implementation can evaluate. Flag data layouts, helper decomposition,
+algorithms, or procedures fixed without evidence, and ask whether each could
+be deferred to coding with a stated constraint instead. Implementing agents
+follow what the ADR states, so a premature detail becomes a defect in the code.
+
 Historical backfills may lack recoverable alternatives or rationale. They
 should distinguish recovered fact from inference rather than inventing missing
 history.
@@ -82,11 +89,12 @@ Report as **Critical** when the ADR:
 - substitutes task execution or progress for durable decision rationale.
 
 Use **Warning** for material but non-blocking incompleteness in context,
-trade-offs, consequences, references, or mitigation, and for bloat that buries
-an otherwise sound decision. Use **Suggestion** for optional clarity or
-presentation improvements. Do not fail an ADR for omitting rejected options
-that never existed, nor for omitting an optional prose shape when the decision
-evidence is complete.
+trade-offs, consequences, references, or mitigation, for bloat that buries
+an otherwise sound decision, and for low-level choices fixed before
+implementation could supply the evidence to make them. Use **Suggestion** for
+optional clarity or presentation improvements. Do not fail an ADR for omitting
+rejected options that never existed, nor for omitting an optional prose shape
+when the decision evidence is complete.
 
 ## Output
 

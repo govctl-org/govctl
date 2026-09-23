@@ -66,8 +66,10 @@ When drafting:
 - use `rfc-writer` for normative Clause quality;
 - use `adr-writer` and establish alternatives before the decision;
 - use root `govctl clause` commands for every Clause operation;
-- use `[[artifact-id]]` references in governed prose; and
-- keep implementation details out unless they are an external contract.
+- use `[[artifact-id]]` references in governed prose;
+- keep implementation details out unless they are an external contract; and
+- separate choices that must be settled now from those coding can settle
+  better, and leave the latter out of RFC and ADR drafts.
 
 Draft lifecycle operations belong to the later `spec` or `gov` handoff. A
 behavior-changing amendment needs governed implementation; a clarification with

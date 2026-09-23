@@ -32,6 +32,13 @@ sequencing do not become normative merely because they are concrete. Ask
 whether the statement remains valid if private implementation changes while the
 external contract remains the same.
 
+Apply the same test to procedure. Prose that walks through internal steps,
+data flow, or computation strategy is pseudo-code even without language
+types; the contract should state the observable outcome, invariant, or error.
+Ordering is contractual only when an observer can detect it. Flag obligations
+that pin behavior no consumer depends on, where leaving it unspecified or
+granting MAY would serve the contract better.
+
 Move design choice and trade-off rationale to an ADR. Move delivery scope and
 acceptance evidence to a Work Item. Move transient execution state to loop
 evidence or the final response.
@@ -77,15 +84,16 @@ Report as **Critical** when the RFC:
 - conflicts with a normative RFC or leaves mutually inconsistent obligations;
 - makes a binding requirement materially ambiguous or unverifiable;
 - puts private implementation choice into the contract without an externally
-  relevant invariant;
+  relevant invariant, including step-by-step procedure written as prose;
 - invents design rationale or execution scope in place of the owning artifact;
   or
 - omits a contract case whose absence makes required behavior unsafe or
   indeterminate.
 
 Use **Warning** for material but non-blocking gaps such as weak rationale,
-missing useful references, or underspecified edge cases that do not invalidate
-the core contract. Put optional editorial improvements under **Suggestion**.
+missing useful references, underspecified edge cases that do not invalidate
+the core contract, or observable behavior pinned more tightly than any
+consumer needs. Put optional editorial improvements under **Suggestion**.
 Do not elevate formatting preference or concrete external syntax by itself.
 
 ## Output

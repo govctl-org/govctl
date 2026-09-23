@@ -59,8 +59,23 @@ alternatives cannot be recovered, say so instead of inventing them.
 
 The context should let a future reader understand why a decision was necessary.
 The alternatives should reflect real choices rather than straw options. The
-decision should be decisive and explain why the chosen option won. Consequences
-must include material costs and mitigations, not only benefits.
+decision should commit clearly to what it actually decides and explain why the
+chosen option won. Consequences must include material costs and mitigations,
+not only benefits.
+
+### Decide Only What Must Be Decided Now
+
+An ADR written before implementation has little evidence about low-level
+design, yet implementing agents treat everything it states as settled. Record
+the direction, boundaries, and constraints that are costly to reverse or that
+other work depends on. For each sub-choice, ask whether deciding it during
+coding would lose anything; if not, leave it out, or name it as deferred to
+implementation together with any constraint it must respect.
+
+Data layouts, helper decomposition, algorithms, error-handling mechanics, and
+step-by-step procedures rarely belong in an ADR written before code exists.
+When such a choice turns out to matter, record it after implementation has
+produced the evidence.
 
 ### Keep It Short
 
@@ -112,6 +127,8 @@ An ADR is ready when:
   that was actually considered, with an uncontested decision stating so
   plainly instead of fabricating rejected options;
 - the decision states the chosen direction and why it prevailed;
+- the decision leaves choices that coding can settle better to implementation
+  rather than fixing them without evidence;
 - consequences name meaningful benefits, costs, and mitigations;
 - RFC and ADR references connect the decision to its governing context;
 - no section invents normative product behavior or task execution state;

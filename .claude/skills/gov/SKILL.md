@@ -95,6 +95,12 @@ Keep implementation scoped to the Work Item and governing artifacts. When work
 reveals a specification defect, repair the specification through the authorized
 lifecycle rather than silently deviating.
 
+RFCs and ADRs bind only what they state. Choices they leave open belong to
+implementation. When coding shows that a stated low-level detail is wrong,
+raise it for repair instead of building around it. When a significant design
+choice emerges during coding, record its ADR once implementation has produced
+the evidence.
+
 When source reference scanning is enabled, express its positive domain in
 `source_scan.include`. Project `.gitignore` files provide baseline exclusions;
 put governance-specific exclusions and re-inclusions in `.govignore`. A custom

@@ -59,9 +59,11 @@ NOT deviations are warnings with context. MAY grants optionality and is not
 violated by either permitted choice.
 
 Compare accepted ADR direction separately. Report drift when the implementation
-materially abandons the chosen architecture or its constraints. If that drift
-also violates an RFC, cite the RFC as the compliance violation and the ADR only
-as supporting design context.
+materially abandons the chosen architecture or its constraints. Choices an ADR
+leaves open are not drift. When an ADR fixes a low-level detail that the code
+has justifiably departed from, name the ADR as the owner of the next action.
+If that drift also violates an RFC, cite the RFC as the compliance violation
+and the ADR only as supporting design context.
 
 Audit both directions within the selected scope: required behavior missing from
 code, code contradicting required behavior, and externally observable behavior
