@@ -7,13 +7,11 @@ argument-hint: "[optional guard topic]"
 
 # Guard Writer
 
-Define reusable executable completion checks under
-[[RFC-0000:C-GUARD-DEF]]. This helper owns guard quality; the invoking workflow
-decides when a guard applies to a Work Item.
+Define reusable executable completion checks under [[RFC-0000:C-GUARD-DEF]].
+This helper owns guard quality; the invoking workflow decides which Work Items
+use a guard.
 
 ## Discovery
-
-Inspect existing guards and effective project policy before adding another:
 
 ```bash
 govctl guard list
@@ -21,71 +19,58 @@ govctl guard show <GUARD-ID>
 govctl work show <WI-ID>
 ```
 
-Use `govctl guard --help` and subcommand help for current creation, editing, and
-deletion syntax. Inspect `gov/config.toml` for project defaults.
+Check `gov/config.toml` for project defaults. Use `govctl <resource> --help`
+for current syntax.
 
 ## Hard Stops
 
 - Do not create a guard for a one-off diagnostic.
-- Do not add a heavyweight or domain-specific guard to project defaults merely
-  because it is reusable.
-- Do not permanently delete a guard without explicit user authorization; hand
-  the destructive operation to the invoking workflow.
-- Do not use interactive commands, prompts, or TTY-dependent behavior.
-- Do not use repeated waivers to conceal an over-broad default.
-- Stop when the command does not provide stable evidence for a named risk.
+- Do not add a heavy or domain-specific guard to project defaults just because
+  it is reusable.
+- Do not delete a guard without explicit user authorization; hand deletion to
+  the invoking workflow.
+- No interactive commands, prompts, or TTY-dependent behavior.
+- Stop when the command gives no stable evidence for a named risk.
 
-## Definition Policy
+## Writing A Guard
 
-A guard has metadata (`id`, `title`, optional artifact `refs`) and an executable
-check (`command`, optional `timeout_secs`, optional output `pattern`). Let
-`govctl guard` own serialization and field validation.
+A guard has `id`, `title`, optional `refs`, a `command`, optional
+`timeout_secs`, and an optional output `pattern`. Let `govctl guard` handle
+serialization and field validation.
 
-Choose a command that:
+The command should:
 
-- runs non-interactively from the project root;
-- verifies one named risk domain with a stable exit status;
-- uses the narrowest reliable test, lint, schema, or validation target;
-- has an intentional timeout for its expected cost; and
-- needs an output pattern only when exit status cannot prove the condition.
+- run non-interactively from the project root;
+- check one named risk with a stable exit status;
+- use the narrowest reliable test, lint, schema, or validation target;
+- set a timeout that fits its expected cost; and
+- use a `pattern` only when exit status cannot prove the condition.
 
-Keep commands simple and portable within the repository's supported
-environment. Reference the RFC or ADR whose requirement or decision the guard
-helps verify.
+Keep commands simple and portable. Reference the RFC or ADR the guard helps
+verify. For a reusable scenario with a Conformance Case, add the guard to that
+Case's `guards` field; never put `CONF-*` IDs in guard `refs`.
 
-When a reusable scenario has a Conformance Case, add the Guard to that Case's
-`guards` field. Do not add `CONF-*` IDs to Guard `refs`; Cases own the derived
-Case-to-Guard edge.
+## Placement
 
-## Scope Policy
+- `verification.default_guards` are the intersection of checks every Work Item
+  needs: fast, stable, environment-independent, and relevant even to
+  documentation-only work.
+- A Work Item's `verification.required_guards` add reusable checks chosen from
+  its changed surface, references, and criteria.
+- Full suites belong on cross-cutting items, release checks, or changes no
+  narrower guard can cover.
+- A waiver needs a specific reason and applies to the effective default plus
+  item guard set. Repeated waivers mean the guard's scope is wrong; fix the
+  scope instead of waiving again.
 
-Project `verification.default_guards` are the intersection of checks required
-by every Work Item. A default should be fast, stable, environment-independent,
-and relevant even to documentation-only work.
+## Checklist
 
-Use Work Item `verification.required_guards` for reusable checks selected from
-that item's changed surface, governing references, and acceptance criteria.
-Full suites belong on cross-cutting items, release checks, or changes whose
-blast radius cannot be covered by narrower guards.
+- The ID and metadata are clear and unique, and no existing guard already
+  serves the same purpose.
+- Timeout and pattern are present only when needed.
+- Placement as default or required matches actual scope.
+- `govctl check` passes; it validates schema, identity, references, and
+  pattern syntax.
+- The command has been run once when the guard is new or materially changed.
 
-Waivers need a specific reason and apply to the effective default plus
-Work-Item guard set. Repeated waivers are evidence that the guard's scope should
-be corrected.
-
-## Quality Tests
-
-A guard is ready when:
-
-- its ID and metadata are clear and unique;
-- its command is non-interactive, deterministic enough for a completion gate,
-  and scoped to a named risk;
-- timeout and pattern settings have an explicit need;
-- references connect it to relevant governance;
-- its placement as a default or Work Item requirement matches actual scope; and
-- it does not duplicate an existing guard without a distinct purpose.
-
-## Completion Evidence
-
-Run `govctl check` after creating or editing a guard. This validates schema,
-identity, references, and pattern syntax. Exercise the command itself when the
-guard is new or materially changed, then hand VCS work to the `commit` skill.
+Hand VCS work to the `commit` skill.

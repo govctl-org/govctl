@@ -8,107 +8,71 @@ argument-hint: "[optional commit message hint]"
 # Commit
 
 Record the current coherent change without inventing governance work or
-rewriting unrelated files.
+touching unrelated files.
 
-## Operational Baseline
+## Detect The VCS
 
-### Discovery
+Run `jj root` first. If it succeeds, use only `jj`: a colocated repository also
+contains `.git`, so probing Git first picks the wrong tool. Only if `jj root`
+fails, use `git rev-parse --git-dir`.
 
-Detect Jujutsu first:
+Inspect changes with `jj status` and `jj diff`, or `git status --short`,
+`git diff`, and `git diff --cached`. The repository is governed when `gov/`
+exists.
 
-```bash
-jj root
-```
+## Hard Stops
 
-If it succeeds, use only `jj`. A colocated repository also contains `.git`, so
-probing Git would select the wrong VCS. Only when `jj root` fails, use
-`git rev-parse --git-dir`.
-
-Treat the repository as governed when `gov/config.toml` or `gov/` exists. In the
-govctl repository itself, use `cargo run --quiet --` for governance commands.
-Inspect current changes with `jj status` and `jj diff`, or with the corresponding
-Git commands after Git has been selected:
-
-```bash
-git status --short
-git diff
-git diff --cached
-```
-
-Use the selected VCS `--help` when additional syntax is needed.
-
-### Hard Stops
-
-- This skill is the only workflow that issues raw commit commands.
-- Do not create or reactivate a Work Item solely to make a commit.
-- Do not perform RFC or ADR lifecycle transitions here.
+- This is the only workflow that issues raw commit commands.
+- Do not create or reactivate a Work Item just to make a commit.
+- Do not perform RFC or ADR lifecycle transitions.
 - Do not commit governed changes while `govctl check` fails.
 - Do not absorb, revert, or reformat unrelated user changes.
 - Stop when substantive implementation has no matching active or completed Work
-  Item and is not limited to spec-only governance maintenance.
+  Item and is not spec-only governance maintenance.
 
-## Decision Policy
+## Traceability
 
-### Establish Traceability
+In a governed repository, run `govctl check` and `govctl work list active`. Use
+the Work Item already identified by context or the diff; query
+`govctl work list done` only if none is. Spec-only changes need no Work Item.
 
-For governed repositories, run `govctl check` and inspect active Work Items with
-`govctl work list active`. Use the matching active or completed item already
-visible in task context or the diff; query `govctl work list done` only when that
-context does not identify it. Spec-only changes may be committed without a Work
-Item.
+For a matching active Work Item:
 
-Before committing a matching active Work Item:
-
-- tick only criteria actually satisfied by the diff;
+- tick only criteria the diff satisfies;
 - move it to `done` only when all criteria and effective guards pass; and
 - add a note only for a durable constraint or retry rule, never for progress,
-  validation output, review state, or the fact that a commit was made.
+  validation output, review state, or the commit itself.
 
-An implementation Work Item may already be `done` before its final commit. Keep
-the closure change and implementation in the same coherent commit.
+An item may already be `done`; keep the closure and implementation in one
+commit.
 
-### Define The Commit Boundary
+## Commit Boundary
 
-Review the full diff, including generated and governance files. The commit must
-represent one explainable outcome. Leave unrelated work untouched. If unrelated
-work shares the current Jujutsu change, stop before describing it and use
-`jj split --help` or user guidance to establish a coherent change boundary.
-For Git, inspect the index before committing and stop if it already contains
-unrelated staged changes; staging reviewed paths does not remove them.
+Review the full diff, including generated and governance files. The commit is
+one explainable outcome. If unrelated work shares the current jj change, stop
+and split it (`jj split --help`) or ask the user. With Git, stop if the index
+already holds unrelated staged changes.
 
-Use:
+Message format, with the type chosen from the outcome (`feat`, `fix`,
+`refactor`, `docs`, `test`, `chore`):
 
 ```text
 <type>(<area>): <short summary>
 ```
 
-Choose `feat`, `fix`, `refactor`, `docs`, `test`, or `chore` from the delivered
-outcome, not from individual file types.
-
-### Record
-
-For Jujutsu, describe the current change and then create a new empty change:
+Record it without opening an editor; use stdin for multi-line messages:
 
 ```bash
 jj describe -m "<type>(<area>): <summary>"
 jj new
 ```
 
-For Git, stage the reviewed change and commit it:
-
 ```bash
 git add -- <reviewed-path>...
 git commit -m "<type>(<area>): <summary>"
 ```
 
-Use stdin for a multi-line commit message. Do not open an interactive VCS
-editor.
+## Report
 
-## Completion Evidence
-
-Report:
-
-- commit ID and subject;
-- matching Work Item status, when applicable;
-- `govctl check` result for governed repositories; and
-- whether the post-commit working copy is clean.
+The commit ID and subject, the Work Item status if any, the `govctl check`
+result, and whether the working copy is clean afterwards.

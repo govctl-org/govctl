@@ -7,14 +7,10 @@ argument-hint: <artifact-maintenance-task>
 
 # Specification Maintenance
 
-Maintain governance artifacts for `$ARGUMENTS` without implementing code or
-creating execution work.
+Maintain governance artifacts for `$ARGUMENTS` without writing code or creating
+execution work.
 
-## Operational Baseline
-
-### Discovery
-
-Establish artifact and lifecycle state first:
+## Discovery
 
 ```bash
 govctl status
@@ -23,86 +19,62 @@ govctl rfc list
 govctl adr list
 ```
 
-Read the current projection with the resource `show` command and use `--history`
-only when obsolete content matters. Use `govctl <resource> --help` for current
-authoring and lifecycle syntax. In the govctl repository itself, invoke the
-development binary as `cargo run --quiet --`.
+Read artifacts with `show`; add `--history` only when obsolete content matters.
+Use `govctl <resource> --help` for current syntax.
 
-### Hard Stops
+## Hard Stops
 
-- This workflow is artifact-only. Do not write implementation code, create Work
-  Items, or advance an RFC beyond `spec`.
-- RFCs own obligations; ADRs own design rationale. Do not put implementation
-  plans into either artifact.
-- Use canonical govctl resource commands rather than editing `gov/` files.
-  Clause operations use the root `govctl clause` namespace.
-- Obtain user authorization before lifecycle-owned or destructive artifact
-  operations, including acceptance/rejection, finalization, version changes,
-  deprecation, supersession, and deletion, unless already granted.
-- Stop when a clarification changes behavior, design remains unresolved, or the
-  task requires implementation. Route those cases to `discuss` or `gov`.
-- Stop lifecycle mutation when authoritative phase, signature baseline, or
-  required recovery state cannot be established.
+- Do not write code, create Work Items, or advance an RFC beyond `spec`.
+- RFCs own obligations, ADRs own design rationale, and Work Items own execution
+  scope. Keep implementation plans out of RFCs and ADRs.
+- Do not edit `gov/` files directly; use govctl commands. Clause operations use
+  the root `govctl clause` namespace.
+- Ask the user before any lifecycle or destructive artifact operation (accept,
+  reject, finalize, advance, bump, deprecate, supersede, delete) unless the
+  request already authorizes it.
+- Stop a lifecycle mutation when you cannot establish the phase, sealed
+  baseline, or recovery path it depends on.
+- Hand off to `discuss` or `gov` when a "clarification" changes behavior, the
+  design is unresolved, or code is required.
 
-## Decision Policy
+## Classify The Change
 
-### Classify The Change
+| Change                                     | Path                                   |
+| ------------------------------------------ | -------------------------------------- |
+| Clarify an obligation, behavior unchanged  | Edit and review the RFC                |
+| Add, change, deprecate, or remove behavior | Amend the RFC, then hand code to `gov` |
+| Refine rationale or alternatives           | Edit and review the ADR                |
+| Open design question                       | Hand off to `discuss`                  |
+| Metadata or reference fix                  | Edit the owning artifact               |
 
-| Change                                          | Path                                             |
-| ----------------------------------------------- | ------------------------------------------------ |
-| Clarify an obligation without changing behavior | Edit and review the RFC                          |
-| Change, add, deprecate, or remove behavior      | Amend the RFC, then hand implementation to `gov` |
-| Refine rationale or alternatives                | Edit and review the ADR                          |
-| Resolve an open design question                 | Hand off to `discuss`                            |
-| Fix governance metadata or references           | Edit the owning artifact                         |
+Follow `rfc-writer` or `adr-writer`. Before a lifecycle transition on
+substantively changed content, run `rfc-reviewer`, `adr-reviewer`, or
+`wi-reviewer` as appropriate.
 
-Follow `rfc-writer` or `adr-writer` for artifact quality. Use `rfc-reviewer`
-for RFCs, `adr-reviewer` for ADRs, and `wi-reviewer` for Work Items before
-treating substantively changed content as ready for a lifecycle transition.
+## RFC Lifecycle
 
-### Respect Candidate Boundaries
+Read the RFC's phase and the rules in [[RFC-0000:C-PHASE-LIFECYCLE]] and
+[[RFC-0002:C-LIFECYCLE-VERBS]] before editing:
 
-Inspect the RFC and its governing lifecycle clauses before editing:
+- A draft RFC is finalized, never bumped.
+- A normative RFC in `spec` is still its open candidate; do not bump it just to
+  retarget that candidate.
+- Content edits after `spec` need an authorized version bump before further
+  phase progression.
+- A post-`spec` RFC with no trustworthy sealed baseline needs migration or a
+  restore from version control, not an inferred bump.
+- Do not edit or bump deprecated RFCs.
+- Clause `since` is lifecycle-owned; use Clause lifecycle commands.
+  Current-version changelog corrections use the changelog edit path and do not
+  replace an amendment or bump.
 
-- Draft RFC content remains in its initial candidate and is finalized rather
-  than version-bumped.
-- A normative RFC already in `spec` remains open for current-candidate
-  authoring; do not bump merely to retarget that candidate.
-- Editing sealed content after `spec` creates an amendment that needs an
-  authorized version-changing bump before later phase progression.
-- A post-`spec` RFC without a trustworthy sealed baseline requires the
-  documented migration or version-control restoration path, not an inferred
-  bump.
-- Deprecated RFC content is historical and is not edited or version-bumped.
+## Done When
 
-Clause `since` and version assignment are lifecycle-owned. Use the Clause
-lifecycle surface rather than rewriting history. Current-version changelog
-corrections use the canonical changelog edit path and do not replace a content
-amendment or lifecycle bump.
+- each artifact stays within its authority and its lifecycle state is explicit;
+- its reviewer has no unresolved critical finding;
+- `govctl check` passes and affected projections are rendered; and
+- the final response names changed artifacts, lifecycle state, review result,
+  and the next workflow: `discuss` for open design, `gov` for code, `quick` for
+  unrelated non-behavioral cleanup, or `commit` for VCS.
 
-### Validate And Hand Off
-
-Run `govctl check` after substantive artifact edits and render affected
-projections. Resolve structural diagnostics and critical reviewer findings
-before requesting a lifecycle transition.
-
-Use:
-
-- `discuss` when the decision remains open;
-- `gov` when code or implementation tests are required;
-- `quick` only for unrelated non-behavioral cleanup outside governance
-  artifacts; and
-- `commit` for raw VCS operations.
-
-## Completion Evidence
-
-Spec maintenance is complete when:
-
-- the artifact stays within its authority boundary;
-- lifecycle state and required authorization are explicit;
-- the artifact's named reviewer has no unresolved critical finding;
-- `govctl check` passes and affected projections are current; and
-- the final response identifies changed artifacts, lifecycle state, review
-  result, and the correct next workflow.
-
-Leave unapproved artifacts in their existing draft/proposed lifecycle state.
+Leave unapproved artifacts in their current draft or proposed state.

@@ -8,99 +8,66 @@ argument-hint: "[optional ADR topic]"
 # ADR Writer
 
 Record why one design direction was chosen over alternatives, under what
-constraints, and with what consequences. ADRs justify decisions; they are not
-mini-RFCs or execution logs.
-
-This helper owns ADR content quality. Use `spec` or `gov` for acceptance,
-rejection, supersession, or implementation work.
+constraints, and with what consequences. An ADR is not a mini-RFC or an
+execution log.
 
 ## Discovery
 
-Inspect related decisions and requirements before writing:
-
-```bash
-govctl adr show <ADR-ID>
-govctl search <topic>
-```
-
-Use `govctl adr --help` and subcommand help for current creation and nested-field
-editing syntax. Use `govctl adr show <ADR-ID> --history` when superseded history
-matters.
+Read related decisions and requirements first with `govctl adr show <ADR-ID>`
+and `govctl search <topic>`; add `--history` only when superseded history
+matters. Use `govctl <resource> --help` for current syntax.
 
 ## Hard Stops
 
-- Do not accept, reject, or supersede an ADR from this helper.
-- Do not create externally visible behavior, validation, lifecycle, storage, or
-  compatibility obligations in ADR prose. Establish them in an RFC.
-- Do not store task scope, progress, commands run, validation output, or next
-  actions in an ADR.
-- Do not duplicate renderer-owned headings or structured alternatives in prose.
-- Stop when the governing requirement or the decision being made is unclear.
+- Do not accept, reject, or supersede an ADR here; hand that to `spec` or `gov`.
+- RFCs own obligations, ADRs own design rationale, and Work Items own execution
+  scope. Do not create behavior, validation, lifecycle, storage, or
+  compatibility obligations in ADR prose, and do not record task scope,
+  progress, commands, or validation output.
+- Stop if the governing requirement or the decision itself is unclear.
 
-## Writing Policy
+## Writing Order
 
-### Let The Decision Follow The Evidence
+1. Context: the problem, constraints, and decision drivers.
+2. Alternatives actually considered, with only the pros and cons that
+   influenced the outcome. Never pad to a quota: one real rejected option beats
+   three fabricated ones, and when only one viable direction exists, say so in
+   a sentence.
+3. Mark chosen and rejected alternatives and why each rejected one lost.
+4. Decision: commit clearly to what is decided, as the conclusion of that
+   comparison.
+5. Consequences: benefits, costs, and mitigations, not only benefits.
 
-Write in this order for a new decision:
+For a historical backfill, separate recovered evidence from inference and say
+so when alternatives cannot be recovered.
 
-1. Describe the context, problem, constraints, and decision drivers.
-2. Add the alternatives that were genuinely considered, with only the pros
-   and cons that materially influenced the outcome. Never pad to a quota:
-   one strong rejected option beats three fabricated ones, and when only one
-   viable direction exists, say so in a sentence instead of inventing
-   alternatives.
-3. Mark the chosen and rejected alternatives, recording why rejected options
-   lost.
-4. State the decision as the conclusion of that comparison.
-5. Record positive, negative, and neutral consequences.
-
-For a historical backfill, distinguish recovered evidence from inference. When
-alternatives cannot be recovered, say so instead of inventing them.
-
-The context should let a future reader understand why a decision was necessary.
-The alternatives should reflect real choices rather than straw options. The
-decision should commit clearly to what it actually decides and explain why the
-chosen option won. Consequences must include material costs and mitigations,
-not only benefits.
-
-### Decide Only What Must Be Decided Now
+## Decide Only What Must Be Decided Now
 
 An ADR written before implementation has little evidence about low-level
 design, yet implementing agents treat everything it states as settled. Record
 the direction, boundaries, and constraints that are costly to reverse or that
 other work depends on. For each sub-choice, ask whether deciding it during
 coding would lose anything; if not, leave it out, or name it as deferred to
-implementation together with any constraint it must respect.
+implementation with any constraint it must respect.
 
 Data layouts, helper decomposition, algorithms, error-handling mechanics, and
 step-by-step procedures rarely belong in an ADR written before code exists.
-When such a choice turns out to matter, record it after implementation has
-produced the evidence.
+Record such a choice after implementation has produced the evidence.
+Language-specific structure belongs only when it is central to the decision.
 
-### Keep It Short
+## Keep It Short
 
-ADRs are written for human review. A typical ADR is a few dozen lines, not
-hundreds. Cut background the reader already has, alternatives nobody
-seriously considered, and pros/cons that did not influence the outcome.
-Bloat is a defect: it hides the decision it is meant to record.
+A typical ADR is a few dozen lines. Cut background the reader already has,
+alternatives nobody seriously considered, and pros and cons that did not
+matter. Bloat is a defect: it hides the decision.
 
-### Preserve Artifact Authority
+Normative keywords quoted from an RFC do not make the ADR authoritative.
+Rewrite accidental obligation lists as rationale, or move the missing contract
+to its RFC.
 
-ADRs may reference requirements and explain how they constrain the choice, but
-RFCs own product obligations. Work Items own execution scope and acceptance
-criteria. Loop state and responses own transient execution evidence.
+## Projection Ownership
 
-Normative keywords in quoted or referenced constraints do not transfer
-authority to the ADR. Rewrite accidental RFC-style obligation lists as decision
-rationale, or move the missing contract to its RFC.
-
-Language-specific structures belong only when the concrete structure is central
-to the architectural choice. Prefer stable design properties over private
-implementation details.
-
-### Respect Projection Ownership
-
-The canonical authoring surfaces are:
+Per [[RFC-0000:C-ADR-PROJECTION-OWNERSHIP]]:
 
 | Content                                         | Owner                                 |
 | ----------------------------------------------- | ------------------------------------- |
@@ -109,34 +76,16 @@ The canonical authoring surfaces are:
 | Options, statuses, pros/cons, rejection reasons | `content.alternatives`                |
 | Explanatory prose                               | `context`, `decision`, `consequences` |
 
-Do not include renderer-generated `Context`, `Decision`, `Consequences`, or
-`Alternatives Considered` headings in content fields. Do not restate structured
-alternative statuses, pros, cons, or rejection reasons in a parallel prose
-inventory. This boundary follows [[RFC-0000:C-ADR-PROJECTION-OWNERSHIP]].
+Do not write `Context`, `Decision`, `Consequences`, or `Alternatives
+Considered` headings into content fields, and do not restate alternatives'
+statuses, pros, cons, or rejection reasons in prose.
 
-`govctl adr show` presents the current projection and hides a superseded ADR's
-body by default. `--history` restores the historical view; rendered Markdown
-remains complete.
+## Before Handoff
 
-## Quality Tests
-
-An ADR is ready when:
-
-- context identifies the actual problem, constraints, and decision drivers;
-- alternatives were evaluated before the conclusion — every one a real option
-  that was actually considered, with an uncontested decision stating so
-  plainly instead of fabricating rejected options;
-- the decision states the chosen direction and why it prevailed;
-- the decision leaves choices that coding can settle better to implementation
-  rather than fixing them without evidence;
-- consequences name meaningful benefits, costs, and mitigations;
-- RFC and ADR references connect the decision to its governing context;
-- no section invents normative product behavior or task execution state;
-- the record stays short enough for comfortable human review; and
-- project tags are applied when configured.
-
-## Completion Evidence
-
-Run `govctl check` after substantive edits and use `adr-reviewer` before
-acceptance or handoff. Use `spec` for decision-only governance work and `gov`
-when the accepted decision accompanies implementation.
+- every alternative was really considered, and an uncontested decision says so;
+- the decision leaves choices that coding can settle better to implementation;
+- consequences include real costs;
+- references connect the decision to its governing RFCs, and configured project
+  tags are applied;
+- `govctl check` passes; and
+- `adr-reviewer` has no unresolved critical finding.

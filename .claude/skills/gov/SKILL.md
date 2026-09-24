@@ -7,15 +7,10 @@ argument-hint: <what-to-do>
 
 # Governed Implementation
 
-Deliver `$ARGUMENTS` under the repository's governance model. Use this skill for
-substantive implementation; use `quick` for trivial non-behavioral changes and
-`spec` when no implementation is required.
+Deliver `$ARGUMENTS` under the repository's governance model. Use `quick` for
+trivial non-behavioral changes and `spec` when no code is needed.
 
-## Operational Baseline
-
-### Discovery
-
-Establish current state before choosing a workflow:
+## Discovery
 
 ```bash
 govctl status
@@ -25,106 +20,83 @@ govctl loop list open
 govctl search <topic>
 ```
 
-Read a matching Work Item with `govctl work show <WI-ID>` and inspect relevant
-RFCs or ADRs through their `show` commands. Use `govctl <resource> --help` for
-current syntax and diagnostics for recovery. In the govctl repository itself,
-invoke the development binary as `cargo run --quiet --`.
+Read the matching Work Item and relevant RFCs and ADRs with their `show`
+commands. Use `govctl <resource> --help` for current syntax.
 
-### Hard Stops
+## Hard Stops
 
-- RFCs are authoritative. Stop when the requested behavior conflicts with a
-  normative RFC or is materially unspecified.
-- Do not implement behavior that depends on a draft RFC.
-- Obtain user authorization before lifecycle-owned or destructive artifact
-  operations, including acceptance/rejection, phase or version changes,
-  deprecation, supersession, and deletion, unless the request already grants it.
-- Do not edit files under `gov/` directly; use canonical govctl resource
-  commands. Clause operations use the root `govctl clause` namespace.
+- Stop when the request conflicts with a normative RFC or the behavior is
+  unspecified. Do not implement against a draft RFC.
+- Ask the user before any lifecycle or destructive artifact operation (accept,
+  reject, finalize, advance, bump, deprecate, supersede, delete) unless the
+  request already authorizes it.
+- Do not edit `gov/` files directly; use govctl commands. Clause operations use
+  the root `govctl clause` namespace.
 - Substantive implementation needs a matching active Work Item. Do not create
-  separate Work Items for mechanical substeps.
-- Stop before mutation when authoritative lifecycle state or the required
-  recovery path cannot be established.
+  Work Items for mechanical substeps.
 
-## Decision Policy
+## Choose The Path
 
-### Choose The Smallest Governance Path
+| Situation                                           | Action                                           |
+| --------------------------------------------------- | ------------------------------------------------ |
+| A normative RFC fully specifies the change          | Implement against it                             |
+| Behavior is new, ambiguous, deprecated, or breaking | Amend the RFC first; add an ADR only for its why |
+| Trivial and non-behavioral                          | Hand off to `quick`                              |
+| Governance-only                                     | Hand off to `spec`                               |
 
-| Situation                                               | Action                                                                              |
-| ------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| Existing normative RFC fully specifies the change       | Implement against it                                                                |
-| Behavior is new, ambiguous, deprecated, or incompatible | Establish the obligation in an RFC; use an ADR only for supporting design rationale |
-| Change is trivial and non-behavioral                    | Hand off to `quick`                                                                 |
-| Work is governance-only                                 | Hand off to `spec`                                                                  |
+One Work Item covers one durable outcome. Reuse a matching active item, activate
+a queued one, or create one with `wi-writer`, choosing the narrowest guards that
+cover the changed risk. Use a loop for non-trivial execution that needs round
+evidence; let govctl generate its ID and reuse an open matching loop.
 
-Use one Work Item for one durable outcome. Reuse a matching active item, activate
-a queued item, or create one only when the result deserves durable tracking.
-Use `wi-writer` for field quality and choose the narrowest guards that cover the
-changed risk. Project defaults are for checks required by every Work Item.
+RFCs own obligations, ADRs own design rationale, and Work Items own execution
+scope. Work Item `description` states scope and reason; `notes` hold only facts
+or retry constraints still useful after closure. Progress, validation output,
+and temporary blockers go in loop state or the final response. A Conformance
+Case maps a scenario to RFC Clauses and Guards but is never authority for
+behavior; use `govctl conformance trace` to navigate.
 
-Use a loop when non-trivial execution needs local round evidence. Let govctl
-generate the loop ID, reuse an open matching loop, and keep transient progress in
-loop state rather than Work Item notes.
+## RFC Lifecycle
 
-### Preserve Artifact Authority
+Read the RFC's phase and the rules in [[RFC-0000:C-PHASE-LIFECYCLE]] and
+[[RFC-0002:C-LIFECYCLE-VERBS]] before mutating it:
 
-- RFC: obligations and externally relevant invariants.
-- ADR: design choice, rationale, and consequences.
-- Work Item: task scope, acceptance criteria, dependencies, and durable
-  execution facts.
-- Conformance Case: a derived, non-normative mapping from a project scenario to
-  versioned RFC Clauses and reusable Guards.
+- Do not implement against draft or deprecated content.
+- Content edits after `impl` need an authorized version bump before further
+  phase progression.
+- Stop before mutating an artifact whose lifecycle state or recovery path you
+  cannot establish, including a post-`spec` RFC without a sealed baseline.
+- Clause `since` is lifecycle-owned; use Clause lifecycle commands.
 
-Work Item `description` states scope and reason. `notes` hold only facts or retry
-constraints that remain useful after closure. Progress, validation output,
-plans, and temporary blockers belong in loop evidence or the final response.
-Use `govctl conformance trace` for requirement-to-scenario navigation. Never
-treat a Case as authority for behavior that is absent from its RFC requirements.
+## Implement And Verify
 
-### Respect RFC Lifecycle Boundaries
+Keep code within the Work Item and its governing artifacts. When work reveals a
+specification defect, repair the specification through its lifecycle instead of
+silently deviating.
 
-Inspect the current RFC with `show` and read its governing lifecycle clauses
-before mutation. Do not implement against draft or deprecated content, progress
-an amended sealed version without its authorized bump, or mutate a post-`spec`
-RFC whose sealed baseline cannot be established. Clause `since` is
-lifecycle-owned; use canonical Clause lifecycle commands rather than editing
-history.
+RFCs and ADRs bind only what they state; choices they leave open belong to
+implementation. When coding shows a stated low-level detail is wrong, raise it
+for repair instead of building around it. When a significant design choice
+emerges during coding, record its ADR once implementation has produced the
+evidence.
 
-### Implement And Verify
+With source scanning enabled, set its domain in `source_scan.include`.
+`.gitignore` provides baseline exclusions; governance-specific exclusions and
+re-inclusions go in `.govignore`. A custom `source_scan.pattern` uses capture
+group 1 as the artifact ID.
 
-Keep implementation scoped to the Work Item and governing artifacts. When work
-reveals a specification defect, repair the specification through the authorized
-lifecycle rather than silently deviating.
+Run narrow checks while developing. Do not rerun guards by hand right before
+`govctl work move <WI-ID> done`, which runs them. Use `compliance-checker` when
+RFC-governed behavior changes materially. After a failure, change the approach;
+do not repeat the same command without new evidence.
 
-RFCs and ADRs bind only what they state. Choices they leave open belong to
-implementation. When coding shows that a stated low-level detail is wrong,
-raise it for repair instead of building around it. When a significant design
-choice emerges during coding, record its ADR once implementation has produced
-the evidence.
+## Done When
 
-When source reference scanning is enabled, express its positive domain in
-`source_scan.include`. Project `.gitignore` files provide baseline exclusions;
-put governance-specific exclusions and re-inclusions in `.govignore`. A custom
-`source_scan.pattern` uses capture group 1 as the artifact ID for every match.
+- the code matches governing RFCs and accepted ADRs;
+- `govctl check`, focused tests, and rendered projections are current;
+- no critical review finding remains;
+- acceptance criteria reflect the delivered outcome and the Work Item moves to
+  `done` with its guards passing; and
+- the final response reports the result, validation, and residual risk.
 
-Run the narrowest useful checks while developing. Before closing the Work Item,
-do not manually repeat guards that `govctl work move <WI-ID> done` is about to
-run. Standalone verification is for diagnosis or evidence while the item remains
-active. Use the `compliance-checker` agent, not an artifact reviewer, when
-RFC-governed implementation behavior changes materially.
-
-Recover from diagnostics by changing the failing assumption or approach. Do not
-repeat the same failed command without new evidence.
-
-## Completion Evidence
-
-The task is complete when:
-
-- implementation matches the governing RFCs and accepted ADRs;
-- `govctl check` passes for the governed repository;
-- relevant focused tests and generated projections are current;
-- semantic review has no unresolved critical finding;
-- Work Item acceptance criteria reflect the delivered outcome;
-- moving the Work Item to `done` passes its effective guards; and
-- the final response reports the result, validation, and any residual risk.
-
-Use the `commit` skill for raw VCS operations.
+Use `commit` for VCS operations.

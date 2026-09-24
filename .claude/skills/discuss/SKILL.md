@@ -7,14 +7,10 @@ argument-hint: <topic-or-question>
 
 # Design Discussion
 
-Understand `$ARGUMENTS`, relate it to existing governance, and produce only the
-design artifacts justified by the discussion.
+Understand `$ARGUMENTS`, relate it to existing governance, and draft only the
+artifacts the discussion justifies.
 
-## Operational Baseline
-
-### Discovery
-
-Start from repository context rather than a blank design:
+## Discovery
 
 ```bash
 govctl status
@@ -23,76 +19,58 @@ govctl rfc list
 govctl adr list
 ```
 
-Read relevant current artifacts with `show`; use `--history` only when prior
-content matters. Use `govctl <resource> --help` for current authoring syntax. In
-the govctl repository itself, invoke the development binary as
-`cargo run --quiet --`.
+Read relevant artifacts with `show`; add `--history` only when prior content
+matters. Use `govctl <resource> --help` for current syntax.
 
-### Hard Stops
+## Hard Stops
 
-- This is a design workflow: do not implement code or create Work Items.
-- Do not perform lifecycle or destructive artifact mutations here, including
-  acceptance/rejection, phase or version changes, deprecation, supersession,
-  and deletion.
-- Do not issue raw VCS commands; use the `commit` skill when drafts should be
-  recorded.
-- RFCs own obligations, ADRs own design rationale, and Work Items own execution.
-  Do not use one artifact to compensate for missing content in another.
-- Stop and ask when requirements conflict, a breaking consequence is
-  unacknowledged, or the available evidence cannot resolve a material ambiguity.
+- Do not write code or create Work Items.
+- Do not perform lifecycle or destructive operations (accept, reject, finalize,
+  advance, bump, deprecate, supersede, delete); they belong to `spec` or `gov`.
+- Do not issue raw VCS commands; use `commit`.
+- RFCs own obligations, ADRs own design rationale, and Work Items own execution
+  scope. Do not use one to fill gaps in another.
+- Ask when requirements conflict, a breaking consequence is unacknowledged, or
+  evidence cannot resolve a material ambiguity.
 
-## Decision Policy
+## Classify The Outcome
 
-### Classify The Outcome
+| Question answered                        | Result                               |
+| ---------------------------------------- | ------------------------------------ |
+| What behavior or invariant must be true? | RFC or RFC amendment                 |
+| Why was one design chosen over others?   | ADR                                  |
+| What does an existing artifact mean?     | Clarify in conversation              |
+| What work should be done now?            | Hand off to `gov`; no Work Item here |
 
-| Question answered                            | Result                               |
-| -------------------------------------------- | ------------------------------------ |
-| What behavior or invariant must be true?     | RFC or RFC amendment                 |
-| Why was one design chosen over alternatives? | ADR                                  |
-| What does an existing artifact mean?         | Discussion or clarification          |
-| What work should be executed now?            | Hand off to `gov`; no Work Item here |
+Not every discussion needs an artifact.
 
-Not every discussion needs an artifact. Prefer clarification in conversation
-when no durable obligation or decision changes.
+## Explore And Draft
 
-### Explore Before Concluding
-
-Identify constraints from existing RFCs and ADRs, then compare plausible
-options. Ask only questions whose answers materially change the design. For
-high-risk or difficult trade-offs, use `decision-analysis`.
+Start from constraints in existing RFCs and ADRs, then compare plausible
+options. Ask only questions whose answers change the design. Use
+`decision-analysis` for high-risk trade-offs.
 
 When drafting:
 
-- use `rfc-writer` for normative Clause quality;
-- use `adr-writer` and establish alternatives before the decision;
-- use root `govctl clause` commands for every Clause operation;
-- use `[[artifact-id]]` references in governed prose;
-- keep implementation details out unless they are an external contract; and
+- follow `rfc-writer` for Clauses and `adr-writer` for decisions, with
+  alternatives before the conclusion;
+- use root `govctl clause` commands and `[[artifact-id]]` references;
+- leave out implementation details that are not an external contract; and
 - separate choices that must be settled now from those coding can settle
   better, and leave the latter out of RFC and ADR drafts.
 
-Draft lifecycle operations belong to the later `spec` or `gov` handoff. A
-behavior-changing amendment needs governed implementation; a clarification with
-no implementation can use `spec`.
+Run `govctl check` after edits and the matching reviewer (`rfc-reviewer`,
+`adr-reviewer`) before calling a draft ready. Resolve critical findings first.
 
-### Review And Validate
+## Done When
 
-Run `govctl check` after substantive artifact edits. Use `rfc-reviewer` for an
-RFC draft, `adr-reviewer` for an ADR draft, and `wi-reviewer` for a Work Item
-when independent semantic review is warranted. Resolve critical findings before
-presenting the artifact as ready. Reviewer isolation is for semantic quality;
-govctl remains responsible for structural validation.
+The final response covers:
 
-## Completion Evidence
+- the problem, constraints, options, and recommendation;
+- drafts created or changed, with their status;
+- open questions, risks, and validation and review results; and
+- the handoff: keep discussing, `spec` for clarifications, `gov` for
+  behavior-changing amendments, or `commit`.
 
-Conclude with:
-
-- the problem and constraints understood;
-- options considered and the current recommendation;
-- draft artifacts created or changed, with status;
-- unresolved questions and material risks;
-- validation and reviewer results; and
-- the correct handoff: continue discussion, `spec`, `gov`, or `commit`.
-
-Leave artifacts in draft/proposed state until the user authorizes the owning
-lifecycle transition.
+Leave artifacts in draft or proposed state until the user authorizes a
+transition.

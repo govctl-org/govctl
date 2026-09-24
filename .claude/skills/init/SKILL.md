@@ -7,75 +7,52 @@ argument-hint: "[optional setup scope]"
 
 # Initialize Govctl
 
-Establish a valid local governance scaffold and report the workflow that should
-own the user's next task. Setup does not create product behavior or governance
-history.
+Create a valid governance scaffold and point the user to the right workflow for
+their next task. Setup creates no product behavior or governance history.
 
 ## Discovery
 
-Check for `gov/config.toml`, a usable local `govctl`, and any existing
-project-local agent assets. In the govctl source repository, prefer
-`cargo run --quiet --` as the development invocation. Elsewhere, use the
-available project-local or installed binary.
-
+Check for `gov/config.toml`, a usable `govctl`, and existing local agent assets.
 Use `govctl init --help`, `govctl agent --help`, and
-`govctl init-skills --help` for current options, destination resolution, and
-overwrite behavior. Use `agent doctor`, `agent install`, and `agent update` for
-user-scoped runtime integration. Reserve `init-skills` for project-local or
-custom-directory projection.
-Before `init-skills`, map the logical destination to its resolved target,
-inspect existing path ancestors for symlinks, and determine whether the target
-is contained by the project root.
+`govctl init-skills --help` for current options and overwrite behavior. `agent doctor|install|update` manage user-scoped runtime
+integration; `init-skills` writes project-local or custom-directory copies.
 
 ## Hard Stops
 
-- Do not create Work Items, product code, RFCs, or ADRs during setup.
-- Obtain explicit user authorization before installing a binary or using any
-  `--force` option.
-- Obtain explicit user authorization before `agent install` or `agent update`
-  changes user-scoped runtime configuration.
-- Do not run `init --force` as a generic repair for an existing project.
-- Do not overwrite project-local skills or agents without inspecting their
-  destination and confirming that replacement is intended.
-- Obtain separate explicit authorization before `init-skills` creates or
-  replaces files when the resolved destination is outside the project root or
-  any existing ancestor is a symlink. Show the exact resolved target first.
-- Do not edit governed files directly; let `govctl init` own the scaffold.
-- Hand raw VCS work to `commit`.
+- Create no Work Items, code, RFCs, or ADRs.
+- Get explicit approval before installing a binary, using any `--force`, or
+  running `agent install` or `agent update`.
+- Never use `init --force` to repair an existing project.
+- Before `init-skills`, resolve the destination, check its existing ancestors
+  for symlinks, and check whether it stays inside the project root. Confirm any
+  replacement of existing skills or agents.
+- If the resolved target is outside the project root or behind a symlinked
+  ancestor, show it and get separate approval.
+- Do not edit governed files directly; `govctl init` owns the scaffold.
+- Hand VCS work to `commit`.
 
-## Setup Policy
+## Setup
 
-If no usable invocation exists, report the missing prerequisite. Ask before
-installing `govctl`; if Rust tooling is also absent, stop with the required
-installation dependency rather than modifying the project.
+If `govctl` is missing, ask before installing it; if Rust tooling is also
+missing, stop and name the dependency.
 
-When `gov/config.toml` is absent, initialize through `govctl init`. When it is
-present, treat the project as initialized and inspect `govctl status` rather
-than running initialization again. Follow diagnostics: outdated schemas or
-project-support files belong to deterministic `govctl migrate`, while invalid
-artifacts require correction through their owning workflows.
+Run `govctl init` only when `gov/config.toml` is absent; otherwise inspect
+`govctl status`. Outdated schemas go to `govctl migrate`; invalid artifacts go
+to their owning workflows.
 
-For user-scoped integration, run `agent doctor` before the authorized
-`agent install` or `agent update`, report failures without substituting manual
-runtime commands, and tell the user to start a new session after success. The
-installed session hook stays silent outside governed projects. Its direct-edit
-guidance is advisory: prefer the canonical CLI when it can express the change,
-but use direct editing for unsupported operations and run `govctl check`
-afterward.
+For runtime integration, run `agent doctor` first, report failures instead of
+substituting manual commands, and tell the user to start a new session after
+success. The installed hook is silent outside governed projects, and its
+direct-edit guidance is advisory: use the CLI when it supports a change,
+otherwise edit directly and run `govctl check`.
 
-Project-local skills and reviewer agents are optional. Project them only when
-the user wants local copies, using `init-skills` destination and format
-discovery. Default to a non-symlinked destination within the project. Preserve
-existing assets unless their replacement was explicitly authorized.
+Local skills and agents are optional; install them only on request, default to
+a non-symlinked destination inside the project, and keep existing assets
+unless replacement was approved.
 
-## Completion Evidence
+## Done When
 
-Setup is complete when:
-
-- `gov/config.toml` and the expected scaffold exist;
-- `govctl status` can read the project;
-- initialization or asset-install diagnostics have no unresolved failure;
-- the report distinguishes files created, skipped, and intentionally replaced;
-  and
-- the user is directed to `discuss`, `spec`, `gov`, `quick`, or `migrate`
-  according to the next task.
+- the scaffold exists and `govctl status` reads it;
+- diagnostics show no unresolved failure;
+- the report separates files created, skipped, and replaced; and
+- the user is pointed to `discuss`, `spec`, `gov`, `quick`, or `migrate`.

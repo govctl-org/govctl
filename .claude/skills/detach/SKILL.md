@@ -7,123 +7,83 @@ argument-hint: "[optional scope hint]"
 
 # Detach Govctl
 
-Stop using govctl in a project while preserving its governance history and
-unrelated user configuration. Detachment is destructive integration cleanup,
-not artifact deletion.
+Remove govctl integration from a project while archiving its governance history
+and keeping unrelated configuration.
 
-## Read-Only Inventory
+## Inventory (Read-Only)
 
-Do not mutate anything during discovery. Inspect:
+Change nothing yet. Inspect `gov/` and its config; configured docs, source-scan,
+and agent-asset paths; local skills and agents; hooks, plugin metadata,
+instructions, and editor config that invoke govctl; `[[...]]` references in
+source and config; existing `gov.archived/`, working-copy changes, ignore rules,
+and destination collisions. For every candidate path, record its logical and
+resolved path and check each existing ancestor for symlinks.
 
-- `gov/config.toml` and the full `gov/` tree;
-- configured documentation, source-scan, and agent-asset paths;
-- project-local skills and reviewer agents attributable to govctl;
-- hooks, plugin metadata, project instructions, and editor configuration that
-  invoke or require govctl;
-- `[[RFC-...]]`, `[[ADR-...]]`, `[[WI-...]]`, and other governed references in
-  source and configuration; and
-- the logical-to-resolved mapping for every candidate path, using symlink
-  metadata to inspect each existing ancestor without assuming containment; and
-- existing `gov.archived/`, working-copy changes, ignore rules, and destination
-  collisions.
-
-Use structured parsers for structured configuration. Use `rg` for reference and
-text discovery. Treat generated projections under configured documentation
-paths as historical output and preserve them by default.
-
-Ownership must be established before removal. A matching filename or a mention
-of `govctl` is evidence to inspect, not proof that an entire file or directory
-is govctl-owned. When ownership is ambiguous, preserve the content and list it
-for manual review.
+Use parsers for structured config and `rg` for text. Keep generated docs by
+default. A filename match or mention of govctl is a lead, not proof of
+ownership; when ownership is unclear, keep the content and list it for manual
+review.
 
 ## Hard Stops
 
-- Present a file-level mutation plan and obtain explicit confirmation before
-  changing anything. Approval applies only to that stated plan.
-- Never delete the authoritative `gov/` tree; archive it.
-- Stop on an existing archive destination instead of overwriting, merging, or
-  inventing a new destination without user agreement.
-- Require `gov/`, its archive destination, and their existing ancestors to be
-  non-symlink paths contained by the project root.
-- Do not remove a shared skills, agents, hooks, plugin, editor, or instruction
-  directory as a unit unless the inventory proves the directory is wholly
-  govctl-owned.
-- Default all other mutations to resolved targets contained by the project
-  root. A symlinked or external target requires separate exact authorization
-  after showing its logical path, resolved target, and symlinked ancestors.
-- Do not discard unrelated working-copy changes or non-govctl configuration.
-- Do not strip plain historical prose merely because it mentions an RFC, ADR,
-  Work Item, or govctl.
-- After archiving `gov/`, do not invoke project-scoped govctl commands unless
-  the archive is first restored.
-- Stop on the first unexpected mutation failure and report completed and pending
-  operations; do not continue into a less recoverable partial state.
+- Get explicit confirmation of a file-level plan before any change. Approval
+  covers only that plan.
+- Archive `gov/`; never delete it. If the destination exists, stop rather than
+  overwrite, merge, or choose another path.
+- `gov/`, the archive destination, and their ancestors must be non-symlink
+  paths inside the project root.
+- Other changes must target resolved paths inside the project root. A symlinked
+  or external target needs its own approval after showing its logical path,
+  resolved target, and symlinked ancestors.
+- Never remove a shared skills, agents, hooks, plugin, editor, or instruction
+  directory unless govctl provably owns all of it.
+- Keep unrelated working-copy changes, non-govctl config, and plain historical
+  prose that merely mentions governance.
+- After archiving, run no project-scoped govctl command until the archive is
+  restored.
+- Stop at the first unexpected failure and report what completed and what is
+  pending.
 
-## Mutation Plan
+## Dry-Run Plan
 
-The dry-run report must identify:
+List the archive source and destination (logical and resolved), every file to
+remove, every config entry or text span to edit, references to remove or keep
+or leave for review, what stays untouched, overlapping existing changes, a
+recoverable baseline for each touched file, and restoration steps. Resolve
+collisions and unclear ownership before asking for confirmation; redo the
+inventory if scope changes.
 
-- the exact logical and resolved archive source and proposed destination;
-- every file to remove;
-- every structured configuration entry or text span to edit;
-- references that will be removed, retained as useful archival prose, or left
-  for manual review;
-- generated documentation and unrelated assets that will remain untouched;
-- existing changes that overlap the plan;
-- a recoverable baseline for every edited or removed file; and
-- restoration steps derived from those baselines and the proposed operations.
+## Execution
 
-Resolve destination collisions and ambiguous ownership before asking for final
-confirmation. Re-run the inventory if the user changes the scope.
+1. Rename `gov/` to the confirmed archive path.
+2. Remove only verified govctl assets; in shared directories remove the owned
+   entries and keep the directory.
+3. Edit hooks and config surgically, keeping unrelated entries valid.
+4. Remove reference markup only where the remaining comment stays accurate;
+   delete reference-only comments and keep useful history as plain prose.
+5. Remove govctl instruction sections without touching neighboring policy.
+6. Delete a directory only if it is empty and in the plan.
 
-## Execution Policy
-
-Apply the confirmed plan in a recoverable order:
-
-1. Preserve the authoritative governance tree by renaming the confirmed,
-   non-symlinked `gov/` path to the confirmed non-conflicting, non-symlinked
-   archive path.
-2. Remove only verified project-local govctl assets. In shared directories,
-   remove individual owned entries and retain the container.
-3. Edit hooks and structured configuration surgically, preserving unrelated
-   entries and valid file structure.
-4. Remove governed reference markup from source only where the remaining
-   comment stays accurate. Delete a reference-only comment when it has no other
-   meaning; preserve useful historical context as plain prose when appropriate.
-5. Remove govctl-specific instruction sections without altering neighboring
-   project policy.
-6. Clean up a directory only when it is empty and was part of the confirmed
-   plan.
-
-Do not automatically rewrite ignore policy. Report archive tracking or ignore
-implications and apply a change only when it was included in the confirmed
-plan.
+Change ignore rules only if the plan includes it; otherwise just report the
+implications.
 
 ## Recovery
 
-Keep an operation record in the final response, not in the archived governed
-artifacts. If an edit fails, preserve the archive and successfully completed
-changes, stop, and explain the exact restoration or continuation steps. Never
-claim atomic detachment when the filesystem operations were not transactional.
+Record operations in the final response, not in the archive. On failure, keep
+the archive and completed changes, stop, and give exact restore or continue
+steps. The operations are not atomic; do not claim they are. To restore,
+resolve any new `gov/` collision, move the archive back, reinstall removed
+assets, and follow the remaining steps from the plan.
 
-Restoration starts by resolving any new `gov/` collision, moving the confirmed
-archive back to `gov/`, and reinstalling project-local assets only where they
-were removed. Derive the remaining restoration steps from the recorded plan
-rather than promising a fixed one-command undo.
+## Done When
 
-## Completion Evidence
+- `gov/` exists at the confirmed archive path;
+- no hook, instruction, or verified govctl asset still activates the
+  integration;
+- source edits keep behavior and meaningful comments, and unrelated assets are
+  untouched;
+- a final scan lists remaining unclear or intentionally kept mentions; and
+- the report lists archived, removed, edited, kept, and unresolved paths plus
+  restoration steps.
 
-Detachment is complete when:
-
-- the governance tree exists at the confirmed archive path;
-- no active project hook, instruction, or verified govctl-owned local asset
-  still activates the integration;
-- source edits preserve code behavior and meaningful comments;
-- configured generated documentation and unrelated user assets remain
-  untouched unless the user explicitly included them;
-- a final scan reports remaining ambiguous or intentionally preserved mentions;
-  and
-- the final report lists archived, removed, edited, preserved, and unresolved
-  paths plus restoration guidance.
-
-Use `commit` if the user wants the confirmed detachment recorded in VCS.
+Use `commit` if the user wants the detach recorded.
