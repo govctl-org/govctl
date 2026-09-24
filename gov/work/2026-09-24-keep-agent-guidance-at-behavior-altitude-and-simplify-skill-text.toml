@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-24-001"
+title = "Keep agent guidance at behavior altitude and simplify skill text"
+status = "done"
+created = "2026-09-24"
+started = "2026-09-24"
+completed = "2026-09-24"
+refs = ["RFC-0000:C-REFERENCE-HIERARCHY"]
+
+[content]
+description = "External feedback reports that agent-written ADRs and RFCs over-specify implementation: ADRs fix low-level choices before coding can supply evidence, RFCs describe internal procedure as prose pseudo-code, and implementing agents then follow those details into defective code. Update the bundled skills and reviewer agents so artifacts constrain only behavior and decisions that must be settled early, and so implementation is bound only by what artifacts state. In the same pass, simplify the skill and agent text by removing template scaffolding, restated checklists, and duplicated lifecycle rules without dropping distinct rules."
+
+[[content.acceptance_criteria]]
+text = "rfc-writer and rfc-reviewer treat internal procedure and unobservable ordering in RFC Clauses as defects"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "adr-writer and adr-reviewer limit ADRs to decisions that must be settled before implementation and flag premature low-level choices"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "gov, discuss, and compliance-checker bind implementation only to what RFCs and ADRs state"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "rfc-writer no longer suggests ADR references from RFCs"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "skill and agent guidance is shortened without dropping distinct rules"
+status = "done"
+category = "chore"

@@ -10,6 +10,27 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.20.2] - 2026-09-24
+
+0.20.2 stops agents from over-specifying implementation in RFCs and ADRs.
+Agent-written ADRs fixed low-level choices before coding could supply evidence,
+and RFCs described internal procedure as prose pseudo-code; implementing agents
+then followed those details into defective code. The bundled skills and
+reviewer agents now keep both artifacts at the level of behavior and early
+decisions, and their text is about a quarter shorter.
+
+### Fixed
+
+- rfc-writer and rfc-reviewer treat internal procedure and unobservable
+  ordering in RFC Clauses as defects. (WI-2026-09-24-001)
+- adr-writer and adr-reviewer limit ADRs to decisions that must be settled
+  before implementation and flag premature low-level choices.
+  (WI-2026-09-24-001)
+- gov, discuss, and compliance-checker bind implementation only to what RFCs
+  and ADRs state. (WI-2026-09-24-001)
+- rfc-writer no longer suggests ADR references from RFCs, which the reference
+  hierarchy forbids. (WI-2026-09-24-001)
+
 ## [0.20.1] - 2026-09-16
 
 0.20.1 stops agents from fabricating ADR alternatives. The ADR-0042 gate
