@@ -3,18 +3,18 @@
 [govctl]
 id = "RFC-0010"
 title = "Multi-workspace coordination for parallel agents"
-version = "0.2.0"
+version = "0.2.1"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-09-08"
-updated = "2026-09-08"
+updated = "2026-09-26"
 refs = [
     "RFC-0004",
     "RFC-0002",
 ]
 tags = ["collaboration"]
-signature = "a0de4b072b164893916b1b5e69e74dc4f7f6017801c00860282246341b1fdee8"
+signature = "2609702f6fbbaa4454d1ac61ff23c746fd1959e88f0b952a673deb8fccfcdf23"
 
 [[sections]]
 title = "Summary"
@@ -30,6 +30,12 @@ clauses = [
     "clauses/C-ARTIFACT-CLAIM.toml",
     "clauses/C-PRESENCE.toml",
 ]
+
+[[changelog]]
+version = "0.2.1"
+date = "2026-09-26"
+notes = "Clarify when the primary workspace cannot be determined"
+fixed = ["Treat workspace information that does not establish whether the invoking workspace is the primary as undeterminable"]
 
 [[changelog]]
 version = "0.2.0"
