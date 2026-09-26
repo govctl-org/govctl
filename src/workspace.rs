@@ -17,12 +17,31 @@ pub enum WorkspaceContext {
     NoVcs,
     /// The directory belongs to the clone's primary workspace.
     Primary,
-    /// The directory belongs to a secondary workspace; `primary` is the
-    /// primary workspace root.
-    Secondary { primary: PathBuf },
+    /// The directory belongs to a secondary workspace; `primary` identifies
+    /// the primary workspace.
+    Secondary { primary: PrimaryWorkspace },
     /// Version control is present but the primary workspace cannot be
     /// determined; callers warn and proceed.
     Undeterminable(Undeterminable),
+}
+
+/// How a refusal identifies the primary workspace.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PrimaryWorkspace {
+    /// The primary workspace root.
+    Root(PathBuf),
+    /// A jj primary workspace whose root jj has not recorded; its name
+    /// still identifies it — [[RFC-0010:C-COMMAND-SCOPE]].
+    JjName(String),
+}
+
+impl std::fmt::Display for PrimaryWorkspace {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Root(root) => write!(f, "{}", root.display()),
+            Self::JjName(name) => write!(f, "jj workspace `{name}` (root path not recorded)"),
+        }
+    }
 }
 
 /// Why the primary workspace cannot be determined.
@@ -33,14 +52,11 @@ pub enum Undeterminable {
     VcsUnavailable { tool: &'static str },
     /// A bare repository or separate git directory has no main working tree.
     NoGitMainWorktree,
-    /// jj has no usable root for the current workspace and its working-copy
-    /// commit does not single it out.
+    /// jj reports no usable root for the current workspace and its
+    /// working-copy commit does not single it out.
     JjCurrentWorkspaceUnidentified,
     /// No jj workspace has the primary name.
     JjPrimaryNameUnknown { name: String, configured: bool },
-    /// The invoking workspace is not the primary, but jj has no usable root
-    /// for the primary, so a refusal could not identify it.
-    JjPrimaryRootUnknown { name: String },
 }
 
 impl Undeterminable {
@@ -54,7 +70,7 @@ impl Undeterminable {
                 "the git repository is bare or uses a separate git directory, so it has no main working tree".to_string()
             }
             Self::JjCurrentWorkspaceUnidentified => {
-                "jj has no root path for the current workspace and another workspace has the same working-copy commit".to_string()
+                "jj reports no usable root path for the current workspace, and its working-copy commit does not single it out".to_string()
             }
             Self::JjPrimaryNameUnknown { name, configured: true } => {
                 format!("the configured primary workspace `{name}` is not a jj workspace of this repository")
@@ -62,9 +78,6 @@ impl Undeterminable {
             Self::JjPrimaryNameUnknown { name, configured: false } => {
                 format!("no jj workspace is named `{name}`, the default primary")
             }
-            Self::JjPrimaryRootUnknown { name } => format!(
-                "this is not the primary workspace `{name}`, and jj has no root path for it (workspaces created before jj 0.38 record none)"
-            ),
         }
     }
 
@@ -78,15 +91,10 @@ impl Undeterminable {
                 "run trunk-scoped commands from a clone with a main working tree".to_string()
             }
             Self::JjCurrentWorkspaceUnidentified => {
-                "give this workspace its own working-copy commit, for example with `jj new`"
-                    .to_string()
+                "if another workspace has the same working-copy commit, give this one its own, for example with `jj new`".to_string()
             }
             Self::JjPrimaryNameUnknown { .. } => {
-                "set workspace.primary in gov/config.toml to a name listed by `jj workspace list`"
-                    .to_string()
-            }
-            Self::JjPrimaryRootUnknown { name } => {
-                format!("run trunk-scoped commands from the `{name}` workspace")
+                "set workspace.primary in gov/config.toml to a name listed by `jj workspace list`".to_string()
             }
         }
     }
@@ -305,7 +313,7 @@ fn git_context(dir: &Path) -> Option<WorkspaceContext> {
                 if std::fs::canonicalize(primary.join(".git")).ok() == Some(common_dir.clone()) =>
             {
                 Some(WorkspaceContext::Secondary {
-                    primary: primary.to_path_buf(),
+                    primary: PrimaryWorkspace::Root(primary.to_path_buf()),
                 })
             }
             _ => Some(WorkspaceContext::Undeterminable(
@@ -414,16 +422,14 @@ fn classify_jj(
         return WorkspaceContext::Primary;
     }
     match workspaces.iter().find(|ws| ws.name == primary_name) {
-        Some(JjWorkspace {
-            root: Some(primary),
-            ..
-        }) => WorkspaceContext::Secondary {
-            primary: primary.clone(),
+        // The primary is determined by name; a refusal names it when jj has
+        // no usable root for it.
+        Some(primary) => WorkspaceContext::Secondary {
+            primary: match &primary.root {
+                Some(root) => PrimaryWorkspace::Root(root.clone()),
+                None => PrimaryWorkspace::JjName(primary.name.clone()),
+            },
         },
-        // A refusal could not identify a primary whose root is unknown.
-        Some(_) => WorkspaceContext::Undeterminable(Undeterminable::JjPrimaryRootUnknown {
-            name: primary_name.to_string(),
-        }),
         None => WorkspaceContext::Undeterminable(Undeterminable::JjPrimaryNameUnknown {
             name: primary_name.to_string(),
             configured,
@@ -565,7 +571,7 @@ mod tests {
         assert_eq!(
             detect(&secondary, &Config::default()),
             WorkspaceContext::Secondary {
-                primary: expected_primary
+                primary: PrimaryWorkspace::Root(expected_primary)
             }
         );
 
@@ -627,7 +633,7 @@ mod tests {
         assert_eq!(
             detect(&secondary, &Config::default()),
             WorkspaceContext::Secondary {
-                primary: std::fs::canonicalize(&main).unwrap()
+                primary: PrimaryWorkspace::Root(std::fs::canonicalize(&main).unwrap())
             }
         );
         assert_eq!(detect(&main, &Config::default()), WorkspaceContext::Primary);
@@ -661,7 +667,7 @@ mod tests {
         assert_eq!(
             detect(&main, &config),
             WorkspaceContext::Secondary {
-                primary: std::fs::canonicalize(&other).unwrap()
+                primary: PrimaryWorkspace::Root(std::fs::canonicalize(&other).unwrap())
             }
         );
 
@@ -702,13 +708,13 @@ mod tests {
         assert_eq!(
             classify_jj(&config, Path::new("/repo/second"), &secondary_unrecorded),
             WorkspaceContext::Secondary {
-                primary: PathBuf::from("/repo/main")
+                primary: PrimaryWorkspace::Root(PathBuf::from("/repo/main"))
             }
         );
     }
 
     #[test]
-    fn jj_unidentifiable_workspace_or_primary_root_is_undeterminable() {
+    fn jj_primary_is_determined_by_name_not_by_recorded_root() {
         let config = Config::default();
         let here = Path::new("/repo/second");
         // Two workspaces at the invoking commit cannot be told apart.
@@ -717,13 +723,14 @@ mod tests {
             classify_jj(&config, here, &ambiguous),
             WorkspaceContext::Undeterminable(Undeterminable::JjCurrentWorkspaceUnidentified)
         );
-        // The current workspace is secondary but the primary cannot be named.
+        // A secondary is refused even when the primary's root is unrecorded:
+        // the name still determines the primary — [[RFC-0010:C-COMMAND-SCOPE]].
         let primary_unrecorded = [jj_ws("default", None, false), jj_ws("second", None, true)];
         assert_eq!(
             classify_jj(&config, here, &primary_unrecorded),
-            WorkspaceContext::Undeterminable(Undeterminable::JjPrimaryRootUnknown {
-                name: "default".to_string()
-            })
+            WorkspaceContext::Secondary {
+                primary: PrimaryWorkspace::JjName("default".to_string())
+            }
         );
         // Without configuration, a repo lacking `default` has no primary.
         let no_default = [jj_ws("second", Some("/repo/second"), true)];
@@ -761,9 +768,9 @@ mod tests {
         assert_eq!(detect(&main, &Config::default()), WorkspaceContext::Primary);
         assert_eq!(
             detect(&secondary, &Config::default()),
-            WorkspaceContext::Undeterminable(Undeterminable::JjPrimaryRootUnknown {
-                name: "default".to_string()
-            })
+            WorkspaceContext::Secondary {
+                primary: PrimaryWorkspace::JjName("default".to_string())
+            }
         );
     }
 

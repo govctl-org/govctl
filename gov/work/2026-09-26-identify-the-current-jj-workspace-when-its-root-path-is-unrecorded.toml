@@ -10,7 +10,7 @@ completed = "2026-09-26"
 refs = ["RFC-0010:C-COMMAND-SCOPE"]
 
 [content]
-description = "Trunk-scoped commands report that trunk-scope enforcement is inactive in jj repositories whose workspaces were created before jj 0.38, because such workspaces have no recorded root path. Workspace classification currently recognizes the current workspace only by matching its root path, so it cannot identify the workspace at all and falls back to the enforcement-inactive warning, even in the jj `default` workspace that RFC-0010 names as the fallback primary. The resulting warning also points users at `workspace.primary`, which cannot help. Classify the current jj workspace by identity when its root path is unavailable, so that enforcement follows the command-scope rules instead of silently degrading."
+description = "Trunk-scoped commands report that trunk-scope enforcement is inactive in jj repositories whose workspaces were created before jj 0.38, because such workspaces have no recorded root path. Workspace classification recognizes the current workspace only by matching its root path, so it cannot identify the workspace at all and falls back to the enforcement-inactive warning, even in the jj `default` workspace that RFC-0010 names as the fallback primary. Identify the current workspace when no root path is recorded, and determine the primary by name as RFC-0010 requires, so that enforcement follows the command-scope rules instead of silently degrading."
 
 [[content.acceptance_criteria]]
 text = "trunk-scoped commands run without the enforcement-inactive warning in the primary jj workspace when workspace root paths are unrecorded"
@@ -18,12 +18,12 @@ status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
-text = "trunk-scoped commands refuse to run in a secondary jj workspace whose root path is unrecorded when the primary workspace root is known"
+text = "trunk-scoped commands refuse to run in a secondary jj workspace and name the primary workspace, even when jj recorded no root path for either"
 status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
-text = "trunk-scope enforcement degrades to the warning when the current jj workspace or an unrecorded primary workspace root cannot be identified unambiguously"
+text = "in jj repositories, trunk-scope enforcement degrades to the warning only when jj cannot report its workspaces, the current workspace cannot be identified, or no workspace has the primary name"
 status = "done"
 category = "fixed"
 

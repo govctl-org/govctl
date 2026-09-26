@@ -193,8 +193,7 @@ fn enforce_trunk_scope(
         workspace::WorkspaceContext::Secondary { primary } => Err(Diagnostic::new(
             diagnostic::DiagnosticCode::E0823TrunkScopeViolation,
             format!(
-                "Trunk-scoped commands (release, release undo, migrate) must run in the primary workspace: {}",
-                primary.display()
+                "Trunk-scoped commands (release, release undo, migrate) must run in the primary workspace: {primary}"
             ),
             cwd.display().to_string(),
         )),

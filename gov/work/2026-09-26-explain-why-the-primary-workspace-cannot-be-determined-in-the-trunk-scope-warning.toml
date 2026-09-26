@@ -10,7 +10,7 @@ completed = "2026-09-26"
 refs = ["RFC-0010:C-COMMAND-SCOPE"]
 
 [content]
-description = "The warning that trunk-scope enforcement is inactive always tells users to set `workspace.primary` in `gov/config.toml`, but that setting only helps when the primary workspace name is missing or wrong. When the VCS tool cannot report the workspace layout, when the git repository is bare or uses a separate git directory, or when jj recorded no root path for the current or primary workspace, the hint sends users toward a fix that cannot work. Make the warning state which condition prevented determining the primary workspace and give a hint that addresses that condition."
+description = "The warning that trunk-scope enforcement is inactive always tells users to set `workspace.primary` in `gov/config.toml`, but that setting only helps when no jj workspace has the primary name. When the VCS tool cannot report the workspace layout, when the git repository is bare or uses a separate git directory, or when the current jj workspace cannot be identified, the hint sends users toward a fix that cannot work. Make the warning state which condition prevented determining the primary workspace and give a hint that addresses that condition."
 
 [[content.acceptance_criteria]]
 text = "the trunk-scope enforcement-inactive warning names the condition that prevented determining the primary workspace"
@@ -18,12 +18,12 @@ status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
-text = "the warning suggests setting workspace.primary only when the primary jj workspace name is missing or unknown"
+text = "the trunk-scope enforcement-inactive warning suggests setting workspace.primary only when no jj workspace has the configured or default primary name"
 status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
-text = "tests cover the warning cause for an unknown primary name, an unrecorded primary workspace root, and an unsupported git layout"
+text = "tests cover the warning text for an unknown primary name and a git clone without a main working tree"
 status = "done"
 category = "chore"
 

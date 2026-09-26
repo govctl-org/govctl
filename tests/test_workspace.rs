@@ -308,6 +308,49 @@ fn jj_unconfigured_added_workspace_is_refused() -> TestResult {
 }
 
 #[test]
+fn jj_workspaces_without_recorded_roots_follow_trunk_scope() -> TestResult {
+    if !tool_available("jj") {
+        return Ok(());
+    }
+    let main = init_jj_project()?;
+    let holder = TempDir::new()?;
+    let secondary = add_jj_workspace(main.path(), &holder, "secondary")?;
+    // Workspaces created before jj 0.38 record no root paths; emulate them.
+    let index = main.path().join(".jj/repo/workspace_store/index");
+    if !index.exists() {
+        return Ok(());
+    }
+    std::fs::write(&index, b"")?;
+
+    // [[RFC-0010:C-COMMAND-SCOPE]]: the unconfigured primary is `default`,
+    // determined by name whether or not its root is recorded.
+    let output = govctl(main.path(), &["migrate"])?;
+    assert!(
+        output.status.success(),
+        "migrate failed in the default workspace: {}",
+        stderr(&output)
+    );
+    let primary_stderr = stderr(&output);
+    assert!(
+        !primary_stderr.contains("warning"),
+        "no trunk-scope warning expected in the default workspace: {primary_stderr}"
+    );
+
+    let output = govctl(&secondary, &["migrate"])?;
+    assert!(
+        !output.status.success(),
+        "migrate must fail in a secondary workspace"
+    );
+    let stderr = stderr(&output);
+    assert!(stderr.contains("E0823"), "unexpected stderr: {stderr}");
+    assert!(
+        stderr.contains("`default`"),
+        "diagnostic must name the primary workspace: {stderr}"
+    );
+    Ok(())
+}
+
+#[test]
 fn jj_undeterminable_primary_trunk_failure_still_warns() -> TestResult {
     if !tool_available("jj") {
         return Ok(());
