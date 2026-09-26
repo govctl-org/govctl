@@ -10,14 +10,25 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.20.3] - 2026-09-27
+
+0.20.3 fixes trunk-scope enforcement in jj repositories whose workspaces were
+created before jj 0.38. Those workspaces record no root path, so govctl could
+not recognize the current workspace: `release`, `release undo`, and `migrate`
+warned that enforcement was inactive (W0114) everywhere, including the
+`default` primary workspace, and ran even from secondary workspaces.
+
 ### Fixed
 
-- trunk-scoped commands run without the enforcement-inactive warning in the primary jj workspace when workspace root paths are unrecorded (WI-2026-09-26-001)
-- trunk-scoped commands refuse to run in a secondary jj workspace and name the primary workspace, even when jj recorded no root path for either (WI-2026-09-26-001)
-- in jj repositories, trunk-scope enforcement degrades to the warning only when jj cannot report its workspaces, the current workspace cannot be identified, or no workspace has the primary name (WI-2026-09-26-001)
-- a stale jj workspace root path no longer identifies the wrong workspace as the current workspace (WI-2026-09-26-001)
-- the trunk-scope enforcement-inactive warning names the condition that prevented determining the primary workspace (WI-2026-09-26-002)
-- the trunk-scope enforcement-inactive warning suggests setting workspace.primary only when no jj workspace has the configured or default primary name (WI-2026-09-26-002)
+- Trunk-scoped commands recognize the current jj workspace when jj recorded no
+  root path for it: they run without a warning in the primary workspace and
+  refuse in a secondary one, naming the primary workspace even when its root
+  path is unrecorded. A stale root path no longer identifies the wrong
+  workspace. (WI-2026-09-26-001)
+- The W0114 warning states why the primary workspace cannot be determined and
+  gives a matching hint. It suggests setting `workspace.primary` only when no
+  jj workspace has the configured or default primary name.
+  (WI-2026-09-26-002)
 
 ## [0.20.2] - 2026-09-24
 
