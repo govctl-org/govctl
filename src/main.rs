@@ -198,11 +198,14 @@ fn enforce_trunk_scope(
             ),
             cwd.display().to_string(),
         )),
-        workspace::WorkspaceContext::Undeterminable => Ok(Some(Diagnostic::new(
+        workspace::WorkspaceContext::Undeterminable(cause) => Ok(Some(Diagnostic::new(
             diagnostic::DiagnosticCode::W0114TrunkScopeEnforcementInactive,
-            "Version control is present but the primary workspace cannot be determined; \
-             trunk-scope enforcement is inactive. Set workspace.primary in gov/config.toml \
-             to name the primary workspace.",
+            format!(
+                "The primary workspace cannot be determined: {}; trunk-scope enforcement is \
+                 inactive (hint: {})",
+                cause.reason(),
+                cause.hint()
+            ),
             cwd.display().to_string(),
         ))),
         workspace::WorkspaceContext::Primary | workspace::WorkspaceContext::NoVcs => Ok(None),

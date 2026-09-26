@@ -254,6 +254,10 @@ fn bare_repo_worktree_trunk_command_warns_and_proceeds() -> TestResult {
         !stderr.contains("E0823"),
         "must not refuse with a bogus primary: {stderr}"
     );
+    assert!(
+        stderr.contains("no main working tree") && !stderr.contains("workspace.primary"),
+        "the warning must name the git layout, not suggest configuration: {stderr}"
+    );
     Ok(())
 }
 
@@ -392,6 +396,10 @@ fn jj_configured_unknown_primary_warns_and_proceeds() -> TestResult {
     assert!(
         !stderr.contains("E0823"),
         "must not refuse while the primary is undeterminable: {stderr}"
+    );
+    assert!(
+        stderr.contains("`nonexistent`") && stderr.contains("workspace.primary"),
+        "the warning must name the unknown primary and suggest configuration: {stderr}"
     );
     Ok(())
 }
