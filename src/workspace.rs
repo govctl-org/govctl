@@ -405,9 +405,10 @@ fn parse_jj_workspace(line: &str) -> Option<JjWorkspace> {
 /// configured workspace name, or jj's initial `default` workspace when
 /// unconfigured — [[RFC-0010:C-COMMAND-SCOPE]].
 ///
-/// The current workspace is found by its root. When no root matches, a
-/// single workspace at the invoking working-copy commit identifies it
-/// instead; anything more ambiguous resolves toward caution.
+/// The current workspace is found by its root among the workspaces at the
+/// invoking working-copy commit. When no root matches, a single workspace at
+/// that commit identifies it instead; anything more ambiguous resolves
+/// toward caution.
 fn classify_jj(
     config: &Config,
     current_root: &Path,
@@ -426,8 +427,9 @@ fn classify_jj(
         // no usable root for it.
         Some(primary) => WorkspaceContext::Secondary {
             primary: match &primary.root {
-                Some(root) => PrimaryWorkspace::Root(root.clone()),
-                None => PrimaryWorkspace::JjName(primary.name.clone()),
+                // A primary root equal to the invoking root is stale.
+                Some(root) if root != current_root => PrimaryWorkspace::Root(root.clone()),
+                _ => PrimaryWorkspace::JjName(primary.name.clone()),
             },
         },
         None => WorkspaceContext::Undeterminable(Undeterminable::JjPrimaryNameUnknown {
@@ -441,9 +443,11 @@ fn current_jj_workspace<'a>(
     current_root: &Path,
     workspaces: &'a [JjWorkspace],
 ) -> Option<&'a JjWorkspace> {
+    // The invoking workspace is always at the invoking commit, so a root
+    // match elsewhere is a stale root that another checkout now occupies.
     if let Some(ws) = workspaces
         .iter()
-        .find(|ws| ws.root.as_deref() == Some(current_root))
+        .find(|ws| ws.at_current_commit && ws.root.as_deref() == Some(current_root))
     {
         return Some(ws);
     }
@@ -492,11 +496,18 @@ fn entry_present(path: &Path) -> bool {
 mod tests {
     use super::*;
 
+    /// Whether `tool` can run. Environments that set
+    /// `GOVCTL_TEST_REQUIRE_VCS`, such as CI, fail instead of skipping.
     fn tool_available(tool: &str) -> bool {
-        std::process::Command::new(tool)
+        let available = std::process::Command::new(tool)
             .arg("--version")
             .output()
-            .is_ok_and(|output| output.status.success())
+            .is_ok_and(|output| output.status.success());
+        assert!(
+            available || std::env::var_os("GOVCTL_TEST_REQUIRE_VCS").is_none(),
+            "`{tool}` is required when GOVCTL_TEST_REQUIRE_VCS is set"
+        );
+        available
     }
 
     fn run(dir: &Path, tool: &str, args: &[&str]) {
@@ -714,6 +725,52 @@ mod tests {
     }
 
     #[test]
+    fn undeterminable_hint_suggests_configuration_only_for_an_unknown_primary_name() {
+        let causes = [
+            Undeterminable::VcsUnavailable { tool: "git" },
+            Undeterminable::VcsUnavailable { tool: "jj" },
+            Undeterminable::NoGitMainWorktree,
+            Undeterminable::JjCurrentWorkspaceUnidentified,
+            Undeterminable::JjPrimaryNameUnknown {
+                name: "main".to_string(),
+                configured: true,
+            },
+            Undeterminable::JjPrimaryNameUnknown {
+                name: "default".to_string(),
+                configured: false,
+            },
+        ];
+        let reasons: std::collections::HashSet<_> = causes.iter().map(|c| c.reason()).collect();
+        assert_eq!(
+            reasons.len(),
+            causes.len(),
+            "each cause needs its own reason"
+        );
+        for cause in &causes {
+            let suggests_config = cause.hint().contains("workspace.primary");
+            let name_unknown = matches!(cause, Undeterminable::JjPrimaryNameUnknown { .. });
+            assert_eq!(suggests_config, name_unknown, "{cause:?}: {}", cause.hint());
+        }
+    }
+
+    #[test]
+    fn jj_stale_root_of_another_workspace_does_not_identify_the_current_one() {
+        let config = Config::default();
+        // `default` recorded /repo/here before moving away; the invoking
+        // checkout at /repo/here is `second`.
+        let workspaces = [
+            jj_ws("default", Some("/repo/here"), false),
+            jj_ws("second", None, true),
+        ];
+        assert_eq!(
+            classify_jj(&config, Path::new("/repo/here"), &workspaces),
+            WorkspaceContext::Secondary {
+                primary: PrimaryWorkspace::JjName("default".to_string())
+            }
+        );
+    }
+
+    #[test]
     fn jj_primary_is_determined_by_name_not_by_recorded_root() {
         let config = Config::default();
         let here = Path::new("/repo/second");
@@ -761,6 +818,10 @@ mod tests {
         // Emulate workspaces created before jj 0.38, which recorded no roots.
         let index = main.join(".jj/repo/workspace_store/index");
         if !index.exists() {
+            assert!(
+                std::env::var_os("GOVCTL_TEST_REQUIRE_VCS").is_none(),
+                "jj no longer stores workspace roots at {index:?}"
+            );
             return;
         }
         std::fs::write(&index, b"").unwrap();

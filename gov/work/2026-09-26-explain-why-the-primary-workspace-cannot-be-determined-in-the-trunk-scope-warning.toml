@@ -22,10 +22,5 @@ text = "the trunk-scope enforcement-inactive warning suggests setting workspace.
 status = "done"
 category = "fixed"
 
-[[content.acceptance_criteria]]
-text = "tests cover the warning text for an unknown primary name and a git clone without a main working tree"
-status = "done"
-category = "chore"
-
 [verification]
-required_guards = ["GUARD-CARGO-TEST"]
+required_guards = ["GUARD-WORKSPACE-DETECTION-TESTS"]

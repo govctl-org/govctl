@@ -15,6 +15,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 - trunk-scoped commands run without the enforcement-inactive warning in the primary jj workspace when workspace root paths are unrecorded (WI-2026-09-26-001)
 - trunk-scoped commands refuse to run in a secondary jj workspace and name the primary workspace, even when jj recorded no root path for either (WI-2026-09-26-001)
 - in jj repositories, trunk-scope enforcement degrades to the warning only when jj cannot report its workspaces, the current workspace cannot be identified, or no workspace has the primary name (WI-2026-09-26-001)
+- a stale jj workspace root path no longer identifies the wrong workspace as the current workspace or reports the current directory as the primary workspace (WI-2026-09-26-001)
 - the trunk-scope enforcement-inactive warning names the condition that prevented determining the primary workspace (WI-2026-09-26-002)
 - the trunk-scope enforcement-inactive warning suggests setting workspace.primary only when no jj workspace has the configured or default primary name (WI-2026-09-26-002)
 

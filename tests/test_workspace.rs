@@ -27,11 +27,18 @@ fn tool(dir: &Path, tool: &str, args: &[&str]) -> Result<Output, std::io::Error>
         .output()
 }
 
+/// Whether `tool_name` can run. Environments that set
+/// `GOVCTL_TEST_REQUIRE_VCS`, such as CI, fail instead of skipping.
 fn tool_available(tool_name: &str) -> bool {
-    Command::new(tool_name)
+    let available = Command::new(tool_name)
         .arg("--version")
         .output()
-        .is_ok_and(|output| output.status.success())
+        .is_ok_and(|output| output.status.success());
+    assert!(
+        available || std::env::var_os("GOVCTL_TEST_REQUIRE_VCS").is_none(),
+        "`{tool_name}` is required when GOVCTL_TEST_REQUIRE_VCS is set"
+    );
+    available
 }
 
 fn run_tool(dir: &Path, tool_name: &str, args: &[&str]) -> TestResult {
@@ -318,6 +325,10 @@ fn jj_workspaces_without_recorded_roots_follow_trunk_scope() -> TestResult {
     // Workspaces created before jj 0.38 record no root paths; emulate them.
     let index = main.path().join(".jj/repo/workspace_store/index");
     if !index.exists() {
+        assert!(
+            std::env::var_os("GOVCTL_TEST_REQUIRE_VCS").is_none(),
+            "jj no longer stores workspace roots at {index:?}"
+        );
         return Ok(());
     }
     std::fs::write(&index, b"")?;
