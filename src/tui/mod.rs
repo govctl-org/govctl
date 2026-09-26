@@ -1,7 +1,7 @@
 //! TUI module for interactive dashboard.
 //!
-//! This module provides an interactive terminal UI for browsing
-//! RFCs, ADRs, and Work Items.
+//! This module provides a read-only terminal UI for browsing governed
+//! artifacts, search results, loops, and diagnostics.
 
 mod app;
 mod dag;

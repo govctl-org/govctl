@@ -283,22 +283,22 @@ status = "pending"
 category = "chore"
 ```
 
-| Field                                    | Required | Type   | Description                                         |
-| ---------------------------------------- | -------- | ------ | --------------------------------------------------- |
-| `govctl.id`                              | yes      | string | Unique identifier `WI-YYYY-MM-DD-NNN`               |
-| `govctl.title`                           | yes      | string | Work item title                                     |
-| `govctl.status`                          | yes      | enum   | `queue` \| `active` \| `done` \| `cancelled`        |
-| `govctl.created`                         | yes      | date   | Creation date                                       |
-| `govctl.started`                         | no       | date   | When work began                                     |
-| `govctl.completed`                       | no       | date   | When work finished                                  |
-| `govctl.refs`                            | no       | array  | Cross-references                                    |
-| `govctl.depends_on`                      | no       | array  | Blocking dependencies on other work items           |
-| `content.description`                    | yes      | string | Work description                                    |
-| `content.notes`                          | no       | array  | Ad-hoc key points (string array)                    |
-| `content.acceptance_criteria`            | no       | array  | Completion checklist                                |
-| `content.acceptance_criteria[].text`     | yes      | string | Criterion text                                      |
-| `content.acceptance_criteria[].status`   | no       | enum   | `pending` \| `done` \| `cancelled`                  |
-| `content.acceptance_criteria[].category` | no       | enum   | Changelog category (`add` \| `fix` \| `chore` etc.) |
+| Field                                    | Required | Type   | Description                                             |
+| ---------------------------------------- | -------- | ------ | ------------------------------------------------------- |
+| `govctl.id`                              | yes      | string | Unique identifier `WI-YYYY-MM-DD-NNN`                   |
+| `govctl.title`                           | yes      | string | Work item title                                         |
+| `govctl.status`                          | yes      | enum   | `queue` \| `active` \| `done` \| `cancelled`            |
+| `govctl.created`                         | yes      | date   | Creation date                                           |
+| `govctl.started`                         | no       | date   | When work began                                         |
+| `govctl.completed`                       | no       | date   | When work finished                                      |
+| `govctl.refs`                            | no       | array  | Cross-references                                        |
+| `govctl.depends_on`                      | no       | array  | Blocking dependencies on other work items               |
+| `content.description`                    | yes      | string | Work description                                        |
+| `content.notes`                          | no       | array  | Ad-hoc key points (string array)                        |
+| `content.acceptance_criteria`            | no       | array  | Completion checklist                                    |
+| `content.acceptance_criteria[].text`     | yes      | string | Criterion text                                          |
+| `content.acceptance_criteria[].status`   | no       | enum   | `pending` \| `done` \| `cancelled`                      |
+| `content.acceptance_criteria[].category` | no       | enum   | Changelog category (`added` \| `fixed` \| `chore` etc.) |
 
 ### Local Loop State (TOML)
 
@@ -394,7 +394,7 @@ Per ADR-0003, all rendered markdown files include a deterministic hash signature
 
 ### Purpose
 
-Rendered markdown files are **read-only projections** of the authoritative JSON/TOML sources. The signature ensures:
+Rendered markdown files are **read-only projections** of the authoritative TOML sources. The signature ensures:
 
 1. **SSOT enforcement**: Edits to markdown are detected and rejected
 2. **Tamper detection**: Any modification breaks the signature

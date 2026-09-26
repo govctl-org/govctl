@@ -44,8 +44,6 @@ pub use matching::{MatchOptions, MatchOptionsOwned};
 use self::request::resolve_owned_value;
 pub(crate) use value_codec::parse_requirement_binding as parse_conformance_requirement;
 
-// Field normalization is centralized in edit_engine::plan_request.
-
 pub(super) fn serialize_edit_doc<T: serde::Serialize>(
     value: &T,
     id: &str,

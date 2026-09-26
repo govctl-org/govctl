@@ -29,11 +29,11 @@ fn test_expand_inline_refs_adr() {
 
 #[test]
 fn test_expand_inline_refs_multiple() {
-    let text = "See [[RFC-0000]] and [[ADR-0042]] for context.";
+    let text = "See [[RFC-0000]] and [[ADR-0063]] for context.";
     let result = expand_inline_refs(text, DEFAULT_PATTERN);
     assert_eq!(
         result,
-        "See [RFC-0000](../rfc/RFC-0000.md) and [ADR-0042](../adr/ADR-0042.md) for context."
+        "See [RFC-0000](../rfc/RFC-0000.md) and [ADR-0063](../adr/ADR-0063.md) for context."
     );
 }
 

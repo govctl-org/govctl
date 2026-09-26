@@ -64,9 +64,12 @@ gov/
 ├── adr/              # ADR sources (TOML)
 ├── work/             # Work item sources (TOML)
 ├── guard/            # Verification guards (TOML)
+├── conformance/      # Conformance Case sources (TOML)
 ├── schema/           # JSON schemas for validation
-└── releases.toml     # Release history
+└── templates/        # Artifact templates
 ```
+
+`gov/releases.toml` is created by the first `govctl release`.
 
 All governance artifacts use TOML with `#:schema` comment headers for IDE discoverability:
 
@@ -86,20 +89,20 @@ status = "proposed"
 govctl rfc new "Feature Title"
 ```
 
-This creates `gov/rfc/RFC-0000/rfc.toml` with the RFC metadata.
+This creates `gov/rfc/RFC-0001/rfc.toml` with the RFC metadata.
 
 ## Add a Clause
 
 RFCs are composed of clauses — atomic units of specification:
 
 ```bash
-govctl clause new RFC-0000:C-SCOPE "Scope" -s "Specification" -k normative
+govctl clause new RFC-0001:C-SCOPE "Scope" -s "Specification" -k normative
 ```
 
 ## Edit Clause Content
 
 ```bash
-govctl clause edit RFC-0000:C-SCOPE text --set --stdin <<'EOF'
+govctl clause edit RFC-0001:C-SCOPE text --set --stdin <<'EOF'
 The feature MUST do X.
 The feature SHOULD do Y.
 EOF
@@ -109,10 +112,10 @@ EOF
 
 ```bash
 # Styled markdown to stdout
-govctl rfc show RFC-0000
+govctl rfc show RFC-0001
 govctl adr show ADR-0001
 govctl work show WI-2026-01-17-001
-govctl clause show RFC-0000:C-SCOPE
+govctl clause show RFC-0001:C-SCOPE
 
 # Interactive TUI dashboard
 govctl tui

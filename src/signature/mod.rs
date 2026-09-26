@@ -3,7 +3,7 @@
 //! Implements [[ADR-0003]] deterministic hash signatures.
 //!
 //! Signatures ensure rendered markdown files are read-only projections
-//! of the authoritative JSON/TOML sources. Any direct edit to the markdown
+//! of the authoritative TOML sources. Any direct edit to the markdown
 //! will break the signature, which is detected by `govctl check`.
 
 mod canonical_json;

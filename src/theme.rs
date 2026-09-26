@@ -12,7 +12,7 @@ pub enum SemanticColor {
     Success,
     /// In-progress / pending states: draft, proposed, queue, spec
     Warning,
-    /// Ended / inactive states: deprecated, superseded, cancelled
+    /// Ended / inactive states: deprecated, rejected, superseded, cancelled
     Muted,
     /// Informational accents: IDs, paths, test phase
     Info,

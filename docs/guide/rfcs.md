@@ -19,7 +19,8 @@ An RFC consists of:
 - **Metadata** (`rfc.toml`) — ID, title, status, phase, version, owners
 - **Clauses** (`clauses/*.toml`) — Atomic units of specification
 
-The TOML files use `#:schema` headers and a `[govctl]` + `[content]` layout:
+`rfc.toml` uses a `#:schema` header, `[govctl]` metadata, and ordered
+`[[sections]]` that list clause files:
 
 ```toml
 #:schema ../../schema/rfc.schema.json
@@ -34,8 +35,13 @@ owners = ["@you"]
 created = "2026-03-17"
 refs = []
 
-[content]
-summary = "Brief summary of this RFC."
+[[sections]]
+title = "Summary"
+clauses = ["clauses/C-SUMMARY.toml"]
+
+[[sections]]
+title = "Specification"
+clauses = ["clauses/C-SCOPE.toml"]
 ```
 
 ## Tagging RFCs
@@ -108,7 +114,7 @@ Options:
 - `-s, --section` — Section name (e.g., "Specification", "Rationale")
 - `-k, --kind` — `normative` (binding) or `informative` (explanatory)
 
-Clause files use the same `[govctl]` + `[content]` layout:
+Clause files use a `[govctl]` + `[content]` layout:
 
 ```toml
 #:schema ../../../schema/clause.schema.json

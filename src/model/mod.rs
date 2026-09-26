@@ -4,6 +4,9 @@
 //! - RFCs with clauses ([[RFC-0000:C-RFC-DEF]])
 //! - ADRs ([[RFC-0000:C-ADR-DEF]])
 //! - Work Items ([[RFC-0000:C-WORK-DEF]])
+//! - Guards ([[RFC-0000:C-GUARD-DEF]])
+//! - Releases ([[RFC-0000:C-RELEASE-DEF]])
+//! - Conformance Cases ([[RFC-0008:C-CONFORMANCE-CASE]])
 //!
 //! Lifecycle state machines per [[RFC-0001]].
 

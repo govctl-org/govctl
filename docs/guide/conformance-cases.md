@@ -37,9 +37,9 @@ govctl conformance get CONF-CACHE-INVALIDATION-BEHAVIOR requirements
 govctl conformance edit CONF-CACHE-INVALIDATION-BEHAVIOR \
   requirements --add RFC-0012:C-CACHE-FALLBACK@1.2.0
 govctl conformance edit CONF-CACHE-INVALIDATION-BEHAVIOR \
-  requirements[0].version --set 1.3.0
+  "requirements[0].version" --set 1.3.0
 govctl conformance edit CONF-CACHE-INVALIDATION-BEHAVIOR \
-  requirements[1] --remove
+  "requirements[1]" --remove
 ```
 
 Case mutations validate the complete prospective trace graph before writing.

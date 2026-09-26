@@ -117,6 +117,11 @@ Code first -> patch RFC/ADR afterward to match what happened
 That pattern turns governance into a log of implementation choices instead of a
 source of authority.
 
+The rule covers what an RFC or ADR already decided. Choices they deliberately
+leave open belong to implementation; when one of those turns out to be a
+significant design decision, record it in an ADR once the code has produced the
+evidence.
+
 ## Work Item Execution
 
 Use Work Items for non-trivial implementation even when no new RFC or ADR is
@@ -253,8 +258,8 @@ Use reviewer agents for semantic checks:
 
 - `rfc-reviewer` catches vague requirements and implementation details inside
   RFCs.
-- `adr-reviewer` catches missing alternatives, dishonest consequences, and ADRs
-  that invent requirements.
+- `adr-reviewer` catches fabricated alternatives, dishonest consequences,
+  premature low-level choices, and ADRs that invent requirements.
 - `wi-reviewer` catches vague criteria, transient notes, local requirements, and
   over-split Work Items.
 - `compliance-checker` audits implementation against normative RFC clauses and

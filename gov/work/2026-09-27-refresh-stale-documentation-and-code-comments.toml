@@ -1,0 +1,22 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-27-001"
+title = "Refresh stale documentation and code comments"
+status = "done"
+created = "2026-09-27"
+started = "2026-09-27"
+completed = "2026-09-27"
+
+[content]
+description = "Project documentation and source comments have drifted from the current CLI, artifact formats, and governing artifacts since the last documentation refresh; for example, source comments still cite superseded ADRs and the user guides describe artifact layouts that no longer exist. Audit the README, agent guide, introduction, user guides, schema notes, templates, and source comments against current behavior, and correct content that is stale, contradicts the implementation, or cites superseded artifacts. Rewrites for style and new documentation are out of scope."
+
+[[content.acceptance_criteria]]
+text = "README, agent guide, introduction, user guides, schema notes, and templates match current CLI behavior and artifact formats"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "source comments no longer cite superseded artifacts or describe behavior the code no longer has"
+status = "done"
+category = "chore"

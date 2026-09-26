@@ -3,8 +3,9 @@
 //! Implements the primary-workspace determination of
 //! [[RFC-0010:C-COMMAND-SCOPE]] and the detection degradation rules of
 //! [[RFC-0010:C-REGISTRY]]: no version control is silently single-checkout,
-//! while present-but-unreadable metadata or an unresolvable primary name
-//! degrades toward caution with a warning.
+//! while present-but-unreadable metadata, an unidentifiable current
+//! workspace, or an unresolvable primary name degrades toward caution with a
+//! warning.
 
 use crate::config::Config;
 use std::path::{Path, PathBuf};

@@ -18,14 +18,18 @@ Do not invent behavior, skip governance gates, or deviate silently from specific
 
 ```
 .claude/                ← Agent configuration (SSOT for skills and agents)
-├── skills/                Workflow skills (init, discuss, spec, gov, quick, commit, migrate, detach) + writer skills (rfc-writer, adr-writer, wi-writer, guard-writer)
+├── skills/                Workflow skills (init, discuss, spec, gov, quick, commit, migrate, detach) + writer skills (rfc-writer, adr-writer, wi-writer, guard-writer) + reference skill (decision-analysis)
 └── agents/                Reviewer agents (rfc-reviewer, adr-reviewer, wi-reviewer, compliance-checker)
 
 gov/                    ← Source of truth (governance artifacts)
 ├── rfc/                   RFC directories with rfc.toml + clauses/*.toml
 ├── adr/                   ADRs (TOML files)
 ├── work/                  Work items (TOML files)
+├── guard/                 Verification guards (TOML files)
+├── conformance/           Conformance cases (TOML files)
+├── releases.toml          Release records
 ├── schema/                JSON/TOML schemas
+├── templates/             Artifact templates
 └── config.toml            Project configuration
 
 docs/                   ← User guide plus rendered projections

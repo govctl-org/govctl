@@ -1,4 +1,4 @@
-//! Edit path rules generated from JSON SSOT (ADR-0030).
+//! Edit path rules generated from JSON SSOT ([[ADR-0031]]).
 
 use crate::diagnostic::DiagnosticCode;
 

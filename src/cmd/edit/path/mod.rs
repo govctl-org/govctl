@@ -76,7 +76,7 @@ pub fn parse_field_path(input: &str) -> DiagnosticResult<FieldPath> {
     parse_raw_field_path(input)
 }
 
-/// Parse a field path string into raw segments, without alias normalization.
+/// Parse a field path string into raw segments.
 pub fn parse_raw_field_path(input: &str) -> DiagnosticResult<FieldPath> {
     if input.is_empty() {
         return Err(Diagnostic::new(

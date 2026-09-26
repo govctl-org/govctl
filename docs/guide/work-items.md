@@ -62,6 +62,9 @@ queue → active → done
     ↘        ↘ cancelled
 ```
 
+An unreleased `done` work item can move back to `active` to correct a premature
+completion. Released work items stay `done`.
+
 ### Move Between States
 
 ```bash
@@ -265,13 +268,10 @@ govctl work edit WI-2026-01-17-001 "acceptance_criteria[0].category" --set fixed
 
 ## Removing Items
 
-Remove items from array fields using flexible matching:
+Remove items from array fields by exact value, index, or regex:
 
 ```bash
 # Exact value
-govctl work edit WI-2026-01-17-001 notes --remove "edge case"
-
-# Another exact value
 govctl work edit WI-2026-01-17-001 notes --remove "Discovered edge case in validation"
 
 # By index (0-based)

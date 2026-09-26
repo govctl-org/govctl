@@ -1,4 +1,4 @@
-//! TOML parsing for ADR, Work Item, Guard, and Release files.
+//! TOML parsing for ADR, Work Item, Guard, Conformance Case, and Release files.
 
 mod toml_io;
 

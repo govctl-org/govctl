@@ -10,6 +10,10 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Fixed
+
+- README, agent guide, introduction, user guides, schema notes, and templates match current CLI behavior and artifact formats (WI-2026-09-27-001)
+
 ## [0.20.3] - 2026-09-27
 
 0.20.3 fixes trunk-scope enforcement in jj repositories whose workspaces were

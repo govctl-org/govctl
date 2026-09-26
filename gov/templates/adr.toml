@@ -1,13 +1,13 @@
 # Architecture Decision Record
 #
-# Status lifecycle: proposed → accepted → deprecated
+# Status lifecycle: proposed → accepted → superseded
 #                      ↓
-#                   superseded
+#                   rejected
 #
 # Fields:
 #   - id: Unique identifier (ADR-NNNN)
 #   - title: Short descriptive title
-#   - status: proposed | accepted | superseded | deprecated
+#   - status: proposed | accepted | rejected | superseded
 #   - date: Creation date (YYYY-MM-DD)
 #   - superseded_by: ID of superseding ADR (if superseded)
 #   - refs: References to related RFCs, ADRs, or external docs
