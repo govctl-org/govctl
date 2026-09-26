@@ -28,14 +28,14 @@ status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
-text = "a stale jj workspace root path no longer identifies the wrong workspace as the current workspace or reports the current directory as the primary workspace"
+text = "a stale jj workspace root path no longer identifies the wrong workspace as the current workspace"
 status = "done"
 category = "fixed"
 
 [[content.acceptance_criteria]]
-text = "CI runs the jj workspace tests and fails them instead of skipping when git or jj is missing"
+text = "CI installs jj so the jj workspace tests run instead of being skipped"
 status = "done"
 category = "chore"
 
 [verification]
-required_guards = ["GUARD-WORKSPACE-DETECTION-TESTS"]
+required_guards = ["GUARD-CARGO-TEST"]

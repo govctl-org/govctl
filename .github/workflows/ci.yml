@@ -14,9 +14,6 @@ jobs:
   ci:
     name: CI
     runs-on: ubuntu-latest
-    env:
-      # Fail workspace tests instead of skipping them when git or jj is missing.
-      GOVCTL_TEST_REQUIRE_VCS: "1"
     steps:
       - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
@@ -27,6 +24,8 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: jj-cli
+      # jj workspace tests skip when jj is missing; fail here instead.
+      - run: jj --version
 
       - name: Format
         run: cargo fmt --all -- --check

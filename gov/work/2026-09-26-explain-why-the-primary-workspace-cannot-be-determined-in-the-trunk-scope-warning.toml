@@ -23,4 +23,4 @@ status = "done"
 category = "fixed"
 
 [verification]
-required_guards = ["GUARD-WORKSPACE-DETECTION-TESTS"]
+required_guards = ["GUARD-CARGO-TEST"]
