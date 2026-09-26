@@ -271,17 +271,30 @@ fn jj_context(dir: &Path, config: &Config) -> WorkspaceContext {
     }
 }
 
-/// jj workspace names with their canonical roots, as reported by
-/// `jj workspace list`. A template with a tab separator keeps parsing exact
-/// even for workspace names or roots containing spaces.
-fn jj_workspaces(dir: &Path) -> Option<Vec<(String, PathBuf)>> {
+/// One entry of `jj workspace list`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct JjWorkspace {
+    name: String,
+    /// Canonical root, or `None` when jj has no usable root for it:
+    /// workspaces created before jj 0.38 never recorded one, and a recorded
+    /// root goes stale when its checkout is moved or deleted.
+    root: Option<PathBuf>,
+    /// Whether this workspace's working-copy commit is the invoking
+    /// workspace's working-copy commit. More than one workspace can match
+    /// when several have the same commit checked out.
+    at_current_commit: bool,
+}
+
+/// Workspaces reported by `jj workspace list`. A template with tab
+/// separators keeps parsing exact even for names or roots containing spaces.
+fn jj_workspaces(dir: &Path) -> Option<Vec<JjWorkspace>> {
     let output = std::process::Command::new("jj")
         .args([
             "--ignore-working-copy",
             "workspace",
             "list",
             "-T",
-            r#"name ++ "\t" ++ root ++ "\n""#,
+            r#"name ++ "\t" ++ if(target.current_working_copy(), "1", "0") ++ "\t" ++ root ++ "\n""#,
         ])
         .current_dir(dir)
         .output()
@@ -290,39 +303,65 @@ fn jj_workspaces(dir: &Path) -> Option<Vec<(String, PathBuf)>> {
         return None;
     }
     let stdout = String::from_utf8_lossy(&output.stdout);
-    let mut workspaces = Vec::new();
-    for line in stdout.lines() {
-        let (name, root) = line.split_once('\t')?;
-        // A workspace whose checkout was deleted still appears in the list;
-        // skip it rather than failing the whole lookup.
-        if let Ok(root) = std::fs::canonicalize(root) {
-            workspaces.push((name.to_string(), root));
-        }
-    }
-    Some(workspaces)
+    stdout.lines().map(parse_jj_workspace).collect()
+}
+
+fn parse_jj_workspace(line: &str) -> Option<JjWorkspace> {
+    let (name, rest) = line.split_once('\t')?;
+    let (current, root) = rest.split_once('\t')?;
+    Some(JjWorkspace {
+        name: name.to_string(),
+        root: std::fs::canonicalize(root).ok(),
+        at_current_commit: current == "1",
+    })
 }
 
 /// Classify the jj workspace rooted at `current_root`: the primary is the
 /// configured workspace name, or jj's initial `default` workspace when
 /// unconfigured — [[RFC-0010:C-COMMAND-SCOPE]].
+///
+/// The current workspace is found by its root. When no root matches, a
+/// single workspace at the invoking working-copy commit identifies it
+/// instead; anything more ambiguous resolves toward caution.
 fn classify_jj(
     config: &Config,
     current_root: &Path,
-    workspaces: &[(String, PathBuf)],
+    workspaces: &[JjWorkspace],
 ) -> WorkspaceContext {
-    let Some((current_name, _)) = workspaces.iter().find(|(_, root)| root == current_root) else {
+    let Some(current) = current_jj_workspace(current_root, workspaces) else {
         return WorkspaceContext::Undeterminable;
     };
     let primary_name = config.workspace.primary.as_deref().unwrap_or("default");
-    if current_name == primary_name {
+    if current.name == primary_name {
         return WorkspaceContext::Primary;
     }
-    match workspaces.iter().find(|(name, _)| name == primary_name) {
-        Some((_, primary)) => WorkspaceContext::Secondary {
+    match workspaces.iter().find(|ws| ws.name == primary_name) {
+        Some(JjWorkspace {
+            root: Some(primary),
+            ..
+        }) => WorkspaceContext::Secondary {
             primary: primary.clone(),
         },
-        // The configured or fallback primary name is unknown to the repo.
-        None => WorkspaceContext::Undeterminable,
+        // The primary name is unknown to the repo, or its root is unknown so
+        // the refusal could not identify it.
+        _ => WorkspaceContext::Undeterminable,
+    }
+}
+
+fn current_jj_workspace<'a>(
+    current_root: &Path,
+    workspaces: &'a [JjWorkspace],
+) -> Option<&'a JjWorkspace> {
+    if let Some(ws) = workspaces
+        .iter()
+        .find(|ws| ws.root.as_deref() == Some(current_root))
+    {
+        return Some(ws);
+    }
+    let mut candidates = workspaces.iter().filter(|ws| ws.at_current_commit);
+    match (candidates.next(), candidates.next()) {
+        (Some(ws), None) => Some(ws),
+        _ => None,
     }
 }
 
@@ -546,6 +585,84 @@ mod tests {
         // A configured name unknown to the repo cannot be determined.
         config.workspace.primary = Some("nonexistent".to_string());
         assert_eq!(detect(&main, &config), WorkspaceContext::Undeterminable);
+    }
+
+    fn jj_ws(name: &str, root: Option<&str>, at_current_commit: bool) -> JjWorkspace {
+        JjWorkspace {
+            name: name.to_string(),
+            root: root.map(PathBuf::from),
+            at_current_commit,
+        }
+    }
+
+    #[test]
+    fn jj_unrecorded_root_is_identified_by_current_commit() {
+        let config = Config::default();
+        let here = Path::new("/repo/main");
+        // Workspaces created before jj 0.38 have no recorded root.
+        let only_default = [jj_ws("default", None, true)];
+        assert_eq!(
+            classify_jj(&config, here, &only_default),
+            WorkspaceContext::Primary
+        );
+
+        let secondary_unrecorded = [
+            jj_ws("default", Some("/repo/main"), false),
+            jj_ws("second", None, true),
+        ];
+        assert_eq!(
+            classify_jj(&config, Path::new("/repo/second"), &secondary_unrecorded),
+            WorkspaceContext::Secondary {
+                primary: PathBuf::from("/repo/main")
+            }
+        );
+    }
+
+    #[test]
+    fn jj_unidentifiable_workspace_or_primary_root_is_undeterminable() {
+        let config = Config::default();
+        let here = Path::new("/repo/second");
+        // Two workspaces at the invoking commit cannot be told apart.
+        let ambiguous = [jj_ws("default", None, true), jj_ws("second", None, true)];
+        assert_eq!(
+            classify_jj(&config, here, &ambiguous),
+            WorkspaceContext::Undeterminable
+        );
+        // The current workspace is secondary but the primary cannot be named.
+        let primary_unrecorded = [jj_ws("default", None, false), jj_ws("second", None, true)];
+        assert_eq!(
+            classify_jj(&config, here, &primary_unrecorded),
+            WorkspaceContext::Undeterminable
+        );
+    }
+
+    #[test]
+    fn jj_workspaces_without_recorded_roots_classify_by_name() {
+        if !tool_available("jj") {
+            return;
+        }
+        let temp = tempfile::TempDir::new().unwrap();
+        let main = temp.path().join("main");
+        std::fs::create_dir(&main).unwrap();
+        init_jj_repo(&main);
+        let secondary = temp.path().join("secondary");
+        run(
+            &main,
+            "jj",
+            &["workspace", "add", secondary.to_str().unwrap()],
+        );
+        // Emulate workspaces created before jj 0.38, which recorded no roots.
+        let index = main.join(".jj/repo/workspace_store/index");
+        if !index.exists() {
+            return;
+        }
+        std::fs::write(&index, b"").unwrap();
+
+        assert_eq!(detect(&main, &Config::default()), WorkspaceContext::Primary);
+        assert_eq!(
+            detect(&secondary, &Config::default()),
+            WorkspaceContext::Undeterminable
+        );
     }
 
     /// Initialize a non-colocated jj repo with a described initial change.

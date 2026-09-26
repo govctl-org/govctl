@@ -1,0 +1,36 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-26-001"
+title = "Identify the current jj workspace when its root path is unrecorded"
+status = "done"
+created = "2026-09-26"
+started = "2026-09-26"
+completed = "2026-09-26"
+refs = ["RFC-0010:C-COMMAND-SCOPE"]
+
+[content]
+description = "Trunk-scoped commands report that trunk-scope enforcement is inactive in jj repositories whose workspaces were created before jj 0.38, because such workspaces have no recorded root path. Workspace classification currently recognizes the current workspace only by matching its root path, so it cannot identify the workspace at all and falls back to the enforcement-inactive warning, even in the jj `default` workspace that RFC-0010 names as the fallback primary. The resulting warning also points users at `workspace.primary`, which cannot help. Classify the current jj workspace by identity when its root path is unavailable, so that enforcement follows the command-scope rules instead of silently degrading."
+
+[[content.acceptance_criteria]]
+text = "trunk-scoped commands run without the enforcement-inactive warning in the primary jj workspace when workspace root paths are unrecorded"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "trunk-scoped commands refuse to run in a secondary jj workspace whose root path is unrecorded when the primary workspace root is known"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "trunk-scope enforcement degrades to the warning when the current jj workspace or an unrecorded primary workspace root cannot be identified unambiguously"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "workspace classification tests cover jj workspaces without recorded root paths"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]
