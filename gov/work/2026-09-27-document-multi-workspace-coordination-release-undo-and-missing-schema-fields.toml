@@ -26,3 +26,8 @@ category = "added"
 text = "the schema notes list the work item verification table, RFC refs, tags, and signature fields, and the Guard and Conformance Case identifier formats"
 status = "done"
 category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "the schema notes document the Guard and Conformance Case file fields"
+status = "done"
+category = "fixed"

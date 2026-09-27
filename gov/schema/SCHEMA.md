@@ -309,6 +309,61 @@ category = "chore"
 | `verification.waivers[].guard`           | yes      | string | Waived guard ID                                          |
 | `verification.waivers[].reason`          | yes      | string | Why the guard is waived                                  |
 
+### Guard (TOML)
+
+```toml
+[govctl]
+id = "GUARD-CARGO-TEST"
+title = "cargo test passes"
+refs = ["RFC-0000"]
+tags = ["testing"]
+
+[check]
+command = "cargo test"
+timeout_secs = 300
+pattern = "test result: ok"
+```
+
+| Field                | Required | Type    | Description                                                               |
+| -------------------- | -------- | ------- | ------------------------------------------------------------------------- |
+| `govctl.id`          | yes      | string  | Unique identifier `GUARD-NAME`                                            |
+| `govctl.title`       | yes      | string  | Guard title                                                               |
+| `govctl.refs`        | no       | array   | Cross-references                                                          |
+| `govctl.tags`        | no       | array   | Controlled-vocabulary tags from `gov/config.toml`                         |
+| `check.command`      | yes      | string  | Non-interactive command run from the project root                         |
+| `check.timeout_secs` | no       | integer | Timeout in seconds (default 300)                                          |
+| `check.pattern`      | no       | string  | Case-insensitive regex that must match combined stdout and stderr to pass |
+
+### Conformance Case (TOML)
+
+```toml
+[govctl]
+id = "CONF-CACHE-EXPIRY"
+title = "Cache expiry"
+tags = ["caching"]
+
+[case]
+path = "tests/cache.rs"
+selector = "expired_entries_are_evicted"
+guards = ["GUARD-CARGO-TEST"]
+
+[[case.requirements]]
+ref = "RFC-0001:C-CACHE-EXPIRY"
+version = "0.1.0"
+```
+
+| Field                         | Required | Type   | Description                                                       |
+| ----------------------------- | -------- | ------ | ----------------------------------------------------------------- |
+| `govctl.id`                   | yes      | string | Unique identifier `CONF-NAME`                                     |
+| `govctl.title`                | yes      | string | Case title                                                        |
+| `govctl.tags`                 | no       | array  | Controlled-vocabulary tags from `gov/config.toml`                 |
+| `case.path`                   | yes      | string | Repository-relative file outside the gov root                     |
+| `case.selector`               | yes      | string | Project-defined locator within the file; `*` means the whole file |
+| `case.requirements`           | yes      | array  | Requirement bindings                                              |
+| `case.requirements[].ref`     | yes      | string | Fully qualified RFC Clause ID                                     |
+| `case.requirements[].version` | yes      | string | Semantic version of the owning RFC the Case applies to            |
+| `case.guards`                 | no       | array  | Guard IDs that verify the scenario                                |
+
 ### Local Loop State (TOML)
 
 Loop execution state is local runtime data under `.govctl/loops/<loop-id>/`, not a governed work item field. `loop-state.schema.json` defines `state.toml`; `loop-round.schema.json` defines loop-level round records under `rounds/round-NNN.toml`.

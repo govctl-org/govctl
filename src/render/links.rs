@@ -5,7 +5,7 @@ use crate::reference_pattern;
 /// Supports:
 /// - RFC refs: `RFC-0000` -> `[RFC-0000](../rfc/RFC-0000.md)`
 /// - Clause refs: `RFC-0000:C-NAME` -> `[RFC-0000:C-NAME](../rfc/RFC-0000.md#rfc-0000c-name)`
-/// - ADR refs: `ADR-0042` -> `[ADR-0042](../adr/ADR-0042.md)`
+/// - ADR refs: `ADR-0031` -> `[ADR-0031](../adr/ADR-0031.md)`
 /// - Work Item refs: `WI-2026-01-17-001` -> `[WI-2026-01-17-001](../work/WI-2026-01-17-001.md)`
 fn ref_link(ref_id: &str) -> String {
     ref_link_with_base(ref_id, "..")

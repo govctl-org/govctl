@@ -19,6 +19,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 - README, agent guide, introduction, user guides, schema notes, and templates match current CLI behavior and artifact formats (WI-2026-09-27-001)
 - the schema notes list the work item verification table, RFC refs, tags, and signature fields, and the Guard and Conformance Case identifier formats (WI-2026-09-27-002)
+- the schema notes document the Guard and Conformance Case file fields (WI-2026-09-27-002)
 
 ## [0.20.3] - 2026-09-27
 
