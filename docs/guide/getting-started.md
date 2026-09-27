@@ -253,6 +253,17 @@ govctl release 0.2.0 --date 2026-04-15
 
 This records the release in `gov/releases.toml` and makes those work items available for changelog generation.
 
+To correct a release cut before publishing, undo the newest one by naming its
+version:
+
+```bash
+govctl release undo 0.2.0
+```
+
+Only the newest release can be undone, and only when the version matches. Its
+work items stay `done` and become unreleased again. Undo does not touch
+`CHANGELOG.md`, Git tags, or published packages.
+
 ## Adopting govctl in an Existing Project
 
 `govctl init` is safe to run in existing repositories — it only creates the `gov/` directory structure alongside existing files.

@@ -1,0 +1,28 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-27-002"
+title = "Document multi-workspace coordination, release undo, and missing schema fields"
+status = "done"
+created = "2026-09-27"
+started = "2026-09-27"
+completed = "2026-09-27"
+refs = ["RFC-0010"]
+
+[content]
+description = "The user guides do not describe the multi-workspace coordination that [[RFC-0010]] added (artifact claims, the primary workspace and `workspace.primary`, and trunk-scoped commands with their refusal and warning), nor how to undo the latest release cut. The schema notes also omit the work item verification table, several RFC metadata fields, and the Guard and Conformance Case identifier formats. Document these for users from the current RFCs and CLI help, without restating normative clauses."
+
+[[content.acceptance_criteria]]
+text = "a user guide page explains artifact claims, the primary workspace, and trunk-scoped commands for repositories with parallel workspaces"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "the getting-started guide shows how to undo the latest release cut"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "the schema notes list the work item verification table, RFC refs, tags, and signature fields, and the Guard and Conformance Case identifier formats"
+status = "done"
+category = "fixed"

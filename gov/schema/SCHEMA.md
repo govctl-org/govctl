@@ -13,12 +13,14 @@ This document defines the unified data model for all govctl artifacts.
 
 ## Identifier Formats
 
-| Artifact  | Format              | Example             |
-| --------- | ------------------- | ------------------- |
-| RFC       | `RFC-NNNN`          | `RFC-0001`          |
-| Clause    | `C-NAME`            | `C-PHASE-ORDER`     |
-| ADR       | `ADR-NNNN`          | `ADR-0001`          |
-| Work Item | (see ID strategies) | `WI-2026-01-17-001` |
+| Artifact         | Format              | Example             |
+| ---------------- | ------------------- | ------------------- |
+| RFC              | `RFC-NNNN`          | `RFC-0001`          |
+| Clause           | `C-NAME`            | `C-PHASE-ORDER`     |
+| ADR              | `ADR-NNNN`          | `ADR-0001`          |
+| Work Item        | (see ID strategies) | `WI-2026-01-17-001` |
+| Guard            | `GUARD-NAME`        | `GUARD-CARGO-TEST`  |
+| Conformance Case | `CONF-NAME`         | `CONF-CACHE-EXPIRY` |
 
 **Full references** combine artifact IDs:
 
@@ -155,19 +157,22 @@ date = "2026-01-17"
 notes = "Initial release"
 ```
 
-| Field               | Required | Type   | Description                            |
-| ------------------- | -------- | ------ | -------------------------------------- |
-| `govctl.id`         | yes      | string | Unique identifier `RFC-NNNN`           |
-| `govctl.title`      | yes      | string | Human-readable title                   |
-| `govctl.version`    | yes      | string | Semantic version `X.Y.Z`               |
-| `govctl.status`     | yes      | enum   | `draft` \| `normative` \| `deprecated` |
-| `govctl.phase`      | yes      | enum   | `spec` \| `impl` \| `test` \| `stable` |
-| `govctl.owners`     | yes      | array  | List of responsible parties            |
-| `govctl.created`    | yes      | date   | Creation date                          |
-| `govctl.updated`    | no       | date   | Last modification date                 |
-| `govctl.supersedes` | no       | string | RFC ID this replaces                   |
-| `sections`          | yes      | array  | Ordered sections with clause refs      |
-| `changelog`         | no       | array  | Version history                        |
+| Field               | Required | Type   | Description                                                   |
+| ------------------- | -------- | ------ | ------------------------------------------------------------- |
+| `govctl.id`         | yes      | string | Unique identifier `RFC-NNNN`                                  |
+| `govctl.title`      | yes      | string | Human-readable title                                          |
+| `govctl.version`    | yes      | string | Semantic version `X.Y.Z`                                      |
+| `govctl.status`     | yes      | enum   | `draft` \| `normative` \| `deprecated`                        |
+| `govctl.phase`      | yes      | enum   | `spec` \| `impl` \| `test` \| `stable`                        |
+| `govctl.owners`     | yes      | array  | List of responsible parties                                   |
+| `govctl.created`    | yes      | date   | Creation date                                                 |
+| `govctl.updated`    | no       | date   | Last modification date                                        |
+| `govctl.supersedes` | no       | string | RFC ID this replaces                                          |
+| `govctl.refs`       | no       | array  | Cross-references                                              |
+| `govctl.tags`       | no       | array  | Controlled-vocabulary tags from `gov/config.toml`             |
+| `govctl.signature`  | no       | string | Content signature sealed on entry to `impl` (lifecycle-owned) |
+| `sections`          | yes      | array  | Ordered sections with clause refs                             |
+| `changelog`         | no       | array  | Version history                                               |
 
 ### Clause (TOML)
 
@@ -283,22 +288,26 @@ status = "pending"
 category = "chore"
 ```
 
-| Field                                    | Required | Type   | Description                                             |
-| ---------------------------------------- | -------- | ------ | ------------------------------------------------------- |
-| `govctl.id`                              | yes      | string | Unique identifier `WI-YYYY-MM-DD-NNN`                   |
-| `govctl.title`                           | yes      | string | Work item title                                         |
-| `govctl.status`                          | yes      | enum   | `queue` \| `active` \| `done` \| `cancelled`            |
-| `govctl.created`                         | yes      | date   | Creation date                                           |
-| `govctl.started`                         | no       | date   | When work began                                         |
-| `govctl.completed`                       | no       | date   | When work finished                                      |
-| `govctl.refs`                            | no       | array  | Cross-references                                        |
-| `govctl.depends_on`                      | no       | array  | Blocking dependencies on other work items               |
-| `content.description`                    | yes      | string | Work description                                        |
-| `content.notes`                          | no       | array  | Ad-hoc key points (string array)                        |
-| `content.acceptance_criteria`            | no       | array  | Completion checklist                                    |
-| `content.acceptance_criteria[].text`     | yes      | string | Criterion text                                          |
-| `content.acceptance_criteria[].status`   | no       | enum   | `pending` \| `done` \| `cancelled`                      |
-| `content.acceptance_criteria[].category` | no       | enum   | Changelog category (`added` \| `fixed` \| `chore` etc.) |
+| Field                                    | Required | Type   | Description                                              |
+| ---------------------------------------- | -------- | ------ | -------------------------------------------------------- |
+| `govctl.id`                              | yes      | string | Unique identifier `WI-YYYY-MM-DD-NNN`                    |
+| `govctl.title`                           | yes      | string | Work item title                                          |
+| `govctl.status`                          | yes      | enum   | `queue` \| `active` \| `done` \| `cancelled`             |
+| `govctl.created`                         | yes      | date   | Creation date                                            |
+| `govctl.started`                         | no       | date   | When work began                                          |
+| `govctl.completed`                       | no       | date   | When work finished                                       |
+| `govctl.refs`                            | no       | array  | Cross-references                                         |
+| `govctl.depends_on`                      | no       | array  | Blocking dependencies on other work items                |
+| `content.description`                    | yes      | string | Work description                                         |
+| `content.notes`                          | no       | array  | Ad-hoc key points (string array)                         |
+| `content.acceptance_criteria`            | no       | array  | Completion checklist                                     |
+| `content.acceptance_criteria[].text`     | yes      | string | Criterion text                                           |
+| `content.acceptance_criteria[].status`   | no       | enum   | `pending` \| `done` \| `cancelled`                       |
+| `content.acceptance_criteria[].category` | no       | enum   | Changelog category (`added` \| `fixed` \| `chore` etc.)  |
+| `verification.required_guards`           | no       | array  | Guard IDs required in addition to project default guards |
+| `verification.waivers`                   | no       | array  | Guards waived from the item's effective required set     |
+| `verification.waivers[].guard`           | yes      | string | Waived guard ID                                          |
+| `verification.waivers[].reason`          | yes      | string | Why the guard is waived                                  |
 
 ### Local Loop State (TOML)
 
