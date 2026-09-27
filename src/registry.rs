@@ -107,7 +107,8 @@ struct AuditEvent {
 /// lifetime of one artifact-creating command.
 ///
 /// All operations are non-fatal: a session with `inner == None` is either
-/// silently inactive (no VCS) or degraded (warning recorded in `warnings`).
+/// silently inactive (no VCS, or a dry-run preview) or degraded (warning
+/// recorded in `warnings`).
 pub struct ReservationSession {
     inner: Option<Active>,
     warnings: Vec<Diagnostic>,

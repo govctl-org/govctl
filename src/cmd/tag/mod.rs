@@ -1,7 +1,7 @@
 //! Tag management commands: new, delete, list.
 //!
 //! Implements controlled-vocabulary tag operations per [[RFC-0002:C-RESOURCES]].
-//! Tags are stored in gov/config.toml under [tags] allowed.
+//! Tags are stored in `gov/config.toml` under `[tags] allowed`.
 
 mod registry;
 
@@ -26,7 +26,7 @@ struct TagEntry {
     usage: usize,
 }
 
-/// Add a new allowed tag to config.toml [tags] allowed.
+/// Add a new allowed tag to `config.toml` `[tags] allowed`.
 pub fn tag_new(
     config: &Config,
     tag: &str,
@@ -57,7 +57,7 @@ pub fn tag_new(
     Ok(vec![])
 }
 
-/// Remove an allowed tag from config.toml [tags] allowed.
+/// Remove an allowed tag from `config.toml` `[tags] allowed`.
 /// Fails if any artifact still references the tag.
 pub fn tag_delete(
     config: &Config,

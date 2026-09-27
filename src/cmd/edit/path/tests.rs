@@ -61,7 +61,7 @@ fn test_parser_preserves_noncanonical_names() -> Result<(), Box<dyn std::error::
 }
 
 #[test]
-fn test_raw_parse_keeps_alias_token() -> Result<(), Box<dyn std::error::Error>> {
+fn test_raw_parse_keeps_unknown_field_token() -> Result<(), Box<dyn std::error::Error>> {
     let p = parse_raw_field_path("alt[0]")?;
     assert_eq!(p.segments[0].name, "alt");
     Ok(())

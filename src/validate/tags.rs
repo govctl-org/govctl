@@ -5,7 +5,7 @@ use crate::model::ProjectIndex;
 /// Validate that all artifact tags are in the allowed set and well-formed.
 ///
 /// Per [[RFC-0002:C-RESOURCES]] controlled-vocabulary tags: every tag used by an
-/// artifact must be listed in config.toml [tags] allowed, and each tag must match
+/// artifact must be listed in `config.toml` `[tags] allowed`, and each tag must match
 /// the format `^[a-z][a-z0-9-]*$`.
 pub(super) fn validate_artifact_tags(
     index: &ProjectIndex,

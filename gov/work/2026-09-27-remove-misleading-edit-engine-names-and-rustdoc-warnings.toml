@@ -1,0 +1,25 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-09-27-003"
+title = "Remove misleading edit-engine names and rustdoc warnings"
+status = "done"
+created = "2026-09-27"
+started = "2026-09-27"
+completed = "2026-09-27"
+
+[content]
+description = "After path aliases were removed, the edit engine still exposes a field-parsing helper named for canonicalization that performs none and takes an ignored artifact argument, several edit tests are named after alias rewriting that no longer exists, and the engine module calls itself a second version. Separately, `cargo doc` reports warnings where comment text such as `[tags]` and `<ID>` is read as intra-doc links or HTML. Rename or remove the misleading names and fix the doc formatting without changing behavior."
+
+[[content.acceptance_criteria]]
+text = "edit-engine function, test, and module names describe current behavior instead of removed alias canonicalization"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "cargo doc builds without warnings"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

@@ -129,6 +129,8 @@ pub(crate) enum Commands {
     /// Render artifacts to markdown from SSOT (bulk operation)
     ///
     /// For single-item render, use: govctl rfc render <ID>, govctl adr render <ID>, etc.
+    // The doc comment is CLI help text, so it stays plain rather than rustdoc markup.
+    #[allow(rustdoc::invalid_html_tags)]
     #[command(after_help = help::RENDER)]
     Render {
         /// What to render: rfc (default), adr, work, changelog, or all

@@ -65,8 +65,7 @@ fn test_plan_unknown_artifact_fails() -> Result<(), Box<dyn std::error::Error>> 
 }
 
 #[test]
-fn test_scope_aware_alias_only_applies_when_valid_for_artifact()
--> Result<(), Box<dyn std::error::Error>> {
+fn test_unknown_adr_field_is_rejected() -> Result<(), Box<dyn std::error::Error>> {
     let diag = match plan_request("ADR-0001", Some("desc")) {
         Ok(plan) => return Err(format!("unknown ADR field should fail, got {plan:?}").into()),
         Err(diag) => diag,
@@ -97,7 +96,7 @@ fn test_legacy_storage_prefix_is_rejected() -> Result<(), Box<dyn std::error::Er
 }
 
 #[test]
-fn test_unknown_alias_in_scope_is_not_rewritten() -> Result<(), Box<dyn std::error::Error>> {
+fn test_unknown_nested_work_field_is_rejected() -> Result<(), Box<dyn std::error::Error>> {
     let diag = match plan_request("WI-2026-01-01-001", Some("alt[0].pro[0]")) {
         Ok(plan) => {
             return Err(format!("unknown work item field should fail, got {plan:?}").into());

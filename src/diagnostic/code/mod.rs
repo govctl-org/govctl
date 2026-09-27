@@ -103,15 +103,15 @@ pub enum DiagnosticCode {
     E1007GuardStillReferenced,
 
     // Tag errors (E11xx)
-    /// Tag format is invalid (must match ^[a-z][a-z0-9-]*$)
+    /// Tag format is invalid (must match `^[a-z][a-z0-9-]*$`)
     E1101TagInvalidFormat,
-    /// Tag already exists in config.toml [tags] allowed
+    /// Tag already exists in `config.toml` `[tags] allowed`
     E1102TagAlreadyExists,
-    /// Tag not found in config.toml [tags] allowed
+    /// Tag not found in `config.toml` `[tags] allowed`
     E1103TagNotFound,
     /// Tag is still referenced by one or more artifacts
     E1104TagStillReferenced,
-    /// Artifact uses a tag not in config.toml [tags] allowed — per [[RFC-0002:C-RESOURCES]]
+    /// Artifact uses a tag not in `config.toml` `[tags] allowed` — per [[RFC-0002:C-RESOURCES]]
     E1105TagUnknown,
 
     // Loop state errors (E12xx)

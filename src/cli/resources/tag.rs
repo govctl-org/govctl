@@ -11,6 +11,8 @@ EXAMPLES:
 ")]
     New {
         /// Tag name (must match ^[a-z][a-z0-9-]*$)
+        // The doc comment is CLI help text, so it stays plain rather than rustdoc markup.
+        #[allow(rustdoc::broken_intra_doc_links)]
         tag: String,
     },
     /// Remove an allowed tag from config.toml (fails if any artifact uses it)

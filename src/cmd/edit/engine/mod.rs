@@ -1,4 +1,4 @@
-//! V2 edit engine planning pipeline (ADR-0031 foundation).
+//! Edit engine planning pipeline (ADR-0031 foundation).
 //!
 //! This module introduces a single entry point for edit request planning:
 //! `parse -> resolve -> classify`.
@@ -112,14 +112,6 @@ pub struct TargetPlan {
     pub target: Option<ResolvedTarget>,
 }
 
-/// Parse a canonical user field expression.
-pub fn parse_and_canonicalize_field(
-    _artifact: ArtifactType,
-    field: &str,
-) -> DiagnosticResult<FieldPath> {
-    path::parse_raw_field_path(field)
-}
-
 /// Build a command-handler-safe plan from command inputs.
 ///
 /// This function intentionally does not enforce verb/field capability checks;
@@ -138,9 +130,7 @@ fn plan_request_with_verb(
     verb: Option<Verb>,
 ) -> DiagnosticResult<TargetPlan> {
     let artifact = resolve_artifact(id)?;
-    let field_path = field
-        .map(|path| parse_and_canonicalize_field(artifact, path))
-        .transpose()?;
+    let field_path = field.map(path::parse_raw_field_path).transpose()?;
     let target = field_path
         .as_ref()
         .map(|field_path| resolve_target(artifact, field_path, id))
