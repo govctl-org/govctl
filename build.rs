@@ -39,7 +39,7 @@ fn main() {
     println!("cargo:rerun-if-changed=.claude/agents");
     println!("cargo:rerun-if-changed=.claude/hooks");
 
-    // Edit rules SSOT + schema (ADR-0030)
+    // Edit rules SSOT + schema (ADR-0031)
     println!("cargo:rerun-if-changed=gov/schema/edit-ops.schema.json");
     println!("cargo:rerun-if-changed=gov/schema/edit-ops.json");
     println!("cargo:rerun-if-changed=build_support/edit_ops_spec.rs");

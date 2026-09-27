@@ -10,17 +10,6 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
-### Added
-
-- a user guide page explains artifact claims, the primary workspace, and trunk-scoped commands for repositories with parallel workspaces (WI-2026-09-27-002)
-- the getting-started guide shows how to undo the latest release cut (WI-2026-09-27-002)
-
-### Fixed
-
-- README, agent guide, introduction, user guides, schema notes, and templates match current CLI behavior and artifact formats (WI-2026-09-27-001)
-- the schema notes list the work item verification table, RFC refs, tags, and signature fields, and the Guard and Conformance Case identifier formats (WI-2026-09-27-002)
-- the schema notes document the Guard and Conformance Case file fields (WI-2026-09-27-002)
-
 ## [0.20.3] - 2026-09-27
 
 0.20.3 fixes trunk-scope enforcement in jj repositories whose workspaces were

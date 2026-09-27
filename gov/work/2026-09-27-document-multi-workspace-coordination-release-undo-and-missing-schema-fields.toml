@@ -15,19 +15,19 @@ description = "The user guides do not describe the multi-workspace coordination 
 [[content.acceptance_criteria]]
 text = "a user guide page explains artifact claims, the primary workspace, and trunk-scoped commands for repositories with parallel workspaces"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "the getting-started guide shows how to undo the latest release cut"
 status = "done"
-category = "added"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "the schema notes list the work item verification table, RFC refs, tags, and signature fields, and the Guard and Conformance Case identifier formats"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "the schema notes document the Guard and Conformance Case file fields"
 status = "done"
-category = "fixed"
+category = "chore"

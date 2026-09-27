@@ -14,7 +14,7 @@ description = "Project documentation and source comments have drifted from the c
 [[content.acceptance_criteria]]
 text = "README, agent guide, introduction, user guides, schema notes, and templates match current CLI behavior and artifact formats"
 status = "done"
-category = "fixed"
+category = "chore"
 
 [[content.acceptance_criteria]]
 text = "source comments no longer cite superseded artifacts or describe behavior the code no longer has"
