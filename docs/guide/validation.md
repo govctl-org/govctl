@@ -169,6 +169,7 @@ govctl guard delete GUARD-MY-LINT
 
 ### Guard Behavior
 
+- A guard command runs in a non-login, non-interactive `bash` that inherits the environment of the process running govctl unchanged. Shell profile files are not loaded, so a guard uses the `PATH` and variables of the shell, agent, or CI job that invoked it. If a guard needs extra setup, put it in the command itself (for example, `source ./env.sh && make check`)
 - A guard **passes** when its command exits with code 0 (and matches `pattern` if specified)
 - A guard **fails** when the command exits non-zero, times out, or doesn't match the pattern
 - All guards must pass before `govctl work move <WI-ID> done` succeeds

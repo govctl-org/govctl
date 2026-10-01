@@ -10,6 +10,11 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Fixed
+
+- Guard commands receive the invoking process PATH with its original entry order, so a caller-prepended directory remains first (WI-2026-10-01-001)
+- Guard commands run without loading login-shell or user profile startup files (WI-2026-10-01-001)
+
 ## [0.20.3] - 2026-09-27
 
 0.20.3 fixes trunk-scope enforcement in jj repositories whose workspaces were

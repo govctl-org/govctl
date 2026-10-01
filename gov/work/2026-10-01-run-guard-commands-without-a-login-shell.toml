@@ -1,0 +1,39 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-10-01-001"
+title = "Run guard commands without a login shell"
+status = "done"
+created = "2026-10-01"
+started = "2026-10-01"
+completed = "2026-10-01"
+refs = [
+    "RFC-0000:C-GUARD-DEF",
+    "ADR-0064",
+]
+
+[content]
+description = "Run Verification Guard commands in a non-login shell so they inherit the invoking process environment unchanged, as required by [[RFC-0000:C-GUARD-DEF]] 1.10.0 and decided in [[ADR-0064]]. The guard runner currently starts a login shell, which re-sources profile files and reorders or overrides the caller PATH. Scope is limited to the guard runner, its regression test, and user-facing notes about the behavior change."
+
+[[content.acceptance_criteria]]
+text = "Guard commands receive the invoking process PATH with its original entry order, so a caller-prepended directory remains first"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "Guard commands run without loading login-shell or user profile startup files"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "A regression test proves that a caller-prepended PATH entry and a caller-set variable reach a guard command unchanged"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "The validation guide documents that guards inherit the invoking environment without loading shell profile files"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

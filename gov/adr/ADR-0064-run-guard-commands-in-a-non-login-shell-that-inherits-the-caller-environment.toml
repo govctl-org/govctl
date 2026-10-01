@@ -1,0 +1,55 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0064"
+title = "Run guard commands in a non-login shell that inherits the caller environment"
+status = "accepted"
+date = "2026-10-01"
+refs = ["RFC-0000"]
+tags = ["core"]
+
+[content]
+context = """
+[[RFC-0000:C-GUARD-DEF]] requires a guard command to run non-interactively from the project root but says nothing about the shell or environment. Since guards were introduced, the runner has executed commands with `bash -lc`, a login shell. No recorded decision explains the `-l`.
+
+A downstream user reported that guards "do not receive environment variables". Reproduction showed that ordinary variables (for example `VIRTUAL_ENV` or arbitrary exported names) do reach the guard, but the login shell re-sources `/etc/profile` and the user's bash profile files before running the command. On macOS, `path_helper` moves caller-prepended `PATH` entries behind the system directories, and profile files can prepend or overwrite further entries and variables. A guard run from an activated virtualenv, `nix develop`, direnv, or tool-manager shell can therefore resolve `python`, `cargo`, or `node` to a different binary than the caller's shell does.
+
+The login shell's benefit was already partial: `bash -l` never reads zsh startup files, so on macOS, where zsh is the default shell, it mainly contributes `/etc/profile` and its `path_helper` reordering.
+
+Guards are completion gates. Their result should depend on the repository and on the environment the caller deliberately prepared, which is often an agent or CI job, and not on each developer's dotfiles."""
+decision = """
+Guard commands run in a non-login, non-interactive bash that inherits the environment of the process invoking govctl. govctl does not source profile files, reset `PATH`, or add, remove, or rewrite variables on the guard's behalf; only bash's own non-interactive startup behavior (for example honoring a caller-set `BASH_ENV`) applies. A guard that needs extra setup states it in its own command. The interpreter remains bash; only login-shell startup is removed.
+
+Whether this inheritance becomes a normative requirement in [[RFC-0000:C-GUARD-DEF]] is decided separately through that RFC's amendment process."""
+consequences = """
+**Positive:** guards run against the toolchain the caller prepared, so results from virtualenvs, Nix shells, direnv, agents, and CI match what the caller would see by running the command directly. Results stop depending on individual dotfiles.
+
+**Negative:** this changes behavior for existing users. A guard that relied on a profile file to put a tool on `PATH` now sees only the invoking process's environment. When govctl is started from a minimal environment such as a GUI or IDE launcher, the guard either fails with "command not found" or resolves a different, system-provided binary of the same name. Mitigation: call out the change in the release notes and show how to source setup explicitly in the guard command or run govctl from a configured shell. In both cases the result follows the environment the caller controls, so it can be reproduced by running the command directly in that environment.
+
+**Neutral:** the working directory, timeout, output capture, and pattern matching required by [[RFC-0000:C-GUARD-DEF]] are unchanged."""
+
+[[content.alternatives]]
+text = "Run guards with a non-login, non-interactive bash that inherits the invoking process environment unchanged"
+status = "accepted"
+pros = [
+    "The guard sees exactly the PATH and variables of the shell, agent, or CI job that invoked govctl",
+    "Matches make, just, and git hooks, which run commands without a login shell and with the invoking environment",
+]
+cons = ["Tools that are only on PATH through profile files are no longer found when govctl is started from a minimal environment such as a GUI or IDE launcher"]
+
+[[content.alternatives]]
+text = "Keep the login shell (status quo)"
+status = "rejected"
+pros = ["Tools configured only in profile files resolve even when govctl is started from a minimal environment"]
+cons = [
+    "Silently reorders or overrides the caller's PATH and variables, so guards can test a different toolchain than the caller uses",
+    "Guard results depend on per-machine dotfiles, which reduces reproducibility between developers, agents, and CI",
+]
+rejection_reason = "The toolchain a guard uses should be determined by the environment the caller prepared, which the caller can inspect and reproduce, rather than by profile files that silently override it."
+
+[[content.alternatives]]
+text = "Add a per-guard option that selects login-shell execution"
+status = "rejected"
+pros = ["Projects that rely on profile-based setup can opt back in per guard"]
+cons = ["Adds a guard schema field and requires amending [[RFC-0000:C-GUARD-DEF]] to support a mode with no reported need"]
+rejection_reason = "No concrete need for login-shell guards has been reported. A guard command that needs profile setup can source it explicitly, which keeps that dependency visible in the guard itself."

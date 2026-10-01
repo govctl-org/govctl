@@ -6,7 +6,10 @@ title = "Verification Guard Definition"
 kind = "normative"
 status = "active"
 since = "1.1.0"
-tags = ["core", "validation"]
+tags = [
+    "core",
+    "validation",
+]
 
 [content]
 text = """
@@ -25,6 +28,8 @@ Implementations MUST define a machine-readable JSON Schema for the Verification 
 Verification Guard IDs MUST be unique within a repository.
 
 A guard check MUST execute its command non-interactively from the project root.
+
+A guard check MUST pass the environment of the process invoking the check to its command unchanged, apart from variables the command interpreter maintains itself. Implementations MUST NOT load login-shell or user profile startup files before running the command.
 
 If `timeout_secs` is absent, implementations MUST use a default timeout of 300 seconds.
 

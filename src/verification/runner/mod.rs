@@ -40,9 +40,11 @@ pub fn run_guard(config: &Config, guard: &GuardEntry) -> Result<GuardRunResult, 
     let mut stdout_capture = GuardOutputCapture::new(guard, "stdout")?;
     let mut stderr_capture = GuardOutputCapture::new(guard, "stderr")?;
 
+    // Non-login shell: inherit the caller's environment unchanged instead of
+    // re-sourcing profile files [[RFC-0000:C-GUARD-DEF]], [[ADR-0064]].
     let mut command = Command::new("/bin/bash");
     command
-        .args(["-lc", &guard.spec.check.command])
+        .args(["-c", &guard.spec.check.command])
         .current_dir(project_root)
         .stdout(stdout_capture.stdio(guard, "stdout")?)
         .stderr(stderr_capture.stdio(guard, "stderr")?);

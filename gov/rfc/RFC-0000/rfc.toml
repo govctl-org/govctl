@@ -3,19 +3,19 @@
 [govctl]
 id = "RFC-0000"
 title = "govctl Governance Framework"
-version = "1.9.0"
+version = "1.10.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-07-27"
+updated = "2026-10-01"
 tags = [
     "core",
     "schema",
     "validation",
     "lifecycle",
 ]
-signature = "a2a685672de26ebcf29d71f167b54ee21f9aec6727e055dce457dfceecbbf8c3"
+signature = "5e712040c6c499c58511f0523022539a8473641b574c81e17590b1f1dc891a8d"
 
 [[sections]]
 title = "Summary"
@@ -52,6 +52,12 @@ clauses = ["clauses/C-RELEASE-DEF.toml"]
 [[sections]]
 title = "Verification Guard Specification"
 clauses = ["clauses/C-GUARD-DEF.toml"]
+
+[[changelog]]
+version = "1.10.0"
+date = "2026-10-01"
+notes = "Require guard commands to inherit the invoking environment"
+added = ["Require guard checks to pass the invoking process environment unchanged and forbid loading login-shell or user profile startup files"]
 
 [[changelog]]
 version = "1.9.0"

@@ -95,6 +95,56 @@ fn test_verify_detached_guard_descendant_holding_output_open_does_not_hang() -> 
     Ok(())
 }
 
+/// Per [[RFC-0000:C-GUARD-DEF]], guard commands inherit the invoking environment
+/// unchanged and do not load login-shell or user profile startup files.
+#[cfg(unix)]
+#[test]
+fn test_verify_guard_inherits_caller_environment_without_login_profile() -> TestResult {
+    let temp_dir = init_project()?;
+    let home = tempfile::tempdir()?;
+    let caller_bin = temp_dir.path().join("caller-bin");
+    fs::create_dir(&caller_bin)?;
+    fs::write(
+        home.path().join(".bash_profile"),
+        "export LOGIN_PROFILE_LOADED=1\nexport PATH=/profile-bin:$PATH\nexport GOVCTL_PROBE=profile-value\n",
+    )?;
+
+    append_verification_config(temp_dir.path(), true, &["GUARD-ENV"])?;
+    let command = format!(
+        "echo PATH=$PATH GOVCTL_PROBE=$GOVCTL_PROBE LOGIN_PROFILE_LOADED=${{LOGIN_PROFILE_LOADED:-}}; \
+         test ${{PATH%%:*}} = '{}' && test $GOVCTL_PROBE = caller-value && test -z ${{LOGIN_PROFILE_LOADED:-}}",
+        caller_bin.display()
+    );
+    write_guard_with_timeout(
+        temp_dir.path(),
+        "GUARD-ENV",
+        &command,
+        None,
+        NON_TIMEOUT_GUARD_TIMEOUT_SECS,
+    )?;
+
+    let caller_path = format!(
+        "{}:{}",
+        caller_bin.display(),
+        std::env::var("PATH").unwrap_or_default()
+    );
+    let result = Command::new(env!("CARGO_BIN_EXE_govctl"))
+        .arg("verify")
+        .current_dir(temp_dir.path())
+        .env("NO_COLOR", "1")
+        .env("GOVCTL_DEFAULT_OWNER", "@test-user")
+        .env("HOME", home.path())
+        .env("PATH", caller_path)
+        .env("GOVCTL_PROBE", "caller-value")
+        .env_remove("LOGIN_PROFILE_LOADED")
+        .output()?;
+    let output = common::format_command_output(&["verify"], &result);
+    assert!(output.contains("PASS GUARD-ENV"), "output: {}", output);
+    assert!(output.contains("exit: 0"), "output: {}", output);
+
+    Ok(())
+}
+
 #[test]
 fn test_work_move_done_rejects_failed_required_guard() -> TestResult {
     let temp_dir = init_project()?;
