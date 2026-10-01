@@ -10,10 +10,21 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.21.0] - 2026-10-01
+
+0.21.0 runs verification guards in a non-login shell. Guards previously ran
+under `bash -lc`, which re-read `/etc/profile` and the user's bash profile, so
+`PATH` could be reordered (for example by macOS `path_helper`) and variables
+overridden. A guard could then use a different `python`, `cargo`, or `node`
+than the active virtualenv, Nix shell, or CI job. This is a breaking change for
+guards that relied on profile files to find their tools: provide that setup in
+the environment that runs govctl, or source it in the guard command.
+
 ### Fixed
 
-- Guard commands receive the invoking process PATH with its original entry order, so a caller-prepended directory remains first (WI-2026-10-01-001)
-- Guard commands run without loading login-shell or user profile startup files (WI-2026-10-01-001)
+- Guard commands inherit the invoking process environment unchanged: a
+  caller-prepended `PATH` entry stays first, and login-shell and user profile
+  startup files are no longer loaded. (WI-2026-10-01-001)
 
 ## [0.20.3] - 2026-09-27
 
