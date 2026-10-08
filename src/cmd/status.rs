@@ -314,11 +314,10 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     let project_root = crate::local_index::project_root(config);
     let project_root =
         std::fs::canonicalize(project_root).unwrap_or_else(|_| project_root.to_path_buf());
-    let gov_root =
-        std::fs::canonicalize(&config.gov_root).unwrap_or_else(|_| config.gov_root.clone());
+    let state_dir = project_root.join(".govctl");
     printer.local_state(
-        &project_root.join(".govctl"),
-        &gov_root.join(crate::lock::LOCK_FILE_NAME),
+        &state_dir,
+        &state_dir.join(crate::lock::LOCK_FILE_NAME),
         presence.location(),
     );
 

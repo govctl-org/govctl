@@ -9,14 +9,24 @@ use crate::diagnostic::{Diagnostic, DiagnosticCode, DiagnosticResult};
 use fs2::FileExt;
 use std::fs::OpenOptions;
 use std::io;
+use std::path::PathBuf;
 use std::thread;
 use std::time::{Duration, Instant};
 
-/// Name of the lock file under the gov root (per ADR-0025).
-pub(crate) const LOCK_FILE_NAME: &str = ".govctl.lock";
+/// Name of the lock file inside the workspace-local `.govctl/` directory —
+/// [[ADR-0065]]. The legacy `gov/.govctl.lock` is neither used nor deleted.
+pub(crate) const LOCK_FILE_NAME: &str = "gov.lock";
 
 /// Backoff between try_lock attempts.
 const POLL_INTERVAL_MS: u64 = 100;
+
+/// Path of the gov-root write lock: one lock per governed project, kept in
+/// workspace-local state rather than under `gov/` — [[ADR-0065]].
+pub(crate) fn gov_lock_path(config: &Config) -> PathBuf {
+    crate::local_index::project_root(config)
+        .join(".govctl")
+        .join(LOCK_FILE_NAME)
+}
 
 /// Guard that holds the exclusive lock; releasing on drop.
 pub struct GovLockGuard {
@@ -29,7 +39,7 @@ pub struct GovLockGuard {
 /// Fails with an actionable error if the lock cannot be acquired within the timeout.
 pub fn acquire_gov_lock(config: &Config) -> DiagnosticResult<GovLockGuard> {
     let gov_root = config.gov_root.as_path();
-    let lock_path = gov_root.join(LOCK_FILE_NAME);
+    let lock_path = gov_lock_path(config);
     let timeout_secs = config.concurrency.lock_timeout_secs;
 
     // Ensure gov root exists so we can create the lock file
@@ -42,6 +52,16 @@ pub fn acquire_gov_lock(config: &Config) -> DiagnosticResult<GovLockGuard> {
             ),
             gov_root.display().to_string(),
         ));
+    }
+
+    if let Some(state_dir) = lock_path.parent() {
+        std::fs::create_dir_all(state_dir).map_err(|e| {
+            Diagnostic::io_error(
+                "create local state directory",
+                e,
+                state_dir.display().to_string(),
+            )
+        })?;
     }
 
     let file = OpenOptions::new()
@@ -89,7 +109,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn lock_file_name_is_under_gov_root() {
-        assert_eq!(LOCK_FILE_NAME, ".govctl.lock");
+    fn lock_lives_in_workspace_local_state() {
+        let mut config = Config::default();
+        config.gov_root = PathBuf::from("/project/gov");
+        assert_eq!(
+            gov_lock_path(&config),
+            PathBuf::from("/project/.govctl/gov.lock")
+        );
     }
 }

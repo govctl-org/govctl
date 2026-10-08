@@ -17,6 +17,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 ### Changed
 
 - The detach skill inventories the clone-shared registry namespace as an outside-project path that needs separate approval before removal (WI-2026-10-09-001)
+- Write commands lock a file inside `.govctl/` instead of `gov/.govctl.lock`, creating `.govctl/` when it is missing, and no longer create a lock file under `gov/` (WI-2026-10-09-002)
+- `govctl status` reports the lock location inside `.govctl/` (WI-2026-10-09-002)
 
 ## [0.21.0] - 2026-10-01
 

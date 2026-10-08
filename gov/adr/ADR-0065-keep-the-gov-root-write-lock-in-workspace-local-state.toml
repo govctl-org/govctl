@@ -1,0 +1,71 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0065"
+title = "Keep the gov-root write lock in workspace-local state"
+status = "accepted"
+date = "2026-10-09"
+refs = [
+    "ADR-0025",
+    "RFC-0004",
+    "RFC-0002",
+    "RFC-0010",
+]
+tags = ["core"]
+
+[content]
+context = """
+[[ADR-0025]] serializes govctl writes with one exclusive lock per gov root and names `gov/.govctl.lock` as an example location; the implementation adopted that path. [[RFC-0004]] requires the observable concurrency behavior but leaves the mechanism, including the lock location, to the implementation.
+
+govctl now distinguishes workspace-local state, kept under `.govctl/` at the project root, from clone-shared coordination state, which [[RFC-0010:C-REGISTRY]] places in version-control storage. The lock is workspace-local state, yet it is the only runtime file inside `gov/`, the tree that otherwise holds only governed artifacts. A `.govctl.lock` ignore entry keeps it out of ordinary commits, and the file is empty, so an accidental commit leaks nothing. But anything that handles `gov/` as a whole without honoring ignore rules, such as `git add -f gov/` or archiving or copying `gov/`, picks the lock up as if it were governed content.
+
+The project root, its `gov/` directory, and its `.govctl/` directory correspond one to one, because the gov root is always `<project root>/gov`. A lock under `.govctl/` therefore keeps exactly the per-project scope that [[ADR-0025]] chose."""
+decision = """
+The gov-root write lock moves into the project's workspace-local state directory, `.govctl/`. Its file name is left to the implementation, and acquiring it creates `.govctl/` when the directory does not exist yet. The locking decision of [[ADR-0025]] is unchanged: one exclusive, process-scoped lock per governed project serializes all writes. Only the location that ADR gave as an example is replaced.
+
+govctl stops using `gov/.govctl.lock` and does not delete it. Users remove a leftover file by hand once every govctl that writes to the project has been upgraded. The `.govctl.lock` ignore entry required by [[RFC-0002:C-GLOBAL-COMMANDS]] stays in place, so a leftover file never appears as untracked."""
+consequences = """
+**Positive:** new projects keep no runtime file in `gov/`, so whole-tree operations on it need no special exclusion. Workspace-local state lives in one directory; `govctl status` still reports the lock location, which now falls inside `.govctl/`.
+
+**Negative:** until every govctl writing to a project is upgraded, an older process and a newer one lock different files, so their writes to that project are not serialized. Mitigation: release notes ask users to upgrade every agent and tool that writes to a project at the same time. Existing projects keep an empty, ignored `gov/.govctl.lock` until a user deletes it; release notes give that step and say to take it only after the upgrade.
+
+**Neutral:** the lock's scope, timeout, and failure behavior required by [[RFC-0004]] are unchanged."""
+
+[[content.alternatives]]
+text = "Move the lock into the workspace-local state directory .govctl/"
+status = "accepted"
+pros = [
+    "gov/ holds only governed artifacts, and all workspace-local state sits under one ignored directory",
+    "Copying, archiving, or force-adding gov/ can no longer carry the lock",
+]
+cons = [
+    "While old and new govctl versions write to one project, they lock different files and do not exclude each other",
+    "Existing projects keep an empty, ignored gov/.govctl.lock until a user deletes it by hand",
+]
+
+[[content.alternatives]]
+text = "Keep the lock at gov/.govctl.lock and rely on the ignore entry"
+status = "rejected"
+pros = ["No change and no mixed-version window"]
+cons = ["gov/ keeps one runtime file that every whole-tree operation must remember to exclude"]
+rejection_reason = "The ignore entry only protects ordinary commits; the boundary between governed artifacts and local state is easier to keep when no local state lives in gov/."
+
+[[content.alternatives]]
+text = "Acquire both the legacy gov/.govctl.lock and the new lock during a transition period"
+status = "rejected"
+pros = ["Old and new govctl versions keep excluding each other during the upgrade"]
+cons = [
+    "The new version must keep creating gov/.govctl.lock, because taking the legacy lock only when the file exists races with an older process creating it",
+    "Needs a second lock acquisition and a later decision to end the transition",
+]
+rejection_reason = "It keeps the runtime file in gov/ for the whole transition, which defeats the purpose of the move, to close an upgrade window that upgrading all writers together already closes."
+
+[[content.alternatives]]
+text = "Have govctl migrate delete the legacy gov/.govctl.lock"
+status = "rejected"
+pros = ["Existing projects lose the leftover file without manual steps"]
+cons = [
+    "Deleting a lock file an older process holds lets a second older process lock a fresh file on Unix, and makes older processes fail to open it on Windows",
+    "Adds an observable migrate behavior that [[RFC-0002:C-GLOBAL-COMMANDS]] would have to permit",
+]
+rejection_reason = "Removing an empty, ignored file is not worth a deletion that can break exclusion between older processes or make them fail; a manual deletion after the upgrade has no such hazard."

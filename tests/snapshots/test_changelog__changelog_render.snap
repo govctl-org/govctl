@@ -29,7 +29,7 @@ Releases
 
 Local State
   workspace    <TEMPDIR>/.govctl/
-  lock         <TEMPDIR>/gov/.govctl.lock
+  lock         <TEMPDIR>/.govctl/gov.lock
   registry     not applicable (no version control)
 
 exit: 0

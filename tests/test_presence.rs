@@ -572,7 +572,7 @@ fn status_shows_local_state_locations_shared_across_worktrees() -> TestResult {
     );
     assert_eq!(
         local_state_value(&main_out, "lock"),
-        Some(main_root.join("gov/.govctl.lock").display().to_string()),
+        Some(main_root.join(".govctl/gov.lock").display().to_string()),
         "status: {main_out}"
     );
     let registry = std::fs::canonicalize(registry_dir(main.path())?)?;

@@ -1,0 +1,35 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-10-09-002"
+title = "Move the gov-root write lock into .govctl"
+status = "done"
+created = "2026-10-09"
+started = "2026-10-09"
+completed = "2026-10-09"
+refs = [
+    "ADR-0065",
+    "RFC-0004",
+]
+
+[content]
+description = "Move the gov-root write lock from `gov/.govctl.lock` into the workspace-local `.govctl/` directory, as decided in [[ADR-0065]], so `gov/` holds only governed artifacts. The concurrency behavior required by [[RFC-0004]] is unchanged. Scope is the lock location, the status report and guide that show it, tests, and release-note guidance for the mixed-version window and the leftover legacy file."
+notes = ["Leave a legacy gov/.govctl.lock in place: deleting it while an older govctl holds it can break exclusion between older processes on Unix or make them fail on Windows ([[ADR-0065]])."]
+
+[[content.acceptance_criteria]]
+text = "Write commands lock a file inside `.govctl/` instead of `gov/.govctl.lock`, creating `.govctl/` when it is missing, and no longer create a lock file under `gov/`"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "`govctl status` reports the lock location inside `.govctl/`"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "The parallel-workspaces guide lists the lock under `.govctl/` and tells users to delete a leftover `gov/.govctl.lock` only after every writer is upgraded"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

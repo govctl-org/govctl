@@ -24,7 +24,7 @@ governed artifact.
 
 | Kind            | Scope                         | Contents                                    | Location                                                                                |
 | --------------- | ----------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- |
-| Workspace-local | One working tree or workspace | Search index, loop state, the gov-root lock | `.govctl/` at the project root, and `gov/.govctl.lock`                                  |
+| Workspace-local | One working tree or workspace | Search index, loop state, the gov-root lock | `.govctl/` at the project root                                                          |
 | Clone-shared    | Every workspace of the clone  | ID reservations, RFC claims, presence       | git: `<git-common-dir>/govctl/registry/<hash>/`; jj: `.jj/repo/govctl/registry/<hash>/` |
 
 Workspace-local state is ignored by `.gitignore` and can be deleted while no
@@ -35,6 +35,12 @@ worktree or workspace is a separate directory with its own `.govctl/`. `<hash>`
 identifies the governed project, so a monorepo with several govctl projects
 keeps separate registries. In a jj repository colocated with git, the jj store
 is used.
+
+Earlier govctl versions kept the write lock at `gov/.govctl.lock`. govctl no
+longer uses or deletes that file. Until every agent and tool that writes to a
+project runs the new version, old and new processes lock different files and
+do not wait for each other, so upgrade them together. Once they are all
+upgraded, delete a leftover `gov/.govctl.lock` by hand.
 
 `govctl status` prints the exact paths for the current workspace under
 **Local State**. Without version control the registry is reported as not

@@ -227,7 +227,7 @@ refs = ["WI-2026-01-01-001"]
         .truncate(false)
         .read(true)
         .write(true)
-        .open(temp_dir.path().join("gov/.govctl.lock"))?;
+        .open(temp_dir.path().join(".govctl/gov.lock"))?;
     lock.lock_exclusive()?;
 
     let child = Command::new(env!("CARGO_BIN_EXE_govctl"))
