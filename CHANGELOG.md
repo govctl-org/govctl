@@ -10,15 +10,32 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+## [0.22.0] - 2026-10-09
+
+0.22.0 makes govctl's local state easy to find and keeps it out of `gov/`.
+`govctl status` gains a **Local State** section that shows where this
+workspace keeps its state and where the clone-shared coordination registry
+lives. The gov-root write lock moves from `gov/.govctl.lock` to
+`.govctl/gov.lock`, so `gov/` holds only governed artifacts.
+
+**Upgrade note:** until every agent and tool that writes to a project runs
+0.22.0, older and newer processes lock different files and do not wait for
+each other, so upgrade them together. govctl no longer uses or deletes
+`gov/.govctl.lock`; once every writer is upgraded, delete that file by hand.
+
 ### Added
 
-- `govctl status` shows the workspace-local state locations and the clone-shared registry location, or why the registry location is unavailable or not applicable (WI-2026-10-09-001)
+- `govctl status` shows a Local State section: the workspace's `.govctl/`
+  directory, the write lock, and the clone-shared registry path, or why the
+  registry is not applicable (no version control) or unavailable.
+  (WI-2026-10-09-001)
 
 ### Changed
 
-- The detach skill inventories the clone-shared registry namespace as an outside-project path that needs separate approval before removal (WI-2026-10-09-001)
-- Write commands lock a file inside `.govctl/` instead of `gov/.govctl.lock`, creating `.govctl/` when it is missing, and no longer create a lock file under `gov/` (WI-2026-10-09-002)
-- `govctl status` reports the lock location inside `.govctl/` (WI-2026-10-09-002)
+- Write commands lock `.govctl/gov.lock`, creating `.govctl/` when it is
+  missing, and no longer create a lock file under `gov/`. (WI-2026-10-09-002)
+- The detach skill lists the clone-shared registry as a path outside the
+  project that needs separate approval before removal. (WI-2026-10-09-001)
 
 ## [0.21.0] - 2026-10-01
 
