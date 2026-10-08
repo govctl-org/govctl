@@ -53,6 +53,13 @@ recoverable baseline for each touched file, and restoration steps. Resolve
 collisions and unclear ownership before asking for confirmation; redo the
 inventory if scope changes.
 
+The clone-shared coordination registry lives outside the project root, in
+version-control storage; `govctl status` reports its path under Local State.
+List that project's registry directory as an outside-project target, and remove
+it only with that separate approval. Never remove the parent `govctl/registry/`,
+because other governed projects in the clone may use it. Record the path before
+archiving `gov/`, since project-scoped commands must not run afterward.
+
 ## Execution
 
 1. Rename `gov/` to the confirmed archive path.

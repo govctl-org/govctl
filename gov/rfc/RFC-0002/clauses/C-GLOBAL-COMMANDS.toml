@@ -58,6 +58,7 @@ Behavior:
 - Displays counts by status/phase for each resource type
 - Highlights active work items
 - Shows pending decisions (proposed ADRs, draft RFCs)
+- Shows where govctl keeps local state for the current workspace: the workspace-local state locations (the `.govctl/` directory and the gov-root lock file) and the clone-shared coordination registry location defined by [[RFC-0010:C-REGISTRY]]. When version control is present but the registry location cannot be determined, it reports that; without version control, it reports that the registry is not applicable
 - Uses colors in TTY mode for visual scanning
 - No output format flag (always human-readable table)
 

@@ -535,3 +535,92 @@ fn status_does_not_refresh_presence_records() -> TestResult {
     );
     Ok(())
 }
+
+/// The `Local State` value printed by `govctl status` for `label` —
+/// [[RFC-0002:C-GLOBAL-COMMANDS]].
+fn local_state_value(status_out: &str, label: &str) -> Option<String> {
+    status_out
+        .split("Local State")
+        .nth(1)?
+        .lines()
+        .find_map(|line| {
+            line.trim()
+                .strip_prefix(label)
+                .map(|rest| rest.trim().to_string())
+        })
+}
+
+#[test]
+fn status_shows_local_state_locations_shared_across_worktrees() -> TestResult {
+    if !tool_available("git") {
+        return Ok(());
+    }
+    let main = init_git_project()?;
+    let holder = TempDir::new()?;
+    let secondary = add_worktree(main.path(), &holder, "status-paths")?;
+    // Seed the registry so its namespace directory exists.
+    run_govctl(main.path(), &["work", "new", "Seed probe"])?;
+
+    let main_out = stdout(&run_govctl(main.path(), &["status"])?);
+    let secondary_out = stdout(&run_govctl(&secondary, &["status"])?);
+
+    let main_root = std::fs::canonicalize(main.path())?;
+    assert_eq!(
+        local_state_value(&main_out, "workspace"),
+        Some(format!("{}/", main_root.join(".govctl").display())),
+        "status: {main_out}"
+    );
+    assert_eq!(
+        local_state_value(&main_out, "lock"),
+        Some(main_root.join("gov/.govctl.lock").display().to_string()),
+        "status: {main_out}"
+    );
+    let registry = std::fs::canonicalize(registry_dir(main.path())?)?;
+    let expected_registry = Some(format!("{}/", registry.display()));
+    assert_eq!(
+        local_state_value(&main_out, "registry"),
+        expected_registry,
+        "status: {main_out}"
+    );
+    assert_eq!(
+        local_state_value(&secondary_out, "registry"),
+        expected_registry,
+        "every worktree reports the same clone-shared registry: {secondary_out}"
+    );
+    assert_ne!(
+        local_state_value(&secondary_out, "workspace"),
+        local_state_value(&main_out, "workspace"),
+        "workspace-local state is per worktree: {secondary_out}"
+    );
+    Ok(())
+}
+
+#[test]
+fn no_vcs_status_reports_registry_not_applicable() -> TestResult {
+    let temp = common::init_project()?;
+    let output = run_govctl(temp.path(), &["status"])?;
+    let out = stdout(&output);
+    assert_eq!(
+        local_state_value(&out, "registry").as_deref(),
+        Some("not applicable (no version control)"),
+        "status: {out}"
+    );
+    assert!(
+        stderr(&output).is_empty(),
+        "no-VCS status stays silent: {}",
+        stderr(&output)
+    );
+    Ok(())
+}
+
+#[test]
+fn unreadable_vcs_status_reports_registry_unavailable() -> TestResult {
+    let temp = common::init_project()?;
+    // A `.git` entry git cannot read: version control is present but its
+    // shared storage cannot be determined — [[RFC-0010:C-REGISTRY]].
+    std::fs::write(temp.path().join(".git"), "not a git dir")?;
+    let out = stdout(&run_govctl(temp.path(), &["status"])?);
+    let registry = local_state_value(&out, "registry").unwrap_or_default();
+    assert!(registry.starts_with("unavailable ("), "status: {out}");
+    Ok(())
+}

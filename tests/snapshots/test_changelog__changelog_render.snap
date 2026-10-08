@@ -27,6 +27,11 @@ Conformance Cases
 Releases
   Total        1
 
+Local State
+  workspace    <TEMPDIR>/.govctl/
+  lock         <TEMPDIR>/gov/.govctl.lock
+  registry     not applicable (no version control)
+
 exit: 0
 
 $ govctl render changelog --dry-run

@@ -13,7 +13,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 /// Name of the lock file under the gov root (per ADR-0025).
-const LOCK_FILE_NAME: &str = ".govctl.lock";
+pub(crate) const LOCK_FILE_NAME: &str = ".govctl.lock";
 
 /// Backoff between try_lock attempts.
 const POLL_INTERVAL_MS: u64 = 100;

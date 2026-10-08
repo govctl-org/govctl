@@ -17,6 +17,30 @@ never changes governed artifacts.
 - **Version control present but the shared state is unreadable:** commands
   continue in single-checkout mode and warn (`W0115`).
 
+## Where govctl Keeps Local State
+
+govctl keeps two kinds of local state. Neither is committed, and neither is a
+governed artifact.
+
+| Kind            | Scope                         | Contents                                    | Location                                                                                |
+| --------------- | ----------------------------- | ------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Workspace-local | One working tree or workspace | Search index, loop state, the gov-root lock | `.govctl/` at the project root, and `gov/.govctl.lock`                                  |
+| Clone-shared    | Every workspace of the clone  | ID reservations, RFC claims, presence       | git: `<git-common-dir>/govctl/registry/<hash>/`; jj: `.jj/repo/govctl/registry/<hash>/` |
+
+Workspace-local state is ignored by `.gitignore` and can be deleted while no
+govctl command is running: govctl rebuilds the index, and deleting loop state
+only loses the ability to resume those loops. The
+clone-shared registry has to live in version-control storage because each
+worktree or workspace is a separate directory with its own `.govctl/`. `<hash>`
+identifies the governed project, so a monorepo with several govctl projects
+keeps separate registries. In a jj repository colocated with git, the jj store
+is used.
+
+`govctl status` prints the exact paths for the current workspace under
+**Local State**. Without version control the registry is reported as not
+applicable. When version control is present but its storage cannot be read,
+it is reported as unavailable, along with the reason.
+
 ## Artifact IDs
 
 IDs are reserved across workspaces when an artifact is created, so two

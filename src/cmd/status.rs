@@ -5,11 +5,13 @@ use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::load::load_project;
 use crate::model::{AdrStatus, ClauseStatus, RfcPhase, RfcStatus, WorkItemEntry, WorkItemStatus};
 use crate::parse::{load_guards, load_releases};
+use crate::registry::RegistryLocation;
 use crate::status_counts::{StatusCounts, count_by, count_for, total_count};
 use crate::theme::status_semantic;
 use crate::ui::stdout_supports_color;
 use owo_colors::OwoColorize;
 use std::hash::Hash;
+use std::path::Path;
 
 struct StatusPrinter {
     colors: bool,
@@ -173,6 +175,29 @@ impl StatusPrinter {
         }
     }
 
+    /// Where govctl keeps local state: workspace-local locations and the
+    /// clone-shared coordination registry — [[RFC-0002:C-GLOBAL-COMMANDS]],
+    /// [[RFC-0010:C-REGISTRY]].
+    fn local_state(&self, workspace_dir: &Path, lock: &Path, registry: &RegistryLocation) {
+        self.section_header("Local State");
+        self.location_line("workspace", &format!("{}/", workspace_dir.display()));
+        self.location_line("lock", &lock.display().to_string());
+        let registry = match registry {
+            RegistryLocation::At(path) => format!("{}/", path.display()),
+            RegistryLocation::NotApplicable => "not applicable (no version control)".to_string(),
+            RegistryLocation::Unavailable(reason) => format!("unavailable ({reason})"),
+        };
+        self.location_line("registry", &registry);
+    }
+
+    fn location_line(&self, label: &str, value: &str) {
+        if self.colors {
+            println!("  {:12} {}", label.dimmed(), value);
+        } else {
+            println!("  {:12} {}", label, value);
+        }
+    }
+
     fn pending_phase_count(&self, label: &str, count: usize) {
         print!("{label}:");
         if count > 0 {
@@ -276,7 +301,6 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     let mut presence = crate::registry::PresenceSession::begin_readonly(config);
     let foreign = presence.foreign();
     printer.foreign_work(&foreign);
-    let warnings = presence.into_warnings();
 
     printer.section_header("Verification Guards");
     printer.total_line(guards.len());
@@ -287,6 +311,17 @@ pub fn show_status(config: &Config) -> DiagnosticResult<Diagnostics> {
     printer.section_header("Releases");
     printer.total_line(releases.releases.len());
 
+    let project_root = crate::local_index::project_root(config);
+    let project_root =
+        std::fs::canonicalize(project_root).unwrap_or_else(|_| project_root.to_path_buf());
+    let gov_root =
+        std::fs::canonicalize(&config.gov_root).unwrap_or_else(|_| config.gov_root.clone());
+    printer.local_state(
+        &project_root.join(".govctl"),
+        &gov_root.join(crate::lock::LOCK_FILE_NAME),
+        presence.location(),
+    );
+
     println!();
-    Ok(warnings)
+    Ok(presence.into_warnings())
 }

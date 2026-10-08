@@ -849,6 +849,20 @@ pub struct PresenceSession {
     inner: Option<OpenedRegistry>,
     ttl: Duration,
     warnings: Vec<Diagnostic>,
+    location: RegistryLocation,
+}
+
+/// Where the coordination registry lives, as resolved when a session opened —
+/// reported by `govctl status` per [[RFC-0002:C-GLOBAL-COMMANDS]].
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum RegistryLocation {
+    /// No version control: coordination is inapplicable.
+    NotApplicable,
+    /// Version control is present but the registry cannot be used.
+    Unavailable(String),
+    /// The registry namespace for this governed project; it may not exist
+    /// yet when no workspace has written to it.
+    At(PathBuf),
 }
 
 impl PresenceSession {
@@ -870,13 +884,25 @@ impl PresenceSession {
             inner: None,
             ttl: claim_ttl(config),
             warnings: vec![],
+            location: RegistryLocation::NotApplicable,
         };
         match open(config, preview) {
             OpenOutcome::Inactive => {}
-            OpenOutcome::Degraded(reason) => session.degrade(reason, &config.gov_root),
-            OpenOutcome::Ready(opened) => session.inner = Some(opened),
+            OpenOutcome::Degraded(reason) => {
+                session.location = RegistryLocation::Unavailable(reason.clone());
+                session.degrade(reason, &config.gov_root);
+            }
+            OpenOutcome::Ready(opened) => {
+                session.location = RegistryLocation::At(opened.root.clone());
+                session.inner = Some(opened);
+            }
         }
         session
+    }
+
+    /// Registry location resolved when this session opened.
+    pub fn location(&self) -> &RegistryLocation {
+        &self.location
     }
 
     fn degrade(&mut self, reason: String, file: &Path) {

@@ -10,6 +10,14 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- `govctl status` shows the workspace-local state locations and the clone-shared registry location, or why the registry location is unavailable or not applicable (WI-2026-10-09-001)
+
+### Changed
+
+- The detach skill inventories the clone-shared registry namespace as an outside-project path that needs separate approval before removal (WI-2026-10-09-001)
+
 ## [0.21.0] - 2026-10-01
 
 0.21.0 runs verification guards in a non-login shell. Guards previously ran

@@ -1,0 +1,34 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-10-09-001"
+title = "Show govctl local state locations in status"
+status = "done"
+created = "2026-10-09"
+started = "2026-10-09"
+completed = "2026-10-09"
+refs = [
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "RFC-0010:C-REGISTRY",
+]
+
+[content]
+description = "Make the two tiers of govctl local state explicit, as required by [[RFC-0002:C-GLOBAL-COMMANDS]] 3.7.0. govctl keeps workspace-local state in the working tree and coordination state in clone-shared version-control storage per [[RFC-0010:C-REGISTRY]], but nothing shows users where the shared registry lives, the guides describe the locations piecemeal, and the detach workflow does not account for the registry. Scope is the status output, the parallel-workspaces guide, and the detach skill."
+
+[[content.acceptance_criteria]]
+text = "`govctl status` shows the workspace-local state locations and the clone-shared registry location, or why the registry location is unavailable or not applicable"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "The parallel-workspaces guide defines workspace-local and clone-shared state and lists their locations for git and jj repositories"
+status = "done"
+category = "chore"
+
+[[content.acceptance_criteria]]
+text = "The detach skill inventories the clone-shared registry namespace as an outside-project path that needs separate approval before removal"
+status = "done"
+category = "changed"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]
