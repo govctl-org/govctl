@@ -10,7 +10,7 @@ mod snapshots;
 // Each integration test binary imports a different subset of this facade.
 #[allow(unused_imports)]
 pub use commands::{
-    command, format_command_output, run_commands, run_dynamic_commands, run_normalized_commands,
+    command, format_command_output, run_commands, run_commands_with_env, run_dynamic_commands, run_normalized_commands,
     work_add_acceptance, work_add_dependency, work_add_field, work_delete_force, work_get_field,
     work_list_all, work_move_done, work_new, work_new_active, work_remove_acceptance,
     work_remove_dependency, work_set_field, work_show, work_tick_acceptance,

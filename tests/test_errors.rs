@@ -3,7 +3,8 @@
 mod common;
 
 use common::{
-    init_project, init_project_with_date, normalize_output, run_commands, write_minimal_rfc,
+    init_project, init_project_with_date, normalize_output, run_commands, run_commands_with_env,
+    write_minimal_rfc,
 };
 use std::fs;
 

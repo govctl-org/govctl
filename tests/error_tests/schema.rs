@@ -707,6 +707,32 @@ fn test_check_uses_root_gitignore_when_run_from_subdirectory() -> common::TestRe
 }
 
 #[test]
+fn test_git_ceiling_directories_isolates_git_discovery() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let ceiling = temp_dir.path().to_string_lossy().to_string();
+
+    // Precondition guard: with the ceiling set to the temp root, git must
+    // not consider the temp project inside any work tree, even if the
+    // test runner itself lives in a checkout.
+    let rev_parse = std::process::Command::new("git")
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .current_dir(temp_dir.path())
+        .env("GIT_CEILING_DIRECTORIES", &ceiling)
+        .output()?;
+    assert!(
+        !rev_parse.status.success(),
+        "temp project should be outside any git work tree under GIT_CEILING_DIRECTORIES"
+    );
+
+    // Behavior parity: ceiling changes git discovery only, not govctl output.
+    let plain = run_commands(temp_dir.path(), &[&["check"]])?;
+    let ceiling_env = [("GIT_CEILING_DIRECTORIES", ceiling.as_str())];
+    let isolated = run_commands_with_env(temp_dir.path(), &[&["check"]], &ceiling_env)?;
+    assert_eq!(plain, isolated, "plain: {}\nisolated: {}", plain, isolated);
+    Ok(())
+}
+
+#[test]
 fn test_check_reports_gitignore_read_error() -> common::TestResult {
     let temp_dir = init_project()?;
     let gitignore_path = temp_dir.path().join(".gitignore");
