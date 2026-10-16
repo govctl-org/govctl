@@ -2,7 +2,7 @@
 
 mod common;
 
-use common::{TestResult, init_project, init_project_v1, run_commands};
+use common::{TestResult, git_init_isolated, init_project, init_project_v1, run_commands};
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -320,6 +320,144 @@ fn test_migrate_syncs_missing_local_state_gitignore_entry_at_current_version() -
         gitignore
     );
 
+    Ok(())
+}
+
+#[test]
+fn test_migrate_syncs_only_effective_missing_gitignore_entry() -> TestResult {
+    let temp_dir = init_project()?;
+    git_init_isolated(temp_dir.path())?;
+    let expected_version = current_schema_version(temp_dir.path())?;
+    // `.govctl.lock` is covered by `.git/info/exclude`; the project
+    // `.gitignore` covers neither entry.
+    fs::write(temp_dir.path().join(".git/info/exclude"), ".govctl.lock\n")?;
+    fs::write(
+        temp_dir.path().join(".gitignore"),
+        "# project ignores\ntarget/\n",
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        output.contains(&format!(
+            "Synced 1 gitignore entry; already at schema version {expected_version}"
+        )),
+        "output: {}",
+        output
+    );
+
+    let gitignore = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
+    assert!(
+        gitignore.lines().any(|line| line.trim() == ".govctl/"),
+        "migrate should add .govctl/ to .gitignore: {}",
+        gitignore
+    );
+    assert!(
+        !gitignore.lines().any(|line| line.trim() == ".govctl.lock"),
+        "migrate must not duplicate the exclude-covered entry: {}",
+        gitignore
+    );
+
+    let check = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(
+        !check.contains("warning[W0111]"),
+        "check should be W0111-clean after partial sync: {}",
+        check
+    );
+    Ok(())
+}
+
+#[test]
+fn test_migrate_repairs_negated_gitignore_entry() -> TestResult {
+    let temp_dir = init_project()?;
+    git_init_isolated(temp_dir.path())?;
+    let expected_version = current_schema_version(temp_dir.path())?;
+    // Last-match-wins makes `.govctl.lock` trackable despite its literal line.
+    fs::write(
+        temp_dir.path().join(".gitignore"),
+        ".govctl.lock\n!.govctl.lock\n.govctl/\n",
+    )?;
+
+    let check = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(check.contains("warning[W0111]"), "output: {}", check);
+    assert!(check.contains(".govctl.lock"), "output: {}", check);
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        output.contains(&format!(
+            "Synced 1 gitignore entry; already at schema version {expected_version}"
+        )),
+        "output: {}",
+        output
+    );
+
+    // The re-appended rule sorts after the negation, restoring the ignore.
+    let gitignore = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
+    assert!(
+        gitignore.trim_end().ends_with(".govctl.lock"),
+        "migrate should re-append .govctl.lock after the negation: {}",
+        gitignore
+    );
+
+    let recheck = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(!recheck.contains("warning[W0111]"), "output: {}", recheck);
+    Ok(())
+}
+
+#[test]
+fn test_tracked_local_state_is_not_synced() -> TestResult {
+    let temp_dir = init_project()?;
+    git_init_isolated(temp_dir.path())?;
+    let git = |args: &[&str]| -> TestResult {
+        let status = std::process::Command::new("git")
+            .args(args)
+            .current_dir(temp_dir.path())
+            .status()?;
+        assert!(status.success(), "git {args:?} failed");
+        Ok(())
+    };
+    // Commit `.govctl.lock`: ignore rules can never apply to a tracked path,
+    // so syncing `.gitignore` entries for it would pile up futile duplicates.
+    fs::write(temp_dir.path().join(".govctl.lock"), "lock\n")?;
+    git(&["add", "-f", ".govctl.lock"])?;
+    git(&[
+        "-c",
+        "user.email=test@example.com",
+        "-c",
+        "user.name=govctl-test",
+        "commit",
+        "-qm",
+        "track lock",
+    ])?;
+    // `.govctl/` stays effectively ignored via its literal line.
+    fs::write(temp_dir.path().join(".gitignore"), ".govctl/\n")?;
+
+    let check = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(
+        !check.contains("warning[W0111]"),
+        "tracked paths must not warn: {}",
+        check
+    );
+
+    let before = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
+    let migrated = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        !migrated.contains("Synced"),
+        "migrate must not sync futile entries: {}",
+        migrated
+    );
+    assert_eq!(
+        fs::read_to_string(temp_dir.path().join(".gitignore"))?,
+        before,
+        "migrate must leave .gitignore untouched for tracked paths"
+    );
+
+    // A second migrate proves no entries pile up across runs.
+    run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert_eq!(
+        fs::read_to_string(temp_dir.path().join(".gitignore"))?,
+        before,
+        "repeated migrate runs must not append duplicates"
+    );
     Ok(())
 }
 

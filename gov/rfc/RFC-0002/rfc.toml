@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.7.0"
+version = "3.8.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-10-09"
+updated = "2026-10-15"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "b0d973d1328fa016505901d635f9f15addbbb5ac1da8b18267e0724c3d72a9bf"
+signature = "a0799cca3e084541ab12fc2d7b035248c1b4107f91472ffa396ab05f927e61ae"
 
 [[sections]]
 title = "Summary"
@@ -47,6 +47,12 @@ clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
 ]
+
+[[changelog]]
+version = "3.8.0"
+date = "2026-10-15"
+notes = "Honor effective gitignore status for local-state entries"
+changed = ["check, migrate, and init treat govctl local-state paths as satisfied when git check-ignore reports them ignored, falling back to project .gitignore parsing outside git repositories"]
 
 [[changelog]]
 version = "3.7.0"

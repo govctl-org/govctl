@@ -10,17 +10,18 @@ mod snapshots;
 // Each integration test binary imports a different subset of this facade.
 #[allow(unused_imports)]
 pub use commands::{
-    command, format_command_output, run_commands, run_commands_with_env, run_dynamic_commands, run_normalized_commands,
-    work_add_acceptance, work_add_dependency, work_add_field, work_delete_force, work_get_field,
-    work_list_all, work_move_done, work_new, work_new_active, work_remove_acceptance,
-    work_remove_dependency, work_set_field, work_show, work_tick_acceptance,
-    work_tick_acceptance_done,
+    command, format_command_output, run_commands, run_commands_with_env, run_dynamic_commands,
+    run_normalized_commands, work_add_acceptance, work_add_dependency, work_add_field,
+    work_delete_force, work_get_field, work_list_all, work_move_done, work_new, work_new_active,
+    work_remove_acceptance, work_remove_dependency, work_set_field, work_show,
+    work_tick_acceptance, work_tick_acceptance_done,
 };
 #[allow(unused_imports)]
 pub use fixtures::{
-    append_verification_config, first_work_id, init_project, init_project_at, init_project_v1,
-    init_project_with_date, temp_dir_with_date, today, work_id, write_canonical_guarded_work_item,
-    write_guard, write_guard_with_timeout, write_guarded_work_item, write_minimal_rfc,
+    append_verification_config, first_work_id, git_init_isolated, init_project, init_project_at,
+    init_project_v1, init_project_with_date, temp_dir_with_date, today, work_id,
+    write_canonical_guarded_work_item, write_guard, write_guard_with_timeout,
+    write_guarded_work_item, write_minimal_rfc,
 };
 #[allow(unused_imports)]
 pub use snapshots::{

@@ -47,6 +47,27 @@ pub fn init_project() -> Result<TempDir, Box<dyn std::error::Error>> {
     init_project_at(None)
 }
 
+/// Initialize a git repository in an existing project directory, isolated
+/// from the developer's global git config: `core.excludesFile` points at an
+/// empty file inside `.git/info` (which git always reads in addition), so
+/// ignore verdicts depend only on the repo's own rules.
+pub fn git_init_isolated(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
+    let status = Command::new("git")
+        .args(["init", "-q"])
+        .current_dir(dir)
+        .status()?;
+    assert!(status.success(), "git init failed");
+    let empty = dir.join(".git/info/empty-excludes");
+    fs::write(&empty, "")?;
+    let status = Command::new("git")
+        .args(["config", "core.excludesFile"])
+        .arg(&empty)
+        .current_dir(dir)
+        .status()?;
+    assert!(status.success(), "git config core.excludesFile failed");
+    Ok(())
+}
+
 pub fn temp_dir_with_date() -> Result<(TempDir, String), std::io::Error> {
     let temp_dir = TempDir::new()?;
     let date = today();

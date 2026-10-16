@@ -93,10 +93,7 @@ pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> Result<String, std::io:
     run_commands_with_env(dir, commands, &[])
 }
 
-/// Run govctl commands with extra environment variables set for each
-/// invocation (inherited env is preserved). Used to isolate git discovery
-/// via `GIT_CEILING_DIRECTORIES` so temp projects are definitionally
-/// outside any enclosing repository.
+/// Run govctl commands with extra environment variables set for each invocation (inherited env is preserved).
 pub fn run_commands_with_env(
     dir: &Path,
     commands: &[&[&str]],
