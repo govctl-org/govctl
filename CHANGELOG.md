@@ -10,6 +10,15 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Changed
+
+- check, init, and migrate treat local-state paths as satisfied when version control already excludes them (WI-2026-10-18-001)
+
+### Fixed
+
+- a tracked file inside the local-state directory does not hide a missing directory ignore rule (WI-2026-10-18-001)
+- when a child of the local-state directory is tracked and a new file there is already excluded, check stays quiet and migrate does not append another directory entry, including on a second run (WI-2026-10-18-002)
+
 ## [0.22.0] - 2026-10-09
 
 0.22.0 makes govctl's local state easy to find and keeps it out of `gov/`.
