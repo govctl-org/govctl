@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.7.0"
+version = "3.8.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-10-09"
+updated = "2026-10-18"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "b0d973d1328fa016505901d635f9f15addbbb5ac1da8b18267e0724c3d72a9bf"
+signature = "fb1f84ece30f4f013d24e210ee9113ee8664d567ae385f0585a47ef22da0b628"
 
 [[sections]]
 title = "Summary"
@@ -47,6 +47,12 @@ clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
 ]
+
+[[changelog]]
+version = "3.8.0"
+date = "2026-10-18"
+notes = "Honor effective ignore status for local state"
+changed = ["check, init, and migrate treat local-state paths as satisfied when version control already excludes them"]
 
 [[changelog]]
 version = "3.7.0"

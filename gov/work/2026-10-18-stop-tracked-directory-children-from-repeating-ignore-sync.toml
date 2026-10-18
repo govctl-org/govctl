@@ -1,0 +1,30 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-10-18-002"
+title = "Stop tracked directory children from repeating ignore sync"
+status = "done"
+created = "2026-10-18"
+started = "2026-10-18"
+completed = "2026-10-18"
+refs = [
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "ADR-0066",
+]
+tags = ["validation"]
+
+[content]
+description = "Repair check and migrate so a tracked file inside the local-state directory does not mark that directory unsatisfied when a new file there is already excluded. Isolate tests that depend on a non-repository so a parent checkout cannot satisfy or hide those checks."
+
+[[content.acceptance_criteria]]
+text = "when a child of the local-state directory is tracked and a new file there is already excluded, check stays quiet and migrate does not append another directory entry, including on a second run"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "tests that require a non-repository stop discovery above the temp project, and isolated repositories do not inherit commit signing or global hooks"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

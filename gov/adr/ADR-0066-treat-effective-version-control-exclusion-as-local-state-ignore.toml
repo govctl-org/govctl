@@ -1,0 +1,27 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0066"
+title = "Treat effective version-control exclusion as local-state ignore"
+status = "accepted"
+date = "2026-10-18"
+refs = ["RFC-0002:C-GLOBAL-COMMANDS"]
+tags = ["validation"]
+
+[content]
+context = "`govctl check` and `govctl migrate` treated local state as outdated unless the project `.gitignore` contained the literal entries `.govctl.lock` and `.govctl/`. That forces a repository diff on projects that keep govctl local-only and already exclude those paths through another version-control rule, such as a parent ignore file, repository exclude configuration, or a user-global exclude file. The requirement is still that new local-state files stay out of version control. The open choice is which exclusion mechanism satisfies that requirement."
+decision = "Satisfy the local-state ignore requirement when version control would already exclude a new untracked file at `.govctl.lock` or `.govctl/`, including ancestor, repository-local, and user-global exclude rules. Do not add a redundant project `.gitignore` entry in that case. When the path is untracked and still trackable, add the project entry. An already tracked path is not a missing ignore entry. Outside a version-control repository, keep using the project `.gitignore` text. The observable contract is [[RFC-0002:C-GLOBAL-COMMANDS]]; how the implementation asks version control is not part of this decision."
+consequences = "Positive: `check`, `init`, and `migrate` stop demanding `.gitignore` lines that version control already applies, and a negated rule can still be repaired by appending an entry. Negative: a repository whose version-control tool is unavailable falls back to the project file and may warn even when an external exclude would have applied. An already tracked path stays tracked; exclusion does not untrack it, so operators who committed local state must remove it themselves. Neutral: projects that only use the project `.gitignore` keep the previous result."
+
+[[content.alternatives]]
+text = "Require the literal entries in the project .gitignore"
+status = "rejected"
+pros = ["The check is a file read and does not depend on a version-control command."]
+cons = ["Projects that already exclude the paths elsewhere still see a warning and a redundant .gitignore edit."]
+rejection_reason = "The warning and the extra lines describe repository policy, not whether new local-state files would actually be tracked."
+
+[[content.alternatives]]
+text = "Treat any effective version-control exclusion as sufficient, and write a project .gitignore entry only when a path is still trackable"
+status = "accepted"
+pros = ["Local-only use no longer needs a committed or dirty .gitignore change when another exclude rule already covers the paths."]
+cons = ["Outside a repository, and when the version-control command cannot answer, the check still depends on the project .gitignore text."]

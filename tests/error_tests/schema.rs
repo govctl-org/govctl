@@ -686,7 +686,14 @@ fn test_check_reports_missing_local_state_gitignore_entry() -> common::TestResul
     let temp_dir = init_project()?;
     fs::write(temp_dir.path().join(".gitignore"), ".govctl.lock\n")?;
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    // A parent checkout that already ignores these paths must not hide the
+    // missing project entry. Git applies the ceiling to ancestors only.
+    let ceiling = git_ceiling_above(temp_dir.path());
+    let output = run_commands_with_env(
+        temp_dir.path(),
+        &[&["check"]],
+        &[("GIT_CEILING_DIRECTORIES", ceiling.as_str())],
+    )?;
     assert!(output.contains("warning[W0111]"), "output: {}", output);
     assert!(output.contains(".gitignore"), "output: {}", output);
     assert!(output.contains(".govctl/"), "output: {}", output);
@@ -707,13 +714,147 @@ fn test_check_uses_root_gitignore_when_run_from_subdirectory() -> common::TestRe
 }
 
 #[test]
+fn test_git_ceiling_directories_isolates_git_discovery() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let ceiling = git_ceiling_above(temp_dir.path());
+
+    // Precondition guard: with the ceiling set to the temp project's parent,
+    // git must not consider the temp project inside any work tree, even if
+    // the test runner itself lives in a checkout.
+    let rev_parse = std::process::Command::new("git")
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .current_dir(temp_dir.path())
+        .env("GIT_CEILING_DIRECTORIES", &ceiling)
+        .output()?;
+    assert!(
+        !rev_parse.status.success(),
+        "temp project should be outside any git work tree under GIT_CEILING_DIRECTORIES"
+    );
+
+    // Parent discovery and the non-repo file parse agree only when the
+    // project file itself records the entries. Init omits them when a
+    // containing checkout already excludes the paths.
+    fs::write(
+        temp_dir.path().join(".gitignore"),
+        ".govctl.lock\n.govctl/\n",
+    )?;
+
+    // Behavior parity: ceiling changes git discovery only, not govctl output.
+    let plain = run_commands(temp_dir.path(), &[&["check"]])?;
+    let ceiling_env = [("GIT_CEILING_DIRECTORIES", ceiling.as_str())];
+    let isolated = run_commands_with_env(temp_dir.path(), &[&["check"]], &ceiling_env)?;
+    assert_eq!(plain, isolated, "plain: {}\nisolated: {}", plain, isolated);
+    Ok(())
+}
+
+#[test]
+fn test_check_clean_when_info_exclude_covers_local_state() -> common::TestResult {
+    let temp_dir = init_project()?;
+    git_init_isolated(temp_dir.path())?;
+    // Strip the init-written entries so only `.git/info/exclude` provides coverage.
+    fs::write(
+        temp_dir.path().join(".gitignore"),
+        "# project ignores\ntarget/\n",
+    )?;
+    fs::write(
+        temp_dir.path().join(".git/info/exclude"),
+        ".govctl.lock\n.govctl/\n",
+    )?;
+
+    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(
+        !output.contains("warning[W0111]"),
+        "exclude-covered entries must not warn: {}",
+        output
+    );
+    // Effective coverage must not cause redundant entries in the project file.
+    let gitignore = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
+    assert!(
+        !gitignore.lines().any(|line| line.trim() == ".govctl.lock"),
+        "must not duplicate exclude-covered entry: {}",
+        gitignore
+    );
+    assert!(
+        !gitignore.lines().any(|line| line.trim() == ".govctl/"),
+        "must not duplicate exclude-covered entry: {}",
+        gitignore
+    );
+    Ok(())
+}
+
+#[test]
+fn test_check_falls_back_to_file_parse_outside_git_repo() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let ceiling = git_ceiling_above(temp_dir.path());
+    let ceiling_env = [("GIT_CEILING_DIRECTORIES", ceiling.as_str())];
+
+    // Precondition: under the ceiling the temp project is outside any work
+    // tree, so `git check-ignore` cannot answer and the file parse applies.
+    let rev_parse = std::process::Command::new("git")
+        .args(["rev-parse", "--is-inside-work-tree"])
+        .current_dir(temp_dir.path())
+        .env("GIT_CEILING_DIRECTORIES", ceiling.as_str())
+        .output()?;
+    assert!(
+        !rev_parse.status.success(),
+        "temp project should be outside any git work tree under GIT_CEILING_DIRECTORIES"
+    );
+
+    // A stray `.git/info/exclude` without a repository must have no effect.
+    fs::create_dir_all(temp_dir.path().join(".git/info"))?;
+    fs::write(
+        temp_dir.path().join(".git/info/exclude"),
+        ".govctl.lock\n.govctl/\n",
+    )?;
+    fs::write(temp_dir.path().join(".gitignore"), ".govctl.lock\n")?;
+
+    let output = run_commands_with_env(temp_dir.path(), &[&["check"]], &ceiling_env)?;
+    assert!(output.contains("warning[W0111]"), "output: {}", output);
+    assert!(output.contains(".govctl/"), "output: {}", output);
+
+    let migrated = run_commands_with_env(temp_dir.path(), &[&["migrate"]], &ceiling_env)?;
+    assert!(
+        migrated.contains("Synced 1 gitignore entry"),
+        "output: {}",
+        migrated
+    );
+    let gitignore = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
+    assert_eq!(
+        gitignore.matches(".govctl.lock").count(),
+        1,
+        "migrate must not duplicate the present entry: {}",
+        gitignore
+    );
+    assert!(
+        gitignore.lines().any(|line| line.trim() == ".govctl/"),
+        "migrate must add the missing entry: {}",
+        gitignore
+    );
+
+    let check = run_commands_with_env(temp_dir.path(), &[&["check"]], &ceiling_env)?;
+    assert!(!check.contains("warning[W0111]"), "output: {}", check);
+    Ok(())
+}
+
+#[test]
 fn test_check_reports_gitignore_read_error() -> common::TestResult {
     let temp_dir = init_project()?;
     let gitignore_path = temp_dir.path().join(".gitignore");
-    fs::remove_file(&gitignore_path)?;
+    // Init skips creating the file when a containing checkout already
+    // excludes the local-state paths.
+    if gitignore_path.is_file() {
+        fs::remove_file(&gitignore_path)?;
+    }
     fs::create_dir(&gitignore_path)?;
+    // Effective ignore from a parent checkout returns before the read, so
+    // this case has to stay outside any work tree.
+    let ceiling = git_ceiling_above(temp_dir.path());
 
-    let output = run_commands(temp_dir.path(), &[&["check"]])?;
+    let output = run_commands_with_env(
+        temp_dir.path(),
+        &[&["check"]],
+        &[("GIT_CEILING_DIRECTORIES", ceiling.as_str())],
+    )?;
     assert!(output.contains("error"), "output: {}", output);
     assert!(output.contains("read .gitignore"), "output: {}", output);
     assert!(output.contains(".gitignore"), "output: {}", output);

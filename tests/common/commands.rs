@@ -90,10 +90,19 @@ pub fn run_normalized_commands(
 
 /// Run govctl commands in a directory and capture output.
 pub fn run_commands(dir: &Path, commands: &[&[&str]]) -> Result<String, std::io::Error> {
+    run_commands_with_env(dir, commands, &[])
+}
+
+/// Run govctl commands with extra environment variables set for each invocation (inherited env is preserved).
+pub fn run_commands_with_env(
+    dir: &Path,
+    commands: &[&[&str]],
+    env: &[(&str, &str)],
+) -> Result<String, std::io::Error> {
     let mut output = String::new();
 
     for args in commands {
-        append_command_output(dir, args, &mut output)?;
+        append_command_output_with_env(dir, args, env, &mut output)?;
     }
 
     Ok(output)
@@ -119,9 +128,19 @@ fn append_command_output(
     args: &[&str],
     output: &mut String,
 ) -> Result<(), std::io::Error> {
+    append_command_output_with_env(dir, args, &[], output)
+}
+
+fn append_command_output_with_env(
+    dir: &Path,
+    args: &[&str],
+    env: &[(&str, &str)],
+    output: &mut String,
+) -> Result<(), std::io::Error> {
     let result = Command::new(env!("CARGO_BIN_EXE_govctl"))
         .args(args)
         .current_dir(dir)
+        .envs(env.iter().copied())
         .env("NO_COLOR", "1")
         .env("GOVCTL_DEFAULT_OWNER", "@test-user")
         .output()?;

@@ -1,0 +1,35 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-10-18-001"
+title = "Honor effective ignore for local govctl state"
+status = "done"
+created = "2026-10-18"
+started = "2026-10-18"
+completed = "2026-10-18"
+refs = [
+    "RFC-0002:C-GLOBAL-COMMANDS",
+    "ADR-0066",
+]
+tags = ["validation"]
+
+[content]
+description = "Make check, init, and migrate accept local-state paths that version control already excludes, and record that choice against the global-command contract."
+
+[[content.acceptance_criteria]]
+text = "check, init, and migrate treat local-state paths as satisfied when version control already excludes them"
+status = "done"
+category = "changed"
+
+[[content.acceptance_criteria]]
+text = "a tracked file inside the local-state directory does not hide a missing directory ignore rule"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "ignore-behavior tests cover repository exclude rules, negated rules, tracked paths, and non-repository fallback"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]
