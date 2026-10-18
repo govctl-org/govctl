@@ -183,11 +183,14 @@ fn git_ignore_state(root: &std::path::Path, entry: &str) -> IgnoreState {
     if entry.ends_with('/') && !candidate.ends_with('/') {
         candidate.push('/');
     }
-    let output = std::process::Command::new("git")
-        .args(["check-ignore", "-q", "--"])
-        .arg(candidate)
-        .current_dir(root)
-        .output();
+    let mut command = std::process::Command::new("git");
+    command.args(["check-ignore", "-q"]);
+    // An indexed directory query reports "not ignored" once any child is
+    // tracked, even when a new file under that directory would be excluded.
+    if entry.ends_with('/') {
+        command.arg("--no-index");
+    }
+    let output = command.arg("--").arg(candidate).current_dir(root).output();
     match output.ok().and_then(|output| output.status.code()) {
         Some(0) => IgnoreState::Ignored,
         Some(1) => IgnoreState::Trackable,

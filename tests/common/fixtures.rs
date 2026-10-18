@@ -50,7 +50,9 @@ pub fn init_project() -> Result<TempDir, Box<dyn std::error::Error>> {
 /// Initialize a git repository in an existing project directory, isolated
 /// from the developer's global git config: `core.excludesFile` points at an
 /// empty file inside `.git/info` (which git always reads in addition), so
-/// ignore verdicts depend only on the repo's own rules.
+/// ignore verdicts depend only on the repo's own rules. Commit signing and
+/// global hooks are disabled so a later test commit exercises ignore
+/// behavior rather than the developer's commit setup.
 pub fn git_init_isolated(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let status = Command::new("git")
         .args(["init", "-q"])
@@ -65,7 +67,23 @@ pub fn git_init_isolated(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
         .current_dir(dir)
         .status()?;
     assert!(status.success(), "git config core.excludesFile failed");
+    for (key, value) in [("commit.gpgsign", "false"), ("core.hooksPath", "/dev/null")] {
+        let status = Command::new("git")
+            .args(["config", key, value])
+            .current_dir(dir)
+            .status()?;
+        assert!(status.success(), "git config {key} failed");
+    }
     Ok(())
+}
+
+/// Parent of `dir` for `GIT_CEILING_DIRECTORIES`.
+///
+/// Git does not apply the ceiling to the working directory itself, so a
+/// ceiling equal to the temp project still discovers a checkout that
+/// contains it. The parent stops that walk.
+pub fn git_ceiling_above(dir: &Path) -> String {
+    dir.parent().unwrap_or(dir).to_string_lossy().into_owned()
 }
 
 pub fn temp_dir_with_date() -> Result<(TempDir, String), std::io::Error> {

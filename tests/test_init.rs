@@ -2,15 +2,27 @@
 
 mod common;
 
-use common::run_commands;
+use common::{git_ceiling_above, run_commands, run_commands_with_env};
 use std::fs;
+use std::path::Path;
 use tempfile::TempDir;
+
+/// Init as a non-repository. A containing checkout that already excludes
+/// local-state paths would skip writing the project entries these tests assert.
+fn init_outside_repo(dir: &Path) -> Result<String, std::io::Error> {
+    let ceiling = git_ceiling_above(dir);
+    run_commands_with_env(
+        dir,
+        &[&["init"]],
+        &[("GIT_CEILING_DIRECTORIES", ceiling.as_str())],
+    )
+}
 
 #[test]
 fn test_init_creates_gitignore() -> common::TestResult {
     let temp_dir = TempDir::new()?;
 
-    let output = run_commands(temp_dir.path(), &[&["init"]])?;
+    let output = init_outside_repo(temp_dir.path())?;
     assert!(output.contains("Project initialized"));
 
     let gitignore_path = temp_dir.path().join(".gitignore");
@@ -232,7 +244,7 @@ fn test_init_appends_to_existing_gitignore() -> common::TestResult {
     let gitignore_path = temp_dir.path().join(".gitignore");
     fs::write(&gitignore_path, "# Existing content\ntarget/\n")?;
 
-    let output = run_commands(temp_dir.path(), &[&["init"]])?;
+    let output = init_outside_repo(temp_dir.path())?;
     assert!(output.contains("Project initialized"));
 
     let content = fs::read_to_string(&gitignore_path)?;
@@ -258,7 +270,7 @@ fn test_init_appends_to_existing_gitignore_without_trailing_newline() -> common:
     let gitignore_path = temp_dir.path().join(".gitignore");
     fs::write(&gitignore_path, "target/")?;
 
-    let output = run_commands(temp_dir.path(), &[&["init"]])?;
+    let output = init_outside_repo(temp_dir.path())?;
     assert!(output.contains("Project initialized"));
 
     let content = fs::read_to_string(&gitignore_path)?;

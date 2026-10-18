@@ -2,7 +2,10 @@
 
 mod common;
 
-use common::{TestResult, git_init_isolated, init_project, init_project_v1, run_commands};
+use common::{
+    TestResult, git_ceiling_above, git_init_isolated, init_project, init_project_v1, run_commands,
+    run_commands_with_env,
+};
 use std::fs;
 use std::io;
 use std::path::Path;
@@ -298,8 +301,15 @@ fn test_migrate_syncs_missing_local_state_gitignore_entry_at_current_version() -
     let expected_version = current_schema_version(temp_dir.path())?;
     let gitignore_path = temp_dir.path().join(".gitignore");
     fs::write(&gitignore_path, ".govctl.lock\n")?;
+    // Outside a work tree, migrate decides from the project file. A parent
+    // checkout that already excludes the directory would skip the sync.
+    let ceiling = git_ceiling_above(temp_dir.path());
 
-    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    let output = run_commands_with_env(
+        temp_dir.path(),
+        &[&["migrate"]],
+        &[("GIT_CEILING_DIRECTORIES", ceiling.as_str())],
+    )?;
     assert!(
         output.contains(&format!(
             "Synced 1 gitignore entry; already at schema version {expected_version}"
@@ -502,10 +512,101 @@ fn test_tracked_child_does_not_hide_missing_directory_ignore() -> TestResult {
         output
     );
     let gitignore = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
-    assert!(
-        gitignore.lines().any(|line| line.trim() == ".govctl/"),
-        "migrate should add the directory ignore: {}",
+    assert_eq!(
         gitignore
+            .lines()
+            .filter(|line| line.trim() == ".govctl/")
+            .count(),
+        1,
+        "migrate should add the directory ignore once: {}",
+        gitignore
+    );
+
+    let again = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        !again.contains("Synced"),
+        "a second migrate must not append another directory entry: {}",
+        again
+    );
+    let gitignore = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
+    assert_eq!(
+        gitignore
+            .lines()
+            .filter(|line| line.trim() == ".govctl/")
+            .count(),
+        1,
+        "repeated migrate must not duplicate .govctl/: {}",
+        gitignore
+    );
+    let recheck = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(
+        !recheck.contains("warning[W0111]"),
+        "the added directory rule must satisfy check: {}",
+        recheck
+    );
+    Ok(())
+}
+
+#[test]
+fn test_tracked_child_with_existing_directory_rule_is_stable() -> TestResult {
+    let temp_dir = init_project()?;
+    git_init_isolated(temp_dir.path())?;
+    let git = |args: &[&str]| -> TestResult {
+        let status = std::process::Command::new("git")
+            .args(args)
+            .current_dir(temp_dir.path())
+            .status()?;
+        assert!(status.success(), "git {args:?} failed");
+        Ok(())
+    };
+    fs::create_dir_all(temp_dir.path().join(".govctl"))?;
+    fs::write(temp_dir.path().join(".govctl/note.txt"), "tracked child\n")?;
+    git(&["add", "-f", ".govctl/note.txt"])?;
+    git(&[
+        "-c",
+        "user.email=test@example.com",
+        "-c",
+        "user.name=govctl-test",
+        "commit",
+        "-qm",
+        "track child",
+    ])?;
+
+    // Project rule already excludes a new file. The tracked child must not
+    // make check warn or migrate append.
+    fs::write(
+        temp_dir.path().join(".gitignore"),
+        ".govctl.lock\n.govctl/\n",
+    )?;
+    assert_tracked_child_directory_rule_is_stable(temp_dir.path())?;
+
+    // Repo-local exclude is the same contract without a project directory line.
+    fs::write(temp_dir.path().join(".gitignore"), ".govctl.lock\n")?;
+    fs::write(temp_dir.path().join(".git/info/exclude"), ".govctl/\n")?;
+    assert_tracked_child_directory_rule_is_stable(temp_dir.path())?;
+    Ok(())
+}
+
+fn assert_tracked_child_directory_rule_is_stable(dir: &Path) -> TestResult {
+    let before = fs::read_to_string(dir.join(".gitignore"))?;
+    let check = run_commands(dir, &[&["check"]])?;
+    assert!(
+        !check.contains("warning[W0111]"),
+        "an existing directory exclusion must not warn while a child is tracked: {}",
+        check
+    );
+    for _ in 0..2 {
+        let migrated = run_commands(dir, &[&["migrate"]])?;
+        assert!(
+            !migrated.contains("Synced"),
+            "migrate must not append a directory entry that already excludes new files: {}",
+            migrated
+        );
+    }
+    assert_eq!(
+        fs::read_to_string(dir.join(".gitignore"))?,
+        before,
+        "migrate must leave .gitignore untouched"
     );
     Ok(())
 }
