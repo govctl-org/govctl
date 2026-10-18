@@ -8,7 +8,7 @@ status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-10-15"
+updated = "2026-10-18"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "a0799cca3e084541ab12fc2d7b035248c1b4107f91472ffa396ab05f927e61ae"
+signature = "fb1f84ece30f4f013d24e210ee9113ee8664d567ae385f0585a47ef22da0b628"
 
 [[sections]]
 title = "Summary"
@@ -50,9 +50,9 @@ clauses = [
 
 [[changelog]]
 version = "3.8.0"
-date = "2026-10-15"
-notes = "Honor effective gitignore status for local-state entries"
-changed = ["check, migrate, and init treat govctl local-state paths as satisfied when git check-ignore reports them ignored, falling back to project .gitignore parsing outside git repositories"]
+date = "2026-10-18"
+notes = "Honor effective ignore status for local state"
+changed = ["check, init, and migrate treat local-state paths as satisfied when version control already excludes them"]
 
 [[changelog]]
 version = "3.7.0"

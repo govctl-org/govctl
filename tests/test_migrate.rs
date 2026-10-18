@@ -462,6 +462,55 @@ fn test_tracked_local_state_is_not_synced() -> TestResult {
 }
 
 #[test]
+fn test_tracked_child_does_not_hide_missing_directory_ignore() -> TestResult {
+    let temp_dir = init_project()?;
+    git_init_isolated(temp_dir.path())?;
+    let expected_version = current_schema_version(temp_dir.path())?;
+    let git = |args: &[&str]| -> TestResult {
+        let status = std::process::Command::new("git")
+            .args(args)
+            .current_dir(temp_dir.path())
+            .status()?;
+        assert!(status.success(), "git {args:?} failed");
+        Ok(())
+    };
+    // A tracked file inside `.govctl/` must not make the directory look ignored.
+    fs::create_dir_all(temp_dir.path().join(".govctl"))?;
+    fs::write(temp_dir.path().join(".govctl/note.txt"), "tracked child\n")?;
+    git(&["add", "-f", ".govctl/note.txt"])?;
+    git(&[
+        "-c",
+        "user.email=test@example.com",
+        "-c",
+        "user.name=govctl-test",
+        "commit",
+        "-qm",
+        "track child",
+    ])?;
+    fs::write(temp_dir.path().join(".gitignore"), ".govctl.lock\n")?;
+
+    let check = run_commands(temp_dir.path(), &[&["check"]])?;
+    assert!(check.contains("warning[W0111]"), "output: {}", check);
+    assert!(check.contains(".govctl/"), "output: {}", check);
+
+    let output = run_commands(temp_dir.path(), &[&["migrate"]])?;
+    assert!(
+        output.contains(&format!(
+            "Synced 1 gitignore entry; already at schema version {expected_version}"
+        )),
+        "output: {}",
+        output
+    );
+    let gitignore = fs::read_to_string(temp_dir.path().join(".gitignore"))?;
+    assert!(
+        gitignore.lines().any(|line| line.trim() == ".govctl/"),
+        "migrate should add the directory ignore: {}",
+        gitignore
+    );
+    Ok(())
+}
+
+#[test]
 fn test_migrate_rejects_unsupported_schema_even_without_file_changes() -> TestResult {
     let temp_dir = init_project_v1()?;
 

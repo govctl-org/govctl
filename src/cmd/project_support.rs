@@ -108,7 +108,7 @@ pub(crate) fn local_state_gitignore_diagnostics(config: &Config) -> Diagnostics 
     vec![Diagnostic::new(
         DiagnosticCode::W0111ProjectSupportOutdated,
         format!(
-            "Local govctl state entries missing from .gitignore: {}. Run `govctl migrate` to refresh local-state .gitignore entries.",
+            "Local govctl state paths are not effectively ignored: {}. Run `govctl migrate` to refresh local-state ignore entries.",
             missing_entries.join(", ")
         ),
         display_path.display().to_string(),
@@ -171,8 +171,9 @@ fn git_ignore_state(root: &std::path::Path, entry: &str) -> IgnoreState {
     // Ignore rules never apply to tracked paths, and `check-ignore` reports
     // them not-ignored: syncing rules for one would pile up futile
     // duplicates that no `migrate` run can satisfy, so skip it without
-    // warning.
-    if git_is_tracked(root, &plain) {
+    // warning. Only an exact index path counts; a tracked child of `.govctl/`
+    // must not hide a missing directory ignore rule.
+    if git_is_tracked(root, entry) {
         return IgnoreState::Tracked;
     }
     // The directory entry needs its trailing slash: git only applies `dir/`
@@ -194,11 +195,18 @@ fn git_ignore_state(root: &std::path::Path, entry: &str) -> IgnoreState {
     }
 }
 
-/// Whether `candidate` is already tracked by Git.
-fn git_is_tracked(root: &std::path::Path, candidate: &str) -> bool {
+/// Whether the exact path `entry` is already tracked by Git.
+///
+/// Directory spellings such as `.govctl/` are not index entries. A tracked
+/// child must not make the directory look tracked, or an unignored directory
+/// would skip the ignore check.
+fn git_is_tracked(root: &std::path::Path, entry: &str) -> bool {
+    if entry.ends_with('/') {
+        return false;
+    }
     std::process::Command::new("git")
         .args(["ls-files", "--error-unmatch", "--"])
-        .arg(candidate)
+        .arg(entry)
         .current_dir(root)
         .output()
         .ok()
