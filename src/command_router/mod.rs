@@ -66,6 +66,7 @@ pub(crate) fn plan_list(
     limit: Option<usize>,
     output: Option<ListOutputFormat>,
     tags: Vec<String>,
+    owners: Vec<String>,
 ) -> CommandPlan {
     collection(
         target_kind,
@@ -74,6 +75,7 @@ pub(crate) fn plan_list(
             limit,
             output,
             tags,
+            owners,
         },
     )
 }

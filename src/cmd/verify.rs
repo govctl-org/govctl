@@ -7,7 +7,9 @@ use crate::diagnostic::{
 use crate::parse::load_guards_with_warnings;
 use crate::ui;
 use crate::verification;
+use crate::write::WriteOp;
 use std::collections::HashMap;
+use std::path::Path;
 
 use super::work_lookup::load_work_item_by_id;
 
@@ -15,7 +17,20 @@ pub fn verify(
     config: &Config,
     guard_ids: &[String],
     work_id: Option<&str>,
+    record: Option<&Path>,
+    op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
+    if let Some(record_path) = record {
+        let Some(work_id) = work_id else {
+            return Err(Diagnostic::new(
+                DiagnosticCode::E0822UnsupportedOperation,
+                "A pass record requires --work",
+                "verify",
+            ));
+        };
+        return verify_pass_record(config, work_id, record_path, op);
+    }
+
     let (guards_by_id, mut diagnostics) = load_guard_context(config)?;
     let work_item = if let Some(work_id) = work_id {
         Some(load_work_item_by_id(config, work_id)?)
@@ -62,6 +77,105 @@ pub fn verify(
         work_id.unwrap_or("verify"),
     )?);
     Ok(diagnostics)
+}
+
+/// Write a pass record for one work item. [[RFC-0002:C-PASS-RECORD-COMMAND]]
+fn verify_pass_record(
+    config: &Config,
+    work_id: &str,
+    record_path: &Path,
+    op: WriteOp,
+) -> DiagnosticResult<Diagnostics> {
+    let work_item = load_work_item_by_id(config, work_id)?;
+    let work_id = work_item.spec.govctl.id.as_str();
+
+    let checkout = match super::pass_record::sample_checkout(config.project_root()) {
+        Ok(checkout) => checkout,
+        Err(err) => return Ok(checkout_diagnostics(err, work_id)),
+    };
+    let revision = super::pass_record::current_revision(&checkout).to_string();
+    match super::pass_record::matches_revision(&checkout, &revision, Some(record_path)) {
+        Ok(true) => {}
+        Ok(false) => {
+            return Ok(vec![super::pass_record::reject(
+                "Checkout does not match the pass record revision",
+                work_id,
+            )]);
+        }
+        Err(err) => return Ok(checkout_diagnostics(err, work_id)),
+    }
+
+    let effective = verification::effective_required_guard_ids(config, &work_item);
+    if effective.is_empty() {
+        return Ok(vec![super::pass_record::empty_guard_set(work_id)]);
+    }
+
+    if op.is_preview() {
+        // The report names the work item, revision, and guard set. It does not
+        // claim that the guards passed.
+        ui::info(format!(
+            "Pass record plan for {work_id}: revision {revision}; guards {}",
+            effective.join(", ")
+        ));
+        return Ok(vec![]);
+    }
+
+    let (guards_by_id, mut diagnostics) = load_guard_context(config)?;
+    diagnostics.extend(verification::validate_work_item_verification(
+        config,
+        &guards_by_id,
+        &work_item,
+    ));
+    if diagnostics
+        .iter()
+        .any(|diag| diag.level == DiagnosticLevel::Error)
+    {
+        return Ok(diagnostics);
+    }
+
+    diagnostics.extend(run_selected_guards(
+        config,
+        &guards_by_id,
+        &effective,
+        work_id,
+    )?);
+    if diagnostics
+        .iter()
+        .any(|diag| diag.level == DiagnosticLevel::Error)
+    {
+        return Ok(diagnostics);
+    }
+
+    match super::pass_record::matches_revision(&checkout, &revision, Some(record_path)) {
+        Ok(true) => {}
+        Ok(false) => {
+            diagnostics.push(super::pass_record::reject(
+                "Checkout does not match the pass record revision",
+                work_id,
+            ));
+            return Ok(diagnostics);
+        }
+        Err(err) => {
+            diagnostics.extend(checkout_diagnostics(err, work_id));
+            return Ok(diagnostics);
+        }
+    }
+
+    super::pass_record::write_record(record_path, work_id, &revision, &effective)?;
+    Ok(diagnostics)
+}
+
+fn checkout_diagnostics(err: super::pass_record::InspectError, work_id: &str) -> Diagnostics {
+    let message = "This checkout has no usable commit identifier";
+    match err {
+        super::pass_record::InspectError::NoVcs => {
+            vec![super::pass_record::reject(message, work_id)]
+        }
+        super::pass_record::InspectError::Unreadable => vec![
+            super::pass_record::unreadable_warning(work_id),
+            super::pass_record::reject(message, work_id),
+        ],
+    }
 }
 
 pub fn enforce_work_item_guards(

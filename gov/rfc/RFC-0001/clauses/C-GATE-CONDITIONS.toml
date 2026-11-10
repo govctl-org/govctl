@@ -23,6 +23,8 @@ Certain transitions have additional gate conditions beyond the state machine rul
 
 The effective required verification guards are the union of the work item's `verification.required_guards` and, only when project verification is enabled, the project's configured default guards. Only guards covered by explicit waivers are removed from that set.
 
+A pass record that meets [[RFC-0001:C-PASS-RECORD]] satisfies conditions 3 and 4 without executing guards. When the transition supplies no pass record, the lifecycle command MUST execute every guard in the effective required set, and each executed guard MUST pass. When the transition supplies no pass record and that set is empty, conditions 3 and 4 are satisfied without execution. Supplying a pass record MUST NOT use this empty-set rule.
+
 Rationale: Prevents marking work as complete without defined success criteria or executable completion proof.
 
 **RFC draft -> normative:**

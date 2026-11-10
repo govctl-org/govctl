@@ -55,6 +55,7 @@ pub enum BuiltinOp {
     Verify {
         guard_ids: Vec<String>,
         work: Option<String>,
+        record: Option<PathBuf>,
     },
     Search {
         query: Vec<String>,
@@ -266,6 +267,7 @@ pub enum LifecycleOp {
     MoveWork {
         file_or_id: PathBuf,
         status: WorkItemStatus,
+        evidence: Option<PathBuf>,
     },
     /// Record one verification waiver. Implements [[RFC-0002:C-WORK-WAIVE]].
     WaiveWork {
@@ -285,6 +287,9 @@ pub enum Op {
         output: Option<ListOutputFormat>,
         /// Tags to filter by (artifact must have ALL specified tags) — [[RFC-0002:C-CRUD-VERBS]]
         tags: Vec<String>,
+        /// Work Item owners to require. Empty for every other list target.
+        /// [[RFC-0002:C-WORK-OWNERS]]
+        owners: Vec<String>,
     },
     Get {
         output: Option<GetOutputFormat>,

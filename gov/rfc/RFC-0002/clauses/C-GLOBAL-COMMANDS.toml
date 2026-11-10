@@ -125,17 +125,18 @@ Executes reusable verification guards.
 Syntax:
 - `govctl verify [GUARD-ID ...]`
 - `govctl verify --work WI-ID`
+- `govctl verify --work WI-ID --record <path>`
 
 Behavior:
 - Loads Verification Guard artifacts from `gov/guard/`
 - Explicit `GUARD-ID` arguments and `--work WI-ID` MUST NOT be combined in the same invocation
 - With explicit `GUARD-ID` arguments: runs those guards
-- With `--work WI-ID`: runs the effective required guards for that work item after applying project defaults and work-item waivers
+- With `--work WI-ID` and without `--record`: runs the effective required guards for that work item after applying project defaults and work-item waivers
+- With `--work WI-ID --record <path>`: writes a pass record as defined by [[RFC-0002:C-PASS-RECORD-COMMAND]]
 - With no explicit guards and no `--work`: runs the project-level default guards from `gov/config.toml`
 - Reads project-level verification policy from [[RFC-0002:C-VERIFY-CONFIG]]
-- Executes each guard command non-interactively from the project root
-- Reports pass/fail per selected guard
-- Returns non-zero if any selected guard fails, if no guards are selected, or if a requested guard ID is unknown
+- An invocation that executes guards MUST execute each selected guard non-interactively from the project root, MUST report pass or fail for each selected guard, and MUST return non-zero if any selected guard fails, if no guards are selected, or if a requested guard ID is unknown
+- `govctl verify --work WI-ID --record <path>` MUST follow [[RFC-0002:C-PASS-RECORD-COMMAND]] where that clause forbids executing guards, changes the report, or changes the exit status
 
 **9. `govctl init-skills`**
 

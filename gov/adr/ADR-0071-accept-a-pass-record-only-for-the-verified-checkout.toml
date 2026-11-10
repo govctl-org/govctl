@@ -1,0 +1,42 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0071"
+title = "Accept a pass record only for the verified checkout"
+status = "accepted"
+date = "2026-11-10"
+refs = [
+    "RFC-0001:C-PASS-RECORD",
+    "RFC-0002:C-PASS-RECORD-COMMAND",
+    "RFC-0006:C-WORK-ITEM-INTERACTION",
+    "RFC-0001:C-GATE-CONDITIONS",
+]
+tags = [
+    "lifecycle",
+    "validation",
+]
+
+[content]
+context = "Closing a Work Item runs its effective guards on the machine that runs the lifecycle command. Those guards may need a different machine from the one that records completion. Loop round notes are local execution trace."
+decision = "A pass record may satisfy the guard portion of the done gate only for the Work Item and checkout defined by [[RFC-0001:C-PASS-RECORD]]. Other version-control changes cannot reuse the record. The lifecycle command checks the record and does not run guards when a record is supplied. Loop evidence does not satisfy the gate. [[RFC-0001:C-GATE-CONDITIONS]] is the gate this decision changes. [[RFC-0002:C-PASS-RECORD-COMMAND]] defines the commands."
+consequences = "Positive: guards can run on the checkout that has the required tools, and that same checkout can close later without running them again. Negative: other version-control changes, a different identifier, or a checkout without version control cannot reuse the record. The exact match, including the pass-record file, stays in [[RFC-0001:C-PASS-RECORD]]. A supplied record that does not satisfy the gate, including one whose guard set no longer matches after a waiver change, is rejected and does not run the guards. Closing without a record is how those guards run. Neutral: a waiver still means that guard does not apply."
+
+[[content.alternatives]]
+text = "Accept the record for any later commit"
+status = "rejected"
+pros = ["Closing would not have to stay on the verified commit."]
+cons = ["A later commit is a different tree from the one that passed."]
+rejection_reason = "The record would then cover changes that were not verified."
+
+[[content.alternatives]]
+text = "Let loop evidence satisfy the done gate"
+status = "rejected"
+pros = ["A loop already stores round summaries."]
+cons = ["Loop evidence is local execution trace and does not close a Work Item."]
+rejection_reason = "The lifecycle command would stop being the gate."
+
+[[content.alternatives]]
+text = "Bind the pass record to the verified checkout"
+status = "accepted"
+pros = ["The record names the tree that passed and the guards that were required."]
+cons = ["The closing checkout must still be that tree, and a checkout without version control cannot close from a record."]

@@ -3,6 +3,7 @@ source: tests/edit_tests/path_cases/tick.rs
 expression: value
 ---
 $ govctl work new Nested Tick
+WI-<DATE>-001
 Created work item: gov/work/<DATE>-nested-tick.toml
   ID: WI-<DATE>-001
 exit: 0

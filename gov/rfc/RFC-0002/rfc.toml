@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.9.0"
+version = "3.10.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-10-30"
+updated = "2026-11-10"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "67685a2e7ff2dc3743dc43aa061291e026012cc15c9a0e664cb07136fb241a8a"
+signature = "34719a733784cfa8ad59693764b67ba93d9c4c666ba4c927f09cd86881a207d0"
 
 [[sections]]
 title = "Summary"
@@ -40,6 +40,10 @@ clauses = [
     "clauses/C-NAMESPACE-RECOVERY.toml",
     "clauses/C-PRE-1-RELEASE-TARGET-COMPATIBILITY.toml",
     "clauses/C-WORK-WAIVE.toml",
+    "clauses/C-WORK-NEW-OUTPUT.toml",
+    "clauses/C-WORK-FILE-STABILITY.toml",
+    "clauses/C-WORK-OWNERS.toml",
+    "clauses/C-PASS-RECORD-COMMAND.toml",
 ]
 
 [[sections]]
@@ -47,6 +51,17 @@ title = "Global Commands"
 clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
+]
+
+[[changelog]]
+version = "3.10.0"
+date = "2026-11-10"
+notes = "Make work creation, updates, owners, and pass records scriptable"
+added = [
+    "work new writes the new Work Item ID to standard output",
+    "Existing Work Item updates preserve text the command does not change",
+    "work list can filter by owner",
+    "verify --record and work move done --evidence use a pass record",
 ]
 
 [[changelog]]

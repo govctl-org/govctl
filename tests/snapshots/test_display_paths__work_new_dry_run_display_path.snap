@@ -1,6 +1,6 @@
 ---
-source: tests/test_display_paths.rs
-expression: "normalize_output(&output, temp_dir.path(), &date)"
+source: tests/display_path_tests/new.rs
+expression: value
 ---
 $ govctl work new New Work --dry-run
 Would create dir: gov/work
@@ -17,4 +17,5 @@ Would write: gov/work/<DATE>-new-work.toml
   description = """
   Describe the work to be done.
   What is the goal? What are the acceptance criteria?"""
+  ID: WI-<DATE>-001
 exit: 0

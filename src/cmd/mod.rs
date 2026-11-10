@@ -18,6 +18,7 @@ pub mod migrate;
 pub mod move_;
 pub mod new;
 pub(crate) mod output;
+pub(crate) mod pass_record;
 pub(crate) mod project_support;
 pub mod render;
 pub mod search;

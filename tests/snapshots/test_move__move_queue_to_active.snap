@@ -3,6 +3,7 @@ source: tests/test_move.rs
 expression: value
 ---
 $ govctl work new Test task
+WI-<DATE>-001
 Created work item: gov/work/<DATE>-test-task.toml
   ID: WI-<DATE>-001
 exit: 0

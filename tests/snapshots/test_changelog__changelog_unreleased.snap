@@ -3,6 +3,7 @@ source: tests/changelog_tests/release_workflow.rs
 expression: value
 ---
 $ govctl work new New features --active
+WI-<DATE>-003
 Created work item: gov/work/<DATE>-new-features.toml
   ID: WI-<DATE>-003
 exit: 0
@@ -28,6 +29,7 @@ Moved <DATE>-new-features.toml to done
 exit: 0
 
 $ govctl work new API changes --active
+WI-<DATE>-004
 Created work item: gov/work/<DATE>-api-changes.toml
   ID: WI-<DATE>-004
 exit: 0

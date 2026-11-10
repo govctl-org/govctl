@@ -60,4 +60,5 @@ EXAMPLES:
     govctl work edit WI-<DATE>-001 "acceptance_criteria[0]" --set "fix: Correct edge case"
     govctl work edit WI-<DATE>-001 "acceptance_criteria[0]" --tick done
     govctl work edit WI-<DATE>-001 verification.required_guards --add GUARD-CARGO-TEST
+    govctl work edit WI-<DATE>-001 owners --add ada
 exit: 0

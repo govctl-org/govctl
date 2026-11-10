@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-11-10-003"
+title = "Filter Work Items by owner"
+status = "done"
+created = "2026-11-10"
+refs = [
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0002:C-WORK-OWNERS",
+    "RFC-0002:C-EDIT-FIELD-CONTRACT",
+    "ADR-0070",
+]
+tags = ["work-items"]
+started = "2026-11-10"
+completed = "2026-11-10"
+
+[content]
+description = "Let a Work Item record owners, and let the work list keep only items that have every requested owner."
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "A Work Item can record owners, and the work list owner filter keeps items that have every requested owner, combines with the status filter and tags, rejects an empty owner option, and returns an empty result when nothing matches"
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "An empty or duplicate owner is rejected, and getting an omitted owner list returns an empty list"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

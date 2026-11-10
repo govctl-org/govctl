@@ -129,6 +129,7 @@ pub(super) fn list_work_items(
     limit: Option<usize>,
     output: ListOutputFormat,
     tags: &[String],
+    owners: &[String],
 ) -> DiagnosticResult<()> {
     let mut items: Vec<_> = index.work_items.iter().collect();
 
@@ -152,6 +153,8 @@ pub(super) fn list_work_items(
     }
 
     retain_by_tags(&mut items, tags, |i| i.meta().tags.as_slice());
+    // [[RFC-0002:C-WORK-OWNERS]]: every requested owner must be present.
+    retain_by_owners(&mut items, owners, |i| i.meta().owners.as_slice());
 
     items.sort_by(|a, b| a.meta().id.cmp(&b.meta().id));
 
@@ -185,6 +188,21 @@ fn apply_limit<T>(items: &mut Vec<T>, limit: Option<usize>) {
     if let Some(n) = limit {
         items.truncate(n);
     }
+}
+
+fn retain_by_owners<T, F>(items: &mut Vec<T>, required: &[String], mut owners_for: F)
+where
+    F: for<'a> FnMut(&'a T) -> &'a [String],
+{
+    if required.is_empty() {
+        return;
+    }
+    items.retain(|item| {
+        let stored = owners_for(item);
+        required
+            .iter()
+            .all(|owner| stored.iter().any(|candidate| candidate == owner))
+    });
 }
 
 fn retain_by_tags<T, F>(items: &mut Vec<T>, required: &[String], mut tags_for: F)

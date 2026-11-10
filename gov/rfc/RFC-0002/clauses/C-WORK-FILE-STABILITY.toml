@@ -1,0 +1,23 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-WORK-FILE-STABILITY"
+title = "Work Item update stability"
+kind = "normative"
+status = "active"
+since = "3.10.0"
+tags = [
+    "editing",
+    "work-items",
+]
+
+[content]
+text = """
+A command that updates an existing Work Item file MUST preserve the previous text of every key it does not change and of every comment that does not belong to a logical field it changes.
+
+The command MAY rewrite the textual representation of each logical field it changes, including a comment or blank line that belongs to that field. It MAY insert or remove a key only when that key belongs to a logical field the command changes.
+
+This obligation applies to `govctl work edit`, `govctl work move`, and `govctl work waive`. `govctl work new` creates the initial file and MAY choose that file's textual representation.
+
+**Rationale:**
+Unrelated updates to the same Work Item should merge. Text that belongs to a field the command changes may be rewritten with that field."""

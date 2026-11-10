@@ -3,13 +3,13 @@
 [govctl]
 id = "RFC-0006"
 title = "Loop Execution Model"
-version = "1.0.0"
+version = "1.1.0"
 status = "normative"
-phase = "stable"
+phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-05-31"
-updated = "2026-07-25"
-signature = "d02adbb9e12eea12c7ab230165b2d269bc5e3baec462089f55224f24ab8acb52"
+updated = "2026-11-10"
+signature = "e8b60e88e01346977ac0ef946891fc73691729eaea56dccd07812e04586bac15"
 
 [[sections]]
 title = "Summary"
@@ -37,6 +37,12 @@ clauses = [
     "clauses/C-EXECUTION-STATE-SEPARATION.toml",
     "clauses/C-DEPENDENCY-SEPARATION.toml",
 ]
+
+[[changelog]]
+version = "1.1.0"
+date = "2026-11-10"
+notes = "Keep loop evidence separate from a pass record"
+changed = ["Loop evidence does not satisfy the done gate, and a pass record is not loop evidence"]
 
 [[changelog]]
 version = "1.0.0"

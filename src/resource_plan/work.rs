@@ -1,6 +1,6 @@
 use super::{
-    ToPlan, compile_common_delete, compile_common_edit, compile_common_get, compile_common_list,
-    compile_common_render, compile_common_show,
+    ToPlan, compile_common_delete, compile_common_edit, compile_common_get, compile_common_render,
+    compile_common_show, compile_work_list,
 };
 use crate::cmd;
 use crate::command_router::{CommandPlan, CreateOp, LifecycleOp, plan_create, plan_lifecycle};
@@ -10,17 +10,22 @@ use crate::{ListTarget, WorkCommand};
 impl ToPlan for WorkCommand {
     fn to_plan(&self) -> DiagnosticResult<CommandPlan> {
         match self {
-            WorkCommand::List(args) => Ok(compile_common_list(ListTarget::Work, args)),
+            WorkCommand::List(args) => compile_work_list(&args.common, &args.owner),
             WorkCommand::Get(args) => compile_common_get(args),
             WorkCommand::Show(args) => {
                 Ok(compile_common_show(cmd::edit::ArtifactType::WorkItem, args))
             }
-            WorkCommand::Move { file, status } => Ok(plan_lifecycle(
+            WorkCommand::Move {
+                file,
+                status,
+                evidence,
+            } => Ok(plan_lifecycle(
                 cmd::edit::ArtifactType::WorkItem,
                 &file.display().to_string(),
                 LifecycleOp::MoveWork {
                     file_or_id: file.clone(),
                     status: *status,
+                    evidence: evidence.clone(),
                 },
             )),
             WorkCommand::New { title, active } => Ok(plan_create(

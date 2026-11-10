@@ -20,6 +20,7 @@ pub fn list(
     limit: Option<usize>,
     output: Option<ListOutputFormat>,
     tags: &[String],
+    owners: &[String],
 ) -> DiagnosticResult<Diagnostics> {
     let output = output::resolve_list_output(output);
     if target == ListTarget::Guard {
@@ -37,7 +38,7 @@ pub fn list(
         ListTarget::Rfc => list_rfcs(&index, filter, limit, output, tags)?,
         ListTarget::Clause => list_clauses(&index, filter, limit, output, tags)?,
         ListTarget::Adr => list_adrs(&index, filter, limit, output, tags)?,
-        ListTarget::Work => list_work_items(&index, filter, limit, output, tags)?,
+        ListTarget::Work => list_work_items(&index, filter, limit, output, tags, owners)?,
         ListTarget::Guard => unreachable!("handled above"),
         ListTarget::Conformance => {
             return crate::cmd::conformance::list(config, filter, limit, Some(output), tags);

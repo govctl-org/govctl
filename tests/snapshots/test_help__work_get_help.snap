@@ -35,7 +35,7 @@ Options:
           Print help (see a summary with '-h')
 
 VALID FIELDS:
-    - title, description, status, completed_at, refs, depends_on
+    - title, description, status, completed_at, refs, depends_on, owners
     - notes, acceptance_criteria
     - verification.required_guards, verification.waivers
 

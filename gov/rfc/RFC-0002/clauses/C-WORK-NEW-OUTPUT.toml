@@ -1,0 +1,23 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-WORK-NEW-OUTPUT"
+title = "Work creation identifier"
+kind = "normative"
+status = "active"
+since = "3.10.0"
+tags = [
+    "cli",
+    "work-items",
+]
+
+[content]
+text = """
+A successful `govctl work new` invocation MUST write exactly the created Work Item ID and one trailing newline to standard output, and it MUST NOT write any other bytes to standard output. The human-readable creation report and any diagnostics MUST be written to standard error.
+
+A failed invocation and a global `--dry-run` invocation MUST NOT write any bytes to standard output and MUST NOT create the Work Item file. The dry-run planned-creation report MUST be written to standard error. That report MAY name the ID that would be created.
+
+`govctl work new` is exempt from the output-format selection in [[RFC-0002:C-OUTPUT-FORMAT]]. Its successful output remains the identifier line above when standard output is not a terminal.
+
+**Rationale:**
+Scripts read one identifier line from the success stream. Failure and dry-run leave that stream empty. The diagnostic stream may still name a prospective ID."""

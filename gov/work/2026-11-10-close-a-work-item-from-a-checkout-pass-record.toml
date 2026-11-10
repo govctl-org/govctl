@@ -1,0 +1,46 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-11-10-004"
+title = "Close a Work Item from a checkout pass record"
+status = "done"
+created = "2026-11-10"
+refs = [
+    "RFC-0001:C-PASS-RECORD",
+    "RFC-0001:C-GATE-CONDITIONS",
+    "RFC-0002:C-PASS-RECORD-COMMAND",
+    "RFC-0006:C-WORK-ITEM-INTERACTION",
+    "ADR-0071",
+]
+tags = [
+    "lifecycle",
+    "validation",
+]
+started = "2026-11-10"
+completed = "2026-11-10"
+
+[content]
+description = "Let the done transition accept a pass record when the checkout matches that record's commit, allowing only the record file inside the checkout as an extra change, and keep running guards when no record is supplied."
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "Recording a pass writes the work item, the commit identifier sampled before the record file is written, and exactly the effective guard set after those guards pass, and only when the checkout matches that commit aside from the record path"
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "Moving to done with a record succeeds without running guards when the checkout matches the recorded commit, allowing only that record file inside the checkout as an extra change, and acceptance criteria must still be complete"
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "Recording or closing is rejected without changing the work item, without running guards, and without modifying the record file when there is no usable commit identifier, the checkout does not match the recorded commit, the guard set differs, the record is missing or unreadable, or evidence is used for a status other than done"
+
+[[content.acceptance_criteria]]
+category = "chore"
+status = "done"
+text = "Moving to done without a pass record still runs the effective guards"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

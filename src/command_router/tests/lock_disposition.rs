@@ -165,6 +165,7 @@ fn test_lock_disposition_requires_lock_for_mutating_commands()
             LifecycleOp::MoveWork {
                 file_or_id: std::path::PathBuf::from("WI-2026-04-07-004"),
                 status: WorkItemStatus::Done,
+                evidence: None,
             },
         )
         .lock_disposition(),

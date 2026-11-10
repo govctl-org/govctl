@@ -76,6 +76,11 @@ pub fn render_work_item_with_projection(
         let _ = writeln!(out);
     }
 
+    if !meta.owners.is_empty() {
+        let _ = writeln!(out, "> **Owners:** {}", meta.owners.join(", "));
+        let _ = writeln!(out);
+    }
+
     // References (expanded to markdown links)
     if !meta.refs.is_empty() {
         let _ = writeln!(out, "**References:** {}", render_refs(&meta.refs));

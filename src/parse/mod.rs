@@ -1,6 +1,7 @@
 //! TOML parsing for ADR, Work Item, Guard, Conformance Case, and Release files.
 
 mod toml_io;
+mod work_write;
 
 use crate::config::Config;
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
@@ -133,21 +134,17 @@ pub fn load_work_item(config: &Config, path: &Path) -> Result<WorkItemEntry, Dia
     })
 }
 
-/// Write a work item to TOML file
+/// Write a work item to TOML file.
+///
+/// New files are pretty-printed. Updates of an existing file preserve unchanged
+/// text — [[RFC-0002:C-WORK-FILE-STABILITY]].
 pub fn write_work_item(
     path: &Path,
     spec: &WorkItemSpec,
     op: WriteOp,
     display_path: Option<&Path>,
 ) -> Result<(), Diagnostic> {
-    toml_io::write_toml_spec(
-        path,
-        ArtifactSchema::WorkItem,
-        spec,
-        op,
-        display_path,
-        "Failed to serialize TOML",
-    )
+    work_write::write_work_item(path, spec, op, display_path)
 }
 
 /// Write a verification guard to TOML file.

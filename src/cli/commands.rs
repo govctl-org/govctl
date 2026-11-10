@@ -157,6 +157,14 @@ pub(crate) enum Commands {
         /// Run the effective guard set for a specific work item
         #[arg(long, conflicts_with = "guard_ids")]
         work: Option<String>,
+        /// Write a pass record after the work item's guards pass
+        #[arg(
+            long,
+            requires = "work",
+            conflicts_with = "guard_ids",
+            value_name = "PATH"
+        )]
+        record: Option<PathBuf>,
     },
 
     /// Search governed artifacts.

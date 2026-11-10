@@ -1,0 +1,37 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0070"
+title = "Record Work Item owners without milestone or priority"
+status = "accepted"
+date = "2026-11-10"
+refs = [
+    "RFC-0000:C-WORK-DEF",
+    "RFC-0002:C-WORK-OWNERS",
+]
+tags = ["work-items"]
+
+[content]
+context = "A Work Item has no owner field, so owners are written into free-text notes. Milestone and priority were requested beside owners."
+decision = "Add an optional owners list and a Work Item list filter that keeps an item only when it has every requested owner. Requiring every requested owner follows the same rule as tag filtering. Do not add milestone or priority. [[RFC-0000:C-WORK-DEF]] defines the field. [[RFC-0002:C-WORK-OWNERS]] defines the filter."
+consequences = "Positive: owners are structured data and the list can require every requested owner. Negative: notes that already mention an owner are not copied into the field. Neutral: releases still group completed work, and tags can still label a batch."
+
+[[content.alternatives]]
+text = "Add a milestone field"
+status = "rejected"
+pros = ["A batch of work could share a named target."]
+cons = ["Releases already group completed Work Items, and tags can label a batch."]
+rejection_reason = "A milestone would duplicate grouping that releases and tags already provide."
+
+[[content.alternatives]]
+text = "Add a priority field"
+status = "rejected"
+pros = ["A queue could be sorted by a stored rank."]
+cons = ["Queue, active, and depends_on already order work, and no lifecycle rule would read the rank."]
+rejection_reason = "Nothing in the lifecycle consumes a priority."
+
+[[content.alternatives]]
+text = "Add an owners list and an owner filter"
+status = "accepted"
+pros = ["Ownership is a list of names, and the list can require every requested owner."]
+cons = ["The filter finds an item only after an owner is recorded on it."]

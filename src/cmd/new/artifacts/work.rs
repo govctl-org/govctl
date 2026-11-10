@@ -104,10 +104,15 @@ pub(super) fn create(
         warnings.extend(presence.into_warnings());
     }
 
-    if !op.is_preview() {
+    // [[RFC-0002:C-WORK-NEW-OUTPUT]]: success writes only the ID on stdout.
+    // The human report stays on stderr. Dry-run and failure write no stdout.
+    if op.is_preview() {
+        ui::sub_info(format!("ID: {work_id}"));
+    } else {
         let display_path = config.display_path(&work_path);
         ui::created("work item", &display_path);
         ui::sub_info(format!("ID: {work_id}"));
+        println!("{work_id}");
     }
 
     Ok(warnings)

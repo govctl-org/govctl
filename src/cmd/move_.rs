@@ -15,6 +15,7 @@ pub fn move_item(
     config: &Config,
     file: &Path,
     status: WorkItemStatus,
+    evidence: Option<&Path>,
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     // Find the work item file
@@ -64,6 +65,16 @@ pub fn move_item(
         }
     }
 
+    // [[RFC-0002:C-PASS-RECORD-COMMAND]]: evidence is only valid for done,
+    // and a rejected record leaves the work item unchanged.
+    if evidence.is_some() && status != WorkItemStatus::Done {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0822UnsupportedOperation,
+            "Pass record evidence applies only when the target status is done",
+            work_id,
+        ));
+    }
+
     // Validate acceptance criteria before marking done
     if status == WorkItemStatus::Done {
         // Must have at least one acceptance criterion
@@ -106,7 +117,11 @@ pub fn move_item(
             ));
         }
 
-        verify::enforce_work_item_guards(config, &entry)?;
+        if let Some(record_path) = evidence {
+            super::pass_record::require_evidence(config, &entry, record_path)?;
+        } else {
+            verify::enforce_work_item_guards(config, &entry)?;
+        }
     }
 
     entry.spec.govctl.status = status;

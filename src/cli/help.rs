@@ -72,11 +72,13 @@ pub(super) const VERIFY: &str = r#"EXAMPLES:
     govctl verify GUARD-CLIPPY
     govctl verify GUARD-CLIPPY GUARD-TESTS
     govctl verify --work WI-2026-04-06-001
+    govctl verify --work WI-2026-04-06-001 --record pass.toml
 
 NOTES:
     - Pass guard IDs to run specific guards directly.
     - Use `--work` to run the effective guard set for a work item.
     - `--work` conflicts with explicit guard IDs.
+    - `--record` requires `--work` and writes a pass record after those guards pass.
 "#;
 
 pub(super) const SEARCH: &str = r#"EXAMPLES:

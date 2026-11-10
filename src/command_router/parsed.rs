@@ -47,9 +47,14 @@ impl CommandPlan {
                 force: *force,
             }))),
             Commands::Migrate => Ok(global(Op::Builtin(BuiltinOp::Migrate))),
-            Commands::Verify { guard_ids, work } => Ok(global(Op::Builtin(BuiltinOp::Verify {
+            Commands::Verify {
+                guard_ids,
+                work,
+                record,
+            } => Ok(global(Op::Builtin(BuiltinOp::Verify {
                 guard_ids: guard_ids.clone(),
                 work: work.clone(),
+                record: record.clone(),
             }))),
             Commands::Search {
                 query,

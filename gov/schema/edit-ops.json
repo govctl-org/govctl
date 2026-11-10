@@ -216,6 +216,12 @@
     },
     {
       "artifact": "work",
+      "name": "owners",
+      "kind": "list",
+      "verbs": ["add", "remove", "get"]
+    },
+    {
+      "artifact": "work",
       "name": "description",
       "kind": "scalar",
       "verbs": ["get", "set"]
@@ -565,6 +571,13 @@
       "get": { "path": ["govctl", "tags"], "render": "csv_strings" },
       "set": null,
       "list_path": ["govctl", "tags"]
+    },
+    {
+      "artifact": "work",
+      "name": "owners",
+      "get": { "path": ["govctl", "owners"], "render": "csv_strings" },
+      "set": null,
+      "list_path": ["govctl", "owners"]
     },
     {
       "artifact": "work",
