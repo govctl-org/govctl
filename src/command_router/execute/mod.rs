@@ -179,6 +179,11 @@ fn execute_lifecycle(
         LifecycleOp::MoveWork { file_or_id, status } => {
             cmd::move_::move_item(config, file_or_id, *status, op)
         }
+        LifecycleOp::WaiveWork {
+            work_id,
+            guard_id,
+            reason,
+        } => cmd::waive::waive_guard(config, work_id, guard_id, reason.as_deref(), op),
     };
     match result {
         Ok(op_diags) => diags.extend(op_diags),

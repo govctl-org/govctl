@@ -173,11 +173,13 @@ pub(super) const WORK: &str = r#"COMMON WORKFLOW:
     3. `govctl work edit` to define scope and acceptance criteria
     4. `govctl work edit <ID> "acceptance_criteria[N]" --set <text>` to correct a criterion
     5. `govctl work edit <ID> "acceptance_criteria[N]" --tick <status>` to update criterion status
-    6. `govctl work move` to change lifecycle state
+    6. `govctl work waive <ID> <GUARD-ID> --reason <text>` to record one required-guard waiver
+    7. `govctl work move` to change lifecycle state
 
 START HERE:
     - New work item: `govctl work new "Title"`
     - Activate work: `govctl work move WI-<DATE>-001 active`
+    - Record a waiver: `govctl work waive WI-<DATE>-001 GUARD-ID --reason "Why this guard does not apply"`
     - Inspect one work item: `govctl work get WI-<DATE>-001`
 "#;
 

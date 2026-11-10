@@ -1,0 +1,38 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-10-30-001"
+title = "Record a work-item guard waiver from the CLI"
+status = "done"
+created = "2026-10-30"
+started = "2026-10-30"
+completed = "2026-10-30"
+refs = [
+    "RFC-0002:C-WORK-WAIVE",
+    "ADR-0067",
+]
+tags = [
+    "cli",
+    "work-items",
+]
+
+[content]
+description = "Add the missing command that records one verification waiver on a Work Item, with the Guard and reason checked before the waiver is stored."
+
+[[content.acceptance_criteria]]
+text = "govctl work waive records one waiver naming the Work Item, Guard, and trimmed reason"
+status = "done"
+category = "added"
+
+[[content.acceptance_criteria]]
+text = "work waive rejects a missing Work Item, unknown Guard, empty reason, duplicate waiver, or Guard that is not required, and leaves the Work Item unchanged"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "govctl describe lists the work waive command"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

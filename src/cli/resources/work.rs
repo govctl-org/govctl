@@ -65,6 +65,27 @@ NOTES:
         #[arg(long)]
         active: bool,
     },
+    /// Record one verification waiver on a work item
+    #[command(after_help = "\
+EXAMPLES:
+    govctl work waive WI-2026-04-06-001 GUARD-CARGO-TEST --reason \"Not exercised by this change\"
+
+NOTES:
+    - `--reason` is required. Blank text is rejected after trimming.
+    - The Guard must already be required for the work item.
+    - `work edit` can correct or remove a waiver after it exists.
+")]
+    Waive {
+        /// Work item ID
+        #[arg(value_name = "WI-ID")]
+        work_id: String,
+        /// Guard to waive
+        #[arg(value_name = "GUARD-ID")]
+        guard_id: String,
+        /// Why this guard is waived for this work item
+        #[arg(long)]
+        reason: Option<String>,
+    },
     /// Canonical path-first edit entrypoint
     #[command(after_help = "\
 EXAMPLES:

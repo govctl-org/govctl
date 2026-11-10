@@ -267,6 +267,12 @@ pub enum LifecycleOp {
         file_or_id: PathBuf,
         status: WorkItemStatus,
     },
+    /// Record one verification waiver. Implements [[RFC-0002:C-WORK-WAIVE]].
+    WaiveWork {
+        work_id: String,
+        guard_id: String,
+        reason: Option<String>,
+    },
 }
 
 #[derive(Debug, Clone)]

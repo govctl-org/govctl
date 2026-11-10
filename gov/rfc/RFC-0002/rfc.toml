@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.8.0"
+version = "3.9.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-10-18"
+updated = "2026-10-30"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "fb1f84ece30f4f013d24e210ee9113ee8664d567ae385f0585a47ef22da0b628"
+signature = "67685a2e7ff2dc3743dc43aa061291e026012cc15c9a0e664cb07136fb241a8a"
 
 [[sections]]
 title = "Summary"
@@ -39,6 +39,7 @@ clauses = [
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
     "clauses/C-NAMESPACE-RECOVERY.toml",
     "clauses/C-PRE-1-RELEASE-TARGET-COMPATIBILITY.toml",
+    "clauses/C-WORK-WAIVE.toml",
 ]
 
 [[sections]]
@@ -47,6 +48,12 @@ clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
 ]
+
+[[changelog]]
+version = "3.9.0"
+date = "2026-10-30"
+notes = "Record a work-item guard waiver from the CLI"
+added = ["govctl work waive records one work-item guard waiver with a required reason"]
 
 [[changelog]]
 version = "3.8.0"

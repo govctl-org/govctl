@@ -1,0 +1,33 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0067"
+title = "Record work-item guard waivers with a dedicated command"
+status = "accepted"
+date = "2026-10-30"
+refs = [
+    "RFC-0002:C-WORK-WAIVE",
+    "RFC-0002:C-EDIT-FIELD-CONTRACT",
+]
+tags = [
+    "cli",
+    "work-items",
+]
+
+[content]
+context = "[[RFC-0002:C-EDIT-FIELD-CONTRACT]] lets `work edit` correct or remove an existing verification waiver and does not create one. A creation path has to name one Guard and a non-empty reason, and the Guard must already be required for that Work Item. Callers currently have to write the Work Item file by hand."
+decision = "Create a waiver with `govctl work waive <WI-ID> <GUARD-ID> --reason <text>`. Keep `work edit` limited to correcting or removing a waiver that already exists. The command syntax and rejection rules are [[RFC-0002:C-WORK-WAIVE]]."
+consequences = "Positive: a user or agent can record a justified waiver without hand-editing TOML, and an invalid waiver is rejected before it is stored. Negative: callers that expected `verification.waivers --add` still cannot use it; they must call `work waive`. Neutral: an existing waiver remains editable through the indexed `guard` and `reason` paths."
+
+[[content.alternatives]]
+text = "Extend work edit so verification.waivers accepts --add"
+status = "rejected"
+pros = ["One mutation surface would cover create, correct, and remove."]
+cons = ["A list append does not carry both a Guard ID and a reason."]
+rejection_reason = "Creation stays off the generic edit path so the Guard and the reason are checked together."
+
+[[content.alternatives]]
+text = "Record the waiver with govctl work waive"
+status = "accepted"
+pros = ["The command takes the Guard and the reason as one invocation on the Work Item that stores the waiver."]
+cons = ["Callers learn a verb besides edit."]

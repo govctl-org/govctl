@@ -30,6 +30,19 @@ impl ToPlan for WorkCommand {
                     active: *active,
                 },
             )),
+            WorkCommand::Waive {
+                work_id,
+                guard_id,
+                reason,
+            } => Ok(plan_lifecycle(
+                cmd::edit::ArtifactType::WorkItem,
+                work_id,
+                LifecycleOp::WaiveWork {
+                    work_id: work_id.clone(),
+                    guard_id: guard_id.clone(),
+                    reason: reason.clone(),
+                },
+            )),
             WorkCommand::Edit(args) => compile_common_edit(args),
             WorkCommand::Delete(args) => {
                 compile_common_delete(cmd::edit::ArtifactType::WorkItem, args)

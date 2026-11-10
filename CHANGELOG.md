@@ -10,6 +10,10 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- govctl work waive records one waiver naming the Work Item, Guard, and trimmed reason (WI-2026-10-30-001)
+
 ### Changed
 
 - check, init, and migrate treat local-state paths as satisfied when version control already excludes them (WI-2026-10-18-001)
@@ -18,6 +22,7 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 - a tracked file inside the local-state directory does not hide a missing directory ignore rule (WI-2026-10-18-001)
 - when a child of the local-state directory is tracked and a new file there is already excluded, check stays quiet and migrate does not append another directory entry, including on a second run (WI-2026-10-18-002)
+- work waive rejects a missing Work Item, unknown Guard, empty reason, duplicate waiver, or Guard that is not required, and leaves the Work Item unchanged (WI-2026-10-30-001)
 
 ## [0.22.0] - 2026-10-09
 

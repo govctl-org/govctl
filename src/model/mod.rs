@@ -36,6 +36,6 @@ pub use index::{
 pub use release::{Release, ReleasesFile};
 pub use rfc::{RfcPhase, RfcSpec, RfcStatus, RfcWire, SectionSpec};
 pub use work::{
-    ChecklistItem, ChecklistStatus, WorkItemContent, WorkItemMeta, WorkItemSpec, WorkItemStatus,
-    WorkItemVerification,
+    ChecklistItem, ChecklistStatus, GuardWaiver, WorkItemContent, WorkItemMeta, WorkItemSpec,
+    WorkItemStatus, WorkItemVerification,
 };
