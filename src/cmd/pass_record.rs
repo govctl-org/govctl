@@ -51,31 +51,10 @@ pub(crate) fn require_evidence(
             work_id,
         ));
     }
-    let checkout = match inspect(config.project_root()) {
-        Ok(checkout) => checkout,
-        Err(InspectError::NoVcs) => {
-            return Err(reject(
-                "This checkout has no usable commit identifier",
-                work_id,
-            ));
-        }
-        Err(InspectError::Unreadable) => {
-            ui::diagnostic(&unreadable_warning(work_id));
-            return Err(reject(
-                "This checkout has no usable commit identifier",
-                work_id,
-            ));
-        }
-    };
-    let matches = content_matches(&checkout, &record.revision, Some(record_path)).map_err(
-        |err| match err {
-            InspectError::NoVcs => reject("This checkout has no usable commit identifier", work_id),
-            InspectError::Unreadable => {
-                ui::diagnostic(&unreadable_warning(work_id));
-                reject("This checkout has no usable commit identifier", work_id)
-            }
-        },
-    )?;
+    let checkout =
+        inspect(config.project_root()).map_err(|err| checkout_rejection(err, work_id))?;
+    let matches = content_matches(&checkout, &record.revision, Some(record_path))
+        .map_err(|err| checkout_rejection(err, work_id))?;
     if !matches {
         return Err(reject(
             "Checkout does not match the pass record revision",
@@ -90,6 +69,13 @@ pub(crate) fn require_evidence(
         ));
     }
     Ok(())
+}
+
+fn checkout_rejection(err: InspectError, work_id: &str) -> Diagnostic {
+    if matches!(err, InspectError::Unreadable) {
+        ui::diagnostic(&unreadable_warning(work_id));
+    }
+    reject("This checkout has no usable commit identifier", work_id)
 }
 
 pub(crate) fn unreadable_warning(location: &str) -> Diagnostic {

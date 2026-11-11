@@ -118,7 +118,14 @@ pub fn move_item(
         }
 
         if let Some(record_path) = evidence {
+            // [[RFC-0001:C-GATE-CONDITIONS]]: a pass record does not make an
+            // unusable guard reference acceptable.
+            verify::reject_unusable_guard_reference(config, &entry)?;
             super::pass_record::require_evidence(config, &entry, record_path)?;
+        } else if op.is_preview() {
+            // [[RFC-0002:C-LIFECYCLE-VERBS]]: a dry-run reports the guard set
+            // and does not execute it.
+            verify::preview_work_item_guards(config, &entry)?;
         } else {
             verify::enforce_work_item_guards(config, &entry)?;
         }

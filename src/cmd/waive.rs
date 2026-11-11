@@ -18,14 +18,13 @@ pub fn waive_guard(
     op: WriteOp,
 ) -> DiagnosticResult<Diagnostics> {
     let mut entry = crate::cmd::work_lookup::load_work_item_by_id(config, work_id)
-        .map_err(|diag| rejection(diag.code, &diag.message, work_id, guard_id))?;
+        .map_err(|diag| attach_guard(diag, work_id, guard_id))?;
     let reason = reason.unwrap_or("").trim();
     if reason.is_empty() {
         return Err(rejection(
             DiagnosticCode::E0401WorkSchemaInvalid,
-            &format!("Verification waiver reason must not be empty: {guard_id}"),
+            format!("Verification waiver reason must not be empty: {guard_id}"),
             work_id,
-            guard_id,
         ));
     }
     if entry
@@ -37,9 +36,8 @@ pub fn waive_guard(
     {
         return Err(rejection(
             DiagnosticCode::E0401WorkSchemaInvalid,
-            &format!("Duplicate waiver for verification guard: {guard_id}"),
+            format!("Duplicate waiver for verification guard: {guard_id}"),
             work_id,
-            guard_id,
         ));
     }
 
@@ -47,9 +45,8 @@ pub fn waive_guard(
     if !guards.contains_key(guard_id) {
         return Err(rejection(
             DiagnosticCode::E1002GuardNotFound,
-            &format!("Work item waiver references unknown verification guard: {guard_id}"),
+            format!("Work item waiver references unknown verification guard: {guard_id}"),
             work_id,
-            guard_id,
         ));
     }
     if !required_guard_ids_before_waivers(config, &entry)
@@ -58,11 +55,10 @@ pub fn waive_guard(
     {
         return Err(rejection(
             DiagnosticCode::E0401WorkSchemaInvalid,
-            &format!(
+            format!(
                 "Verification waiver references guard that is not required for this work item: {guard_id}"
             ),
             work_id,
-            guard_id,
         ));
     }
 
@@ -84,28 +80,15 @@ pub fn waive_guard(
     Ok(vec![])
 }
 
-fn rejection(code: DiagnosticCode, message: &str, work_id: &str, guard_id: &str) -> Diagnostic {
-    let mut message = message.to_string();
-    if !message_names_id(&message, guard_id) {
-        message.push_str(&format!(" Guard: {guard_id}."));
-    }
+fn rejection(code: DiagnosticCode, message: impl Into<String>, work_id: &str) -> Diagnostic {
     Diagnostic::new(code, message, work_id)
 }
 
-fn message_names_id(message: &str, id: &str) -> bool {
-    if id.is_empty() {
-        return false;
-    }
-    message.match_indices(id).any(|(start, _)| {
-        let before = message[..start].chars().next_back();
-        let after = message[start + id.len()..].chars().next();
-        boundary_ok(before) && boundary_ok(after)
-    })
-}
-
-fn boundary_ok(ch: Option<char>) -> bool {
-    match ch {
-        Some(ch) => !ch.is_ascii_alphanumeric() && !matches!(ch, '-' | '_' | ':'),
-        None => true,
-    }
+/// The work-item lookup does not know which guard was requested.
+fn attach_guard(diag: Diagnostic, work_id: &str, guard_id: &str) -> Diagnostic {
+    Diagnostic::new(
+        diag.code,
+        format!("{} Guard: {guard_id}.", diag.message),
+        work_id,
+    )
 }

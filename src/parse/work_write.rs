@@ -5,7 +5,7 @@
 //! text, the write fails and the file is left unchanged.
 
 use crate::diagnostic::{Diagnostic, DiagnosticCode};
-use crate::model::WorkItemSpec;
+use crate::model::{ChecklistItem, WorkItemSpec};
 use crate::schema::ArtifactSchema;
 use crate::write::{WriteOp, write_file};
 use std::collections::BTreeSet;
@@ -82,17 +82,10 @@ fn patch_table(
     changed: &mut bool,
 ) -> Result<(), Diagnostic> {
     if table_keys(document) != value_keys(previous) {
-        return Err(preserve_error(
-            location,
-            "existing work item text cannot be preserved",
-        ));
+        return Err(cannot_preserve(location));
     }
 
-    let stale: Vec<String> = previous
-        .keys()
-        .filter(|key| !desired.contains_key(key.as_str()))
-        .cloned()
-        .collect();
+    let stale = stale_keys(previous, desired);
     for key in &stale {
         let Some(previous_value) = previous.get(key) else {
             continue;
@@ -112,10 +105,7 @@ fn patch_table(
             }
             Some(_) => {
                 let Some(previous_value) = previous.get(key) else {
-                    return Err(preserve_error(
-                        location,
-                        "existing work item text cannot be preserved",
-                    ));
+                    return Err(cannot_preserve(location));
                 };
                 if same_stored_value(previous_value, desired_value) {
                     continue;
@@ -153,17 +143,10 @@ fn patch_inline_table(
     changed: &mut bool,
 ) -> Result<(), Diagnostic> {
     if inline_keys(document) != value_keys(previous) {
-        return Err(preserve_error(
-            location,
-            "existing work item text cannot be preserved",
-        ));
+        return Err(cannot_preserve(location));
     }
 
-    let stale: Vec<String> = previous
-        .keys()
-        .filter(|key| !desired.contains_key(key.as_str()))
-        .cloned()
-        .collect();
+    let stale = stale_keys(previous, desired);
     for key in &stale {
         let Some(previous_value) = previous.get(key) else {
             continue;
@@ -182,10 +165,7 @@ fn patch_inline_table(
             continue;
         }
         let Some(previous_value) = previous.get(key) else {
-            return Err(preserve_error(
-                location,
-                "existing work item text cannot be preserved",
-            ));
+            return Err(cannot_preserve(location));
         };
         if same_stored_value(previous_value, desired_value) {
             continue;
@@ -202,10 +182,7 @@ fn patch_inline_table(
                 .get_mut(key)
                 .and_then(toml_edit::Value::as_inline_table_mut)
             else {
-                return Err(preserve_error(
-                    location,
-                    "existing work item text cannot be preserved",
-                ));
+                return Err(cannot_preserve(location));
             };
             patch_inline_table(child, previous_table, desired_table, location, changed)?;
             continue;
@@ -270,10 +247,9 @@ fn inline_keys(table: &toml_edit::InlineTable) -> BTreeSet<String> {
     table.iter().map(|(key, _)| key.to_string()).collect()
 }
 
-/// Checklist items omit `status` and `category` when those are the defaults
-/// `pending` and `added`. Serde emits the defaults, but that text is the same
-/// stored field. An explicit default stays put, because both sides then have
-/// the key.
+/// Two stored values are the same when their typed meaning matches. A checklist
+/// item that omits its default status or category is the same item as one that
+/// stores those defaults.
 fn same_stored_value(previous: &toml::Value, desired: &toml::Value) -> bool {
     match (previous, desired) {
         (toml::Value::Table(previous), toml::Value::Table(desired)) => {
@@ -291,22 +267,39 @@ fn same_stored_value(previous: &toml::Value, desired: &toml::Value) -> bool {
 }
 
 fn same_stored_table(previous: &toml::Table, desired: &toml::Table) -> bool {
+    if let Some(same) = same_checklist(previous, desired) {
+        return same;
+    }
     let mut keys = BTreeSet::new();
     keys.extend(previous.keys().map(String::as_str));
     keys.extend(desired.keys().map(String::as_str));
     keys.into_iter()
         .all(|key| match (previous.get(key), desired.get(key)) {
             (Some(previous), Some(desired)) => same_stored_value(previous, desired),
-            (Some(only), None) | (None, Some(only)) => implicit_checklist_default(key, only),
-            (None, None) => true,
+            _ => false,
         })
 }
 
-fn implicit_checklist_default(key: &str, value: &toml::Value) -> bool {
-    matches!(
-        (key, value.as_str()),
-        ("status", Some("pending")) | ("category", Some("added"))
-    )
+/// Omitted checklist `status` and `category` deserialize as the same item as
+/// the explicit defaults. Compare that typed item, not the stored key text.
+fn same_checklist(previous: &toml::Table, desired: &toml::Table) -> Option<bool> {
+    if !checklist_shape(previous) || !checklist_shape(desired) {
+        return None;
+    }
+    let previous = checklist_item(previous)?;
+    let desired = checklist_item(desired)?;
+    Some(previous == desired)
+}
+
+fn checklist_shape(table: &toml::Table) -> bool {
+    table.contains_key("text")
+        && table
+            .keys()
+            .all(|key| matches!(key.as_str(), "text" | "status" | "category"))
+}
+
+fn checklist_item(table: &toml::Table) -> Option<ChecklistItem> {
+    toml::Value::Table(table.clone()).try_into().ok()
 }
 
 fn value_keys(table: &toml::Table) -> BTreeSet<String> {
@@ -383,6 +376,18 @@ fn table_to_edit(table: &toml::Table, location: &str) -> Result<toml_edit::Table
         edited.insert(key, value_to_item(value, location)?);
     }
     Ok(edited)
+}
+
+fn stale_keys(previous: &toml::Table, desired: &toml::Table) -> Vec<String> {
+    previous
+        .keys()
+        .filter(|key| !desired.contains_key(key.as_str()))
+        .cloned()
+        .collect()
+}
+
+fn cannot_preserve(location: &str) -> Diagnostic {
+    preserve_error(location, "existing work item text cannot be preserved")
 }
 
 fn preserve_error(location: &str, message: impl Into<String>) -> Diagnostic {

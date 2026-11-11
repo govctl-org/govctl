@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.10.0"
+version = "3.11.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-11-10"
+updated = "2026-11-11"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "34719a733784cfa8ad59693764b67ba93d9c4c666ba4c927f09cd86881a207d0"
+signature = "2ea7df04d043acd00b6b53955c380676dcc35e4647bfb6f8437a59d0bdaee2fb"
 
 [[sections]]
 title = "Summary"
@@ -52,6 +52,12 @@ clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
 ]
+
+[[changelog]]
+version = "3.11.0"
+date = "2026-11-11"
+notes = "Preview a done move without executing guards"
+changed = ["A dry-run of work move done without evidence reports the guard set and does not execute it"]
 
 [[changelog]]
 version = "3.10.0"

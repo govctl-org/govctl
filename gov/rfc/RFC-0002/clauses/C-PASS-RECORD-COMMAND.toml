@@ -49,7 +49,7 @@ A record that satisfies [[RFC-0001:C-PASS-RECORD]] for that Work Item and the cu
 
 Acceptance-criteria checks required by [[RFC-0001:C-GATE-CONDITIONS]] still apply when `--evidence` is present. With global `--dry-run`, the command MUST NOT change the Work Item.
 
-When `--evidence` is absent, `govctl work move <WI-ID> done` MUST execute the effective required guards as required by [[RFC-0001:C-GATE-CONDITIONS]].
+When `--evidence` is absent, an invocation that performs the transition MUST execute the effective required guards as required by [[RFC-0001:C-GATE-CONDITIONS]]. A global `--dry-run` invocation without `--evidence` MUST follow [[RFC-0002:C-LIFECYCLE-VERBS]].
 
 **Rationale:**
-The checkout that produced the record is the only checkout that record can close. The Work Item lifecycle command remains the gate, and a dry run writes neither the record nor the status change."""
+The checkout that produced the record is the only checkout that record can close. The Work Item lifecycle command remains the gate. A dry run writes neither the record nor the status change, and a dry run of the close does not execute guards."""

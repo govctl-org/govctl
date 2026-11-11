@@ -20,6 +20,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 - Recording a pass writes the work item, the commit identifier sampled before the record file is written, and exactly the effective guard set after those guards pass, and only when the checkout matches that commit aside from the record path (WI-2026-11-10-004)
 - Moving to done with a record succeeds without running guards when the checkout matches the recorded commit, allowing only that record file inside the checkout as an extra change, and acceptance criteria must still be complete (WI-2026-11-10-004)
 - Recording or closing is rejected without changing the work item, without running guards, and without modifying the record file when there is no usable commit identifier, the checkout does not match the recorded commit, the guard set differs, the record is missing or unreadable, or evidence is used for a status other than done (WI-2026-11-10-004)
+- A dry-run of moving a Work Item to done without a pass record exits zero when the transition and acceptance criteria are acceptable and no guard reference is unusable, leaves the Work Item unchanged, does not execute the guards, names the Work Item and each guard in the effective set on standard error, states when that set is empty, and does not claim that those guards passed (WI-2026-11-11-001)
+- That dry-run rejects pending acceptance criteria and an unusable guard reference, does not execute guards, does not write the preview report, and leaves the Work Item unchanged (WI-2026-11-11-001)
 
 ### Changed
 

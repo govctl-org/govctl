@@ -1,0 +1,34 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0072"
+title = "Preview a done move without executing guards"
+status = "accepted"
+date = "2026-11-11"
+refs = [
+    "RFC-0001:C-GATE-CONDITIONS",
+    "RFC-0002:C-LIFECYCLE-VERBS",
+    "ADR-0006",
+]
+tags = [
+    "lifecycle",
+    "cli",
+]
+
+[content]
+context = "A dry-run of moving a Work Item to done executes the effective guards before it previews the Work Item write. Those guards are external commands and can change the workspace. The project already has a command that runs guards without changing status."
+decision = "A dry-run that enters done without a pass record resolves the effective guard set and reports it. It does not execute those guards or claim that they passed. The real transition still executes them when no pass record is supplied. [[RFC-0001:C-GATE-CONDITIONS]] separates that preview from the transition. [[RFC-0002:C-LIFECYCLE-VERBS]] defines the preview report."
+consequences = "Positive: previewing a close does not run builds or other guard side effects. Negative: a successful dry-run does not mean the guards would pass. Neutral: the verification command still runs the guards without changing status."
+
+[[content.alternatives]]
+text = "Treat dry-run as a full gate rehearsal"
+status = "rejected"
+pros = ["A successful preview would mean the guards on the real move would pass."]
+cons = ["The preview would run the same external commands, including their side effects."]
+rejection_reason = "The preview would perform the same external work as the close."
+
+[[content.alternatives]]
+text = "Report the guard set and do not execute it"
+status = "accepted"
+pros = ["Previewing a close stays free of guard side effects."]
+cons = ["A successful preview does not show whether the guards would pass."]

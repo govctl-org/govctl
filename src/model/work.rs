@@ -79,7 +79,7 @@ pub enum ChecklistStatus {
 
 /// A checklist item with text, status, and changelog category
 /// Per [[ADR-0013]], category enables changelog generation from acceptance criteria.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChecklistItem {
     pub text: String,
     #[serde(default)]

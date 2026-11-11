@@ -419,6 +419,7 @@ fn a_record_that_counts_a_waived_guard_as_passed_is_rejected() -> TestResult {
     let temp = init_project()?;
     let dir = temp.path();
     write_guard(dir, GUARD_ID, "touch ignored-marker")?;
+    write_guard(dir, "GUARD-OTHER", "true")?;
     write_item(dir, &[GUARD_ID, "GUARD-OTHER"], "done")?;
     let mut item = fs::read_to_string(work_path(dir))?;
     item.push_str(

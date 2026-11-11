@@ -4,7 +4,7 @@ use crate::config::Config;
 use crate::diagnostic::{
     Diagnostic, DiagnosticCode, DiagnosticLevel, DiagnosticResult, Diagnostics,
 };
-use crate::parse::load_guards_with_warnings;
+use crate::parse::{load_guard, load_guards_with_warnings};
 use crate::ui;
 use crate::verification;
 use crate::write::WriteOp;
@@ -178,22 +178,91 @@ fn checkout_diagnostics(err: super::pass_record::InspectError, work_id: &str) ->
     }
 }
 
+/// Reject a done transition whose guard reference is unusable.
+///
+/// [[RFC-0001:C-GATE-CONDITIONS]]
+pub fn reject_unusable_guard_reference(
+    config: &Config,
+    work_item: &crate::model::WorkItemEntry,
+) -> DiagnosticResult<()> {
+    load_guard_gate(config, work_item).map(|_| ())
+}
+
+/// Report the guards a `done` transition would run. Does not execute them.
+///
+/// [[RFC-0002:C-LIFECYCLE-VERBS]]
+pub fn preview_work_item_guards(
+    config: &Config,
+    work_item: &crate::model::WorkItemEntry,
+) -> DiagnosticResult<()> {
+    // A guard file that does not parse is skipped. Only an unusable reference
+    // for this Work Item suppresses the report.
+    let guards_by_id = load_parsed_guards(config)?;
+    let diagnostics =
+        verification::validate_work_item_verification(config, &guards_by_id, work_item);
+    let mut errors = error_lines(diagnostics);
+    let required = &work_item.spec.verification.required_guards;
+    let selected_guard_ids = verification::effective_required_guard_ids(config, work_item);
+    for guard_id in &selected_guard_ids {
+        let missing = !guards_by_id.contains_key(guard_id);
+        // A missing required guard is already in `errors`.
+        let reported = required.iter().any(|id| id == guard_id);
+        if missing && !reported {
+            errors.push(
+                verification::unknown_guard_diagnostic(guard_id, &work_item.spec.govctl.id)
+                    .to_string(),
+            );
+        }
+    }
+    if !errors.is_empty() {
+        return Err(guard_requirement_failure(
+            &work_item.spec.govctl.id,
+            &errors,
+        ));
+    }
+
+    let listed = if selected_guard_ids.is_empty() {
+        "none".to_string()
+    } else {
+        selected_guard_ids.join(", ")
+    };
+    ui::info(format!(
+        "Done plan for {}: guards {listed}",
+        work_item.spec.govctl.id
+    ));
+    Ok(())
+}
+
+fn load_parsed_guards(
+    config: &Config,
+) -> DiagnosticResult<HashMap<String, crate::model::GuardEntry>> {
+    let mut guards = HashMap::new();
+    let guard_dir = config.guard_dir();
+    if !guard_dir.exists() {
+        return Ok(guards);
+    }
+    let entries = std::fs::read_dir(&guard_dir)
+        .map_err(|err| Diagnostic::io_error("read guards", err, guard_dir.display().to_string()))?;
+    for entry in entries {
+        let entry = entry.map_err(|err| {
+            Diagnostic::io_error("read guards", err, guard_dir.display().to_string())
+        })?;
+        let path = entry.path();
+        if path.extension().and_then(|ext| ext.to_str()) != Some("toml") {
+            continue;
+        }
+        if let Ok(guard) = load_guard(config, &path) {
+            guards.insert(guard.meta().id.clone(), guard);
+        }
+    }
+    Ok(guards)
+}
+
 pub fn enforce_work_item_guards(
     config: &Config,
     work_item: &crate::model::WorkItemEntry,
 ) -> DiagnosticResult<()> {
-    let (guards_by_id, mut diagnostics) = load_guard_context(config)?;
-    diagnostics.extend(verification::validate_work_item_verification(
-        config,
-        &guards_by_id,
-        work_item,
-    ));
-    let mut errors: Vec<String> = diagnostics
-        .into_iter()
-        .filter(|diag| diag.level == DiagnosticLevel::Error)
-        .map(|diag| diag.to_string())
-        .collect();
-
+    let guards_by_id = load_guard_gate(config, work_item)?;
     let selected_guard_ids = verification::effective_required_guard_ids(config, work_item);
     if selected_guard_ids.is_empty() {
         return Ok(());
@@ -205,29 +274,64 @@ pub fn enforce_work_item_guards(
         &selected_guard_ids,
         &work_item.spec.govctl.id,
     )?;
-    errors.extend(
-        run_diags
-            .into_iter()
-            .filter(|diag| diag.level == DiagnosticLevel::Error)
-            .map(|diag| diag.message),
-    );
+    let errors: Vec<String> = run_diags
+        .into_iter()
+        .filter(|diag| diag.level == DiagnosticLevel::Error)
+        .map(|diag| diag.message)
+        .collect();
 
     if errors.is_empty() {
         Ok(())
     } else {
-        Err(Diagnostic::new(
-            DiagnosticCode::E1004GuardCheckFailed,
-            format!(
-                "Cannot mark as done: verification guard requirements failed:\n{}",
-                errors
-                    .into_iter()
-                    .map(|msg| format!("  - {msg}"))
-                    .collect::<Vec<_>>()
-                    .join("\n")
-            ),
+        Err(guard_requirement_failure(
             &work_item.spec.govctl.id,
+            &errors,
         ))
     }
+}
+
+fn load_guard_gate(
+    config: &Config,
+    work_item: &crate::model::WorkItemEntry,
+) -> DiagnosticResult<HashMap<String, crate::model::GuardEntry>> {
+    let (guards_by_id, mut diagnostics) = load_guard_context(config)?;
+    diagnostics.extend(verification::validate_work_item_verification(
+        config,
+        &guards_by_id,
+        work_item,
+    ));
+    let errors = error_lines(diagnostics);
+    if errors.is_empty() {
+        Ok(guards_by_id)
+    } else {
+        Err(guard_requirement_failure(
+            &work_item.spec.govctl.id,
+            &errors,
+        ))
+    }
+}
+
+fn error_lines(diagnostics: impl IntoIterator<Item = Diagnostic>) -> Vec<String> {
+    diagnostics
+        .into_iter()
+        .filter(|diag| diag.level == DiagnosticLevel::Error)
+        .map(|diag| diag.to_string())
+        .collect()
+}
+
+fn guard_requirement_failure(work_id: &str, errors: &[String]) -> Diagnostic {
+    Diagnostic::new(
+        DiagnosticCode::E1004GuardCheckFailed,
+        format!(
+            "Cannot mark as done: verification guard requirements failed:\n{}",
+            errors
+                .iter()
+                .map(|msg| format!("  - {msg}"))
+                .collect::<Vec<_>>()
+                .join("\n")
+        ),
+        work_id,
+    )
 }
 
 fn load_guard_context(
