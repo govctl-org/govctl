@@ -1,7 +1,7 @@
 use super::document::{self, SearchDocument};
 use crate::artifact_catalog::{self, CatalogKind, CatalogRecord};
 use crate::config::Config;
-use crate::diagnostic::DiagnosticResult;
+use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::local_index::{database_path, open_database, sqlite_diagnostic};
 use rusqlite::{Connection, OptionalExtension, params};
 use std::collections::{HashMap, HashSet};
@@ -89,7 +89,7 @@ pub(super) fn sync(
     connection: &Connection,
     requested_kinds: &[CatalogKind],
     reindex: bool,
-) -> DiagnosticResult<()> {
+) -> DiagnosticResult<Diagnostics> {
     let sync_kinds = if reindex {
         CatalogKind::ALL.to_vec()
     } else {
@@ -130,6 +130,7 @@ pub(super) fn sync(
         delete_document(config, &transaction, &key.0, &key.1)?;
     }
 
+    let mut skipped = Diagnostics::new();
     for record in records {
         let key = (record.kind.as_str().to_string(), record.id.clone());
         if manifest
@@ -139,14 +140,25 @@ pub(super) fn sync(
         {
             continue;
         }
-        let search_document = document::build(config, &record)?;
-        upsert_document(config, &transaction, &record, &search_document)?;
+        // A cataloged artifact that fails to load must not abort the whole
+        // sync. Drop any previously indexed copy so it cannot match on stale
+        // content, report its diagnostic, and keep indexing the rest. It has
+        // no manifest entry, so the next sync retries it.
+        match document::build(config, &record) {
+            Ok(search_document) => {
+                upsert_document(config, &transaction, &record, &search_document)?;
+            }
+            Err(diagnostic) => {
+                delete_document(config, &transaction, &key.0, &key.1)?;
+                skipped.push(diagnostic);
+            }
+        }
     }
 
     transaction.commit().map_err(|error| {
         sqlite_diagnostic("commit search index sync", error, &database_path(config))
     })?;
-    Ok(())
+    Ok(skipped)
 }
 
 fn clear(config: &Config, connection: &Connection) -> DiagnosticResult<()> {

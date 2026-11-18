@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-11-17-001"
+title = "Keep search working when one artifact fails to load"
+status = "done"
+created = "2026-11-17"
+started = "2026-11-18"
+completed = "2026-11-18"
+refs = ["RFC-0002:C-SEARCH-COMMAND"]
+tags = ["cli"]
+
+[content]
+description = "Make search index sync skip a cataloged artifact that fails to load, drop its previously indexed copy, and report its load diagnostic instead of failing every query."
+
+[[content.acceptance_criteria]]
+text = "search returns results for loadable artifacts when another cataloged artifact fails to load, and reports the skipped artifact's load diagnostic"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "an artifact that was indexed while valid and then stops loading is removed from the search index instead of matching on stale content"
+status = "done"
+category = "fixed"
+
+[[content.acceptance_criteria]]
+text = "search tests cover an incomplete cataloged artifact and a previously indexed artifact that becomes invalid"
+status = "done"
+category = "chore"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]
