@@ -143,13 +143,17 @@ pub(super) fn sync(
         // A cataloged artifact that fails to load must not abort the whole
         // sync. Drop any previously indexed copy so it cannot match on stale
         // content, report its diagnostic, and keep indexing the rest. It has
-        // no manifest entry, so the next sync retries it.
+        // no manifest entry, so the next sync retries it. When it was never
+        // indexed there is nothing to drop, and the delete would scan
+        // search_fts on every search.
         match document::build(config, &record) {
             Ok(search_document) => {
                 upsert_document(config, &transaction, &record, &search_document)?;
             }
             Err(diagnostic) => {
-                delete_document(config, &transaction, &key.0, &key.1)?;
+                if fts_keys.contains(&key) || manifest.contains_key(&key) {
+                    delete_document(config, &transaction, &key.0, &key.1)?;
+                }
                 skipped.push(diagnostic);
             }
         }
@@ -368,4 +372,38 @@ fn upsert_document(
 
 pub(super) fn encode_tags(tags: &[String]) -> String {
     tags.join("\n")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn sync_skips_cleanup_for_unloadable_artifact_that_was_never_indexed()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = tempfile::TempDir::new()?;
+        let adr_dir = temp_dir.path().join("gov/adr");
+        std::fs::create_dir_all(&adr_dir)?;
+        std::fs::write(
+            adr_dir.join("ADR-0099-partial.toml"),
+            "[govctl]\nid = \"ADR-0099\"\n",
+        )?;
+        let config = Config {
+            gov_root: temp_dir.path().join("gov"),
+            governed: true,
+            ..Default::default()
+        };
+        let connection = open(&config)?;
+        // Any write to the search index now fails, so a sync that only has a
+        // never-indexed, unloadable ADR must not issue a delete for it.
+        connection.execute_batch("PRAGMA query_only = ON")?;
+
+        let skipped = sync(&config, &connection, &[CatalogKind::Adr], false)?;
+        assert_eq!(skipped.len(), 1, "{skipped:?}");
+        assert!(
+            skipped[0].file.contains("ADR-0099-partial.toml"),
+            "{skipped:?}"
+        );
+        Ok(())
+    }
 }
