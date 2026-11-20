@@ -42,24 +42,11 @@ pub fn search(
     Ok(skipped)
 }
 
-/// Return search results for read-only callers such as the TUI. Implements
-/// [[RFC-0007:C-SEARCH]], [[RFC-0007:C-READ-ONLY]], and
-/// [[RFC-0002:C-SEARCH-COMMAND]].
-pub(crate) fn search_results(
-    config: &Config,
-    query: &[String],
-    type_filters: &[ListTarget],
-    tag_filters: &[String],
-    limit: Option<usize>,
-    reindex: bool,
-) -> DiagnosticResult<Vec<SearchResult>> {
-    search_with_diagnostics(config, query, type_filters, tag_filters, limit, reindex)
-        .map(|(results, _skipped)| results)
-}
-
-/// Sync the index and query it. Artifacts that are cataloged but fail to
-/// load are left out of the results and returned as diagnostics.
-fn search_with_diagnostics(
+/// Sync the index and query it for read-only callers such as the TUI.
+/// Artifacts that are cataloged but fail to load are left out of the
+/// results and returned as diagnostics. Implements [[RFC-0007:C-SEARCH]],
+/// [[RFC-0007:C-READ-ONLY]], and [[RFC-0002:C-SEARCH-COMMAND]].
+pub(crate) fn search_with_diagnostics(
     config: &Config,
     query: &[String],
     type_filters: &[ListTarget],

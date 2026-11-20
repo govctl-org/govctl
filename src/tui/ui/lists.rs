@@ -422,6 +422,49 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
         return;
     }
 
+    // Artifacts skipped because they failed to load are listed below the
+    // healthy results rather than replacing them.
+    let area = if app.search_skipped.is_empty() {
+        area
+    } else {
+        let max_lines = app.search_skipped.len().min(5);
+        let [results_area, skipped_area] =
+            Layout::vertical([Constraint::Min(3), Constraint::Length(max_lines as u16 + 2)])
+                .areas(area);
+        let mut lines = app
+            .search_skipped
+            .iter()
+            .take(max_lines)
+            .map(|diagnostic| {
+                Line::from(vec![
+                    Span::styled(
+                        format!("{} ", diagnostic.code.code()),
+                        Style::default().fg(Color::Yellow),
+                    ),
+                    Span::raw(format!("{}: {}", diagnostic.file, diagnostic.message)),
+                ])
+            })
+            .collect::<Vec<_>>();
+        if app.search_skipped.len() > max_lines {
+            lines.pop();
+            lines.push(Line::from(format!(
+                "... and {} more",
+                app.search_skipped.len() - max_lines + 1
+            )));
+        }
+        frame.render_widget(
+            Paragraph::new(Text::from(lines)).block(
+                panel_block(&format!(
+                    "SKIPPED {} (FAILED TO LOAD)",
+                    app.search_skipped.len()
+                ))
+                .border_style(Style::default().fg(Color::Yellow)),
+            ),
+            skipped_area,
+        );
+        results_area
+    };
+
     let indices = app.list_indices();
     ResourceTable::from_indexed_items(
         &app.search_results,
