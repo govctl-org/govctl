@@ -396,6 +396,31 @@ pub(super) fn draw_loop(frame: &mut Frame, app: &mut App, area: Rect) {
 }
 
 // Implements [[RFC-0007:C-SEARCH]]: search results view.
+/// Table chrome is two borders, one header, and one header margin. One more
+/// row is the first result.
+const SEARCH_RESULT_RESERVE: u16 = 5;
+const SKIPPED_PANEL_CHROME: u16 = 2;
+const SKIPPED_LINE_CAP: usize = 5;
+
+fn split_search_areas(area: Rect, skipped_count: usize) -> Option<(Rect, Rect, usize)> {
+    if skipped_count == 0 {
+        return None;
+    }
+    let room = area.height.saturating_sub(SEARCH_RESULT_RESERVE);
+    if room < SKIPPED_PANEL_CHROME + 1 {
+        return None;
+    }
+    let line_room = (room - SKIPPED_PANEL_CHROME) as usize;
+    let shown = skipped_count.min(SKIPPED_LINE_CAP).min(line_room);
+    let skipped_height = shown as u16 + SKIPPED_PANEL_CHROME;
+    let [results_area, skipped_area] = Layout::vertical([
+        Constraint::Min(SEARCH_RESULT_RESERVE),
+        Constraint::Length(skipped_height),
+    ])
+    .areas(area);
+    Some((results_area, skipped_area, shown))
+}
+
 pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
     if let Some(diagnostic) = &app.search_error {
         let message = Text::from(vec![
@@ -422,19 +447,16 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
         return;
     }
 
-    // Artifacts skipped because they failed to load are listed below the
-    // healthy results rather than replacing them.
-    let area = if app.search_skipped.is_empty() {
-        area
-    } else {
-        let max_lines = app.search_skipped.len().min(5);
-        let [results_area, skipped_area] =
-            Layout::vertical([Constraint::Min(3), Constraint::Length(max_lines as u16 + 2)])
-                .areas(area);
+    // Keep one healthy result row. The table uses two border rows, a header,
+    // and the header's bottom margin before that row. The skipped panel uses
+    // only the height left after that.
+    let area = if let Some((results_area, skipped_area, shown)) =
+        split_search_areas(area, app.search_skipped.len())
+    {
         let mut lines = app
             .search_skipped
             .iter()
-            .take(max_lines)
+            .take(shown)
             .map(|diagnostic| {
                 Line::from(vec![
                     Span::styled(
@@ -445,11 +467,11 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
                 ])
             })
             .collect::<Vec<_>>();
-        if app.search_skipped.len() > max_lines {
+        if app.search_skipped.len() > shown {
             lines.pop();
             lines.push(Line::from(format!(
                 "... and {} more",
-                app.search_skipped.len() - max_lines + 1
+                app.search_skipped.len() - shown + 1
             )));
         }
         frame.render_widget(
@@ -463,6 +485,8 @@ pub(super) fn draw_search(frame: &mut Frame, app: &mut App, area: Rect) {
             skipped_area,
         );
         results_area
+    } else {
+        area
     };
 
     let indices = app.list_indices();

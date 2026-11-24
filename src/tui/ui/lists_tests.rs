@@ -122,6 +122,32 @@ fn cockpit_list_renderers_draw_search_loop_and_diagnostic_rows()
             .iter()
             .any(|line| line.contains("ADR-0099-partial.toml"))
     );
+
+    let mut app = App::new(list_project_index());
+    app.view = View::Search;
+    app.search_results.push(SearchResult {
+        kind: "rfc".to_string(),
+        id: "RFC-0001".to_string(),
+        title: "RFC title".to_string(),
+        path: "gov/rfc/RFC-0001/rfc.toml".to_string(),
+        snippet: "human cockpit".to_string(),
+        score: None,
+        status: Some("normative".to_string()),
+        scenario_path: None,
+    });
+    for index in 0..5 {
+        app.search_skipped.push(Diagnostic::new(
+            DiagnosticCode::E0901IoError,
+            "missing field title",
+            format!("gov/adr/ADR-009{index}-partial.toml"),
+        ));
+    }
+    let rendered = render_list_app_at(120, 10, app, draw_search)?;
+    assert!(
+        rendered.iter().any(|line| line.contains("human cockpit")),
+        "skipped panel hid the result row: {rendered:?}"
+    );
+    assert!(rendered.iter().any(|line| line.contains("SKIPPED 5")));
     Ok(())
 }
 

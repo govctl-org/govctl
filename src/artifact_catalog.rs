@@ -238,11 +238,27 @@ pub(crate) fn refresh_kind(config: &Config, kind: CatalogKind) -> DiagnosticResu
     refresh_kind_with_connection(config, &connection, kind)
 }
 
-pub(crate) fn list_records(
+/// Refresh the requested kinds and list them on `connection`.
+///
+/// The caller owns the transaction. Search sync uses this so the catalog
+/// snapshot and the index update commit together.
+pub(crate) fn sync_records(
     config: &Config,
+    connection: &Connection,
     kinds: &[CatalogKind],
 ) -> DiagnosticResult<Vec<CatalogRecord>> {
-    let connection = open_catalog(config)?;
+    initialize_schema(connection, &index_db_path(config))?;
+    for kind in kinds {
+        refresh_kind_on(config, connection, *kind)?;
+    }
+    list_records_on(config, connection, kinds)
+}
+
+fn list_records_on(
+    config: &Config,
+    connection: &Connection,
+    kinds: &[CatalogKind],
+) -> DiagnosticResult<Vec<CatalogRecord>> {
     let mut records = Vec::new();
 
     for kind in kinds {
@@ -362,7 +378,6 @@ fn refresh_kind_with_connection(
     connection: &Connection,
     kind: CatalogKind,
 ) -> DiagnosticResult<()> {
-    let entries = scan_kind(config, kind)?;
     let transaction = connection.unchecked_transaction().map_err(|err| {
         sqlite_diagnostic(
             "begin local artifact catalog refresh",
@@ -370,7 +385,24 @@ fn refresh_kind_with_connection(
             &index_db_path(config),
         )
     })?;
-    transaction
+    refresh_kind_on(config, &transaction, kind)?;
+    transaction.commit().map_err(|err| {
+        sqlite_diagnostic(
+            "commit local artifact catalog refresh",
+            err,
+            &index_db_path(config),
+        )
+    })?;
+    Ok(())
+}
+
+fn refresh_kind_on(
+    config: &Config,
+    connection: &Connection,
+    kind: CatalogKind,
+) -> DiagnosticResult<()> {
+    let entries = scan_kind(config, kind)?;
+    connection
         .execute(
             "DELETE FROM artifact_catalog WHERE kind = ?1",
             params![kind.as_str()],
@@ -384,7 +416,7 @@ fn refresh_kind_with_connection(
         })?;
 
     for entry in entries {
-        transaction
+        connection
             .execute(
                 "
                 INSERT OR REPLACE INTO artifact_catalog
@@ -408,14 +440,6 @@ fn refresh_kind_with_connection(
                 )
             })?;
     }
-
-    transaction.commit().map_err(|err| {
-        sqlite_diagnostic(
-            "commit local artifact catalog refresh",
-            err,
-            &index_db_path(config),
-        )
-    })?;
     Ok(())
 }
 
@@ -911,8 +935,10 @@ text = "Catalog clause"
             refresh_kind(&config, kind)?;
         }
 
-        let records = list_records(
+        let connection = open_catalog(&config)?;
+        let records = list_records_on(
             &config,
+            &connection,
             &[
                 CatalogKind::Rfc,
                 CatalogKind::Clause,

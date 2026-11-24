@@ -3,7 +3,7 @@ use crate::artifact_catalog::{self, CatalogKind, CatalogRecord};
 use crate::config::Config;
 use crate::diagnostic::{DiagnosticResult, Diagnostics};
 use crate::local_index::{database_path, open_database, sqlite_diagnostic};
-use rusqlite::{Connection, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, TransactionBehavior, params};
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
 
@@ -86,7 +86,7 @@ fn initialize_schema(connection: &Connection, path: &Path) -> DiagnosticResult<(
 
 pub(super) fn sync(
     config: &Config,
-    connection: &Connection,
+    connection: &mut Connection,
     requested_kinds: &[CatalogKind],
     reindex: bool,
 ) -> DiagnosticResult<Diagnostics> {
@@ -96,14 +96,25 @@ pub(super) fn sync(
         requested_kinds.to_vec()
     };
 
+    // Hold the write lock before reading the catalog or the index. Otherwise
+    // a second search can commit a newer row after this sync has listed the
+    // old keys and before it deletes them.
+    connection
+        .busy_timeout(std::time::Duration::from_secs(5))
+        .map_err(|error| {
+            sqlite_diagnostic("set search index lock wait", error, &database_path(config))
+        })?;
+    let transaction = connection
+        .transaction_with_behavior(TransactionBehavior::Immediate)
+        .map_err(|error| {
+            sqlite_diagnostic("begin search index sync", error, &database_path(config))
+        })?;
+
     if reindex {
-        clear(config, connection)?;
+        clear(config, &transaction)?;
     }
 
-    for kind in &sync_kinds {
-        artifact_catalog::refresh_kind(config, *kind)?;
-    }
-    let records = artifact_catalog::list_records(config, &sync_kinds)?;
+    let records = artifact_catalog::sync_records(config, &transaction, &sync_kinds)?;
     let current = records
         .iter()
         .map(|record| {
@@ -113,12 +124,8 @@ pub(super) fn sync(
             )
         })
         .collect::<HashMap<_, _>>();
-    let manifest = manifest_for_kinds(config, connection, &sync_kinds)?;
-    let fts_keys = fts_keys_for_kinds(config, connection, &sync_kinds)?;
-
-    let transaction = connection.unchecked_transaction().map_err(|error| {
-        sqlite_diagnostic("begin search index sync", error, &database_path(config))
-    })?;
+    let manifest = manifest_for_kinds(config, &transaction, &sync_kinds)?;
+    let fts_keys = fts_keys_for_kinds(config, &transaction, &sync_kinds)?;
 
     for key in fts_keys.iter().filter(|key| !current.contains_key(*key)) {
         delete_document(config, &transaction, &key.0, &key.1)?;
@@ -393,12 +400,20 @@ mod tests {
             governed: true,
             ..Default::default()
         };
-        let connection = open(&config)?;
-        // Any write to the search index now fails, so a sync that only has a
-        // never-indexed, unloadable ADR must not issue a delete for it.
-        connection.execute_batch("PRAGMA query_only = ON")?;
+        let mut connection = open(&config)?;
+        // A delete of a manifest row fails the sync. A never-indexed,
+        // unloadable ADR must not issue one.
+        connection.execute_batch(
+            "
+            CREATE TRIGGER search_manifest_no_delete
+            BEFORE DELETE ON search_manifest
+            BEGIN
+                SELECT RAISE(ABORT, 'unexpected delete');
+            END;
+            ",
+        )?;
 
-        let skipped = sync(&config, &connection, &[CatalogKind::Adr], false)?;
+        let skipped = sync(&config, &mut connection, &[CatalogKind::Adr], false)?;
         assert_eq!(skipped.len(), 1, "{skipped:?}");
         assert!(
             skipped[0].file.contains("ADR-0099-partial.toml"),

@@ -56,8 +56,8 @@ pub(crate) fn search_with_diagnostics(
 ) -> DiagnosticResult<(Vec<SearchResult>, Diagnostics)> {
     let terms = query_terms(query)?;
     let kinds = kinds_for_filters(type_filters);
-    let connection = index::open(config)?;
-    let skipped = index::sync(config, &connection, &kinds, reindex)?;
+    let mut connection = index::open(config)?;
+    let skipped = index::sync(config, &mut connection, &kinds, reindex)?;
     let results = query::query_index(
         config,
         &connection,
