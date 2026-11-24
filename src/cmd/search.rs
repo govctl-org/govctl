@@ -36,34 +36,37 @@ pub fn search(
     output: OutputFormat,
     reindex: bool,
 ) -> DiagnosticResult<Diagnostics> {
-    let results = search_results(config, query, type_filters, tag_filters, limit, reindex)?;
+    let (results, skipped) =
+        search_with_diagnostics(config, query, type_filters, tag_filters, limit, reindex)?;
     print_results(&results, output);
-    Ok(vec![])
+    Ok(skipped)
 }
 
-/// Return search results for read-only callers such as the TUI. Implements
-/// [[RFC-0007:C-SEARCH]], [[RFC-0007:C-READ-ONLY]], and
-/// [[RFC-0002:C-SEARCH-COMMAND]].
-pub(crate) fn search_results(
+/// Sync the index and query it for read-only callers such as the TUI.
+/// Artifacts that are cataloged but fail to load are left out of the
+/// results and returned as diagnostics. Implements [[RFC-0007:C-SEARCH]],
+/// [[RFC-0007:C-READ-ONLY]], and [[RFC-0002:C-SEARCH-COMMAND]].
+pub(crate) fn search_with_diagnostics(
     config: &Config,
     query: &[String],
     type_filters: &[ListTarget],
     tag_filters: &[String],
     limit: Option<usize>,
     reindex: bool,
-) -> DiagnosticResult<Vec<SearchResult>> {
+) -> DiagnosticResult<(Vec<SearchResult>, Diagnostics)> {
     let terms = query_terms(query)?;
     let kinds = kinds_for_filters(type_filters);
-    let connection = index::open(config)?;
-    index::sync(config, &connection, &kinds, reindex)?;
-    query::query_index(
+    let mut connection = index::open(config)?;
+    let skipped = index::sync(config, &mut connection, &kinds, reindex)?;
+    let results = query::query_index(
         config,
         &connection,
         &terms,
         &kinds,
         tag_filters,
         limit.unwrap_or(DEFAULT_LIMIT),
-    )
+    )?;
+    Ok((results, skipped))
 }
 
 fn query_terms(query: &[String]) -> DiagnosticResult<Vec<String>> {

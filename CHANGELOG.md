@@ -18,6 +18,8 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 - a tracked file inside the local-state directory does not hide a missing directory ignore rule (WI-2026-10-18-001)
 - when a child of the local-state directory is tracked and a new file there is already excluded, check stays quiet and migrate does not append another directory entry, including on a second run (WI-2026-10-18-002)
+- search returns results for loadable artifacts when another cataloged artifact fails to load, and reports the skipped artifact's load diagnostic (WI-2026-11-17-001)
+- an artifact that was indexed while valid and then stops loading is removed from the search index instead of matching on stale content (WI-2026-11-17-001)
 
 ## [0.22.0] - 2026-10-09
 

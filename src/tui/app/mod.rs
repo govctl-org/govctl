@@ -164,6 +164,8 @@ pub struct App {
     pub search_results: Vec<SearchResult>,
     /// Search error from the last submitted query
     pub search_error: Option<Diagnostic>,
+    /// Load diagnostics for artifacts the last search skipped
+    pub search_skipped: Vec<Diagnostic>,
     /// Whether filter input mode is active
     pub filter_mode: bool,
     /// Show help overlay
@@ -203,6 +205,7 @@ impl App {
             search_mode: false,
             search_results: Vec::new(),
             search_error: None,
+            search_skipped: Vec::new(),
             filter_mode: false,
             show_help: false,
             should_quit: false,
@@ -246,13 +249,14 @@ impl App {
         if query.is_empty() {
             self.search_results.clear();
             self.search_error = None;
+            self.search_skipped.clear();
             self.selected = 0;
             self.table_state.select(None);
             self.invalidate_indices();
             return;
         }
 
-        match crate::cmd::search::search_results(
+        match crate::cmd::search::search_with_diagnostics(
             &self.config,
             &[query.to_string()],
             &[],
@@ -260,13 +264,15 @@ impl App {
             Some(50),
             false,
         ) {
-            Ok(results) => {
+            Ok((results, skipped)) => {
                 self.search_results = results;
                 self.search_error = None;
+                self.search_skipped = skipped;
             }
             Err(diagnostic) => {
                 self.search_results.clear();
                 self.search_error = Some(diagnostic);
+                self.search_skipped.clear();
             }
         }
         self.selected = 0;
@@ -501,6 +507,41 @@ mod tests {
 
         assert!(app.search_results.is_empty());
         assert!(app.list_indices().is_empty());
+    }
+
+    #[test]
+    fn submit_search_keeps_load_diagnostics_for_skipped_artifacts()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temp_dir = tempfile::TempDir::new()?;
+        let adr_dir = temp_dir.path().join("gov/adr");
+        std::fs::create_dir_all(&adr_dir)?;
+        // Cataloged by its `[govctl].id`, but it does not load as an ADR.
+        std::fs::write(
+            adr_dir.join("ADR-0099-partial.toml"),
+            "[govctl]\nid = \"ADR-0099\"\n",
+        )?;
+        let config = Config {
+            gov_root: temp_dir.path().join("gov"),
+            governed: true,
+            ..Default::default()
+        };
+        let mut app = App::with_project(config, project_index());
+        app.search_query = "cache".to_string();
+        app.submit_search();
+
+        assert!(app.search_error.is_none(), "{:?}", app.search_error);
+        assert!(
+            app.search_skipped
+                .iter()
+                .any(|diagnostic| diagnostic.file.contains("ADR-0099-partial.toml")),
+            "{:?}",
+            app.search_skipped
+        );
+
+        app.search_query = "  ".to_string();
+        app.submit_search();
+        assert!(app.search_skipped.is_empty());
+        Ok(())
     }
 
     #[test]
