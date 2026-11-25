@@ -336,6 +336,36 @@ fn test_search_rejects_legacy_work_journal() -> common::TestResult {
 }
 
 #[test]
+fn test_search_skips_cataloged_artifact_that_fails_to_load() -> common::TestResult {
+    let temp_dir = init_project()?;
+    let work_id = "WI-2026-01-01-001";
+    write_work(temp_dir.path(), work_id, "Needle Work", "needle body")?;
+    write_adr(temp_dir.path())?;
+
+    let initial = run_commands(temp_dir.path(), &[&["search", "cache", "-o", "plain"]])?;
+    assert!(initial.contains("ADR-0001"), "{initial}");
+
+    // A file with a `[govctl].id` is cataloged even though it does not load.
+    fs::write(
+        temp_dir.path().join("gov/adr/ADR-0099-partial.toml"),
+        "[govctl]\nid = \"ADR-0099\"\n",
+    )?;
+    let healthy = run_commands(temp_dir.path(), &[&["search", "needle", "-o", "plain"]])?;
+    assert!(healthy.contains(work_id), "{healthy}");
+    assert!(healthy.contains("ADR-0099-partial.toml"), "{healthy}");
+
+    // An indexed artifact that stops loading must not keep its stale entry.
+    fs::write(
+        temp_dir.path().join("gov/adr/ADR-0001-cache-decision.toml"),
+        "[govctl]\nid = \"ADR-0001\"\n",
+    )?;
+    let stale = run_commands(temp_dir.path(), &[&["search", "cache", "-o", "plain"]])?;
+    assert!(!stale.contains("ADR-0001\n"), "{stale}");
+    assert!(stale.contains("ADR-0001-cache-decision.toml"), "{stale}");
+    Ok(())
+}
+
+#[test]
 fn test_search_rebuilds_unversioned_existing_fts_table() -> common::TestResult {
     let temp_dir = init_project()?;
     let db_dir = temp_dir.path().join(".govctl");
