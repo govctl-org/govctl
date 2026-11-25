@@ -148,6 +148,39 @@ fn dry_run_rejects_an_unknown_guard_without_running_another() -> TestResult {
 }
 
 #[test]
+fn dry_run_rejects_a_duplicate_guard_id_without_running_it() -> TestResult {
+    let temp = init_project()?;
+    let dir = temp.path();
+    let id = "WI-2026-01-01-008";
+    write_guard(dir, GUARD_ID, "touch ran-from-guard")?;
+    let original = fs::read_to_string(dir.join("gov/guard/guard-touch.toml"))?;
+    fs::write(dir.join("gov/guard/guard-touch-again.toml"), original)?;
+    write_item(
+        dir,
+        id,
+        "done",
+        "\n[verification]\nrequired_guards = [\"GUARD-TOUCH\"]\n",
+    )?;
+
+    let preview = run_commands(dir, &[&["--dry-run", "work", "move", id, "done"]])?;
+    assert!(preview.contains("exit: 1"), "output: {preview}");
+    assert!(preview.contains("E1003"), "output: {preview}");
+    assert!(
+        !preview.contains("Done plan"),
+        "previewed a duplicate: {preview}"
+    );
+    assert!(!marker(dir).exists(), "dry-run ran the guard");
+
+    let closed = run_commands(dir, &[&["work", "move", id, "done"]])?;
+    assert!(closed.contains("exit: 1"), "output: {closed}");
+    assert!(closed.contains("E1003"), "output: {closed}");
+    assert!(!marker(dir).exists(), "the real move ran the guard");
+    let status = run_commands(dir, &[&["work", "get", id, "status"]])?;
+    assert!(status.contains("active"), "output: {status}");
+    Ok(())
+}
+
+#[test]
 fn dry_run_reports_when_an_unrelated_guard_file_does_not_parse() -> TestResult {
     let temp = init_project()?;
     let dir = temp.path();

@@ -195,12 +195,14 @@ pub fn preview_work_item_guards(
     config: &Config,
     work_item: &crate::model::WorkItemEntry,
 ) -> DiagnosticResult<()> {
-    // A guard file that does not parse is skipped. Only an unusable reference
-    // for this Work Item suppresses the report.
-    let guards_by_id = load_parsed_guards(config)?;
+    // A guard file that does not parse is skipped. A duplicate ID is the same
+    // error the real gate reports before it runs anything.
+    let (guards_by_id, duplicate_diagnostics) =
+        verification::build_guard_index(load_parsed_guards(config)?);
     let diagnostics =
         verification::validate_work_item_verification(config, &guards_by_id, work_item);
-    let mut errors = error_lines(diagnostics);
+    let mut errors = error_lines(duplicate_diagnostics);
+    errors.extend(error_lines(diagnostics));
     let required = &work_item.spec.verification.required_guards;
     let selected_guard_ids = verification::effective_required_guard_ids(config, work_item);
     for guard_id in &selected_guard_ids {
@@ -233,10 +235,8 @@ pub fn preview_work_item_guards(
     Ok(())
 }
 
-fn load_parsed_guards(
-    config: &Config,
-) -> DiagnosticResult<HashMap<String, crate::model::GuardEntry>> {
-    let mut guards = HashMap::new();
+fn load_parsed_guards(config: &Config) -> DiagnosticResult<Vec<crate::model::GuardEntry>> {
+    let mut guards = Vec::new();
     let guard_dir = config.guard_dir();
     if !guard_dir.exists() {
         return Ok(guards);
@@ -252,7 +252,7 @@ fn load_parsed_guards(
             continue;
         }
         if let Ok(guard) = load_guard(config, &path) {
-            guards.insert(guard.meta().id.clone(), guard);
+            guards.push(guard);
         }
     }
     Ok(guards)

@@ -191,6 +191,34 @@ fn later_commit_matches_only_when_the_record_file_is_the_difference() -> TestRes
 }
 
 #[test]
+fn a_failing_guard_does_not_write_the_record() -> TestResult {
+    let temp = init_project()?;
+    let dir = temp.path();
+    write_guard(dir, GUARD_ID, "touch failed-marker; exit 1")?;
+    write_item(dir, &[GUARD_ID], "done")?;
+    let ignore = dir.join(".gitignore");
+    let mut ignored = fs::read_to_string(&ignore).unwrap_or_default();
+    if !ignored.ends_with('\n') && !ignored.is_empty() {
+        ignored.push('\n');
+    }
+    ignored.push_str("failed-marker\n");
+    fs::write(&ignore, ignored)?;
+    commit_project(dir)?;
+    let before = fs::read(work_path(dir))?;
+
+    let output = govctl(dir, &["verify", "--work", WORK_ID, "--record", "pass.toml"])?;
+    let stderr = text(&output.stderr);
+    assert!(!output.status.success(), "stderr: {stderr}");
+    assert!(dir.join("failed-marker").is_file(), "guard did not run");
+    assert!(
+        !record_path(dir).exists(),
+        "record written after a failing guard"
+    );
+    assert_eq!(fs::read(work_path(dir))?, before);
+    Ok(())
+}
+
+#[test]
 fn dirty_checkout_and_dirty_guard_reject_without_writing_the_record() -> TestResult {
     let recorded = recorded_project()?;
     let dir = recorded.dir.path();
