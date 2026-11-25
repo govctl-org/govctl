@@ -88,6 +88,12 @@ fn verify_pass_record(
 ) -> DiagnosticResult<Diagnostics> {
     let work_item = load_work_item_by_id(config, work_id)?;
     let work_id = work_item.spec.govctl.id.as_str();
+    if record_replaces_work_item(record_path, &work_item.path) {
+        return Ok(vec![super::pass_record::reject(
+            "Pass record path must not be the work item file",
+            work_id,
+        )]);
+    }
 
     let checkout = match super::pass_record::sample_checkout(config.project_root()) {
         Ok(checkout) => checkout,
@@ -163,6 +169,27 @@ fn verify_pass_record(
 
     super::pass_record::write_record(record_path, work_id, &revision, &effective)?;
     Ok(diagnostics)
+}
+
+fn record_replaces_work_item(record_path: &Path, work_item_path: &Path) -> bool {
+    match (resolve_path(record_path), resolve_path(work_item_path)) {
+        (Some(record_path), Some(work_item_path)) => record_path == work_item_path,
+        _ => false,
+    }
+}
+
+fn resolve_path(path: &Path) -> Option<std::path::PathBuf> {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir().ok()?.join(path)
+    };
+    if absolute.exists() {
+        return std::fs::canonicalize(&absolute).ok();
+    }
+    let parent = absolute.parent()?;
+    let name = absolute.file_name()?;
+    Some(std::fs::canonicalize(parent).ok()?.join(name))
 }
 
 fn checkout_diagnostics(err: super::pass_record::InspectError, work_id: &str) -> Diagnostics {

@@ -191,6 +191,36 @@ fn later_commit_matches_only_when_the_record_file_is_the_difference() -> TestRes
 }
 
 #[test]
+fn recording_over_the_work_item_file_is_rejected_before_guards() -> TestResult {
+    let temp = init_project()?;
+    let dir = temp.path();
+    write_guard(dir, GUARD_ID, "touch ignored-marker")?;
+    write_item(dir, &[GUARD_ID], "done")?;
+    let before = fs::read(work_path(dir))?;
+    let record = "gov/work/2026-01-01-recorded.toml";
+
+    let preview = govctl(
+        dir,
+        &["--dry-run", "verify", "--work", WORK_ID, "--record", record],
+    )?;
+    let preview_err = text(&preview.stderr);
+    assert!(!preview.status.success(), "stderr: {preview_err}");
+    assert!(preview_err.contains("E0820"), "stderr: {preview_err}");
+    assert!(
+        !preview_err.contains("Pass record plan"),
+        "previewed overwriting the work item: {preview_err}"
+    );
+
+    let output = govctl(dir, &["verify", "--work", WORK_ID, "--record", record])?;
+    let stderr = text(&output.stderr);
+    assert!(!output.status.success(), "stderr: {stderr}");
+    assert!(stderr.contains("E0820"), "stderr: {stderr}");
+    assert!(!marker(dir).exists(), "rejection ran the guard");
+    assert_eq!(fs::read(work_path(dir))?, before);
+    Ok(())
+}
+
+#[test]
 fn a_failing_guard_does_not_write_the_record() -> TestResult {
     let temp = init_project()?;
     let dir = temp.path();
