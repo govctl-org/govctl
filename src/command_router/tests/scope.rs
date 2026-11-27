@@ -59,6 +59,7 @@ fn test_mutating_commands_are_branch_content_scoped() -> Result<(), Box<dyn std:
             LifecycleOp::MoveWork {
                 file_or_id: std::path::PathBuf::from("WI-2026-09-08-001"),
                 status: WorkItemStatus::Done,
+                evidence: None,
             },
         )
         .command_scope(),

@@ -1,0 +1,30 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0068"
+title = "Print the new Work Item ID on standard output"
+status = "accepted"
+date = "2026-11-10"
+refs = ["RFC-0002:C-WORK-NEW-OUTPUT"]
+tags = [
+    "cli",
+    "work-items",
+]
+
+[content]
+context = "`govctl work new` reports the new Work Item on the diagnostic stream. A script that needs the new ID has to recover it from human text."
+decision = "A successful `govctl work new` writes the Work Item ID and a newline to standard output. The human creation report stays on standard error. A dry run writes neither the ID nor the file. [[RFC-0002:C-WORK-NEW-OUTPUT]] states the obligation."
+consequences = "Positive: a script can read one line from the success stream. Negative: a caller that scraped the diagnostic text for the ID must read standard output instead. Neutral: failure and dry-run still produce no ID on standard output."
+
+[[content.alternatives]]
+text = "Read the new ID from the diagnostic text"
+status = "rejected"
+pros = ["No new success-stream contract is required."]
+cons = ["The diagnostic wording is for humans and can change."]
+rejection_reason = "The ID would stay coupled to human text."
+
+[[content.alternatives]]
+text = "Write the new ID to standard output"
+status = "accepted"
+pros = ["The success stream is one line a script can read."]
+cons = ["The creation report and the ID are on different streams."]

@@ -3,17 +3,17 @@
 [govctl]
 id = "RFC-0001"
 title = "Lifecycle State Machines"
-version = "0.7.0"
+version = "0.9.0"
 status = "normative"
-phase = "stable"
+phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-17"
-updated = "2026-07-20"
+updated = "2026-11-11"
 tags = [
     "core",
     "lifecycle",
 ]
-signature = "e67a234786417d9c81abf240a46875efdc6e0852c4be3c4ef5e914223450646a"
+signature = "ac0c58ec8243399e5ec9970ce4c1ec597a56f23338a4aa6ba29a469ced334c89"
 
 [[sections]]
 title = "Summary"
@@ -28,7 +28,20 @@ clauses = [
     "clauses/C-ADR-STATUS.toml",
     "clauses/C-CLAUSE-STATUS.toml",
     "clauses/C-GATE-CONDITIONS.toml",
+    "clauses/C-PASS-RECORD.toml",
 ]
+
+[[changelog]]
+version = "0.9.0"
+date = "2026-11-11"
+notes = "A dry-run does not perform the done transition"
+changed = ["A dry-run of the done transition does not execute guards or satisfy the guard gate"]
+
+[[changelog]]
+version = "0.8.0"
+date = "2026-11-10"
+notes = "Accept a commit pass record at the done gate"
+added = ["A pass record can satisfy the guard portion of the done gate for the same commit"]
 
 [[changelog]]
 version = "0.7.0"

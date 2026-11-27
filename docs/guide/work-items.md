@@ -238,7 +238,13 @@ running both commands back to back repeats the guards.
 
 ### Waiving A Guard
 
-If a specific guard must be waived for this work item, record that in the artifact with a reason:
+If a specific guard must be waived for this work item, record the Guard and a reason:
+
+```bash
+govctl work waive WI-2026-01-17-001 GUARD-CARGO-TEST --reason "Temporarily flaky on macOS runners; tracked in issue #123"
+```
+
+The Guard must already be required for this work item. The command stores:
 
 ```toml
 [[verification.waivers]]
@@ -246,7 +252,7 @@ guard = "GUARD-CARGO-TEST"
 reason = "Temporarily flaky on macOS runners; tracked in issue #123"
 ```
 
-Waivers are per-work-item only. They do not disable the guard globally, and they should remain rare and justified.
+`work edit` can correct the Guard or reason, or remove the waiver, after it exists. Waivers are per-work-item only. They do not disable the guard globally, and they should remain rare and justified.
 
 ## Notes
 

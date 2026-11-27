@@ -1,0 +1,39 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-WORK-WAIVE"
+title = "Record a work-item guard waiver"
+kind = "normative"
+status = "active"
+since = "3.9.0"
+tags = ["cli"]
+
+[content]
+text = """
+`govctl work waive` records one verification waiver on an existing Work Item.
+
+**Syntax**
+
+```
+govctl work waive <WI-ID> <GUARD-ID> --reason <text>
+```
+
+`<WI-ID>` MUST identify an existing Work Item. `<GUARD-ID>` MUST identify an existing Guard. `--reason` is required. The stored reason MUST be `<text>` with surrounding whitespace removed, and that result MUST be non-empty.
+
+On success, the command MUST append exactly one `verification.waivers` entry. That entry's `guard` MUST equal `<GUARD-ID>` and its `reason` MUST equal the trimmed reason. The command MUST NOT change any other field of the Work Item. Its success report MUST name the Work Item and the Guard.
+
+The command MUST reject the invocation and MUST NOT modify the Work Item when:
+
+- no Work Item has that ID;
+- no Guard has that ID;
+- the trimmed reason is empty;
+- the Work Item already records a waiver for that Guard; or
+- that Guard is absent from the Work Item's effective required guard set before waivers, as defined by [[RFC-0001:C-GATE-CONDITIONS]].
+
+A rejection MUST identify the Work Item when its ID was supplied and the Guard when its ID was supplied.
+
+With global `--dry-run`, the command MUST apply the same acceptance and rejection rules, MUST report the waiver it would append, and MUST leave the Work Item unchanged.
+
+**Rationale**
+
+Creating a waiver checks that the Guard is required and that a reason exists. Those checks belong on one command. `edit` keeps the authority to correct or remove a waiver that already exists."""

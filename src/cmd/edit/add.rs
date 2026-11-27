@@ -131,6 +131,8 @@ pub fn add_to_field(request: AddFieldRequest<'_>) -> DiagnosticResult<Vec<Diagno
         }
         ArtifactType::WorkItem => {
             let mut entry = WorkTomlAdapter::load(config, id)?;
+            let prepared = super::owners::prepare_owner_value(&entry, target, value, id)?;
+            let value = prepared.as_deref().unwrap_or(value);
             if fp.as_simple() == Some("acceptance_criteria") {
                 work_add_acceptance_criteria(&mut entry, value)?;
             } else {

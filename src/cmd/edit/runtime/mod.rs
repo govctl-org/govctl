@@ -55,9 +55,14 @@ pub fn get_simple_value(
     let Some(spec) = simple_field_spec(artifact, field) else {
         return Err(unknown_field_error(artifact, field, id));
     };
-    Ok(support::value_at_path(doc, spec.path)
-        .cloned()
-        .unwrap_or(Value::Null))
+    match support::value_at_path(doc, spec.path).cloned() {
+        Some(value) => Ok(value),
+        // [[RFC-0002:C-WORK-OWNERS]]: an omitted owners list is empty.
+        None if artifact == ArtifactType::WorkItem && field == "owners" => {
+            Ok(Value::Array(Vec::new()))
+        }
+        None => Ok(Value::Null),
+    }
 }
 
 /// Set a simple field on a serialized artifact document.

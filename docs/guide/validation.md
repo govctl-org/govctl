@@ -237,7 +237,13 @@ it only where its risk applies.
 
 ### Guard Waivers
 
-If a guard must be waived for a specific work item, record that explicitly with a reason:
+If a guard must be waived for a specific work item, record the Guard and a reason:
+
+```bash
+govctl work waive WI-2026-01-17-001 GUARD-CARGO-TEST --reason "Flaky on CI runner image; tracked in issue #123"
+```
+
+The Guard must already be in that work item's effective required set. The command stores:
 
 ```toml
 [[verification.waivers]]
@@ -245,7 +251,7 @@ guard = "GUARD-CARGO-TEST"
 reason = "Flaky on CI runner image; tracked in issue #123"
 ```
 
-Waivers are scoped to a single work item. They do not disable verification globally, and they should be treated as an exception that must be explained.
+`work edit` can correct or remove a waiver after it exists. Waivers are scoped to a single work item. They do not disable verification globally, and they should be treated as an exception that must be explained.
 
 ## Rendering
 

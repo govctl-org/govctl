@@ -303,6 +303,7 @@ fn test_indexed_set_support_follows_list_item_shape() -> Result<(), Box<dyn std:
         ("RFC-0001", "changelog.fixed[0]"),
         ("ADR-0001", "alternatives[0].pros[0]"),
         ("WI-2026-01-01-001", "notes[0]"),
+        ("WI-2026-01-01-001", "owners[0]"),
         ("WI-2026-01-01-001", "acceptance_criteria[0]"),
         ("WI-2026-01-01-001", "verification.required_guards[0]"),
     ] {

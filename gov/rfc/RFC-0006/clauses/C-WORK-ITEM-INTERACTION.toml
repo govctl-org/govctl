@@ -27,7 +27,7 @@ Loops interact with work items by reading Work Item lifecycle state, mapping it 
 
 **Validation requirements:**
 
-Before a Work Item is transitioned to `done`, the Work Item lifecycle command MUST verify the existing gate conditions defined by RFC-0001:C-GATE-CONDITIONS. A loop MAY record verification evidence in round summary artifacts, but that evidence does not replace the Work Item lifecycle gate.
+Before a Work Item is transitioned to `done`, the Work Item lifecycle command MUST verify the gate conditions defined by [[RFC-0001:C-GATE-CONDITIONS]]. A pass record accepted under [[RFC-0001:C-PASS-RECORD]] is checked by that lifecycle command and is not loop evidence. A loop MAY record verification evidence in round summary artifacts. Loop evidence does not replace the Work Item lifecycle gate.
 
 **Durable work item context:**
 

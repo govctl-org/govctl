@@ -72,11 +72,13 @@ pub(super) const VERIFY: &str = r#"EXAMPLES:
     govctl verify GUARD-CLIPPY
     govctl verify GUARD-CLIPPY GUARD-TESTS
     govctl verify --work WI-2026-04-06-001
+    govctl verify --work WI-2026-04-06-001 --record pass.toml
 
 NOTES:
     - Pass guard IDs to run specific guards directly.
     - Use `--work` to run the effective guard set for a work item.
     - `--work` conflicts with explicit guard IDs.
+    - `--record` requires `--work` and writes a pass record after those guards pass.
 "#;
 
 pub(super) const SEARCH: &str = r#"EXAMPLES:
@@ -173,11 +175,13 @@ pub(super) const WORK: &str = r#"COMMON WORKFLOW:
     3. `govctl work edit` to define scope and acceptance criteria
     4. `govctl work edit <ID> "acceptance_criteria[N]" --set <text>` to correct a criterion
     5. `govctl work edit <ID> "acceptance_criteria[N]" --tick <status>` to update criterion status
-    6. `govctl work move` to change lifecycle state
+    6. `govctl work waive <ID> <GUARD-ID> --reason <text>` to record one required-guard waiver
+    7. `govctl work move` to change lifecycle state
 
 START HERE:
     - New work item: `govctl work new "Title"`
     - Activate work: `govctl work move WI-<DATE>-001 active`
+    - Record a waiver: `govctl work waive WI-<DATE>-001 GUARD-ID --reason "Why this guard does not apply"`
     - Inspect one work item: `govctl work get WI-<DATE>-001`
 "#;
 

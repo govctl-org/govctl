@@ -1,0 +1,35 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-PASS-RECORD"
+title = "Checkout pass record"
+kind = "normative"
+status = "active"
+since = "0.8.0"
+tags = [
+    "lifecycle",
+    "validation",
+]
+
+[content]
+text = """
+A pass record is a caller-supplied TOML file reporting that one Work Item's effective required guards passed for one commit. It is not a governed artifact. It is not loop evidence under [[RFC-0006:C-WORK-ITEM-INTERACTION]].
+
+The document's keys MUST be exactly `work_id`, `revision`, and `guards`. Any other key MUST be rejected.
+
+`work_id` MUST be a non-empty string. `revision` MUST be a non-empty string. `guards` MUST be an array of non-empty strings with no duplicate values.
+
+`revision` MUST be the commit identifier, in the shared version-control history defined by [[RFC-0010:C-DEFINITIONS]], of the tree whose guards passed. It MUST be sampled before the pass-record file is created or modified. Writing that file MUST NOT change the stored `revision`. `revision` MUST NOT be a workspace path. `revision` MUST NOT be an identifier that changes merely because the checkout is open.
+
+A checkout has no usable commit identifier when it is not under version control. When version-control metadata is present but that identifier cannot be read, the checkout also has no usable commit identifier. That failure MUST warn as required by [[RFC-0010:C-REGISTRY]] and MUST NOT be treated as the absence of version control.
+
+A checkout matches `revision` when its content is the tree identified by that commit, plus at most the pass-record file when that file lies inside the checkout. Content that version control excludes under the effective-ignore rule in [[RFC-0002:C-GLOBAL-COMMANDS]] is not a difference. A later commit matches only when its content difference from `revision` is limited to that pass-record file.
+
+`guards` satisfies a Work Item only when the array contains exactly the same Guard IDs as that Work Item's effective required guard set after waivers, as defined by [[RFC-0001:C-GATE-CONDITIONS]]. Order is not significant. A waived guard is absent from that set. A pass record MUST NOT treat a waived guard as a passed guard.
+
+The record satisfies the guard portion of the transition to `done` only when `work_id` equals the Work Item being transitioned, the closing checkout matches `revision`, and `guards` satisfies that Work Item. Acceptance-criteria conditions in [[RFC-0001:C-GATE-CONDITIONS]] still apply. A pass record does not satisfy them.
+
+When a supplied pass record does not satisfy the guard portion, the transition to `done` MUST be rejected, the Work Item MUST remain unchanged, and the guards MUST NOT be executed. Supplying a pass record MUST NOT change which guards are waived.
+
+**Rationale:**
+The stored identifier is the commit whose tree passed, sampled before the record file exists. A later snapshot that contains only that file is still that tree. Any other change is a different tree. A waiver records that a guard does not apply, which is separate from a guard passing."""

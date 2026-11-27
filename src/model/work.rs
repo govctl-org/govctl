@@ -21,6 +21,10 @@ pub struct WorkItemMeta {
     pub depends_on: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub tags: Vec<String>,
+    /// People responsible for the work item. Omitted means empty.
+    /// [[RFC-0000:C-WORK-DEF]], [[RFC-0002:C-WORK-OWNERS]]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub owners: Vec<String>,
 }
 
 impl WorkItemMeta {
@@ -35,6 +39,7 @@ impl WorkItemMeta {
             refs: vec![],
             depends_on: vec![],
             tags: vec![],
+            owners: vec![],
         }
     }
 }
@@ -74,7 +79,7 @@ pub enum ChecklistStatus {
 
 /// A checklist item with text, status, and changelog category
 /// Per [[ADR-0013]], category enables changelog generation from acceptance criteria.
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ChecklistItem {
     pub text: String,
     #[serde(default)]

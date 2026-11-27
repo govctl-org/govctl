@@ -1,0 +1,27 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-WORK-OWNERS"
+title = "Work Item owners"
+kind = "normative"
+status = "active"
+since = "3.10.0"
+tags = [
+    "cli",
+    "work-items",
+]
+
+[content]
+text = """
+`owners` is the Work Item field defined by [[RFC-0000:C-WORK-DEF]]. Mutation of `owners` uses the scalar-list operations in [[RFC-0002:C-EDIT-FIELD-CONTRACT]].
+
+An `--add` or indexed `--set` MUST trim surrounding whitespace before storing the owner. It MUST reject an empty result, and it MUST leave the Work Item unchanged. It MUST reject a value that duplicates an owner at a different index. An indexed `--set` that stores the trimmed text already at that same index MUST succeed.
+
+`govctl work get <WI-ID> owners` MUST return that field. An omitted `owners` field MUST be returned as an empty list.
+
+`govctl work list` MUST accept a repeatable `--owner <owner>` option. This option applies only to Work Item listing. Each requested value MUST be trimmed with the same rule as a stored owner, and a whitespace-only value MUST be rejected as empty. An item is listed only when its stored owners contain every requested value by exact string comparison. The option MUST be combinable with the positional status filter and with `--tag`.
+
+A request that matches no Work Item MUST yield an empty result and MUST NOT be an error.
+
+**Rationale:**
+Ownership is a property of the Work Item. Listing keeps an item only when it has every requested owner, matching the existing rule that tag filtering requires every requested tag."""

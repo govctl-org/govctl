@@ -1,0 +1,30 @@
+#:schema ../schema/adr.schema.json
+
+[govctl]
+id = "ADR-0069"
+title = "Preserve unchanged Work Item text when updating"
+status = "accepted"
+date = "2026-11-10"
+refs = ["RFC-0002:C-WORK-FILE-STABILITY"]
+tags = [
+    "editing",
+    "work-items",
+]
+
+[content]
+context = "A Work Item keeps status, tags, notes, and its other fields in one TOML file. Rewriting that whole file makes a change to one field conflict with a change to another field."
+decision = "An update to an existing Work Item preserves the previous text of comments and of every field the command does not change. The command may rewrite a field it changes. Notes stay on the Work Item. [[RFC-0002:C-WORK-FILE-STABILITY]] states the obligation."
+consequences = "Positive: a change to one field can merge with a change to another field. Negative: two edits of the same field can still conflict. Neutral: a newly created Work Item may still use a canonical layout."
+
+[[content.alternatives]]
+text = "Store each note in its own append-only file"
+status = "rejected"
+pros = ["Appending a note would not rewrite the Work Item."]
+cons = ["Notes would leave the Work Item field, and a status or tag edit would still rewrite the main file."]
+rejection_reason = "The conflict comes from rewriting the whole file, and splitting notes would add a second store for one field."
+
+[[content.alternatives]]
+text = "Preserve unchanged Work Item text"
+status = "accepted"
+pros = ["Unrelated fields keep their previous text in the one Work Item file."]
+cons = ["Edits to the same field can still overlap."]

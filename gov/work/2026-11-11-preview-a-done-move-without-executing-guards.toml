@@ -1,0 +1,32 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-11-11-001"
+title = "Preview a done move without executing guards"
+status = "done"
+created = "2026-11-11"
+refs = ["RFC-0001:C-GATE-CONDITIONS", "RFC-0002:C-LIFECYCLE-VERBS", "ADR-0072"]
+tags = ["cli", "lifecycle"]
+started = "2026-11-11"
+completed = "2026-11-11"
+
+[content]
+description = "Let a dry-run of moving a Work Item to done report the guards that would run and leave them unexecuted, because those guard commands can change the workspace. A real move without a pass record still runs those guards."
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "A dry-run of moving a Work Item to done without a pass record exits zero when the transition and acceptance criteria are acceptable and no guard reference is unusable, leaves the Work Item unchanged, does not execute the guards, names the Work Item and each guard in the effective set on standard error, states when that set is empty, and does not claim that those guards passed"
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "That dry-run rejects pending acceptance criteria and an unusable guard reference, does not execute guards, does not write the preview report, and leaves the Work Item unchanged"
+
+[[content.acceptance_criteria]]
+category = "chore"
+status = "done"
+text = "Moving to done without a dry-run and without a pass record still executes the effective guards"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

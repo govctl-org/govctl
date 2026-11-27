@@ -53,6 +53,15 @@
             "type": "string",
             "pattern": "^[a-z][a-z0-9-]*$"
           }
+        },
+        "owners": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\S(.*\\S)?$"
+          },
+          "uniqueItems": true
         }
       },
       "additionalProperties": false

@@ -1,0 +1,33 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-11-10-002"
+title = "Preserve unchanged Work Item text on update"
+status = "done"
+created = "2026-11-10"
+refs = [
+    "RFC-0002:C-WORK-FILE-STABILITY",
+    "ADR-0069",
+]
+tags = [
+    "editing",
+    "work-items",
+]
+started = "2026-11-10"
+completed = "2026-11-10"
+
+[content]
+description = "Update an existing Work Item by rewriting only the fields the command changes, so a change to one field can merge with a change to another field."
+
+[[content.acceptance_criteria]]
+category = "changed"
+status = "done"
+text = "An update to an existing Work Item preserves comments and fields the command does not change"
+
+[[content.acceptance_criteria]]
+category = "chore"
+status = "done"
+text = "Edit, status transition, and waiver recording all preserve that unchanged text"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

@@ -36,6 +36,19 @@ pub fn field_added(id: &str, field: &str, value: &str) {
     }
 }
 
+pub fn would_record_waiver(id: &str, guard_id: &str, reason: &str) {
+    if use_colors() {
+        eprintln!(
+            "Would add '{}' to {}.verification.waivers with reason '{}'",
+            guard_id.white(),
+            id.cyan().bold(),
+            reason.white()
+        );
+    } else {
+        eprintln!("Would add '{guard_id}' to {id}.verification.waivers with reason '{reason}'");
+    }
+}
+
 pub fn field_removed(id: &str, field: &str, value: &str) {
     if use_colors() {
         eprintln!(

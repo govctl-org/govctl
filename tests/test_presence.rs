@@ -130,8 +130,8 @@ fn write_presence(
     Ok(())
 }
 
-/// Extract the first work item id from command output (the id is reported on
-/// stderr via `ui::sub_info`).
+/// Extract the first work item id from command output. A successful `work new`
+/// writes the id on stdout; the human report on stderr also names it.
 fn work_id_of(output: &Output) -> Result<String, Box<dyn std::error::Error>> {
     let combined = format!("{}{}", stdout(output), stderr(output));
     let id = combined

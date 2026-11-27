@@ -1,0 +1,55 @@
+#:schema ../../../schema/clause.schema.json
+
+[govctl]
+id = "C-PASS-RECORD-COMMAND"
+title = "Pass record commands"
+kind = "normative"
+status = "active"
+since = "3.10.0"
+tags = [
+    "cli",
+    "validation",
+    "work-items",
+]
+
+[content]
+text = """
+`govctl verify` and `govctl work move` expose the pass record defined by [[RFC-0001:C-PASS-RECORD]].
+
+**Record a pass**
+
+```
+govctl verify --work <WI-ID> --record <path>
+```
+
+`--record` MUST be rejected unless `--work` is present. `--record` MUST NOT be combined with explicit Guard ID arguments. A rejected invocation of this command MUST exit non-zero. A successful invocation MUST exit zero.
+
+The command MUST reject the invocation, MUST NOT execute guards, and MUST NOT create or modify `<path>` when:
+
+- no Work Item has `<WI-ID>`;
+- the checkout has no usable commit identifier under [[RFC-0001:C-PASS-RECORD]]; when version-control metadata is present but that identifier cannot be read, the rejection MUST warn as required by [[RFC-0010:C-REGISTRY]];
+- the checkout does not match its current commit identifier under [[RFC-0001:C-PASS-RECORD]], treating `<path>` as the pass-record file when `<path>` lies inside the checkout; or
+- the Work Item's effective required guard set is empty.
+
+Otherwise the command MUST execute every guard in that effective set. When any executed guard fails, or the record cannot be written, the command MUST reject the invocation and MUST NOT leave `<path>` changed.
+
+On success, `<path>` MUST be a pass record whose `work_id` equals `<WI-ID>`, whose `revision` equals the commit identifier sampled before `<path>` is created or modified, and whose `guards` satisfies that Work Item under [[RFC-0001:C-PASS-RECORD]].
+
+With global `--dry-run`, the command MUST apply the same Work Item and checkout rejection rules, MUST NOT execute guards, and MUST NOT create or modify `<path>`. When those rules pass, the command MUST exit zero and MUST write its report to standard error. The report MUST name the Work Item, the commit identifier that would be stored as `revision`, and the guard set that a successful run would record. It MUST NOT claim that those guards passed. A rejection MUST exit non-zero.
+
+**Close with a pass record**
+
+```
+govctl work move <WI-ID> done --evidence <path>
+```
+
+`--evidence` MUST be rejected when the target status is not `done`. The command MUST NOT execute guards when `--evidence` is present.
+
+A record that satisfies [[RFC-0001:C-PASS-RECORD]] for that Work Item and the current checkout satisfies the guard portion of the `done` gate. A missing file, an unreadable file, or a record that does not satisfy the gate MUST be rejected, the Work Item MUST remain unchanged, and the guards MUST NOT be executed.
+
+Acceptance-criteria checks required by [[RFC-0001:C-GATE-CONDITIONS]] still apply when `--evidence` is present. With global `--dry-run`, the command MUST NOT change the Work Item.
+
+When `--evidence` is absent, an invocation that performs the transition MUST execute the effective required guards as required by [[RFC-0001:C-GATE-CONDITIONS]]. A global `--dry-run` invocation without `--evidence` MUST follow [[RFC-0002:C-LIFECYCLE-VERBS]].
+
+**Rationale:**
+The checkout that produced the record is the only checkout that record can close. The Work Item lifecycle command remains the gate. A dry run writes neither the record nor the status change, and a dry run of the close does not execute guards."""

@@ -1,0 +1,33 @@
+#:schema ../schema/work.schema.json
+
+[govctl]
+id = "WI-2026-11-10-001"
+title = "Print the new Work Item ID on standard output"
+status = "done"
+created = "2026-11-10"
+refs = [
+    "RFC-0002:C-WORK-NEW-OUTPUT",
+    "ADR-0068",
+]
+tags = [
+    "cli",
+    "work-items",
+]
+started = "2026-11-10"
+completed = "2026-11-10"
+
+[content]
+description = "Make a successful work-item creation report its new ID on the success stream, so a script can read it, while the human creation report stays on the diagnostic stream."
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "A successful work item creation writes only the new ID and a newline on standard output, and keeps the human creation report on standard error"
+
+[[content.acceptance_criteria]]
+category = "added"
+status = "done"
+text = "A dry run writes no work item ID on standard output, creates no work item file, and reports the planned creation on standard error"
+
+[verification]
+required_guards = ["GUARD-CARGO-TEST"]

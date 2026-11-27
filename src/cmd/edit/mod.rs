@@ -12,6 +12,7 @@ mod doc_target;
 pub mod engine;
 mod get;
 pub(crate) mod matching;
+mod owners;
 pub mod path;
 mod refs;
 mod remove;

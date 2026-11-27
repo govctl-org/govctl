@@ -1,5 +1,6 @@
 use super::adapter::{
     AdrTomlAdapter, ClauseTomlAdapter, ConformanceTomlAdapter, GuardTomlAdapter, RfcTomlAdapter,
+    TomlAdapter,
 };
 use super::doc_target::{set_clause_field, set_rfc_field};
 use super::engine as edit_engine;
@@ -60,6 +61,9 @@ pub(super) fn apply_set_field(
                     id,
                 ));
             }
+            let entry = super::toml_adapter::WorkTomlAdapter::load(config, id)?;
+            let prepared = super::owners::prepare_owner_value(&entry, target, value, id)?;
+            let value = prepared.as_deref().unwrap_or(value);
             set_work_toml_field(config, id, target, value, op, !enforce_verb_ownership)?
         }
         ArtifactType::Rfc => {

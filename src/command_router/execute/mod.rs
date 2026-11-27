@@ -71,6 +71,7 @@ fn execute_list(
     limit: Option<usize>,
     output: Option<ListOutputFormat>,
     tags: &[String],
+    owners: &[String],
 ) -> CommandResult {
     cmd::list::list(
         config,
@@ -79,6 +80,7 @@ fn execute_list(
         limit,
         output,
         tags,
+        owners,
     )
 }
 
@@ -176,9 +178,16 @@ fn execute_lifecycle(
             debug_assert!(matches!(artifact, cmd::edit::ArtifactType::Adr));
             cmd::lifecycle::reject_adr(config, id, op)
         }
-        LifecycleOp::MoveWork { file_or_id, status } => {
-            cmd::move_::move_item(config, file_or_id, *status, op)
-        }
+        LifecycleOp::MoveWork {
+            file_or_id,
+            status,
+            evidence,
+        } => cmd::move_::move_item(config, file_or_id, *status, evidence.as_deref(), op),
+        LifecycleOp::WaiveWork {
+            work_id,
+            guard_id,
+            reason,
+        } => cmd::waive::waive_guard(config, work_id, guard_id, reason.as_deref(), op),
     };
     match result {
         Ok(op_diags) => diags.extend(op_diags),
@@ -287,7 +296,16 @@ pub(super) fn execute_plan(plan: &CommandPlan, config: &Config, op: WriteOp) -> 
             limit,
             output,
             tags,
-        } => execute_list(plan, config, filter.as_deref(), *limit, *output, tags),
+            owners,
+        } => execute_list(
+            plan,
+            config,
+            filter.as_deref(),
+            *limit,
+            *output,
+            tags,
+            owners,
+        ),
         Op::Get { output } => execute_get(plan, config, *output),
         Op::Show { output, history } => execute_show(plan, config, *output, *history),
         Op::Edit(edit) => execute_edit(plan, config, edit, op),

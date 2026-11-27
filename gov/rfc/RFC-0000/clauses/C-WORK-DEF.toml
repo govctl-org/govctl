@@ -14,16 +14,18 @@ A Work Item tracks a unit of work from inception through a release-eligible comp
 
 Every Work Item MUST be stored as a TOML file containing:
 - `[govctl]` section with required fields: `id`, `title`, `status`, `created`
-- optional `[govctl]` fields: `started`, `completed`, `refs`
+- optional `[govctl]` fields: `started`, `completed`, `refs`, `owners`
 - `[content]` section with required field: `description`
 - optional `[content]` fields: `acceptance_criteria`, `notes`
 - optional `[verification]` section with: `required_guards`, `waivers`
 
-Omitted list-valued fields `refs`, `acceptance_criteria`, `notes`, `verification.required_guards`, and `verification.waivers` MUST be interpreted as empty lists.
+Omitted list-valued fields `refs`, `owners`, `acceptance_criteria`, `notes`, `verification.required_guards`, and `verification.waivers` MUST be interpreted as empty lists.
 
 Format evolution is tracked by the project-level `[schema] version` in `gov/config.toml`, not per-artifact fields.
 
 Implementations MUST define a machine-readable JSON Schema for the Work Item file structure and MUST validate Work Item files against that schema during project validation.
+
+When present, `owners` MUST be an array of strings. Each owner MUST be non-empty after surrounding whitespace is removed, and the stored value MUST equal that trimmed text. Duplicate owner values MUST be rejected during validation. Adding or replacing an owner MUST apply that trim and rejection before the file is written, as defined by [[RFC-0002:C-WORK-OWNERS]].
 
 When present, `verification.required_guards` MUST be an array of Verification Guard IDs defined by [[RFC-0000:C-GUARD-DEF]]. These guard IDs augment project-level default guard requirements when project verification is enabled.
 
@@ -62,4 +64,4 @@ A done Work Item that is not referenced by a release MUST be allowed to return t
 A Work Item referenced by a release MUST remain done.
 
 **Rationale:**
-An unreleased completion is a correctable judgment. Release membership supplies the immutable lifecycle boundary without adding another persisted Work Item status. Omitting empty list fields keeps the TOML representation minimal without changing the logical data model."""
+An unreleased completion is a correctable judgment. Release membership supplies the immutable lifecycle boundary without adding another persisted Work Item status. Omitting empty list fields keeps the TOML representation minimal without changing the logical data model. Owners name who is responsible for the Work Item without changing its lifecycle or its execution order."""

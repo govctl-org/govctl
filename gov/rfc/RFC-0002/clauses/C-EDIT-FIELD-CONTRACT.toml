@@ -25,7 +25,7 @@ Each resource MUST support these paths and operations:
 | ADR | `alternatives[i].text`, `alternatives[i].rejection_reason` | `--set` |
 | ADR | `alternatives[i].pros`, `alternatives[i].cons` | `--add`, `--remove` |
 | Work Item | `title`, `description` | `--set` |
-| Work Item | `refs`, `depends_on`, `tags`, `notes` | `--add`, `--remove` |
+| Work Item | `refs`, `depends_on`, `tags`, `notes`, `owners` | `--add`, `--remove` |
 | Work Item | `acceptance_criteria` | `--add`, `--remove`, `--tick` |
 | Work Item | `acceptance_criteria[i]`, `acceptance_criteria[i].text`, `acceptance_criteria[i].category` | `--set` |
 | Work Item | `verification.required_guards` | `--add`, `--remove` |
@@ -74,7 +74,7 @@ Indices MUST be zero-based decimal integers. `--remove <value>` MUST use exact m
 
 RFC changelog paths address only the current version record. Released historical changelog records MUST NOT be editable through this surface.
 
-The logical Guard paths `command`, `timeout_secs`, and `pattern` map to persisted check configuration without exposing the wire-layout name. Work Item waiver creation remains owned by the verification waiver command; `edit` only corrects or removes an existing waiver.
+The logical Guard paths `command`, `timeout_secs`, and `pattern` map to persisted check configuration without exposing the wire-layout name. Work Item waiver creation is owned by [[RFC-0002:C-WORK-WAIVE]]. `edit` only corrects or removes an existing waiver.
 
 **Rationale:**
 

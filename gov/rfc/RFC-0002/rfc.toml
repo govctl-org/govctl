@@ -3,12 +3,12 @@
 [govctl]
 id = "RFC-0002"
 title = "CLI Resource Model and Command Architecture"
-version = "3.8.0"
+version = "3.11.0"
 status = "normative"
 phase = "impl"
 owners = ["@govctl-org"]
 created = "2026-01-19"
-updated = "2026-10-18"
+updated = "2026-11-11"
 tags = [
     "cli",
     "editing",
@@ -16,7 +16,7 @@ tags = [
     "validation",
     "release",
 ]
-signature = "fb1f84ece30f4f013d24e210ee9113ee8664d567ae385f0585a47ef22da0b628"
+signature = "2ea7df04d043acd00b6b53955c380676dcc35e4647bfb6f8437a59d0bdaee2fb"
 
 [[sections]]
 title = "Summary"
@@ -39,6 +39,11 @@ clauses = [
     "clauses/C-EDIT-FIELD-CONTRACT.toml",
     "clauses/C-NAMESPACE-RECOVERY.toml",
     "clauses/C-PRE-1-RELEASE-TARGET-COMPATIBILITY.toml",
+    "clauses/C-WORK-WAIVE.toml",
+    "clauses/C-WORK-NEW-OUTPUT.toml",
+    "clauses/C-WORK-FILE-STABILITY.toml",
+    "clauses/C-WORK-OWNERS.toml",
+    "clauses/C-PASS-RECORD-COMMAND.toml",
 ]
 
 [[sections]]
@@ -47,6 +52,29 @@ clauses = [
     "clauses/C-DESCRIBE-COMMAND.toml",
     "clauses/C-AGENT-INTEGRATION.toml",
 ]
+
+[[changelog]]
+version = "3.11.0"
+date = "2026-11-11"
+notes = "Preview a done move without executing guards"
+changed = ["A dry-run of work move done without evidence reports the guard set and does not execute it"]
+
+[[changelog]]
+version = "3.10.0"
+date = "2026-11-10"
+notes = "Make work creation, updates, owners, and pass records scriptable"
+added = [
+    "work new writes the new Work Item ID to standard output",
+    "Existing Work Item updates preserve text the command does not change",
+    "work list can filter by owner",
+    "verify --record and work move done --evidence use a pass record",
+]
+
+[[changelog]]
+version = "3.9.0"
+date = "2026-10-30"
+notes = "Record a work-item guard waiver from the CLI"
+added = ["govctl work waive records one work-item guard waiver with a required reason"]
 
 [[changelog]]
 version = "3.8.0"

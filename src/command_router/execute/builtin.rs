@@ -24,9 +24,11 @@ pub(super) fn execute_builtin(config: &Config, builtin: &BuiltinOp, op: WriteOp)
             force,
         } => execute_global_render(config, *target, *dry_run, *force),
         BuiltinOp::Migrate => cmd::migrate::migrate(config, op),
-        BuiltinOp::Verify { guard_ids, work } => {
-            cmd::verify::verify(config, guard_ids, work.as_deref())
-        }
+        BuiltinOp::Verify {
+            guard_ids,
+            work,
+            record,
+        } => cmd::verify::verify(config, guard_ids, work.as_deref(), record.as_deref(), op),
         BuiltinOp::Search {
             query,
             types,

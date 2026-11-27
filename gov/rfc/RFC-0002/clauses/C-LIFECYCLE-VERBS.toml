@@ -102,6 +102,8 @@ Resource-specific lifecycle and constrained-mutation operations implement state 
 1. `govctl work move <id> <queue|active|done|cancelled>`
    - Implements [[RFC-0001:C-WORK-STATUS]] transitions.
    - Validates gate conditions when entering `done`.
+   - When the target is `done`, `--evidence <path>` MUST apply [[RFC-0002:C-PASS-RECORD-COMMAND]].
+   - With global `--dry-run` and no `--evidence`, entering `done` MUST apply the same transition and acceptance-criteria rejection rules as an invocation that performs the transition. It MUST reject an unusable guard reference, as defined by [[RFC-0001:C-GATE-CONDITIONS]], with a non-zero exit. A rejection MUST leave the Work Item unchanged, MUST NOT execute guards, and MUST NOT write the preview report. When the transition is allowed, the acceptance criteria pass, and no guard reference is unusable, the command MUST NOT execute guards, MUST NOT claim that any guard passed, MUST leave the Work Item unchanged, MUST exit zero, and MUST write a report to standard error. The report MUST name the Work Item and each guard in the effective required set. When that set is empty, the report MUST state that the set is empty.
    - MUST reject done -> active when any release references the Work Item.
    - queue -> active MUST set `started` when it is absent.
    - active -> done MUST set `completed`.

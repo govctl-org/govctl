@@ -10,14 +10,29 @@ Release entries are curated summaries for readers. Work item traceability remain
 
 ## [Unreleased]
 
+### Added
+
+- govctl work waive records one waiver naming the Work Item, Guard, and trimmed reason (WI-2026-10-30-001)
+- A successful work item creation writes only the new ID and a newline on standard output, and keeps the human creation report on standard error (WI-2026-11-10-001)
+- A dry run writes no work item ID on standard output, creates no work item file, and reports the planned creation on standard error (WI-2026-11-10-001)
+- A Work Item can record owners, and the work list owner filter keeps items that have every requested owner, combines with the status filter and tags, rejects an empty owner option, and returns an empty result when nothing matches (WI-2026-11-10-003)
+- An empty or duplicate owner is rejected, and getting an omitted owner list returns an empty list (WI-2026-11-10-003)
+- Recording a pass writes the work item, the commit identifier sampled before the record file is written, and exactly the effective guard set after those guards pass, and only when the checkout matches that commit aside from the record path (WI-2026-11-10-004)
+- Moving to done with a record succeeds without running guards when the checkout matches the recorded commit, allowing only that record file inside the checkout as an extra change, and acceptance criteria must still be complete (WI-2026-11-10-004)
+- Recording or closing is rejected without changing the work item, without running guards, and without modifying the record file when there is no usable commit identifier, the checkout does not match the recorded commit, the guard set differs, the record is missing or unreadable, or evidence is used for a status other than done (WI-2026-11-10-004)
+- A dry-run of moving a Work Item to done without a pass record exits zero when the transition and acceptance criteria are acceptable and no guard reference is unusable, leaves the Work Item unchanged, does not execute the guards, names the Work Item and each guard in the effective set on standard error, states when that set is empty, and does not claim that those guards passed (WI-2026-11-11-001)
+- That dry-run rejects pending acceptance criteria and an unusable guard reference, does not execute guards, does not write the preview report, and leaves the Work Item unchanged (WI-2026-11-11-001)
+
 ### Changed
 
 - check, init, and migrate treat local-state paths as satisfied when version control already excludes them (WI-2026-10-18-001)
+- An update to an existing Work Item preserves comments and fields the command does not change (WI-2026-11-10-002)
 
 ### Fixed
 
 - a tracked file inside the local-state directory does not hide a missing directory ignore rule (WI-2026-10-18-001)
 - when a child of the local-state directory is tracked and a new file there is already excluded, check stays quiet and migrate does not append another directory entry, including on a second run (WI-2026-10-18-002)
+- work waive rejects a missing Work Item, unknown Guard, empty reason, duplicate waiver, or Guard that is not required, and leaves the Work Item unchanged (WI-2026-10-30-001)
 - search returns results for loadable artifacts when another cataloged artifact fails to load, and reports the skipped artifact's load diagnostic (WI-2026-11-17-001)
 - an artifact that was indexed while valid and then stops loading is removed from the search index instead of matching on stale content (WI-2026-11-17-001)
 

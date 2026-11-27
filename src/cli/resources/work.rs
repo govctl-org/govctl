@@ -1,12 +1,22 @@
 use std::path::PathBuf;
 
-use clap::Subcommand;
+use clap::{Args, Subcommand};
 
 use crate::model::WorkItemStatus;
 use crate::{
     CommonDeleteArgs, CommonEditArgs, CommonGetArgs, CommonListArgs, CommonRenderArgs,
     CommonShowArgs,
 };
+
+/// Work item list filters. `--owner` is work-item only — [[RFC-0002:C-WORK-OWNERS]].
+#[derive(Args, Clone, Debug)]
+pub(crate) struct WorkListArgs {
+    #[command(flatten)]
+    pub(crate) common: CommonListArgs,
+    /// Owner that a work item must have. Repeat to require every owner.
+    #[arg(long)]
+    pub(crate) owner: Vec<String>,
+}
 
 /// Work item commands (resource-first structure)
 #[derive(Subcommand, Clone, Debug)]
@@ -15,17 +25,20 @@ pub(crate) enum WorkCommand {
     #[command(after_help = "\
 FILTERS:
     Filter may be a work-item status, work-item ID, or title substring.
+    Repeat --owner to require every listed owner.
 
 EXAMPLES:
     govctl work list
     govctl work list active
     govctl work list queue -n 10
+    govctl work list --owner ada
+    govctl work list active --owner ada --tag cli
 ")]
-    List(CommonListArgs),
+    List(WorkListArgs),
     /// Get work item metadata or specific field
     #[command(after_help = "\
 VALID FIELDS:
-    - title, description, status, completed_at, refs, depends_on
+    - title, description, status, completed_at, refs, depends_on, owners
     - notes, acceptance_criteria
     - verification.required_guards, verification.waivers
 
@@ -65,6 +78,27 @@ NOTES:
         #[arg(long)]
         active: bool,
     },
+    /// Record one verification waiver on a work item
+    #[command(after_help = "\
+EXAMPLES:
+    govctl work waive WI-2026-04-06-001 GUARD-CARGO-TEST --reason \"Not exercised by this change\"
+
+NOTES:
+    - `--reason` is required. Blank text is rejected after trimming.
+    - The Guard must already be required for the work item.
+    - `work edit` can correct or remove a waiver after it exists.
+")]
+    Waive {
+        /// Work item ID
+        #[arg(value_name = "WI-ID")]
+        work_id: String,
+        /// Guard to waive
+        #[arg(value_name = "GUARD-ID")]
+        guard_id: String,
+        /// Why this guard is waived for this work item
+        #[arg(long)]
+        reason: Option<String>,
+    },
     /// Canonical path-first edit entrypoint
     #[command(after_help = "\
 EXAMPLES:
@@ -74,6 +108,7 @@ EXAMPLES:
     govctl work edit WI-2026-04-06-001 \"acceptance_criteria[0]\" --set \"fix: Correct edge case\"
     govctl work edit WI-2026-04-06-001 \"acceptance_criteria[0]\" --tick done
     govctl work edit WI-2026-04-06-001 verification.required_guards --add GUARD-CARGO-TEST
+    govctl work edit WI-2026-04-06-001 owners --add ada
 ")]
     Edit(CommonEditArgs),
     /// Move work item to new status
@@ -81,9 +116,11 @@ EXAMPLES:
 EXAMPLES:
     govctl work move WI-2026-04-06-001 active
     govctl work move WI-2026-04-06-001 done
+    govctl work move WI-2026-04-06-001 done --evidence pass.toml
 
 NOTES:
     - `done` requires acceptance criteria and effective guards to pass.
+    - `--evidence` supplies a pass record and does not run guards.
     - Use `work edit ... \"acceptance_criteria[N]\" --tick` to update criterion status.
 ")]
     Move {
@@ -93,6 +130,9 @@ NOTES:
         /// Target status
         #[arg(value_enum)]
         status: WorkItemStatus,
+        /// Pass record that satisfies the guard portion of done
+        #[arg(long, value_name = "PATH")]
+        evidence: Option<PathBuf>,
     },
     /// Delete work item
     #[command(after_help = "\
