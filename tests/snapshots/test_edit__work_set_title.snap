@@ -4,7 +4,7 @@ expression: value
 ---
 $ govctl work new Original Title
 WI-<DATE>-001
-Created work item: gov/work/<DATE>-original-title.toml
+Created work item: gov/work/WI-<DATE>-001.toml
   ID: WI-<DATE>-001
 exit: 0
 

@@ -30,7 +30,7 @@ exit: 0
 
 $ govctl work new Initial setup --active
 WI-<DATE>-001
-Created work item: gov/work/<DATE>-initial-setup.toml
+Created work item: gov/work/WI-<DATE>-001.toml
   ID: WI-<DATE>-001
 exit: 0
 
@@ -51,12 +51,12 @@ Marked 'Basic configuration' as done
 exit: 0
 
 $ govctl work move WI-<DATE>-001 done
-Moved <DATE>-initial-setup.toml to done
+Moved WI-<DATE>-001.toml to done
 exit: 0
 
 $ govctl work new Bug fixes --active
 WI-<DATE>-002
-Created work item: gov/work/<DATE>-bug-fixes.toml
+Created work item: gov/work/WI-<DATE>-002.toml
   ID: WI-<DATE>-002
 exit: 0
 
@@ -77,7 +77,7 @@ Marked 'Crash on empty input' as done
 exit: 0
 
 $ govctl work move WI-<DATE>-002 done
-Moved <DATE>-bug-fixes.toml to done
+Moved WI-<DATE>-002.toml to done
 exit: 0
 
 $ govctl release 0.1.0 --date 2026-01-15

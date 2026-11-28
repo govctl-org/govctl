@@ -4,7 +4,7 @@ expression: value
 ---
 $ govctl work new Completed work item --active
 WI-<DATE>-001
-Created work item: gov/work/<DATE>-completed-work-item.toml
+Created work item: gov/work/WI-<DATE>-001.toml
   ID: WI-<DATE>-001
 exit: 0
 
@@ -17,7 +17,7 @@ Marked 'Test criterion' as done
 exit: 0
 
 $ govctl work move WI-<DATE>-001 done
-Moved <DATE>-completed-work-item.toml to done
+Moved WI-<DATE>-001.toml to done
 exit: 0
 
 $ govctl work delete WI-<DATE>-001 -f
