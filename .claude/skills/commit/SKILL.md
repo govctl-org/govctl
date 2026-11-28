@@ -53,23 +53,27 @@ one explainable outcome. If unrelated work shares the current jj change, stop
 and split it (`jj split --help`) or ask the user. With Git, stop if the index
 already holds unrelated staged changes.
 
-Message format, with the type chosen from the outcome (`feat`, `fix`,
+Follow the repository's own commit-message guidance, and any user or machine
+guidance already in scope, when it exists. In the absence of other guidance,
+use the format below. Choose the type from the outcome (`feat`, `fix`,
 `refactor`, `docs`, `test`, `chore`):
 
 ```text
 <type>(<area>): <short summary>
 ```
 
-Record it without opening an editor; use stdin for multi-line messages:
+Record the selected message without opening an editor. Use the fallback
+format above only when no other guidance applies. Use stdin for a multi-line
+message:
 
 ```bash
-jj describe -m "<type>(<area>): <summary>"
+jj describe -m "<message>"
 jj new
 ```
 
 ```bash
 git add -- <reviewed-path>...
-git commit -m "<type>(<area>): <summary>"
+git commit -m "<message>"
 ```
 
 ## Report
