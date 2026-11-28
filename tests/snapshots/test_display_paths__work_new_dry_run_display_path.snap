@@ -4,7 +4,7 @@ expression: value
 ---
 $ govctl work new New Work --dry-run
 Would create dir: gov/work
-Would write: gov/work/<DATE>-new-work.toml
+Would write: gov/work/WI-<DATE>-001.toml
   #:schema ../schema/work.schema.json
   
   [govctl]

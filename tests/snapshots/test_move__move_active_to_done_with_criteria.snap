@@ -7,7 +7,7 @@ Marked 'Task done' as done
 exit: 0
 
 $ govctl work move WI-<DATE>-001 done
-Moved <DATE>-test-task.toml to done
+Moved WI-<DATE>-001.toml to done
 exit: 0
 
 $ govctl work list all

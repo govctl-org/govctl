@@ -1,7 +1,7 @@
 use super::*;
 
 #[test]
-fn test_work_new_same_title_uses_filename_suffix() -> common::TestResult {
+fn test_work_new_same_title_writes_distinct_id_files() -> common::TestResult {
     let (temp_dir, date) = init_project_with_date()?;
 
     let output = run_commands(
@@ -18,8 +18,8 @@ fn test_work_new_same_title_uses_filename_suffix() -> common::TestResult {
     );
 
     let work_dir = temp_dir.path().join("gov").join("work");
-    let first_path = work_dir.join(format!("{date}-duplicate-title.toml"));
-    let second_path = work_dir.join(format!("{date}-duplicate-title-001.toml"));
+    let first_path = work_dir.join(format!("WI-{date}-001.toml"));
+    let second_path = work_dir.join(format!("WI-{date}-002.toml"));
 
     assert!(first_path.exists(), "missing {}", first_path.display());
     assert!(second_path.exists(), "missing {}", second_path.display());

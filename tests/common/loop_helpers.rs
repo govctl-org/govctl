@@ -79,13 +79,8 @@ pub fn write_guard(dir: &Path, guard_id: &str, command: &str) -> super::TestResu
     super::write_guard_with_timeout(dir, guard_id, command, None, 300)
 }
 
-pub fn append_required_guard(
-    dir: &Path,
-    date: &str,
-    slug: &str,
-    guard_id: &str,
-) -> super::TestResult {
-    let path = dir.join(format!("gov/work/{date}-{slug}.toml"));
+pub fn append_required_guard(dir: &Path, work_id: &str, guard_id: &str) -> super::TestResult {
+    let path = dir.join(format!("gov/work/{work_id}.toml"));
     let mut content = fs::read_to_string(&path)?;
     content.push_str(&format!(
         "\n[verification]\nrequired_guards = [\"{guard_id}\"]\n"

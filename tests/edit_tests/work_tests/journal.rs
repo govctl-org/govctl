@@ -67,7 +67,7 @@ fn test_work_new_omits_journal_field() -> common::TestResult {
         .path()
         .join("gov")
         .join("work")
-        .join(format!("{date}-test-task.toml"));
+        .join(format!("WI-{date}-001.toml"));
     let content = std::fs::read_to_string(work_path)?;
 
     assert!(

@@ -7,7 +7,6 @@ use crate::model::{
 use crate::schema::ArtifactSchema;
 use crate::ui;
 use crate::write::{WriteOp, create_dir_all, today};
-use slug::slugify;
 use std::path::Path;
 
 pub(super) fn create(
@@ -21,7 +20,6 @@ pub(super) fn create(
     create_dir_all(&work_dir, op, Some(&display_work_dir))?;
 
     let date = today();
-    let slug = slugify(title);
 
     // [[RFC-0010:C-ID-RESERVATION]]: reserve the generated ID in the shared
     // registry and allocate from the union of the local tree, live
@@ -52,14 +50,15 @@ pub(super) fn create(
         }
     };
 
-    let mut filename = format!("{date}-{slug}.toml");
-    let mut work_path = work_dir.join(&filename);
-    let mut suffix = 1u32;
-
-    while work_path.exists() {
-        filename = format!("{date}-{slug}-{suffix:03}.toml");
-        work_path = work_dir.join(&filename);
-        suffix += 1;
+    // The file name is the ID. A title slug is not part of the name, and a
+    // second counter is not used when two titles match.
+    let work_path = work_dir.join(format!("{work_id}.toml"));
+    if work_path.exists() {
+        return Err(Diagnostic::new(
+            DiagnosticCode::E0401WorkSchemaInvalid,
+            format!("Work item file already exists: {}", work_path.display()),
+            work_id,
+        ));
     }
 
     let (status, started) = if active {

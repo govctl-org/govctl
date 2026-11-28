@@ -37,7 +37,7 @@ fn test_work_journal_storage_is_rejected() -> common::TestResult {
         .path()
         .join("gov")
         .join("work")
-        .join(format!("{}-legacy-journal-test.toml", date));
+        .join(format!("WI-{date}-001.toml"));
     let output = run_commands(temp_dir.path(), &[&["work", "new", "Legacy Journal Test"]])?;
     assert!(output.contains("Created work item"), "output: {output}");
 

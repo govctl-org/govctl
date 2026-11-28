@@ -30,13 +30,13 @@ fn test_work_new_dry_run_selects_same_suffix_as_execution() -> common::TestResul
     )?;
 
     assert!(
-        output.contains(&format!("{date}-repeated-title-001.toml")),
+        output.contains(&format!("Would write: gov/work/WI-{date}-002.toml")),
         "{output}"
     );
     assert!(
         !temp_dir
             .path()
-            .join(format!("gov/work/{date}-repeated-title-001.toml"))
+            .join(format!("gov/work/WI-{date}-002.toml"))
             .exists()
     );
     Ok(())

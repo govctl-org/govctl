@@ -4,7 +4,7 @@ expression: value
 ---
 $ govctl work new Task to start
 WI-<DATE>-001
-Created work item: gov/work/<DATE>-task-to-start.toml
+Created work item: gov/work/WI-<DATE>-001.toml
   ID: WI-<DATE>-001
 exit: 0
 
@@ -20,7 +20,7 @@ What is the goal? What are the acceptance criteria?
 exit: 0
 
 $ govctl work move WI-<DATE>-001 active
-Moved <DATE>-task-to-start.toml to active
+Moved WI-<DATE>-001.toml to active
 exit: 0
 
 $ govctl work show WI-<DATE>-001

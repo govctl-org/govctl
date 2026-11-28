@@ -147,15 +147,15 @@ fn workspaces_of_one_clone_allocate_distinct_ids() -> TestResult {
     assert!(secondary.join("gov/rfc/RFC-0002").is_dir());
 
     let date = common::today();
+    let main_id = common::work_id(&date, 1);
+    let secondary_id = common::work_id(&date, 2);
     assert!(
         main.path()
-            .join(format!("gov/work/{date}-main-work.toml"))
+            .join(format!("gov/work/{main_id}.toml"))
             .exists()
     );
     let secondary_work =
-        std::fs::read_to_string(secondary.join(format!("gov/work/{date}-secondary-work.toml")))?;
-    let main_id = common::work_id(&date, 1);
-    let secondary_id = common::work_id(&date, 2);
+        std::fs::read_to_string(secondary.join(format!("gov/work/{secondary_id}.toml")))?;
     assert!(
         secondary_work.contains(&format!("id = \"{secondary_id}\"")),
         "secondary work item must reserve {secondary_id}: {secondary_work}"

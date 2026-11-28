@@ -28,7 +28,7 @@ gov/
 ├── config.toml           # govctl configuration
 ├── rfc/                  # RFC-NNNN/rfc.toml + clauses/*.toml
 ├── adr/                  # ADR-NNNN-*.toml
-├── work/                 # YYYY-MM-DD-<slug>.toml
+├── work/                 # WI-YYYY-MM-DD-NNN.toml
 ├── guard/                # <slug>.toml verification guards
 └── releases.toml         # Release history
 ```
