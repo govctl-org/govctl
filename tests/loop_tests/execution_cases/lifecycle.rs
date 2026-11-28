@@ -30,7 +30,7 @@ fn test_loop_run_opens_round_without_mutating_work_item() -> common::TestResult 
         "{output}"
     );
 
-    let work_toml = fs::read_to_string(temp_dir.path().join(format!("gov/work/{date}-root.toml")))?;
+    let work_toml = fs::read_to_string(temp_dir.path().join(format!("gov/work/{root_id}.toml")))?;
     assert!(work_toml.contains("status = \"queue\""), "{work_toml}");
 
     let state_toml = fs::read_to_string(

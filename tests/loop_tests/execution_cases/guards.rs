@@ -16,7 +16,7 @@ fn test_loop_run_does_not_execute_required_guards() -> common::TestResult {
     assert!(output.contains("exit: 0"), "{output}");
 
     write_guard(temp_dir.path(), "GUARD-FAIL", "exit 1")?;
-    append_required_guard(temp_dir.path(), &date, "root", "GUARD-FAIL")?;
+    append_required_guard(temp_dir.path(), &root_id, "GUARD-FAIL")?;
 
     let output = run_dynamic_commands(
         temp_dir.path(),
@@ -33,7 +33,7 @@ fn test_loop_run_does_not_execute_required_guards() -> common::TestResult {
     assert!(!output.contains("FAIL GUARD-FAIL"), "{output}");
     assert!(!output.contains("error[E1210]"), "{output}");
 
-    let work_toml = fs::read_to_string(temp_dir.path().join(format!("gov/work/{date}-root.toml")))?;
+    let work_toml = fs::read_to_string(temp_dir.path().join(format!("gov/work/{root_id}.toml")))?;
     assert!(work_toml.contains("status = \"active\""), "{work_toml}");
     let state_toml = fs::read_to_string(
         temp_dir

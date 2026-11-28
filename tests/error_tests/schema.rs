@@ -328,7 +328,7 @@ fn test_generated_resource_ids_reject_exhausted_namespaces() -> common::TestResu
     assert!(
         !temp_dir
             .path()
-            .join(format!("gov/work/{date}-overflow.toml"))
+            .join(format!("gov/work/WI-{date}-1000.toml"))
             .exists()
     );
     Ok(())
